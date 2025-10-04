@@ -1,7 +1,23 @@
 [project]
 name = "pptx-generator"
 version = "0.1.0"
-description = "Add your description here"
+description = "JSON 仕様から提案書 PPTX を生成するツール"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.8,<3",
+    "typer>=0.12,<0.13",
+    "python-pptx>=0.6.21",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+]
+
+[project.scripts]
+pptx-generator = "pptx_generator.cli:app"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,25 @@
+{
+  "template_version": "v1",
+  "fonts": {
+    "heading": {
+      "name": "Yu Gothic",
+      "size_pt": 32,
+      "color_hex": "#1A1A1A"
+    },
+    "body": {
+      "name": "Yu Gothic",
+      "size_pt": 18,
+      "color_hex": "#333333"
+    }
+  },
+  "colors": {
+    "primary": "#005BAC",
+    "secondary": "#0097A7",
+    "accent": "#FF7043",
+    "background": "#FFFFFF"
+  },
+  "footer": {
+    "text": "Confidential",
+    "show_page_number": true
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "title": "次期プロジェクト提案",
+    "client": "ABC 株式会社",
+    "author": "営業部",
+    "created_at": "2025-10-04",
+    "theme": "corporate",
+    "locale": "ja-JP"
+  },
+  "auth": {
+    "created_by": "codex",
+    "department": "solution"
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "layout": "Title Slide",
+      "title": "次期プロジェクト提案",
+      "subtitle": "2025 年度 上期",
+      "bullets": []
+    },
+    {
+      "id": "agenda",
+      "layout": "Title and Content",
+      "title": "アジェンダ",
+      "bullets": [
+        {
+          "id": "agenda-1",
+          "text": "背景",
+          "level": 0
+        },
+        {
+          "id": "agenda-2",
+          "text": "提案概要",
+          "level": 0
+        },
+        {
+          "id": "agenda-3",
+          "text": "期待効果",
+          "level": 0
+        }
+      ]
+    }
+  ]
+}

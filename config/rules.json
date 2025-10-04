@@ -1,0 +1,14 @@
+{
+  "title": {
+    "max_length": 25
+  },
+  "bullet": {
+    "max_length": 120,
+    "max_level": 3
+  },
+  "forbidden_words": [
+    "御社",
+    "弊社",
+    "TODO"
+  ]
+}
