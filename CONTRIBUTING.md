@@ -39,6 +39,7 @@
 
 ## 7. テスト方針
 - 単体テスト: `python/tests/` 配下に配置し、 `pytest` を使用。JSON 入力 → PPTX 出力の検証を行う。
+  - 実行コマンドは `uv run --extra dev pytest` を使用する。ローカルに `pytest` を直接インストールしていないため、`uv` 経由で実行すること。
 - 結合テスト: `tests/integration/` にサンプル JSON を用意し、パイプライン全体 (JSON→PPTX→PDF) を検証する。
 - パフォーマンステスト: 30 スライド規模のケースで処理時間を計測し、結果を記録する。
 - セキュリティテスト: 入力検証、脆弱性スキャン (`pip-audit`, `dotnet list package --vulnerable`) を CI で実施する。
