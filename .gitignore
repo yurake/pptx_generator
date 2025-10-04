@@ -20,3 +20,4 @@ docs/discussion.txt
 # Logs and caches
 *.log
 .cache/
+.pptxgen/
