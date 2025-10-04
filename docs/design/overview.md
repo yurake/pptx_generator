@@ -208,8 +208,12 @@ project/
  │   ├─ corporate_default_v1.pptx
  │   └─ layout_map.yaml
  ├─ docs/
- │   ├─ requirements.md
- │   └─ design.md
+ │   ├─ requirements/
+ │   │   └─ overview.md
+ │   ├─ design/
+ │   │   └─ overview.md
+ │   └─ policies/
+ │       └─ task-management.md
  ├─ scripts/
  │   ├─ run_pipeline.sh
  │   └─ run_pipeline.ps1

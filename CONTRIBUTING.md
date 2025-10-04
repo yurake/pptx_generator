@@ -52,26 +52,20 @@
 - CI 失敗は最優先で修正し、`main` へのマージは常に CI Pass を条件とする。
 
 ## 9. 設定・テンプレ管理
-- `config/branding.json`, `config/rules.json`, `rules/polish.yaml` などのルール変更は Pull Request でレビューする。
-- テンプレート更新は `template_validator.py` を実行し、レイアウト・プレースホルダ構造の変化を確認する。
-- `docs/adr/` に重大な意思決定やテンプレート更新理由を記録する。
+- 変更フローと検証手順は `docs/policies/config-and-templates.md` を参照すること。
+- 影響がある変更は必ず Issue / ToDo に記録し、PR レビューで合意を取る。
 
 ## 10. ドキュメント更新
-- 要件変更は `docs/requirements.md`、設計変更は `docs/design.md` を更新する。
-- 運用手順や runbook、FAQ は `docs/` 配下に追加し、変更点を README にリンクする。
-- プロジェクトに関するアナウンス事項は Release Notes や Slack で共有する。
+- カテゴリ構成と更新ルールは `docs/README.md` に従うこと。
+- 新規資料を追加する際は適切なディレクトリを選び、README の一覧を更新する。
 
 ## 11. リリース手順
-1. テンプレートおよび設定ファイルのバージョンを確認し、必要ならインクリメント。
-2. `CHANGELOG.md` (未作成の場合は新設) を更新し、主要変更点と既知の注意点を記載。
-3. ステージング環境で 3 件以上の案件データを用いた生成テストを実施。
-4. 監査ログ、通知動作、PDF 変換など重要機能をチェックし、承認者のレビューを得る。
-5. タグ付け (`vX.Y.Z`) と GitHub Release を作成し、デプロイを実施。
+- 詳細なフローは `docs/runbooks/release.md` を参照し、チェックリストに沿って進める。
+- リリース後は対応状況を Slack と Release Notes で共有する。
 
 ## 12. サポート・問い合わせ
-- 緊急連絡は Slack `#pptx-generator` チャンネルを利用。
-- 問い合わせや改善要望は GitHub Issue に記載し、ラベル (bug, enhancement, question) を付与する。
-- 運用時間外の重大障害は当番制で対応し、対応ログを共有する。
+- 連絡チャネルや当番体制は `docs/runbooks/support.md` に従うこと。
+- 対応ログは Issue または該当 ToDo に残し、翌営業日までに共有する。
 
 ## 13. タスク管理
 - 作業を開始する前にタスクを計画したら、`docs/todo/` 配下に `YYYYMMDD-<slug>.md` 形式で ToDo リストファイルを新規作成すること。
