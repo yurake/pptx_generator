@@ -9,6 +9,7 @@ __pycache__/
 
 # Tooling artifacts
 .serena/
+src/pptx_generator.egg-info/
 
 # Project discussions
 docs/discussion.txt
