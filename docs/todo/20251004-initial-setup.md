@@ -12,9 +12,7 @@
   - メモ: JSON 入力と出力パス指定の受け口を実装
 - [x] 設定ファイルの初期値作成
   - メモ: branding / rules のダミー設定を配置
-- [ ] レビュー対応
-  - メモ: 指摘事項はここに記載
 
 ## メモ
-- 依存ライブラリは最小限 (pydantic, typer, python-pptx) から導入する。
+- 依存ライブラリは最小限 (pydantic, click, python-pptx) から導入する。
 - validator 拡張後に `uv run --extra dev pytest` を実行し、テスト成功を確認。

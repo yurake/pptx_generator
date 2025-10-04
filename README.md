@@ -13,8 +13,9 @@ JSON 仕様から PowerPoint 提案書を自動生成する開発中のツール
 1. サンプル JSON `samples/sample_spec.json` を基に編集し、案件情報を準備します。
 2. CLI を実行して PPTX と analysis.json を生成します。
    ```bash
-   uv run pptx-generator run samples/sample_spec.json --workdir .pptxgen
+   uv run pptx-generator run samples/sample_spec.json
    ```
+   - `--workdir` は省略可能で、指定しない場合は `.pptxgen` が自動作成されます。
 3. 生成物は `.pptxgen/outputs/` 配下に保存されます。
 
 ## 設定

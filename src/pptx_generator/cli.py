@@ -1,4 +1,4 @@
-"""pptx_generator CLI。"""
+"""pptx_generator CLI."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-import typer
+import click
 
 from .models import JobSpec, SpecValidationError
 from .pipeline import (
@@ -23,35 +23,74 @@ from .settings import BrandingConfig, RulesConfig
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 
-app = typer.Typer(help="JSON 仕様から PPTX を生成する CLI")
 
-
-@app.callback()
-def configure_logging(
-    verbose: bool = typer.Option(False, "-v", "--verbose", help="冗長ログを出力する"),
-) -> None:
+@click.group(help="JSON 仕様から PPTX を生成する CLI")
+@click.option("-v", "--verbose", is_flag=True, help="冗長ログを出力する")
+def app(verbose: bool) -> None:
+    """CLI ルートエントリ。"""
     level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 
 @app.command()
+@click.argument(
+    "spec_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--workdir",
+    "-w",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptxgen"),
+    show_default=True,
+    help="作業ディレクトリ",
+)
+@click.option(
+    "--template",
+    "-t",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="PPTX テンプレートファイル",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_filename",
+    default="proposal.pptx",
+    show_default=True,
+    help="出力 PPTX 名",
+)
+@click.option(
+    "--rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=DEFAULT_RULES_PATH,
+    show_default=True,
+    help="検証ルール設定ファイル",
+)
+@click.option(
+    "--branding",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=DEFAULT_BRANDING_PATH,
+    show_default=True,
+    help="ブランド設定ファイル",
+)
 def run(
-    spec_path: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True, help="入力 JSON ファイル"),
-    workdir: Path = typer.Option(Path(".pptxgen"), "--workdir", "-w", help="作業ディレクトリ"),
-    template: Optional[Path] = typer.Option(None, "--template", "-t", exists=True, file_okay=True, dir_okay=False, readable=True, help="PPTX テンプレートファイル"),
-    output_filename: str = typer.Option("proposal.pptx", "--output", "-o", help="出力 PPTX 名"),
-    rules_path: Path = typer.Option(DEFAULT_RULES_PATH, "--rules", help="検証ルール設定ファイル"),
-    branding_path: Path = typer.Option(DEFAULT_BRANDING_PATH, "--branding", help="ブランド設定ファイル"),
+    spec_path: Path,
+    workdir: Path,
+    template: Optional[Path],
+    output_filename: str,
+    rules: Path,
+    branding: Path,
 ) -> None:
     """生成パイプラインを実行する。"""
     try:
         spec = JobSpec.parse_file(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise typer.Exit(code=2) from exc
+        raise click.exceptions.Exit(code=2) from exc
 
-    rules_config = RulesConfig.load(rules_path)
-    branding_config = BrandingConfig.load(branding_path)
+    rules_config = RulesConfig.load(rules)
+    branding_config = BrandingConfig.load(branding)
 
     workdir.mkdir(parents=True, exist_ok=True)
     context = PipelineContext(spec=spec, workdir=workdir)
@@ -80,26 +119,26 @@ def run(
         runner.execute(context)
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
-        raise typer.Exit(code=3) from exc
+        raise click.exceptions.Exit(code=3) from exc
     except FileNotFoundError as exc:
-        typer.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise typer.Exit(code=4) from exc
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
         logging.exception("パイプライン実行中にエラーが発生しました")
-        raise typer.Exit(code=1) from exc
+        raise click.exceptions.Exit(code=1) from exc
 
     pptx_path = context.artifacts.get("pptx_path")
     analysis_path = context.artifacts.get("analysis_path")
-    typer.echo(f"PPTX: {pptx_path}")
-    typer.echo(f"Analysis: {analysis_path}")
+    click.echo(f"PPTX: {pptx_path}")
+    click.echo(f"Analysis: {analysis_path}")
 
 
 def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
-    typer.echo(message, err=True)
+    click.echo(message, err=True)
     if not errors:
         return
     formatted = json.dumps(errors, ensure_ascii=False, indent=2)
-    typer.echo(formatted, err=True)
+    click.echo(formatted, err=True)
 
 
 if __name__ == "__main__":
