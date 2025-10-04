@@ -1,0 +1,74 @@
+# 開発ルール (CONTRIBUTING)
+
+## 1. 開発環境
+- Python 3.12 系を標準とし、仮想環境 (`uv`, `poetry`, `venv` 等) で依存を管理すること。
+- .NET 8 SDK をインストールし、仕上げツール (Open XML SDK) のビルドを確認すること。
+- LibreOffice をインストールし、`--headless` で PDF 変換テストが実行できる状態を維持すること。
+- 共通テンプレートや設定ファイルは `templates/` `python/config/` の最新版を使用すること。
+
+## 2. Git アイデンティティと履歴
+- 著者・コミッタはグローバル設定の `user.name` / `user.email` を使用し、noreply メールは利用しない。
+- 履歴を書き換えない（rebase --onto などによる著者情報の改変禁止）。
+- エージェント関与を明示する場合はコミット末尾に `Co-authored-by: Codex CLI <codex@example.com>` を追記する。
+
+## 3. ブランチとコミット
+- `main` ブランチは保護対象とし、直接 push を禁止する。
+- 作業ブランチは `feat|fix|chore|docs/<issue#>-<slug>` を基本とし、リリース用は `release/<major.minor>`、緊急対応は `hotfix/<tag>` を使用する。
+- コミットメッセージは Conventional Commits 準拠（例: `feat(renderer): add chart support`）で、スコープは `frontend`, `backend`, `ci`, `docs`, `infra`, `deps` を主に用いる。
+- 粒度の細かいコミットを積み、マージ時に Squash して履歴を簡潔に保つ。
+- 必要に応じて `Co-authored-by` 行を付与し、履歴の透明性を保つ。
+
+## 4. Pull Request 運用
+- Draft PR を早期に作成し、目的・変更点・影響範囲・テスト結果・ロールバック方法を記載する。
+- PR サイズは概ね 300 行以内を目安にし、超える場合は分割を検討する。
+- マージ前に CI グリーン、最新 `main` への追従、コンフリクト解消を完了させる。
+- 承認は最低 1 名（重要領域は CODEOWNERS などで追加）を必須とし、レビュー SLA は初回応答 1 営業日を目標とする。
+- マージ方式は Squash を基本とし、必要に応じて Rebase and merge を使用する（Merge commit は禁止）。
+
+## 5. コーディング規約
+- Python: `ruff` と `black` で静的解析とフォーマットを実施、型は `mypy` で検証する。
+- C#: `dotnet format` を使用し、nullable 参照型を有効にする。
+- スクリプト言語 (Bash/PowerShell) は shellcheck / PSScriptAnalyzer を用いて lint する。
+- コメントは必要最小限とし、ビジネスルールや非自明な処理に限定する。
+
+## 6. 依存とバージョン管理
+- Python 依存は `pyproject.toml` と `uv.lock` で管理し、追加時は `uv add` を使用する。
+- .NET 依存は `dotnet add package` で追加し、`dotnet list package --vulnerable` を定期実行する。
+- LibreOffice 等の外部ツールバージョンは `docs/adr/` や README に明記する。
+- テンプレートファイル (.pptx/.potx) はバージョン番号付きファイル名とし、更新履歴を `docs/adr/` に追記する。
+
+## 7. テスト方針
+- 単体テスト: `python/tests/` 配下に配置し、 `pytest` を使用。JSON 入力 → PPTX 出力の検証を行う。
+- 結合テスト: `tests/integration/` にサンプル JSON を用意し、パイプライン全体 (JSON→PPTX→PDF) を検証する。
+- パフォーマンステスト: 30 スライド規模のケースで処理時間を計測し、結果を記録する。
+- セキュリティテスト: 入力検証、脆弱性スキャン (`pip-audit`, `dotnet list package --vulnerable`) を CI で実施する。
+
+## 8. CI/CD
+- GitHub Actions で以下を実行すること。
+  - Lint (`ruff`, `black --check`, `mypy`, `dotnet format`)
+  - ユニットテスト (`pytest`, `.NET` テスト)
+  - セキュリティスキャン (`pip-audit`, `dotnet list package --vulnerable`)
+- 成果物のビルド (Docker イメージ等) はステージング環境へのデプロイ前に必ず成功させる。
+- CI 失敗は最優先で修正し、`main` へのマージは常に CI Pass を条件とする。
+
+## 9. 設定・テンプレ管理
+- `config/branding.json`, `config/rules.json`, `rules/polish.yaml` などのルール変更は Pull Request でレビューする。
+- テンプレート更新は `template_validator.py` を実行し、レイアウト・プレースホルダ構造の変化を確認する。
+- `docs/adr/` に重大な意思決定やテンプレート更新理由を記録する。
+
+## 10. ドキュメント更新
+- 要件変更は `docs/requirements.md`、設計変更は `docs/design.md` を更新する。
+- 運用手順や runbook、FAQ は `docs/` 配下に追加し、変更点を README にリンクする。
+- プロジェクトに関するアナウンス事項は Release Notes や Slack で共有する。
+
+## 11. リリース手順
+1. テンプレートおよび設定ファイルのバージョンを確認し、必要ならインクリメント。
+2. `CHANGELOG.md` (未作成の場合は新設) を更新し、主要変更点と既知の注意点を記載。
+3. ステージング環境で 3 件以上の案件データを用いた生成テストを実施。
+4. 監査ログ、通知動作、PDF 変換など重要機能をチェックし、承認者のレビューを得る。
+5. タグ付け (`vX.Y.Z`) と GitHub Release を作成し、デプロイを実施。
+
+## 12. サポート・問い合わせ
+- 緊急連絡は Slack `#pptx-generator` チャンネルを利用。
+- 問い合わせや改善要望は GitHub Issue に記載し、ラベル (bug, enhancement, question) を付与する。
+- 運用時間外の重大障害は当番制で対応し、対応ログを共有する。
