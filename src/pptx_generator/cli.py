@@ -28,13 +28,9 @@ app = typer.Typer(help="JSON 仕様から PPTX を生成する CLI")
 
 @app.callback()
 def configure_logging(
-    verbose: int = typer.Option(0, "-v", "--verbose", count=True, help="冗長ログ出力レベル"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="冗長ログを出力する"),
 ) -> None:
-    level = logging.WARNING
-    if verbose == 1:
-        level = logging.INFO
-    elif verbose >= 2:
-        level = logging.DEBUG
+    level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 
