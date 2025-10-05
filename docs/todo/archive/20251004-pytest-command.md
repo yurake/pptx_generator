@@ -4,6 +4,8 @@
 関連ブランチ: main
 期限: 2025-10-04
 関連Issue: #0
+関連PR: 未設定
+closed_at: 2025-10-05
 ---
 
 - [x] `uv run --extra dev pytest` でテストを実行する
