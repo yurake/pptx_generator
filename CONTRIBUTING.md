@@ -38,7 +38,6 @@
 - Python 依存は `pyproject.toml` と `uv.lock` で管理し、追加時は `uv add` を使用する。
 - .NET 依存は `dotnet add package` で追加し、`dotnet list package --vulnerable` を定期実行する。
 - LibreOffice 等の外部ツールバージョンは `docs/adr/` や README に明記する。
-- テンプレートファイル (.pptx/.potx) はバージョン番号付きファイル名とし、更新履歴を `docs/adr/` に追記する。
 
 ## 7. テスト方針
 - 単体テスト: `python/tests/` 配下に配置し、 `pytest` を使用。JSON 入力 → PPTX 出力の検証を行う。

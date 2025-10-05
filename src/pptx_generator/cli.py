@@ -11,18 +11,10 @@ from typing import Optional
 import click
 
 from .models import JobSpec, SpecValidationError
-from .pipeline import (
-    AnalyzerOptions,
-    PdfExportError,
-    PdfExportOptions,
-    PdfExportStep,
-    PipelineContext,
-    PipelineRunner,
-    RenderingOptions,
-    SimpleAnalyzerStep,
-    SimpleRendererStep,
-    SpecValidatorStep,
-)
+from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
+                       PdfExportStep, PipelineContext, PipelineRunner,
+                       RenderingOptions, SimpleAnalyzerStep,
+                       SimpleRendererStep, SpecValidatorStep)
 from .settings import BrandingConfig, RulesConfig
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
@@ -34,13 +26,15 @@ DEFAULT_BRANDING_PATH = Path("config/branding.json")
 def app(verbose: bool) -> None:
     """CLI ルートエントリ。"""
     level = logging.INFO if verbose else logging.WARNING
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    logging.basicConfig(
+        level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 
 @app.command()
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
 )
 @click.option(
     "--workdir",
@@ -53,7 +47,8 @@ def app(verbose: bool) -> None:
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="PPTX テンプレートファイル",
 )
@@ -67,14 +62,16 @@ def app(verbose: bool) -> None:
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=DEFAULT_BRANDING_PATH,
     show_default=True,
     help="ブランド設定ファイル",
@@ -100,7 +97,8 @@ def app(verbose: bool) -> None:
 )
 @click.option(
     "--libreoffice-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="LibreOffice (soffice) 実行ファイルのパス",
 )
@@ -242,7 +240,8 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
     }
     audit_path = outputs_dir / "audit_log.json"
-    audit_path.write_text(json.dumps(audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    audit_path.write_text(json.dumps(
+        audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     context.add_artifact("audit_path", audit_path)
     return audit_path
 
