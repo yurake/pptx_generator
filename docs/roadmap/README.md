@@ -7,23 +7,25 @@
 
 ## アクティブテーマ
 
-### パイプライン機能拡張
-- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
-- 参照 ToDo: [docs/todo/20251004-pipeline-enhancements.md](../todo/20251004-pipeline-enhancements.md)
-- 状況: 7 件中 6 件完了（2025-10-05 更新）
-- 次のアクション: PR 作成と連携する Issue の整理。
-
-### レンダラー リッチコンテンツ対応
-- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
-- 参照 ToDo: [docs/todo/20251005-renderer-rich-content.md](../todo/20251005-renderer-rich-content.md)
-- 状況: 14 件中 13 件完了（2025-10-05 更新）
-- 次のアクション: Issue/PR の更新と成果物共有。
-
 ### PDF 自動生成対応
 - ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料の整備を容易にする。
 - 参照 ToDo: [docs/todo/20251005-pdf-export-automation.md](../todo/20251005-pdf-export-automation.md)
 - 状況: 未着手（2025-10-05 登録）
 - 次のアクション: CLI オプションとパイプラインの設計、テスト計画の策定。
+
+## 完了テーマ
+
+### パイプライン機能拡張
+- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
+- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md)
+- 状況: 7 件中 7 件完了（2025-10-06 更新）
+- 完了メモ: PR #7 をマージし、スキーマ拡張・テスト・ドキュメント更新を完了。
+
+### レンダラー リッチコンテンツ対応
+- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
+- 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
+- 状況: 14 件中 14 件完了（2025-10-06 更新）
+- 完了メモ: PR #7 でリッチコンテンツ描画と関連ドキュメントの刷新を実施。
 
 ## 更新履歴
 - 2025-10-05: 初版作成。
