@@ -19,11 +19,12 @@ class RulesConfig:
         data = json.loads(path.read_text(encoding="utf-8"))
         title = data.get("title", {})
         bullet = data.get("bullet", {})
+        defaults = cls()
         return cls(
-            max_title_length=title.get("max_length", cls.max_title_length),
-            max_bullet_length=bullet.get("max_length", cls.max_bullet_length),
-            max_bullet_level=bullet.get("max_level", cls.max_bullet_level),
-            forbidden_words=tuple(data.get("forbidden_words", ())),
+            max_title_length=title.get("max_length", defaults.max_title_length),
+            max_bullet_length=bullet.get("max_length", defaults.max_bullet_length),
+            max_bullet_level=bullet.get("max_level", defaults.max_bullet_level),
+            forbidden_words=tuple(data.get("forbidden_words", defaults.forbidden_words)),
         )
 
 
