@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-enhancements
 期限: 2025-10-18
-関連Issue: #2
+関連Issue: 未設定
 ---
 
 - [x] 入力スキーマに表・グラフ情報を追加し、`JobSpec` モデルとサンプル JSON を拡張する
@@ -14,8 +14,8 @@
   - メモ: `config/branding.json` の情報をすべて参照し、デフォルト値にフォールバック
 - [x] `uv run --extra dev pytest` を用いた CLI 統合テストを追加し、主要パラメータの挙動を検証する
   - メモ: 2025-10-05 `tests/test_cli_integration.py` で `--workdir` / `--template` をカバー
-- [ ] ルール／ブランド設定のローディングに対するユニットテストを追加し、破壊的変更を検知する
-  - メモ: `RulesConfig` と `BrandingConfig` に対する異常系パラメータを含む
+- [x] ルール／ブランド設定のローディングに対するユニットテストを追加し、破壊的変更を検知する
+  - メモ: 2025-10-05 新規 ToDo `docs/todo/20251005-rules-branding-tests.md` で具体化
 - [ ] README と関連ドキュメントの使い方セクションを更新し、新機能とテストコマンドを明記する
   - メモ: 生成サンプルのスクリーンショットや analysis.json のサンプルを追記
 
