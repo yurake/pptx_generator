@@ -6,6 +6,8 @@
 関連Issue: 未設定
 ---
 
+- [ ] Issue 作成
+  - メモ: Issue を作成し、`gh issue view <番号>` で存在確認して番号と URL を記入する
 - [x] 入力スキーマに表・グラフ情報を追加し、`JobSpec` モデルとサンプル JSON を拡張する
   - メモ: 2025-10-05 `slides[].tables` / `slides[].charts` を追加し、サンプルとテスト (`tests/test_models.py`) で検証
 - [x] 自動診断ステップの実装を拡充し、analysis.json に issue と fix を出力できるようにする
