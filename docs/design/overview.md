@@ -21,7 +21,8 @@
 | Service-D Analyzer | PPTX 解析、幾何・タイポ情報抽出 | Python, `python-pptx`, Open XML 解析 |
 | Service-D Refiner | `analysis.json` に基づく自動補正 | Python |
 | Service-E Polisher | Open XML SDK による最終調整 | .NET 8, Open XML SDK |
-| Service-F Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
+| Service-F PDF Exporter | LibreOffice を用いた PPTX→PDF 変換と再試行制御 | Python, LibreOffice CLI |
+| Service-G Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
 
 ## 3. データフロー
 1. `spec.json` を受領し、`JobId` を生成。
@@ -29,9 +30,10 @@
 3. Renderer がテンプレート（`templates/corporate_default_vN.potx`）を読み込み、指定レイアウトに沿ってスライドを作成。
 4. Analyzer が PPTX から図形位置・テキスト属性を抽出し、`analysis.json` を生成。
 5. Refiner が `analysis.json` に含まれる `fixes` を適用し、`proposal_refined.pptx` を出力。
-6. Polisher（任意）が Open XML SDK で段落・禁則・色統一を適用し、`proposal_polished.pptx` を作成。
-7. Distributor が出力ファイルをストレージへ保存し、メタ情報とともに通知。
-8. 監査情報を `audit_log` ストレージへ保存。
+6. PDF Exporter が LibreOffice (soffice) により PPTX から PDF を生成し、失敗時はリトライ。
+7. Polisher（任意）が Open XML SDK で段落・禁則・色統一を適用し、`proposal_polished.pptx` を作成。
+8. Distributor が出力ファイルをストレージへ保存し、メタ情報とともに通知。
+9. CLI が `audit_log.json` を生成し、PDF 変換メタデータ（試行回数・所要時間）を含む監査情報を保存。
 
 ## 4. JSON スキーマ詳細
 ```yaml
@@ -166,6 +168,7 @@ assets:
 - メトリクス: 生成時間、LibreOffice 変換時間、エラー率、再試行回数。
 - アラート: `critical` issue 発生、変換失敗連続、テンプレート検証エラー、外部 API 障害。
 - Runbook: 正常系・異常系の手順を docs/runbook.md で管理。
+- 監査: CLI が `outputs/audit_log.json` を生成し、`pdf_export_metadata` をメトリクス基盤に取り込むことで LibreOffice 成功率とリードタイムを可視化する。
 
 ## 11. セキュリティ設計
 - データ暗号化: ストレージに保存するファイルを SSE (Storage-side Encryption) + 任意でクライアント暗号化。
