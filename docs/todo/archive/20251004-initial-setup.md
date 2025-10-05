@@ -4,6 +4,8 @@
 関連ブランチ: feat/initial-setup
 期限: 2025-10-11
 関連Issue: #1
+関連PR: 未設定
+closed_at: 2025-10-05
 ---
 
 - [x] Python パッケージ構成の雛形作成
