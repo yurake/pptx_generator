@@ -29,26 +29,68 @@ class RulesConfig:
 
 
 @dataclass(slots=True)
+class BrandingFont:
+    name: str
+    size_pt: float
+    color_hex: str
+
+
+@dataclass(slots=True)
 class BrandingConfig:
-    heading_font: str
-    body_font: str
-    body_font_size: float
-    body_font_color: str
+    heading_font: BrandingFont
+    body_font: BrandingFont
     primary_color: str
+    secondary_color: str
+    accent_color: str
     background_color: str
 
     @classmethod
     def load(cls, path: Path) -> "BrandingConfig":
         data = json.loads(path.read_text(encoding="utf-8"))
+        defaults = cls.default()
         fonts = data.get("fonts", {})
         colors = data.get("colors", {})
+
+        heading_settings = fonts.get("heading", {})
+        body_settings = fonts.get("body", {})
+
+        heading_font = BrandingFont(
+            name=heading_settings.get("name") or defaults.heading_font.name,
+            size_pt=float(heading_settings.get("size_pt") or defaults.heading_font.size_pt),
+            color_hex=_ensure_hex_prefix(
+                heading_settings.get("color_hex") or defaults.heading_font.color_hex
+            ),
+        )
+        body_font = BrandingFont(
+            name=body_settings.get("name") or defaults.body_font.name,
+            size_pt=float(body_settings.get("size_pt") or defaults.body_font.size_pt),
+            color_hex=_ensure_hex_prefix(
+                body_settings.get("color_hex") or defaults.body_font.color_hex
+            ),
+        )
+
         return cls(
-            heading_font=fonts.get("heading", {}).get("name", "Yu Gothic"),
-            body_font=fonts.get("body", {}).get("name", "Yu Gothic"),
-            body_font_size=float(fonts.get("body", {}).get("size_pt", 18.0)),
-            body_font_color=_ensure_hex_prefix(fonts.get("body", {}).get("color_hex", "#333333")),
-            primary_color=_ensure_hex_prefix(colors.get("primary", "#005BAC")),
-            background_color=_ensure_hex_prefix(colors.get("background", "#FFFFFF")),
+            heading_font=heading_font,
+            body_font=body_font,
+            primary_color=_ensure_hex_prefix(colors.get("primary") or defaults.primary_color),
+            secondary_color=_ensure_hex_prefix(
+                colors.get("secondary") or defaults.secondary_color
+            ),
+            accent_color=_ensure_hex_prefix(colors.get("accent") or defaults.accent_color),
+            background_color=_ensure_hex_prefix(
+                colors.get("background") or defaults.background_color
+            ),
+        )
+
+    @classmethod
+    def default(cls) -> "BrandingConfig":
+        return cls(
+            heading_font=BrandingFont(name="Yu Gothic", size_pt=32.0, color_hex="#1A1A1A"),
+            body_font=BrandingFont(name="Yu Gothic", size_pt=18.0, color_hex="#333333"),
+            primary_color="#005BAC",
+            secondary_color="#0097A7",
+            accent_color="#FF7043",
+            background_color="#FFFFFF",
         )
 
 

@@ -70,11 +70,15 @@ class TestBrandingConfig:
 
         config = BrandingConfig.load(config_path)
 
-        assert config.heading_font == "Heading"
-        assert config.body_font == "Body"
-        assert config.body_font_size == pytest.approx(16.0)
-        assert config.body_font_color == "#0F0F0F"
+        assert config.heading_font.name == "Heading"
+        assert config.heading_font.size_pt == pytest.approx(30.0)
+        assert config.heading_font.color_hex == "#111111"
+        assert config.body_font.name == "Body"
+        assert config.body_font.size_pt == pytest.approx(16.0)
+        assert config.body_font.color_hex == "#0F0F0F"
         assert config.primary_color == "#112233"
+        assert config.secondary_color == "#0097A7"
+        assert config.accent_color == "#FF7043"
         assert config.background_color == "#FFFFFF"
 
     def test_load_fallback_for_missing_body_font(self, tmp_path: Path) -> None:
@@ -90,9 +94,9 @@ class TestBrandingConfig:
 
         config = BrandingConfig.load(config_path)
 
-        assert config.body_font == "Yu Gothic"
-        assert config.body_font_size == pytest.approx(18.0)
-        assert config.body_font_color == "#333333"
+        assert config.body_font.name == "Yu Gothic"
+        assert config.body_font.size_pt == pytest.approx(18.0)
+        assert config.body_font.color_hex == "#333333"
 
     def test_load_invalid_json_raises(self, tmp_path: Path) -> None:
         config_path = tmp_path / "branding.json"
