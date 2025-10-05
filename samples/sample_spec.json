@@ -40,6 +40,37 @@
           "text": "期待効果",
           "level": 0
         }
+      ],
+      "tables": [
+        {
+          "id": "agenda-milestones",
+          "columns": ["項目", "時期"],
+          "rows": [
+            ["PoC 実施", "2025 Q2"],
+            ["本番導入", "2025 Q3"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kpi",
+      "layout": "Title and Content",
+      "title": "期待効果",
+      "charts": [
+        {
+          "id": "kpi-chart",
+          "type": "column",
+          "categories": ["導入前", "導入後"],
+          "series": [
+            {
+              "name": "作業時間",
+              "values": [10, 4]
+            }
+          ],
+          "options": {
+            "data_labels": true
+          }
+        }
       ]
     }
   ]

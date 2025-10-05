@@ -39,6 +39,53 @@ class SlideImage(BaseModel):
     height_in: float | None = None
 
 
+class TableStyle(BaseModel):
+    header_fill: str | None = Field(None, pattern=r"^#?[0-9A-Fa-f]{6}$")
+    zebra: bool = False
+
+    @field_validator("header_fill")
+    @classmethod
+    def normalize_header_fill(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value if value.startswith("#") else f"#{value}"
+
+
+class SlideTable(BaseModel):
+    id: str
+    anchor: str | None = None
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[str | int | float]] = Field(default_factory=list)
+    style: TableStyle | None = None
+
+
+class ChartSeries(BaseModel):
+    name: str
+    values: list[int | float] = Field(default_factory=list)
+    color_hex: str | None = Field(None, pattern=r"^#?[0-9A-Fa-f]{6}$")
+
+    @field_validator("color_hex")
+    @classmethod
+    def normalize_color(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value if value.startswith("#") else f"#{value}"
+
+
+class ChartOptions(BaseModel):
+    data_labels: bool = False
+    y_axis_format: str | None = None
+
+
+class SlideChart(BaseModel):
+    id: str
+    anchor: str | None = None
+    type: str
+    categories: list[str] = Field(default_factory=list)
+    series: list[ChartSeries] = Field(default_factory=list)
+    options: ChartOptions | None = None
+
+
 class Slide(BaseModel):
     id: str
     layout: str
@@ -47,6 +94,8 @@ class Slide(BaseModel):
     notes: str | None = None
     bullets: list[SlideBullet] = Field(default_factory=list)
     images: list[SlideImage] = Field(default_factory=list)
+    tables: list[SlideTable] = Field(default_factory=list)
+    charts: list[SlideChart] = Field(default_factory=list)
 
 
 class JobMeta(BaseModel):
