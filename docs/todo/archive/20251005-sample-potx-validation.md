@@ -5,6 +5,8 @@
 期限: 2025-10-12
 関連Issue: #13 https://github.com/yurake/pptx_generator/issues/13
 ---
+<!-- Archived: 2025-10-05T17:17:04Z after merge PR #14 -->
+<!-- Status: Completed -->
 
 - [x] ブランチ作成
 - [x] Issue 作成
