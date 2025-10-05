@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-pdf-export
 期限: 2025-10-25
-関連Issue: 未作成
+関連Issue: #8
 ---
 
 - [ ] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する
