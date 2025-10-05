@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-enhancements
 期限: 2025-10-18
-関連Issue: 未設定
+関連Issue: #10
 ---
 
 - [x] スライド要素の描画戦略を整理し、アンカー解決方針を決める
@@ -33,7 +33,7 @@
 - [x] `uv run --extra dev pytest` を実行し、追加テストの結果を記録する
   - メモ: 2025-10-05 テストスイート全体を実行しパスを確認
 - [ ] Issue と PR の更新
-  - メモ: 2025-10-05 PR 下書きを `docs/notes/pr-draft-pipeline-enhancements.md` に整理。Issue 起票と添付資料の準備を残す
+  - メモ: 2025-10-05 #10 を作成済み。PR 添付資料とスクリーンショット準備が残る
 
 ## メモ
 - `python-pptx` のグラフ描画 API 仕様を確認する資料を収集する
