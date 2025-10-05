@@ -5,6 +5,8 @@
 期限: 2025-10-12
 関連Issue: #13 https://github.com/yurake/pptx_generator/issues/13
 ---
+<!-- Archived: 2025-10-05T17:17:04Z after merge PR #14 -->
+<!-- Status: Completed -->
 
 - [x] ブランチ作成
 - [x] Issue 作成
@@ -17,8 +19,8 @@
   - メモ: レイアウト・フォント・画像が期待通りかチェック
 - [x] 結果をドキュメントへ記録
   - メモ: レビューで指摘された内容を記録
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #14 https://github.com/yurake/pptx_generator/pull/14 を作成し本文へ反映済
 
 ## メモ
 - CLI 実行時は作業ディレクトリ `.pptxgen` を使用する
