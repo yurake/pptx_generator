@@ -18,7 +18,18 @@
       "layout": "Title Slide",
       "title": "次期プロジェクト提案",
       "subtitle": "2025 年度 上期",
-      "bullets": []
+      "bullets": [],
+      "images": [
+        {
+          "id": "cover-logo",
+          "source": "samples/assets/logo.png",
+          "sizing": "fit",
+          "left_in": 7.5,
+          "top_in": 4.5,
+          "width_in": 2.0,
+          "height_in": 2.0
+        }
+      ]
     },
     {
       "id": "agenda",
@@ -48,7 +59,22 @@
           "rows": [
             ["PoC 実施", "2025 Q2"],
             ["本番導入", "2025 Q3"]
-          ]
+          ],
+          "style": {
+            "header_fill": "#E6EEF8",
+            "zebra": true
+          }
+        }
+      ],
+      "images": [
+        {
+          "id": "agenda-chart-thumb",
+          "source": "samples/assets/logo.png",
+          "sizing": "stretch",
+          "left_in": 6.5,
+          "top_in": 4.2,
+          "width_in": 2.0,
+          "height_in": 2.0
         }
       ]
     },
@@ -64,7 +90,8 @@
           "series": [
             {
               "name": "作業時間",
-              "values": [10, 4]
+              "values": [10, 4],
+              "color_hex": "#FF7043"
             }
           ],
           "options": {

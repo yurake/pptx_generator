@@ -7,6 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
 from pptx_generator.models import JobSpec
@@ -54,6 +55,16 @@ def test_cli_run_generates_outputs(tmp_path) -> None:
         actual = slide.shapes.title.text if slide.shapes.title else None
         assert actual == slide_spec.title
 
+    agenda_slide = presentation.slides[1]
+    tables = [shape for shape in agenda_slide.shapes if getattr(shape, "has_table", False)]
+    assert tables, "テーブルが描画されていること"
+    images = [shape for shape in agenda_slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert images, "画像が描画されていること"
+
+    kpi_slide = presentation.slides[2]
+    charts = [shape for shape in kpi_slide.shapes if getattr(shape, "has_chart", False)]
+    assert charts, "チャートが描画されていること"
+
 
 def test_cli_run_supports_template(tmp_path) -> None:
     spec_path = Path("samples/sample_spec.json")
@@ -96,3 +107,7 @@ def test_cli_run_supports_template(tmp_path) -> None:
             continue
         actual = slide.shapes.title.text if slide.shapes.title else None
         assert actual == slide_spec.title
+
+    agenda_slide = presentation.slides[1]
+    tables = [shape for shape in agenda_slide.shapes if getattr(shape, "has_table", False)]
+    assert tables
