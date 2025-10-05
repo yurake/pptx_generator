@@ -100,16 +100,14 @@ def run(
         RenderingOptions(
             template_path=template,
             output_filename=output_filename,
-            default_font_name=branding_config.body_font,
-            default_font_size=branding_config.body_font_size,
-            default_font_color=branding_config.primary_color,
+            branding=branding_config,
         )
     )
     analyzer = SimpleAnalyzerStep(
         AnalyzerOptions(
-            min_font_size=branding_config.body_font_size,
-            default_font_size=branding_config.body_font_size,
-            default_font_color=branding_config.body_font_color,
+            min_font_size=branding_config.body_font.size_pt,
+            default_font_size=branding_config.body_font.size_pt,
+            default_font_color=branding_config.body_font.color_hex,
             preferred_text_color=branding_config.primary_color,
             background_color=branding_config.background_color,
             max_bullet_level=rules_config.max_bullet_level,
