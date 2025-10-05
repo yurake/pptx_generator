@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/2-rules-branding-tests
 期限: 2025-10-12
-関連Issue: #2
+関連Issue: #3
 関連PR: 未作成
 ---
 
@@ -20,7 +20,7 @@
 - [x] 新設テストを `uv run --extra dev pytest tests/test_settings.py` で実行し結果を記録する
   - メモ: 2025-10-05 すべて成功
 - [x] Issue 作成
-  - メモ: Issue #2 に進捗コメントを追記予定
+  - メモ: Issue #3 を作成済み
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
