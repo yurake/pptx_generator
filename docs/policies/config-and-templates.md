@@ -2,7 +2,8 @@
 
 ## 対象範囲
 - `config/branding.json`, `config/rules.json` など設定ファイル全般
-- `.pptx` / `.potx` テンプレートおよび `rules/polish.yaml`
+- `.pptx` テンプレートおよび `rules/polish.yaml`
+  ※テンプレートは .pptx のみ対応（.potxは未対応）。.potxを利用したい場合はPowerPointで新規 .pptx として保存してください。
 
 ## 変更手順
 1. 変更内容を Issue または ToDo に記録し、影響範囲を整理する。
