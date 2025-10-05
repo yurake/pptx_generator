@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-enhancements
 期限: 2025-10-18
-関連Issue: #2
+関連Issue: 未設定
 ---
 
 - [x] 入力スキーマに表・グラフ情報を追加し、`JobSpec` モデルとサンプル JSON を拡張する
@@ -11,7 +11,7 @@
 - [x] 自動診断ステップの実装を拡充し、analysis.json に issue と fix を出力できるようにする
   - メモ: 2025-10-05 余白逸脱・フォントサイズ下限・コントラスト不足・箇条書きレベル超過を検出し、各修正案を付与
 - [ ] レンダラーに表・画像・グラフの描画処理を追加し、ブランド設定からスタイルを適用する
-  - メモ: `config/branding.json` の情報をすべて参照し、デフォルト値にフォールバック
+  - メモ: `docs/todo/20251005-renderer-rich-content.md` を参照し、`config/branding.json` の情報をすべて参照する
 - [x] `uv run --extra dev pytest` を用いた CLI 統合テストを追加し、主要パラメータの挙動を検証する
   - メモ: 2025-10-05 `tests/test_cli_integration.py` で `--workdir` / `--template` をカバー
 - [x] ルール／ブランド設定のローディングに対するユニットテストを追加し、破壊的変更を検知する
