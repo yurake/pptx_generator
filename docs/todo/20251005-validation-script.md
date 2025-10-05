@@ -15,3 +15,4 @@
 
 ## メモ
 - 余白やフォントなど高度な検証は別途タスクで扱う。
+- 2025-10-05 GitHub Actions の CI で `scripts/verify_cli_outputs.py` を実行するワークフローを追加。
