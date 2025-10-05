@@ -3,12 +3,12 @@
 担当者: yurak
 関連ブランチ: feat/sample-potx-validation
 期限: 2025-10-12
-関連Issue: 未作成
+関連Issue: #13 https://github.com/yurake/pptx_generator/issues/13
 ---
 
 - [x] ブランチ作成
-- [ ] Issue 作成
-  - メモ: 未作成: 後続でテンプレート検証 Issue を新規登録予定 (作成後に番号と URL を記録)
+- [x] Issue 作成
+  - メモ: Issue #13 を参照（samples/skeleton.potx のPPTX生成検証 / .potx→.pptx 差異要確認）
 - [x] サンプルテンプレートの配置とパス確認
   - メモ: samples/skeleton.pptx が参照可能であることを確認
 - [x] サンプル仕様で CLI を実行
@@ -16,7 +16,9 @@
 - [x] 出力 PPTX の内容確認
   - メモ: レイアウト・フォント・画像が期待通りかチェック
 - [x] 結果をドキュメントへ記録
-  - メモ: docs/notes/ か当 ToDo に検証結果を残す
+  - メモ: レビューで指摘された内容を記録
+- [ ] PR 作成
+  - メモ: PR を作成したら番号と URL を記入する
 
 ## メモ
 - CLI 実行時は作業ディレクトリ `.pptxgen` を使用する
