@@ -113,7 +113,8 @@ class SimpleRendererStep:
             paragraph.text = slide_spec.title
             self._apply_brand_font(paragraph, self._branding.heading_font)
             return
-        textbox = slide.shapes.add_textbox(Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0))
+        textbox = slide.shapes.add_textbox(
+            Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0))
         text_frame = textbox.text_frame
         text_frame.clear()
         paragraph = text_frame.paragraphs[0]
@@ -127,7 +128,8 @@ class SimpleRendererStep:
         text_frame = body_shape.text_frame
         text_frame.clear()
         for index, bullet in enumerate(slide_spec.bullets):
-            paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
+            paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph(
+            )
             paragraph.text = bullet.text
             paragraph.level = bullet.level
             self._apply_font(paragraph, bullet.font)
@@ -152,7 +154,8 @@ class SimpleRendererStep:
             anchor_shape, left, top, width, height = self._resolve_anchor(
                 slide, table_spec.anchor, self.options.fallback_table_box
             )
-            table_shape = slide.shapes.add_table(row_count, column_count, left, top, width, height)
+            table_shape = slide.shapes.add_table(
+                row_count, column_count, left, top, width, height)
             table = table_shape.table
 
             for idx in range(column_count):
@@ -160,7 +163,8 @@ class SimpleRendererStep:
 
             start_row = 0
             if header:
-                self._fill_table_row(table.rows[0], header, is_header=True, style=table_spec.style)
+                self._fill_table_row(
+                    table.rows[0], header, is_header=True, style=table_spec.style)
                 start_row = 1
 
             for offset, row_values in enumerate(rows):
@@ -186,7 +190,8 @@ class SimpleRendererStep:
             width = self._override_emu(width, image_spec.width_in)
             height = self._override_emu(height, image_spec.height_in)
 
-            image_path = self._resolve_image_source(image_spec.source, image_spec.id)
+            image_path = self._resolve_image_source(
+                image_spec.source, image_spec.id)
             picture = slide.shapes.add_picture(str(image_path), left, top)
 
             self._resize_picture(picture, width, height, image_spec.sizing)
@@ -204,7 +209,8 @@ class SimpleRendererStep:
                 continue
 
             data = CategoryChartData()
-            categories = chart_spec.categories or [str(index + 1) for index in range(len(chart_spec.series[0].values))]
+            categories = chart_spec.categories or [
+                str(index + 1) for index in range(len(chart_spec.series[0].values))]
             data.categories = categories
             for series in chart_spec.series:
                 data.add_series(series.name, series.values)
@@ -213,7 +219,8 @@ class SimpleRendererStep:
             anchor_shape, left, top, width, height = self._resolve_anchor(
                 slide, chart_spec.anchor, self.options.fallback_chart_box
             )
-            chart_shape = slide.shapes.add_chart(chart_type, left, top, width, height, data)
+            chart_shape = slide.shapes.add_chart(
+                chart_type, left, top, width, height, data)
             chart = chart_shape.chart
 
             self._apply_chart_series_colors(chart.series, chart_spec.series)
@@ -251,7 +258,8 @@ class SimpleRendererStep:
         font = paragraph.font
         font.name = branding_font.name
         font.size = Pt(branding_font.size_pt)
-        font.color.rgb = RGBColor.from_string(branding_font.color_hex.lstrip("#"))
+        font.color.rgb = RGBColor.from_string(
+            branding_font.color_hex.lstrip("#"))
 
     def _find_shape_by_name(self, slide, name: str):
         for shape in slide.shapes:
@@ -328,7 +336,8 @@ class SimpleRendererStep:
         return path
 
     def _download_remote_image(self, url: str, image_id: str) -> Path:
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=Path(url).suffix or ".img")
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False, suffix=Path(url).suffix or ".img")
         try:
             with urlopen(url) as response:
                 tmp.write(response.read())
@@ -426,7 +435,8 @@ class SimpleRendererStep:
         try:
             shape.element.getparent().remove(shape.element)
         except Exception:  # noqa: BLE001
-            logger.debug("shape の削除に失敗しました: %s", shape.name if hasattr(shape, "name") else shape)
+            logger.debug("shape の削除に失敗しました: %s",
+                         shape.name if hasattr(shape, "name") else shape)
 
     def _cleanup_temp_files(self) -> None:
         for path in self._temp_files:
