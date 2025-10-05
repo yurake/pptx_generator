@@ -22,8 +22,13 @@
 - `docs/runbooks/release.md`: リリース計画からロールバックまでの手順。
 - `docs/runbooks/support.md`: 緊急連絡と問い合わせ対応フロー。
 
+## roadmap
+- 開発テーマ単位の大項目 ToDo を整理する場所。
+- `docs/roadmap/README.md`: 進行中テーマの一覧とリンク。
+
 ## todo
 - タスク進捗トラッキング用の ToDo ファイルとテンプレート。
 - `docs/todo/README.md`: 作成・更新・アーカイブのガイド。
 - `docs/todo/template.md`: ToDo ファイルの雛形。
 - `docs/todo/archive/`: 完了済み ToDo の保管場所。
+
