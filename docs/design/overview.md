@@ -27,7 +27,7 @@
 ## 3. データフロー
 1. `spec.json` を受領し、`JobId` を生成。
 2. Validator が JSON スキーマを検証し、`validation_report.json` を出力。問題があれば停止。
-3. Renderer がテンプレート（`templates/corporate_default_vN.potx`）を読み込み、指定レイアウトに沿ってスライドを作成。
+3. Renderer がテンプレート（`templates/corporate_default_vN.pptx`）を読み込み、指定レイアウトに沿ってスライドを作成。
 4. Analyzer が PPTX から図形位置・テキスト属性を抽出し、`analysis.json` を生成。
 5. Refiner が `analysis.json` に含まれる `fixes` を適用し、`proposal_refined.pptx` を出力。
 6. PDF Exporter が LibreOffice (soffice) により PPTX から PDF を生成し、失敗時はリトライ。
@@ -130,7 +130,8 @@ assets:
 - `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
 - ブランドカラー・フォントを `config/branding.json` に定義し、Renderer・Analyzer・Polisher が共有。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
-- 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント。
+- 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
+- テンプレートファイルは .pptx 形式のみ対応。.potxを利用する場合は、PowerPointで新規 .pptx を作成して保存してください。
 
 ## 7. 自動診断・補正ロジック
 - Analyzer: PPTX の DrawingML を解析し、図形位置 (EMU)、サイズ、フォント情報を抽出。
