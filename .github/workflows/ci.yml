@@ -29,6 +29,3 @@ jobs:
 
       - name: Run pytest
         run: uv run --extra dev pytest
-
-      - name: Verify CLI outputs
-        run: uv run python scripts/verify_cli_outputs.py

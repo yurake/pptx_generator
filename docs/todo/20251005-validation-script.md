@@ -1,18 +1,18 @@
 ---
-目的: CLI 生成結果を自動検証するスクリプトを整備し、手動確認を効率化する
+目的: CLI 生成結果の検証を自動化し、手動確認を効率化する
 担当者: Codex
 関連ブランチ: main
 期限: 2025-10-12
 関連Issue: #0
 ---
 
-- [x] 要件整理とスクリプト構成案の作成
+- [x] 要件整理と検証観点の整理
   - メモ: 2025-10-05 CLI 実行フローと検証観点を整理
-- [x] 検証スクリプト実装と補助モジュール追加
-  - メモ: 2025-10-05 `scripts/verify_cli_outputs.py` を追加し、自動検証処理を実装
-- [x] 動作確認とドキュメント更新
-  - メモ: 2025-10-05 スクリプト実行で成功を確認し、README/CONTRIBUTING に利用手順を追記
+- [x] pytest に CLI 統合テストを追加
+  - メモ: 2025-10-05 `tests/test_cli_integration.py` を実装し `--workdir` / `--template` をカバー
+- [x] CI / ドキュメントを更新
+  - メモ: 2025-10-05 pytest 実行で CLI 検証を自動化し、README/CONTRIBUTING の手順を更新
 
 ## メモ
 - 余白やフォントなど高度な検証は別途タスクで扱う。
-- 2025-10-05 GitHub Actions の CI で `scripts/verify_cli_outputs.py` を実行するワークフローを追加。
+- 2025-10-05 CLI 検証は pytest の統合テストへ統合し、CI では `uv run --extra dev pytest` のみを実行。
