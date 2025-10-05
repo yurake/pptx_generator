@@ -3,11 +3,11 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-enhancements
 期限: 2025-10-18
-関連Issue: 未設定
+関連Issue: #9
 ---
 
-- [ ] Issue 作成
-  - メモ: Issue を作成し、`gh issue view <番号>` で存在確認して番号と URL を記入する
+- [x] Issue 作成
+  - メモ: 2025-10-05 #9 を作成済み。PR 作成と資料添付を残す
 - [x] 入力スキーマに表・グラフ情報を追加し、`JobSpec` モデルとサンプル JSON を拡張する
   - メモ: 2025-10-05 `slides[].tables` / `slides[].charts` を追加し、サンプルとテスト (`tests/test_models.py`) で検証
 - [x] 自動診断ステップの実装を拡充し、analysis.json に issue と fix を出力できるようにする
