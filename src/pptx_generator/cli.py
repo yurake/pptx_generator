@@ -11,6 +11,7 @@ import click
 
 from .models import JobSpec, SpecValidationError
 from .pipeline import (
+    AnalyzerOptions,
     PipelineContext,
     PipelineRunner,
     RenderingOptions,
@@ -100,7 +101,18 @@ def run(
             template_path=template,
             output_filename=output_filename,
             default_font_name=branding_config.body_font,
+            default_font_size=branding_config.body_font_size,
             default_font_color=branding_config.primary_color,
+        )
+    )
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(
+            min_font_size=branding_config.body_font_size,
+            default_font_size=branding_config.body_font_size,
+            default_font_color=branding_config.body_font_color,
+            preferred_text_color=branding_config.primary_color,
+            background_color=branding_config.background_color,
+            max_bullet_level=rules_config.max_bullet_level,
         )
     )
     steps = [
@@ -111,7 +123,7 @@ def run(
             forbidden_words=rules_config.forbidden_words,
         ),
         renderer,
-        SimpleAnalyzerStep(),
+        analyzer,
     ]
     runner = PipelineRunner(steps)
 

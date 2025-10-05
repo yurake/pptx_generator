@@ -18,6 +18,13 @@ JSON 仕様から PowerPoint 提案書を自動生成する開発中のツール
    - `--workdir` は省略可能で、指定しない場合は `.pptxgen` が自動作成されます。
 3. 生成物は `.pptxgen/outputs/` 配下に保存されます。
 
+## 検証
+- CLI の実行と生成物の内容をまとめて確認する場合は、以下のスクリプトを利用できます。
+  ```bash
+  uv run python scripts/verify_cli_outputs.py
+  ```
+  - 標準では `samples/sample_spec.json` を入力に使用し、`analysis.json` と `proposal.pptx` の内容を検証します。
+
 ## 設定
 - `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義します。
 - `config/branding.json`: デフォルトのフォントやブランドカラーを定義します。

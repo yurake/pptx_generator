@@ -31,7 +31,10 @@ class RulesConfig:
 class BrandingConfig:
     heading_font: str
     body_font: str
+    body_font_size: float
+    body_font_color: str
     primary_color: str
+    background_color: str
 
     @classmethod
     def load(cls, path: Path) -> "BrandingConfig":
@@ -41,5 +44,12 @@ class BrandingConfig:
         return cls(
             heading_font=fonts.get("heading", {}).get("name", "Yu Gothic"),
             body_font=fonts.get("body", {}).get("name", "Yu Gothic"),
-            primary_color=colors.get("primary", "#005BAC"),
+            body_font_size=float(fonts.get("body", {}).get("size_pt", 18.0)),
+            body_font_color=_ensure_hex_prefix(fonts.get("body", {}).get("color_hex", "#333333")),
+            primary_color=_ensure_hex_prefix(colors.get("primary", "#005BAC")),
+            background_color=_ensure_hex_prefix(colors.get("background", "#FFFFFF")),
         )
+
+
+def _ensure_hex_prefix(value: str) -> str:
+    return value if value.startswith("#") else f"#{value}"
