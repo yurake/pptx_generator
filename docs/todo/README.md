@@ -10,6 +10,7 @@
 - Issue 先行パターン
   - 先に GitHub Issue を立てて背景・完了条件を整理する。
   - ToDo ファイルを作成し `関連Issue` に番号を記入、Issue 側には ToDo への相対パスを追記する。
+  - Issue 番号を記載する前に `gh issue view <番号>` で実在を確認し、コメント URL も記録する。
 - ToDo 先行パターン
   - 作業内容を整理するために ToDo を先に作成し、`関連Issue: 未作成` の状態で進捗を記録する。
   - 必要な検討ログを ToDo にまとめた上で Issue を作成し、作成後にチェックリストの「Issue 作成」を完了させつつ `関連Issue` を `#<issue-number>` へ更新する。
