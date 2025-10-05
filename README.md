@@ -16,7 +16,12 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
    uv run pptx-generator run samples/sample_spec.json
    ```
    - `--workdir` は省略可能で、指定しない場合は `.pptxgen` が自動作成されます。
-    - `--branding` でブランド設定 JSON を差し替えると、フォントやカラーが自動で反映されます。
+   - `--branding` でブランド設定 JSON を差し替えると、フォントやカラーが自動で反映されます。
+   - `--export-pdf` を付与すると LibreOffice (soffice) を使って PDF を同時出力します。
+     - `--pdf-mode=only` を指定すると PPTX を残さず PDF のみ保存します。
+     - `--libreoffice-path` で soffice の場所を明示でき、`LIBREOFFICE_PATH` 環境変数も利用できます。
+     - タイムアウトやリトライは `--pdf-timeout` / `--pdf-retries` で調整します。
+    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
 3. 生成物は `.pptxgen/outputs/` 配下に保存されます。
 
 ## テスト・検証
