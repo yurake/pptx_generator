@@ -2,13 +2,12 @@
 import argparse
 import os
 import re
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import requests
 
 API = "https://api.github.com"
-BEGIN = "<!-- BEGIN: issues-sync -->"
-END = "<!-- END: issues-sync -->"
+TASK_RE = re.compile(r"^- \[( |x|X)\] (.*?)(?:\s*\(#?(\d+)\)|\s+#(\d+))?\s*$")
 TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
 
 
@@ -25,11 +24,14 @@ def list_issues_by_label(owner, repo, token, label):
     issues = []
     page = 1
     while True:
+        params = {"state": "all", "per_page": 100, "page": page}
+        if label:
+            params["labels"] = label
         data = gh(
             "GET",
             f"{API}/repos/{owner}/{repo}/issues",
             token,
-            params={"state": "all", "labels": label, "per_page": 100, "page": page},
+            params=params,
         )
         if not data:
             break
@@ -41,41 +43,6 @@ def list_issues_by_label(owner, repo, token, label):
             break
         page += 1
     return issues
-
-
-def render_block(issues):
-    lines = ["## Synced Issues\n"]
-    for it in issues:
-        mark = "x" if it["state"] == "closed" else " "
-        lines.append(f"- [{mark}] {it['title']} (#{it['number']})\n")
-    return "".join(lines)
-
-
-def upsert_block(md_path, new_block):
-    if not os.path.exists(md_path):
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(f"{BEGIN}\n{new_block}{END}\n")
-        return True
-
-    with open(md_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    start = content.find(BEGIN)
-    end = content.find(END)
-
-    if start == -1 or end == -1 or end < start:
-        updated = content
-        if not content.endswith("\n"):
-            updated += "\n"
-        updated += f"\n{BEGIN}\n{new_block}{END}\n"
-    else:
-        updated = content[: start + len(BEGIN)] + "\n" + new_block + content[end:]
-
-    if updated != content:
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(updated)
-        return True
-    return False
 
 
 def normalize_repo_path(path: str) -> str:
@@ -119,20 +86,53 @@ def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_
     return unique
 
 
-def select_issues_for_path(issues: List[dict], todo_path: str):
-    rel_path = normalize_repo_path(todo_path)
-    res = []
-    for issue in issues:
-        body = issue.get("body")
-        marker = None
-        if body:
-            m = TODO_MARKER_RE.search(body)
-            if m:
-                marker = m.group(1).strip()
-        if marker == rel_path:
-            res.append(issue)
-    res.sort(key=lambda i: (i["state"] != "open", i["number"]))
-    return res
+def extract_marker(body: Optional[str]) -> Optional[str]:
+    if not body:
+        return None
+    m = TODO_MARKER_RE.search(body)
+    return m.group(1).strip() if m else None
+
+
+def parse_task_states(text: str) -> Dict[str, bool]:
+    states: Dict[str, bool] = {}
+    if not text:
+        return states
+    for line in text.splitlines():
+        m = TASK_RE.match(line)
+        if not m:
+            continue
+        title = m.group(2).strip()
+        states[title] = (m.group(1).lower() == "x")
+    return states
+
+
+def apply_task_states(content: str, states: Dict[str, bool]) -> tuple[str, bool]:
+    if not states:
+        return content, False
+    lines = content.splitlines()
+    changed = False
+    for idx, line in enumerate(lines):
+        m = TASK_RE.match(line)
+        if not m:
+            continue
+        title = m.group(2).strip()
+        if title not in states:
+            continue
+        desired_checked = states[title]
+        current_checked = (m.group(1).lower() == "x")
+        if current_checked == desired_checked:
+            continue
+        marker = "x" if desired_checked else " "
+        lines[idx] = f"- [{marker}] {m.group(2)}"
+        if m.group(3):
+            lines[idx] += f" (#{m.group(3)})"
+        elif m.group(4):
+            lines[idx] += f" #{m.group(4)}"
+        changed = True
+    updated = "\n".join(lines)
+    if content.endswith("\n"):
+        updated += "\n"
+    return updated, changed
 
 
 def main():
@@ -141,7 +141,7 @@ def main():
     ap.add_argument("--todo-dir", help="ToDo ファイルを探索するディレクトリ")
     ap.add_argument("--template-name", default="template.md", help="テンプレートファイル名")
     ap.add_argument("--include-template", action="store_true", help="テンプレートも同期対象に含める")
-    ap.add_argument("--global-label", default="todo-sync", help="全 ToDo に共通で付与するラベル")
+    ap.add_argument("--global-label", default="todo-sync", help="Issue に付与された共通ラベル")
     args = ap.parse_args()
 
     repo = os.environ.get("GITHUB_REPOSITORY")
@@ -155,16 +155,40 @@ def main():
         print("No ToDo files found. Nothing to sync.")
         return
 
-    all_issues = list_issues_by_label(owner, repo_name, token, args.global_label) if args.global_label else []
+    issues = list_issues_by_label(owner, repo_name, token, args.global_label)
+    issues_by_path = {extract_marker(issue.get("body")): issue for issue in issues if extract_marker(issue.get("body"))}
 
     for path in todo_files:
         if not os.path.isfile(path):
             continue
-        issues = select_issues_for_path(all_issues, path)
-        block = render_block(issues)
-        changed = upsert_block(path, block)
         rel = normalize_repo_path(path)
-        print(f"Synced issues block for {rel}: changed={changed}")
+        issue = issues_by_path.get(rel)
+        if not issue:
+            print(f"Skip {rel}: related issue not found")
+            continue
+
+        states = parse_task_states(issue.get("body", ""))
+        if not states:
+            print(f"Skip {rel}: no tasks found in issue #{issue['number']}")
+            continue
+
+        content = read_text(path)
+        updated, changed = apply_task_states(content, states)
+        if changed:
+            write_text(path, updated)
+            print(f"Updated {rel} from issue #{issue['number']}")
+        else:
+            print(f"No changes for {rel}")
+
+
+def read_text(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def write_text(path: str, content: str):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 
 if __name__ == "__main__":

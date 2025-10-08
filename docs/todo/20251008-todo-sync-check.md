@@ -9,13 +9,13 @@
 - [ ] docs/todo/ 配下の現行ファイルを棚卸しし、対象一覧を確定する
   - `ls docs/todo` で一覧取得、`archive/` 含めてメモに列挙
   - template.md は同期対象外であることを README と照合
-- [ ] 代表ファイルを複製し、親 Issue・タスク Issue の生成を確認する
+- [ ] 代表ファイルを複製し、1 Issue にタスク一覧が反映されることを確認する
   - `cp docs/todo/template.md docs/todo/20251008-sync-sample.md`
   - front matter を埋めてタスクタイトルを編集、`git commit` して push
-  - push 後に `todo-sync / Sync ToDo → Issues` が対象ブランチで走り、Issues に `todo-sync-<slug>-<hash>` ラベル付きタスクが作成されるか確認
-- [ ] 複数ファイル並行時にラベル衝突が起きないことを確認する
+  - push 後に `todo-sync / Sync ToDo → Issues` が走り、1 件の Issue にチェックボックスが生成されるか確認
+- [ ] 複数ファイル並行時にタスクが混在しないことを確認する
   - 別ファイル `docs/todo/20251008-sync-parallel.md` を追加し同様に push
-  - Actions ログで各ファイルの処理結果を確認し、GitHub Issues 上でラベル・親 Issue が分離されていることをチェック
+-  - Actions ログで各ファイルの処理結果を確認し、GitHub Issues 上で `<!-- todo-path: ... -->` マーカーが適切に設定されていることをチェック
 - [ ] Issue 側の状態変更が md に反映されるか確認する
   - 任意タスク Issue を GitHub 上でクローズ
   - `todo-sync / Sync Issues → ToDo` を workflow_dispatch で該当ブランチに対して実行し、対象 md のチェックボックスが `[x]` へ更新されるか確認
