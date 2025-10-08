@@ -36,7 +36,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/sync_todo_to_issues.py --todo-dir docs/todo --global-label 'todo-sync' --label-prefix 'todo-sync' --parent-label 'todo-card'
+          python scripts/sync_todo_to_issues.py --todo-dir docs/todo --global-label 'todo-sync' --parent-label 'todo-card'
       - name: Commit parent-issue links if needed
         run: |
           if git diff --quiet; then
@@ -68,7 +68,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/sync_issues_to_todo.py --todo-dir docs/todo --global-label 'todo-sync' --label-prefix 'todo-sync'
+          python scripts/sync_issues_to_todo.py --todo-dir docs/todo --global-label 'todo-sync'
       - name: Commit & push if changed
         run: |
           if git diff --quiet; then

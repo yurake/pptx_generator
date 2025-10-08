@@ -83,26 +83,23 @@ def normalize_repo_path(path: str) -> str:
     return rel.replace(os.sep, "/")
 
 
-def build_scoped_label(prefix: str, todo_path: str) -> str:
-    from hashlib import sha1
-    rel = normalize_repo_path(todo_path)
-    digest = sha1(rel.encode("utf-8")).hexdigest()[:6]
-    slug = re.sub(r"[^a-z0-9]+", "-", rel.lower()).strip("-") or "todo"
-    max_slug_len = max(1, 50 - len(prefix) - len(digest) - 2)
-    slug = slug[:max_slug_len]
-    return f"{prefix}-{slug}-{digest}"
-
-
 def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_name: str, include_template: bool) -> List[str]:
     paths: List[str] = []
     for p in todo_paths:
-        if p and os.path.isfile(p):
-            paths.append(os.path.normpath(p))
+        if not p:
+            continue
+        norm = os.path.normpath(p)
+        if os.path.basename(norm) == "README.md":
+            continue
+        if os.path.isfile(norm):
+            paths.append(norm)
 
     if todo_dir:
         for root, _dirs, files in os.walk(todo_dir):
             for fname in files:
                 if not fname.endswith(".md"):
+                    continue
+                if fname == "README.md":
                     continue
                 if not include_template and fname == template_name:
                     continue
@@ -111,7 +108,10 @@ def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_
     unique = []
     seen = set()
     for p in sorted(paths):
-        if not include_template and os.path.basename(p) == template_name:
+        basename = os.path.basename(p)
+        if basename == "README.md":
+            continue
+        if not include_template and basename == template_name:
             continue
         if p not in seen:
             unique.append(p)
@@ -119,18 +119,17 @@ def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_
     return unique
 
 
-def select_issues_for_path(issues: List[dict], todo_path: str, scoped_label: str):
+def select_issues_for_path(issues: List[dict], todo_path: str):
     rel_path = normalize_repo_path(todo_path)
     res = []
     for issue in issues:
-        marker = None
         body = issue.get("body")
+        marker = None
         if body:
             m = TODO_MARKER_RE.search(body)
             if m:
                 marker = m.group(1).strip()
-        label_names = {lbl["name"] for lbl in issue.get("labels", [])}
-        if marker == rel_path or scoped_label in label_names:
+        if marker == rel_path:
             res.append(issue)
     res.sort(key=lambda i: (i["state"] != "open", i["number"]))
     return res
@@ -143,7 +142,6 @@ def main():
     ap.add_argument("--template-name", default="template.md", help="テンプレートファイル名")
     ap.add_argument("--include-template", action="store_true", help="テンプレートも同期対象に含める")
     ap.add_argument("--global-label", default="todo-sync", help="全 ToDo に共通で付与するラベル")
-    ap.add_argument("--label-prefix", default="todo-sync", help="ToDo ファイル固有ラベルの接頭辞")
     args = ap.parse_args()
 
     repo = os.environ.get("GITHUB_REPOSITORY")
@@ -162,8 +160,7 @@ def main():
     for path in todo_files:
         if not os.path.isfile(path):
             continue
-        scoped_label = build_scoped_label(args.label_prefix, path)
-        issues = select_issues_for_path(all_issues, path, scoped_label)
+        issues = select_issues_for_path(all_issues, path)
         block = render_block(issues)
         changed = upsert_block(path, block)
         rel = normalize_repo_path(path)
