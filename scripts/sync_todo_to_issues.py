@@ -256,19 +256,6 @@ def find_issue_by_path(issues: List[dict], rel_path: str) -> Optional[dict]:
     return None
 
 
-def is_legacy_issue(issue: dict, rel_path: str, keep_number: int) -> bool:
-    if issue["number"] == keep_number:
-        return False
-    body = issue.get("body") or ""
-    marker = extract_marker(body)
-    if marker != rel_path:
-        return False
-    if "### タスク" in body:
-        return False
-    legacy_indicators = ("This issue is managed by", "Parent card for")
-    return any(indicator in body for indicator in legacy_indicators)
-
-
 def remove_label(owner: str, repo: str, token: str, issue_number: int, label: str):
     if not label:
         return
@@ -282,7 +269,7 @@ def remove_label(owner: str, repo: str, token: str, issue_number: int, label: st
         pass
 
 
-def retire_legacy_issues(
+def retire_additional_issues(
     owner: str,
     repo: str,
     token: str,
@@ -295,7 +282,10 @@ def retire_legacy_issues(
     keep_number = keep_issue["number"]
     retired: List[int] = []
     for issue in list(cached_issues):
-        if not is_legacy_issue(issue, rel_path, keep_number):
+        if issue["number"] == keep_number:
+            continue
+        marker = extract_marker(issue.get("body"))
+        if marker != rel_path:
             continue
         number = issue["number"]
         comment = f"この ToDo は issue #{keep_number} に統合されたため、本 Issue はクローズします。"
@@ -402,7 +392,7 @@ def main():
                     cached_issues[idx] = issue
                     break
 
-        retire_legacy_issues(
+        retire_additional_issues(
             owner,
             repo_name,
             token,

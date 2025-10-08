@@ -134,16 +134,48 @@ def test_extract_tasks_and_notes(todo_to_issues):
     assert notes.startswith("## メモ")
 
 
-def test_is_legacy_issue(todo_to_issues):
+def test_retire_additional_issues_closes_duplicates(todo_to_issues, monkeypatch):
     rel = "docs/todo/sample.md"
-    legacy_issue = {
-        "number": 12,
-        "body": "This issue is managed by **docs/todo/sample.md** sync.\n\n<!-- todo-path: docs/todo/sample.md -->",
-    }
-    assert todo_to_issues.is_legacy_issue(legacy_issue, rel, keep_number=20)
-
-    new_issue = {
+    base_issue = {
         "number": 20,
         "body": "## title\n\n### タスク\n- [ ] test\n\n<!-- todo-path: docs/todo/sample.md -->",
+        "state": "open",
+        "labels": [],
     }
-    assert not todo_to_issues.is_legacy_issue(new_issue, rel, keep_number=20)
+    dup_issue = {
+        "number": 12,
+        "body": "## title\n\n### タスク\n- [ ] test\n\n<!-- todo-path: docs/todo/sample.md -->",
+        "state": "open",
+        "labels": [],
+    }
+    closed_ids = []
+
+    def fake_gh(method, url, token, **kwargs):
+        if method == "PATCH" and url.endswith("/issues/12"):
+            closed_ids.append(12)
+            dup_issue["state"] = "closed"
+            return dup_issue
+        return {}
+
+    removed = []
+
+    def fake_remove_label(owner, repo, token, issue_number, label):
+        removed.append((issue_number, label))
+
+    monkeypatch.setattr(todo_to_issues, "gh", fake_gh)
+    monkeypatch.setattr(todo_to_issues, "remove_label", fake_remove_label)
+
+    cache = [base_issue, dup_issue]
+    todo_to_issues.retire_additional_issues(
+        owner="o",
+        repo="r",
+        token="t",
+        rel_path=rel,
+        keep_issue=base_issue,
+        cached_issues=cache,
+        global_label="todo-sync",
+        parent_label="todo-card",
+    )
+
+    assert closed_ids == [12]
+    assert cache == [base_issue]
