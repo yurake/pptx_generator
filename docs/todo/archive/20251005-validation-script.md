@@ -21,4 +21,7 @@ closed_at: 2025-10-05
 
 <!-- BEGIN: issues-sync -->
 ## Synced Issues
+- [x] 要件整理と検証観点の整理 (#90)
+- [x] pytest に CLI 統合テストを追加 (#91)
+- [x] CI / ドキュメントを更新 (#92)
 <!-- END: issues-sync -->
