@@ -27,7 +27,7 @@
 - 参照 ToDo: [docs/todo/20251007-analyzer-layout-consistency.md](../todo/20251007-analyzer-layout-consistency.md)
 - 状況: 実装中（2025-10-07 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
-- 次のアクション: Analyzer レポートのモニタリング指標整理、Fix ログの可視化要件の精査。
+- 次のアクション: `contrast_low` 判定の調整方針整理、Analyzer レポートのモニタリング指標の整理、Fix ログ可視化要件の精査。
 
 ### ビジュアルフィードバックコパイロット（優先度: P3）
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。

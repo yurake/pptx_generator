@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from pptx_generator.models import FontSpec, JobAuth, JobMeta, JobSpec, Slide, SlideBullet, SlideImage
 from pptx_generator.pipeline import AnalyzerOptions, PipelineContext, SimpleAnalyzerStep
 
@@ -80,3 +82,60 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
 
     layout_issue = next(issue for issue in payload["issues"] if issue["type"] == "layout_consistency")
     assert layout_issue["fix"]["payload"]["level"] == 0
+    contrast_issue = next(issue for issue in payload["issues"] if issue["type"] == "contrast_low")
+    assert contrast_issue["metrics"]["required_ratio"] == pytest.approx(4.5)
+    assert contrast_issue["metrics"]["font_size_pt"] == pytest.approx(12.0)
+
+
+def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(
+            schema_version="1.0",
+            title="コントラスト調整テスト",
+            client="Zeta",
+            author="営業部",
+            created_at="2025-10-07",
+            theme="corporate",
+        ),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-large",
+                layout="Title and Content",
+                bullets=[
+                    SlideBullet(
+                        id="bullet-large",
+                        text="セカンダリカラーの本文",
+                        level=0,
+                        font=FontSpec(
+                            name="Yu Gothic",
+                            size_pt=24.0,
+                            color_hex="#0097A7",
+                        ),
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(
+            min_font_size=16.0,
+            default_font_size=16.0,
+            max_bullet_level=3,
+            default_font_color="#333333",
+            preferred_text_color="#005BAC",
+            background_color="#FFFFFF",
+            large_text_threshold_pt=18.0,
+            large_text_min_contrast=3.0,
+        )
+    )
+
+    analyzer.run(context)
+
+    analysis_path = context.require_artifact("analysis_path")
+    payload = json.loads(analysis_path.read_text(encoding="utf-8"))
+
+    issue_types = {issue["type"] for issue in payload["issues"]}
+    assert "contrast_low" not in issue_types

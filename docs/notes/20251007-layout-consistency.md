@@ -5,3 +5,4 @@
 - 実装: `SimpleAnalyzerStep` で bullet 列を走査し、許容レベル (`previous_applied_level + 1`、初回は 0) を超える場合に issue/fix を生成。
 - 実装: SimpleRefinerStep を追加し、`bullet_reindent` を適用して `refiner_adjustments` を記録（2025-10-07）。
 - 監査ログ: `audit_log.json` に `refiner_adjustments` を出力し、調整履歴を参照できるようにした（2025-10-07）。
+- 対応: フォントサイズが `large_text_threshold_pt` 以上の場合はコントラスト基準を 3.0:1 に緩和し、`required_ratio` と `font_size_pt` をメトリクスに記録（2025-10-07）。
