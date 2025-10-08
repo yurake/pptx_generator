@@ -256,6 +256,77 @@ def find_issue_by_path(issues: List[dict], rel_path: str) -> Optional[dict]:
     return None
 
 
+def is_legacy_issue(issue: dict, rel_path: str, keep_number: int) -> bool:
+    if issue["number"] == keep_number:
+        return False
+    body = issue.get("body") or ""
+    marker = extract_marker(body)
+    if marker != rel_path:
+        return False
+    if "### タスク" in body:
+        return False
+    legacy_indicators = ("This issue is managed by", "Parent card for")
+    return any(indicator in body for indicator in legacy_indicators)
+
+
+def remove_label(owner: str, repo: str, token: str, issue_number: int, label: str):
+    if not label:
+        return
+    try:
+        gh(
+            "DELETE",
+            f"{API}/repos/{owner}/{repo}/issues/{issue_number}/labels/{label}",
+            token,
+        )
+    except Exception:
+        pass
+
+
+def retire_legacy_issues(
+    owner: str,
+    repo: str,
+    token: str,
+    rel_path: str,
+    keep_issue: dict,
+    cached_issues: List[dict],
+    global_label: str,
+    parent_label: str,
+):
+    keep_number = keep_issue["number"]
+    retired: List[int] = []
+    for issue in list(cached_issues):
+        if not is_legacy_issue(issue, rel_path, keep_number):
+            continue
+        number = issue["number"]
+        comment = f"この ToDo は issue #{keep_number} に統合されたため、本 Issue はクローズします。"
+        try:
+            gh(
+                "POST",
+                f"{API}/repos/{owner}/{repo}/issues/{number}/comments",
+                token,
+                json={"body": comment},
+            )
+        except Exception:
+            pass
+
+        if issue.get("state") != "closed":
+            try:
+                issue = gh(
+                    "PATCH",
+                    f"{API}/repos/{owner}/{repo}/issues/{number}",
+                    token,
+                    json={"state": "closed"},
+                )
+            except Exception:
+                issue["state"] = "closed"
+        remove_label(owner, repo, token, number, global_label)
+        remove_label(owner, repo, token, number, parent_label)
+        retired.append(number)
+        cached_issues.remove(issue)
+    if retired:
+        print(f"Retired legacy issues for {rel_path}: {', '.join(map(str, retired))}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--todo-path", action="append", default=[], help="ToDo Markdown ファイルのパス")
@@ -330,6 +401,17 @@ def main():
                 if it["number"] == issue["number"]:
                     cached_issues[idx] = issue
                     break
+
+        retire_legacy_issues(
+            owner,
+            repo_name,
+            token,
+            rel,
+            issue,
+            cached_issues,
+            args.global_label,
+            args.parent_label,
+        )
 
         new_content, changed = upsert_related_issue_number_line(content, issue["number"])
         if changed:
