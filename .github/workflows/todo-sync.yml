@@ -24,7 +24,7 @@ env:
 
 jobs:
   from_md:
-    name: Sync from md → Issues (PR, multi-file)
+    name: Sync from md → Issues
     if: >-
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, '[skip md->issues]')
@@ -113,7 +113,7 @@ jobs:
           signoff: false
 
   from_issues:
-    name: Sync from Issues → md (PR, multi-file)
+    name: Sync from Issues → md
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
