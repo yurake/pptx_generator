@@ -17,3 +17,7 @@
 
 ## メモ
 - ラベル命名や親 Issue のフォーマットに変更が必要になった場合は別タスク化する。
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->

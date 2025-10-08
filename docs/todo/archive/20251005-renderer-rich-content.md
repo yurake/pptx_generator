@@ -38,3 +38,7 @@
 ## メモ
 - `python-pptx` のグラフ描画 API 仕様を確認する資料を収集する
 - サンプル画像は CC0 素材を利用する
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->

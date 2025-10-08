@@ -18,3 +18,7 @@ closed_at: 2025-10-05
 ## メモ
 - 余白やフォントなど高度な検証は別途タスクで扱う。
 - 2025-10-05 CLI 検証は pytest の統合テストへ統合し、CI では `uv run --extra dev pytest` のみを実行。
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->

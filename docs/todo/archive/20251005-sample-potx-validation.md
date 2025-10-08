@@ -31,3 +31,7 @@
 - Command: uv run pptx-generator run samples/sample_spec.json --template samples/skeleton.pptx
 - Output: .pptxgen/outputs/proposal.pptx (size=661391, md5=6a929fd7...)
 - Notes: 詳細所見は docs/notes/20251005-sample-potx-validation.md / Issue 未作成
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->

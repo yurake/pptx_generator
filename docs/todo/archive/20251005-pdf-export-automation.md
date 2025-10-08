@@ -30,3 +30,7 @@
 - Java Runtime 未導入時の挙動を事前確認する
 - LibreOffice のバージョンアップに伴う互換性の影響を把握しておく
 - LibreOffice 依存を回避する代替 API（Microsoft Graph 等）をバックアップ案として調査する
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->
