@@ -24,6 +24,17 @@ def write_text(path: str, content: str):
         f.write(content)
 
 
+def parse_issue_number(ref: Optional[str]) -> Optional[int]:
+    if not ref:
+        return None
+    ref = ref.strip()
+    if ref.startswith("#"):
+        ref = ref[1:]
+    if not ref.isdigit():
+        return None
+    return int(ref)
+
+
 def parse_tasks(md_path: str):
     tasks = []
     with open(md_path, "r", encoding="utf-8") as f:
@@ -92,6 +103,16 @@ def list_issues_by_label(owner: str, repo: str, token: str, label: str):
             break
         page += 1
     return issues
+
+
+def get_issue(owner: str, repo: str, token: str, number: int) -> Optional[dict]:
+    try:
+        issue = gh("GET", f"{API}/repos/{owner}/{repo}/issues/{number}", token)
+        if "pull_request" in issue:
+            return None
+        return issue
+    except Exception:
+        return None
 
 
 def extract_front_matter_fields(content: str) -> Dict[str, str]:
@@ -354,7 +375,17 @@ def main():
         issue_title = f"ToDo: {fields['目的']}" if fields.get("目的") else f"ToDo: {rel}"
         body = build_issue_body(rel, fields, tasks_section, notes_section)
 
-        issue = find_issue_by_path(cached_issues, rel)
+        issue_number_hint = parse_issue_number(fields.get("関連Issue"))
+        issue = None
+        if issue_number_hint:
+            fetched = get_issue(owner, repo_name, token, issue_number_hint)
+            if fetched and extract_marker(fetched.get("body")) in {rel, None}:
+                issue = fetched
+                if issue not in cached_issues:
+                    cached_issues.append(issue)
+
+        if not issue:
+            issue = find_issue_by_path(cached_issues, rel)
         created = False
         if not issue:
             labels = [lbl for lbl in [args.global_label, args.parent_label] if lbl]
