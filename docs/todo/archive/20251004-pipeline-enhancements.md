@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-enhancements
 期限: 2025-10-18
-関連Issue: #9
+関連Issue: 未設定
 ---
 
 - [x] Issue 作成
