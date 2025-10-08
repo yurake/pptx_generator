@@ -1,7 +1,7 @@
 ---
 目的: 並行 ToDo 同期挙動確認
 関連ブランチ: docs/todo-sync-check
-関連Issue: 未作成
+関連Issue: #104
 ---
 
 - [ ] 既存 ToDo Issue と混在せず作成されることを確認
