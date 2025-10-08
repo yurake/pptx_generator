@@ -40,12 +40,6 @@ def todo_to_issues():
     return _load_module("sync_todo_to_issues", "scripts/sync_todo_to_issues.py")
 
 
-@pytest.fixture(scope="module")
-def issues_to_todo():
-    _install_request_stub()
-    return _load_module("sync_issues_to_todo", "scripts/sync_issues_to_todo.py")
-
-
 def test_parse_tasks(tmp_path, todo_to_issues):
     md_body = textwrap.dedent(
         """
@@ -102,22 +96,94 @@ def test_upsert_related_issue_number_line_inserts_when_missing(todo_to_issues):
     assert lines[3] == "関連Issue: #55"
 
 
-def test_render_block_and_upsert_block(tmp_path, issues_to_todo):
-    issues = [
-        {"title": "閉じたタスク", "number": 5, "state": "closed"},
-        {"title": "開いているタスク", "number": 7, "state": "open"},
-    ]
+def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
+    todo_dir = tmp_path / "docs" / "todo"
+    (todo_dir / "archive").mkdir(parents=True)
+    (todo_dir / "template.md").write_text("template", encoding="utf-8")
+    (todo_dir / "README.md").write_text("readme", encoding="utf-8")
+    (todo_dir / "20251008-check.md").write_text("content", encoding="utf-8")
+    (todo_dir / "archive" / "old.md").write_text("old", encoding="utf-8")
 
-    block = issues_to_todo.render_block(issues)
-    assert "[x] 閉じたタスク (#5)" in block
-    assert "[ ] 開いているタスク (#7)" in block
+    paths = todo_to_issues.collect_todo_paths([], str(todo_dir), "template.md", include_template=False)
 
-    md_path = tmp_path / "todo.md"
-    changed = issues_to_todo.upsert_block(str(md_path), block)
-    assert changed is True
-    content = md_path.read_text(encoding="utf-8")
-    assert issues_to_todo.BEGIN in content
-    assert issues_to_todo.END in content
+    assert all(not p.endswith("template.md") for p in paths)
+    assert all("README.md" not in p for p in paths)
+    assert any(p.endswith("20251008-check.md") for p in paths)
+    assert any("archive" in p and p.endswith("old.md") for p in paths)
 
-    changed_again = issues_to_todo.upsert_block(str(md_path), block)
-    assert changed_again is False
+
+def test_extract_tasks_and_notes(todo_to_issues):
+    content = textwrap.dedent(
+        """
+        ---
+        目的: テスト
+        ---
+
+        - [ ] タスクA
+          - メモ: A
+
+        - [x] タスクB
+
+        ## メモ
+        - note
+        """
+    )
+    tasks, notes = todo_to_issues.extract_tasks_and_notes(content)
+    assert "タスクA" in tasks
+    assert "タスクB" in tasks
+    assert notes.startswith("## メモ")
+
+
+def test_parse_issue_number(todo_to_issues):
+    parse = todo_to_issues.parse_issue_number
+    assert parse("#12") == 12
+    assert parse(" 34 ") == 34
+    assert parse("abc") is None
+    assert parse("#abc") is None
+
+
+def test_retire_additional_issues_closes_duplicates(todo_to_issues, monkeypatch):
+    rel = "docs/todo/sample.md"
+    base_issue = {
+        "number": 20,
+        "body": "## title\n\n### タスク\n- [ ] test\n\n<!-- todo-path: docs/todo/sample.md -->",
+        "state": "open",
+        "labels": [],
+    }
+    dup_issue = {
+        "number": 12,
+        "body": "## title\n\n### タスク\n- [ ] test\n\n<!-- todo-path: docs/todo/sample.md -->",
+        "state": "open",
+        "labels": [],
+    }
+    closed_ids = []
+
+    def fake_gh(method, url, token, **kwargs):
+        if method == "PATCH" and url.endswith("/issues/12"):
+            closed_ids.append(12)
+            dup_issue["state"] = "closed"
+            return dup_issue
+        return {}
+
+    removed = []
+
+    def fake_remove_label(owner, repo, token, issue_number, label):
+        removed.append((issue_number, label))
+
+    monkeypatch.setattr(todo_to_issues, "gh", fake_gh)
+    monkeypatch.setattr(todo_to_issues, "remove_label", fake_remove_label)
+
+    cache = [base_issue, dup_issue]
+    todo_to_issues.retire_additional_issues(
+        owner="o",
+        repo="r",
+        token="t",
+        rel_path=rel,
+        keep_issue=base_issue,
+        cached_issues=cache,
+        global_label="todo-sync",
+        parent_label="todo-card",
+    )
+
+    assert closed_ids == [12]
+    assert cache == [base_issue]

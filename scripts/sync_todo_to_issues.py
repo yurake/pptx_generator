@@ -1,70 +1,102 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import re
-import argparse
+from typing import Dict, Iterable, List, Optional, Tuple
+
 import requests
-from typing import Tuple
 
 API = "https://api.github.com"
 
 TASK_RE = re.compile(r"^- \[( |x|X)\] (.*?)(?:\s*\(#?(\d+)\)|\s+#(\d+))?\s*$")
 RELATED_ISSUE_LINE_RE = re.compile(r"^(\s*関連Issue:\s*)(.*)\s*$")
 FRONT_MATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
+
 
 def read_text(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
+
 def write_text(path: str, content: str):
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
+
+def parse_issue_number(ref: Optional[str]) -> Optional[int]:
+    if not ref:
+        return None
+    ref = ref.strip()
+    if ref.startswith("#"):
+        ref = ref[1:]
+    if not ref.isdigit():
+        return None
+    return int(ref)
+
+
 def parse_tasks(md_path: str):
     tasks = []
-    with open(md_path, 'r', encoding='utf-8') as f:
+    with open(md_path, "r", encoding="utf-8") as f:
         for line in f:
             m = TASK_RE.match(line)
             if not m:
                 continue
-            checked = (m.group(1).lower() == 'x')
+            checked = (m.group(1).lower() == "x")
             title = m.group(2).strip()
             num = m.group(3) or m.group(4)
             issue_number = int(num) if num else None
             tasks.append({
-                'title': title,
-                'checked': checked,
-                'issue_number': issue_number,
+                "title": title,
+                "checked": checked,
+                "issue_number": issue_number,
             })
     return tasks
 
+
 def gh(method: str, url: str, token: str, **kwargs):
-    headers = kwargs.pop('headers', {})
+    headers = kwargs.pop("headers", {})
     headers.update({
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github+json',
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
     })
     r = requests.request(method, url, headers=headers, **kwargs)
     if r.status_code >= 400:
         raise RuntimeError(f"GitHub API error {r.status_code}: {r.text}")
     return r.json() if r.text else {}
 
-def ensure_label(owner: str, repo: str, token: str, label: str, desc: str = 'Synced by template.md'):
+
+def ensure_label(owner: str, repo: str, token: str, label: str, desc: str) -> None:
+    if not label:
+        return
     try:
-        gh('GET', f"{API}/repos/{owner}/{repo}/labels/{label}", token)
+        gh("GET", f"{API}/repos/{owner}/{repo}/labels/{label}", token)
     except Exception:
-        gh('POST', f"{API}/repos/{owner}/{repo}/labels", token,
-           json={'name': label, 'color': '0e8a16', 'description': desc})
+        gh(
+            "POST",
+            f"{API}/repos/{owner}/{repo}/labels",
+            token,
+            json={"name": label, "color": "0e8a16", "description": desc},
+        )
+
 
 def list_issues_by_label(owner: str, repo: str, token: str, label: str):
     issues = []
     page = 1
     while True:
-        data = gh('GET', f"{API}/repos/{owner}/{repo}/issues", token,
-                  params={'state': 'all', 'labels': label, 'per_page': 100, 'page': page})
+        params = {"state": "all", "per_page": 100, "page": page}
+        if label:
+            params["labels"] = label
+        data = gh(
+            "GET",
+            f"{API}/repos/{owner}/{repo}/issues",
+            token,
+            params=params,
+        )
         if not data:
             break
         for it in data:
-            if 'pull_request' in it:
+            if "pull_request" in it:
                 continue
             issues.append(it)
         if len(data) < 100:
@@ -72,18 +104,101 @@ def list_issues_by_label(owner: str, repo: str, token: str, label: str):
         page += 1
     return issues
 
-def extract_front_matter_fields(content: str) -> dict:
+
+def get_issue(owner: str, repo: str, token: str, number: int) -> Optional[dict]:
+    try:
+        issue = gh("GET", f"{API}/repos/{owner}/{repo}/issues/{number}", token)
+        if "pull_request" in issue:
+            return None
+        return issue
+    except Exception:
+        return None
+
+
+def extract_front_matter_fields(content: str) -> Dict[str, str]:
     m = FRONT_MATTER_RE.match(content)
-    fields = {}
+    fields: Dict[str, str] = {}
     if not m:
         return fields
     body = m.group(1)
     for line in body.splitlines():
         if ":" in line:
             k, v = line.split(":", 1)
-            fields[k].strip() if k in fields else None
             fields[k.strip()] = v.strip()
     return fields
+
+
+def extract_tasks_and_notes(content: str) -> Tuple[str, str]:
+    lines = content.splitlines()
+    tasks: List[str] = []
+    notes: List[str] = []
+    in_tasks = False
+    notes_start = None
+    for idx, line in enumerate(lines):
+        if not in_tasks:
+            if TASK_RE.match(line):
+                in_tasks = True
+                tasks.append(line)
+        else:
+            if line.startswith("## "):
+                notes_start = idx
+                break
+            tasks.append(line)
+    if notes_start is not None:
+        notes = lines[notes_start:]
+    elif in_tasks:
+        notes = []
+    else:
+        notes = lines
+    tasks_section = "\n".join(tasks).strip()
+    notes_section = "\n".join(notes).strip()
+    return tasks_section, notes_section
+
+
+def extract_marker(body: Optional[str]) -> Optional[str]:
+    if not body:
+        return None
+    m = TODO_MARKER_RE.search(body)
+    return m.group(1).strip() if m else None
+
+
+def ensure_issue_labels(owner: str, repo: str, token: str, issue, labels: Iterable[str]):
+    desired = [lbl for lbl in labels if lbl]
+    if not desired:
+        return
+    current = {lbl["name"] for lbl in issue.get("labels", [])}
+    missing = [lbl for lbl in desired if lbl not in current]
+    if missing:
+        updated_labels = gh(
+            "POST",
+            f"{API}/repos/{owner}/{repo}/issues/{issue['number']}/labels",
+            token,
+            json={"labels": missing},
+        )
+        issue["labels"] = updated_labels
+
+
+def build_issue_body(rel_path: str, fields: Dict[str, str], tasks: str, notes: str) -> str:
+    lines: List[str] = []
+    title = fields.get("目的") or rel_path
+    lines.append(f"## {title}")
+    lines.append("")
+    lines.append(f"- パス: `{rel_path}`")
+    for key in ("目的", "担当者", "関連ブランチ", "期限"):
+        if key in fields:
+            lines.append(f"- {key}: {fields[key]}")
+    if "関連Issue" in fields:
+        lines.append(f"- 関連Issue: {fields['関連Issue']}")
+    lines.append("")
+    lines.append("### タスク")
+    lines.append(tasks or "_(タスク未設定)_")
+    if notes:
+        lines.append("")
+        lines.append(notes)
+    lines.append("")
+    lines.append(f"<!-- todo-path: {rel_path} -->")
+    return "\n".join(lines).strip() + "\n"
+
 
 def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bool]:
     changed = False
@@ -92,95 +207,240 @@ def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bo
         m = RELATED_ISSUE_LINE_RE.match(line)
         if m:
             prefix, rest = m.group(1), m.group(2)
-            if rest.strip() == "未作成" or rest.strip() == "":
-                lines[i] = f"{prefix}#{number}"
-                changed = True
-            elif rest.strip().startswith("#"):
-                pass
-            else:
+            stripped = rest.strip()
+            if stripped in {"未作成", ""} or not stripped.startswith("#"):
                 lines[i] = f"{prefix}#{number}"
                 changed = True
             break
     else:
         inset = f"関連Issue: #{number}"
-        # try placing after front matter if exists
         fm = FRONT_MATTER_RE.match(content)
         if fm:
             endpos = fm.end()
             content = content[:endpos] + inset + "\n" + content[endpos:]
-            changed = True
         else:
             content = inset + "\n" + content
-            changed = True
-        return content, changed
+        return content, True
 
     updated = "\n".join(lines)
     if content.endswith("\n"):
         updated += "\n"
     return updated, changed
 
+
+def normalize_repo_path(path: str) -> str:
+    rel = os.path.relpath(path, start=".")
+    return rel.replace(os.sep, "/")
+
+
+def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_name: str, include_template: bool) -> List[str]:
+    paths: List[str] = []
+    for p in todo_paths:
+        if not p:
+            continue
+        norm = os.path.normpath(p)
+        if os.path.basename(norm) == "README.md":
+            continue
+        if os.path.isfile(norm):
+            paths.append(norm)
+
+    if todo_dir:
+        for root, _dirs, files in os.walk(todo_dir):
+            for fname in files:
+                if not fname.endswith(".md"):
+                    continue
+                if fname == "README.md":
+                    continue
+                if not include_template and fname == template_name:
+                    continue
+                paths.append(os.path.normpath(os.path.join(root, fname)))
+
+    unique = []
+    seen = set()
+    for p in sorted(paths):
+        basename = os.path.basename(p)
+        if basename == "README.md":
+            continue
+        if not include_template and basename == template_name:
+            continue
+        if p not in seen:
+            unique.append(p)
+            seen.add(p)
+    return unique
+
+
+def find_issue_by_path(issues: List[dict], rel_path: str) -> Optional[dict]:
+    candidates = [issue for issue in issues if extract_marker(issue.get("body")) == rel_path]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda i: i.get("created_at", ""))
+    return candidates[0]
+
+
+def remove_label(owner: str, repo: str, token: str, issue_number: int, label: str):
+    if not label:
+        return
+    try:
+        gh(
+            "DELETE",
+            f"{API}/repos/{owner}/{repo}/issues/{issue_number}/labels/{label}",
+            token,
+        )
+    except Exception:
+        pass
+
+
+def retire_additional_issues(
+    owner: str,
+    repo: str,
+    token: str,
+    rel_path: str,
+    keep_issue: dict,
+    cached_issues: List[dict],
+    global_label: str,
+    parent_label: str,
+):
+    keep_number = keep_issue["number"]
+    retired: List[int] = []
+    for issue in list(cached_issues):
+        if issue["number"] == keep_number:
+            continue
+        marker = extract_marker(issue.get("body"))
+        if marker != rel_path:
+            continue
+        number = issue["number"]
+        comment = f"この ToDo は issue #{keep_number} に統合されたため、本 Issue はクローズします。"
+        try:
+            gh(
+                "POST",
+                f"{API}/repos/{owner}/{repo}/issues/{number}/comments",
+                token,
+                json={"body": comment},
+            )
+        except Exception:
+            pass
+
+        if issue.get("state") != "closed":
+            try:
+                gh(
+                    "PATCH",
+                    f"{API}/repos/{owner}/{repo}/issues/{number}",
+                    token,
+                    json={"state": "closed"},
+                )
+            except Exception:
+                pass
+        remove_label(owner, repo, token, number, global_label)
+        remove_label(owner, repo, token, number, parent_label)
+        retired.append(number)
+        cached_issues[:] = [it for it in cached_issues if it["number"] != number]
+    if retired:
+        print(f"Retired legacy issues for {rel_path}: {', '.join(map(str, retired))}")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--todo-path', default='docs/todo/template.md')
-    ap.add_argument('--label', default='todo-sync')
-    ap.add_argument('--parent-label', default='todo-card')
+    ap.add_argument("--todo-path", action="append", default=[], help="ToDo Markdown ファイルのパス")
+    ap.add_argument("--todo-dir", help="ToDo ファイルを探索するディレクトリ")
+    ap.add_argument("--template-name", default="template.md", help="テンプレートファイル名")
+    ap.add_argument("--include-template", action="store_true", help="テンプレートも同期対象に含める")
+    ap.add_argument("--global-label", default="todo-sync", help="Issue に付与する共通ラベル")
+    ap.add_argument("--parent-label", default="todo-card", help="識別用ラベル (任意)")
     args = ap.parse_args()
 
-    repo = os.environ.get('GITHUB_REPOSITORY')
-    token = os.environ.get('GITHUB_TOKEN')
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    token = os.environ.get("GITHUB_TOKEN")
     if not repo or not token:
-        raise SystemExit('GITHUB_REPOSITORY and GITHUB_TOKEN are required')
-    owner, repo_name = repo.split('/')
+        raise SystemExit("GITHUB_REPOSITORY and GITHUB_TOKEN are required")
+    owner, repo_name = repo.split("/")
 
-    ensure_label(owner, repo_name, token, args.label, 'Synced from template.md tasks')
-    ensure_label(owner, repo_name, token, args.parent_label, 'Parent card issue')
+    todo_files = collect_todo_paths(args.todo_path, args.todo_dir, args.template_name, args.include_template)
+    if not todo_files:
+        print("No ToDo files found. Nothing to sync.")
+        return
 
-    # Per-task issues
-    tasks = parse_tasks(args.todo_path)
-    existing = list_issues_by_label(owner, repo_name, token, args.label)
-    issues_by_number = {i['number']: i for i in existing}
-    issues_by_title = {i['title']: i for i in existing}
+    ensure_label(owner, repo_name, token, args.global_label, "Synced from docs/todo files")
+    ensure_label(owner, repo_name, token, args.parent_label, "ToDo tracking issue")
 
-    for t in tasks:
+    cached_issues = list_issues_by_label(owner, repo_name, token, args.global_label)
+
+    for path in todo_files:
+        if not os.path.isfile(path):
+            continue
+
+        rel = normalize_repo_path(path)
+        content = read_text(path)
+        fields = extract_front_matter_fields(content)
+        tasks_section, notes_section = extract_tasks_and_notes(content)
+        issue_title = f"ToDo: {fields['目的']}" if fields.get("目的") else f"ToDo: {rel}"
+        body = build_issue_body(rel, fields, tasks_section, notes_section)
+
+        issue_number_hint = parse_issue_number(fields.get("関連Issue"))
         issue = None
-        if t['issue_number'] and t['issue_number'] in issues_by_number:
-            issue = issues_by_number[t['issue_number']]
-        elif t['title'] in issues_by_title:
-            issue = issues_by_title[t['title']]
-        else:
-            created = gh('POST', f"{API}/repos/{owner}/{repo_name}/issues", token,
-                        json={'title': t['title'], 'labels': [args.label],
-                              'body': 'This issue is managed by **template.md** sync.'})
-            issue = created
+        if issue_number_hint:
+            fetched = get_issue(owner, repo_name, token, issue_number_hint)
+            if fetched:
+                issue = fetched
+                if issue not in cached_issues:
+                    cached_issues.append(issue)
 
-        labels = [l['name'] for l in issue.get('labels', [])]
-        if args.label not in labels:
-            gh('POST', f"{API}/repos/{owner}/{repo_name}/issues/{issue['number']}/labels", token,
-               json={'labels': [args.label]})
+        if not issue:
+            issue = find_issue_by_path(cached_issues, rel)
+        created = False
+        if not issue:
+            labels = [lbl for lbl in [args.global_label, args.parent_label] if lbl]
+            issue = gh(
+                "POST",
+                f"{API}/repos/{owner}/{repo_name}/issues",
+                token,
+                json={
+                    "title": issue_title,
+                    "labels": labels,
+                    "body": body,
+                },
+            )
+            cached_issues.append(issue)
+            created = True
 
-        desired_open = not t['checked']
-        is_open = (issue['state'] == 'open')
-        if desired_open and not is_open:
-            gh('PATCH', f"{API}/repos/{owner}/{repo_name}/issues/{issue['number']}", token, json={'state': 'open'})
-        elif not desired_open and is_open:
-            gh('PATCH', f"{API}/repos/{owner}/{repo_name}/issues/{issue['number']}", token, json={'state': 'closed'})
+        ensure_issue_labels(owner, repo_name, token, issue, [args.global_label, args.parent_label])
 
-    # Parent card issue
-    content = read_text(args.todo_path)
-    fields = extract_front_matter_fields(content)
-    parent_title = fields.get('目的') or f"Todo Card: {os.path.basename(args.todo_path)}"
+        updates = {}
+        desired_title = issue_title
+        if issue.get("title") != desired_title:
+            updates["title"] = desired_title
+        if issue.get("body") != body:
+            updates["body"] = body
 
-    cards = list_issues_by_label(owner, repo_name, token, args.parent_label)
-    parent = next((it for it in cards if it['title'] == parent_title), None)
-    if not parent:
-        fm_lines = [f"{k}: {v}" for k, v in fields.items()] or ["(no front matter)"]
-        body = "Parent card for this TODO template.\n\n" + "\n".join(fm_lines)
-        parent = gh('POST', f"{API}/repos/{owner}/{repo_name}/issues", token,
-                    json={'title': parent_title, 'labels': [args.parent_label], 'body': body})
+        if updates:
+            issue = gh(
+                "PATCH",
+                f"{API}/repos/{owner}/{repo_name}/issues/{issue['number']}",
+                token,
+                json=updates,
+            )
+            for idx, it in enumerate(cached_issues):
+                if it["number"] == issue["number"]:
+                    cached_issues[idx] = issue
+                    break
 
-    new_content, changed = upsert_related_issue_number_line(content, parent['number'])
-    if changed:
-        write_text(args.todo_path, new_content)
+        retire_additional_issues(
+            owner,
+            repo_name,
+            token,
+            rel,
+            issue,
+            cached_issues,
+            args.global_label,
+            args.parent_label,
+        )
 
-if __name__ == '__main__':
+        new_content, changed = upsert_related_issue_number_line(content, issue["number"])
+        if changed:
+            write_text(path, new_content)
+
+        action = "created" if created else ("updated" if updates else "unchanged")
+        print(f"Synced {rel} -> issue #{issue['number']} ({action})")
+
+
+if __name__ == "__main__":
     main()

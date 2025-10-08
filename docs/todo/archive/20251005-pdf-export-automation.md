@@ -4,6 +4,7 @@
 関連ブランチ: feat/pipeline-pdf-export
 期限: 2025-10-25
 ---
+関連Issue: #56
 
 - [x] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する
   - メモ: PATH に `soffice` が無い場合のフォールバックとエラーメッセージを設計する
@@ -30,3 +31,17 @@
 - Java Runtime 未導入時の挙動を事前確認する
 - LibreOffice のバージョンアップに伴う互換性の影響を把握しておく
 - LibreOffice 依存を回避する代替 API（Microsoft Graph 等）をバックアップ案として調査する
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+- [x] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する (#47)
+- [x] CLI オプションの UX 定義を行い、`docs/design/overview.md` に反映する (#48)
+- [x] パイプラインへ PDF 生成ステップを追加し、`outputs` ディレクトリへ保存する (#49)
+- [x] 変換ジョブのリトライポリシーとタイムアウトを設定し、監査ログへ記録する (#50)
+- [x] テストケースを整備し、PDF 出力の存在確認とページ数検証を自動化する (#51)
+- [x] テスト環境で LibreOffice が利用できない場合のモック戦略を用意する (#52)
+- [x] ドキュメント更新 (#53)
+- [x] 運用 Runbook に、失敗時の復旧フローと連絡手順を追記する (#54)
+- [x] QA 観点のチェックリストを作成し、社内レビューを実施する (#55)
+- [x] PR 作成 (#56)
+<!-- END: issues-sync -->
