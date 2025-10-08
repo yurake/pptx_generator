@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: main
 期限: 2025-10-04
-関連Issue: 未設定
+関連Issue: #45
 関連PR: 未設定
 closed_at: 2025-10-05
 ---
@@ -16,3 +16,9 @@ closed_at: 2025-10-05
 ## メモ
 - 2025-10-04: `pytest` コマンドを実行したところ `bash: pytest: command not found` が発生した。
 - 2025-10-04: `uv run --extra dev pytest` で再実行し、全テストが成功した。
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+- [x] `uv run --extra dev pytest` でテストを実行する (#44)
+- [x] 実行結果を確認し追加のエラーがあれば記録する (#45)
+<!-- END: issues-sync -->
