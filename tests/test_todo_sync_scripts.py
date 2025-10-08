@@ -134,6 +134,14 @@ def test_extract_tasks_and_notes(todo_to_issues):
     assert notes.startswith("## メモ")
 
 
+def test_parse_issue_number(todo_to_issues):
+    parse = todo_to_issues.parse_issue_number
+    assert parse("#12") == 12
+    assert parse(" 34 ") == 34
+    assert parse("abc") is None
+    assert parse("#abc") is None
+
+
 def test_retire_additional_issues_closes_duplicates(todo_to_issues, monkeypatch):
     rel = "docs/todo/sample.md"
     base_issue = {
