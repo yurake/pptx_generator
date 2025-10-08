@@ -6,25 +6,32 @@
 関連Issue: #102
 ---
 
-- [ ] docs/todo/ 配下の現行ファイルを棚卸しし、対象一覧を確定する
+- [x] docs/todo/ 配下の現行ファイルを棚卸しし、対象一覧を確定する
   - `ls docs/todo` で一覧取得、`archive/` 含めてメモに列挙
   - template.md は同期対象外であることを README と照合
-- [ ] 代表ファイルを複製し、1 Issue にタスク一覧が反映されることを確認する
+  - 完了: 2025-10-08 一覧を確認し、archive/ 配下も含めて同期対象を整理
+- [x] 代表ファイルを複製し、1 Issue にタスク一覧が反映されることを確認する
   - `cp docs/todo/template.md docs/todo/20251008-sync-sample.md`
   - front matter を埋めてタスクタイトルを編集、`git commit` して push
   - push 後に `todo-sync / Sync ToDo → Issues` が走り、1 件の Issue にチェックボックスが生成されるか確認
-- [ ] 複数ファイル並行時にタスクが混在しないことを確認する
+  - 完了: 2025-10-08 GitHub Issues 上で 1 件の Issue にタスクが集約されることを確認
+- [x] 複数ファイル並行時にタスクが混在しないことを確認する
   - 別ファイル `docs/todo/20251008-sync-parallel.md` を追加し同様に push
--  - Actions ログで各ファイルの処理結果を確認し、GitHub Issues 上で `<!-- todo-path: ... -->` マーカーが適切に設定されていることをチェック
-- [ ] 完了済み ToDo を archive/ へ移動した際も同期されるか確認する
+  - Actions ログで各ファイルの処理結果を確認し、GitHub Issues 上で `<!-- todo-path: ... -->` マーカーが適切に設定されていることをチェック
+  - 完了: 2025-10-08 並列ファイルでも Issue が混在しないことを確認
+- [x] 完了済み ToDo を archive/ へ移動した際も同期されるか確認する
   - テスト済みファイルを `git mv docs/todo/20251008-sync-sample.md docs/todo/archive/`
   - push 後の Actions 実行で同ファイルが引き続き処理対象となり、親 Issue 参照が維持されるか確認
-- [ ] `[skip md->issues]` コミットで md→Issues の同期が抑止されるか確認する
+  - 完了: 2025-10-08 archive/ 移動後も Issue 参照が維持されることを確認
+- [x] `[skip md->issues]` コミットで md→Issues の同期が抑止されるか確認する
   - 対象ファイルに軽微な変更を入れたコミットを `[skip md->issues]` 付きで push
   - Actions ログで `Sync ToDo → Issues` ジョブがスキップされることを確認
-- [ ] 検証結果を docs/notes/ へ記録し、後続改善タスクを洗い出す
+  - 完了: 2025-10-08 `[skip md->issues]` 付きコミットでジョブがスキップされることを確認
+- [x] 検証結果を docs/notes/ へ記録し、後続改善タスクを洗い出す
   - 成果・問題点・残課題を `docs/notes/20251008-todo-sync-test-coverage.md` に追記
   - 改善が必要な項目は別の ToDo または Issue として整理
+  - 完了: 2025-10-08 ノートへ結果を記録し、改善項目を整理
 
 ## メモ
 - ラベル命名や親 Issue のフォーマットに変更が必要になった場合は別タスク化する。
+- 重複 Issue は自動クローズされることを確認済み。
