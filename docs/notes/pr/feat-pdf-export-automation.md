@@ -25,4 +25,4 @@
 ## 添付
 - QA: [docs/qa/pdf-export-checklist.md](../../qa/pdf-export-checklist.md)
 - Support Runbook: [docs/runbooks/support.md](../../runbooks/support.md)
-- Issue: [docs/notes/issues/0008-pdf-export-automation.md](../issues/0008-pdf-export-automation.md)
+- 背景ノート: [docs/notes/issues/0008-pdf-export-automation.md](../issues/0008-pdf-export-automation.md)
