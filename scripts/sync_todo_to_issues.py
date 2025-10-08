@@ -249,11 +249,11 @@ def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_
 
 
 def find_issue_by_path(issues: List[dict], rel_path: str) -> Optional[dict]:
-    for issue in issues:
-        marker = extract_marker(issue.get("body"))
-        if marker == rel_path:
-            return issue
-    return None
+    candidates = [issue for issue in issues if extract_marker(issue.get("body")) == rel_path]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda i: i.get("created_at", ""))
+    return candidates[0]
 
 
 def remove_label(owner: str, repo: str, token: str, issue_number: int, label: str):
