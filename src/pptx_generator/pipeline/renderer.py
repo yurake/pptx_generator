@@ -3,27 +3,57 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+import os
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from pptx import Presentation
+from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.util import Inches, Pt
 
-from ..models import FontSpec, JobSpec, Slide
+from ..models import ChartSeries, FontSpec, JobSpec, Slide
+from ..settings import BrandingConfig, BrandingFont
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
+class LayoutBox:
+    left_in: float
+    top_in: float
+    width_in: float
+    height_in: float
+
+    def to_emu(self) -> tuple[int, int, int, int]:
+        return (
+            int(Inches(self.left_in)),
+            int(Inches(self.top_in)),
+            int(Inches(self.width_in)),
+            int(Inches(self.height_in)),
+        )
+
+
+@dataclass(slots=True)
 class RenderingOptions:
     template_path: Path | None = None
     output_filename: str = "proposal.pptx"
-    default_font_name: str = "Yu Gothic"
-    default_font_size: float = 18.0
-    default_font_color: str = "#333333"
+    branding: BrandingConfig | None = None
+    fallback_image_box: LayoutBox = field(
+        default_factory=lambda: LayoutBox(1.0, 1.75, 8.0, 4.5)
+    )
+    fallback_table_box: LayoutBox = field(
+        default_factory=lambda: LayoutBox(1.0, 1.5, 8.5, 3.0)
+    )
+    fallback_chart_box: LayoutBox = field(
+        default_factory=lambda: LayoutBox(1.0, 1.5, 8.5, 4.0)
+    )
 
 
 class SimpleRendererStep:
@@ -33,13 +63,20 @@ class SimpleRendererStep:
 
     def __init__(self, options: RenderingOptions | None = None) -> None:
         self.options = options or RenderingOptions()
+        if self.options.branding is None:
+            self.options.branding = BrandingConfig.default()
+        self._branding: BrandingConfig = self.options.branding
+        self._temp_files: list[Path] = []
 
     def run(self, context: PipelineContext) -> None:
         presentation = self._load_template()
-        self._render_slides(presentation, context.spec)
-        output_path = self._save(presentation, context.workdir)
-        context.add_artifact("pptx_path", output_path)
-        logger.info("PPTX を出力しました: %s", output_path)
+        try:
+            self._render_slides(presentation, context.spec)
+            output_path = self._save(presentation, context.workdir)
+            context.add_artifact("pptx_path", output_path)
+            logger.info("PPTX を出力しました: %s", output_path)
+        finally:
+            self._cleanup_temp_files()
 
     def _load_template(self) -> Presentation:
         if self.options.template_path and self.options.template_path.exists():
@@ -54,6 +91,9 @@ class SimpleRendererStep:
             slide = presentation.slides.add_slide(layout)
             self._apply_title(slide, slide_spec)
             self._apply_bullets(slide, slide_spec)
+            self._apply_tables(slide, slide_spec)
+            self._apply_images(slide, slide_spec)
+            self._apply_charts(slide, slide_spec)
 
     def _resolve_layout(self, presentation: Presentation, slide_spec: Slide):
         for layout in presentation.slide_layouts:
@@ -67,10 +107,19 @@ class SimpleRendererStep:
             return
         title_shape = slide.shapes.title
         if title_shape is not None:
-            title_shape.text = slide_spec.title
+            text_frame = title_shape.text_frame
+            text_frame.clear()
+            paragraph = text_frame.paragraphs[0]
+            paragraph.text = slide_spec.title
+            self._apply_brand_font(paragraph, self._branding.heading_font)
             return
-        textbox = slide.shapes.add_textbox(Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0))
-        textbox.text = slide_spec.title
+        textbox = slide.shapes.add_textbox(
+            Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0))
+        text_frame = textbox.text_frame
+        text_frame.clear()
+        paragraph = text_frame.paragraphs[0]
+        paragraph.text = slide_spec.title
+        self._apply_brand_font(paragraph, self._branding.heading_font)
 
     def _apply_bullets(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.bullets:
@@ -79,10 +128,106 @@ class SimpleRendererStep:
         text_frame = body_shape.text_frame
         text_frame.clear()
         for index, bullet in enumerate(slide_spec.bullets):
-            paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
+            paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph(
+            )
             paragraph.text = bullet.text
             paragraph.level = bullet.level
             self._apply_font(paragraph, bullet.font)
+
+    def _apply_tables(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.tables:
+            return
+
+        for table_spec in slide_spec.tables:
+            header = list(table_spec.columns)
+            rows = [list(row) for row in table_spec.rows]
+            column_count = len(header) or (len(rows[0]) if rows else 0)
+            if column_count == 0:
+                logger.debug("テーブル '%s' に列情報がないためスキップ", table_spec.id)
+                continue
+
+            row_count = len(rows) + (1 if header else 0)
+            if row_count == 0:
+                logger.debug("テーブル '%s' にデータがないためスキップ", table_spec.id)
+                continue
+
+            anchor_shape, left, top, width, height = self._resolve_anchor(
+                slide, table_spec.anchor, self.options.fallback_table_box
+            )
+            table_shape = slide.shapes.add_table(
+                row_count, column_count, left, top, width, height)
+            table = table_shape.table
+
+            for idx in range(column_count):
+                table.columns[idx].width = width // column_count
+
+            start_row = 0
+            if header:
+                self._fill_table_row(
+                    table.rows[0], header, is_header=True, style=table_spec.style)
+                start_row = 1
+
+            for offset, row_values in enumerate(rows):
+                target_row = table.rows[start_row + offset]
+                padded = row_values + [""] * (column_count - len(row_values))
+                self._fill_table_row(
+                    target_row, padded, is_header=False, style=table_spec.style, zebra_index=offset
+                )
+
+            if anchor_shape is not None:
+                self._remove_shape(anchor_shape)
+
+    def _apply_images(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.images:
+            return
+
+        for image_spec in slide_spec.images:
+            anchor_shape, left, top, width, height = self._resolve_anchor(
+                slide, image_spec.anchor, self.options.fallback_image_box
+            )
+            left = self._override_emu(left, image_spec.left_in)
+            top = self._override_emu(top, image_spec.top_in)
+            width = self._override_emu(width, image_spec.width_in)
+            height = self._override_emu(height, image_spec.height_in)
+
+            image_path = self._resolve_image_source(
+                image_spec.source, image_spec.id)
+            picture = slide.shapes.add_picture(str(image_path), left, top)
+
+            self._resize_picture(picture, width, height, image_spec.sizing)
+
+            if anchor_shape is not None:
+                self._remove_shape(anchor_shape)
+
+    def _apply_charts(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.charts:
+            return
+
+        for chart_spec in slide_spec.charts:
+            if not chart_spec.series:
+                logger.debug("チャート '%s' に系列がないためスキップ", chart_spec.id)
+                continue
+
+            data = CategoryChartData()
+            categories = chart_spec.categories or [
+                str(index + 1) for index in range(len(chart_spec.series[0].values))]
+            data.categories = categories
+            for series in chart_spec.series:
+                data.add_series(series.name, series.values)
+
+            chart_type = self._resolve_chart_type(chart_spec.type)
+            anchor_shape, left, top, width, height = self._resolve_anchor(
+                slide, chart_spec.anchor, self.options.fallback_chart_box
+            )
+            chart_shape = slide.shapes.add_chart(
+                chart_type, left, top, width, height, data)
+            chart = chart_shape.chart
+
+            self._apply_chart_series_colors(chart.series, chart_spec.series)
+            self._style_chart(chart, chart_spec.options)
+
+            if anchor_shape is not None:
+                self._remove_shape(anchor_shape)
 
     def _find_body_placeholder(self, slide):
         for shape in slide.placeholders:
@@ -94,9 +239,7 @@ class SimpleRendererStep:
     def _apply_font(self, paragraph, font_spec: FontSpec | None) -> None:
         font = paragraph.font
         if font_spec is None:
-            font.name = self.options.default_font_name
-            font.size = Pt(self.options.default_font_size)
-            font.color.rgb = RGBColor.from_string(self.options.default_font_color.lstrip("#"))
+            self._apply_brand_font(paragraph, self._branding.body_font)
             return
         font.name = font_spec.name
         font.size = Pt(font_spec.size_pt)
@@ -110,3 +253,195 @@ class SimpleRendererStep:
         output_path = output_dir / self.options.output_filename
         presentation.save(output_path)
         return output_path
+
+    def _apply_brand_font(self, paragraph, branding_font: BrandingFont) -> None:
+        font = paragraph.font
+        font.name = branding_font.name
+        font.size = Pt(branding_font.size_pt)
+        font.color.rgb = RGBColor.from_string(
+            branding_font.color_hex.lstrip("#"))
+
+    def _find_shape_by_name(self, slide, name: str):
+        for shape in slide.shapes:
+            if shape.name == name:
+                return shape
+        return None
+
+    def _resolve_anchor(
+        self, slide, anchor: str | None, fallback_box: LayoutBox
+    ) -> tuple[object | None, int, int, int, int]:
+        if anchor:
+            shape = self._find_shape_by_name(slide, anchor)
+            if shape is not None:
+                return shape, shape.left, shape.top, shape.width, shape.height
+        left, top, width, height = fallback_box.to_emu()
+        return None, left, top, width, height
+
+    def _override_emu(self, default: int, value_in: float | None) -> int:
+        if value_in is None:
+            return default
+        return int(Inches(value_in))
+
+    def _fill_table_row(
+        self,
+        row,
+        values: list[object],
+        *,
+        is_header: bool,
+        style,
+        zebra_index: int | None = None,
+    ) -> None:
+        for idx, value in enumerate(values):
+            cell = row.cells[idx]
+            text_frame = cell.text_frame
+            text_frame.clear()
+            paragraph = text_frame.paragraphs[0]
+            paragraph.text = str(value)
+            if is_header:
+                self._apply_brand_font(paragraph, self._branding.heading_font)
+                self._apply_table_header_fill(cell, style)
+            else:
+                self._apply_brand_font(paragraph, self._branding.body_font)
+                self._apply_table_body_fill(cell, style, zebra_index)
+
+    def _apply_table_header_fill(self, cell, style) -> None:
+        header_color = self._branding.primary_color
+        if style and style.header_fill:
+            header_color = style.header_fill
+        fill = cell.fill
+        fill.solid()
+        fill.fore_color.rgb = RGBColor.from_string(header_color.lstrip("#"))
+        paragraph = cell.text_frame.paragraphs[0]
+        paragraph.font.bold = True
+
+    def _apply_table_body_fill(self, cell, style, zebra_index: int | None) -> None:
+        fill = cell.fill
+        fill.solid()
+        color = self._branding.background_color
+        if style and style.zebra and zebra_index is not None and zebra_index % 2 == 1:
+            color = self._branding.secondary_color
+        fill.fore_color.rgb = RGBColor.from_string(color.lstrip("#"))
+
+    def _resolve_image_source(self, source: str, image_id: str) -> Path:
+        parsed = urlparse(str(source))
+        if parsed.scheme in {"http", "https"}:
+            return self._download_remote_image(str(source), image_id)
+
+        path = Path(source).expanduser()
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        if not path.exists():
+            msg = f"画像ファイルが見つかりません: {source}"
+            raise FileNotFoundError(msg)
+        return path
+
+    def _download_remote_image(self, url: str, image_id: str) -> Path:
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False, suffix=Path(url).suffix or ".img")
+        try:
+            with urlopen(url) as response:
+                tmp.write(response.read())
+        finally:
+            tmp.close()
+        path = Path(tmp.name)
+        self._temp_files.append(path)
+        logger.info("画像をダウンロードしました: id=%s, path=%s", image_id, path)
+        return path
+
+    def _resize_picture(self, picture, width: int, height: int, sizing: str) -> None:
+        if width is None and height is None:
+            return
+
+        target_width = width or picture.width
+        target_height = height or picture.height
+
+        if sizing == "stretch":
+            picture.width = target_width
+            picture.height = target_height
+            return
+
+        original_width = picture.width
+        original_height = picture.height
+        if original_width == 0 or original_height == 0:
+            picture.width = target_width
+            picture.height = target_height
+            return
+
+        width_ratio = target_width / original_width
+        height_ratio = target_height / original_height
+
+        if sizing == "fill":
+            scale = max(width_ratio, height_ratio)
+        else:  # fit
+            scale = min(width_ratio, height_ratio)
+
+        picture.width = int(original_width * scale)
+        picture.height = int(original_height * scale)
+
+        if width is not None:
+            picture.left += (target_width - picture.width) // 2
+        if height is not None:
+            picture.top += (target_height - picture.height) // 2
+
+    def _apply_chart_series_colors(
+        self, chart_series, series_specs: list[ChartSeries]
+    ) -> None:
+        palette = [
+            self._branding.accent_color,
+            self._branding.primary_color,
+            self._branding.secondary_color,
+        ]
+        for index, (series, spec) in enumerate(zip(chart_series, series_specs, strict=False)):
+            fill = series.format.fill
+            fill.solid()
+            color = spec.color_hex or palette[index % len(palette)]
+            fill.fore_color.rgb = RGBColor.from_string(color.lstrip("#"))
+
+    def _style_chart(self, chart, options) -> None:
+        if options and options.data_labels:
+            for plot in chart.plots:
+                plot.has_data_labels = True
+                data_labels = plot.data_labels
+                data_labels.show_value = True
+                if options.y_axis_format:
+                    data_labels.number_format = options.y_axis_format
+        if options and options.y_axis_format and hasattr(chart, "value_axis"):
+            chart.value_axis.tick_labels.number_format = options.y_axis_format
+        if getattr(chart, "has_legend", False):
+            if chart.has_legend:
+                chart.legend.include_in_layout = False
+        body_font = self._branding.body_font
+        if hasattr(chart, "category_axis"):
+            font = chart.category_axis.tick_labels.font
+            font.name = body_font.name
+            font.size = Pt(body_font.size_pt)
+        if hasattr(chart, "value_axis"):
+            font = chart.value_axis.tick_labels.font
+            font.name = body_font.name
+            font.size = Pt(body_font.size_pt)
+
+    def _resolve_chart_type(self, chart_type: str) -> XL_CHART_TYPE:
+        mapping = {
+            "column": XL_CHART_TYPE.COLUMN_CLUSTERED,
+            "bar": XL_CHART_TYPE.BAR_CLUSTERED,
+            "line": XL_CHART_TYPE.LINE_MARKERS,
+            "pie": XL_CHART_TYPE.PIE,
+        }
+        return mapping.get(chart_type.lower(), XL_CHART_TYPE.COLUMN_CLUSTERED)
+
+    def _remove_shape(self, shape) -> None:
+        if shape is None:
+            return
+        try:
+            shape.element.getparent().remove(shape.element)
+        except Exception:  # noqa: BLE001
+            logger.debug("shape の削除に失敗しました: %s",
+                         shape.name if hasattr(shape, "name") else shape)
+
+    def _cleanup_temp_files(self) -> None:
+        for path in self._temp_files:
+            try:
+                os.unlink(path)
+            except OSError:
+                logger.debug("一時ファイル削除に失敗: %s", path)
+        self._temp_files.clear()

@@ -1,6 +1,6 @@
 # pptx_generator
 
-JSON 仕様から PowerPoint 提案書を自動生成する開発中のツールです。現時点では基本的なスライド構成と簡易解析のみをサポートしています。
+JSON 仕様から PowerPoint 提案書を自動生成するツールです。タイトルや箇条書きに加えて、ブランド設定に基づく表・画像・グラフの描画と簡易解析をサポートしています。
 
 ## セットアップ
 1. Python 3.12 系の仮想環境を用意します。
@@ -10,26 +10,27 @@ JSON 仕様から PowerPoint 提案書を自動生成する開発中のツール
    ```
 
 ## 使い方
-1. サンプル JSON `samples/sample_spec.json` を基に編集し、案件情報を準備します。
+1. サンプル JSON `samples/sample_spec.json` を基に編集し、案件情報とスライド要素（表・画像・グラフ）を準備します。
 2. CLI を実行して PPTX と analysis.json を生成します。
    ```bash
    uv run pptx-generator run samples/sample_spec.json
    ```
    - `--workdir` は省略可能で、指定しない場合は `.pptxgen` が自動作成されます。
+   - `--branding` でブランド設定 JSON を差し替えると、フォントやカラーが自動で反映されます。
+   - `--export-pdf` を付与すると LibreOffice (soffice) を使って PDF を同時出力します。
+     - `--pdf-mode=only` を指定すると PPTX を残さず PDF のみ保存します。
+     - `--libreoffice-path` で soffice の場所を明示でき、`LIBREOFFICE_PATH` 環境変数も利用できます。
+     - タイムアウトやリトライは `--pdf-timeout` / `--pdf-retries` で調整します。
+    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
 3. 生成物は `.pptxgen/outputs/` 配下に保存されます。
 
 ## テスト・検証
-- CLI の動作確認は pytest の統合テストでカバーしています。
+- レンダラー・CLI を含むテストスイートを pytest で実行できます。
   ```bash
-  uv run --extra dev pytest tests/test_cli_integration.py
+  uv run --extra dev pytest
   ```
-  - `--workdir` と `--template` オプションを含む挙動を検証します。
+  - CLI 統合テストでは PPTX 出力と analysis.json を検証し、レンダラー単体テストで表・画像・グラフの描画ロジックを確認します。
 
 ## 設定
 - `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義します。
 - `config/branding.json`: デフォルトのフォントやブランドカラーを定義します。
-
-## 今後の予定
-- PPTX レイアウトの詳細制御、画像や表の配置
-- 自動診断の高度化（余白・禁則チェックなど）
-- CLI および API の統合テスト整備
