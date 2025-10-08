@@ -113,9 +113,11 @@ def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bo
             content = inset + "\n" + content
             changed = True
         return content, changed
-    return ("
-".join(lines) + ("
-" if content.endswith("\n") else "")), changed
+
+    updated = "\n".join(lines)
+    if content.endswith("\n"):
+        updated += "\n"
+    return updated, changed
 
 def main():
     ap = argparse.ArgumentParser()
