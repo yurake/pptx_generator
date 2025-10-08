@@ -21,6 +21,6 @@ uv run pptx-generator run samples/sample_spec.json
 ```
 
 ## 残課題
-- Issue 番号の発行と PR テンプレートへの反映。
+- 対応 ToDo の最終チェックと PR テンプレートへの反映。
 - スクリーンショット（生成 PPTX 例）を取得して添付。
 - `analysis.json` サンプル差し替え検討（必要なら別 PR）。
