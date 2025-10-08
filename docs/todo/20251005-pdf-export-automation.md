@@ -3,7 +3,6 @@
 担当者: Codex
 関連ブランチ: feat/pipeline-pdf-export
 期限: 2025-10-25
-関連Issue: #8
 ---
 
 - [x] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する
@@ -23,12 +22,11 @@
 - [x] 運用 Runbook に、失敗時の復旧フローと連絡手順を追記する
 - [x] QA 観点のチェックリストを作成し、社内レビューを実施する
   - メモ: 期待する PDF 品質（フォント埋め込み、ページ番号、余白）を明示する
-- [x] Issue 作成
-  - メモ: [docs/notes/issues/0008-pdf-export-automation.md](../notes/issues/0008-pdf-export-automation.md) に要件と完了条件を整理済み（2025-10-05）
 - [x] PR 作成
   - メモ: [docs/notes/pr/feat-pdf-export-automation.md](../notes/pr/feat-pdf-export-automation.md) にドラフト記載。レビューア割当と最終リハーサル完了後に GitHub PR 化予定
 
 ## メモ
+- 背景整理ノート: [docs/notes/issues/0008-pdf-export-automation.md](../notes/issues/0008-pdf-export-automation.md)
 - Java Runtime 未導入時の挙動を事前確認する
 - LibreOffice のバージョンアップに伴う互換性の影響を把握しておく
 - LibreOffice 依存を回避する代替 API（Microsoft Graph 等）をバックアップ案として調査する
