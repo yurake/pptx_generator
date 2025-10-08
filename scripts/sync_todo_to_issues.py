@@ -311,18 +311,18 @@ def retire_legacy_issues(
 
         if issue.get("state") != "closed":
             try:
-                issue = gh(
+                gh(
                     "PATCH",
                     f"{API}/repos/{owner}/{repo}/issues/{number}",
                     token,
                     json={"state": "closed"},
                 )
             except Exception:
-                issue["state"] = "closed"
+                pass
         remove_label(owner, repo, token, number, global_label)
         remove_label(owner, repo, token, number, parent_label)
         retired.append(number)
-        cached_issues.remove(issue)
+        cached_issues[:] = [it for it in cached_issues if it["number"] != number]
     if retired:
         print(f"Retired legacy issues for {rel_path}: {', '.join(map(str, retired))}")
 
