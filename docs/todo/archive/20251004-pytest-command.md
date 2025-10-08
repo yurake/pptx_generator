@@ -19,4 +19,6 @@ closed_at: 2025-10-05
 
 <!-- BEGIN: issues-sync -->
 ## Synced Issues
+- [x] `uv run --extra dev pytest` でテストを実行する (#44)
+- [x] 実行結果を確認し追加のエラーがあれば記録する (#45)
 <!-- END: issues-sync -->

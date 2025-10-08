@@ -21,4 +21,7 @@ closed_at: 2025-10-05
 
 <!-- BEGIN: issues-sync -->
 ## Synced Issues
+- [x] Python パッケージ構成の雛形作成 (#31)
+- [x] CLI エントリポイントの追加 (#32)
+- [x] 設定ファイルの初期値作成 (#33)
 <!-- END: issues-sync -->
