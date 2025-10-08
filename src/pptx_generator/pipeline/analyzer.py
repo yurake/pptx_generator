@@ -91,6 +91,10 @@ class SimpleAnalyzerStep:
                 if fix:
                     fixes.append(fix)
 
+        layout_issues, layout_fixes = self._check_layout_consistency(slide)
+        issues.extend(layout_issues)
+        fixes.extend(layout_fixes)
+
         return issues, fixes
 
     def _check_bullet_depth(
@@ -209,6 +213,59 @@ class SimpleAnalyzerStep:
             fix=fix,
         )
         return issue, fix
+
+    def _check_layout_consistency(
+        self, slide: Slide
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
+        previous_level: int | None = None
+        applied_level: int | None = None
+
+        for bullet in slide.bullets:
+            allowed_level = 0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
+            if bullet.level <= allowed_level:
+                applied_level = bullet.level
+                previous_level = bullet.level
+                continue
+
+            target_level = allowed_level
+            target = {
+                "slide_id": slide.id,
+                "element_id": bullet.id,
+                "element_type": "bullet",
+            }
+            issue_id = self._next_issue_id("layout_consistency", slide.id, bullet.id)
+            message = (
+                f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベル {bullet.level} が"
+                f" 許容ステップ {allowed_level} を超えています"
+            )
+            fix = {
+                "id": f"fix-{issue_id}",
+                "issue_id": issue_id,
+                "type": "bullet_reindent",
+                "target": target,
+                "payload": {"level": target_level},
+            }
+            issue = self._make_issue(
+                issue_id=issue_id,
+                issue_type="layout_consistency",
+                severity="warning",
+                message=message,
+                target=target,
+                metrics={
+                    "level": bullet.level,
+                    "allowed_level": allowed_level,
+                    "previous_level": previous_level,
+                },
+                fix=fix,
+            )
+            issues.append(issue)
+            fixes.append(fix)
+            applied_level = target_level
+            previous_level = bullet.level
+
+        return issues, fixes
 
     def _check_margins(
         self, slide: Slide, image: SlideImage

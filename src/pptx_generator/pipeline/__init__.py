@@ -4,10 +4,12 @@ from .analyzer import AnalyzerOptions, SimpleAnalyzerStep
 from .base import PipelineContext, PipelineRunner, PipelineStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
 from .renderer import RenderingOptions, SimpleRendererStep
+from .refiner import RefinerOptions, SimpleRefinerStep
 from .validator import SpecValidatorStep
 
 __all__ = [
     "AnalyzerOptions",
+    "RefinerOptions",
     "PipelineContext",
     "PipelineRunner",
     "PipelineStep",
@@ -17,6 +19,7 @@ __all__ = [
     "PdfExportResult",
     "PdfExportStep",
     "SimpleAnalyzerStep",
+    "SimpleRefinerStep",
     "SimpleRendererStep",
     "SpecValidatorStep",
 ]

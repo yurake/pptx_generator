@@ -27,13 +27,13 @@
 ## 3. データフロー
 1. `spec.json` を受領し、`JobId` を生成。
 2. Validator が JSON スキーマを検証し、`validation_report.json` を出力。問題があれば停止。
-3. Renderer がテンプレート（`templates/corporate_default_vN.pptx`）を読み込み、指定レイアウトに沿ってスライドを作成。
-4. Analyzer が PPTX から図形位置・テキスト属性を抽出し、`analysis.json` を生成。
-5. Refiner が `analysis.json` に含まれる `fixes` を適用し、`proposal_refined.pptx` を出力。
+3. Refiner が入力 JSON を前処理し、箇条書きレベルの調整など軽微な補正を適用。
+4. Renderer がテンプレート（`templates/corporate_default_vN.pptx`）を読み込み、指定レイアウトに沿ってスライドを作成。
+5. Analyzer が PPTX から図形位置・テキスト属性を抽出し、`analysis.json` を生成。
 6. PDF Exporter が LibreOffice (soffice) により PPTX から PDF を生成し、失敗時はリトライ。
 7. Polisher（任意）が Open XML SDK で段落・禁則・色統一を適用し、`proposal_polished.pptx` を作成。
 8. Distributor が出力ファイルをストレージへ保存し、メタ情報とともに通知。
-9. CLI が `audit_log.json` を生成し、PDF 変換メタデータ（試行回数・所要時間）を含む監査情報を保存。
+9. CLI が `audit_log.json` を生成し、PDF 変換メタデータ（試行回数・所要時間）と Refiner 調整ログを含む監査情報を保存。
 
 ## 4. JSON スキーマ詳細
 ```yaml
@@ -141,12 +141,14 @@ assets:
   - `font_min`: フォントサイズが規定未満。
   - `contrast_low`: 背景と文字色のコントラスト不足 (WCAG 2.1 AA)。
   - `bullet_depth`: 箇条書きレベルが上限超え。
+  - `layout_consistency`: 箇条書きのインデントジャンプ。
 - Fix タイプ:
   - `move`: 指定デルタで位置調整。
   - `font_raise`: 最小フォントサイズまで引き上げ。
   - `color_adjust`: テーマカラーへの置換。
   - `bullet_cap`: 箇条書きレベルの切り上げ。
-- Refiner: Fix 適用後に調整結果をログ化、適用済み ID を記録して重複適用を防止。
+  - `bullet_reindent`: 許容範囲へレベルを再設定。
+- Refiner: `bullet_reindent` を起点に JSON テンプレ段階で段階的な補正を行い、調整結果をアーティファクトとして記録する。
 
 ## 8. 仕上げ処理 (Open XML SDK)
 - `.NET` プロジェクト `dotnet/OpenXmlPolish` を配置。
@@ -170,6 +172,7 @@ assets:
 - アラート: `critical` issue 発生、変換失敗連続、テンプレート検証エラー、外部 API 障害。
 - Runbook: 正常系・異常系の手順を docs/runbook.md で管理。
 - 監査: CLI が `outputs/audit_log.json` を生成し、`pdf_export_metadata` をメトリクス基盤に取り込むことで LibreOffice 成功率とリードタイムを可視化する。
+- 監査ログには `refiner_adjustments` を含め、適用済みの自動補正履歴を追跡可能とする。
 
 ## 11. セキュリティ設計
 - データ暗号化: ストレージに保存するファイルを SSE (Storage-side Encryption) + 任意でクライアント暗号化。
