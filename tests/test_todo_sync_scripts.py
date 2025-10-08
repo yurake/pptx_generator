@@ -103,24 +103,27 @@ def test_upsert_related_issue_number_line_inserts_when_missing(todo_to_issues):
 
 
 def test_render_block_and_upsert_block(tmp_path, issues_to_todo):
-    issues = [
-        {"title": "閉じたタスク", "number": 5, "state": "closed"},
-        {"title": "開いているタスク", "number": 7, "state": "open"},
-    ]
+    content = """
+- [ ] タスクA (#12)
+- [x] タスクB
+""".strip()
+    states = issues_to_todo.parse_task_states(content)
+    assert states == {"タスクA": False, "タスクB": True}
 
-    block = issues_to_todo.render_block(issues)
-    assert "[x] 閉じたタスク (#5)" in block
-    assert "[ ] 開いているタスク (#7)" in block
 
-    md_path = tmp_path / "todo.md"
-    changed = issues_to_todo.upsert_block(str(md_path), block)
+def test_apply_task_states(issues_to_todo):
+    original = textwrap.dedent(
+        """
+        - [ ] タスクA (#12)
+          - メモ: a
+        - [x] タスクB
+        """
+    )
+    states = {"タスクA": True, "タスクB": False}
+    updated, changed = issues_to_todo.apply_task_states(original, states)
     assert changed is True
-    content = md_path.read_text(encoding="utf-8")
-    assert issues_to_todo.BEGIN in content
-    assert issues_to_todo.END in content
-
-    changed_again = issues_to_todo.upsert_block(str(md_path), block)
-    assert changed_again is False
+    assert "- [x] タスクA (#12)" in updated
+    assert "- [ ] タスクB" in updated
 
 
 def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
@@ -137,3 +140,25 @@ def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
     assert all("README.md" not in p for p in paths)
     assert any(p.endswith("20251008-check.md") for p in paths)
     assert any("archive" in p and p.endswith("old.md") for p in paths)
+
+
+def test_extract_tasks_and_notes(todo_to_issues):
+    content = textwrap.dedent(
+        """
+        ---
+        目的: テスト
+        ---
+
+        - [ ] タスクA
+          - メモ: A
+
+        - [x] タスクB
+
+        ## メモ
+        - note
+        """
+    )
+    tasks, notes = todo_to_issues.extract_tasks_and_notes(content)
+    assert "タスクA" in tasks
+    assert "タスクB" in tasks
+    assert notes.startswith("## メモ")
