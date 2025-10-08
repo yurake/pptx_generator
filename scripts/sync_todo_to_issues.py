@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
 import os
 import re
-from typing import Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -13,8 +12,6 @@ TASK_RE = re.compile(r"^- \[( |x|X)\] (.*?)(?:\s*\(#?(\d+)\)|\s+#(\d+))?\s*$")
 RELATED_ISSUE_LINE_RE = re.compile(r"^(\s*関連Issue:\s*)(.*)\s*$")
 FRONT_MATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
-
-LABEL_MAX_LENGTH = 50
 
 
 def read_text(path: str) -> str:
@@ -138,15 +135,6 @@ def normalize_repo_path(path: str) -> str:
     return rel.replace(os.sep, "/")
 
 
-def build_scoped_label(prefix: str, todo_path: str) -> str:
-    rel = normalize_repo_path(todo_path)
-    digest = hashlib.sha1(rel.encode("utf-8")).hexdigest()[:6]
-    slug = re.sub(r"[^a-z0-9]+", "-", rel.lower()).strip("-") or "todo"
-    max_slug_len = max(1, LABEL_MAX_LENGTH - len(prefix) - len(digest) - 2)
-    slug = slug[:max_slug_len]
-    return f"{prefix}-{slug}-{digest}"
-
-
 def extract_marker(body: Optional[str]) -> Optional[str]:
     if not body:
         return None
@@ -199,13 +187,20 @@ def update_issue_cache(cache: List[dict], issue: dict) -> None:
 def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_name: str, include_template: bool) -> List[str]:
     paths: List[str] = []
     for p in todo_paths:
-        if p and os.path.isfile(p):
-            paths.append(os.path.normpath(p))
+        if not p:
+            continue
+        norm = os.path.normpath(p)
+        if os.path.basename(norm) == "README.md":
+            continue
+        if os.path.isfile(norm):
+            paths.append(norm)
 
     if todo_dir:
         for root, _dirs, files in os.walk(todo_dir):
             for fname in files:
                 if not fname.endswith(".md"):
+                    continue
+                if fname == "README.md":
                     continue
                 if not include_template and fname == template_name:
                     continue
@@ -214,7 +209,10 @@ def collect_todo_paths(todo_paths: List[str], todo_dir: Optional[str], template_
     unique = []
     seen = set()
     for p in sorted(paths):
-        if not include_template and os.path.basename(p) == template_name:
+        basename = os.path.basename(p)
+        if basename == "README.md":
+            continue
+        if not include_template and basename == template_name:
             continue
         if p not in seen:
             unique.append(p)
@@ -228,14 +226,12 @@ def sync_tasks_for_file(
     token: str,
     todo_path: str,
     global_label: str,
-    label_prefix: str,
     parent_label: str,
     cached_issues: List[dict],
+    card_cache: Dict[str, dict],
 ) -> Tuple[Optional[int], bool]:
     rel_path = normalize_repo_path(todo_path)
-    scoped_label = build_scoped_label(label_prefix, rel_path)
     ensure_label(owner, repo, token, global_label, "Synced from docs/todo files")
-    ensure_label(owner, repo, token, scoped_label, f"Scoped ToDo label for {rel_path}")
     ensure_label(owner, repo, token, parent_label, "Parent card issue for ToDo files")
 
     marker = f"<!-- todo-path: {rel_path} -->"
@@ -244,7 +240,6 @@ def sync_tasks_for_file(
         issue
         for issue in cached_issues
         if extract_marker(issue.get("body")) == rel_path
-        or any(lbl["name"] == scoped_label for lbl in issue.get("labels", []))
     ]
     issues_by_number = {issue["number"]: issue for issue in scoped_issues}
     issues_by_title = {issue["title"]: issue for issue in scoped_issues}
@@ -277,13 +272,13 @@ def sync_tasks_for_file(
                 token,
                 json={
                     "title": task["title"],
-                    "labels": [global_label, scoped_label],
+                    "labels": [global_label],
                     "body": body,
                 },
             )
             update_issue_cache(cached_issues, issue)
         else:
-            ensure_issue_labels(owner, repo, token, issue, [global_label, scoped_label])
+            ensure_issue_labels(owner, repo, token, issue, [global_label])
             issue = ensure_issue_marker(owner, repo, token, issue, rel_path)
             update_issue_cache(cached_issues, issue)
 
@@ -316,9 +311,10 @@ def sync_tasks_for_file(
     fields = extract_front_matter_fields(content)
     fm_lines = [f"{k}: {v}" for k, v in fields.items()] or ["(no front matter)"]
 
-    parent_title = f"Todo Card: {rel_path}"
-    cards = list_issues_by_label(owner, repo, token, parent_label)
-    parent = next((it for it in cards if extract_marker(it.get("body")) == rel_path), None)
+    parent = card_cache.get(rel_path)
+    if not parent:
+        cards = list_issues_by_label(owner, repo, token, parent_label)
+        parent = next((it for it in cards if extract_marker(it.get("body")) == rel_path), None)
     if not parent:
         body = (
             f"Parent card for **{rel_path}**.\n\n"
@@ -331,13 +327,15 @@ def sync_tasks_for_file(
             token,
             json={
                 "title": parent_title,
-                "labels": [parent_label, scoped_label],
+                "labels": [parent_label],
                 "body": body,
             },
         )
     else:
-        ensure_issue_labels(owner, repo, token, parent, [parent_label, scoped_label])
+        ensure_issue_labels(owner, repo, token, parent, [parent_label])
         parent = ensure_issue_marker(owner, repo, token, parent, rel_path)
+
+    card_cache[rel_path] = parent
 
     new_content, changed = upsert_related_issue_number_line(content, parent["number"])
     if changed:
@@ -353,7 +351,6 @@ def main():
     ap.add_argument("--template-name", default="template.md", help="テンプレートファイル名")
     ap.add_argument("--include-template", action="store_true", help="テンプレートも同期対象に含める")
     ap.add_argument("--global-label", default="todo-sync", help="全 ToDo に共通で付与するラベル")
-    ap.add_argument("--label-prefix", default="todo-sync", help="ToDo ファイル固有ラベルの接頭辞")
     ap.add_argument("--parent-label", default="todo-card", help="親カード Issue に付与するラベル")
     args = ap.parse_args()
 
@@ -369,6 +366,7 @@ def main():
         return
 
     cached_issues = list_issues_by_label(owner, repo_name, token, args.global_label) if args.global_label else []
+    card_cache: Dict[str, dict] = {}
 
     for path in todo_files:
         if not os.path.isfile(path):
@@ -379,9 +377,9 @@ def main():
             token,
             path,
             args.global_label,
-            args.label_prefix,
             args.parent_label,
             cached_issues,
+            card_cache,
         )
         rel = normalize_repo_path(path)
         status = "updated" if changed else "unchanged"

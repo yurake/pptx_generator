@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-import os
 import sys
 import textwrap
 import types
@@ -124,24 +123,17 @@ def test_render_block_and_upsert_block(tmp_path, issues_to_todo):
     assert changed_again is False
 
 
-def test_build_scoped_label_consistency(todo_to_issues, issues_to_todo):
-    path = "docs/todo/20251008-sample.md"
-    label1 = todo_to_issues.build_scoped_label("todo-sync", path)
-    label2 = issues_to_todo.build_scoped_label("todo-sync", path)
-
-    assert label1 == label2
-    assert len(label1) <= todo_to_issues.LABEL_MAX_LENGTH
-
-
 def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
     todo_dir = tmp_path / "docs" / "todo"
     (todo_dir / "archive").mkdir(parents=True)
     (todo_dir / "template.md").write_text("template", encoding="utf-8")
+    (todo_dir / "README.md").write_text("readme", encoding="utf-8")
     (todo_dir / "20251008-check.md").write_text("content", encoding="utf-8")
     (todo_dir / "archive" / "old.md").write_text("old", encoding="utf-8")
 
     paths = todo_to_issues.collect_todo_paths([], str(todo_dir), "template.md", include_template=False)
 
     assert all(not p.endswith("template.md") for p in paths)
+    assert all("README.md" not in p for p in paths)
     assert any(p.endswith("20251008-check.md") for p in paths)
     assert any("archive" in p and p.endswith("old.md") for p in paths)
