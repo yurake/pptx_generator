@@ -162,3 +162,18 @@ def test_extract_tasks_and_notes(todo_to_issues):
     assert "タスクA" in tasks
     assert "タスクB" in tasks
     assert notes.startswith("## メモ")
+
+
+def test_is_legacy_issue(todo_to_issues):
+    rel = "docs/todo/sample.md"
+    legacy_issue = {
+        "number": 12,
+        "body": "This issue is managed by **docs/todo/sample.md** sync.\n\n<!-- todo-path: docs/todo/sample.md -->",
+    }
+    assert todo_to_issues.is_legacy_issue(legacy_issue, rel, keep_number=20)
+
+    new_issue = {
+        "number": 20,
+        "body": "## title\n\n### タスク\n- [ ] test\n\n<!-- todo-path: docs/todo/sample.md -->",
+    }
+    assert not todo_to_issues.is_legacy_issue(new_issue, rel, keep_number=20)
