@@ -4,6 +4,7 @@
 関連ブランチ: feat/pipeline-pdf-export
 期限: 2025-10-25
 ---
+関連Issue: #56
 
 - [x] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する
   - メモ: PATH に `soffice` が無い場合のフォールバックとエラーメッセージを設計する

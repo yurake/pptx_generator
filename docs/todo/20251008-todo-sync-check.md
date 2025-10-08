@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: docs/todo-sync-check
 期限: 2025-10-15
-関連Issue: 未作成
+関連Issue: #102
 ---
 
 - [ ] docs/todo/ 配下の現行ファイルを棚卸しし、対象一覧を確定する

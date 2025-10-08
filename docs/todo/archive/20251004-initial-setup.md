@@ -3,7 +3,7 @@
 担当者: Codex
 関連ブランチ: feat/initial-setup
 期限: 2025-10-11
-関連Issue: 未設定
+関連Issue: #33
 関連PR: 未設定
 closed_at: 2025-10-05
 ---
