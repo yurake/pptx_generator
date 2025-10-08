@@ -379,7 +379,7 @@ def main():
         issue = None
         if issue_number_hint:
             fetched = get_issue(owner, repo_name, token, issue_number_hint)
-            if fetched and extract_marker(fetched.get("body")) in {rel, None}:
+            if fetched:
                 issue = fetched
                 if issue not in cached_issues:
                     cached_issues.append(issue)
