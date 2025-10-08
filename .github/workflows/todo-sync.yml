@@ -45,8 +45,16 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+            STASHED=0
             if git ls-remote --exit-code origin "$BRANCH" >/dev/null 2>&1; then
+              if ! git diff --quiet; then
+                git stash push --include-untracked -m todo-sync-autostash || true
+                STASHED=1
+              fi
               git pull --rebase origin "$BRANCH"
+              if [ "$STASHED" -eq 1 ]; then
+                git stash pop || true
+              fi
             else
               echo "Upstream branch $BRANCH not found. Skip rebase."
             fi
@@ -83,8 +91,16 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+            STASHED=0
             if git ls-remote --exit-code origin "$BRANCH" >/dev/null 2>&1; then
+              if ! git diff --quiet; then
+                git stash push --include-untracked -m todo-sync-autostash || true
+                STASHED=1
+              fi
               git pull --rebase origin "$BRANCH"
+              if [ "$STASHED" -eq 1 ]; then
+                git stash pop || true
+              fi
             else
               echo "Upstream branch $BRANCH not found. Skip rebase."
             fi
