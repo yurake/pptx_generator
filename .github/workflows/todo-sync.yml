@@ -2,29 +2,21 @@ name: todo-sync
 
 on:
   push:
+    branches: [ main ]
     paths:
       - 'docs/todo/*.md'
-      - 'docs/todo/archive/*.md'
+      - 'docs/todo/**/*.md'
   workflow_dispatch:
-    inputs:
-      paths:
-        description: "Target md globs (space-separated)"
-        required: false
-        default: "docs/todo/*.md docs/todo/archive/*.md"
   issues:
     types: [opened, edited, closed, reopened, labeled, unlabeled]
 
 permissions:
   contents: write
-  pull-requests: write
   issues: write
-
-env:
-  DEFAULT_GLOBS: "docs/todo/*.md docs/todo/archive/*.md"
 
 jobs:
   from_md:
-    name: Sync from md → Issues
+    name: Sync ToDo → Issues
     if: >-
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, '[skip md->issues]')
@@ -33,40 +25,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Resolve target files
-        id: files
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            BEFORE="${{ github.event.before }}"
-            AFTER="${{ github.sha }}"
-            CHANGED="$(git diff --name-only "$BEFORE" "$AFTER" || true)"
-            mapfile -t CANDIDATES < <(printf "%s" $DEFAULT_GLOBS)
-            FILES=()
-            for g in "${CANDIDATES[@]}"; do
-              while IFS= read -r f; do
-                grep -qxF "$f" <<< "$CHANGED" && FILES+=("$f")
-              done < <(ls -1 $g 2>/dev/null || true)
-            done
-          else
-            # workflow_dispatch or issues
-            GLOBS="${{ inputs.paths || env.DEFAULT_GLOBS }}"
-            FILES=()
-            for g in $GLOBS; do
-              while IFS= read -r f; do
-                [[ -n "$f" ]] && FILES+=("$f")
-              done < <(ls -1 $g 2>/dev/null || true)
-            done
-          fi
-          # unique
-          readarray -t FILES < <(printf "%s" "${FILES[@]}" | awk 'NF' | sort -u)
-          printf "Found %d files\n" "${#FILES[@]}"
-          printf "%s\n" "${FILES[@]}"
-          # export as outputs (newline -> ::)
-          printf "::set-output name=list::%s\n" "$(printf "%s" "${FILES[*]}")"
-          # also write to file
-          printf "%s\n" "${FILES[@]}" > files.txt
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -74,78 +32,31 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests
-      - name: Run sync & open PR per file
+      - name: Sync todo files → Issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        shell: bash
         run: |
-          set -euo pipefail
-          while IFS= read -r FILE; do
-            [[ -z "$FILE" ]] && continue
-            echo "::group::Process $FILE"
-            python scripts/sync_todo_to_issues.py --todo-path "$FILE" --label 'todo-sync' --parent-label 'todo-card'
-            BRANCH="chore/todo-sync-from-md-$(echo "$FILE" | tr '/.' '_-')"
-            gh api --method GET repos/${{ github.repository }} >/dev/null 2>&1 || true
-            git diff --quiet || {
-              git config user.name 'github-actions[bot]'
-              git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git switch -c "$BRANCH" || git switch "$BRANCH"
-              git add "$FILE"
-              git commit -m "chore(todo): link parent issue in $FILE [skip md->issues]" || true
-              git push -u origin "$BRANCH" || true
-            }
-            echo "::endgroup::"
-          done < files.txt
-      - name: Create PRs (aggregate)
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: chore/todo-sync-from-md-batch
-          title: 'chore(todo): link parent issue (batch)'
-          commit-message: 'chore(todo): link parent issue (batch) [skip md->issues]'
-          body: |
-            Automated update by workflow (from_md).
-            This PR may be empty if per-file branches already created.
-          labels: automation,todo-sync
-          add-paths: |
-            docs/todo/*.md
-            docs/todo/archive/*.md
-          signoff: false
+          python scripts/sync_todo_to_issues.py --todo-dir docs/todo --global-label 'todo-sync' --label-prefix 'todo-sync' --parent-label 'todo-card'
+      - name: Commit parent-issue links if needed
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit from from_md.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add docs/todo
+            git commit -m 'chore(todo): sync todo files → issues [skip md->issues]'
+            git push
+          fi
 
   from_issues:
-    name: Sync from Issues → md
+    name: Sync Issues → ToDo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Resolve target files
-        id: files
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            BEFORE="${{ github.event.before }}"
-            AFTER="${{ github.sha }}"
-            CHANGED="$(git diff --name-only "$BEFORE" "$AFTER" || true)"
-            mapfile -t CANDIDATES < <(printf "%s" $DEFAULT_GLOBS)
-            FILES=()
-            for g in "${CANDIDATES[@]}"; do
-              while IFS= read -r f; do
-                grep -qxF "$f" <<< "$CHANGED" && FILES+=("$f")
-              done < <(ls -1 $g 2>/dev/null || true)
-            done
-          else
-            GLOBS="${{ inputs.paths || env.DEFAULT_GLOBS }}"
-            FILES=()
-            for g in $GLOBS; do
-              while IFS= read -r f; do
-                [[ -n "$f" ]] && FILES+=("$f")
-              done < <(ls -1 $g 2>/dev/null || true)
-            done
-          fi
-          readarray -t FILES < <(printf "%s\n" "${FILES[@]}" | awk 'NF' | sort -u)
-          printf "%s\n" "${FILES[@]}" > files.txt
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -153,39 +64,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests
-      - name: Build md block & PR per file
+      - name: Build todo files from Issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        shell: bash
         run: |
-          set -euo pipefail
-          while IFS= read -r FILE; do
-            [[ -z "$FILE" ]] && continue
-            echo "::group::Process $FILE"
-            python scripts/sync_issues_to_todo.py --todo-path "$FILE" --label 'todo-sync'
-            BRANCH="chore/todo-sync-from-issues-$(echo "$FILE" | tr '/.' '_-')"
-            git diff --quiet || {
-              git config user.name 'github-actions[bot]'
-              git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git switch -c "$BRANCH" || git switch "$BRANCH"
-              git add "$FILE"
-              git commit -m "chore(todo): sync Issues → $FILE [skip md->issues]" || true
-              git push -u origin "$BRANCH" || true
-            }
-            echo "::endgroup::"
-          done < files.txt
-      - name: Create PRs (aggregate)
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: chore/todo-sync-from-issues-batch
-          title: 'chore(todo): sync Issues → md (batch)'
-          commit-message: 'chore(todo): sync Issues → md (batch) [skip md->issues]'
-          body: |
-            Automated update by workflow (from_issues).
-            This PR may be empty if per-file branches already created.
-          labels: automation,todo-sync
-          add-paths: |
-            docs/todo/*.md
-            docs/todo/archive/*.md
-          signoff: false
+          python scripts/sync_issues_to_todo.py --todo-dir docs/todo --global-label 'todo-sync' --label-prefix 'todo-sync'
+      - name: Commit & push if changed
+        run: |
+          if git diff --quiet; then
+            echo 'No changes.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add docs/todo
+            git commit -m 'chore(todo): sync issues → todo files [skip md->issues]'
+            git push
+          fi
