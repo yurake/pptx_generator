@@ -149,6 +149,7 @@ assets:
   - `bullet_cap`: 箇条書きレベルの切り上げ。
   - `bullet_reindent`: 許容範囲へレベルを再設定。
 - Refiner: `bullet_reindent` を起点に JSON テンプレ段階で段階的な補正を行い、調整結果をアーティファクトとして記録する。
+- コントラスト判定は通常 4.5:1 を採用しつつ、フォントサイズが `large_text_threshold_pt` 以上の場合は 3.0:1 を閾値として扱い、メトリクスに `required_ratio` と `font_size_pt` を記録する。
 
 ## 8. 仕上げ処理 (Open XML SDK)
 - `.NET` プロジェクト `dotnet/OpenXmlPolish` を配置。

@@ -163,6 +163,7 @@ def run(
             preferred_text_color=branding_config.primary_color,
             background_color=branding_config.background_color,
             max_bullet_level=rules_config.max_bullet_level,
+            large_text_threshold_pt=branding_config.body_font.size_pt,
         )
     )
     if not export_pdf and pdf_mode != "both":
