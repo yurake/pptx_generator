@@ -13,10 +13,7 @@
 
 ## 3. ブランチとコミット
 - `main` ブランチは保護対象とし、直接 push を禁止する。
-- 作業ブランチは `feat|fix|chore|docs/<issue#>-<slug>` を基本とし、リリース用は `release/<major.minor>`、緊急対応は `hotfix/<tag>` を使用する。Issue 未作成で ToDo の要件整理を先行する場合は暫定ブランチとして `docs/todo-<slug>` を用い、Issue 作成後に `git switch -c feat/<issue#>-<slug>` などで正式な作業ブランチへ切り替える。
-- ブランチ作成フローは以下のいずれかを選択し、Issue と ToDo の情報を同期させる。
-  - Issue 先行: Issue を作成して背景・完了条件を固めた後、ToDo ファイルを作成し `関連Issue` に番号を記入。続いて `main` から `feat|fix|chore|docs/<issue#>-<slug>` を切り、Issue 側に ToDo への相対パスを追記する。
-  - ToDo 先行: ToDo ファイルで作業範囲を整理し `関連Issue: 未作成` のまま暫定ブランチ `docs/todo-<slug>` を作成する。Issue を発行したらチェックリストの「Issue 作成」を完了し、正式ブランチ `feat|fix|chore|docs/<issue#>-<slug>` を作成して以降のコミットを移す。
+- 作業ブランチは `feat|fix|chore|docs/<slug>` を基本とし、リリース用は `release/<major.minor>`、緊急対応は `hotfix/<tag>` を使用する。ToDo を先に整理する場合は暫定ブランチとして `docs/todo-<slug>` を用い、作業開始後は正式ブランチへ移行して履歴をまとめる。
 - コミットメッセージは Conventional Commits 準拠（例: `feat(renderer): add chart support`）で、スコープは `frontend`, `backend`, `ci`, `docs`, `infra`, `deps` を主に用いる。
 - 粒度の細かいコミットを積み、マージ時に Squash して履歴を簡潔に保つ。
 - 必要に応じて `Co-authored-by` 行を付与し、履歴の透明性を保つ。
@@ -38,7 +35,6 @@
 - Python 依存は `pyproject.toml` と `uv.lock` で管理し、追加時は `uv add` を使用する。
 - .NET 依存は `dotnet add package` で追加し、`dotnet list package --vulnerable` を定期実行する。
 - LibreOffice 等の外部ツールバージョンは `docs/adr/` や README に明記する。
-- テンプレートファイル (.pptx/.potx) はバージョン番号付きファイル名とし、更新履歴を `docs/adr/` に追記する。
 
 ## 7. テスト方針
 - 単体テスト: `python/tests/` 配下に配置し、 `pytest` を使用。JSON 入力 → PPTX 出力の検証を行う。
@@ -58,7 +54,7 @@
 
 ## 9. 設定・テンプレ管理
 - 変更フローと検証手順は `docs/policies/config-and-templates.md` を参照すること。
-- 影響がある変更は必ず Issue / ToDo に記録し、PR レビューで合意を取る。
+- 影響がある変更は必ず ToDo に記録し、PR レビューで合意を取る。
 
 ## 10. ドキュメント更新
 - カテゴリ構成と更新ルールは `docs/README.md` に従うこと。
@@ -70,12 +66,13 @@
 
 ## 12. サポート・問い合わせ
 - 連絡チャネルや当番体制は `docs/runbooks/support.md` に従うこと。
-- 対応ログは Issue または該当 ToDo に残し、翌営業日までに共有する。
+- 対応ログは該当 ToDo に残し、翌営業日までに共有する。
 
 ## 13. タスク管理
 - 作業を開始する前にタスクを計画したら、`docs/todo/` 配下に `YYYYMMDD-<slug>.md` 形式で ToDo リストファイルを新規作成すること。
 - 雛形は `docs/todo/template.md` を利用し、必要項目を埋めて初期状態とすること。
-- ToDo には利用するブランチパターン（Issue 先行 / ToDo 先行）と現時点のブランチ名をメモ欄に記載し、正式ブランチへ切り替えたら `関連Issue` とブランチ情報を更新すること。
+- ToDo ファイルをタスク管理の唯一のソースとし、その他のチケットは参照情報として扱うこと。
+- ToDo には利用するブランチパターンと現時点のブランチ名をメモ欄に記載し、正式ブランチへ切り替えたら情報を更新すること。
 - ファイルには目的・担当者・関連ブランチ・期限を冒頭に記載し、その下にチェックボックス形式でタスク項目を列挙すること。
 - 進捗が発生したらチェックボックスを更新し、完了日時やメモを追記して履歴を残すこと。
 - 作業完了後は同ファイルを PR から参照し、必要な場合は `docs/todo/archive/` へ移動して保管すること。
