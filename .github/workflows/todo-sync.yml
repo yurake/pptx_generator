@@ -44,6 +44,12 @@ jobs:
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+            if git ls-remote --exit-code origin "$BRANCH" >/dev/null 2>&1; then
+              git pull --rebase origin "$BRANCH"
+            else
+              echo "Upstream branch $BRANCH not found. Skip rebase."
+            fi
             git add docs/todo
             git commit -m 'chore(todo): sync todo files → issues [skip md->issues]'
             git push
@@ -76,6 +82,12 @@ jobs:
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+            if git ls-remote --exit-code origin "$BRANCH" >/dev/null 2>&1; then
+              git pull --rebase origin "$BRANCH"
+            else
+              echo "Upstream branch $BRANCH not found. Skip rebase."
+            fi
             git add docs/todo
             git commit -m 'chore(todo): sync issues → todo files [skip md->issues]'
             git push
