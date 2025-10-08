@@ -13,8 +13,8 @@ import click
 from .models import JobSpec, SpecValidationError
 from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
                        PdfExportStep, PipelineContext, PipelineRunner,
-                       RenderingOptions, SimpleAnalyzerStep,
-                       SimpleRendererStep, SpecValidatorStep)
+                       RefinerOptions, RenderingOptions, SimpleAnalyzerStep,
+                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep)
 from .settings import BrandingConfig, RulesConfig
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
@@ -150,6 +150,11 @@ def run(
             branding=branding_config,
         )
     )
+    refiner = SimpleRefinerStep(
+        RefinerOptions(
+            max_bullet_level=rules_config.max_bullet_level,
+        )
+    )
     analyzer = SimpleAnalyzerStep(
         AnalyzerOptions(
             min_font_size=branding_config.body_font.size_pt,
@@ -180,6 +185,7 @@ def run(
             max_bullet_level=rules_config.max_bullet_level,
             forbidden_words=rules_config.forbidden_words,
         ),
+        refiner,
         renderer,
         analyzer,
     ]
@@ -238,6 +244,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
             "pdf": _artifact_str(context.artifacts.get("pdf_path")),
         },
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
+        "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
     }
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(

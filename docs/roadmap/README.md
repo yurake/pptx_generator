@@ -21,20 +21,13 @@
 
 ## アクティブテーマ
 
-### PDF 自動生成対応（優先度: P1）
-- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
-- 参照 ToDo: [docs/todo/20251005-pdf-export-automation.md](../todo/20251005-pdf-export-automation.md)
-- 状況: 実装完了・PR 準備中（2025-10-06 更新）
-- 期待成果: `--export-pdf` オプション実装、LibreOffice フォールバック設計、PDF 検証テスト導入。
-- 依存: LibreOffice バイナリ検知ロジック、Analyzer からのメタ情報（スライド枚数）
-- 次のアクション: PR 起票と LibreOffice 環境差分の共有、運用リリース計画の合意。
-
 ### Analyzer / Refiner ルール拡張（優先度: P2）
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
-- 状況: 企画中（2025-10-05 更新）
+- 参照 ToDo: [docs/todo/20251007-analyzer-layout-consistency.md](../todo/20251007-analyzer-layout-consistency.md)
+- 状況: 実装中（2025-10-07 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
-- 次のアクション: 既存分析結果のレビュー、ルールごとのテストケース洗い出し。
+- 次のアクション: Analyzer レポートのモニタリング指標整理、Fix ログの可視化要件の精査。
 
 ### ビジュアルフィードバックコパイロット（優先度: P3）
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。
@@ -77,6 +70,12 @@
 
 ## 完了テーマ
 
+### PDF 自動生成対応
+- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
+- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
+- 状況: 10 件中 10 件完了（2025-10-06 更新）
+- 成果: `--export-pdf` オプション実装、LibreOffice フォールバックと監査ログ整備、PDF 出力テスト追加。
+
 ### パイプライン機能拡張
 - ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
 - 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md)
@@ -93,3 +92,4 @@
 - 2025-10-05: 初版作成。
 - 2025-10-05: 全体目標、フェーズ計画、バックログを追記。
 - 2025-10-06: PDF 自動生成の実装状況と監査ログ出力機能を追記。
+- 2025-10-07: PDF 自動生成対応を完了テーマへ移動。
