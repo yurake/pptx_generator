@@ -6,8 +6,6 @@ on:
       - 'docs/todo/*.md'
       - 'docs/todo/**/*.md'
   workflow_dispatch:
-  issues:
-    types: [opened, edited, closed, reopened, labeled, unlabeled]
 
 permissions:
   contents: write
@@ -60,51 +58,5 @@ jobs:
             fi
             git add docs/todo
             git commit -m 'chore(todo): sync todo files → issues [skip md->issues]'
-            git push
-          fi
-
-  from_issues:
-    name: Sync Issues → ToDo
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-      - name: Build todo files from Issues
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          python scripts/sync_issues_to_todo.py --todo-dir docs/todo --global-label 'todo-sync'
-      - name: Commit & push if changed
-        run: |
-          if git diff --quiet; then
-            echo 'No changes.'
-          else
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
-            STASHED=0
-            if git ls-remote --exit-code origin "$BRANCH" >/dev/null 2>&1; then
-              if ! git diff --quiet; then
-                git stash push --include-untracked -m todo-sync-autostash || true
-                STASHED=1
-              fi
-              git pull --rebase origin "$BRANCH"
-              if [ "$STASHED" -eq 1 ]; then
-                git stash pop || true
-              fi
-            else
-              echo "Upstream branch $BRANCH not found. Skip rebase."
-            fi
-            git add docs/todo
-            git commit -m 'chore(todo): sync issues → todo files [skip md->issues]'
             git push
           fi
