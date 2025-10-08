@@ -16,15 +16,12 @@
 - [ ] 複数ファイル並行時にタスクが混在しないことを確認する
   - 別ファイル `docs/todo/20251008-sync-parallel.md` を追加し同様に push
 -  - Actions ログで各ファイルの処理結果を確認し、GitHub Issues 上で `<!-- todo-path: ... -->` マーカーが適切に設定されていることをチェック
-- [ ] Issue 側の状態変更が md に反映されるか確認する
-  - 任意タスク Issue を GitHub 上でクローズ
-  - `todo-sync / Sync Issues → ToDo` を workflow_dispatch で該当ブランチに対して実行し、対象 md のチェックボックスが `[x]` へ更新されるか確認
 - [ ] 完了済み ToDo を archive/ へ移動した際も同期されるか確認する
   - テスト済みファイルを `git mv docs/todo/20251008-sync-sample.md docs/todo/archive/`
   - push 後の Actions 実行で同ファイルが引き続き処理対象となり、親 Issue 参照が維持されるか確認
 - [ ] `[skip md->issues]` コミットで md→Issues の同期が抑止されるか確認する
   - 対象ファイルに軽微な変更を入れたコミットを `[skip md->issues]` 付きで push
-  - Actions ログで `Sync ToDo → Issues` ジョブがスキップされ、`Sync Issues → ToDo` のみ動くか確認
+  - Actions ログで `Sync ToDo → Issues` ジョブがスキップされることを確認
 - [ ] 検証結果を docs/notes/ へ記録し、後続改善タスクを洗い出す
   - 成果・問題点・残課題を `docs/notes/20251008-todo-sync-test-coverage.md` に追記
   - 改善が必要な項目は別の ToDo または Issue として整理
@@ -35,9 +32,8 @@
 <!-- BEGIN: issues-sync -->
 ## Synced Issues
 - [ ] docs/todo/ 配下の現行ファイルを棚卸しし、対象一覧を確定する (#18)
-- [ ] 代表ファイルを複製し、同期スクリプトで親 Issue・タスク Issue が生成されることを確認 (#19)
-- [ ] 複数ファイル並行時にラベル衝突が起きないことを確認 (#20)
-- [ ] Issue 側の状態変更が md に反映されることを確認 (#21)
+- [ ] 代表ファイルを複製し、1 Issue にタスク一覧が反映されることを確認する (#19)
+- [ ] 複数ファイル並行時にタスクが混在しないことを確認する (#20)
 - [ ] 完了済み ToDo を archive/ へ移動した際も同期されることを確認 (#22)
 - [ ] `[skip md->issues]` コミットで md→Issues の同期が抑止されることを確認 (#23)
 - [ ] 検証結果を docs/notes/ へ記録し、後続の改善タスクがあれば洗い出す (#24)
