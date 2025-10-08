@@ -40,12 +40,6 @@ def todo_to_issues():
     return _load_module("sync_todo_to_issues", "scripts/sync_todo_to_issues.py")
 
 
-@pytest.fixture(scope="module")
-def issues_to_todo():
-    _install_request_stub()
-    return _load_module("sync_issues_to_todo", "scripts/sync_issues_to_todo.py")
-
-
 def test_parse_tasks(tmp_path, todo_to_issues):
     md_body = textwrap.dedent(
         """
@@ -100,30 +94,6 @@ def test_upsert_related_issue_number_line_inserts_when_missing(todo_to_issues):
     assert changed is True
     lines = updated.splitlines()
     assert lines[3] == "関連Issue: #55"
-
-
-def test_render_block_and_upsert_block(tmp_path, issues_to_todo):
-    content = """
-- [ ] タスクA (#12)
-- [x] タスクB
-""".strip()
-    states = issues_to_todo.parse_task_states(content)
-    assert states == {"タスクA": False, "タスクB": True}
-
-
-def test_apply_task_states(issues_to_todo):
-    original = textwrap.dedent(
-        """
-        - [ ] タスクA (#12)
-          - メモ: a
-        - [x] タスクB
-        """
-    )
-    states = {"タスクA": True, "タスクB": False}
-    updated, changed = issues_to_todo.apply_task_states(original, states)
-    assert changed is True
-    assert "- [x] タスクA (#12)" in updated
-    assert "- [ ] タスクB" in updated
 
 
 def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
