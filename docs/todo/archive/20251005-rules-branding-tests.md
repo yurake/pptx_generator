@@ -29,3 +29,7 @@ closed_at: 2025-10-05
 - ブランチパターン: ToDo 先行。暫定ブランチ `docs/todo-rules-branding-tests` で開始し、Issue #2 と連携後に正式ブランチへ切り替える。
 - 設定ファイル: `config/rules.json`, `config/branding.json` をモックファイルで覆う必要あり。
 - 全体テスト: `uv run --extra dev pytest` で既存ケースに影響がないことを確認済み。
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->

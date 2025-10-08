@@ -16,3 +16,7 @@ closed_at: 2025-10-05
 ## メモ
 - 2025-10-04: `pytest` コマンドを実行したところ `bash: pytest: command not found` が発生した。
 - 2025-10-04: `uv run --extra dev pytest` で再実行し、全テストが成功した。
+
+<!-- BEGIN: issues-sync -->
+## Synced Issues
+<!-- END: issues-sync -->
