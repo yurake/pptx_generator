@@ -125,8 +125,35 @@
 - 次のアクション: RM-010 の成果を踏まえた設計レビュー、設定項目の洗い出し、着手時に新規 ToDo を作成。
 - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後に新規 Roadmap として検討する。
 
+<a id="rm-012"></a>
+### RM-012 レンダラーテキスト強化（優先度: P1）
+- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
+- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 状況: 未着手（2025-10-09 設定）
+- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
+- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
+- 次のアクション: スキーマ拡張の設計レビュー、レンダラー実装方針の決定、対応 ToDo の発行。
+
+<a id="rm-013"></a>
+### RM-013 PPTX 解析アナライザー実装（優先度: P1）
+- ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
+- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 状況: 未着手（2025-10-09 設定）
+- 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
+- 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
+- 次のアクション: 解析対象項目の優先順位付け、PoC スクリプト作成、適用ルールとメトリクスの整理。
+
+<a id="rm-014"></a>
+### RM-014 自動補正・仕上げ統合（優先度: P1）
+- ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
+- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 状況: 未着手（2025-10-09 設定）
+- 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
+- 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
+- 次のアクション: 自動補正ポリシーの定義、Open XML SDK ベース実装のスコープ見直し、対応 ToDo とテスト計画の策定。
+
 ## バックログ（優先検討）
-- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。
+- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
@@ -156,3 +183,4 @@
 - 2025-10-06: PDF 自動生成の実装状況と監査ログ出力機能を追記。
 - 2025-10-07: PDF 自動生成対応を完了テーマへ移動。
 - 2025-10-09: RM-002 を再開し、サンプル拡充タスクと参照ドキュメントを追記。
+- 2025-10-09: RM-012〜RM-014 を追加し、通知チャネル整備のバックログ情報を更新。
