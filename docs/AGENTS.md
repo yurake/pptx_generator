@@ -7,6 +7,7 @@
 - 対応する ToDo (`docs/todo/`) を確認し、未作成の場合はテンプレートから作成して紐付ける。
 - 追加・更新する資料のカテゴリが `docs/README.md` に定義されているかを確認する。
 - 既存資料に関連する ADR やポリシーがある場合は先に参照し、整合性の取れた更新内容にする。
+- 作業開始前に Plan を提示し承認を得る。承認方針は `docs/policies/task-management.md` の「Approval-First Development Policy」を参照。
 
 ## カテゴリと配置ルール
 - `docs/policies/`: 運用ルール・手順。設定変更やタスク運用のような規約レベルの改訂はここにまとめ、README の一覧も更新する。
