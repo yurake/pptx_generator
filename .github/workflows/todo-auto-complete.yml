@@ -1,0 +1,68 @@
+name: todo-auto-complete
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+jobs:
+  auto-complete:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - name: Collect ToDo targets
+        id: gather
+        run: |
+          body=$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH")
+          if [ -z "$body" ] || [ "$body" = "null" ]; then
+            echo "todo_list=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          todos=$(printf '%s\n' "$body" | grep -oE 'docs/todo/[0-9]{8}-[A-Za-z0-9_-]+\.md' | sort -u)
+          if [ -z "$todos" ]; then
+            echo "todo_list=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf 'Detected ToDo paths:\n%s\n' "$todos"
+          printf 'todo_list<<EOF\n%s\nEOF\n' "$todos" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if no todo detected
+        if: steps.gather.outputs.todo_list == ''
+        run: echo "No ToDo items detected in PR body. Skipping auto-complete."
+
+      - name: Run ToDo auto completion
+        if: steps.gather.outputs.todo_list != ''
+        run: |
+          set -euo pipefail
+          args=""
+          while IFS= read -r todo; do
+            args="$args --todo $todo"
+          done <<'EOF'
+          ${{ steps.gather.outputs.todo_list }}
+          EOF
+          python3 scripts/auto_complete_todo.py $args \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --pr-url "${{ github.event.pull_request.html_url }}"
+
+      - name: Commit changes
+        if: steps.gather.outputs.todo_list != ''
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/todo docs/roadmap/README.md
+          git commit -m "chore(todo): auto-complete PR #${{ github.event.pull_request.number }}"
+          git push
