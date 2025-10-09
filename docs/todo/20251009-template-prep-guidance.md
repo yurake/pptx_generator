@@ -1,7 +1,7 @@
 ---
 目的: PPTX テンプレート準備ガイドを整備し、利用者が迷わず参照できるようにする
 関連ブランチ: docs/template-prep-checklist
-関連Issue: 未作成
+関連Issue: #128
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
