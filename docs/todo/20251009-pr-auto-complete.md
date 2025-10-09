@@ -5,13 +5,15 @@
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
-- [ ] 作業用ブランチを作成し ToDo を更新
-- [ ] 自動更新に必要なメタデータ仕様を定義しテンプレートに反映
+- [x] 作業用ブランチを作成し ToDo を更新
+- [x] 自動更新に必要なメタデータ仕様を定義しテンプレートに反映
   - メモ: フロントマター項目とロードマップ対応情報を整理する
-- [ ] 自動完了スクリプトとテストを実装
-  - メモ: Markdown 更新ロジックと dry-run を用意する
-- [ ] GitHub Actions ワークフローを追加し動作検証
-- [ ] 運用ドキュメントとロードマップ/ToDo を更新し自動反映を確認
+- [x] 自動完了スクリプトとテストを実装
+  - メモ: `python scripts/auto_complete_todo.py --help` / `uv run --extra dev pytest tests/test_auto_complete_todo.py`
+- [x] GitHub Actions ワークフローを追加し動作検証
+  - メモ: `todo-auto-complete` 追加、`python3 scripts/auto_complete_todo.py --dry-run` で挙動確認
+- [x] 運用ドキュメントとロードマップ/ToDo を更新し自動反映を確認
+  - メモ: `AGENTS.md`, `docs/policies/task-management.md`, `docs/todo/README.md`, `scripts/AGENTS.md` を更新
 - [ ] PR 作成
   - メモ: マージ後に自動化結果を再検証すること
 
