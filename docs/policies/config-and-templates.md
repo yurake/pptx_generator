@@ -25,7 +25,7 @@
 ### サンプル準拠レイアウト（参考）
 | layout 名 | 想定用途 | 主なアンカー |
 | --- | --- | --- |
-| `Title` | ヒーローイメージ付きカバー。タイトル／サブタイトル＋ `hero-image`・`brand-logo` | `hero-image`, `brand-logo` |
+| `Title` | ビジュアル付きカバー。タイトル／サブタイトル＋ `cover-visual`・`brand-logo` | `cover-visual`, `brand-logo` |
 | `Agenda` | アジェンダ一覧。本文プレースホルダー＋マイルストーン表 | `milestone-table`, `agenda-visual` |
 | `Two Column Detail` | 2 カラム構成の詳細説明。左に箇条書き、右に画像 | `detail-visual` |
 | `One Column Detail` | 1 カラム構成でメッセージ重視。必要に応じて下部に画像 | `detail-visual` |
