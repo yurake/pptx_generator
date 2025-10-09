@@ -128,7 +128,6 @@
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
-- LibreOffice 非依存の PDF 変換フェイルオーバー（Microsoft Graph / Cloud API）の調査。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
