@@ -40,3 +40,4 @@
 - AGENTS.md への反映案: 上記ノートの「pptx_generator での適用検討」をベースに作業
 - サブ階層対応: 棚卸し結果・追記内容は各 AGENTS.md のメモ欄に反映する
 - 新設ファイル: `docs/AGENTS.md`, `src/AGENTS.md`, `tests/AGENTS.md`, `scripts/AGENTS.md`, `samples/AGENTS.md`, `config/AGENTS.md`
+- レビュー準備: [docs/notes/20251009-agents-md-review-checklist.md](../notes/20251009-agents-md-review-checklist.md) に確認観点を整理済み
