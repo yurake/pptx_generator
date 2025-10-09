@@ -20,7 +20,3 @@
 
 ## アーカイブ
 - 作業完了後はファイルを `docs/todo/archive/` に移動し、関連する参照 URL やメモを追記して履歴を明確にする。
-
-<!-- BEGIN: issues-sync -->
-## Synced Issues
-<!-- END: issues-sync -->
