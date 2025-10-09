@@ -15,7 +15,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 - [x] 運用ドキュメントとロードマップ/ToDo を更新し自動反映を確認
   - メモ: `AGENTS.md`, `docs/policies/task-management.md`, `docs/todo/README.md`, `scripts/AGENTS.md` を更新
 - [x] PR 作成
-  - メモ: PR #121 https://github.com/yurake/pptx_generator/pull/121（2025-10-09 作成）
+  - メモ: PR #121 https://github.com/yurake/pptx_generator/pull/121（2025-10-09 完了）
 
 ## メモ
 - Approval-First ポリシーに基づき Plan 承認済み（本スレッド）
