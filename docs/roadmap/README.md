@@ -24,7 +24,7 @@
 ### Analyzer / Refiner ルール拡張（優先度: P2）
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
-- 参照 ToDo: [docs/todo/20251007-analyzer-layout-consistency.md](../todo/20251007-analyzer-layout-consistency.md)
+- 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
 - 状況: 実装中（2025-10-07 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
 - 次のアクション: `contrast_low` 判定の調整方針整理、Analyzer レポートのモニタリング指標の整理、Fix ログ可視化要件の精査。
