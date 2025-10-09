@@ -41,3 +41,4 @@
 - サブ階層対応: 棚卸し結果・追記内容は各 AGENTS.md のメモ欄に反映する
 - 新設ファイル: `docs/AGENTS.md`, `src/AGENTS.md`, `tests/AGENTS.md`, `scripts/AGENTS.md`, `samples/AGENTS.md`, `config/AGENTS.md`
 - レビュー準備: [docs/notes/20251009-agents-md-review-checklist.md](../notes/20251009-agents-md-review-checklist.md) に確認観点を整理済み
+- 承認フロー: ルート AGENTS.md と `docs/policies/task-management.md` に Approval-First ポリシーを追記済み
