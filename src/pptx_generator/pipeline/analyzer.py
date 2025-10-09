@@ -19,6 +19,8 @@ class AnalyzerOptions:
     output_filename: str = "analysis.json"
     min_font_size: float = 18.0
     min_contrast_ratio: float = 4.5
+    large_text_min_contrast: float = 3.0
+    large_text_threshold_pt: float = 18.0
     max_bullet_level: int = 3
     margin_in: float = 0.5
     slide_width_in: float = 10.0
@@ -90,6 +92,10 @@ class SimpleAnalyzerStep:
                 issues.append(issue)
                 if fix:
                     fixes.append(fix)
+
+        layout_issues, layout_fixes = self._check_layout_consistency(slide)
+        issues.extend(layout_issues)
+        fixes.extend(layout_fixes)
 
         return issues, fixes
 
@@ -168,13 +174,20 @@ class SimpleAnalyzerStep:
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
         font_spec = bullet.font
         color_hex = font_spec.color_hex if font_spec and font_spec.color_hex else self.options.default_font_color
+        font_size = (
+            font_spec.size_pt if font_spec and font_spec.size_pt else self.options.default_font_size
+        )
         try:
             ratio = _contrast_ratio(color_hex, self.options.background_color)
         except ValueError:
             logger.debug("無効なカラーコードのためコントラスト判定をスキップ: %s", color_hex)
             return None
 
-        if ratio >= self.options.min_contrast_ratio:
+        required_ratio = self.options.min_contrast_ratio
+        if font_size >= self.options.large_text_threshold_pt:
+            required_ratio = min(required_ratio, self.options.large_text_min_contrast)
+
+        if ratio >= required_ratio:
             return None
 
         target = {
@@ -185,7 +198,7 @@ class SimpleAnalyzerStep:
         issue_id = self._next_issue_id("contrast_low", slide.id, bullet.id)
         message = (
             f"スライド '{slide.id}' の箇条書き '{bullet.id}' の文字色と背景色のコントラスト比"
-            f" {ratio:.2f} が基準 {self.options.min_contrast_ratio:.2f} を下回っています"
+            f" {ratio:.2f} が基準 {required_ratio:.2f} を下回っています"
         )
         suggested_color = self.options.preferred_text_color or self.options.default_font_color
         fix = {
@@ -205,10 +218,65 @@ class SimpleAnalyzerStep:
                 "color_hex": _normalize_hex(color_hex),
                 "background_hex": _normalize_hex(self.options.background_color),
                 "contrast_ratio": ratio,
+                "required_ratio": required_ratio,
+                "font_size_pt": font_size,
             },
             fix=fix,
         )
         return issue, fix
+
+    def _check_layout_consistency(
+        self, slide: Slide
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
+        previous_level: int | None = None
+        applied_level: int | None = None
+
+        for bullet in slide.bullets:
+            allowed_level = 0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
+            if bullet.level <= allowed_level:
+                applied_level = bullet.level
+                previous_level = bullet.level
+                continue
+
+            target_level = allowed_level
+            target = {
+                "slide_id": slide.id,
+                "element_id": bullet.id,
+                "element_type": "bullet",
+            }
+            issue_id = self._next_issue_id("layout_consistency", slide.id, bullet.id)
+            message = (
+                f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベル {bullet.level} が"
+                f" 許容ステップ {allowed_level} を超えています"
+            )
+            fix = {
+                "id": f"fix-{issue_id}",
+                "issue_id": issue_id,
+                "type": "bullet_reindent",
+                "target": target,
+                "payload": {"level": target_level},
+            }
+            issue = self._make_issue(
+                issue_id=issue_id,
+                issue_type="layout_consistency",
+                severity="warning",
+                message=message,
+                target=target,
+                metrics={
+                    "level": bullet.level,
+                    "allowed_level": allowed_level,
+                    "previous_level": previous_level,
+                },
+                fix=fix,
+            )
+            issues.append(issue)
+            fixes.append(fix)
+            applied_level = target_level
+            previous_level = bullet.level
+
+        return issues, fixes
 
     def _check_margins(
         self, slide: Slide, image: SlideImage

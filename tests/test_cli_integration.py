@@ -54,6 +54,7 @@ def test_cli_run_generates_outputs(tmp_path) -> None:
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("slides") == len(spec.slides)
     assert audit_payload.get("pdf_export") is None
+    assert isinstance(audit_payload.get("refiner_adjustments"), list)
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
@@ -113,6 +114,9 @@ def test_cli_run_supports_template(tmp_path) -> None:
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
+
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    assert isinstance(audit_payload.get("refiner_adjustments"), list)
 
     for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
         if slide_spec.title is None:
@@ -176,6 +180,7 @@ def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
     assert pdf_meta is not None
     assert pdf_meta.get("attempts") == 1
     assert pdf_meta.get("converter") == "libreoffice"
+    assert isinstance(audit_payload.get("refiner_adjustments"), list)
 
 
 def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
