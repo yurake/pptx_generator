@@ -57,7 +57,7 @@ def _sample_roadmap_content(todo_filename: str) -> str:
 """
 
 
-def test_process_todo_and_update_roadmap(tmp_path):
+def test_process_todo_without_full_completion(tmp_path):
     docs_dir = tmp_path / "docs"
     todo_dir = docs_dir / "todo"
     todo_dir.mkdir(parents=True)
@@ -75,32 +75,77 @@ def test_process_todo_and_update_roadmap(tmp_path):
     pr_url = "https://github.com/org/repo/pull/123"
     today = dt.date.today().isoformat()
 
-    archived_path, fields = process_todo(todo_path, archive_dir, pr_number, pr_url, dry_run=False)
+    result_path, fields, archived = process_todo(todo_path, archive_dir, pr_number, pr_url, dry_run=False)
     assert fields["roadmap_item"] == "RM-002 サンプルテーマ"
-    assert archived_path.exists()
-    archived_content = archived_path.read_text(encoding="utf-8")
+    assert not archived
+    assert result_path == todo_path
+    archived_content = result_path.read_text(encoding="utf-8")
     assert "- [ ] 作業 1" in archived_content
     assert "- [x] PR 作成" in archived_content
     assert f"PR #{pr_number} {pr_url}（{today} 完了）" in archived_content
+    # 未完タスクが残るためロードマップ更新は行わない
+    before_content = roadmap_path.read_text(encoding="utf-8")
+    update_triggered = False
+    if archived:
+        update_triggered = update_roadmap(
+            roadmap_path=roadmap_path,
+            roadmap_item=fields["roadmap_item"],
+            todo_filename=result_path.name,
+            pr_number=pr_number,
+            pr_url=pr_url,
+            date_str=today,
+            dry_run=False,
+        )
+    assert not update_triggered
+    assert roadmap_path.read_text(encoding="utf-8") == before_content
+
+
+def test_process_todo_with_full_completion(tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    archive_dir = todo_dir / "archive"
+    roadmap_dir = docs_dir / "roadmap"
+    roadmap_dir.mkdir(parents=True)
+
+    todo_path = todo_dir / "20251009-complete.md"
+    todo_path.write_text(
+        """---
+目的: 完了テスト
+関連ブランチ: test/complete
+関連Issue: 未作成
+roadmap_item: RM-002 サンプルテーマ
+---
+
+- [x] 作業 1
+  - メモ: 作業詳細
+- [ ] PR 作成
+  - メモ: PR を作成したら番号と URL を記入する
+""",
+        encoding="utf-8",
+    )
+
+    roadmap_path = roadmap_dir / "README.md"
+    roadmap_path.write_text(_sample_roadmap_content(todo_path.name), encoding="utf-8")
+
+    pr_number = 999
+    pr_url = "https://github.com/org/repo/pull/999"
+    today = dt.date.today().isoformat()
+
+    result_path, fields, archived = process_todo(todo_path, archive_dir, pr_number, pr_url, dry_run=False)
+    assert archived
+    assert result_path.parent == archive_dir
+    archived_content = result_path.read_text(encoding="utf-8")
+    assert "- [x] 作業 1" in archived_content
+    assert "- [x] PR 作成" in archived_content
 
     updated = update_roadmap(
         roadmap_path=roadmap_path,
         roadmap_item=fields["roadmap_item"],
-        todo_filename=archived_path.name,
+        todo_filename=result_path.name,
         pr_number=pr_number,
         pr_url=pr_url,
         date_str=today,
         dry_run=False,
     )
     assert updated
-
-    roadmap_content = roadmap_path.read_text(encoding="utf-8")
-    # ブロックが完了セクションへ移動していること
-    assert "### RM-002 サンプルテーマ（優先度: P1）" in roadmap_content.split("## 完了テーマ")[1]
-    # アクティブセクションから削除されていること
-    assert "### RM-002 サンプルテーマ（優先度: P1）" not in roadmap_content.split("## アクティブテーマ")[1].split("## 完了テーマ")[0]
-    # リンク更新とステータス変更確認
-    assert f"[docs/todo/archive/{archived_path.name}]" in roadmap_content
-    assert f"(../todo/archive/{archived_path.name})" in roadmap_content
-    assert f"- 状況: 完了（{today} 更新）" in roadmap_content
-    assert f"- 成果: PR #{pr_number} {pr_url}" in roadmap_content
