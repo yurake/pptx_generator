@@ -16,6 +16,8 @@
   - メモ: agents.md 掲載の sample / openai/codex / apache/airflow / temporalio/sdk-java を確認
 - [x] 収集結果を整理し、AGENTS.md に盛り込むべき項目を洗い出す
   - メモ: docs/notes/20251009-agents-md-sample-review.md に整理済み
+- [ ] ノートの適用検討内容を AGENTS.md に具体化する
+  - メモ: テスト階層ガイド、docs 動線、外部ツール制約、PR レビュー観点、セキュリティ注意点の追記案を作成
 - [x] コミット粒度に関する運用ルールを追加する
   - メモ: AGENTS.md, docs/policies/task-management.md, docs/todo/README.md に細分化コミットの方針を追記
 - [ ] レビュー結果を踏まえて追記を再調整（必要に応じて繰り返し）
@@ -31,3 +33,4 @@
 - 今後追加された例の参照元や抜粋ポイントもメモに追記すること
 - コミット運用ルール追加済み: AGENTS.md, docs/policies/task-management.md, docs/todo/README.md
 - サンプル分析: [docs/notes/20251009-agents-md-sample-review.md](../notes/20251009-agents-md-sample-review.md) にまとめ、具体コマンド例も追記済み
+- AGENTS.md への反映案: 上記ノートの「pptx_generator での適用検討」をベースに作業
