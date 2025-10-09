@@ -4,8 +4,8 @@
 関連Issue: 未作成
 ---
 
-- [ ] まずはブランチ作成
-  - メモ: `feature/agents-md-guidance` をベースブランチから切り出す
+- [x] まずはブランチ作成
+  - メモ: 既存の `docs/archive-analyzer-layout` ブランチを継続利用
 - [ ] 現行ドキュメントの調査 (README, CONTRIBUTING, docs 配下)
   - メモ: ビルド・テスト手順やスタイル規約など AGENTS.md に集約すべき情報を洗い出す
 - [ ] AGENTS.md の章立て案を作成し、必要な追記内容を整理する
