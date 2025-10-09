@@ -18,7 +18,7 @@
 ## 実装ポイント
 - `src/pptx_generator/models.py` にモデル (`SlideTable`, `SlideChart`, ほか) を追加。
 - カラーフィールドは既存 `FontSpec` に倣って `#` 有無を統一整形。
-- サンプル仕様 (`samples/sample_spec.json`) にテーブルとグラフの例を追加。
+- サンプル仕様 (`samples/json/sample_spec.json`) にテーブルとグラフの例を追加。
 - 単体テスト (`tests/test_models.py`) で新フィールドが読み込めることを検証。
 
 ## 今後のタスク
