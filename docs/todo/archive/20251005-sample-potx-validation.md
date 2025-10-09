@@ -28,6 +28,6 @@
 ## 実行結果サマリ
 - Branch: feat/sample-potx-validation
 - Template: samples/skeleton.pptx (md5 短縮: a3b69b1...)
-- Command: uv run pptx-generator run samples/sample_spec.json --template samples/skeleton.pptx
+- Command: uv run pptx-generator run samples/json/sample_spec.json --template samples/skeleton.pptx
 - Output: .pptxgen/outputs/proposal.pptx (size=661391, md5=6a929fd7...)
 - Notes: 詳細所見は docs/notes/20251005-sample-potx-validation.md / Issue 未作成

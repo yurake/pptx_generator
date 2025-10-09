@@ -3,14 +3,14 @@
 - 目的: テンプレート作成時の参照用として、最小構成サンプルとフル構成サンプルを用意し、利用者が要件を把握しやすい状態にする。
 
 ### 最小構成サンプル（Minimal）
-- ファイル: `samples/sample_spec_minimal.json`（新規）
+- ファイル: `samples/json/sample_spec_minimal.json`（新規）
 - レイアウト: 既定テンプレートの `Title Slide` / `Title and Content`
 - コンテンツ: タイトル、サブタイトル、単一スライドの箇条書き（フォント指定なし）
 - 目的: CLI 動作確認や JSON 仕様の雛形として活用してもらう
 - テンプレート: 既定テンプレートを利用。追加アセットなし
 
 ### フル構成サンプル（Full Reference）
-- ファイル: `samples/sample_spec.json`（現行を拡張）
+- ファイル: `samples/json/sample_spec.json`（現行を拡張）
 - レイアウト: Title（カバー）、アジェンダ、課題、解決策、ロードマップ、効果、チーム、クロージングなど 6〜8 枚構成
 - コンテンツ: 画像（アンカー指定あり）、表（列ヘッダー＋ゼブラ）、チャート（系列カラー指定）、ノート欄の記述
 - テンプレート: `samples/templates/templates.pptx`（サンプル用に整備）

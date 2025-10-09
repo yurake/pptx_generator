@@ -11,14 +11,14 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 
 ## 使い方
 1. サンプル JSON を参考に入力仕様を整えます。
-   - 最小構成: `samples/sample_spec_minimal.json`（テンプレート指定なしで 2 枚構成を確認）
-   - フル構成: `samples/sample_spec.json`（テンプレートやアンカー利用例を含む 8 枚構成）
+   - 最小構成: `samples/json/sample_spec_minimal.json`（テンプレート指定なしで 2 枚構成を確認）
+   - フル構成: `samples/json/sample_spec.json`（テンプレートやアンカー利用例を含む 8 枚構成）
    - `.pptx` テンプレートを使う場合は CLI 実行時に `--template <パス>` を指定します。.potx には対応していないため、必要に応じて PowerPoint で `.pptx` に書き出してください。詳細は `docs/policies/config-and-templates.md` を参照してください。テンプレート例として `samples/templates/templates.pptx` を同梱しています。
 2. CLI を実行して PPTX と analysis.json を生成します。
    ```bash
-   uv run pptx-generator run samples/sample_spec_minimal.json
+   uv run pptx-generator run samples/json/sample_spec_minimal.json
    # テンプレートを使う場合
-   uv run pptx-generator run samples/sample_spec.json --template samples/templates/templates.pptx
+   uv run pptx-generator run samples/json/sample_spec.json --template samples/templates/templates.pptx
    ```
    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
 
