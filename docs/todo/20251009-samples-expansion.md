@@ -19,4 +19,4 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 - サンプル間で共通利用するアセットの管理方針を決める（例: 画像・資料の使い分け）
 - CLI 統合テストで追加ケースが必要か検討する
 - 2025-10-09: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、5 ケース成功を確認
-- 箇条書き (`SlideBullet`) で `anchor` を指定できるようにするレンダラー拡張を検討（現状は BODY プレースホルダー固定）
+- 箇条書き (`SlideBullet`) の `anchor` 対応検討は [docs/todo/20251010-renderer-slidebullet-anchor.md](./20251010-renderer-slidebullet-anchor.md)（RM-007 SlideBullet アンカー拡張）で管理する
