@@ -15,7 +15,7 @@
   "slides": [
     {
       "id": "cover",
-      "layout": "Cover Hero",
+      "layout": "Title",
       "title": "次期プロジェクト提案",
       "subtitle": "2025 年度 上期",
       "images": [
@@ -32,11 +32,11 @@
           "sizing": "fit"
         }
       ],
-      "notes": "Cover Hero レイアウトには hero-image / brand-logo のアンカー図形を配置する想定。"
+      "notes": "Title レイアウトには hero-image / brand-logo のアンカー図形を配置する想定。"
     },
     {
       "id": "agenda",
-      "layout": "Section Agenda",
+      "layout": "Agenda",
       "title": "アジェンダ",
       "bullets": [
         {
@@ -134,13 +134,39 @@
       "notes": "同一レイアウトを複数スライドで使うケース。テンプレート側のアンカー名が共通である点に注意。"
     },
     {
+      "id": "overview",
+      "layout": "One Column Detail",
+      "title": "導入効果サマリ",
+      "bullets": [
+        {
+          "id": "overview-1",
+          "text": "目的: 1カラム構成でメッセージを強調しつつ、補足ビジュアルを配置する",
+          "level": 0
+        },
+        {
+          "id": "overview-2",
+          "text": "ベース本文は単一カラムで読みやすく整理し、必要な場合にアンカーで図版を差し込む",
+          "level": 0
+        }
+      ],
+      "images": [
+        {
+          "id": "overview-visual",
+          "source": "samples/assets/logo.png",
+          "anchor": "detail-visual",
+          "sizing": "fit"
+        }
+      ],
+      "notes": "One Column Detail レイアウトでは本文領域を広く確保し、detail-visual アンカーを活用して補足資料を配置。"
+    },
+    {
       "id": "timeline",
-      "layout": "Timeline Board",
+      "layout": "One Column Detail",
       "title": "ロードマップ",
       "tables": [
         {
           "id": "timeline-table",
-          "anchor": "timeline-table",
+          "anchor": "コンテンツ プレースホルダー 2",
           "columns": ["フェーズ", "主要タスク", "成果物"],
           "rows": [
             ["準備", "テンプレート整備 / ブランド確認", "運用ガイドライン"],
@@ -157,12 +183,12 @@
     },
     {
       "id": "metrics",
-      "layout": "Metric Highlight",
+      "layout": "Two Column Detail",
       "title": "期待効果",
       "charts": [
         {
           "id": "metric-chart",
-          "anchor": "metric-chart",
+          "anchor": "コンテンツ プレースホルダー 2",
           "type": "column",
           "categories": ["導入前", "導入後"],
           "series": [
@@ -198,12 +224,12 @@
     },
     {
       "id": "team",
-      "layout": "Team Intro",
+      "layout": "コンテンツ プレースホルダー 2",
       "title": "推進体制",
       "tables": [
         {
           "id": "team-table",
-          "anchor": "team-table",
+          "anchor": "コンテンツ プレースホルダー 2",
           "columns": ["役割", "担当", "主なタスク"],
           "rows": [
             ["プロジェクトマネージャー", "田中 太郎", "全体統括 / KPI 管理"],
@@ -220,7 +246,7 @@
         {
           "id": "team-photo",
           "source": "samples/assets/team.png",
-          "anchor": "team-photo",
+          "anchor": "コンテンツ プレースホルダー 2",
           "sizing": "fill"
         }
       ],
@@ -228,7 +254,7 @@
     },
     {
       "id": "closing",
-      "layout": "Closing Summary",
+      "layout": "Closing",
       "title": "次のアクション",
       "bullets": [
         {
@@ -251,7 +277,7 @@
         {
           "id": "closing-cta",
           "source": "samples/assets/logo.png",
-          "anchor": "closing-cta",
+          "anchor": "コンテンツ プレースホルダー 9",
           "sizing": "fit"
         }
       ],
