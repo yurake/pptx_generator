@@ -73,6 +73,8 @@
 - `src/`: コード構成とテスト方針は `src/AGENTS.md` を参照。
 - `tests/`: テストケースの追加規則は `tests/AGENTS.md` を参照。
 - `scripts/`: GitHub 連携スクリプトの実行条件は `scripts/AGENTS.md` を参照。
+- `samples/`: サンプルデータの更新ルールは `samples/AGENTS.md` を参照。
+- `config/`: ブランド・ルール設定の変更手順は `config/AGENTS.md` を参照。
 - 他ディレクトリに専用の AGENTS.md を追加した場合は、このリストを更新してリンクを追記する。
 
 # 11 データ・セキュリティと外部ツール
