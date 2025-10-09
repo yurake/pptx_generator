@@ -15,50 +15,55 @@
   "slides": [
     {
       "id": "cover",
-      "layout": "Title Slide",
+      "layout": "Cover Hero",
       "title": "次期プロジェクト提案",
       "subtitle": "2025 年度 上期",
-      "bullets": [],
       "images": [
+        {
+          "id": "cover-hero",
+          "source": "samples/assets/hero.png",
+          "anchor": "hero-image",
+          "sizing": "fill"
+        },
         {
           "id": "cover-logo",
           "source": "samples/assets/logo.png",
-          "sizing": "fit",
-          "left_in": 7.5,
-          "top_in": 4.5,
-          "width_in": 2.0,
-          "height_in": 2.0
+          "anchor": "brand-logo",
+          "sizing": "fit"
         }
-      ]
+      ],
+      "notes": "Cover Hero レイアウトには hero-image / brand-logo のアンカー図形を配置する想定。"
     },
     {
       "id": "agenda",
-      "layout": "Title and Content",
+      "layout": "Section Agenda",
       "title": "アジェンダ",
       "bullets": [
         {
           "id": "agenda-1",
-          "text": "背景",
+          "text": "背景整理",
           "level": 0
         },
         {
           "id": "agenda-2",
-          "text": "提案概要",
+          "text": "提案サマリー",
           "level": 0
         },
         {
           "id": "agenda-3",
-          "text": "期待効果",
+          "text": "ロードマップと体制",
           "level": 0
         }
       ],
       "tables": [
         {
           "id": "agenda-milestones",
-          "columns": ["項目", "時期"],
+          "anchor": "milestone-table",
+          "columns": ["マイルストーン", "時期"],
           "rows": [
+            ["キックオフ", "2025 Q1"],
             ["PoC 実施", "2025 Q2"],
-            ["本番導入", "2025 Q3"]
+            ["本番展開", "2025 Q3"]
           ],
           "style": {
             "header_fill": "#E6EEF8",
@@ -68,37 +73,189 @@
       ],
       "images": [
         {
-          "id": "agenda-chart-thumb",
+          "id": "agenda-visual",
           "source": "samples/assets/logo.png",
-          "sizing": "stretch",
-          "left_in": 6.5,
-          "top_in": 4.2,
-          "width_in": 2.0,
-          "height_in": 2.0
+          "anchor": "agenda-visual",
+          "sizing": "fit"
         }
       ]
     },
     {
-      "id": "kpi",
-      "layout": "Title and Content",
+      "id": "problem",
+      "layout": "Two Column Detail",
+      "title": "現状課題",
+      "bullets": [
+        {
+          "id": "problem-1",
+          "text": "提案書フォーマットのばらつきにより確認に時間がかかる",
+          "level": 0
+        },
+        {
+          "id": "problem-2",
+          "text": "ブランド統一ルールが共有されておらず修正が頻発",
+          "level": 0
+        },
+        {
+          "id": "problem-3",
+          "text": "PDF 変換や監査ログ作成が手動で運用コストが高い",
+          "level": 0
+        }
+      ],
+      "images": [
+        {
+          "id": "problem-visual",
+          "source": "samples/assets/hero.png",
+          "anchor": "detail-visual",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "solution",
+      "layout": "Two Column Detail",
+      "title": "提案概要",
+      "bullets": [
+        {
+          "id": "solution-1",
+          "text": "テンプレートとブランド設定を組み合わせた自動レイアウト生成",
+          "level": 0
+        },
+        {
+          "id": "solution-2",
+          "text": "Analyzer によるレイアウト・カラー検証と修正提案の自動化",
+          "level": 0
+        },
+        {
+          "id": "solution-3",
+          "text": "LibreOffice 経由の PDF 出力と監査ログ保存をワンステップで実現",
+          "level": 0
+        }
+      ],
+      "notes": "同一レイアウトを複数スライドで使うケース。テンプレート側のアンカー名が共通である点に注意。"
+    },
+    {
+      "id": "timeline",
+      "layout": "Timeline Board",
+      "title": "ロードマップ",
+      "tables": [
+        {
+          "id": "timeline-table",
+          "anchor": "timeline-table",
+          "columns": ["フェーズ", "主要タスク", "成果物"],
+          "rows": [
+            ["準備", "テンプレート整備 / ブランド確認", "運用ガイドライン"],
+            ["PoC", "サンプル仕様で自動生成検証", "提案書・分析ログ"],
+            ["展開", "案件テンプレート展開 / 教育", "運用開始マニュアル"]
+          ],
+          "style": {
+            "header_fill": "#E0F2FF",
+            "zebra": true
+          }
+        }
+      ],
+      "notes": "比較レイアウトをベースにテーブルを中央配置する想定。"
+    },
+    {
+      "id": "metrics",
+      "layout": "Metric Highlight",
       "title": "期待効果",
       "charts": [
         {
-          "id": "kpi-chart",
+          "id": "metric-chart",
+          "anchor": "metric-chart",
           "type": "column",
           "categories": ["導入前", "導入後"],
           "series": [
             {
-              "name": "作業時間",
+              "name": "作業時間 (時間/提案)",
               "values": [10, 4],
               "color_hex": "#FF7043"
+            },
+            {
+              "name": "手戻り件数 (件/月)",
+              "values": [8, 2],
+              "color_hex": "#4CAF50"
             }
           ],
           "options": {
-            "data_labels": true
+            "data_labels": true,
+            "y_axis_format": "0"
           }
         }
+      ],
+      "bullets": [
+        {
+          "id": "metric-1",
+          "text": "作業時間を 60% 削減し、承認リードタイムを短縮",
+          "level": 0
+        },
+        {
+          "id": "metric-2",
+          "text": "監査ログ自動化により、内部統制の証跡作成を効率化",
+          "level": 0
+        }
       ]
+    },
+    {
+      "id": "team",
+      "layout": "Team Intro",
+      "title": "推進体制",
+      "tables": [
+        {
+          "id": "team-table",
+          "anchor": "team-table",
+          "columns": ["役割", "担当", "主なタスク"],
+          "rows": [
+            ["プロジェクトマネージャー", "田中 太郎", "全体統括 / KPI 管理"],
+            ["テンプレート担当", "山田 花子", "テンプレート整備 / デザイン確認"],
+            ["自動化エンジニア", "佐藤 健", "CLI 拡張 / 環境構築"]
+          ],
+          "style": {
+            "header_fill": "#F0EAF8",
+            "zebra": true
+          }
+        }
+      ],
+      "images": [
+        {
+          "id": "team-photo",
+          "source": "samples/assets/team.png",
+          "anchor": "team-photo",
+          "sizing": "fill"
+        }
+      ],
+      "notes": "写真の差し替え例として team-photo アンカーを設定。"
+    },
+    {
+      "id": "closing",
+      "layout": "Closing Summary",
+      "title": "次のアクション",
+      "bullets": [
+        {
+          "id": "closing-1",
+          "text": "サンプル仕様をベースに案件用テンプレートを準備",
+          "level": 0
+        },
+        {
+          "id": "closing-2",
+          "text": "LibreOffice / .NET 環境の整備手順を社内に共有",
+          "level": 0
+        },
+        {
+          "id": "closing-3",
+          "text": "統合テストと PDF 変換チェックリストを実施",
+          "level": 0
+        }
+      ],
+      "images": [
+        {
+          "id": "closing-cta",
+          "source": "samples/assets/logo.png",
+          "anchor": "closing-cta",
+          "sizing": "fit"
+        }
+      ],
+      "notes": "closing-cta アンカーは任意のロゴ差し替え例。"
     }
   ]
 }

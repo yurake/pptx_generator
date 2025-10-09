@@ -6,15 +6,16 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
 - [ ] まずはブランチ作成
-- [ ] 最小構成サンプルの仕様とテンプレートを整理し、既存ファイルを必要に応じて更新する
-  - メモ: 生成結果を `.pptxgen/outputs/` で確認し、仕様に不足がないか点検
-- [ ] フル構成サンプル（多レイアウト・画像・表・グラフ想定）の仕様とテンプレートを作成し、差分を反映する
-  - メモ: ブランド設定との整合を確認し、必要なら `config/` 参照を追記
-- [ ] ドキュメントと README 類にサンプル利用ガイドを追記し、参照先を整理する
-  - メモ: `docs/` 配下の関連カテゴリ README を更新
+- [x] 最小構成サンプルの仕様とテンプレートを整理し、既存ファイルを必要に応じて更新する
+  - メモ: `samples/sample_spec_minimal.json` を新設し、`uv run pptx-generator run samples/sample_spec_minimal.json --workdir .pptxgen/minimal` で生成を確認
+- [x] フル構成サンプル（多レイアウト・画像・表・グラフ想定）の仕様とテンプレートを作成し、差分を反映する
+  - メモ: `samples/sample_spec.json` を更新し、`samples/templates/templates.pptx` を追加
+- [x] ドキュメントと README 類にサンプル利用ガイドを追記し、参照先を整理する
+  - メモ: README, `samples/AGENTS.md`, `docs/policies/config-and-templates.md` を更新済み
 - [ ] PR 作成
   - メモ: PR 作成後に番号と URL を記入する
 
 ## メモ
 - サンプル間で共通利用するアセットの管理方針を決める（例: 画像・資料の使い分け）
 - CLI 統合テストで追加ケースが必要か検討する
+- 2025-10-09: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、5 ケース成功を確認
