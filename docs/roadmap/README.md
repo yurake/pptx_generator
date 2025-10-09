@@ -76,13 +76,6 @@
 - 依存: 低遅延インフラ、アクセス制御、UI コンポーネント設計。
 - 次のアクション: 技術スタック比較、遅延要件の整理、UI ワイヤーフレーム作成。
 
-<a id="rm-996"></a>
-### RM-996 自動化未完タスク検証（優先度: P0）
-- ゴール: `todo-auto-complete` が未完タスクを保持しつつ PR 作成項目だけを完了にすることを確認する。
-- 参照 ToDo: [docs/todo/20251009-auto-test4.md](../todo/20251009-auto-test4.md)
-- 状況: 0/3 件実施（テスト開始前）
-- 次のアクション: 検証用 PR を作成し、自動コミットを確認する。
-
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。
 - ブランドテンプレート版管理フローの整備と `branding.json` オーバーレイ対応。
@@ -91,6 +84,13 @@
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-996"></a>
+### RM-996 自動化未完タスク検証（優先度: P0）
+- ゴール: `todo-auto-complete` が未完タスクを保持しつつ PR 作成項目だけを完了にすることを確認する。
+- 参照 ToDo: [docs/todo/archive/20251009-auto-test4.md](../todo/archive/20251009-auto-test4.md)
+- 状況: 完了（2025-10-09 更新）
+- 成果: PR #124 https://github.com/yurake/pptx_generator/pull/124
 
 ### PDF 自動生成対応
 - ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
