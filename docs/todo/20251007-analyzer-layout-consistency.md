@@ -1,7 +1,7 @@
 ---
 目的: Analyzer / Refiner ルール拡張テーマの初期対応として layout_consistency 診断を追加する
 関連ブランチ: feat/analyzer-layout-consistency
-関連Issue: 未作成
+関連Issue: #112
 ---
 
 - [x] ブランチ作成
