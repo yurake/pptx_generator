@@ -1,7 +1,7 @@
 ---
 目的: ToDo/ロードマップ自動更新フローを構築し手動漏れを解消する
 関連ブランチ: docs/auto-roadmap-completion
-関連Issue: 未作成
+関連Issue: #116
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
