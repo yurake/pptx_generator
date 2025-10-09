@@ -54,6 +54,7 @@
 
 # 8 コミット・PR 運用
 - コミットメッセージは Conventional Commits (`type(scope): subject`) に従う。例: `docs: update agents guidance`
+- 変更は粒度の細かいコミットに分割し、意図が追跡しやすい履歴を残す。
 - 作業ブランチは `feat|fix|chore|docs/<slug>` などを使用し、`main` への直接 push は禁止。
 - PR はテンプレートに沿って作成し、目的・影響範囲・テスト結果・ロールバック手順を必ず明記する。
 - マージ前に CI 緑化、最新 `main` への追従、コンフリクト解消を完了させる。
