@@ -20,10 +20,10 @@
       "subtitle": "2025 年度 上期",
       "images": [
         {
-          "id": "cover-hero",
-          "source": "samples/assets/hero.png",
-          "anchor": "hero-image",
-          "sizing": "fill"
+          "id": "cover-visual",
+          "source": "samples/assets/logo.png",
+          "anchor": "cover-visual",
+          "sizing": "fit"
         },
         {
           "id": "cover-logo",
@@ -32,7 +32,7 @@
           "sizing": "fit"
         }
       ],
-      "notes": "Title レイアウトには hero-image / brand-logo のアンカー図形を配置する想定。"
+      "notes": "Title レイアウトには cover-visual / brand-logo のアンカー図形を配置する想定。"
     },
     {
       "id": "agenda",
@@ -101,14 +101,7 @@
           "level": 0
         }
       ],
-      "images": [
-        {
-          "id": "problem-visual",
-          "source": "samples/assets/hero.png",
-          "anchor": "detail-visual",
-          "sizing": "fit"
-        }
-      ]
+      "images": []
     },
     {
       "id": "solution",

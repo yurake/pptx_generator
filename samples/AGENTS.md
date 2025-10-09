@@ -3,7 +3,7 @@
 ## 構成
 - `sample_spec_minimal.json`: 最小構成サンプル。テンプレート指定なしで 2 枚構成の生成を確認するための雛形。
 - `sample_spec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
-- `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `hero.png`, `team.png`）。
+- `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
 - `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。
 - `skeleton.pptx`: 提案書の初期テンプレート。変更時は `docs/policies/config-and-templates.md` の手順に従い検証する。
 
