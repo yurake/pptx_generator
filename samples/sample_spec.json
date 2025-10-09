@@ -20,15 +20,9 @@
       "subtitle": "2025 年度 上期",
       "images": [
         {
-          "id": "cover-visual",
-          "source": "samples/assets/logo.png",
-          "anchor": "cover-visual",
-          "sizing": "fit"
-        },
-        {
           "id": "cover-logo",
           "source": "samples/assets/logo.png",
-          "anchor": "brand-logo",
+          "anchor": "Logo",
           "sizing": "fit"
         }
       ],
@@ -36,7 +30,7 @@
     },
     {
       "id": "agenda",
-      "layout": "Agenda",
+      "layout": "Two Column Detail",
       "title": "アジェンダ",
       "bullets": [
         {
@@ -58,7 +52,7 @@
       "tables": [
         {
           "id": "agenda-milestones",
-          "anchor": "milestone-table",
+          "anchor": "Body Right",
           "columns": ["マイルストーン", "時期"],
           "rows": [
             ["キックオフ", "2025 Q1"],
@@ -75,7 +69,7 @@
         {
           "id": "agenda-visual",
           "source": "samples/assets/logo.png",
-          "anchor": "agenda-visual",
+          "anchor": "Logo",
           "sizing": "fit"
         }
       ]
@@ -146,7 +140,7 @@
         {
           "id": "overview-visual",
           "source": "samples/assets/logo.png",
-          "anchor": "detail-visual",
+          "anchor": "Logo",
           "sizing": "fit"
         }
       ],
@@ -159,7 +153,7 @@
       "tables": [
         {
           "id": "timeline-table",
-          "anchor": "コンテンツ プレースホルダー 2",
+          "anchor": "Body",
           "columns": ["フェーズ", "主要タスク", "成果物"],
           "rows": [
             ["準備", "テンプレート整備 / ブランド確認", "運用ガイドライン"],
@@ -181,7 +175,7 @@
       "charts": [
         {
           "id": "metric-chart",
-          "anchor": "コンテンツ プレースホルダー 2",
+          "anchor": "Body Left",
           "type": "column",
           "categories": ["導入前", "導入後"],
           "series": [
@@ -222,7 +216,7 @@
       "tables": [
         {
           "id": "team-table",
-          "anchor": "コンテンツ プレースホルダー 2",
+          "anchor": "Body Right",
           "columns": ["役割", "担当", "主なタスク"],
           "rows": [
             ["プロジェクトマネージャー", "田中 太郎", "全体統括 / KPI 管理"],
@@ -239,7 +233,7 @@
         {
           "id": "team-photo",
           "source": "samples/assets/team.png",
-          "anchor": "コンテンツ プレースホルダー 2",
+          "anchor": "Body Left",
           "sizing": "fill"
         }
       ],
@@ -270,7 +264,7 @@
         {
           "id": "closing-cta",
           "source": "samples/assets/logo.png",
-          "anchor": "コンテンツ プレースホルダー 9",
+          "anchor": "Logo",
           "sizing": "fit"
         }
       ],
