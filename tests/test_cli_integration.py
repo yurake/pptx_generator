@@ -17,7 +17,7 @@ from pptx_generator.pipeline import pdf_exporter
 
 
 def test_cli_run_generates_outputs(tmp_path) -> None:
-    spec_path = Path("samples/sample_spec.json")
+    spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work"
     runner = CliRunner()
 
@@ -79,7 +79,7 @@ def test_cli_run_generates_outputs(tmp_path) -> None:
 
 
 def test_cli_run_supports_template(tmp_path) -> None:
-    spec_path = Path("samples/sample_spec.json")
+    spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-template"
     template_path = tmp_path / "template.pptx"
 
@@ -132,7 +132,7 @@ def test_cli_run_supports_template(tmp_path) -> None:
 
 
 def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/sample_spec.json")
+    spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf"
 
     def fake_which(cmd: str) -> str | None:
@@ -186,7 +186,7 @@ def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/sample_spec.json")
+    spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf-only"
 
     def fake_which(cmd: str) -> str | None:
@@ -237,7 +237,7 @@ def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_run_pdf_skip_env(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/sample_spec.json")
+    spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf-skip"
 
     def fail_run(*args, **kwargs):  # noqa: ANN401

@@ -11,7 +11,7 @@ roadmap_item: RM-007 SlideBullet アンカー拡張
 - [ ] アンカー指定を JSON 仕様に追加し、レンダラーで図形選択を切り替えられるよう実装する
   - メモ: 既存仕様との互換性維持のためアンカー未指定時は従来動作を維持する
 - [ ] サンプルとドキュメント、テストを更新して動作を確認する
-  - メモ: `samples/sample_spec.json` へ anchor 付き箇条書き例を追加し、CLI 統合テストで検証する
+  - メモ: `samples/json/sample_spec.json` へ anchor 付き箇条書き例を追加し、CLI 統合テストで検証する
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
