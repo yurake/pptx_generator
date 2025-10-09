@@ -18,3 +18,4 @@
 ## メモ
 - 参照資料: README.md, CONTRIBUTING.md, docs/policies/config-and-templates.md
 - セットアップ・テスト・スタイル・タスク管理・テンプレート運用に関する指示を AGENTS.md に集約済み
+- ロードマップ: [docs/roadmap/README.md#エージェント運用ガイド整備（優先度-p1）](../roadmap/README.md#エージェント運用ガイド整備（優先度-p1）) に位置付け
