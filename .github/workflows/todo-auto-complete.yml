@@ -3,21 +3,28 @@ name: todo-auto-complete
 on:
   pull_request:
     types:
-      - closed
+      - opened
+      - reopened
+      - ready_for_review
+      - edited
+      - synchronize
 
 permissions:
   contents: write
 
 jobs:
   auto-complete:
-    if: github.event.pull_request.merged == true
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
       - name: Collect ToDo targets
@@ -65,4 +72,4 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add docs/todo docs/roadmap/README.md
           git commit -m "chore(todo): auto-complete PR #${{ github.event.pull_request.number }}"
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

@@ -14,8 +14,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: `todo-auto-complete` 追加、`python3 scripts/auto_complete_todo.py --dry-run` と PR #120 で本番テストを実施
 - [x] 運用ドキュメントとロードマップ/ToDo を更新し自動反映を確認
   - メモ: `AGENTS.md`, `docs/policies/task-management.md`, `docs/todo/README.md`, `scripts/AGENTS.md` を更新
-- [ ] PR 作成
-  - メモ: マージ後に自動化結果を再検証すること
+- [x] PR 作成
+  - メモ: PR #121 https://github.com/yurake/pptx_generator/pull/121（2025-10-09 完了）
 
 ## メモ
 - Approval-First ポリシーに基づき Plan 承認済み（本スレッド）

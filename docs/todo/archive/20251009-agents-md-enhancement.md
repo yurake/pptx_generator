@@ -27,7 +27,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: AGENTS.md, docs/policies/task-management.md, docs/todo/README.md に細分化コミットの方針を追記
 - [x] レビュー結果を踏まえて追記を再調整（必要に応じて繰り返し）
   - メモ: 重複なしの確認完了、追加修正は不要
-- [ ] PR 作成
+- [x] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
 ## メモ

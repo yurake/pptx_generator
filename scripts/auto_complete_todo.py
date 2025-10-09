@@ -35,12 +35,14 @@ def parse_front_matter(content: str) -> Dict[str, str]:
 
 
 def mark_all_tasks_complete(content: str) -> Tuple[str, bool]:
+    """Mark only the final 'PR 作成' task as complete if present."""
     lines = content.splitlines()
     updated = False
     for index, line in enumerate(lines):
-        if line.startswith("- [ ]"):
+        if line.startswith("- [ ] PR 作成"):
             lines[index] = line.replace("- [ ]", "- [x]", 1)
             updated = True
+            break
     new_content = "\n".join(lines)
     if content.endswith("\n"):
         new_content += "\n"
@@ -141,7 +143,13 @@ def update_roadmap(
     return content != updated_content
 
 
-def process_todo(todo_path: Path, archive_dir: Path, pr_number: int, pr_url: str, dry_run: bool) -> Tuple[Path, Dict[str, str]]:
+def process_todo(
+    todo_path: Path,
+    archive_dir: Path,
+    pr_number: int,
+    pr_url: str,
+    dry_run: bool,
+) -> Tuple[Path, Dict[str, str], bool]:
     content = read_text(todo_path)
     fields = parse_front_matter(content)
     if "roadmap_item" not in fields:
@@ -154,8 +162,11 @@ def process_todo(todo_path: Path, archive_dir: Path, pr_number: int, pr_url: str
     if not dry_run:
         write_text(todo_path, content)
 
-    archived_path = archive_todo(todo_path, archive_dir, dry_run)
-    return archived_path, fields
+    should_archive = "- [ ]" not in content
+    if should_archive:
+        archived_path = archive_todo(todo_path, archive_dir, dry_run)
+        return archived_path, fields, True
+    return todo_path, fields, False
 
 
 def main() -> None:
@@ -176,15 +187,19 @@ def main() -> None:
         todo_path = Path(todo)
         if not todo_path.exists():
             raise FileNotFoundError(f"{todo} が見つかりません")
-        archived_path, fields = process_todo(todo_path, archive_dir, args.pr_number, args.pr_url, args.dry_run)
-        results.append((archived_path, fields))
+        result_path, fields, archived = process_todo(
+            todo_path, archive_dir, args.pr_number, args.pr_url, args.dry_run
+        )
+        results.append((result_path, fields, archived))
 
-    for archived_path, fields in results:
+    for result_path, fields, archived in results:
+        if not archived:
+            continue
         roadmap_item = fields["roadmap_item"]
         update_roadmap(
             roadmap_path=roadmap_path,
             roadmap_item=roadmap_item,
-            todo_filename=archived_path.name,
+            todo_filename=result_path.name,
             pr_number=args.pr_number,
             pr_url=args.pr_url,
             date_str=dt.date.today().isoformat(),
