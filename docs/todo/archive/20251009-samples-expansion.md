@@ -12,11 +12,11 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: `samples/json/sample_spec.json` を更新し、`samples/templates/templates.pptx` を追加
 - [x] ドキュメントと README 類にサンプル利用ガイドを追記し、参照先を整理する
   - メモ: README, `samples/AGENTS.md`, `docs/policies/config-and-templates.md` を更新済み
-- [ ] PR 作成
-  - メモ: PR 作成後に番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #133（feat/samples-expansion）でマージ済み
 
 ## メモ
 - サンプル間で共通利用するアセットの管理方針を決める（例: 画像・資料の使い分け）
 - CLI 統合テストで追加ケースが必要か検討する
 - 2025-10-09: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、5 ケース成功を確認
-- 箇条書き (`SlideBullet`) の `anchor` 対応検討は [docs/todo/20251010-renderer-slidebullet-anchor.md](./20251010-renderer-slidebullet-anchor.md)（RM-007 SlideBullet アンカー拡張）で管理する
+- 箇条書き (`SlideBullet`) の `anchor` 対応検討は [docs/todo/20251010-renderer-slidebullet-anchor.md](../20251010-renderer-slidebullet-anchor.md)（RM-007 SlideBullet アンカー拡張）で管理する
