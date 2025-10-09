@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from ..models import JobSpec, SpecValidationError
-from .base import PipelineContext, PipelineStep
+from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
 
