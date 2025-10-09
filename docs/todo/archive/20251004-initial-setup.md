@@ -18,10 +18,3 @@ closed_at: 2025-10-05
 ## メモ
 - 依存ライブラリは最小限 (pydantic, click, python-pptx) から導入する。
 - validator 拡張後に `uv run --extra dev pytest` を実行し、テスト成功を確認。
-
-<!-- BEGIN: issues-sync -->
-## Synced Issues
-- [x] Python パッケージ構成の雛形作成 (#31)
-- [x] CLI エントリポイントの追加 (#32)
-- [x] 設定ファイルの初期値作成 (#33)
-<!-- END: issues-sync -->
