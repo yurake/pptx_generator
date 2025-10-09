@@ -20,14 +20,19 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
    # テンプレートを使う場合
    uv run pptx-generator run samples/sample_spec.json --template samples/templates/templates.pptx
    ```
-   - `--workdir` は省略可能で、指定しない場合は `.pptxgen` が自動作成されます。
-   - `--branding` でブランド設定 JSON を差し替えると、フォントやカラーが自動で反映されます。
-   - `--export-pdf` を付与すると LibreOffice (soffice) を使って PDF を同時出力します。
-     - `--pdf-mode=only` を指定すると PPTX を残さず PDF のみ保存します。
-     - `--libreoffice-path` で soffice の場所を明示でき、`LIBREOFFICE_PATH` 環境変数も利用できます。
-     - タイムアウトやリトライは `--pdf-timeout` / `--pdf-retries` で調整します。
-    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
-3. 生成物は `.pptxgen/outputs/` 配下に保存されます。
+   - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
+
+| Option | Function | Default |
+| --- | --- | --- |
+| `--template <path>` | 利用する `.pptx` テンプレートを指定する | python-pptx 同梱テンプレート |
+| `--workdir <path>` | ワークスペース（出力先）を変更する | `.pptxgen` |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+| `--export-pdf` | LibreOffice 経由で PDF を同時生成する | 無効 |
+| `--pdf-mode=only` | PPTX を生成せず PDF のみ出力する | `full`（PPTX と PDF の両方を生成） |
+| `--libreoffice-path <path>` | soffice の実行パスを明示する | `PATH` 検索結果 |
+| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数を設定する | 60 |
+| `--pdf-retries <count>` | PDF 変換のリトライ回数を指定する | 0 |
+1. 生成物は `--workdir` 未指定の場合 `.pptxgen/outputs/` に保存されます。
 
 ## テスト・検証
 - レンダラー・CLI を含むテストスイートを pytest で実行できます。
