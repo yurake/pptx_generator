@@ -24,8 +24,8 @@
   - メモ: `docs/AGENTS.md`, `src/AGENTS.md`, `tests/AGENTS.md`, `scripts/AGENTS.md` を追加
 - [x] コミット粒度に関する運用ルールを追加する
   - メモ: AGENTS.md, docs/policies/task-management.md, docs/todo/README.md に細分化コミットの方針を追記
-- [ ] レビュー結果を踏まえて追記を再調整（必要に応じて繰り返し）
-  - メモ: フィードバックを反映し、整合性確認後に再度チェックする
+- [x] レビュー結果を踏まえて追記を再調整（必要に応じて繰り返し）
+  - メモ: 重複なしの確認完了、追加修正は不要
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
