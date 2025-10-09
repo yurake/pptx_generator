@@ -15,7 +15,7 @@
 
 ## notes
 - 議事メモや調査結果などのラフな情報を置く場所。
-- `docs/notes/discussion.txt`: 初期ディスカッションのメモ。
+- `docs/notes/initial_discussion.txt`: 初期ディスカッションのメモ。
 
 ## runbooks
 - リリースや問い合わせ対応など、実務手順をまとめたドキュメント。
