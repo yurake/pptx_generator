@@ -1,7 +1,7 @@
 ---
 目的: samples を拡充し、テンプレート準備時の参照用に最小構成・フル構成の仕様と補助ファイルを整備する
 関連ブランチ: feat/samples-expansion
-関連Issue: 未作成
+関連Issue: #129
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
