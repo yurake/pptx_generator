@@ -80,7 +80,7 @@
 ### RM-002 エージェント運用ガイド整備（優先度: P1）
 - ゴール: エージェントが参照する AGENTS.md を体系化し、開発プロセスや検証手順を一元管理する。
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md)
-- 参照 ToDo: [docs/todo/20251009-agents-md-enhancement.md](../todo/20251009-agents-md-enhancement.md)
+- 参照 ToDo: [docs/todo/archive/20251009-agents-md-enhancement.md](../todo/archive/20251009-agents-md-enhancement.md)
 - 状況: 完了（2025-10-09 更新）
 - 期待成果: セットアップ・CLI 操作・テスト・スタイル・タスク運用・テンプレート注意点を網羅したガイド整備。
 
