@@ -12,8 +12,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: `samples/AGENTS.md`, `config/AGENTS.md`, `AGENTS.md` など
 - [x] テスト・CLI コマンドを新パスに追随させる
   - メモ: `tests/test_cli_integration.py` とドキュメント記載コマンド
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #133（feat/samples-expansion）でマージ済み
 
 ## メモ
 - 再配置後は `.pptxgen/outputs/` など生成物パスが変わらないことを確認する。
