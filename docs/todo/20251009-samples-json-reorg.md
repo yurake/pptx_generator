@@ -1,7 +1,7 @@
 ---
 目的: サンプル JSON を整理し `samples/json/` 配下に再配置する
 関連ブランチ: chore/samples-json-reorg
-関連Issue: 未作成
+関連Issue: #131
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
