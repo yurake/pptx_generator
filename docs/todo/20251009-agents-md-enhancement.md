@@ -1,7 +1,7 @@
 ---
 目的: AGENTS.md を拡充しエージェント向け指示を体系化する
 関連ブランチ: feature/agents-md-guidance
-関連Issue: 未作成
+関連Issue: #114
 ---
 
 - [x] まずはブランチ作成
