@@ -1,7 +1,7 @@
 ---
 目的: SlideBullet 要素でテンプレート側のアンカーを指定できるようレンダラーを拡張する
 関連ブランチ: feat/renderer-slidebullet-anchor
-関連Issue: 未作成
+関連Issue: #132
 roadmap_item: RM-007 SlideBullet アンカー拡張
 ---
 
