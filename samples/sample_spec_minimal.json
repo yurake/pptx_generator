@@ -15,7 +15,7 @@
   "slides": [
     {
       "id": "cover",
-      "layout": "Title Slide",
+      "layout": "Title",
       "title": "シンプル提案書サンプル",
       "subtitle": "2025 年度 提案概要",
       "bullets": [],
@@ -23,7 +23,7 @@
     },
     {
       "id": "summary",
-      "layout": "Title and Content",
+      "layout": "One Column Detail",
       "title": "概要",
       "bullets": [
         {
