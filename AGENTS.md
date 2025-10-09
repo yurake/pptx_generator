@@ -54,6 +54,7 @@
 - 調査結果や検討事項は `docs/` 配下の適切なカテゴリ (例: `notes/`, `policies/`, `runbooks/`) に記録する。
 - ドキュメントカテゴリと更新手順の詳細は `docs/AGENTS.md` を参照。追加資料を作成した際はカテゴリ README を更新し、ToDo にメモを残す。
 - Plan を提示する前に、対象作業の ToDo に目的・関連ブランチ・roadmap_item が記録されていることを確認する。
+- PR マージ後は `todo-auto-complete` ワークフローが ToDo アーカイブとロードマップ反映を実施するため、PR テンプレートの「ToDo」欄に対象ファイルを必ず記載する。ワークフロー未実行時は手動で対応し、原因をメモに残す。
 
 # 8 コミット・PR 運用
 - コミットメッセージは Conventional Commits (`type(scope): subject`) に従う。例: `docs: update agents guidance`
