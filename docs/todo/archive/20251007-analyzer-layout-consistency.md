@@ -14,10 +14,11 @@
 - [x] contrast_low 判定の調整方針を確定し実装
   - メモ: フォントサイズ閾値を導入して 3.0:1 の基準を適用し、メトリクスへ `required_ratio` を記録。
 - [x] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+  - メモ: PR #113 (https://github.com/yurake/pptx_generator/pull/113) を作成・マージ済み
 
 ## メモ
 - 参照: docs/roadmap/README.md#L33
 - LibreOffice 依存変更なし。Analyzer 機能の Python 側に限定して実装する。
 - テスト: `uv run --extra dev pytest tests/test_refiner.py tests/test_analyzer.py tests/test_cli_integration.py`
 - SimpleRefinerStep を追加し、`refiner_adjustments` アーティファクトで調整ログを記録。
+- 完了日: 2025-10-08

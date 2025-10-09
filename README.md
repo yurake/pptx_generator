@@ -11,6 +11,7 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 
 ## 使い方
 1. サンプル JSON `samples/sample_spec.json` を基に編集し、案件情報とスライド要素（表・画像・グラフ）を準備します。
+   - `.pptx` テンプレートを使う場合は CLI 実行時に `--template <パス>` を指定します。.potx には対応していないため、必要に応じて PowerPoint で `.pptx` に書き出してください。詳細は `docs/policies/config-and-templates.md` を参照してください。
 2. CLI を実行して PPTX と analysis.json を生成します。
    ```bash
    uv run pptx-generator run samples/sample_spec.json

@@ -24,10 +24,18 @@
 ### Analyzer / Refiner ルール拡張（優先度: P2）
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
-- 参照 ToDo: [docs/todo/20251007-analyzer-layout-consistency.md](../todo/20251007-analyzer-layout-consistency.md)
+- 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
 - 状況: 実装中（2025-10-07 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
 - 次のアクション: `contrast_low` 判定の調整方針整理、Analyzer レポートのモニタリング指標の整理、Fix ログ可視化要件の精査。
+
+### エージェント運用ガイド整備（優先度: P1）
+- ゴール: エージェントが参照する AGENTS.md を体系化し、開発プロセスや検証手順を一元管理する。
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md)
+- 参照 ToDo: [docs/todo/20251009-agents-md-enhancement.md](../todo/20251009-agents-md-enhancement.md)
+- 状況: 4/5 件完了（2025-10-09 更新）
+- 期待成果: セットアップ・CLI 操作・テスト・スタイル・タスク運用・テンプレート注意点を網羅したガイド整備。
+- 次のアクション: AGENTS.md 更新内容のレビュー共有と PR 作成。
 
 ### ビジュアルフィードバックコパイロット（優先度: P3）
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。
