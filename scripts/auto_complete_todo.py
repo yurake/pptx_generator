@@ -35,12 +35,14 @@ def parse_front_matter(content: str) -> Dict[str, str]:
 
 
 def mark_all_tasks_complete(content: str) -> Tuple[str, bool]:
+    """Mark only the final 'PR 作成' task as complete if present."""
     lines = content.splitlines()
     updated = False
     for index, line in enumerate(lines):
-        if line.startswith("- [ ]"):
+        if line.startswith("- [ ] PR 作成"):
             lines[index] = line.replace("- [ ]", "- [x]", 1)
             updated = True
+            break
     new_content = "\n".join(lines)
     if content.endswith("\n"):
         new_content += "\n"

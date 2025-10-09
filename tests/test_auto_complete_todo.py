@@ -79,7 +79,8 @@ def test_process_todo_and_update_roadmap(tmp_path):
     assert fields["roadmap_item"] == "RM-002 サンプルテーマ"
     assert archived_path.exists()
     archived_content = archived_path.read_text(encoding="utf-8")
-    assert "- [x] 作業 1" in archived_content
+    assert "- [ ] 作業 1" in archived_content
+    assert "- [x] PR 作成" in archived_content
     assert f"PR #{pr_number} {pr_url}（{today} 完了）" in archived_content
 
     updated = update_roadmap(
