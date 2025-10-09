@@ -36,6 +36,7 @@
   uv run --extra dev pytest tests/test_cli_integration.py
   ```
 - テスト実行後は出力ディレクトリ (例: `.pptxgen/outputs/`) を確認し、期待する PPTX / PDF が生成されているか確認する。
+- テスト階層やケース追加の方針は `tests/AGENTS.md` を参照する。統合テストでは `samples/` のデータを活用し、バイナリ差分はハッシュやメタ情報で検証する。
 
 # 6 コードスタイルと静的解析
 - Python: `ruff`, `black --check`, `mypy` を利用する。未導入の場合は `uv tool install <package>` で単体インストールしてから以下を実行する。
@@ -51,6 +52,7 @@
 - 作業開始前に `docs/todo/` に `YYYYMMDD-<slug>.md` 形式で ToDo を作成し、進捗状況を適宜更新する。テンプレートは `docs/todo/template.md`。
 - 大項目やロードマップ更新が必要な場合は `docs/roadmap/README.md` も併せて調整する。
 - 調査結果や検討事項は `docs/` 配下の適切なカテゴリ (例: `notes/`, `policies/`, `runbooks/`) に記録する。
+- ドキュメントカテゴリと更新手順の詳細は `docs/AGENTS.md` を参照。追加資料を作成した際はカテゴリ README を更新し、ToDo にメモを残す。
 
 # 8 コミット・PR 運用
 - コミットメッセージは Conventional Commits (`type(scope): subject`) に従う。例: `docs: update agents guidance`
@@ -58,9 +60,22 @@
 - 作業ブランチは `feat|fix|chore|docs/<slug>` などを使用し、`main` への直接 push は禁止。
 - PR はテンプレートに沿って作成し、目的・影響範囲・テスト結果・ロールバック手順を必ず明記する。
 - マージ前に CI 緑化、最新 `main` への追従、コンフリクト解消を完了させる。
+- PR 説明では「変更内容」「背景」「破壊的変更の有無」「関連 ToDo / ドキュメント」を明示し、レビュー観点に応じて `tests/AGENTS.md` や `docs/AGENTS.md` のガイドに沿った更新を確認する。
 
 # 9 設定・テンプレートの注意点
 - テンプレートとして使用できるのは `.pptx` のみ。`.potx` を使う場合は PowerPoint で `.pptx` に書き出す。
 - JSON 仕様の `layout` はテンプレートのレイアウト名と一致させる。アンカー指定が必要な図形にはユニークな名前を設定し、JSON の `anchor` に同名を記述する。
 - 配色・フォントは `config/branding.json` を参照して適用されるため、テンプレート側で変更しても自動反映されない点に注意する。
 - 設定やテンプレートを更新した際は、理由と影響範囲を ToDo および関連ドキュメント (`docs/policies/config-and-templates.md` 等) に記録する。
+
+# 10 サブディレクトリ専用ガイド
+- `docs/`: ドキュメントカテゴリと更新手順は `docs/AGENTS.md` を参照。
+- `src/`: コード構成とテスト方針は `src/AGENTS.md` を参照。
+- `tests/`: テストケースの追加規則は `tests/AGENTS.md` を参照。
+- `scripts/`: GitHub 連携スクリプトの実行条件は `scripts/AGENTS.md` を参照。
+- 他ディレクトリに専用の AGENTS.md を追加した場合は、このリストを更新してリンクを追記する。
+
+# 11 データ・セキュリティと外部ツール
+- 案件固有のデータやブランド設定 JSON には機微情報が含まれるため、公開リポジトリへコミットしない。サンプル化が必要な場合は匿名化して `samples/` へ配置する。
+- LibreOffice や .NET など外部ツールのバージョン差異で動作が変わる場合は `docs/policies/config-and-templates.md` に追記し、必要なら `docs/runbooks/` にフォールバック手順を記録する。
+- 追加で API キーや認証情報が必要な処理は、必ず環境変数経由で読み込み、ドキュメントに必要な前提条件を明記する。
