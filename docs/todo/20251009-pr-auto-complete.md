@@ -11,7 +11,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 - [x] 自動完了スクリプトとテストを実装
   - メモ: `python scripts/auto_complete_todo.py --help` / `uv run --extra dev pytest tests/test_auto_complete_todo.py`
 - [x] GitHub Actions ワークフローを追加し動作検証
-  - メモ: `todo-auto-complete` 追加、`python3 scripts/auto_complete_todo.py --dry-run` で挙動確認
+  - メモ: `todo-auto-complete` 追加、`python3 scripts/auto_complete_todo.py --dry-run` と PR #120 で本番テストを実施
 - [x] 運用ドキュメントとロードマップ/ToDo を更新し自動反映を確認
   - メモ: `AGENTS.md`, `docs/policies/task-management.md`, `docs/todo/README.md`, `scripts/AGENTS.md` を更新
 - [ ] PR 作成
