@@ -493,6 +493,17 @@ def test_renderer_uses_layout_placeholder_names_for_anchors(tmp_path: Path) -> N
     actual_center_x = picture_shape.left + picture_shape.width // 2
     assert abs(actual_center_x - expected_center_x) <= 2000
 
+    def placeholder_names(slide):
+        return {
+            shape.name
+            for shape in slide.shapes
+            if getattr(shape, "is_placeholder", False)
+        }
+
+    assert "Left Content Placeholder" not in placeholder_names(table_slide)
+    assert "Right Content Placeholder" not in placeholder_names(chart_slide)
+    assert "Picture Content Placeholder" not in placeholder_names(image_slide)
+
 
 def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> None:
     (
@@ -708,11 +719,11 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
         int(picture_shape.height),
     ) == placeholders["Logo"][:4]
 
-    placeholder_indices = {
-        shape.placeholder_format.idx
+    remaining_placeholder_names = {
+        shape.name
         for shape in slide.shapes
         if getattr(shape, "is_placeholder", False)
     }
-    assert placeholders["Body Left"][4] in placeholder_indices
-    assert placeholders["Body Right"][4] in placeholder_indices
-    assert placeholders["Logo"][4] in placeholder_indices
+    assert "Body Left" not in remaining_placeholder_names
+    assert "Body Right" not in remaining_placeholder_names
+    assert "Logo" not in remaining_placeholder_names
