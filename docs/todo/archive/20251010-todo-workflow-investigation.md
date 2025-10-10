@@ -16,8 +16,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 - [x] PR テンプレートに入力例と ToDo 記載チェックを追加する
 - [x] `todo-auto-complete` の空検出時にワークフローを失敗させる
 - [x] `todo-auto-complete` 後に ToDo の残存チェックを行う lint ステップを追加し、完了/完了間近が main に残らないことを自動検証する
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #143 https://github.com/yurake/pptx_generator/pull/143（2025-10-10 完了）
 
 ## メモ
 - 承認メッセージ: 2025-10-10 ユーザー指示「実施して」
