@@ -41,6 +41,19 @@ class LayoutBox:
 
 
 @dataclass(slots=True)
+class AnchorResolution:
+    shape: object | None
+    left: int
+    top: int
+    width: int
+    height: int
+    is_placeholder: bool = False
+
+    def as_box(self) -> tuple[int, int, int, int]:
+        return self.left, self.top, self.width, self.height
+
+
+@dataclass(slots=True)
 class RenderingOptions:
     template_path: Path | None = None
     output_filename: str = "proposal.pptx"
@@ -151,15 +164,20 @@ class SimpleRendererStep:
                 logger.debug("テーブル '%s' にデータがないためスキップ", table_spec.id)
                 continue
 
-            anchor_shape, left, top, width, height = self._resolve_anchor(
+            resolution = self._resolve_anchor(
                 slide, table_spec.anchor, self.options.fallback_table_box
             )
+            anchor_shape = resolution.shape
+            if resolution.is_placeholder:
+                self._prepare_placeholder(anchor_shape)
+            left, top, width, height = resolution.as_box()
             table_shape = slide.shapes.add_table(
                 row_count, column_count, left, top, width, height)
             table = table_shape.table
 
+            total_width = table_shape.width
             for idx in range(column_count):
-                table.columns[idx].width = width // column_count
+                table.columns[idx].width = total_width // column_count
 
             start_row = 0
             if header:
@@ -174,7 +192,7 @@ class SimpleRendererStep:
                     target_row, padded, is_header=False, style=table_spec.style, zebra_index=offset
                 )
 
-            if anchor_shape is not None:
+            if anchor_shape is not None and not resolution.is_placeholder:
                 self._remove_shape(anchor_shape)
 
     def _apply_images(self, slide, slide_spec: Slide) -> None:
@@ -182,21 +200,25 @@ class SimpleRendererStep:
             return
 
         for image_spec in slide_spec.images:
-            anchor_shape, left, top, width, height = self._resolve_anchor(
+            resolution = self._resolve_anchor(
                 slide, image_spec.anchor, self.options.fallback_image_box
             )
-            left = self._override_emu(left, image_spec.left_in)
-            top = self._override_emu(top, image_spec.top_in)
-            width = self._override_emu(width, image_spec.width_in)
-            height = self._override_emu(height, image_spec.height_in)
-
+            anchor_shape = resolution.shape
+            if resolution.is_placeholder:
+                self._prepare_placeholder(anchor_shape)
             image_path = self._resolve_image_source(
                 image_spec.source, image_spec.id)
+            left = self._override_emu(resolution.left, image_spec.left_in)
+            top = self._override_emu(resolution.top, image_spec.top_in)
+            target_width = self._override_emu(
+                resolution.width, image_spec.width_in)
+            target_height = self._override_emu(
+                resolution.height, image_spec.height_in)
             picture = slide.shapes.add_picture(str(image_path), left, top)
+            self._resize_picture(picture, target_width,
+                                 target_height, image_spec.sizing)
 
-            self._resize_picture(picture, width, height, image_spec.sizing)
-
-            if anchor_shape is not None:
+            if anchor_shape is not None and not resolution.is_placeholder:
                 self._remove_shape(anchor_shape)
 
     def _apply_charts(self, slide, slide_spec: Slide) -> None:
@@ -216,9 +238,13 @@ class SimpleRendererStep:
                 data.add_series(series.name, series.values)
 
             chart_type = self._resolve_chart_type(chart_spec.type)
-            anchor_shape, left, top, width, height = self._resolve_anchor(
+            resolution = self._resolve_anchor(
                 slide, chart_spec.anchor, self.options.fallback_chart_box
             )
+            anchor_shape = resolution.shape
+            if resolution.is_placeholder:
+                self._prepare_placeholder(anchor_shape)
+            left, top, width, height = resolution.as_box()
             chart_shape = slide.shapes.add_chart(
                 chart_type, left, top, width, height, data)
             chart = chart_shape.chart
@@ -226,7 +252,7 @@ class SimpleRendererStep:
             self._apply_chart_series_colors(chart.series, chart_spec.series)
             self._style_chart(chart, chart_spec.options)
 
-            if anchor_shape is not None:
+            if anchor_shape is not None and not resolution.is_placeholder:
                 self._remove_shape(anchor_shape)
 
     def _find_body_placeholder(self, slide):
@@ -267,15 +293,57 @@ class SimpleRendererStep:
                 return shape
         return None
 
+    def _find_placeholder_by_name(self, slide, name: str):
+        layout = getattr(slide, "slide_layout", None)
+        if layout is None:
+            return None
+        target_idx: int | None = None
+        for layout_shape in layout.shapes:
+            if getattr(layout_shape, "is_placeholder", False) and layout_shape.name == name:
+                target_idx = layout_shape.placeholder_format.idx
+                break
+        if target_idx is None:
+            return None
+        for shape in slide.shapes:
+            if getattr(shape, "is_placeholder", False) and shape.placeholder_format.idx == target_idx:
+                return shape
+        return None
+
     def _resolve_anchor(
         self, slide, anchor: str | None, fallback_box: LayoutBox
-    ) -> tuple[object | None, int, int, int, int]:
+    ) -> AnchorResolution:
         if anchor:
             shape = self._find_shape_by_name(slide, anchor)
             if shape is not None:
-                return shape, shape.left, shape.top, shape.width, shape.height
+                return AnchorResolution(
+                    shape,
+                    int(shape.left),
+                    int(shape.top),
+                    int(shape.width),
+                    int(shape.height),
+                    getattr(shape, "is_placeholder", False),
+                )
+            placeholder = self._find_placeholder_by_name(slide, anchor)
+            if placeholder is not None:
+                return AnchorResolution(
+                    placeholder,
+                    int(placeholder.left),
+                    int(placeholder.top),
+                    int(placeholder.width),
+                    int(placeholder.height),
+                    True,
+                )
         left, top, width, height = fallback_box.to_emu()
-        return None, left, top, width, height
+        return AnchorResolution(None, left, top, width, height)
+
+    def _prepare_placeholder(self, placeholder) -> None:
+        if placeholder is None:
+            return
+        try:
+            if getattr(placeholder, "has_text_frame", False):
+                placeholder.text_frame.clear()
+        except Exception:  # noqa: BLE001
+            logger.debug("プレースホルダーの初期化に失敗", exc_info=True)
 
     def _override_emu(self, default: int, value_in: float | None) -> int:
         if value_in is None:
