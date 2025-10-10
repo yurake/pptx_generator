@@ -16,6 +16,7 @@
 ## notes
 - 議事メモや調査結果などのラフな情報を置く場所。
 - `docs/notes/initial_discussion.txt`: 初期ディスカッションのメモ。
+- `docs/notes/20251010-test-coverage-alignment.md`: 要件とテストケースの対応を生成 AI に整理させる依頼テンプレートと出力例。
 
 ## runbooks
 - リリースや問い合わせ対応など、実務手順をまとめたドキュメント。
