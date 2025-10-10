@@ -175,9 +175,10 @@
 
 ### パイプライン機能拡張
 - ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
-- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md)
-- 状況: 7 件中 7 件完了（2025-10-06 更新）
+- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md), [docs/todo/20251010-auto-complete-archive-handling.md](../todo/20251010-auto-complete-archive-handling.md)
+- 状況: 7 件中 7 件完了（2025-10-06 更新）、追加修正 1 件完了（2025-10-10 更新）
 - 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
+- 追加成果: auto_complete_todo.py でアーカイブ済み ToDo の成功判定を実装（PR #146）。
 
 ### レンダラー リッチコンテンツ対応
 - ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
