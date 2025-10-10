@@ -1,6 +1,6 @@
 ---
 目的: todo-auto-complete ワークフローが main 上の ToDo に未完チェックを残す原因を調査し、対策案をまとめる
-関連ブランチ: work
+関連ブランチ: feat/todo-workflow-lint
 関連Issue: #139
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
