@@ -10,6 +10,7 @@
 - Python 3.12 系の仮想環境を用意し、`uv sync` で依存を同期する。
 - .NET 8 SDK と LibreOffice (headless 実行可能) をインストールし、Open XML SDK ベースの仕上げツールと PDF 変換が動作することを確認する。
 - `uv` コマンドが利用できない場合は <https://docs.astral.sh/uv/getting-started/installation/> を参照し導入する。
+- サンドボックスなどで権限エラーが出る場合は `UV_CACHE_DIR=.uv-cache` を付けて `uv` を実行し、作業ツリー内のキャッシュを使う。
 
 ## セットアップコマンド
 - 依存同期: `uv sync`

@@ -22,3 +22,4 @@
 ## アーカイブ
 - 作業完了後は `todo-auto-complete` が head ブランチ上で `docs/todo/archive/` へ移動し、ロードマップの該当項目を「完了テーマ」へ移す。
 - 自動化対象外のケースでは手動でアーカイブを行い、必要に応じてロードマップの調整方法を `docs/notes/` に残す。
+- 手動で移動する際は `git mv docs/todo/<file>.md docs/todo/archive/<file>.md` の形式で `git mv` を使用し、履歴を一貫させる。
