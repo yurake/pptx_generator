@@ -14,8 +14,8 @@ roadmap_item: RM-015 ワークフロー自動化基盤整備
   - メモ: モック入力とアーカイブファイルを用いたケースを追加する
 - [ ] ドキュメントとロードマップ、ToDo の相互リンクを更新する
   - メモ: docs/roadmap/README.md や関連メモを整備する
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #145 https://github.com/yurake/pptx_generator/pull/145（2025-10-10 完了）
 
 ## メモ
 - GitHub Actions の todo-auto-complete ワークフローで参照するファイル構造を整理し、docs/todo/archive/ 配下の扱いを明記する
