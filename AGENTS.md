@@ -91,3 +91,8 @@
 - Plan には scope、影響ファイル、リスクや前提、テスト戦略（単体／統合）、ロールバック方法を箇条書きで含める。緊急対応時も最小限の Plan を提示し、承認を待つ。
 - 承認を得たメッセージ ID やリンクを PR 説明およびコミット本文に記録する。Plan の内容を変更する際は作業を中断し、更新版 Plan への再承認を得る。
 - 詳細な運用手順とチェック項目は `docs/policies/task-management.md` の「Approval-First Development Policy」を参照する。
+
+# 13 個別ガイドの運用
+- 個別要件がある場合は、本ファイルに加えて補助ガイド `AGENTS_PRIVATE.md` を用意する。
+- `AGENTS_PRIVATE.md` は対象ディレクトリ直下に配置し、共通ガイドと異なる運用のみを記載する。
+- 読み順は「共通 (AGENTS.md) → 個別 (AGENTS_PRIVATE.md)」とし、矛盾がある場合は個別ガイドの記載を優先する。
