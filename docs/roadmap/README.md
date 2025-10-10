@@ -52,7 +52,7 @@
 <a id="rm-005"></a>
 ### RM-005 プレゼンストーリーモデラー（優先度: P5）
 - ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計し、アウトラインとスライド骨子を自動生成する。
-- 参照ドキュメント: [docs/notes/initial_discussion.txt](../notes/initial_discussion.txt), [docs/requirements/overview.md](../requirements/overview.md)
+- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md)
 - 状況: 企画中（2025-10-05 更新）
 - 期待成果: `Service-A Outliner` の高度化、感情トーンや意思決定ステージに合わせたストーリーパターン生成、アウトライン差分レビュー UI。
 - 依存: LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
