@@ -163,7 +163,7 @@
 - ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
 - 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
 - 状況: 10 件中 10 件完了（2025-10-06 更新）
-- 成果: PR #143 https://github.com/yurake/pptx_generator/pull/143
+- 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
 
 ### パイプライン機能拡張
 - ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
