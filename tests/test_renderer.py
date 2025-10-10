@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import base64
+import logging
 from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.util import Inches
 
 from pptx_generator.models import (
     ChartOptions,
@@ -52,6 +54,16 @@ def _load_placeholder_boxes(
                 shape.placeholder_format.idx,
             )
     return placeholders
+
+
+def _emu_box_from_inches(box: tuple[float, float, float, float]) -> tuple[int, int, int, int]:
+    left_in, top_in, width_in, height_in = box
+    return (
+        int(Inches(left_in)),
+        int(Inches(top_in)),
+        int(Inches(width_in)),
+        int(Inches(height_in)),
+    )
 
 
 def test_renderer_renders_rich_content(tmp_path: Path) -> None:
@@ -155,6 +167,166 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
         assert chart.value_axis.tick_labels.number_format == "0%"
     series = chart.series[0]
     assert series.format.fill.fore_color.rgb == RGBColor.from_string("123456")
+
+
+def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Fallback Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="fallback-table",
+                layout="Title and Content",
+                tables=[
+                    SlideTable(
+                        id="table",
+                        columns=["A"],
+                        rows=[["value"]],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(RenderingOptions(output_filename="fallback.pptx"))
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+
+    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
+    assert (
+        table_shape.left,
+        table_shape.top,
+        table_shape.width,
+        table_shape.height,
+    ) == expected_box
+
+
+def test_renderer_falls_back_when_anchor_unknown(tmp_path: Path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Fallback Unknown"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="missing-anchor",
+                layout="Title and Content",
+                tables=[
+                    SlideTable(
+                        id="table",
+                        anchor="Unknown Anchor",
+                        columns=["A"],
+                        rows=[["value"]],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(RenderingOptions(output_filename="fallback-unknown.pptx"))
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+
+    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
+    assert (
+        table_shape.left,
+        table_shape.top,
+        table_shape.width,
+        table_shape.height,
+    ) == expected_box
+
+
+def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _,
+        left_box,
+        right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    left_in = left_box[0] / Inches(1)
+    top_in = left_box[1] / Inches(1)
+    width_in = left_box[2] / Inches(1)
+    height_in = left_box[3] / Inches(1)
+
+    override_width = width_in * 0.6
+    override_height = height_in * 0.75
+    centered_left = left_in + (width_in - override_width) / 2
+    centered_top = top_in + (height_in - override_height) / 2
+
+    image_path = tmp_path / "tolerance.png"
+    _write_dummy_png(image_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Tolerance Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="centered-image",
+                layout=two_content_layout_name,
+                title="許容誤差テスト",
+                images=[
+                    SlideImage(
+                        id="image",
+                        anchor="Left Content Placeholder",
+                        source=str(image_path),
+                        left_in=centered_left,
+                        top_in=centered_top,
+                        width_in=override_width,
+                        height_in=override_height,
+                    )
+                ],
+                tables=[
+                    SlideTable(
+                        id="table",
+                        anchor="Right Content Placeholder",
+                        columns=["A"],
+                        rows=[["1"]],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="tolerance.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    assert (
+        table_shape.left,
+        table_shape.top,
+        table_shape.width,
+        table_shape.height,
+    ) == right_box
+
+    picture_shape = next(
+        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    )
+    placeholder_center_x = left_box[0] + left_box[2] // 2
+    placeholder_center_y = left_box[1] + left_box[3] // 2
+    picture_center_x = picture_shape.left + picture_shape.width // 2
+    picture_center_y = picture_shape.top + picture_shape.height // 2
+
+    assert abs(picture_center_x - placeholder_center_x) <= 1000
+    assert abs(picture_center_y - placeholder_center_y) <= 1000
 
 
 def _build_template_with_named_placeholders(tmp_path: Path):
@@ -320,6 +492,132 @@ def test_renderer_uses_layout_placeholder_names_for_anchors(tmp_path: Path) -> N
     expected_center_x = expected_left + expected_width // 2
     actual_center_x = picture_shape.left + picture_shape.width // 2
     assert abs(actual_center_x - expected_center_x) <= 2000
+
+
+def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _,
+        _left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    presentation = Presentation(template_path)
+    layout = next(
+        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+    )
+    for shape in list(layout.shapes):
+        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+            shape.element.getparent().remove(shape.element)
+            break
+    removed_template_path = tmp_path / "template_placeholder_removed.pptx"
+    presentation.save(removed_template_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Removed Placeholder"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="table-slide",
+                layout=two_content_layout_name,
+                tables=[
+                    SlideTable(
+                        id="table",
+                        anchor="Left Content Placeholder",
+                        columns=["A"],
+                        rows=[["1"]],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(template_path=removed_template_path, output_filename="removed.pptx")
+    )
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.renderer"):
+        renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+
+    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
+    assert (
+        table_shape.left,
+        table_shape.top,
+        table_shape.width,
+        table_shape.height,
+    ) == expected_box
+    assert not any(record.levelno >= logging.ERROR for record in caplog.records)
+
+
+def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _,
+        _left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    presentation = Presentation(template_path)
+    layout = next(
+        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+    )
+    for shape in layout.shapes:
+        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+            shape.name = "Renamed Placeholder"
+            break
+    renamed_template_path = tmp_path / "template_placeholder_renamed.pptx"
+    presentation.save(renamed_template_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Renamed Placeholder"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="table-slide",
+                layout=two_content_layout_name,
+                tables=[
+                    SlideTable(
+                        id="table",
+                        anchor="Left Content Placeholder",
+                        columns=["A"],
+                        rows=[["1"]],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(template_path=renamed_template_path, output_filename="renamed.pptx")
+    )
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.renderer"):
+        renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+
+    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
+    assert (
+        table_shape.left,
+        table_shape.top,
+        table_shape.width,
+        table_shape.height,
+    ) == expected_box
+    assert not any(record.levelno >= logging.ERROR for record in caplog.records)
 
 
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
