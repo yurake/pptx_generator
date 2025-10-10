@@ -14,8 +14,8 @@ roadmap_item: RM-007 SlideBullet アンカー拡張
   - メモ: `samples/json/sample_spec.json` へ anchor 付き箇条書き例を追加し、CLI 統合テストで検証する
 - [ ] プレースホルダー/図形からコンテンツに差し替えた後に元オブジェクトを削除する仕様改修を検討する
   - メモ: 画像・表・チャートのアンカー適用後に背後へ残存するプレースホルダーを除去する
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #142 https://github.com/yurake/pptx_generator/pull/142（2025-10-10 完了）
 
 ## メモ
 - `SlideBullet` 以外のテキスト形状にも拡張が必要かを調査し、スコープを明示する
