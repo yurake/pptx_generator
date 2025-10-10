@@ -1,7 +1,7 @@
 ---
 目的: AGENTS.md に個別運用向け資料参照方法を追記し、AGENTS_private.md の読み込み方針を定義する
 関連ブランチ: docs/agents-private-guidance
-関連Issue: 未作成
+関連Issue: #151
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
