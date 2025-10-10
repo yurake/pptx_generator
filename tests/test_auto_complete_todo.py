@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import sys
 import datetime as dt
 from pathlib import Path
-import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from scripts import auto_complete_todo
 from scripts.auto_complete_todo import process_todo, update_roadmap
 
 
@@ -149,3 +150,73 @@ roadmap_item: RM-002 サンプルテーマ
         dry_run=False,
     )
     assert updated
+
+
+def test_main_skips_archived_path(monkeypatch, capsys, tmp_path):
+    archive_dir = tmp_path / "docs" / "todo" / "archive"
+    archive_dir.mkdir(parents=True)
+    archived_todo = archive_dir / "20251001-archived.md"
+    archived_todo.write_text("---\n目的: 完了済み\n---\n", encoding="utf-8")
+
+    roadmap_path = tmp_path / "docs" / "roadmap" / "README.md"
+    roadmap_path.parent.mkdir(parents=True, exist_ok=True)
+
+    argv = [
+        "auto_complete_todo.py",
+        "--todo",
+        str(archived_todo),
+        "--pr-number",
+        "1",
+        "--pr-url",
+        "https://example.test/pr/1",
+        "--archive-dir",
+        str(archive_dir),
+        "--roadmap",
+        str(roadmap_path),
+        "--dry-run",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    auto_complete_todo.main()
+    captured = capsys.readouterr()
+    assert "既にアーカイブ済みのため処理をスキップします" in captured.out
+
+
+def test_main_skips_when_archived_counterpart_exists(monkeypatch, capsys, tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    archive_dir = todo_dir / "archive"
+    archive_dir.mkdir()
+
+    archived_todo = archive_dir / "20251001-archived.md"
+    archived_todo.write_text("---\n目的: 完了済み\n---\n", encoding="utf-8")
+
+    missing_original = todo_dir / archived_todo.name
+
+    roadmap_path = docs_dir / "roadmap" / "README.md"
+    roadmap_path.parent.mkdir(parents=True, exist_ok=True)
+
+    argv = [
+        "auto_complete_todo.py",
+        "--todo",
+        str(missing_original),
+        "--pr-number",
+        "2",
+        "--pr-url",
+        "https://example.test/pr/2",
+        "--archive-dir",
+        str(archive_dir),
+        "--roadmap",
+        str(roadmap_path),
+        "--dry-run",
+    ]
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", argv)
+
+    auto_complete_todo.main()
+    captured = capsys.readouterr()
+    assert str(archived_todo) in captured.out

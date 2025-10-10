@@ -182,10 +182,24 @@ def main() -> None:
     archive_dir = Path(args.archive_dir)
     roadmap_path = Path(args.roadmap)
 
+    archive_dir_resolved = archive_dir.resolve(strict=False)
+
     results = []
     for todo in args.todo:
         todo_path = Path(todo)
-        if not todo_path.exists():
+        if todo_path.exists():
+            try:
+                todo_resolved = todo_path.resolve(strict=True)
+            except FileNotFoundError:
+                todo_resolved = todo_path
+            if todo_resolved.is_relative_to(archive_dir_resolved):
+                print(f"[INFO] {todo_resolved} は既にアーカイブ済みのため処理をスキップします。")
+                continue
+        else:
+            archive_candidate = archive_dir / todo_path.name
+            if archive_candidate.exists():
+                print(f"[INFO] {archive_candidate} は既にアーカイブ済みのため処理をスキップします。")
+                continue
             raise FileNotFoundError(f"{todo} が見つかりません")
         result_path, fields, archived = process_todo(
             todo_path, archive_dir, args.pr_number, args.pr_url, args.dry_run
