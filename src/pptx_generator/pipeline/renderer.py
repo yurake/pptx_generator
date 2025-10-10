@@ -137,8 +137,21 @@ class SimpleRendererStep:
     def _apply_bullets(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.bullets:
             return
-        body_shape = self._find_body_placeholder(slide)
-        text_frame = body_shape.text_frame
+
+        # anchor が指定されている場合は最初の bullet の anchor を使用
+        # 全 bullets が同じ図形に配置されることを想定
+        first_bullet = slide_spec.bullets[0]
+        if first_bullet.anchor:
+            target_shape = self._find_shape_by_name(slide, first_bullet.anchor)
+            if not target_shape:
+                raise ValueError(
+                    f"Shape with name '{first_bullet.anchor}' not found in slide. "
+                    f"Please check the template and ensure the shape name matches."
+                )
+        else:
+            target_shape = self._find_body_placeholder(slide)
+
+        text_frame = target_shape.text_frame
         text_frame.clear()
         for index, bullet in enumerate(slide_spec.bullets):
             paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph(

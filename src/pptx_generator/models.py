@@ -25,6 +25,7 @@ class SlideBullet(BaseModel):
     id: str
     text: str = Field(..., max_length=200)
     level: int = Field(0, ge=0, le=5)
+    anchor: str | None = None
     font: FontSpec | None = None
 
 
