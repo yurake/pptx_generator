@@ -43,9 +43,11 @@ jobs:
           printf 'Detected ToDo paths:\n%s\n' "$todos"
           printf 'todo_list<<EOF\n%s\nEOF\n' "$todos" >> "$GITHUB_OUTPUT"
 
-      - name: Skip if no todo detected
+      - name: Fail if no todo detected
         if: steps.gather.outputs.todo_list == ''
-        run: echo "No ToDo items detected in PR body. Skipping auto-complete."
+        run: |
+          echo "PR 本文に対象 ToDo が記載されていません。テンプレートの占位文字列を置き換えてください。"
+          exit 1
 
       - name: Run ToDo auto completion
         if: steps.gather.outputs.todo_list != ''
@@ -73,3 +75,6 @@ jobs:
           git add docs/todo docs/roadmap/README.md
           git commit -m "chore(todo): auto-complete PR #${{ github.event.pull_request.number }}"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+      - name: Lint remaining ToDo files
+        run: python3 scripts/lint_todo_completion.py

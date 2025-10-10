@@ -151,6 +151,33 @@
 
 ## 完了テーマ
 
+<a id="rm-002"></a>
+### RM-002 エージェント運用ガイド整備（優先度: P1）
+- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
+- 状況: 完了（2025-10-10 更新）
+- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
+
+### PDF 自動生成対応
+- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
+- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
+- 状況: 10 件中 10 件完了（2025-10-06 更新）
+- 成果: PR #143 https://github.com/yurake/pptx_generator/pull/143
+
+### パイプライン機能拡張
+- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
+- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md), [docs/todo/archive/20251010-auto-complete-archive-handling.md](../todo/archive/20251010-auto-complete-archive-handling.md)
+- 状況: 7 件中 7 件完了（2025-10-06 更新）、追加修正 1 件完了（2025-10-10 更新）
+- 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
+- 追加成果: auto_complete_todo.py でアーカイブ済み ToDo の成功判定を実装（PR #146）。
+
+### レンダラー リッチコンテンツ対応
+- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
+- 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
+- 状況: 14 件中 14 件完了（2025-10-06 更新）
+- 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
+
 <a id="rm-008"></a>
 ### RM-008 カスタムテンプレート操作性向上（優先度: P2）
 - ゴール: プレースホルダー名称を活用して画像・テーブル・チャートを配置し、テンプレート側で図形種類を固定しなくてもアンカー指定が有効になる状態を実現する。
@@ -158,32 +185,6 @@
 - 状況: 完了（2025-10-10 更新）
 - 期待成果: プレースホルダーと図形のアンカー混在対応、テンプレート準備ガイドの更新、回帰テストによる互換性確認。
 - 依存: レンダラーのアンカー解決ロジック、テンプレート操作ドキュメント、CLI テストスイート。
-
-<a id="rm-002"></a>
-### RM-002 エージェント運用ガイド整備（優先度: P1）
-- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
-- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
-- 状況: 完了（2025-10-09 更新）
-- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
-
-### PDF 自動生成対応
-- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
-- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
-- 状況: 10 件中 10 件完了（2025-10-06 更新）
-- 成果: `--export-pdf` オプション実装、LibreOffice フォールバックと監査ログ整備、PDF 出力テスト追加。
-
-### パイプライン機能拡張
-- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
-- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md)
-- 状況: 7 件中 7 件完了（2025-10-06 更新）
-- 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
-
-### レンダラー リッチコンテンツ対応
-- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
-- 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
-- 状況: 14 件中 14 件完了（2025-10-06 更新）
-- 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
 
 ## 更新履歴
 - 2025-10-05: 初版作成。
