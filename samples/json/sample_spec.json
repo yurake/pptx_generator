@@ -211,7 +211,7 @@
     },
     {
       "id": "team",
-      "layout": "コンテンツ プレースホルダー 2",
+      "layout": "Two Column Detail",
       "title": "推進体制",
       "tables": [
         {
@@ -234,7 +234,7 @@
           "id": "team-photo",
           "source": "samples/assets/team.png",
           "anchor": "Body Left",
-          "sizing": "fill"
+          "sizing": "fit"
         }
       ],
       "notes": "写真の差し替え例として team-photo アンカーを設定。"

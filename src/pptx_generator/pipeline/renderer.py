@@ -192,7 +192,7 @@ class SimpleRendererStep:
                     target_row, padded, is_header=False, style=table_spec.style, zebra_index=offset
                 )
 
-            if anchor_shape is not None and not resolution.is_placeholder:
+            if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
 
     def _apply_images(self, slide, slide_spec: Slide) -> None:
@@ -218,7 +218,7 @@ class SimpleRendererStep:
             self._resize_picture(picture, target_width,
                                  target_height, image_spec.sizing)
 
-            if anchor_shape is not None and not resolution.is_placeholder:
+            if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
 
     def _apply_charts(self, slide, slide_spec: Slide) -> None:
@@ -252,7 +252,7 @@ class SimpleRendererStep:
             self._apply_chart_series_colors(chart.series, chart_spec.series)
             self._style_chart(chart, chart_spec.options)
 
-            if anchor_shape is not None and not resolution.is_placeholder:
+            if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
 
     def _find_body_placeholder(self, slide):
