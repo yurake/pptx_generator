@@ -211,7 +211,7 @@
     },
     {
       "id": "team",
-      "layout": "コンテンツ プレースホルダー 2",
+      "layout": "Two Column Detail",
       "title": "推進体制",
       "tables": [
         {
