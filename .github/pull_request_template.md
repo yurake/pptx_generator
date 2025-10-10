@@ -5,9 +5,7 @@
 ## 関連リンク
 - Close #<番号>, #<番号>
 - Issue: #<番号>
-- ToDo:
-  - docs/todo/<ファイル名>.md
-  - docs/todo/<ファイル名>.md
+- ToDo: docs/todo/<ファイル名>.md
 - ノート／設計資料: docs/notes/<ファイル名>.md
 
 ## 変更内容
