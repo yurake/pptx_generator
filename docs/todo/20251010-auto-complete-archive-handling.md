@@ -1,7 +1,7 @@
 ---
 目的: auto_complete_todo.py でアーカイブ済み ToDo も成功扱いできるよう判定ロジックを改善する
 関連ブランチ: fix/auto-complete-archive
-関連Issue: 未作成
+関連Issue: #150
 roadmap_item: RM-015 ワークフロー自動化基盤整備
 ---
 
