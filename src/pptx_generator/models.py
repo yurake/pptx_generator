@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Iterable, Iterator, Literal
 
 from pydantic import (
     BaseModel,
@@ -119,6 +119,19 @@ class Slide(BaseModel):
     images: list[SlideImage] = Field(default_factory=list)
     tables: list[SlideTable] = Field(default_factory=list)
     charts: list[SlideChart] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+    def iter_bullet_groups(self) -> Iterable[SlideBulletGroup]:
+        """箇条書きグループを順序通りに返す。"""
+
+        return tuple(self.bullets)
+
+    def iter_bullets(self) -> Iterator[SlideBullet]:
+        """すべての箇条書き項目を順序通りにイテレートする。"""
+
+        for group in self.bullets:
+            yield from group.items
 
 
 class JobMeta(BaseModel):

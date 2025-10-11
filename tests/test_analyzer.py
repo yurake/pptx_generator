@@ -6,14 +6,26 @@ import json
 
 import pytest
 
-from pptx_generator.models import FontSpec, JobAuth, JobMeta, JobSpec, Slide, SlideBullet, SlideImage
+from pptx_generator.models import (
+    FontSpec,
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+    SlideImage,
+)
 from pptx_generator.pipeline import AnalyzerOptions, PipelineContext, SimpleAnalyzerStep
+
+def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
+    return SlideBulletGroup(anchor=anchor, items=list(bullets))
 
 
 def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
     spec = JobSpec(
         meta=JobMeta(
-            schema_version="1.0",
+            schema_version="1.1",
             title="テスト案件",
             client="Zeta",
             author="営業部",
@@ -27,15 +39,17 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
                 layout="Title and Content",
                 title="テストスライド",
                 bullets=[
-                    SlideBullet(
-                        id="bullet-1",
-                        text="本文",
-                        level=4,
-                        font=FontSpec(
-                            name="Yu Gothic",
-                            size_pt=12.0,
-                            color_hex="#FFFFFF",
-                        ),
+                    _group(
+                        SlideBullet(
+                            id="bullet-1",
+                            text="本文",
+                            level=4,
+                            font=FontSpec(
+                                name="Yu Gothic",
+                                size_pt=12.0,
+                                color_hex="#FFFFFF",
+                            ),
+                        )
                     )
                 ],
                 images=[
@@ -90,7 +104,7 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
 def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None:
     spec = JobSpec(
         meta=JobMeta(
-            schema_version="1.0",
+            schema_version="1.1",
             title="コントラスト調整テスト",
             client="Zeta",
             author="営業部",
@@ -103,15 +117,17 @@ def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None
                 id="slide-large",
                 layout="Title and Content",
                 bullets=[
-                    SlideBullet(
-                        id="bullet-large",
-                        text="セカンダリカラーの本文",
-                        level=0,
-                        font=FontSpec(
-                            name="Yu Gothic",
-                            size_pt=24.0,
-                            color_hex="#0097A7",
-                        ),
+                    _group(
+                        SlideBullet(
+                            id="bullet-large",
+                            text="セカンダリカラーの本文",
+                            level=0,
+                            font=FontSpec(
+                                name="Yu Gothic",
+                                size_pt=24.0,
+                                color_hex="#0097A7",
+                            ),
+                        )
                     )
                 ],
             )
