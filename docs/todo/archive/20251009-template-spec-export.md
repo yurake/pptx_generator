@@ -34,7 +34,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 - [x] ドキュメント更新
   - メモ: README.mdにextract-templateコマンドの使用方法、オプション一覧、使用例を追加完了
 - [x] PR作成
-  - メモ: feat/template-spec-export ブランチをプッシュ完了。GitHub上でPR作成準備完了
+  - メモ: PR #154 (feat/template-spec-export → main) を作成済み
 
 ## 設計詳細
 
