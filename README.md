@@ -28,21 +28,21 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
    - `.pptx` テンプレートを使う場合は CLI 実行時に `--template <パス>` を指定します。.potx には対応していないため、必要に応じて PowerPoint で `.pptx` に書き出してください。詳細は `docs/policies/config-and-templates.md` を参照してください。テンプレート例として `samples/templates/templates.pptx` を同梱しています。
 2. CLI を実行して PPTX と analysis.json を生成します。
    ```bash
-   uv run pptx-generator run samples/json/sample_spec_minimal.json
+   uv run pptx gen samples/json/sample_spec_minimal.json
    # テンプレートを使う場合
-   uv run pptx-generator run samples/json/sample_spec.json --template samples/templates/templates.pptx
+   uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
    ```
    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
-3. テンプレートの構造解析を行う場合は `extract-template` コマンドを使用します。
+3. テンプレートの構造解析を行う場合は `tpl-extract` コマンドを使用します。
    ```bash
    # 基本的な使用方法
-   uv run pptx-generator extract-template --template samples/templates/templates.pptx
+   uv run pptx tpl-extract --template samples/templates/templates.pptx
    
    # 特定のレイアウトのみを抽出
-   uv run pptx-generator extract-template --template samples/templates/templates.pptx --layout "タイトルスライド"
+   uv run pptx tpl-extract --template samples/templates/templates.pptx --layout "タイトルスライド"
    
    # YAML形式で出力
-   uv run pptx-generator extract-template --template samples/templates/templates.pptx --format yaml
+   uv run pptx tpl-extract --template samples/templates/templates.pptx --format yaml
    ```
    - 既存の `.pptx` テンプレートから JSON 仕様の雛形を生成し、テンプレートの構造を解析してアンカー情報や座標データを含む雛形 JSON を作成します。
 
@@ -57,7 +57,7 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数を設定する | 60 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数を指定する | 0 |
 
-### extract-template 専用オプション
+### tpl-extract 専用オプション
 
 | Option | Function | Default |
 | --- | --- | --- |
