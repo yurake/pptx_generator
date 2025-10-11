@@ -1,7 +1,7 @@
 ---
 目的: レイアウトスタイル設定の統一設計と運用フローを具体化する
 関連ブランチ: docs/layout-style-governance
-関連Issue: 未作成
+関連Issue: #161
 roadmap_item: RM-011 レイアウトスタイル統一
 ---
 

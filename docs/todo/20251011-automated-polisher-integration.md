@@ -1,7 +1,7 @@
 ---
 目的: Refiner の自動補正を拡張し、Open XML SDK ベースの仕上げ工程を統合する
 関連ブランチ: feat/polisher-integration
-関連Issue: 未作成
+関連Issue: #160
 roadmap_item: RM-014 自動補正・仕上げ統合
 ---
 
