@@ -19,18 +19,18 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
   - メモ: 単体・統合テスト方針、サンプル活用方針確定
 - [x] 全体処理フロー設計完了
   - メモ: Mermaid図付きフロー確定
-- [ ] ブランチ作成
-  - メモ: feat/template-spec-export ブランチで作業開始
-- [ ] TemplateAnalyzerStep実装
-  - メモ: `src/pptx_generator/pipeline/template_analyzer.py`新規作成
-- [ ] モデルクラス拡張
-  - メモ: `src/pptx_generator/models.py`にTemplateSpec等追加
-- [ ] CLI統合実装
-  - メモ: `src/pptx_generator/cli.py`にextract-templateコマンド追加
-- [ ] 単体テスト実装
-  - メモ: 抽出関数・命名規則・エラー処理のテスト
-- [ ] 統合テスト実装
-  - メモ: CLIオプション・サンプルテンプレート検証
+- [x] ブランチ作成
+  - メモ: feat/template-spec-export ブランチで作業中
+- [x] TemplateExtractorStep実装
+  - メモ: `src/pptx_generator/pipeline/template_extractor.py`で抽出ステップと本体を実装
+- [x] モデルクラス拡張
+  - メモ: `src/pptx_generator/models.py`にTemplateSpec関連モデルを追加
+- [x] CLI統合実装
+  - メモ: `src/pptx_generator/cli.py`にextract-templateコマンドを追加
+- [x] 単体テスト実装
+  - メモ: `tests/test_template_extractor.py`で抽出ロジックを検証
+- [x] 統合テスト実装
+  - メモ: `tests/test_cli_integration.py`でextract-templateコマンドの動作を検証
 - [x] ドキュメント更新
   - メモ: README.mdにextract-templateコマンドの使用方法、オプション一覧、使用例を追加完了
 - [x] PR作成
@@ -42,7 +42,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 - python-pptxでpptxテンプレートから図形・プレースホルダー属性抽出
 - アンカー名（図形名・プレースホルダー名）を基準に座標・サイズ・種別・初期テキスト等を収集
 - 命名規則ガイド準拠・SlideBullet拡張仕様と重複しない抽出ロジック
-- 新規TemplateAnalyzerStepをpipelineに追加、outputs/template_spec.jsonへ雛形保存
+- TemplateExtractorStepをpipeline構成に追加し、outputs/template_spec.jsonへ雛形保存
 
 ### 2. JSON雛形生成処理フロー・スキーマ設計
 - layout名・アンカー名・shape種別・座標・サイズ・初期テキスト・placeholder種別等を抽出
@@ -72,7 +72,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 
 ```mermaid
 flowchart TD
-    A[extract-template CLIコマンド] --> B[TemplateAnalyzerStep]
+    A[extract-template CLIコマンド] --> B[TemplateExtractorStep]
     B --> C[python-pptxでテンプレート解析]
     C --> D[レイアウト・アンカー・属性抽出]
     D --> E[命名規則・SlideBullet拡張仕様チェック]
@@ -85,6 +85,6 @@ flowchart TD
 ## メモ
 - 設計フェーズ完了、実装フェーズへ移行可能
 - python-pptxライブラリの習熟が必要
-- 既存のrenderer.pyやanalyzer.pyとの整合性確保が重要
+- 既存のrenderer.pyやTemplateExtractorとの整合性確保が重要
 - SlideBullet拡張仕様との競合回避に注意
 - テスト実行時はsamples/templates/内のファイルを活用
