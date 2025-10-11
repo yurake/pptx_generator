@@ -17,7 +17,7 @@ from pptx_generator.models import JobSpec, TemplateSpec
 from pptx_generator.pipeline import pdf_exporter
 
 
-def test_cli_run_generates_outputs(tmp_path) -> None:
+def test_cli_gen_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work"
     runner = CliRunner()
@@ -25,7 +25,7 @@ def test_cli_run_generates_outputs(tmp_path) -> None:
     result = runner.invoke(
         app,
         [
-            "run",
+            "gen",
             str(spec_path),
             "--workdir",
             str(workdir),
@@ -79,7 +79,7 @@ def test_cli_run_generates_outputs(tmp_path) -> None:
     assert charts, "チャートが描画されていること"
 
 
-def test_cli_run_supports_template(tmp_path) -> None:
+def test_cli_gen_supports_template(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-template"
     template_path = tmp_path / "template.pptx"
@@ -93,7 +93,7 @@ def test_cli_run_supports_template(tmp_path) -> None:
     result = runner.invoke(
         app,
         [
-            "run",
+            "gen",
             str(spec_path),
             "--workdir",
             str(workdir),
@@ -132,7 +132,7 @@ def test_cli_run_supports_template(tmp_path) -> None:
     assert tables
 
 
-def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
+def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf"
 
@@ -156,7 +156,7 @@ def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
     result = runner.invoke(
         app,
         [
-            "run",
+            "gen",
             str(spec_path),
             "--workdir",
             str(workdir),
@@ -186,7 +186,7 @@ def test_cli_run_exports_pdf(tmp_path, monkeypatch) -> None:
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
 
 
-def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
+def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf-only"
 
@@ -210,7 +210,7 @@ def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
     result = runner.invoke(
         app,
         [
-            "run",
+            "gen",
             str(spec_path),
             "--workdir",
             str(workdir),
@@ -237,7 +237,7 @@ def test_cli_run_pdf_only(tmp_path, monkeypatch) -> None:
     assert audit_payload.get("artifacts", {}).get("pdf") == str(pdf_path)
 
 
-def test_cli_run_pdf_skip_env(tmp_path, monkeypatch) -> None:
+def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     workdir = tmp_path / "work-pdf-skip"
 
@@ -251,7 +251,7 @@ def test_cli_run_pdf_skip_env(tmp_path, monkeypatch) -> None:
     result = runner.invoke(
         app,
         [
-            "run",
+            "gen",
             str(spec_path),
             "--workdir",
             str(workdir),
@@ -273,8 +273,8 @@ def test_cli_run_pdf_skip_env(tmp_path, monkeypatch) -> None:
     assert audit_payload.get("pdf_export", {}).get("converter") == "skipped"
 
 
-def test_cli_extract_template_basic(tmp_path) -> None:
-    """extract-template コマンドの基本動作テスト。"""
+def test_cli_tpl_extract_basic(tmp_path) -> None:
+    """tpl-extract コマンドの基本動作テスト。"""
     template_path = Path("samples/templates/templates.pptx")
     workdir = tmp_path / "work-extract"
     runner = CliRunner()
@@ -282,7 +282,7 @@ def test_cli_extract_template_basic(tmp_path) -> None:
     result = runner.invoke(
         app,
         [
-            "extract-template",
+            "tpl-extract",
             "--template",
             str(template_path),
             "--workdir",
@@ -307,8 +307,8 @@ def test_cli_extract_template_basic(tmp_path) -> None:
     assert template_spec.extracted_at is not None
 
 
-def test_cli_extract_template_custom_output(tmp_path) -> None:
-    """extract-template コマンドのカスタム出力パステスト。"""
+def test_cli_tpl_extract_custom_output(tmp_path) -> None:
+    """tpl-extract コマンドのカスタム出力パステスト。"""
     template_path = Path("samples/templates/templates.pptx")
     output_path = tmp_path / "custom_template_spec.json"
     runner = CliRunner()
@@ -316,7 +316,7 @@ def test_cli_extract_template_custom_output(tmp_path) -> None:
     result = runner.invoke(
         app,
         [
-            "extract-template",
+            "tpl-extract",
             "--template",
             str(template_path),
             "--output",
@@ -333,8 +333,8 @@ def test_cli_extract_template_custom_output(tmp_path) -> None:
     assert template_spec.template_path == str(template_path)
 
 
-def test_cli_extract_template_with_filters(tmp_path) -> None:
-    """extract-template コマンドのフィルタ機能テスト。"""
+def test_cli_tpl_extract_with_filters(tmp_path) -> None:
+    """tpl-extract コマンドのフィルタ機能テスト。"""
     template_path = Path("samples/templates/templates.pptx")
     workdir = tmp_path / "work-extract-filter"
     runner = CliRunner()
@@ -342,7 +342,7 @@ def test_cli_extract_template_with_filters(tmp_path) -> None:
     result = runner.invoke(
         app,
         [
-            "extract-template",
+            "tpl-extract",
             "--template",
             str(template_path),
             "--workdir",
@@ -368,14 +368,14 @@ def test_cli_extract_template_with_filters(tmp_path) -> None:
     assert template_spec.template_path == str(template_path)
 
 
-def test_cli_extract_template_nonexistent_file() -> None:
-    """extract-template コマンドの存在しないファイルテスト。"""
+def test_cli_tpl_extract_nonexistent_file() -> None:
+    """tpl-extract コマンドの存在しないファイルテスト。"""
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
-            "extract-template",
+            "tpl-extract",
             "--template",
             "nonexistent.pptx",
         ],
@@ -385,8 +385,8 @@ def test_cli_extract_template_nonexistent_file() -> None:
     assert "ファイルが見つかりません" in result.output
 
 
-def test_cli_extract_template_verbose_output(tmp_path) -> None:
-    """extract-template コマンドの詳細出力テスト。"""
+def test_cli_tpl_extract_verbose_output(tmp_path) -> None:
+    """tpl-extract コマンドの詳細出力テスト。"""
     template_path = Path("samples/templates/templates.pptx")
     workdir = tmp_path / "work-extract-verbose"
     runner = CliRunner()
@@ -395,7 +395,7 @@ def test_cli_extract_template_verbose_output(tmp_path) -> None:
         app,
         [
             "--verbose",  # グローバルオプション
-            "extract-template",
+            "tpl-extract",
             "--template",
             str(template_path),
             "--workdir",
@@ -410,8 +410,8 @@ def test_cli_extract_template_verbose_output(tmp_path) -> None:
     assert "抽出された図形・アンカー数:" in result.output
 
 
-def test_cli_extract_template_with_mock_presentation(tmp_path) -> None:
-    """extract-template コマンドのモックプレゼンテーションテスト。"""
+def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
+    """tpl-extract コマンドのモックプレゼンテーションテスト。"""
     # 一時的なPPTXファイルを作成
     with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as temp_file:
         temp_template_path = Path(temp_file.name)
@@ -428,7 +428,7 @@ def test_cli_extract_template_with_mock_presentation(tmp_path) -> None:
         result = runner.invoke(
             app,
             [
-                "extract-template",
+                "tpl-extract",
                 "--template",
                 str(temp_template_path),
                 "--workdir",

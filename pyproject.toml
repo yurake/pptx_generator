@@ -17,7 +17,7 @@ dev = [
 ]
 
 [project.scripts]
-pptx-generator = "pptx_generator.cli:app"
+pptx = "pptx_generator.cli:app"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
