@@ -23,7 +23,7 @@
   ```bash
   uv run pptx gen samples/json/sample_spec.json
   ```
-  - 出力先は既定で `.pptxgen/outputs/`。`--workdir` で変更可能。
+  - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
   - ブランド設定を差し替える場合は `--branding <path>` を指定する。
   - `--export-pdf` で LibreOffice 経由の PDF 生成を有効化できる。
 
@@ -36,7 +36,7 @@
   ```bash
   uv run --extra dev pytest tests/test_cli_integration.py
   ```
-- テスト実行後は出力ディレクトリ (例: `.pptxgen/outputs/`) を確認し、期待する PPTX / PDF が生成されているか確認する。
+- テスト実行後は出力ディレクトリ (例: `.pptx/gen/`) を確認し、期待する PPTX / PDF が生成されているか確認する。
 - テスト階層やケース追加の方針は `tests/AGENTS.md` を参照する。統合テストでは `samples/` のデータを活用し、バイナリ差分はハッシュやメタ情報で検証する。
 
 # 6 コードスタイルと静的解析

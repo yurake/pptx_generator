@@ -8,8 +8,6 @@ from pptx_generator.branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
-
-
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 
 
@@ -39,6 +37,10 @@ def test_extract_branding_config_from_sample_template() -> None:
 
     assert footer["text"] == ""
     assert footer["show_page_number"] is True
+
+    branding_config = extract_branding_config(SAMPLE_TEMPLATE).to_branding_config()
+    assert branding_config.heading_font.name == "Meiryo UI"
+    assert branding_config.primary_color == "#156082"
 
 
 def test_extract_branding_config_missing_template(tmp_path: Path) -> None:

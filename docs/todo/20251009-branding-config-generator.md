@@ -13,8 +13,10 @@ roadmap_item: RM-009 テンプレート設定自動生成
   - メモ: 同メモで Option A/B/C の比較と概算工数を整理（2025-10-11）。
 - [x] PoC スクリプトでテンプレートからの抽出手順を検証
   - メモ: `scripts/branding_extract.py` 追加。`uv run python scripts/branding_extract.py --template samples/templates/templates.pptx` で JSON 出力を確認（2025-10-11）。
-- [ ] CLI へ抽出機能を統合し、テンプレート指定時のブランド切り替えに対応
-  - メモ: `uv run pptx gen --template` 時に抽出、`--branding` 明示時は従来通り。`tpl-extract` はテンプレート仕様とブランド設定の同時出力を想定。
+- [x] CLI へ抽出機能を統合し、テンプレート指定時のブランド切り替えに対応
+  - メモ: `pptx gen` でテンプレート指定時に自動抽出。`tpl-extract` は `branding.json` を同時出力（2025-10-11）。
+- [x] CLI 出力先オプションの整理とデフォルトディレクトリ更新
+  - メモ: `pptx gen`/`tpl-extract` を `--output` で統一し、既定を `.pptx/gen` / `.pptx/extract` へ変更（2025-10-11）。
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 

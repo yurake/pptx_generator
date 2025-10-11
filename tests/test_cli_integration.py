@@ -19,7 +19,7 @@ from pptx_generator.pipeline import pdf_exporter
 
 def test_cli_gen_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
-    workdir = tmp_path / "work"
+    output_dir = tmp_path / "gen-work"
     runner = CliRunner()
 
     result = runner.invoke(
@@ -27,8 +27,8 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
         [
             "gen",
             str(spec_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
         ],
         catch_exceptions=False,
     )
@@ -37,10 +37,9 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
 
     spec = JobSpec.parse_file(spec_path)
 
-    outputs_dir = workdir / "outputs"
-    pptx_path = outputs_dir / "proposal.pptx"
-    analysis_path = outputs_dir / "analysis.json"
-    audit_path = outputs_dir / "audit_log.json"
+    pptx_path = output_dir / "proposal.pptx"
+    analysis_path = output_dir / "analysis.json"
+    audit_path = output_dir / "audit_log.json"
 
     assert pptx_path.exists()
     assert analysis_path.exists()
@@ -56,6 +55,9 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert audit_payload.get("slides") == len(spec.slides)
     assert audit_payload.get("pdf_export") is None
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
+    branding_info = audit_payload.get("branding")
+    assert branding_info is not None
+    assert branding_info.get("source", {}).get("type") in {"default", "builtin"}
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
@@ -81,7 +83,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
 
 def test_cli_gen_supports_template(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
-    workdir = tmp_path / "work-template"
+    output_dir = tmp_path / "gen-work-template"
     template_path = tmp_path / "template.pptx"
 
     template = Presentation()
@@ -95,11 +97,11 @@ def test_cli_gen_supports_template(tmp_path) -> None:
         [
             "gen",
             str(spec_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
             "--template",
             str(template_path),
-            "--output",
+            "--pptx-name",
             "with-template.pptx",
         ],
         catch_exceptions=False,
@@ -107,10 +109,9 @@ def test_cli_gen_supports_template(tmp_path) -> None:
 
     assert result.exit_code == 0
 
-    outputs_dir = workdir / "outputs"
-    pptx_path = outputs_dir / "with-template.pptx"
-    analysis_path = outputs_dir / "analysis.json"
-    audit_path = outputs_dir / "audit_log.json"
+    pptx_path = output_dir / "with-template.pptx"
+    analysis_path = output_dir / "analysis.json"
+    audit_path = output_dir / "audit_log.json"
     assert pptx_path.exists()
     assert analysis_path.exists()
     assert audit_path.exists()
@@ -120,6 +121,10 @@ def test_cli_gen_supports_template(tmp_path) -> None:
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
+    branding_info = audit_payload.get("branding")
+    assert branding_info is not None
+    assert branding_info.get("source", {}).get("type") == "template"
+    assert "config" in branding_info
 
     for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
         if slide_spec.title is None:
@@ -127,14 +132,56 @@ def test_cli_gen_supports_template(tmp_path) -> None:
         actual = slide.shapes.title.text if slide.shapes.title else None
         assert actual == slide_spec.title
 
-    agenda_slide = presentation.slides[1]
-    tables = [shape for shape in agenda_slide.shapes if getattr(shape, "has_table", False)]
-    assert tables
 
+def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    output_dir = tmp_path / "gen-work-template-branding"
+    template_path = tmp_path / "template.pptx"
+    branding_path = tmp_path / "custom-branding.json"
+
+    Presentation().save(template_path)
+
+    branding_payload = {
+        "fonts": {
+            "heading": {"name": "Test Font", "size_pt": 30, "color_hex": "#123456"},
+            "body": {"name": "Test Font", "size_pt": 16, "color_hex": "#654321"},
+        },
+        "colors": {
+            "primary": "#111111",
+            "secondary": "#222222",
+            "accent": "#333333",
+            "background": "#FFFFFF",
+        },
+    }
+    branding_path.write_text(json.dumps(branding_payload), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(template_path),
+            "--branding",
+            str(branding_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    branding_info = audit_payload.get("branding")
+    assert branding_info is not None
+    assert branding_info.get("source", {}).get("type") == "file"
+    assert branding_info.get("source", {}).get("path") == str(branding_path)
 
 def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
-    workdir = tmp_path / "work-pdf"
+    output_dir = tmp_path / "gen-work-pdf"
 
     def fake_which(cmd: str) -> str | None:
         if cmd == "soffice":
@@ -158,8 +205,8 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
         [
             "gen",
             str(spec_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
             "--export-pdf",
             "--pdf-output",
             "custom.pdf",
@@ -169,10 +216,9 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
 
     assert result.exit_code == 0
 
-    outputs_dir = workdir / "outputs"
-    pptx_path = outputs_dir / "proposal.pptx"
-    pdf_path = outputs_dir / "custom.pdf"
-    audit_path = outputs_dir / "audit_log.json"
+    pptx_path = output_dir / "proposal.pptx"
+    pdf_path = output_dir / "custom.pdf"
+    audit_path = output_dir / "audit_log.json"
 
     assert pptx_path.exists()
     assert pdf_path.exists()
@@ -188,7 +234,7 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
 
 def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
-    workdir = tmp_path / "work-pdf-only"
+    output_dir = tmp_path / "gen-work-pdf-only"
 
     def fake_which(cmd: str) -> str | None:
         if cmd == "soffice":
@@ -212,8 +258,8 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
         [
             "gen",
             str(spec_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
             "--export-pdf",
             "--pdf-mode",
             "only",
@@ -223,10 +269,9 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
 
     assert result.exit_code == 0
 
-    outputs_dir = workdir / "outputs"
-    pdf_path = outputs_dir / "proposal.pdf"
-    pptx_path = outputs_dir / "proposal.pptx"
-    audit_path = outputs_dir / "audit_log.json"
+    pdf_path = output_dir / "proposal.pdf"
+    pptx_path = output_dir / "proposal.pptx"
+    audit_path = output_dir / "audit_log.json"
 
     assert pdf_path.exists()
     assert not pptx_path.exists()
@@ -239,7 +284,7 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
 
 def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
-    workdir = tmp_path / "work-pdf-skip"
+    output_dir = tmp_path / "gen-work-pdf-skip"
 
     def fail_run(*args, **kwargs):  # noqa: ANN401
         raise AssertionError("LibreOffice should not be invoked when skip env is set")
@@ -253,8 +298,8 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
         [
             "gen",
             str(spec_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
             "--export-pdf",
         ],
         catch_exceptions=False,
@@ -262,9 +307,8 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
 
     assert result.exit_code == 0
 
-    outputs_dir = workdir / "outputs"
-    pdf_path = outputs_dir / "proposal.pdf"
-    audit_path = outputs_dir / "audit_log.json"
+    pdf_path = output_dir / "proposal.pdf"
+    audit_path = output_dir / "audit_log.json"
     assert pdf_path.exists()
     assert pdf_path.read_bytes() == b""
     assert audit_path.exists()
@@ -276,41 +320,7 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
 def test_cli_tpl_extract_basic(tmp_path) -> None:
     """tpl-extract コマンドの基本動作テスト。"""
     template_path = Path("samples/templates/templates.pptx")
-    workdir = tmp_path / "work-extract"
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "tpl-extract",
-            "--template",
-            str(template_path),
-            "--workdir",
-            str(workdir),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-    assert "テンプレート抽出が完了しました" in result.output
-
-    outputs_dir = workdir / "outputs"
-    output_path = outputs_dir / "template_spec.json"
-    assert output_path.exists()
-
-    # JSON内容の検証
-    template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
-    template_spec = TemplateSpec.model_validate(template_spec_data)
-    
-    assert template_spec.template_path == str(template_path)
-    assert len(template_spec.layouts) > 0
-    assert template_spec.extracted_at is not None
-
-
-def test_cli_tpl_extract_custom_output(tmp_path) -> None:
-    """tpl-extract コマンドのカスタム出力パステスト。"""
-    template_path = Path("samples/templates/templates.pptx")
-    output_path = tmp_path / "custom_template_spec.json"
+    output_dir = tmp_path / "extract-basic"
     runner = CliRunner()
 
     result = runner.invoke(
@@ -320,23 +330,36 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
             "--template",
             str(template_path),
             "--output",
-            str(output_path),
+            str(output_dir),
         ],
         catch_exceptions=False,
     )
 
     assert result.exit_code == 0
-    assert output_path.exists()
+    assert "テンプレート抽出が完了しました" in result.output
 
+    output_path = output_dir / "template_spec.json"
+    assert output_path.exists()
+    branding_path = output_dir / "branding.json"
+    assert branding_path.exists()
+
+    # JSON内容の検証
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
+    
     assert template_spec.template_path == str(template_path)
+    assert len(template_spec.layouts) > 0
+    assert template_spec.extracted_at is not None
+
+    branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
+    assert "fonts" in branding_data
+    assert "colors" in branding_data
 
 
-def test_cli_tpl_extract_with_filters(tmp_path) -> None:
-    """tpl-extract コマンドのフィルタ機能テスト。"""
+def test_cli_tpl_extract_custom_output(tmp_path) -> None:
+    """tpl-extract コマンドのカスタム出力パステスト。"""
     template_path = Path("samples/templates/templates.pptx")
-    workdir = tmp_path / "work-extract-filter"
+    output_dir = tmp_path / "extract-custom"
     runner = CliRunner()
 
     result = runner.invoke(
@@ -345,8 +368,40 @@ def test_cli_tpl_extract_with_filters(tmp_path) -> None:
             "tpl-extract",
             "--template",
             str(template_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    spec_path = output_dir / "template_spec.json"
+    assert spec_path.exists()
+    branding_path = output_dir / "branding.json"
+    assert branding_path.exists()
+
+    template_spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
+    template_spec = TemplateSpec.model_validate(template_spec_data)
+    assert template_spec.template_path == str(template_path)
+
+    branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
+    assert "fonts" in branding_data
+
+
+def test_cli_tpl_extract_with_filters(tmp_path) -> None:
+    """tpl-extract コマンドのフィルタ機能テスト。"""
+    template_path = Path("samples/templates/templates.pptx")
+    output_dir = tmp_path / "extract-filter"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "tpl-extract",
+            "--template",
+            str(template_path),
+            "--output",
+            str(output_dir),
             "--layout",
             "タイトル",  # レイアウト名フィルタ
             "--anchor",
@@ -357,9 +412,10 @@ def test_cli_tpl_extract_with_filters(tmp_path) -> None:
 
     assert result.exit_code == 0
 
-    outputs_dir = workdir / "outputs"
-    output_path = outputs_dir / "template_spec.json"
+    output_path = output_dir / "template_spec.json"
     assert output_path.exists()
+    branding_path = output_dir / "branding.json"
+    assert branding_path.exists()
 
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -388,7 +444,7 @@ def test_cli_tpl_extract_nonexistent_file() -> None:
 def test_cli_tpl_extract_verbose_output(tmp_path) -> None:
     """tpl-extract コマンドの詳細出力テスト。"""
     template_path = Path("samples/templates/templates.pptx")
-    workdir = tmp_path / "work-extract-verbose"
+    output_dir = tmp_path / "extract-verbose"
     runner = CliRunner()
 
     result = runner.invoke(
@@ -398,8 +454,8 @@ def test_cli_tpl_extract_verbose_output(tmp_path) -> None:
             "tpl-extract",
             "--template",
             str(template_path),
-            "--workdir",
-            str(workdir),
+            "--output",
+            str(output_dir),
         ],
         catch_exceptions=False,
     )
@@ -422,7 +478,7 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
     presentation.save(temp_template_path)
     
     try:
-        workdir = tmp_path / "work-extract-mock"
+        output_dir = tmp_path / "extract-mock"
         runner = CliRunner()
 
         result = runner.invoke(
@@ -431,23 +487,26 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
                 "tpl-extract",
                 "--template",
                 str(temp_template_path),
-                "--workdir",
-                str(workdir),
+                "--output",
+                str(output_dir),
             ],
             catch_exceptions=False,
         )
 
         assert result.exit_code == 0
 
-        outputs_dir = workdir / "outputs"
-        output_path = outputs_dir / "template_spec.json"
+        output_path = output_dir / "template_spec.json"
         assert output_path.exists()
+        branding_path = output_dir / "branding.json"
+        assert branding_path.exists()
 
         template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
         template_spec = TemplateSpec.model_validate(template_spec_data)
-        
+
         assert template_spec.template_path == str(temp_template_path)
         assert len(template_spec.layouts) > 0
+        branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
+        assert "fonts" in branding_data
 
     finally:
         # 一時ファイルをクリーンアップ

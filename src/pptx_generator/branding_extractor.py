@@ -9,6 +9,8 @@ from typing import Any
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
 
+from .settings import BrandingConfig, BrandingFont
+
 NS = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
     "p": "http://schemas.openxmlformats.org/presentationml/2006/main",
@@ -33,6 +35,79 @@ class BrandingExtractionResult:
             "footer": self.footer,
             "source": self.source,
         }
+
+    def to_branding_config(self, fallback: BrandingConfig | None = None) -> BrandingConfig:
+        """抽出結果を ``BrandingConfig`` に変換する。"""
+
+        defaults = fallback or BrandingConfig.default()
+
+        heading_raw = self.fonts.get("heading", {})
+        body_raw = self.fonts.get("body", {})
+
+        heading_font = BrandingFont(
+            name=_pick_str(heading_raw.get("name")) or defaults.heading_font.name,
+            size_pt=_pick_float(heading_raw.get("size_pt"))
+            or defaults.heading_font.size_pt,
+            color_hex=_format_hex(heading_raw.get("color_hex"))
+            if heading_raw.get("color_hex")
+            else defaults.heading_font.color_hex,
+        )
+
+        body_font = BrandingFont(
+            name=_pick_str(body_raw.get("name")) or defaults.body_font.name,
+            size_pt=_pick_float(body_raw.get("size_pt"))
+            or defaults.body_font.size_pt,
+            color_hex=_format_hex(body_raw.get("color_hex"))
+            if body_raw.get("color_hex")
+            else defaults.body_font.color_hex,
+        )
+
+        return BrandingConfig(
+            heading_font=heading_font,
+            body_font=body_font,
+            primary_color=_format_hex(self.colors.get("primary"))
+            if self.colors.get("primary")
+            else defaults.primary_color,
+            secondary_color=_format_hex(self.colors.get("secondary"))
+            if self.colors.get("secondary")
+            else defaults.secondary_color,
+            accent_color=_format_hex(self.colors.get("accent"))
+            if self.colors.get("accent")
+            else defaults.accent_color,
+            background_color=_format_hex(self.colors.get("background"))
+            if self.colors.get("background")
+            else defaults.background_color,
+        )
+
+    def to_branding_payload(self, fallback: BrandingConfig | None = None) -> dict[str, Any]:
+        """branding.json 互換のペイロードを返す。"""
+
+        config = self.to_branding_config(fallback)
+        payload = {
+            "fonts": {
+                "heading": {
+                    "name": config.heading_font.name,
+                    "size_pt": config.heading_font.size_pt,
+                    "color_hex": config.heading_font.color_hex,
+                },
+                "body": {
+                    "name": config.body_font.name,
+                    "size_pt": config.body_font.size_pt,
+                    "color_hex": config.body_font.color_hex,
+                },
+            },
+            "colors": {
+                "primary": config.primary_color,
+                "secondary": config.secondary_color,
+                "accent": config.accent_color,
+                "background": config.background_color,
+            },
+        }
+
+        if self.footer:
+            payload["footer"] = self.footer
+
+        return payload
 
 
 def extract_branding_config(template_path: Path) -> BrandingExtractionResult:
@@ -257,6 +332,23 @@ def _format_hex(value: str | None) -> str:
         return "#000000"
     stripped = value.strip().lstrip("#")
     return f"#{stripped.upper()}"
+
+
+def _pick_str(value: object | None) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _pick_float(value: object | None) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        if isinstance(value, str) and value.strip():
+            return float(value)
+    except ValueError:
+        return None
+    return None
 
 
 def _apply_color_modifiers(color_hex: str, modifiers: list[ET.Element]) -> str:
