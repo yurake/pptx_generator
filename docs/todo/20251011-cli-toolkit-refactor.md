@@ -1,7 +1,7 @@
 ---
 目的: CLI を再編し、テンプレート抽出やサンプル仕様生成など支援系機能を統合しやすい構成にする
 関連ブランチ: feat/cli-toolkit-refactor
-関連Issue: 未作成
+関連Issue: #168
 roadmap_item: RM-016 CLI ツールチェーン整備
 ---
 
