@@ -6,10 +6,15 @@ roadmap_item: RM-009 テンプレート設定自動生成
 ---
 
 - [ ] まずはブランチ作成
-- [ ] テンプレート構造と branding.json の対応関係を整理
-  - メモ: 抽出対象のパラメータと変換ルールを洗い出す
-- [ ] CLI / スクリプト化の選択肢と実装規模を評価
-  - メモ: 既存の renderer / settings モジュールとの連携可否を確認
+  - メモ: 実装フェーズ開始時に `feat/branding-config-generator` を想定。現段階では調査のため未作成。
+- [x] テンプレート構造と branding.json の対応関係を整理
+  - メモ: `docs/notes/20251011-branding-config-mapping.md` に項目別マッピングと抽出手順を記録（2025-10-11）。
+- [x] CLI / スクリプト化の選択肢と実装規模を評価
+  - メモ: 同メモで Option A/B/C の比較と概算工数を整理（2025-10-11）。
+- [x] PoC スクリプトでテンプレートからの抽出手順を検証
+  - メモ: `scripts/branding_extract.py` 追加。`uv run python scripts/branding_extract.py --template samples/templates/templates.pptx` で JSON 出力を確認（2025-10-11）。
+- [ ] CLI へ抽出機能を統合し、テンプレート指定時のブランド切り替えに対応
+  - メモ: `uv run pptx gen --template` 時に抽出、`--branding` 明示時は従来通り。`tpl-extract` はテンプレート仕様とブランド設定の同時出力を想定。
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
