@@ -18,8 +18,8 @@ roadmap_item: RM-014 自動補正・仕上げ統合
   - メモ: `docs/runbooks/` や関連ポリシーへの追記を実施
 - [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` / .NET テストなど)
   - メモ: PDF/PPTX 出力の品質確認と再実行手順を記載
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
 
 ## メモ
 - 解析結果 (RM-013) との連携前提を明文化し、.NET 8 実行環境の要件を確認する。
