@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
-from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide, SlideBullet
+from pptx_generator.models import (
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+)
 from pptx_generator.pipeline import PipelineContext, RefinerOptions, SimpleRefinerStep
+
+def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
+    return SlideBulletGroup(anchor=anchor, items=list(bullets))
 
 
 def test_refiner_reindents_nested_bullets(tmp_path) -> None:
     spec = JobSpec(
         meta=JobMeta(
-            schema_version="1.0",
+            schema_version="1.1",
             title="Refiner テスト",
             client="Test",
             author="営業部",
@@ -22,10 +32,12 @@ def test_refiner_reindents_nested_bullets(tmp_path) -> None:
                 id="slide-1",
                 layout="Title and Content",
                 bullets=[
-                    SlideBullet(id="bullet-1", text="親", level=0),
-                    SlideBullet(id="bullet-2", text="飛び級", level=3),
-                    SlideBullet(id="bullet-3", text="更に飛び級", level=4),
-                    SlideBullet(id="bullet-4", text="正常", level=2),
+                    _group(
+                        SlideBullet(id="bullet-1", text="親", level=0),
+                        SlideBullet(id="bullet-2", text="飛び級", level=3),
+                        SlideBullet(id="bullet-3", text="更に飛び級", level=4),
+                        SlideBullet(id="bullet-4", text="正常", level=2),
+                    )
                 ],
             )
         ],
@@ -36,8 +48,7 @@ def test_refiner_reindents_nested_bullets(tmp_path) -> None:
 
     refiner.run(context)
 
-    bullets = context.spec.slides[0].bullets
-    levels = [bullet.level for bullet in bullets]
+    levels = [bullet.level for bullet in context.spec.slides[0].iter_bullets()]
     assert levels == [0, 1, 2, 2]
 
     adjustments = context.require_artifact("refiner_adjustments")
@@ -62,7 +73,7 @@ def test_refiner_reindents_nested_bullets(tmp_path) -> None:
 def test_refiner_skips_when_disabled(tmp_path) -> None:
     spec = JobSpec(
         meta=JobMeta(
-            schema_version="1.0",
+            schema_version="1.1",
             title="Refiner 無効化テスト",
             client="Test",
             author="営業部",
@@ -75,8 +86,10 @@ def test_refiner_skips_when_disabled(tmp_path) -> None:
                 id="slide-1",
                 layout="Title and Content",
                 bullets=[
-                    SlideBullet(id="bullet-1", text="親", level=0),
-                    SlideBullet(id="bullet-2", text="飛び級", level=3),
+                    _group(
+                        SlideBullet(id="bullet-1", text="親", level=0),
+                        SlideBullet(id="bullet-2", text="飛び級", level=3),
+                    )
                 ],
             )
         ],
@@ -87,8 +100,8 @@ def test_refiner_skips_when_disabled(tmp_path) -> None:
 
     refiner.run(context)
 
-    bullets = context.spec.slides[0].bullets
-    assert [bullet.level for bullet in bullets] == [0, 3]
+    levels = [bullet.level for bullet in context.spec.slides[0].iter_bullets()]
+    assert levels == [0, 3]
 
     adjustments = context.require_artifact("refiner_adjustments")
     assert adjustments == []

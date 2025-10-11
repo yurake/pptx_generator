@@ -45,7 +45,7 @@ class SimpleRefinerStep:
         adjustments: list[dict[str, Any]] = []
         applied_level: int | None = None
 
-        for bullet in slide.bullets:
+        for bullet in slide.iter_bullets():
             allowed_level = (
                 0
                 if applied_level is None
