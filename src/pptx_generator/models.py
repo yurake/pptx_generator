@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Iterable, Iterator, Literal
 
-from pydantic import BaseModel, Field, HttpUrl, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    ValidationError,
+    field_validator,
+)
 
 
 class FontSpec(BaseModel):
@@ -22,10 +29,26 @@ class FontSpec(BaseModel):
 
 
 class SlideBullet(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     id: str
     text: str = Field(..., max_length=200)
     level: int = Field(0, ge=0, le=5)
     font: FontSpec | None = None
+
+
+class SlideBulletGroup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    anchor: str | None = None
+    items: list[SlideBullet] = Field(default_factory=list)
+
+    @field_validator("items")
+    @classmethod
+    def ensure_items_not_empty(cls, value: list[SlideBullet]) -> list[SlideBullet]:
+        if not value:
+            raise ValueError("items には 1 つ以上の bullet を指定してください")
+        return value
 
 
 class SlideImage(BaseModel):
@@ -92,10 +115,23 @@ class Slide(BaseModel):
     title: str | None = None
     subtitle: str | None = None
     notes: str | None = None
-    bullets: list[SlideBullet] = Field(default_factory=list)
+    bullets: list[SlideBulletGroup] = Field(default_factory=list)
     images: list[SlideImage] = Field(default_factory=list)
     tables: list[SlideTable] = Field(default_factory=list)
     charts: list[SlideChart] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+    def iter_bullet_groups(self) -> Iterable[SlideBulletGroup]:
+        """箇条書きグループを順序通りに返す。"""
+
+        return tuple(self.bullets)
+
+    def iter_bullets(self) -> Iterator[SlideBullet]:
+        """すべての箇条書き項目を順序通りにイテレートする。"""
+
+        for group in self.bullets:
+            yield from group.items
 
 
 class JobMeta(BaseModel):
@@ -130,7 +166,9 @@ class JobSpec(BaseModel):
 class SpecValidationError(RuntimeError):
     """入力仕様の検証エラー。"""
 
-    def __init__(self, message: str, *, errors: list[dict[str, object]] | None = None) -> None:
+    def __init__(
+        self, message: str, *, errors: list[dict[str, object]] | None = None
+    ) -> None:
         super().__init__(message)
         self.errors = errors or []
 

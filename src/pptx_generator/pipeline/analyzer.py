@@ -63,7 +63,7 @@ class SimpleAnalyzerStep:
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
 
-        for bullet in slide.bullets:
+        for bullet in slide.iter_bullets():
             bullet_issue = self._check_bullet_depth(slide, bullet)
             if bullet_issue:
                 issue, fix = bullet_issue
@@ -233,7 +233,7 @@ class SimpleAnalyzerStep:
         previous_level: int | None = None
         applied_level: int | None = None
 
-        for bullet in slide.bullets:
+        for bullet in slide.iter_bullets():
             allowed_level = 0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
             if bullet.level <= allowed_level:
                 applied_level = bullet.level
