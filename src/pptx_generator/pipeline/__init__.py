@@ -5,6 +5,7 @@ from .base import PipelineContext, PipelineRunner, PipelineStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
 from .renderer import RenderingOptions, SimpleRendererStep
 from .refiner import RefinerOptions, SimpleRefinerStep
+from .template_extractor import TemplateExtractor, TemplateExtractorOptions, TemplateExtractorStep
 from .validator import SpecValidatorStep
 
 __all__ = [
@@ -22,4 +23,7 @@ __all__ = [
     "SimpleRefinerStep",
     "SimpleRendererStep",
     "SpecValidatorStep",
+    "TemplateExtractor",
+    "TemplateExtractorOptions",
+    "TemplateExtractorStep",
 ]
