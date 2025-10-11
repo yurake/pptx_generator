@@ -6,9 +6,19 @@ import pytest
 
 from pathlib import Path
 
-from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide, SlideBullet
+from pptx_generator.models import (
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+)
 from pptx_generator.models import SpecValidationError
 from pptx_generator.pipeline import PipelineContext, SpecValidatorStep
+
+def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
+    return SlideBulletGroup(anchor=anchor, items=list(bullets))
 
 
 def _build_spec(*, title: str = "タイトル", bullet_text: str = "本文", level: int = 0) -> JobSpec:
@@ -17,12 +27,14 @@ def _build_spec(*, title: str = "タイトル", bullet_text: str = "本文", lev
         layout="Title and Content",
         title=title,
         bullets=[
-            SlideBullet(id="bullet-1", text=bullet_text, level=level),
+            _group(
+                SlideBullet(id="bullet-1", text=bullet_text, level=level),
+            )
         ],
     )
     return JobSpec(
         meta=JobMeta(
-            schema_version="1.0",
+            schema_version="1.1",
             title="Proposal",
             client="client",
             author="author",

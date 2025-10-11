@@ -6,6 +6,7 @@ import base64
 import logging
 from pathlib import Path
 
+import pytest
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
@@ -19,6 +20,7 @@ from pptx_generator.models import (
     JobSpec,
     Slide,
     SlideBullet,
+    SlideBulletGroup,
     SlideChart,
     SlideImage,
     SlideTable,
@@ -27,6 +29,7 @@ from pptx_generator.models import (
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.renderer import RenderingOptions, SimpleRendererStep
 from pptx_generator.settings import BrandingConfig, BrandingFont
+from pydantic import ValidationError
 
 
 def _write_dummy_png(path: Path) -> None:
@@ -56,7 +59,9 @@ def _load_placeholder_boxes(
     return placeholders
 
 
-def _emu_box_from_inches(box: tuple[float, float, float, float]) -> tuple[int, int, int, int]:
+def _emu_box_from_inches(
+    box: tuple[float, float, float, float],
+) -> tuple[int, int, int, int]:
     left_in, top_in, width_in, height_in = box
     return (
         int(Inches(left_in)),
@@ -79,7 +84,11 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
                 layout="Title and Content",
                 title="サンプルタイトル",
                 bullets=[
-                    SlideBullet(id="b1", text="箇条書き", level=0, font=None),
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="b1", text="箇条書き", level=0, font=None),
+                        ]
+                    ),
                 ],
                 images=[
                     SlideImage(
@@ -105,7 +114,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
                         type="column",
                         categories=["Before", "After"],
                         series=[
-                            ChartSeries(name="効果", values=[10, 5], color_hex="#123456"),
+                            ChartSeries(
+                                name="効果", values=[10, 5], color_hex="#123456"
+                            ),
                         ],
                         options=ChartOptions(data_labels=True, y_axis_format="0%"),
                     )
@@ -115,7 +126,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     )
 
     branding = BrandingConfig(
-        heading_font=BrandingFont(name="HeadingBrand", size_pt=30.0, color_hex="#101010"),
+        heading_font=BrandingFont(
+            name="HeadingBrand", size_pt=30.0, color_hex="#101010"
+        ),
         body_font=BrandingFont(name="BodyBrand", size_pt=20.0, color_hex="#202020"),
         primary_color="#445566",
         secondary_color="#DDEEFF",
@@ -133,7 +146,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     presentation = Presentation(pptx_path)
     slide = presentation.slides[0]
 
-    pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    pictures = [
+        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
     assert pictures, "画像が描画されていること"
 
     tables = [shape for shape in slide.shapes if getattr(shape, "has_table", False)]
@@ -194,7 +209,9 @@ def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -226,12 +243,16 @@ def test_renderer_falls_back_when_anchor_unknown(tmp_path: Path) -> None:
     )
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
-    renderer = SimpleRendererStep(RenderingOptions(output_filename="fallback-unknown.pptx"))
+    renderer = SimpleRendererStep(
+        RenderingOptions(output_filename="fallback-unknown.pptx")
+    )
     renderer.run(context)
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -309,7 +330,9 @@ def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
 
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
     assert (
         table_shape.left,
         table_shape.top,
@@ -338,7 +361,10 @@ def _build_template_with_named_placeholders(tmp_path: Path):
 
     supported_types = {PP_PLACEHOLDER.BODY, PP_PLACEHOLDER.OBJECT}
     for shape in two_content_layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.placeholder_format.type in supported_types:
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.placeholder_format.type in supported_types
+        ):
             if left_placeholder_box is None:
                 shape.name = "Left Content Placeholder"
                 left_placeholder_box = (
@@ -359,7 +385,10 @@ def _build_template_with_named_placeholders(tmp_path: Path):
     picture_layout = presentation.slide_layouts[8]
     picture_placeholder_box: tuple[int, int, int, int] | None = None
     for shape in picture_layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.placeholder_format.type == PP_PLACEHOLDER.PICTURE:
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.placeholder_format.type == PP_PLACEHOLDER.PICTURE
+        ):
             shape.name = "Picture Content Placeholder"
             picture_placeholder_box = (
                 shape.left,
@@ -517,10 +546,15 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(template_path)
     layout = next(
-        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+        layout
+        for layout in presentation.slide_layouts
+        if layout.name == two_content_layout_name
     )
     for shape in list(layout.shapes):
-        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.name == "Left Content Placeholder"
+        ):
             shape.element.getparent().remove(shape.element)
             break
     removed_template_path = tmp_path / "template_placeholder_removed.pptx"
@@ -547,7 +581,9 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
-        RenderingOptions(template_path=removed_template_path, output_filename="removed.pptx")
+        RenderingOptions(
+            template_path=removed_template_path, output_filename="removed.pptx"
+        )
     )
 
     caplog.clear()
@@ -556,7 +592,9 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -580,10 +618,15 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(template_path)
     layout = next(
-        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+        layout
+        for layout in presentation.slide_layouts
+        if layout.name == two_content_layout_name
     )
     for shape in layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.name == "Left Content Placeholder"
+        ):
             shape.name = "Renamed Placeholder"
             break
     renamed_template_path = tmp_path / "template_placeholder_renamed.pptx"
@@ -610,7 +653,9 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
-        RenderingOptions(template_path=renamed_template_path, output_filename="renamed.pptx")
+        RenderingOptions(
+            template_path=renamed_template_path, output_filename="renamed.pptx"
+        )
     )
 
     caplog.clear()
@@ -619,7 +664,9 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -632,9 +679,13 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
 
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
-    template_path = Path("samples/templates/templates2.pptx")
+    template_path = Path("samples/templates/templates.pptx")
     placeholders = _load_placeholder_boxes(template_path, "Two Column Detail")
-    assert "Body Left" in placeholders and "Body Right" in placeholders and "Logo" in placeholders
+    assert (
+        "Body Left" in placeholders
+        and "Body Right" in placeholders
+        and "Logo" in placeholders
+    )
 
     image_path = Path("samples/assets/logo.png")
     spec = JobSpec(
@@ -708,9 +759,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     ) == placeholders["Body Right"][:4]
 
     picture_shape = next(
-        shape
-        for shape in slide.shapes
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     )
     assert (
         int(picture_shape.left),
@@ -720,10 +769,279 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     ) == placeholders["Logo"][:4]
 
     remaining_placeholder_names = {
-        shape.name
-        for shape in slide.shapes
-        if getattr(shape, "is_placeholder", False)
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
     }
     assert "Body Left" not in remaining_placeholder_names
     assert "Body Right" not in remaining_placeholder_names
     assert "Logo" not in remaining_placeholder_names
+
+
+def test_renderer_removes_bullet_placeholder_when_anchor_specified(
+    tmp_path: Path,
+) -> None:
+    """グループでアンカー指定時にプレースホルダーが削除されることを確認するテスト。"""
+    (
+        template_path,
+        two_content_layout_name,
+        _,
+        left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Bullet Placeholder Removal Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="bullet-slide",
+                layout=two_content_layout_name,
+                title="箇条書きプレースホルダー削除テスト",
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(
+                                id="bullet1",
+                                text="アンカー指定の箇条書き1",
+                                level=0,
+                            ),
+                            SlideBullet(
+                                id="bullet2",
+                                text="アンカー指定の箇条書き2",
+                                level=1,
+                            ),
+                        ],
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="bullet-placeholder-removal.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    # 箇条書きテキストが正しく配置されていることを確認
+    bullet_texts = []
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            for paragraph in shape.text_frame.paragraphs:
+                if paragraph.text in [
+                    "アンカー指定の箇条書き1",
+                    "アンカー指定の箇条書き2",
+                ]:
+                    bullet_texts.append(paragraph.text)
+                    # テキストフレームが左側プレースホルダーの位置に配置されていることを確認
+                    text_shape = shape
+                    assert abs(text_shape.left - left_box[0]) < 100  # 許容誤差
+                    assert abs(text_shape.top - left_box[1]) < 100
+
+    assert "アンカー指定の箇条書き1" in bullet_texts
+    assert "アンカー指定の箇条書き2" in bullet_texts
+
+    # プレースホルダーが削除されていることを確認
+    remaining_placeholder_names = {
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
+    }
+    assert "Left Content Placeholder" not in remaining_placeholder_names
+
+
+def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
+    """アンカー未指定グループが本文プレースホルダーへ配置されることを確認するテスト。"""
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Bullet Fallback Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="bullet-fallback",
+                layout="Title and Content",
+                title="箇条書きフォールバックテスト",
+                bullets=[
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="b1", text="アンカー未指定の箇条書き", level=0),
+                        ]
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(output_filename="bullet-fallback.pptx")
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    # 箇条書きテキストが配置されていることを確認
+    bullet_found = False
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            for paragraph in shape.text_frame.paragraphs:
+                if paragraph.text == "アンカー未指定の箇条書き":
+                    bullet_found = True
+                    break
+        if bullet_found:
+            break
+
+def test_job_spec_rejects_legacy_bullets_schema() -> None:
+    legacy_spec = {
+        "meta": {"schema_version": "1.1", "title": "Legacy"},
+        "auth": {"created_by": "tester"},
+        "slides": [
+            {
+                "id": "legacy-slide",
+                "layout": "Title and Content",
+                # 旧形式: bullets は SlideBullet のリスト
+                "bullets": [
+                    {"id": "b1", "text": "旧形式", "level": 0},
+                ],
+            }
+        ],
+    }
+
+    with pytest.raises(ValidationError):
+        JobSpec.model_validate(legacy_spec)
+
+
+def test_slide_bullet_rejects_anchor_field() -> None:
+    with pytest.raises(ValidationError):
+        SlideBullet.model_validate(
+            {"id": "b1", "text": "anchor", "level": 0, "anchor": "Body"}
+        )
+
+
+def test_renderer_renders_multiple_bullet_groups(tmp_path: Path) -> None:
+    """グループ形式の複数アンカーが正しく描画されることを確認するテスト。"""
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        left_box,
+        right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Grouped Bullets Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="grouped-bullets",
+                layout=two_content_layout_name,
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="l1", text="左側の箇条書き1", level=0),
+                            SlideBullet(id="l2", text="左側の箇条書き2", level=1),
+                        ],
+                    ),
+                    SlideBulletGroup(
+                        anchor="Right Content Placeholder",
+                        items=[
+                            SlideBullet(id="r1", text="右側の箇条書き1", level=0),
+                        ],
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="grouped-bullets.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    left_text_shape = None
+    right_text_shape = None
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            texts = {paragraph.text for paragraph in shape.text_frame.paragraphs}
+            if "左側の箇条書き1" in texts:
+                left_text_shape = shape
+            if "右側の箇条書き1" in texts:
+                right_text_shape = shape
+
+    assert left_text_shape is not None
+    assert right_text_shape is not None
+
+    assert abs(left_text_shape.left - left_box[0]) < 100
+    assert abs(left_text_shape.top - left_box[1]) < 100
+    assert abs(right_text_shape.left - right_box[0]) < 100
+    assert abs(right_text_shape.top - right_box[1]) < 100
+
+    remaining_placeholder_names = {
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
+    }
+    assert "Left Content Placeholder" not in remaining_placeholder_names
+    assert "Right Content Placeholder" not in remaining_placeholder_names
+
+
+def test_renderer_raises_error_for_duplicate_group_anchor(tmp_path: Path) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        _left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.1", title="Duplicate Anchor"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="duplicate-anchors",
+                layout=two_content_layout_name,
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="b1", text="左", level=0),
+                        ],
+                    ),
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="b2", text="右", level=0),
+                        ],
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="duplicate-anchors.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+
+    with pytest.raises(ValueError, match="箇条書きのアンカー 'Left Content Placeholder'"):
+        renderer.run(context)

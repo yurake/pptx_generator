@@ -49,7 +49,7 @@ class SpecValidatorStep:
 
     def _validate_bullet_length(self, spec: JobSpec) -> None:
         for slide in spec.slides:
-            for bullet in slide.bullets:
+            for bullet in slide.iter_bullets():
                 if len(bullet.text) > self.max_bullet_length:
                     msg = (
                         f"スライド '{slide.id}' の箇条書き '{bullet.id}' が {self.max_bullet_length} 文字を超えています"
@@ -58,7 +58,7 @@ class SpecValidatorStep:
 
     def _validate_bullet_level(self, spec: JobSpec) -> None:
         for slide in spec.slides:
-            for bullet in slide.bullets:
+            for bullet in slide.iter_bullets():
                 if bullet.level > self.max_bullet_level:
                     msg = (
                         f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベルが {self.max_bullet_level} を超えています"
@@ -70,7 +70,7 @@ class SpecValidatorStep:
             return
         for slide in spec.slides:
             self._check_text(slide.id, "title", slide.title)
-            for bullet in slide.bullets:
+            for bullet in slide.iter_bullets():
                 self._check_text(slide.id, bullet.id, bullet.text)
 
     def _check_text(self, slide_id: str, label: str, text: str | None) -> None:
