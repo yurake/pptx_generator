@@ -17,8 +17,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: ドキュメント更新のみのためテスト対象外（確認済）
 - [x] 関連Issueの更新
   - メモ: Issue #165 へコメント済（https://github.com/yurake/pptx_generator/issues/165#issuecomment-3393389929）
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #169 https://github.com/yurake/pptx_generator/pull/169（2025-10-11 完了）
 
 ## メモ
 - 計画のみ完了とする場合の記載例を各メモ欄へ転記済み。
