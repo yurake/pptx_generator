@@ -1,7 +1,7 @@
 ---
 目的: PPTX 解析アナライザーを構築し、品質診断に必要な幾何・スタイル情報を収集する
 関連ブランチ: feat/pptx-analyzer
-関連Issue: 未作成
+関連Issue: #162
 roadmap_item: RM-013 PPTX 解析アナライザー実装
 ---
 
