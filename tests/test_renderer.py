@@ -10,7 +10,8 @@ import pytest
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
-from pptx.util import Inches
+from pptx.enum.text import PP_ALIGN
+from pptx.util import Inches, Pt
 
 from pptx_generator.models import (
     ChartOptions,
@@ -24,7 +25,10 @@ from pptx_generator.models import (
     SlideChart,
     SlideImage,
     SlideTable,
+    SlideTextbox,
     TableStyle,
+    TextboxParagraph,
+    TextboxPosition,
 )
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.renderer import RenderingOptions, SimpleRendererStep
@@ -182,6 +186,75 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
         assert chart.value_axis.tick_labels.number_format == "0%"
     series = chart.series[0]
     assert series.format.fill.fore_color.rgb == RGBColor.from_string("123456")
+
+
+def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="タイトル"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-1",
+                layout="Title Slide",
+                title="タイトル",
+                subtitle="サブタイトル",
+                notes="ノート本文",
+                textboxes=[
+                    SlideTextbox(
+                        id="memo",
+                        text="1 行目\n2 行目",
+                        position=TextboxPosition(
+                            left_in=2.5,
+                            top_in=4.0,
+                            width_in=5.0,
+                            height_in=1.5,
+                        ),
+                        paragraph=TextboxParagraph(
+                            level=1,
+                            align="center",
+                            line_spacing_pt=16.0,
+                            space_before_pt=4.0,
+                            space_after_pt=2.0,
+                        ),
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep()
+    renderer.run(context)
+
+    pptx_path = context.artifacts["pptx_path"]
+    presentation = Presentation(pptx_path)
+    slide = presentation.slides[0]
+
+    subtitle_shape = next(
+        placeholder
+        for placeholder in slide.placeholders
+        if placeholder.placeholder_format.type == PP_PLACEHOLDER.SUBTITLE
+    )
+    assert subtitle_shape.text_frame.paragraphs[0].text == "サブタイトル"
+
+    assert slide.notes_slide.notes_text_frame.text.strip() == "ノート本文"
+
+    textboxes = [
+        shape
+        for shape in slide.shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.TEXT_BOX
+        and getattr(shape, "has_text_frame", False)
+        and shape.text_frame.paragraphs[0].text == "1 行目"
+    ]
+    assert textboxes, "テキストボックスが描画されていること"
+    textbox = textboxes[0]
+    paragraphs = textbox.text_frame.paragraphs
+    assert [p.text for p in paragraphs] == ["1 行目", "2 行目"]
+    for paragraph in paragraphs:
+        assert paragraph.alignment == PP_ALIGN.CENTER
+        assert paragraph.level == 1
+    assert paragraphs[0].space_before == Pt(4)
+    assert paragraphs[0].space_after == Pt(2)
 
 
 def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:
