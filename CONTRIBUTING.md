@@ -40,7 +40,7 @@
 - 単体テスト: `python/tests/` 配下に配置し、 `pytest` を使用。JSON 入力 → PPTX 出力の検証を行う。
   - 実行コマンドは `uv run --extra dev pytest` を使用する。ローカルに `pytest` を直接インストールしていないため、`uv` 経由で実行すること。
 - 結合テスト: `tests/integration/` にサンプル JSON を用意し、パイプライン全体 (JSON→PPTX→PDF) を検証する。
-  - CLI の統合テストは `uv run --extra dev pytest tests/test_cli_integration.py` により実行し、`--workdir` / `--template` オプションを含む挙動を確認する。
+  - CLI の統合テストは `uv run --extra dev pytest tests/test_cli_integration.py` により実行し、`--output` / `--template` オプションを含む挙動を確認する。
 - パフォーマンステスト: 30 スライド規模のケースで処理時間を計測し、結果を記録する。
 - セキュリティテスト: 入力検証、脆弱性スキャン (`pip-audit`, `dotnet list package --vulnerable`) を CI で実施する。
 
