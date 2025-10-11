@@ -5,8 +5,8 @@
 roadmap_item: RM-009 テンプレート設定自動生成
 ---
 
-- [ ] まずはブランチ作成
-  - メモ: 実装フェーズ開始時に `feat/branding-config-generator` を想定。現段階では調査のため未作成。
+- [x] まずはブランチ作成
+  - メモ: 既存ブランチ `feat/cli-toolkit-refactor` を流用して実装（2025-10-11）。
 - [x] テンプレート構造と branding.json の対応関係を整理
   - メモ: `docs/notes/20251011-branding-config-mapping.md` に項目別マッピングと抽出手順を記録（2025-10-11）。
 - [x] CLI / スクリプト化の選択肢と実装規模を評価
