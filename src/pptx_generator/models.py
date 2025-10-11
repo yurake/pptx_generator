@@ -131,7 +131,9 @@ class JobSpec(BaseModel):
 class SpecValidationError(RuntimeError):
     """入力仕様の検証エラー。"""
 
-    def __init__(self, message: str, *, errors: list[dict[str, object]] | None = None) -> None:
+    def __init__(
+        self, message: str, *, errors: list[dict[str, object]] | None = None
+    ) -> None:
         super().__init__(message)
         self.errors = errors or []
 

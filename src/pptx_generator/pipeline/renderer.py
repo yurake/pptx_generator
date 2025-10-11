@@ -127,7 +127,8 @@ class SimpleRendererStep:
             self._apply_brand_font(paragraph, self._branding.heading_font)
             return
         textbox = slide.shapes.add_textbox(
-            Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0))
+            Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0)
+        )
         text_frame = textbox.text_frame
         text_frame.clear()
         paragraph = text_frame.paragraphs[0]
@@ -146,16 +147,16 @@ class SimpleRendererStep:
             fallback_box = LayoutBox(1.0, 1.5, 8.0, 4.5)  # デフォルトの箇条書き領域
             resolution = self._resolve_anchor(slide, first_bullet.anchor, fallback_box)
             anchor_shape = resolution.shape
-            
+
             if not anchor_shape:
                 raise ValueError(
                     f"Shape with name '{first_bullet.anchor}' not found in slide. "
                     f"Please check the template and ensure the shape name matches."
                 )
-            
+
             if resolution.is_placeholder:
                 self._prepare_placeholder(anchor_shape)
-            
+
             # アンカーの位置とサイズを取得して新しいテキストボックスを作成
             left, top, width, height = resolution.as_box()
             target_shape = slide.shapes.add_textbox(left, top, width, height)
@@ -166,7 +167,8 @@ class SimpleRendererStep:
         text_frame = target_shape.text_frame
         text_frame.clear()
         for index, bullet in enumerate(slide_spec.bullets):
-            paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph(
+            paragraph = (
+                text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
             )
             paragraph.text = bullet.text
             paragraph.level = bullet.level
@@ -201,7 +203,8 @@ class SimpleRendererStep:
                 self._prepare_placeholder(anchor_shape)
             left, top, width, height = resolution.as_box()
             table_shape = slide.shapes.add_table(
-                row_count, column_count, left, top, width, height)
+                row_count, column_count, left, top, width, height
+            )
             table = table_shape.table
 
             total_width = table_shape.width
@@ -211,14 +214,19 @@ class SimpleRendererStep:
             start_row = 0
             if header:
                 self._fill_table_row(
-                    table.rows[0], header, is_header=True, style=table_spec.style)
+                    table.rows[0], header, is_header=True, style=table_spec.style
+                )
                 start_row = 1
 
             for offset, row_values in enumerate(rows):
                 target_row = table.rows[start_row + offset]
                 padded = row_values + [""] * (column_count - len(row_values))
                 self._fill_table_row(
-                    target_row, padded, is_header=False, style=table_spec.style, zebra_index=offset
+                    target_row,
+                    padded,
+                    is_header=False,
+                    style=table_spec.style,
+                    zebra_index=offset,
                 )
 
             if anchor_shape is not None:
@@ -235,17 +243,15 @@ class SimpleRendererStep:
             anchor_shape = resolution.shape
             if resolution.is_placeholder:
                 self._prepare_placeholder(anchor_shape)
-            image_path = self._resolve_image_source(
-                image_spec.source, image_spec.id)
+            image_path = self._resolve_image_source(image_spec.source, image_spec.id)
             left = self._override_emu(resolution.left, image_spec.left_in)
             top = self._override_emu(resolution.top, image_spec.top_in)
-            target_width = self._override_emu(
-                resolution.width, image_spec.width_in)
-            target_height = self._override_emu(
-                resolution.height, image_spec.height_in)
+            target_width = self._override_emu(resolution.width, image_spec.width_in)
+            target_height = self._override_emu(resolution.height, image_spec.height_in)
             picture = slide.shapes.add_picture(str(image_path), left, top)
-            self._resize_picture(picture, target_width,
-                                 target_height, image_spec.sizing)
+            self._resize_picture(
+                picture, target_width, target_height, image_spec.sizing
+            )
 
             if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
@@ -261,7 +267,8 @@ class SimpleRendererStep:
 
             data = CategoryChartData()
             categories = chart_spec.categories or [
-                str(index + 1) for index in range(len(chart_spec.series[0].values))]
+                str(index + 1) for index in range(len(chart_spec.series[0].values))
+            ]
             data.categories = categories
             for series in chart_spec.series:
                 data.add_series(series.name, series.values)
@@ -275,7 +282,8 @@ class SimpleRendererStep:
                 self._prepare_placeholder(anchor_shape)
             left, top, width, height = resolution.as_box()
             chart_shape = slide.shapes.add_chart(
-                chart_type, left, top, width, height, data)
+                chart_type, left, top, width, height, data
+            )
             chart = chart_shape.chart
 
             self._apply_chart_series_colors(chart.series, chart_spec.series)
@@ -289,7 +297,9 @@ class SimpleRendererStep:
             if shape.placeholder_format.type == PP_PLACEHOLDER.BODY:
                 return shape
         logger.debug("本文用プレースホルダがないためテキストボックスを追加")
-        return slide.shapes.add_textbox(Inches(1.0), Inches(1.5), Inches(8.0), Inches(4.5))
+        return slide.shapes.add_textbox(
+            Inches(1.0), Inches(1.5), Inches(8.0), Inches(4.5)
+        )
 
     def _apply_font(self, paragraph, font_spec: FontSpec | None) -> None:
         font = paragraph.font
@@ -313,8 +323,7 @@ class SimpleRendererStep:
         font = paragraph.font
         font.name = branding_font.name
         font.size = Pt(branding_font.size_pt)
-        font.color.rgb = RGBColor.from_string(
-            branding_font.color_hex.lstrip("#"))
+        font.color.rgb = RGBColor.from_string(branding_font.color_hex.lstrip("#"))
 
     def _find_shape_by_name(self, slide, name: str):
         for shape in slide.shapes:
@@ -328,13 +337,19 @@ class SimpleRendererStep:
             return None
         target_idx: int | None = None
         for layout_shape in layout.shapes:
-            if getattr(layout_shape, "is_placeholder", False) and layout_shape.name == name:
+            if (
+                getattr(layout_shape, "is_placeholder", False)
+                and layout_shape.name == name
+            ):
                 target_idx = layout_shape.placeholder_format.idx
                 break
         if target_idx is None:
             return None
         for shape in slide.shapes:
-            if getattr(shape, "is_placeholder", False) and shape.placeholder_format.idx == target_idx:
+            if (
+                getattr(shape, "is_placeholder", False)
+                and shape.placeholder_format.idx == target_idx
+            ):
                 return shape
         return None
 
@@ -434,7 +449,8 @@ class SimpleRendererStep:
 
     def _download_remote_image(self, url: str, image_id: str) -> Path:
         tmp = tempfile.NamedTemporaryFile(
-            delete=False, suffix=Path(url).suffix or ".img")
+            delete=False, suffix=Path(url).suffix or ".img"
+        )
         try:
             with urlopen(url) as response:
                 tmp.write(response.read())
@@ -488,7 +504,9 @@ class SimpleRendererStep:
             self._branding.primary_color,
             self._branding.secondary_color,
         ]
-        for index, (series, spec) in enumerate(zip(chart_series, series_specs, strict=False)):
+        for index, (series, spec) in enumerate(
+            zip(chart_series, series_specs, strict=False)
+        ):
             fill = series.format.fill
             fill.solid()
             color = spec.color_hex or palette[index % len(palette)]
@@ -532,8 +550,10 @@ class SimpleRendererStep:
         try:
             shape.element.getparent().remove(shape.element)
         except Exception:  # noqa: BLE001
-            logger.debug("shape の削除に失敗しました: %s",
-                         shape.name if hasattr(shape, "name") else shape)
+            logger.debug(
+                "shape の削除に失敗しました: %s",
+                shape.name if hasattr(shape, "name") else shape,
+            )
 
     def _cleanup_temp_files(self) -> None:
         for path in self._temp_files:

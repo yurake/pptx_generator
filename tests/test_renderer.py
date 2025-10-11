@@ -56,7 +56,9 @@ def _load_placeholder_boxes(
     return placeholders
 
 
-def _emu_box_from_inches(box: tuple[float, float, float, float]) -> tuple[int, int, int, int]:
+def _emu_box_from_inches(
+    box: tuple[float, float, float, float],
+) -> tuple[int, int, int, int]:
     left_in, top_in, width_in, height_in = box
     return (
         int(Inches(left_in)),
@@ -105,7 +107,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
                         type="column",
                         categories=["Before", "After"],
                         series=[
-                            ChartSeries(name="効果", values=[10, 5], color_hex="#123456"),
+                            ChartSeries(
+                                name="効果", values=[10, 5], color_hex="#123456"
+                            ),
                         ],
                         options=ChartOptions(data_labels=True, y_axis_format="0%"),
                     )
@@ -115,7 +119,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     )
 
     branding = BrandingConfig(
-        heading_font=BrandingFont(name="HeadingBrand", size_pt=30.0, color_hex="#101010"),
+        heading_font=BrandingFont(
+            name="HeadingBrand", size_pt=30.0, color_hex="#101010"
+        ),
         body_font=BrandingFont(name="BodyBrand", size_pt=20.0, color_hex="#202020"),
         primary_color="#445566",
         secondary_color="#DDEEFF",
@@ -133,7 +139,9 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     presentation = Presentation(pptx_path)
     slide = presentation.slides[0]
 
-    pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    pictures = [
+        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
     assert pictures, "画像が描画されていること"
 
     tables = [shape for shape in slide.shapes if getattr(shape, "has_table", False)]
@@ -194,7 +202,9 @@ def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -226,12 +236,16 @@ def test_renderer_falls_back_when_anchor_unknown(tmp_path: Path) -> None:
     )
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
-    renderer = SimpleRendererStep(RenderingOptions(output_filename="fallback-unknown.pptx"))
+    renderer = SimpleRendererStep(
+        RenderingOptions(output_filename="fallback-unknown.pptx")
+    )
     renderer.run(context)
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -309,7 +323,9 @@ def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
 
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
     assert (
         table_shape.left,
         table_shape.top,
@@ -338,7 +354,10 @@ def _build_template_with_named_placeholders(tmp_path: Path):
 
     supported_types = {PP_PLACEHOLDER.BODY, PP_PLACEHOLDER.OBJECT}
     for shape in two_content_layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.placeholder_format.type in supported_types:
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.placeholder_format.type in supported_types
+        ):
             if left_placeholder_box is None:
                 shape.name = "Left Content Placeholder"
                 left_placeholder_box = (
@@ -359,7 +378,10 @@ def _build_template_with_named_placeholders(tmp_path: Path):
     picture_layout = presentation.slide_layouts[8]
     picture_placeholder_box: tuple[int, int, int, int] | None = None
     for shape in picture_layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.placeholder_format.type == PP_PLACEHOLDER.PICTURE:
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.placeholder_format.type == PP_PLACEHOLDER.PICTURE
+        ):
             shape.name = "Picture Content Placeholder"
             picture_placeholder_box = (
                 shape.left,
@@ -517,10 +539,15 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(template_path)
     layout = next(
-        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+        layout
+        for layout in presentation.slide_layouts
+        if layout.name == two_content_layout_name
     )
     for shape in list(layout.shapes):
-        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.name == "Left Content Placeholder"
+        ):
             shape.element.getparent().remove(shape.element)
             break
     removed_template_path = tmp_path / "template_placeholder_removed.pptx"
@@ -547,7 +574,9 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
-        RenderingOptions(template_path=removed_template_path, output_filename="removed.pptx")
+        RenderingOptions(
+            template_path=removed_template_path, output_filename="removed.pptx"
+        )
     )
 
     caplog.clear()
@@ -556,7 +585,9 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -580,10 +611,15 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(template_path)
     layout = next(
-        layout for layout in presentation.slide_layouts if layout.name == two_content_layout_name
+        layout
+        for layout in presentation.slide_layouts
+        if layout.name == two_content_layout_name
     )
     for shape in layout.shapes:
-        if getattr(shape, "is_placeholder", False) and shape.name == "Left Content Placeholder":
+        if (
+            getattr(shape, "is_placeholder", False)
+            and shape.name == "Left Content Placeholder"
+        ):
             shape.name = "Renamed Placeholder"
             break
     renamed_template_path = tmp_path / "template_placeholder_renamed.pptx"
@@ -610,7 +646,9 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
-        RenderingOptions(template_path=renamed_template_path, output_filename="renamed.pptx")
+        RenderingOptions(
+            template_path=renamed_template_path, output_filename="renamed.pptx"
+        )
     )
 
     caplog.clear()
@@ -619,7 +657,9 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     presentation = Presentation(context.require_artifact("pptx_path"))
     slide = presentation.slides[0]
-    table_shape = next(shape for shape in slide.shapes if getattr(shape, "has_table", False))
+    table_shape = next(
+        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+    )
 
     expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
     assert (
@@ -634,7 +674,11 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     template_path = Path("samples/templates/templates2.pptx")
     placeholders = _load_placeholder_boxes(template_path, "Two Column Detail")
-    assert "Body Left" in placeholders and "Body Right" in placeholders and "Logo" in placeholders
+    assert (
+        "Body Left" in placeholders
+        and "Body Right" in placeholders
+        and "Logo" in placeholders
+    )
 
     image_path = Path("samples/assets/logo.png")
     spec = JobSpec(
@@ -708,9 +752,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     ) == placeholders["Body Right"][:4]
 
     picture_shape = next(
-        shape
-        for shape in slide.shapes
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     )
     assert (
         int(picture_shape.left),
@@ -720,16 +762,16 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     ) == placeholders["Logo"][:4]
 
     remaining_placeholder_names = {
-        shape.name
-        for shape in slide.shapes
-        if getattr(shape, "is_placeholder", False)
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
     }
     assert "Body Left" not in remaining_placeholder_names
     assert "Body Right" not in remaining_placeholder_names
     assert "Logo" not in remaining_placeholder_names
 
 
-def test_renderer_removes_bullet_placeholder_when_anchor_specified(tmp_path: Path) -> None:
+def test_renderer_removes_bullet_placeholder_when_anchor_specified(
+    tmp_path: Path,
+) -> None:
     """SlideBullet でアンカー指定時にプレースホルダーが削除されることを確認するテスト。"""
     (
         template_path,
@@ -784,7 +826,10 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(tmp_path: Pat
     for shape in slide.shapes:
         if getattr(shape, "has_text_frame", False):
             for paragraph in shape.text_frame.paragraphs:
-                if paragraph.text in ["アンカー指定の箇条書き1", "アンカー指定の箇条書き2"]:
+                if paragraph.text in [
+                    "アンカー指定の箇条書き1",
+                    "アンカー指定の箇条書き2",
+                ]:
                     bullet_texts.append(paragraph.text)
                     # テキストフレームが左側プレースホルダーの位置に配置されていることを確認
                     text_shape = shape
@@ -796,9 +841,7 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(tmp_path: Pat
 
     # プレースホルダーが削除されていることを確認
     remaining_placeholder_names = {
-        shape.name
-        for shape in slide.shapes
-        if getattr(shape, "is_placeholder", False)
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
     }
     assert "Left Content Placeholder" not in remaining_placeholder_names
 
@@ -821,7 +864,9 @@ def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
     )
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
-    renderer = SimpleRendererStep(RenderingOptions(output_filename="bullet-fallback.pptx"))
+    renderer = SimpleRendererStep(
+        RenderingOptions(output_filename="bullet-fallback.pptx")
+    )
     renderer.run(context)
 
     presentation = Presentation(context.require_artifact("pptx_path"))

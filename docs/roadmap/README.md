@@ -147,8 +147,9 @@
 - 参照ドキュメント: [docs/AGENTS.md](../AGENTS.md)
 - 参照 ToDo: [docs/todo/archive/20251010-renderer-slidebullet-anchor.md](../todo/archive/20251010-renderer-slidebullet-anchor.md)
 - 状況: 完了（2025-10-11 更新）
-- 期待成果: JSON 仕様でのアンカー指定対応、BODY 固定以外のテキスト形状選択、CLI テストとサンプルでの検証。
+- 達成成果: JSON 仕様でのアンカー指定対応完了、`_resolve_anchor` を用いた統一的な処理実装、プレースホルダー削除機能実装、テストケース追加（全 10 件成功）、CLI 統合テスト検証完了（全 5 件成功）。
 - 依存: テンプレートレイアウト命名規則、Open XML SDK による仕上げ処理、PDF 変換時の段落整形。
+- 次のアクション: 他のコンテンツ要素（画像・表・チャート）への拡張は別テーマで検討。
 
 <a id="rm-008"></a>
 ### RM-008 カスタムテンプレート操作性向上（優先度: P2）
