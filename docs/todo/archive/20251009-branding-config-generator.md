@@ -21,8 +21,8 @@ roadmap_item: RM-009 テンプレート設定自動生成
   - メモ: `tests/test_cli_integration.py::test_cli_gen_template_branding_fallback` を追加し、抽出エラー時にデフォルトへ切り替わることを確認（2025-10-11）。
 - [x] `--output` 未指定時の既定ディレクトリを自動検証する統合テストを追加
   - メモ: `tests/test_cli_integration.py::test_cli_gen_default_output_directory` / `test_cli_tpl_extract_default_output_directory` を追加（2025-10-11）。
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #170 https://github.com/yurake/pptx_generator/pull/170（2025-10-11 完了）
 
 ## メモ
 - PowerPoint テンプレートのスタイル情報取得には python-pptx の制限があるため、必要に応じて補完ルールを設ける。
