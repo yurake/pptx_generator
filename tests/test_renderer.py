@@ -679,7 +679,7 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
 
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
-    template_path = Path("samples/templates/templates2.pptx")
+    template_path = Path("samples/templates/templates.pptx")
     placeholders = _load_placeholder_boxes(template_path, "Two Column Detail")
     assert (
         "Body Left" in placeholders
