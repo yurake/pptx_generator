@@ -73,10 +73,8 @@ class Slide(BaseModel):
 ### 5. サンプルファイル作成
 
 **新規サンプル:**
-- [`samples/json/sample_spec_with_bullets_anchor.json`](samples/json/sample_spec_with_bullets_anchor.json)
-  - 新仕様 `bullets_anchor` の使用例
-  - 後方互換性の動作例
-  - 2カラムレイアウトでの実用例
+- Phase 1 当時は `samples/json/sample_spec_with_bullets_anchor.json` を作成
+- Phase 3 で `samples/json/sample_spec.json` に統合済み
 
 ## Phase 1 の成果
 

@@ -25,14 +25,14 @@ Phase 3 では暫定的に残していた旧仕様を廃止し、`SlideBulletGro
 ### 3. テスト・サンプル刷新
 
 - 旧仕様向けテストを削除し、新仕様専用のレンダリング・バリデーションテストを追加。
-- `samples/json/sample_spec_with_bullets_anchor.json` をスキーマ 1.1 / グループ形式専用の内容へ置き換え。
+- グループ形式のサンプル JSON は `samples/json/sample_spec.json` に一本化。
 - 旧形式 JSON が ValidationError となることを検証するテストを追加。
 
 ## 影響範囲
 
 - JSON の互換性: 旧仕様（`SlideBullet.anchor` など）を使用したファイルはスキーマ 1.1 では検証エラーとなる。移行時は `SlideBulletGroup` 構造へ書き換える必要がある。
 - テンプレート: アンカー名の運用は Phase 2 と同様、複数箇所で利用する際は図形名の一意性を保つこと。
-- CLI: 既存の CLI 操作フローは変更なし。新スキーマのサンプルを `uv run pptx-generator run samples/json/sample_spec_with_bullets_anchor.json` で確認可能。
+- CLI: 既存の CLI 操作フローは変更なし。新スキーマのサンプルを `uv run pptx-generator run samples/json/sample_spec.json` で確認可能。
 
 ## 今後のタスク
 
