@@ -49,6 +49,7 @@ graph TD
 - 次のアクション: `contrast_low` 判定の調整方針整理、Analyzer レポートのモニタリング指標の整理、Fix ログ可視化要件の精査。
 
 <a id="rm-003"></a>
+### RM-003 ビジュアルフィードバックコパイロット
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
 - 状況: 調査中（2025-10-05 更新）
@@ -57,6 +58,7 @@ graph TD
 - 次のアクション: 参考事例のリサーチ、モデル推論コスト試算、UI プロトタイピング。
 
 <a id="rm-004"></a>
+### RM-004 営業ナレッジ連携自動化
 - ゴール: CRM や案件管理システムから取得した勝ちパターン・競合情報を提案書自動生成に組み込み、ユーザーにとっての「次の一手」を提案する。
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md)
 - 状況: 準備中（2025-10-05 更新）
@@ -65,6 +67,7 @@ graph TD
 - 次のアクション: 主要フィールドの洗い出し、プライバシー要件の確認、最初の連携 PoC 設計。
 
 <a id="rm-005"></a>
+### RM-005 プレゼンストーリーモデラー
 - ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計し、アウトラインとスライド骨子を自動生成する。
 - 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md)
 - 状況: 企画中（2025-10-05 更新）
@@ -73,6 +76,7 @@ graph TD
 - 次のアクション: ユースケース別ストーリーテンプレートの整理、プロトタイプ用プロンプトの作成。
 
 <a id="rm-006"></a>
+### RM-006 ライブ共同編集アシスト
 - ゴール: 提案会議中でも AI がライブでスライド修正案・説明コメント・補足資料リンクを提示し、即応性の高いプレゼンを実現する。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
 - 状況: アイデア段階（2025-10-05 更新）
@@ -101,40 +105,45 @@ graph TD
 - 次のアクション: テンプレート XML 解析とスタイル情報マッピングの調査、補完ルール案の作成、試作ワークフローのステップ定義。
 
 <a id="rm-011"></a>
+### RM-011 レイアウトスタイル統一
 - ゴール: テーブル・チャート・画像などのレイアウトスタイルを設定ファイルで統一管理し、ブランド統一感を維持できるようにする。
 - 参照ドキュメント: 未整備（RM-010 の成果物を踏まえた設計資料を作成予定）
+- 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
 - 状況: 構想中（2025-10-09 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
 - 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、`config/branding.json` の拡張設計。
-- 次のアクション: RM-010 の抽出結果を参照した設計レビュー、設定項目の洗い出し、着手時に新規 ToDo を作成。
+- 次のアクション: RM-010 の抽出結果を参照した設計レビューを完了し、スキーマ実装とテスト完了までを ToDo に沿って遂行する。
     - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
 <a id="rm-012"></a>
 ### RM-012 レンダラーテキスト強化（優先度: P1）
 - ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/20251011-renderer-text-enhancement.md](../todo/20251011-renderer-text-enhancement.md)
 - 状況: 未着手（2025-10-09 設定）
 - 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
 - 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
-- 次のアクション: スキーマ拡張の設計レビュー、レンダラー実装方針の決定、対応 ToDo の発行。
+- 次のアクション: スキーマ拡張の設計レビュー後、描画実装とテスト完了までを段階的に進める。
 
 <a id="rm-013"></a>
 ### RM-013 PPTX 解析アナライザー実装（優先度: P1）
 - ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/20251011-pptx-analyzer-implementation.md](../todo/20251011-pptx-analyzer-implementation.md)
 - 状況: 未着手（2025-10-09 設定）
 - 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
 - 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
-- 次のアクション: 解析対象項目の優先順位付け、PoC スクリプト作成、適用ルールとメトリクスの整理。
+- 次のアクション: 解析対象項目の優先順位付けと PoC を終え、アナライザー実装とテスト完了まで進める。
 
 <a id="rm-014"></a>
 ### RM-014 自動補正・仕上げ統合（優先度: P1）
 - ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/20251011-automated-polisher-integration.md](../todo/20251011-automated-polisher-integration.md)
 - 状況: 未着手（2025-10-09 設定）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
-- 次のアクション: 自動補正ポリシーの定義、Open XML SDK ベース実装のスコープ見直し、対応 ToDo とテスト計画の策定。
+- 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
