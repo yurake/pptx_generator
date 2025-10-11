@@ -17,7 +17,7 @@ roadmap_item: RM-007 SlideBullet アンカー拡張
   - メモ: 新しいテキストボックス作成後にプレースホルダーを削除する方式で実装
   - メモ: テストケース追加済み（test_renderer_removes_bullet_placeholder_when_anchor_specified）
 - [x] PR 作成
-  - メモ: PR #149 https://github.com/yurake/pptx_generator/pull/149（2025-10-10 完了）
+  - メモ: PR #149 https://github.com/yurake/pptx_generator/pull/149（2025-10-11 完了）
 
 ## メモ
 - 承認メッセージ: 2025-10-10 ユーザー指示「ok」
