@@ -1,7 +1,7 @@
 ---
 目的: 既存テンプレートPPTXから構造解析してJSON雛形を生成する機能を実装する
 関連ブランチ: feat/template-spec-export
-関連Issue: 未作成
+関連Issue: #135
 roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 ---
 
