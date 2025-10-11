@@ -6,7 +6,7 @@ roadmap_item: RM-014 自動補正・仕上げ統合
 ---
 
 - [ ] まずはブランチ作成とコミット
-- [ ] 自動補正ポリシーの定義と適用範囲を整理
+- [ ] 自動補正ポリシーの定義と適用範囲を整理https://github.com/yurake/pptx_generator/pull/167/conflict?name=docs%252Ftodo%252F20251011-layout-style-governance.md&base_oid=4d0632db24c1eac1d590bfaaedadfb22dac35b4f&head_oid=2500373f1b471faa8c35fef2cd65b8a877f55045
   - メモ: フォントサイズ・色調整など安全適用ルールを合意
 - [ ] Open XML SDK ポリッシャー連携のスコープと実装方針を決定
   - メモ: .NET プロジェクト構成と CLI 連携ポイントを設計

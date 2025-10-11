@@ -1,0 +1,25 @@
+---
+目的: レンダラーでサブタイトル・ノート・テキストボックス描画を実現し、文章要素を補完する
+関連ブランチ: feat/renderer-text-enhance
+関連Issue: #163
+roadmap_item: RM-012 レンダラーテキスト強化
+---
+
+- [x] まずはブランチ作成とコミット
+- [x] スキーマ拡張の設計レビューを完了
+  - メモ: `slides[].textboxes[]` 定義と既存スキーマへの影響を明文化
+- [x] レンダラー実装方針を確定し、PoC を通じて描画挙動を確認
+  - メモ: subtitle/notes の描画優先度と例外処理を整理
+- [x] サンプル・テストケースの追加計画をまとめる
+  - メモ: CLI 統合テスト更新の影響範囲を `tests/` に記録（docs/notes/20251011-renderer-text-enhancement-impl.md に整理）
+- [x] スキーマ拡張とレンダラー描画処理を実装
+  - メモ: subtitle/notes/textboxes のエッジケース対応を記載
+- [x] サンプル・テンプレート・ドキュメントを更新
+  - メモ: `samples/templates/` の変更点と影響を整理（テンプレート変更は不要と判断）
+- [x] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
+  - メモ: `uv run --extra dev pytest tests/test_renderer.py` / `uv run --extra dev pytest` を実行し全件成功
+- [x] PR 作成
+  - メモ: PR #167 https://github.com/yurake/pptx_generator/pull/167（2025-10-11 完了）
+
+## メモ
+- RM-007 のアンカー仕様と整合させ、テンプレート更新が必要な場合は `samples/templates/` を見直す。

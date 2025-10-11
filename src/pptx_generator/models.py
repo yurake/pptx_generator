@@ -109,6 +109,42 @@ class SlideChart(BaseModel):
     options: ChartOptions | None = None
 
 
+class TextboxPosition(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    left_in: float
+    top_in: float
+    width_in: float
+    height_in: float
+
+
+class TextboxParagraph(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    level: int = Field(0, ge=0, le=5)
+    line_spacing_pt: float | None = Field(None, ge=0.0)
+    space_before_pt: float | None = Field(None, ge=0.0)
+    space_after_pt: float | None = Field(None, ge=0.0)
+    align: Literal[
+        "left",
+        "center",
+        "right",
+        "justify",
+        "distributed",
+    ] | None = None
+
+
+class SlideTextbox(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    text: str
+    anchor: str | None = None
+    position: TextboxPosition | None = None
+    font: FontSpec | None = None
+    paragraph: TextboxParagraph | None = None
+
+
 class Slide(BaseModel):
     id: str
     layout: str
@@ -119,6 +155,7 @@ class Slide(BaseModel):
     images: list[SlideImage] = Field(default_factory=list)
     tables: list[SlideTable] = Field(default_factory=list)
     charts: list[SlideChart] = Field(default_factory=list)
+    textboxes: list[SlideTextbox] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
 
