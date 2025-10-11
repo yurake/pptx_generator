@@ -18,9 +18,23 @@ roadmap_item: RM-007 SlideBullet アンカー拡張
   - メモ: テストケース追加済み（test_renderer_removes_bullet_placeholder_when_anchor_specified）
 - [x] PR 作成
   - メモ: PR #149 https://github.com/yurake/pptx_generator/pull/149（2025-10-11 完了）
+- [ ] 設計課題の整理と改善タスク化
+  - メモ: PR レビュー中にユーザーから重要な指摘あり（2025-10-11）
+  - メモ: 課題を docs/notes/20251011-bullets-anchor-design-issue.md に整理
+- [ ] anchor 指定方法の設計見直し
+  - メモ: 現在は各 bullet に anchor を指定する仕様だが、bullets グループ全体に指定すべき
+  - メモ: 複数箇所への bullets 配置ができない問題を解決する必要あり
+  - メモ: 後方互換性を考慮した段階的移行を検討
+- [ ] Issue 作成と設計議論
+  - メモ: 改善案（グループ化 vs 後方互換）を Issue で議論
+  - メモ: スキーマバージョン更新の必要性を検討
+- [ ] 改善実装の計画策定
+  - メモ: Phase 1（後方互換実装）→ Phase 2（移行期間）→ Phase 3（統一）
+  - メモ: 影響範囲: models.py, renderer.py, tests, samples, docs
 
 ## メモ
 - 承認メッセージ: 2025-10-10 ユーザー指示「ok」
-- `SlideBullet` 以外のテキスト形状にも拡張が必要かを調査し、スコープを明示する
-- LibreOffice PDF 出力や Open XML SDK 仕上げツールへの影響を確認する
-- プレースホルダー削除は別タスクとして検討（画像・表・チャートも含めた統一的な対応が必要）
+- 2025-10-11: PR #149 のレビュー中に anchor 指定方法の設計課題が判明
+- 設計課題の詳細は docs/notes/20251011-bullets-anchor-design-issue.md を参照
+- 現在の実装（各 bullet に anchor）は暫定版として PR #149 でマージ予定
+- 改善版の実装は別 PR で対応する方針
