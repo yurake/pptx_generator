@@ -1,12 +1,12 @@
 # プレースホルダーアンカー拡張検討メモ（2025-10-09）
 
 ## 背景
-- `samples/templates/templates2.pptx` などのレイアウトでは、`Body Left` や `Logo` といったアンカー候補がプレースホルダーとして定義されている。
+- `samples/templates/templates.pptx` などのレイアウトでは、`Body Left` や `Logo` といったアンカー候補がプレースホルダーとして定義されている。
 - 現行レンダラーは図形名検索で見つからない場合にプレースホルダー名をレイアウトから逆引きしているが、取得したプレースホルダーに対して `insert_picture` / `insert_chart` を呼び出す前提になっている。
 - PowerPoint の汎用プレースホルダー（`PP_PLACEHOLDER.OBJECT` など）は `python-pptx` 上で `insert_*` メソッドを持たず、レンダリング時に `AttributeError` が発生してフォールバック座標での描画、もしくは処理失敗に繋がる。
 
 ## 調査結果
-- `samples/templates/templates2.pptx` の `Two Column Detail` レイアウト:
+- `samples/templates/templates.pptx` の `Two Column Detail` レイアウト:
   - `Body Left` / `Body Right` / `Logo` はいずれも `PP_PLACEHOLDER.OBJECT`。`SlidePlaceholder.insert_picture` / `insert_chart` は実装されていなかった。
   - プレースホルダーの `placeholder_format.idx` を使えばスライド作成後に名称が `Content Placeholder n` へ変わっても追跡できる。
 - 汎用プレースホルダーに対しては `slide.shapes.add_*` で図形を追加し、座標・サイズをプレースホルダーから転写するのが安定。
