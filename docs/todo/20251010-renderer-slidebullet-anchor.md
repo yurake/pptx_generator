@@ -18,23 +18,45 @@ roadmap_item: RM-007 SlideBullet アンカー拡張
   - メモ: テストケース追加済み（test_renderer_removes_bullet_placeholder_when_anchor_specified）
 - [x] PR 作成
   - メモ: PR #149 https://github.com/yurake/pptx_generator/pull/149（2025-10-11 完了）
-- [ ] 設計課題の整理と改善タスク化
+
+## Phase 1 完了（2025-10-11）
+
+- [x] 設計課題の整理と改善タスク化
   - メモ: PR レビュー中にユーザーから重要な指摘あり（2025-10-11）
   - メモ: 課題を docs/notes/20251011-bullets-anchor-design-issue.md に整理
-- [ ] anchor 指定方法の設計見直し
-  - メモ: 現在は各 bullet に anchor を指定する仕様だが、bullets グループ全体に指定すべき
-  - メモ: 複数箇所への bullets 配置ができない問題を解決する必要あり
-  - メモ: 後方互換性を考慮した段階的移行を検討
-- [ ] Issue 作成と設計議論
-  - メモ: 改善案（グループ化 vs 後方互換）を Issue で議論
-  - メモ: スキーマバージョン更新の必要性を検討
-- [ ] 改善実装の計画策定
-  - メモ: Phase 1（後方互換実装）→ Phase 2（移行期間）→ Phase 3（統一）
-  - メモ: 影響範囲: models.py, renderer.py, tests, samples, docs
+  - メモ: Phase 1 実装記録を docs/notes/20251011-bullets-anchor-phase1.md に作成
+- [x] bullets_anchor 新仕様の実装完了
+  - メモ: Slide.bullets_anchor フィールド追加、後方互換性維持
+  - メモ: プレースホルダー削除機能実装、テストケース追加
+  - メモ: サンプル JSON 作成、CLI 統合テスト 5件すべて成功
+- [x] Phase 1 成果の記録
+  - メモ: 新仕様導入、後方互換性 100% 維持、テスト・サンプル完備
+  - メモ: 設計課題発見と次段階準備完了
+
+## Phase 2 完了（2025-10-11）
+
+- [x] anchor 指定方法の設計見直し
+  - メモ: SlideBulletGroup 形式を導入し、グループ単位でアンカーを指定できるよう拡張（2025-10-11）
+  - メモ: 複数箇所への bullets 配置に対応し、後方互換性を維持（2025-10-11）
+  - メモ: 詳細は docs/notes/20251011-bullets-anchor-phase2.md に整理済み（2025-10-11）
+- [x] Issue 作成と設計議論
+  - メモ: 改善案（グループ化 vs 後方互換）を議論し、スキーマ更新方針を確定（2025-10-11）
+- [x] 改善実装の計画策定
+  - メモ: Phase 2 実装計画に基づきモデル・レンダラー・テスト・サンプルを更新（2025-10-11）
+  - メモ: Phase 3 移行時のスキーマ更新方針は Issue 議論後に確定予定
+
+## Phase 3 完了（2025-10-11）
+
+- [x] 旧仕様フィールド（SlideBullet.anchor / Slide.bullets_anchor）を削除し、グループ構造へ統一
+  - メモ: スキーマ 1.1 で旧形式を ValidationError として扱う
+- [x] レンダラー・サンプル・テストを Phase 3 仕様へ刷新
+  - メモ: docs/notes/20251011-bullets-anchor-phase3.md を作成
+- [x] スキーマ 1.1 公開と移行ガイド整備
+  - メモ: 既存の配布物は samples/json のみのため更新済み JSON を周知対象とする（2025-10-11）
 
 ## メモ
 - 承認メッセージ: 2025-10-10 ユーザー指示「ok」
 - 2025-10-11: PR #149 のレビュー中に anchor 指定方法の設計課題が判明
 - 設計課題の詳細は docs/notes/20251011-bullets-anchor-design-issue.md を参照
-- 現在の実装（各 bullet に anchor）は暫定版として PR #149 でマージ予定
-- 改善版の実装は別 PR で対応する方針
+- Phase 3 仕様（スキーマ 1.1）を本ブランチで実装済み。旧形式は ValidationError
+- 最新の実装状況と移行方針は docs/notes/20251011-bullets-anchor-phase3.md を参照

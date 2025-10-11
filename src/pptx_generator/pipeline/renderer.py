@@ -17,7 +17,14 @@ from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.util import Inches, Pt
 
-from ..models import ChartSeries, FontSpec, JobSpec, Slide
+from ..models import (
+    ChartSeries,
+    FontSpec,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+)
 from ..settings import BrandingConfig, BrandingFont
 from .base import PipelineContext
 
@@ -136,47 +143,64 @@ class SimpleRendererStep:
         self._apply_brand_font(paragraph, self._branding.heading_font)
 
     def _apply_bullets(self, slide, slide_spec: Slide) -> None:
-        if not slide_spec.bullets:
+        groups = slide_spec.bullets
+        if not groups:
             return
 
-        # anchor が指定されている場合は最初の bullet の anchor を使用
-        # 全 bullets が同じ図形に配置されることを想定
-        first_bullet = slide_spec.bullets[0]
-        if first_bullet.anchor:
-            # アンカー指定時は _resolve_anchor を使用して統一的に処理
-            fallback_box = LayoutBox(1.0, 1.5, 8.0, 4.5)  # デフォルトの箇条書き領域
-            resolution = self._resolve_anchor(slide, first_bullet.anchor, fallback_box)
-            anchor_shape = resolution.shape
+        fallback_items: list[SlideBullet] = []
+        used_anchors: set[str] = set()
 
-            if not anchor_shape:
-                raise ValueError(
-                    f"Shape with name '{first_bullet.anchor}' not found in slide. "
-                    f"Please check the template and ensure the shape name matches."
-                )
+        for group in groups:
+            anchor_name = group.anchor
+            if anchor_name:
+                if anchor_name in used_anchors:
+                    raise ValueError(
+                        f"箇条書きのアンカー '{anchor_name}' が複数のグループで指定されています。"
+                        "図形名はグループごとに一意にしてください。"
+                    )
+                used_anchors.add(anchor_name)
+                self._render_bullet_group_to_anchor(slide, anchor_name, group.items)
+            else:
+                fallback_items.extend(group.items)
 
-            if resolution.is_placeholder:
-                self._prepare_placeholder(anchor_shape)
-
-            # アンカーの位置とサイズを取得して新しいテキストボックスを作成
-            left, top, width, height = resolution.as_box()
-            target_shape = slide.shapes.add_textbox(left, top, width, height)
-        else:
+        if fallback_items:
             target_shape = self._find_body_placeholder(slide)
-            anchor_shape = None
+            self._write_bullets_to_text_frame(target_shape.text_frame, fallback_items)
 
-        text_frame = target_shape.text_frame
+    def _render_bullet_group_to_anchor(
+        self, slide, anchor_name: str, bullets: list[SlideBullet]
+    ) -> None:
+        fallback_box = LayoutBox(1.0, 1.5, 8.0, 4.5)
+        resolution = self._resolve_anchor(slide, anchor_name, fallback_box)
+        anchor_shape = resolution.shape
+
+        if anchor_shape is None:
+            raise ValueError(
+                f"Shape with name '{anchor_name}' not found in slide. "
+                "テンプレートの図形名を確認してください。"
+            )
+
+        if resolution.is_placeholder:
+            self._prepare_placeholder(anchor_shape)
+
+        left, top, width, height = resolution.as_box()
+        target_shape = slide.shapes.add_textbox(left, top, width, height)
+        self._write_bullets_to_text_frame(target_shape.text_frame, bullets)
+
+        if anchor_shape is not None:
+            self._remove_shape(anchor_shape)
+
+    def _write_bullets_to_text_frame(
+        self, text_frame, bullets: list[SlideBullet]
+    ) -> None:
         text_frame.clear()
-        for index, bullet in enumerate(slide_spec.bullets):
+        for index, bullet in enumerate(bullets):
             paragraph = (
                 text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
             )
             paragraph.text = bullet.text
             paragraph.level = bullet.level
             self._apply_font(paragraph, bullet.font)
-
-        # アンカー指定時はプレースホルダーを削除
-        if first_bullet.anchor and anchor_shape is not None:
-            self._remove_shape(anchor_shape)
 
     def _apply_tables(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.tables:

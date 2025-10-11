@@ -6,6 +6,7 @@ import base64
 import logging
 from pathlib import Path
 
+import pytest
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
@@ -19,6 +20,7 @@ from pptx_generator.models import (
     JobSpec,
     Slide,
     SlideBullet,
+    SlideBulletGroup,
     SlideChart,
     SlideImage,
     SlideTable,
@@ -27,6 +29,7 @@ from pptx_generator.models import (
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.renderer import RenderingOptions, SimpleRendererStep
 from pptx_generator.settings import BrandingConfig, BrandingFont
+from pydantic import ValidationError
 
 
 def _write_dummy_png(path: Path) -> None:
@@ -81,7 +84,11 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
                 layout="Title and Content",
                 title="サンプルタイトル",
                 bullets=[
-                    SlideBullet(id="b1", text="箇条書き", level=0, font=None),
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="b1", text="箇条書き", level=0, font=None),
+                        ]
+                    ),
                 ],
                 images=[
                     SlideImage(
@@ -772,7 +779,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
 def test_renderer_removes_bullet_placeholder_when_anchor_specified(
     tmp_path: Path,
 ) -> None:
-    """SlideBullet でアンカー指定時にプレースホルダーが削除されることを確認するテスト。"""
+    """グループでアンカー指定時にプレースホルダーが削除されることを確認するテスト。"""
     (
         template_path,
         two_content_layout_name,
@@ -791,18 +798,21 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(
                 layout=two_content_layout_name,
                 title="箇条書きプレースホルダー削除テスト",
                 bullets=[
-                    SlideBullet(
-                        id="bullet1",
-                        text="アンカー指定の箇条書き1",
-                        level=0,
+                    SlideBulletGroup(
                         anchor="Left Content Placeholder",
-                    ),
-                    SlideBullet(
-                        id="bullet2",
-                        text="アンカー指定の箇条書き2",
-                        level=1,
-                        anchor="Left Content Placeholder",  # 同じアンカーを指定
-                    ),
+                        items=[
+                            SlideBullet(
+                                id="bullet1",
+                                text="アンカー指定の箇条書き1",
+                                level=0,
+                            ),
+                            SlideBullet(
+                                id="bullet2",
+                                text="アンカー指定の箇条書き2",
+                                level=1,
+                            ),
+                        ],
+                    )
                 ],
             )
         ],
@@ -847,7 +857,7 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(
 
 
 def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
-    """SlideBullet でアンカー未指定時に従来通りの動作を維持することを確認するテスト。"""
+    """アンカー未指定グループが本文プレースホルダーへ配置されることを確認するテスト。"""
     spec = JobSpec(
         meta=JobMeta(schema_version="1.0", title="Bullet Fallback Test"),
         auth=JobAuth(created_by="tester"),
@@ -857,7 +867,11 @@ def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
                 layout="Title and Content",
                 title="箇条書きフォールバックテスト",
                 bullets=[
-                    SlideBullet(id="b1", text="アンカー未指定の箇条書き", level=0),
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="b1", text="アンカー未指定の箇条書き", level=0),
+                        ]
+                    )
                 ],
             )
         ],
@@ -883,4 +897,151 @@ def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
         if bullet_found:
             break
 
-    assert bullet_found, "アンカー未指定時も箇条書きが正しく描画されること"
+def test_job_spec_rejects_legacy_bullets_schema() -> None:
+    legacy_spec = {
+        "meta": {"schema_version": "1.1", "title": "Legacy"},
+        "auth": {"created_by": "tester"},
+        "slides": [
+            {
+                "id": "legacy-slide",
+                "layout": "Title and Content",
+                # 旧形式: bullets は SlideBullet のリスト
+                "bullets": [
+                    {"id": "b1", "text": "旧形式", "level": 0},
+                ],
+            }
+        ],
+    }
+
+    with pytest.raises(ValidationError):
+        JobSpec.model_validate(legacy_spec)
+
+
+def test_slide_bullet_rejects_anchor_field() -> None:
+    with pytest.raises(ValidationError):
+        SlideBullet.model_validate(
+            {"id": "b1", "text": "anchor", "level": 0, "anchor": "Body"}
+        )
+
+
+def test_renderer_renders_multiple_bullet_groups(tmp_path: Path) -> None:
+    """グループ形式の複数アンカーが正しく描画されることを確認するテスト。"""
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        left_box,
+        right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Grouped Bullets Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="grouped-bullets",
+                layout=two_content_layout_name,
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="l1", text="左側の箇条書き1", level=0),
+                            SlideBullet(id="l2", text="左側の箇条書き2", level=1),
+                        ],
+                    ),
+                    SlideBulletGroup(
+                        anchor="Right Content Placeholder",
+                        items=[
+                            SlideBullet(id="r1", text="右側の箇条書き1", level=0),
+                        ],
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="grouped-bullets.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    left_text_shape = None
+    right_text_shape = None
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            texts = {paragraph.text for paragraph in shape.text_frame.paragraphs}
+            if "左側の箇条書き1" in texts:
+                left_text_shape = shape
+            if "右側の箇条書き1" in texts:
+                right_text_shape = shape
+
+    assert left_text_shape is not None
+    assert right_text_shape is not None
+
+    assert abs(left_text_shape.left - left_box[0]) < 100
+    assert abs(left_text_shape.top - left_box[1]) < 100
+    assert abs(right_text_shape.left - right_box[0]) < 100
+    assert abs(right_text_shape.top - right_box[1]) < 100
+
+    remaining_placeholder_names = {
+        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
+    }
+    assert "Left Content Placeholder" not in remaining_placeholder_names
+    assert "Right Content Placeholder" not in remaining_placeholder_names
+
+
+def test_renderer_raises_error_for_duplicate_group_anchor(tmp_path: Path) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        _left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.1", title="Duplicate Anchor"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="duplicate-anchors",
+                layout=two_content_layout_name,
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="b1", text="左", level=0),
+                        ],
+                    ),
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="b2", text="右", level=0),
+                        ],
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="duplicate-anchors.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+
+    with pytest.raises(ValueError, match="箇条書きのアンカー 'Left Content Placeholder'"):
+        renderer.run(context)
