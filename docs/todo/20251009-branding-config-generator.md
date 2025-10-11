@@ -17,6 +17,10 @@ roadmap_item: RM-009 テンプレート設定自動生成
   - メモ: `pptx gen` でテンプレート指定時に自動抽出。`tpl-extract` は `branding.json` を同時出力（2025-10-11）。
 - [x] CLI 出力先オプションの整理とデフォルトディレクトリ更新
   - メモ: `pptx gen`/`tpl-extract` を `--output` で統一し、既定を `.pptx/gen` / `.pptx/extract` へ変更（2025-10-11）。
+- [x] ブランド抽出失敗時のフォールバック挙動テストを追加
+  - メモ: `tests/test_cli_integration.py::test_cli_gen_template_branding_fallback` を追加し、抽出エラー時にデフォルトへ切り替わることを確認（2025-10-11）。
+- [x] `--output` 未指定時の既定ディレクトリを自動検証する統合テストを追加
+  - メモ: `tests/test_cli_integration.py::test_cli_gen_default_output_directory` / `test_cli_tpl_extract_default_output_directory` を追加（2025-10-11）。
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 

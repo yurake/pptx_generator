@@ -13,6 +13,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
+from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.models import JobSpec, TemplateSpec
 from pptx_generator.pipeline import pdf_exporter
 
@@ -179,6 +180,40 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
     assert branding_info.get("source", {}).get("type") == "file"
     assert branding_info.get("source", {}).get("path") == str(branding_path)
 
+
+def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    template_path = Path("samples/templates/templates.pptx")
+    output_dir = tmp_path / "gen-work-template-fallback"
+
+    def raise_error(_: Path) -> None:
+        raise BrandingExtractionError("boom")
+
+    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", raise_error)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(template_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    branding_info = audit_payload.get("branding")
+    assert branding_info is not None
+    assert branding_info.get("source", {}).get("type") in {"default", "builtin"}
+    assert branding_info.get("source", {}).get("error") == "boom"
+
+
 def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     output_dir = tmp_path / "gen-work-pdf"
@@ -315,6 +350,38 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("pdf_export", {}).get("converter") == "skipped"
+
+
+def test_cli_gen_default_output_directory(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+        shutil.copytree(repo_root / "config", fs_root / "config")
+
+        result = runner.invoke(
+            app,
+            [
+                "gen",
+                "samples/json/sample_spec.json",
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        output_dir = Path(".pptx/gen")
+        assert (output_dir / "proposal.pptx").exists()
+        assert (output_dir / "analysis.json").exists()
+        audit_path = output_dir / "audit_log.json"
+        assert audit_path.exists()
+
+        audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+        branding_info = audit_payload.get("branding")
+        assert branding_info is not None
+        assert branding_info.get("source", {}).get("type") in {"default", "builtin"}
 
 
 def test_cli_tpl_extract_basic(tmp_path) -> None:
@@ -511,3 +578,30 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
     finally:
         # 一時ファイルをクリーンアップ
         temp_template_path.unlink()
+
+
+def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-extract",
+                "--template",
+                "samples/templates/templates.pptx",
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        output_dir = Path(".pptx/extract")
+        spec_path = output_dir / "template_spec.json"
+        branding_path = output_dir / "branding.json"
+        assert spec_path.exists()
+        assert branding_path.exists()
