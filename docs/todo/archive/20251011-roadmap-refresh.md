@@ -22,7 +22,7 @@ roadmap_item: RM-015 ロードマップ再設計
   - メモ: プロンプト雛形と Auto-fix の適用条件を明文化する
 - [x] `docs/roadmap/README.md` に後続タスク（テンプレ構造抽出 CLI、HITL 実装、AI レビュー）のリンクを追加し、参照 ToDo を紐付ける
 - [x] PR 作成
-  - メモ: PR #166 https://github.com/yurake/pptx_generator/pull/166
+  - メモ: PR #166 https://github.com/yurake/pptx_generator/pull/166（2025-10-11 完了）
 
 ## メモ
 - 戦略メモは `docs/notes/` に配置し、承認後にロードマップ本体へ反映する

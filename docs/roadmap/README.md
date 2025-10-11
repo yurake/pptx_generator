@@ -44,19 +44,6 @@ graph TD
 ## アクティブテーマ
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
 
-<a id="rm-015"></a>
-### RM-015 ロードマップ再設計（優先度: P1）
-- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
-- 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
-- 参照 ToDo: [docs/todo/20251011-roadmap-refresh.md](../todo/20251011-roadmap-refresh.md)
-- 状況: 実装中（2025-10-11 更新）
-- 期待成果: 工程ごとのタスク整理、レイアウト選定/縮約ポリシーの方針化、HITL 承認フローと監査ログ方針整理。
-- 次のアクション: 工程別タスクに分解して以下を進行する。
-  - 工程1・2: テンプレ構造抽出 CLI 要件定義と PoC 設計（ToDo 発行予定）、テンプレ運用ポリシー更新。
-  - 工程3・4: レイアウトスコアリング指標の設計、AI レビュー評価指標の数値化、承認 UI / API 設計、`docs/design/schema-extensions.md` のモデル実装。
-  - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
-  - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/20251011-roadmap-refresh.md](../todo/20251011-roadmap-refresh.md)）
-
 <a id="rm-001"></a>
 ### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
@@ -191,6 +178,18 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-015"></a>
+### RM-015 ロードマップ再設計（優先度: P1）
+- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
+- 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
+- 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: 工程ごとのタスク整理、レイアウト選定/縮約ポリシーの方針化、HITL 承認フローと監査ログ方針整理。
+  - 工程1・2: テンプレ構造抽出 CLI 要件定義と PoC 設計（ToDo 発行予定）、テンプレ運用ポリシー更新。
+  - 工程3・4: レイアウトスコアリング指標の設計、AI レビュー評価指標の数値化、承認 UI / API 設計、`docs/design/schema-extensions.md` のモデル実装。
+  - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
+  - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
 
 <a id="rm-016"></a>
 ### RM-016 CLI ツールチェーン整備（優先度: P1）
