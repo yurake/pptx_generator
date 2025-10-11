@@ -12,7 +12,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 - [x] JSON雛形生成処理フロー設計完了
   - メモ: layout名・アンカー名・属性抽出フロー確定
 - [x] CLI新コマンド設計完了
-  - メモ: `extract-template`コマンド、オプション仕様確定
+  - メモ: `tpl-extract` コマンド（旧 `extract-template`）、オプション仕様確定
 - [x] エラーハンドリング戦略設計完了
   - メモ: ファイル不在、命名不一致、SlideBullet競合対応戦略確定
 - [x] テスト戦略設計完了
@@ -26,13 +26,13 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 - [x] モデルクラス拡張
   - メモ: `src/pptx_generator/models.py`にTemplateSpec関連モデルを追加
 - [x] CLI統合実装
-  - メモ: `src/pptx_generator/cli.py`にextract-templateコマンドを追加
+  - メモ: `src/pptx_generator/cli.py` に tpl-extract コマンドを追加
 - [x] 単体テスト実装
   - メモ: `tests/test_template_extractor.py`で抽出ロジックを検証
 - [x] 統合テスト実装
-  - メモ: `tests/test_cli_integration.py`でextract-templateコマンドの動作を検証
+  - メモ: `tests/test_cli_integration.py` で tpl-extract コマンドの動作を検証
 - [x] ドキュメント更新
-  - メモ: README.mdにextract-templateコマンドの使用方法、オプション一覧、使用例を追加完了
+  - メモ: README.md に tpl-extract コマンドの使用方法、オプション一覧、使用例を追加完了
 - [x] PR作成
   - メモ: PR #154 (feat/template-spec-export → main) を作成済み
 
@@ -51,7 +51,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 - 雛形スキーマ例（anchors配列に属性を格納）
 
 ### 3. CLI新コマンド設計
-- コマンド: `pptx-generator extract-template`
+- コマンド: `pptx tpl-extract`
 - 必須: `--template <path>`、オプション: `--output <path>`, `--layout`, `--anchor`, `--format`, `--verbose`
 - 既存CLIと統合、outputsディレクトリ保存・詳細ログ出力
 
@@ -72,7 +72,7 @@ roadmap_item: RM-008/RM-010 テンプレート仕様エクスポート機能
 
 ```mermaid
 flowchart TD
-    A[extract-template CLIコマンド] --> B[TemplateExtractorStep]
+    A[tpl-extract CLIコマンド] --> B[TemplateExtractorStep]
     B --> C[python-pptxでテンプレート解析]
     C --> D[レイアウト・アンカー・属性抽出]
     D --> E[命名規則・SlideBullet拡張仕様チェック]

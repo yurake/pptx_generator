@@ -31,7 +31,7 @@ def app(verbose: bool) -> None:
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 
-@app.command()
+@app.command("gen")
 @click.argument(
     "spec_path",
     type=click.Path(exists=True, dir_okay=False,
@@ -117,7 +117,7 @@ def app(verbose: bool) -> None:
     show_default=True,
     help="LibreOffice 変換の最大リトライ回数",
 )
-def run(
+def gen(
     spec_path: Path,
     workdir: Path,
     template: Optional[Path],
@@ -131,7 +131,7 @@ def run(
     pdf_timeout: int,
     pdf_retries: int,
 ) -> None:
-    """生成パイプラインを実行する。"""
+    """JSON 仕様から PPTX を生成する。"""
     try:
         spec = JobSpec.parse_file(spec_path)
     except SpecValidationError as exc:
@@ -225,7 +225,7 @@ def run(
     click.echo(f"Audit: {audit_path}")
 
 
-@app.command("extract-template")
+@app.command("tpl-extract")
 @click.option(
     "--template",
     "-t",
@@ -269,7 +269,7 @@ def run(
     show_default=True,
     help="作業ディレクトリ",
 )
-def extract_template(
+def tpl_extract(
     template_path: Path,
     output_path: Optional[Path],
     layout: Optional[str],

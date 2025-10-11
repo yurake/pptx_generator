@@ -6,7 +6,7 @@
 
 ## 変更手順
 1. 変更内容を `docs/todo/` の該当タスクに記録し、影響範囲を整理する。
-2. `uv run pptx-generator run samples/json/sample_spec.json --branding config/branding.json` などで出力を確認する。
+2. `uv run pptx gen samples/json/sample_spec.json --branding config/branding.json` などで出力を確認する。
 3. 必要に応じて `docs/policies/config-and-templates.md` に理由・検証手順を追記する。
 4. 既存テンプレートとの整合性を保つため、`templates/` や `samples/` のファイルが更新不要かを確認する。
 
