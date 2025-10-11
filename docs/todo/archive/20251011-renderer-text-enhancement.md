@@ -19,7 +19,7 @@ roadmap_item: RM-012 レンダラーテキスト強化
 - [x] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
   - メモ: `uv run --extra dev pytest tests/test_renderer.py` / `uv run --extra dev pytest` を実行し全件成功
 - [x] PR 作成
-  - メモ: PR #167 https://github.com/yurake/pptx_generator/pull/167
+  - メモ: PR #167 https://github.com/yurake/pptx_generator/pull/167（2025-10-11 完了）
 
 ## メモ
 - RM-007 のアンカー仕様と整合させ、テンプレート更新が必要な場合は `samples/templates/` を見直す。
