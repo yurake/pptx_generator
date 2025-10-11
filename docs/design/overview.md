@@ -25,15 +25,32 @@
 | Service-G Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
 
 ## 3. データフロー
-1. `spec.json` を受領し、`JobId` を生成。
-2. Validator が JSON スキーマを検証し、`validation_report.json` を出力。問題があれば停止。
-3. Refiner が入力 JSON を前処理し、箇条書きレベルの調整など軽微な補正を適用。
-4. Renderer がテンプレート（`templates/corporate_default_vN.pptx`）を読み込み、指定レイアウトに沿ってスライドを作成。
-5. Analyzer が PPTX から図形位置・テキスト属性を抽出し、`analysis.json` を生成。
-6. PDF Exporter が LibreOffice (soffice) により PPTX から PDF を生成し、失敗時はリトライ。
-7. Polisher（任意）が Open XML SDK で段落・禁則・色統一を適用し、`proposal_polished.pptx` を作成。
-8. Distributor が出力ファイルをストレージへ保存し、メタ情報とともに通知。
-9. CLI が `audit_log.json` を生成し、PDF 変換メタデータ（試行回数・所要時間）と Refiner 調整ログを含む監査情報を保存。
+最新ロードマップでは、以下の 6 工程で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
+
+1. **テンプレ準備**（自動）  
+   テンプレ資産（`.pptx`）を整備し、バージョン管理を行う。差分検証は工程 2 で実施。
+2. **テンプレ構造抽出**（自動）  
+   テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
+3. **コンテンツ正規化**（HITL）  
+   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/overview.md` を参照。
+4. **ドラフト構成設計**（HITL）  
+   章立て・ページ順・`layout_hint` を決定し、`draft_approved.json` を確定。承認ゲートは Approval-First Policy (`docs/policies/task-management.md`) と連携する。
+5. **マッピング**（自動）  
+   テンプレ構造（工程 2）と承認済みデータ（工程 3/4）を突合し、レイアウト選定とプレースホルダ割付を行う。結果は `rendering_ready.json` と `mapping_log.json` に記録。
+6. **PPTX レンダリング**（自動）  
+   `rendering_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
+
+工程 3・4 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema-extensions.md` にまとめている。
+
+### 3.1 状態遷移と中間ファイル
+| ステージ | 入力 | 出力 | 備考 |
+| --- | --- | --- | --- |
+| コンテンツ正規化 | `spec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
+| ドラフト構成 | `content_approved.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン UI、付録への退避、承認ログ（`draft_review_log.json`） |
+| マッピング | `draft_approved.json`, `content_approved.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
+| レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
+
+各 JSON のスキーマは `docs/design/schema-extensions.md` に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
 
 ## 4. JSON スキーマ詳細
 ```yaml
