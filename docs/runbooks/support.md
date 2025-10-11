@@ -23,7 +23,7 @@
   - エラーコード `5`（CLI 終了コード）は PDF 変換ステップでの失敗を示す。
   - チェックリスト:
     - `LIBREOFFICE_PATH` を設定しているか、`soffice` が `PATH` に存在するか確認。
-    - `uv run pptx-generator run ... --export-pdf --pdf-timeout 180` などでタイムアウトを延長。
+    - `uv run pptx gen ... --export-pdf --pdf-timeout 180` などでタイムアウトを延長。
     - `workdir/outputs/` に生成された `*.log`（LibreOffice 標準出力/エラー）を添付してもらう。
   - 暫定対応: `--pdf-mode both` で PPTX を受け取り、手動で PDF 変換する。
   - 恒久対応: LibreOffice のアップデート、権限設定、CI 上では `PPTXGEN_SKIP_PDF_CONVERT=1` を設定して PDF 変換をスキップし、別ジョブで PDF の有無を検証する。

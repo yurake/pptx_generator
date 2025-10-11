@@ -10,7 +10,7 @@
 ## 運用ルール
 - サンプル JSON は公開前提のダミーデータのみを使用し、実案件情報を含めない。
 - `json/` 配下の `sample_spec*.json` を更新した際は `tests/test_cli_integration.py` の期待値や `docs/` の使い方ガイドを確認する。
-- テンプレートを差し替える場合は `uv run pptx-generator run` で出力差分を確認し、`docs/runbooks/release.md` に影響がないか検討する。
+- テンプレートを差し替える場合は `uv run pptx gen` で出力差分を確認し、`docs/runbooks/release.md` に影響がないか検討する。
 - 参照テンプレートにアンカーを追加する際は、レイアウト名と図形名が JSON 仕様と一致しているか確認する。
 
 ## テスト連携
