@@ -14,7 +14,7 @@ roadmap_item: RM-016 CLI ツールチェーン整備
 - [x] 必要に応じてロードマップや関連ドキュメントを更新
   - メモ: `docs/roadmap/README.md` に RM-016 を追記（2025-10-11）
 - [x] PR 作成
-  - メモ: PR #156 https://github.com/yurake/pptx_generator/pull/156
+  - メモ: PR #156 https://github.com/yurake/pptx_generator/pull/156（2025-10-11 完了）
 
 ## メモ
 - 後方互換不要のため既存コマンドは廃止して問題なし。

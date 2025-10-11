@@ -134,21 +134,20 @@
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーの定義、Open XML SDK ベース実装のスコープ見直し、対応 ToDo とテスト計画の策定。
 
-<a id="rm-016"></a>
-### RM-016 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/todo/20251011-cli-toolkit-refactor.md](../todo/20251011-cli-toolkit-refactor.md)
-- 状況: 着手前（2025-10-11 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
-- 次のアクション: CLI 再編の設計方針をドキュメント化し、ToDo に沿って実装・テスト・PR 提出を行う。
-
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-016"></a>
+### RM-016 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
 
 <a id="rm-007"></a>
 ### RM-007 SlideBullet アンカー拡張（優先度: P2）
