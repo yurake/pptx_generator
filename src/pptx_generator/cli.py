@@ -230,7 +230,7 @@ def run(
     "--template",
     "-t",
     "template_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
     required=True,
     help="抽出対象の PPTX テンプレートファイル",
 )
@@ -246,13 +246,13 @@ def run(
     "--layout",
     type=str,
     default=None,
-    help="抽出対象レイアウト名のフィルタ（部分一致）",
+    help="抽出対象レイアウト名のフィルタ（前方一致）",
 )
 @click.option(
     "--anchor",
     type=str,
     default=None,
-    help="抽出対象アンカー名のフィルタ（部分一致）",
+    help="抽出対象アンカー名のフィルタ（前方一致）",
 )
 @click.option(
     "--format",

@@ -77,7 +77,9 @@ class TemplateExtractorStep:
                 layout_info = self._extract_layout_info(slide_layout)
                 
                 # レイアウトフィルタがある場合はチェック
-                if self.options.layout_filter and self.options.layout_filter not in layout_info.name:
+                if self.options.layout_filter and not self._matches_filter(
+                    layout_info.name, self.options.layout_filter
+                ):
                     continue
                 
                 layouts.append(layout_info)
@@ -105,7 +107,9 @@ class TemplateExtractorStep:
                 shape_info = self._extract_shape_info(shape)
                 
                 # アンカーフィルタがある場合はチェック
-                if self.options.anchor_filter and self.options.anchor_filter not in shape_info.name:
+                if self.options.anchor_filter and not self._matches_filter(
+                    shape_info.name, self.options.anchor_filter
+                ):
                     continue
                 
                 anchors.append(shape_info)
@@ -146,16 +150,30 @@ class TemplateExtractorStep:
         
         # テキスト内容の抽出
         text = None
-        if hasattr(shape, 'text_frame') and shape.text_frame:
-            text = shape.text_frame.text
-        elif hasattr(shape, 'text'):
-            text = shape.text
+        text_frame = getattr(shape, "text_frame", None)
+        if text_frame is not None:
+            frame_text = getattr(text_frame, "text", None)
+            if isinstance(frame_text, str):
+                text = frame_text
+        if text is None:
+            raw_text = getattr(shape, "text", None)
+            if isinstance(raw_text, str):
+                text = raw_text
         
         # プレースホルダー情報の抽出
-        is_placeholder = isinstance(shape, (SlidePlaceholder, PlaceholderPicture))
+        placeholder_format = getattr(shape, "placeholder_format", None)
+        is_placeholder = bool(
+            isinstance(shape, (SlidePlaceholder, PlaceholderPicture))
+            or getattr(shape, "is_placeholder", False)
+            or placeholder_format is not None
+        )
         placeholder_type = None
-        if is_placeholder and hasattr(shape, 'placeholder_format'):
-            placeholder_type = str(shape.placeholder_format.type)
+        if placeholder_format is not None:
+            placeholder_kind = getattr(placeholder_format, "type", None)
+            if hasattr(placeholder_kind, "name"):
+                placeholder_type = str(getattr(placeholder_kind, "name"))
+            elif placeholder_kind is not None:
+                placeholder_type = str(placeholder_kind)
         
         # SlideBullet拡張仕様との競合チェック
         conflict = None
@@ -184,6 +202,13 @@ class TemplateExtractorStep:
             conflict=conflict,
             missing_fields=missing_fields,
         )
+
+    @staticmethod
+    def _matches_filter(value: str, keyword: str) -> bool:
+        """フィルタ語との前方一致を確認する。"""
+        if not value or not keyword:
+            return True
+        return value.casefold().startswith(keyword.casefold())
     
     def _determine_output_path(self, context: PipelineContext) -> Path:
         """出力パスを決定する。"""
