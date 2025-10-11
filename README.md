@@ -21,6 +21,18 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
    uv run pptx-generator run samples/json/sample_spec.json --template samples/templates/templates.pptx
    ```
    - 実行後は `outputs/audit_log.json` に生成時刻・メタ情報・PDF 変換結果が追記されます。
+3. テンプレートの構造解析を行う場合は `extract-template` コマンドを使用します。
+   ```bash
+   # 基本的な使用方法
+   uv run pptx-generator extract-template --template samples/templates/templates.pptx
+   
+   # 特定のレイアウトのみを抽出
+   uv run pptx-generator extract-template --template samples/templates/templates.pptx --layout "タイトルスライド"
+   
+   # YAML形式で出力
+   uv run pptx-generator extract-template --template samples/templates/templates.pptx --format yaml
+   ```
+   - 既存の `.pptx` テンプレートから JSON 仕様の雛形を生成し、テンプレートの構造を解析してアンカー情報や座標データを含む雛形 JSON を作成します。
 
 | Option | Function | Default |
 | --- | --- | --- |
@@ -32,7 +44,19 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 | `--libreoffice-path <path>` | soffice の実行パスを明示する | `PATH` 検索結果 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数を設定する | 60 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数を指定する | 0 |
-1. 生成物は `--workdir` 未指定の場合 `.pptxgen/outputs/` に保存されます。
+
+### extract-template 専用オプション
+
+| Option | Function | Default |
+| --- | --- | --- |
+| `--template <path>` | 解析する `.pptx` テンプレートを指定（必須） | - |
+| `--output <path>` | 出力ファイル名を指定 | `template_spec.json` |
+| `--layout <names>` | 抽出するレイアウト名をカンマ区切りで指定 | 全レイアウト |
+| `--anchor <names>` | 抽出するアンカー名をカンマ区切りで指定 | 全アンカー |
+| `--format <json\|yaml>` | 出力形式を指定 | `json` |
+| `--verbose` | 詳細ログを表示 | 無効 |
+
+4. 生成物は `--workdir` 未指定の場合 `.pptxgen/outputs/` に保存されます。
 
 ## テスト・検証
 - レンダラー・CLI を含むテストスイートを pytest で実行できます。
