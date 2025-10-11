@@ -727,3 +727,115 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     assert "Body Left" not in remaining_placeholder_names
     assert "Body Right" not in remaining_placeholder_names
     assert "Logo" not in remaining_placeholder_names
+
+
+def test_renderer_removes_bullet_placeholder_when_anchor_specified(tmp_path: Path) -> None:
+    """SlideBullet でアンカー指定時にプレースホルダーが削除されることを確認するテスト。"""
+    (
+        template_path,
+        two_content_layout_name,
+        _,
+        left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Bullet Placeholder Removal Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="bullet-slide",
+                layout=two_content_layout_name,
+                title="箇条書きプレースホルダー削除テスト",
+                bullets=[
+                    SlideBullet(
+                        id="bullet1",
+                        text="アンカー指定の箇条書き1",
+                        level=0,
+                        anchor="Left Content Placeholder",
+                    ),
+                    SlideBullet(
+                        id="bullet2",
+                        text="アンカー指定の箇条書き2",
+                        level=1,
+                        anchor="Left Content Placeholder",  # 同じアンカーを指定
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="bullet-placeholder-removal.pptx",
+            branding=BrandingConfig.default(),
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    # 箇条書きテキストが正しく配置されていることを確認
+    bullet_texts = []
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            for paragraph in shape.text_frame.paragraphs:
+                if paragraph.text in ["アンカー指定の箇条書き1", "アンカー指定の箇条書き2"]:
+                    bullet_texts.append(paragraph.text)
+                    # テキストフレームが左側プレースホルダーの位置に配置されていることを確認
+                    text_shape = shape
+                    assert abs(text_shape.left - left_box[0]) < 100  # 許容誤差
+                    assert abs(text_shape.top - left_box[1]) < 100
+
+    assert "アンカー指定の箇条書き1" in bullet_texts
+    assert "アンカー指定の箇条書き2" in bullet_texts
+
+    # プレースホルダーが削除されていることを確認
+    remaining_placeholder_names = {
+        shape.name
+        for shape in slide.shapes
+        if getattr(shape, "is_placeholder", False)
+    }
+    assert "Left Content Placeholder" not in remaining_placeholder_names
+
+
+def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
+    """SlideBullet でアンカー未指定時に従来通りの動作を維持することを確認するテスト。"""
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Bullet Fallback Test"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="bullet-fallback",
+                layout="Title and Content",
+                title="箇条書きフォールバックテスト",
+                bullets=[
+                    SlideBullet(id="b1", text="アンカー未指定の箇条書き", level=0),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(RenderingOptions(output_filename="bullet-fallback.pptx"))
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    # 箇条書きテキストが配置されていることを確認
+    bullet_found = False
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            for paragraph in shape.text_frame.paragraphs:
+                if paragraph.text == "アンカー未指定の箇条書き":
+                    bullet_found = True
+                    break
+        if bullet_found:
+            break
+
+    assert bullet_found, "アンカー未指定時も箇条書きが正しく描画されること"

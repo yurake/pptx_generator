@@ -142,14 +142,26 @@ class SimpleRendererStep:
         # 全 bullets が同じ図形に配置されることを想定
         first_bullet = slide_spec.bullets[0]
         if first_bullet.anchor:
-            target_shape = self._find_shape_by_name(slide, first_bullet.anchor)
-            if not target_shape:
+            # アンカー指定時は _resolve_anchor を使用して統一的に処理
+            fallback_box = LayoutBox(1.0, 1.5, 8.0, 4.5)  # デフォルトの箇条書き領域
+            resolution = self._resolve_anchor(slide, first_bullet.anchor, fallback_box)
+            anchor_shape = resolution.shape
+            
+            if not anchor_shape:
                 raise ValueError(
                     f"Shape with name '{first_bullet.anchor}' not found in slide. "
                     f"Please check the template and ensure the shape name matches."
                 )
+            
+            if resolution.is_placeholder:
+                self._prepare_placeholder(anchor_shape)
+            
+            # アンカーの位置とサイズを取得して新しいテキストボックスを作成
+            left, top, width, height = resolution.as_box()
+            target_shape = slide.shapes.add_textbox(left, top, width, height)
         else:
             target_shape = self._find_body_placeholder(slide)
+            anchor_shape = None
 
         text_frame = target_shape.text_frame
         text_frame.clear()
@@ -159,6 +171,10 @@ class SimpleRendererStep:
             paragraph.text = bullet.text
             paragraph.level = bullet.level
             self._apply_font(paragraph, bullet.font)
+
+        # アンカー指定時はプレースホルダーを削除
+        if first_bullet.anchor and anchor_shape is not None:
+            self._remove_shape(anchor_shape)
 
     def _apply_tables(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.tables:
