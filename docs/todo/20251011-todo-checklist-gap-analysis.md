@@ -1,7 +1,7 @@
 ---
 目的: Roadmap 連動タスクで設計・実装・テストが抜けがちな原因を特定する
-関連ブランチ: 未作成
-関連Issue: 未作成
+関連ブランチ: docs/todo-roadmap-integration
+関連Issue: #165
 roadmap_item: RM-002 エージェント運用ガイド整備
 ---
 
@@ -15,8 +15,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: docs/todo/template.md, docs/todo/README.md, docs/roadmap/README.md, AGENTS.md を更新
 - [x] テスト・検証
   - メモ: ドキュメント更新のみのためテスト対象外（確認済）
-- [ ] 関連Issueの更新
-  - メモ: `gh issue list --limit 50` の結果から対象 Issue を選定し、コメント予定
+- [x] 関連Issueの更新
+  - メモ: Issue #165 へコメント済（https://github.com/yurake/pptx_generator/issues/165#issuecomment-3393389929）
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
