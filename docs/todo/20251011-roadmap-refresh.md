@@ -14,13 +14,13 @@ roadmap_item: RM-015 ロードマップ再設計
   - メモ: フェーズごとの KPI と優先タスクを列挙する
 - [x] `docs/roadmap/README.md` を更新し、RM-015 を含む新構成への移行計画を反映する
   - メモ: 既存 RM の継承／廃止判断を記録する
-- [ ] `AGENTS.md` および関連ガイドの記載対象を整理し、各ドキュメントで参照すべき資料（design/requirements/policies 等）を明示する
+- [x] `AGENTS.md` および関連ガイドの記載対象を整理し、各ドキュメントで参照すべき資料（design/requirements/policies 等）を明示する
   - メモ: `docs/AGENTS.md`, `src/AGENTS.md`, `tests/AGENTS.md` から工程詳細を排除し、参照先や更新手順の指針を加える
-- [ ] `README.md` と `docs/design/` に新パイプライン（6 工程＋HITL＋AI レビュー）の概要と利用手順を追記する
+- [x] `README.md` と `docs/design/` に新パイプライン（6 工程＋HITL＋AI レビュー）の概要と利用手順を追記する
   - メモ: CLI コマンド例・テンプレ解析 CLI の計画も盛り込む
-- [ ] `docs/requirements/` と `docs/design/` に承認フロー・AI レビューの状態遷移／スキーマを整理する
+- [x] `docs/requirements/` と `docs/design/` に承認フロー・AI レビューの状態遷移／スキーマを整理する
   - メモ: プロンプト雛形と Auto-fix の適用条件を明文化する
-- [ ] `docs/roadmap/README.md` に後続タスク（テンプレ構造抽出 CLI、HITL 実装、AI レビュー）のリンクを追加し、参照 ToDo を紐付ける
+- [x] `docs/roadmap/README.md` に後続タスク（テンプレ構造抽出 CLI、HITL 実装、AI レビュー）のリンクを追加し、参照 ToDo を紐付ける
 - [ ] PR 作成
   - メモ: PR を作成したら番号と URL を記入する
 
