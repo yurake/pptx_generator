@@ -14,7 +14,8 @@ from .models import JobSpec, SpecValidationError
 from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
                        PdfExportStep, PipelineContext, PipelineRunner,
                        RefinerOptions, RenderingOptions, SimpleAnalyzerStep,
-                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep)
+                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
+                       TemplateExtractor, TemplateExtractorOptions)
 from .settings import BrandingConfig, RulesConfig
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
@@ -222,6 +223,130 @@ def run(
     if pdf_path is not None:
         click.echo(f"PDF: {pdf_path}")
     click.echo(f"Audit: {audit_path}")
+
+
+@app.command("extract-template")
+@click.option(
+    "--template",
+    "-t",
+    "template_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    required=True,
+    help="抽出対象の PPTX テンプレートファイル",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="出力ファイルパス（未指定時は template_spec.json）",
+)
+@click.option(
+    "--layout",
+    type=str,
+    default=None,
+    help="抽出対象レイアウト名のフィルタ（部分一致）",
+)
+@click.option(
+    "--anchor",
+    type=str,
+    default=None,
+    help="抽出対象アンカー名のフィルタ（部分一致）",
+)
+@click.option(
+    "--format",
+    type=click.Choice(["json", "yaml"], case_sensitive=False),
+    default="json",
+    show_default=True,
+    help="出力形式",
+)
+@click.option(
+    "--workdir",
+    "-w",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptxgen"),
+    show_default=True,
+    help="作業ディレクトリ",
+)
+def extract_template(
+    template_path: Path,
+    output_path: Optional[Path],
+    layout: Optional[str],
+    anchor: Optional[str],
+    format: str,
+    workdir: Path,
+) -> None:
+    """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
+    try:
+        # オプション設定
+        extractor_options = TemplateExtractorOptions(
+            template_path=template_path,
+            output_path=output_path,
+            layout_filter=layout,
+            anchor_filter=anchor,
+            format=format.lower(),
+        )
+        
+        # 作業ディレクトリ作成
+        workdir.mkdir(parents=True, exist_ok=True)
+        
+        # 抽出実行
+        extractor = TemplateExtractor(extractor_options)
+        template_spec = extractor.extract()
+        
+        # 出力パス決定
+        if output_path is None:
+            outputs_dir = workdir / "outputs"
+            outputs_dir.mkdir(parents=True, exist_ok=True)
+            if format.lower() == "yaml":
+                output_path = outputs_dir / "template_spec.yaml"
+            else:
+                output_path = outputs_dir / "template_spec.json"
+        
+        # ファイル保存
+        if format.lower() == "yaml":
+            import yaml
+            content = yaml.dump(
+                template_spec.model_dump(),
+                allow_unicode=True,
+                default_flow_style=False,
+                indent=2
+            )
+        else:
+            import json
+            content = json.dumps(
+                template_spec.model_dump(),
+                indent=2,
+                ensure_ascii=False
+            )
+        
+        output_path.write_text(content, encoding="utf-8")
+        
+        # 結果表示
+        click.echo(f"テンプレート抽出が完了しました: {output_path}")
+        click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
+        
+        total_anchors = sum(len(layout.anchors) for layout in template_spec.layouts)
+        click.echo(f"抽出された図形・アンカー数: {total_anchors}")
+        
+        if template_spec.warnings:
+            click.echo(f"警告: {len(template_spec.warnings)} 件")
+            for warning in template_spec.warnings:
+                click.echo(f"  - {warning}", err=True)
+        
+        if template_spec.errors:
+            click.echo(f"エラー: {len(template_spec.errors)} 件")
+            for error in template_spec.errors:
+                click.echo(f"  - {error}", err=True)
+        
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("テンプレート抽出中にエラーが発生しました")
+        click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=1) from exc
 
 
 def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:

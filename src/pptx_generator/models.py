@@ -137,3 +137,40 @@ class SpecValidationError(RuntimeError):
     @classmethod
     def from_validation_error(cls, exc: ValidationError) -> "SpecValidationError":
         return cls("入力仕様の検証に失敗しました", errors=exc.errors())
+
+
+# テンプレート抽出用モデル
+
+class ShapeInfo(BaseModel):
+    """図形情報を表現するモデル。"""
+    
+    name: str = Field(..., description="図形名（アンカー名）")
+    shape_type: str = Field(..., description="図形種別")
+    left_in: float = Field(..., description="左端位置（インチ）")
+    top_in: float = Field(..., description="上端位置（インチ）")
+    width_in: float = Field(..., description="幅（インチ）")
+    height_in: float = Field(..., description="高さ（インチ）")
+    text: str | None = Field(None, description="初期テキスト")
+    placeholder_type: str | None = Field(None, description="プレースホルダー種別")
+    is_placeholder: bool = Field(False, description="プレースホルダーかどうか")
+    error: str | None = Field(None, description="抽出時のエラー")
+    missing_fields: list[str] = Field(default_factory=list, description="欠落フィールド")
+    conflict: str | None = Field(None, description="SlideBullet拡張仕様との競合")
+
+
+class LayoutInfo(BaseModel):
+    """レイアウト情報を表現するモデル。"""
+    
+    name: str = Field(..., description="レイアウト名")
+    anchors: list[ShapeInfo] = Field(default_factory=list, description="図形・プレースホルダー一覧")
+    error: str | None = Field(None, description="レイアウト抽出時のエラー")
+
+
+class TemplateSpec(BaseModel):
+    """テンプレート仕様全体を表現するモデル。"""
+    
+    template_path: str = Field(..., description="テンプレートファイルパス")
+    extracted_at: str = Field(..., description="抽出日時（ISO8601）")
+    layouts: list[LayoutInfo] = Field(default_factory=list, description="レイアウト一覧")
+    warnings: list[str] = Field(default_factory=list, description="警告メッセージ")
+    errors: list[str] = Field(default_factory=list, description="エラーメッセージ")
