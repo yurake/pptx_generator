@@ -34,7 +34,6 @@
       "title": "アジェンダ",
       "bullets": [
         {
-          "anchor": "Body Left",
           "items": [
             {
               "id": "agenda-1",
@@ -97,7 +96,6 @@
       "title": "現状課題",
       "bullets": [
         {
-          "anchor": "Body Left",
           "items": [
             {
               "id": "problem-1",
@@ -125,7 +123,6 @@
       "title": "提案概要",
       "bullets": [
         {
-          "anchor": "Body Left",
           "items": [
             {
               "id": "solution-1",
@@ -153,7 +150,6 @@
       "title": "導入効果サマリ",
       "bullets": [
         {
-          "anchor": "Body",
           "items": [
             {
               "id": "overview-1",
@@ -255,7 +251,6 @@
       ],
       "bullets": [
         {
-          "anchor": "Body Right",
           "items": [
             {
               "id": "metric-1",
@@ -323,7 +318,6 @@
       "title": "次のアクション",
       "bullets": [
         {
-          "anchor": "Body",
           "items": [
             {
               "id": "closing-1",
