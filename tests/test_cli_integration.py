@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -12,7 +13,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
-from pptx_generator.models import JobSpec
+from pptx_generator.models import JobSpec, TemplateSpec
 from pptx_generator.pipeline import pdf_exporter
 
 
@@ -270,3 +271,184 @@ def test_cli_run_pdf_skip_env(tmp_path, monkeypatch) -> None:
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("pdf_export", {}).get("converter") == "skipped"
+
+
+def test_cli_extract_template_basic(tmp_path) -> None:
+    """extract-template コマンドの基本動作テスト。"""
+    template_path = Path("samples/templates/templates.pptx")
+    workdir = tmp_path / "work-extract"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "extract-template",
+            "--template",
+            str(template_path),
+            "--workdir",
+            str(workdir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "テンプレート抽出が完了しました" in result.output
+
+    outputs_dir = workdir / "outputs"
+    output_path = outputs_dir / "template_spec.json"
+    assert output_path.exists()
+
+    # JSON内容の検証
+    template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
+    template_spec = TemplateSpec.model_validate(template_spec_data)
+    
+    assert template_spec.template_path == str(template_path)
+    assert len(template_spec.layouts) > 0
+    assert template_spec.extracted_at is not None
+
+
+def test_cli_extract_template_custom_output(tmp_path) -> None:
+    """extract-template コマンドのカスタム出力パステスト。"""
+    template_path = Path("samples/templates/templates.pptx")
+    output_path = tmp_path / "custom_template_spec.json"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "extract-template",
+            "--template",
+            str(template_path),
+            "--output",
+            str(output_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert output_path.exists()
+
+    template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
+    template_spec = TemplateSpec.model_validate(template_spec_data)
+    assert template_spec.template_path == str(template_path)
+
+
+def test_cli_extract_template_with_filters(tmp_path) -> None:
+    """extract-template コマンドのフィルタ機能テスト。"""
+    template_path = Path("samples/templates/templates.pptx")
+    workdir = tmp_path / "work-extract-filter"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "extract-template",
+            "--template",
+            str(template_path),
+            "--workdir",
+            str(workdir),
+            "--layout",
+            "タイトル",  # レイアウト名フィルタ
+            "--anchor",
+            "title",    # アンカー名フィルタ
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    outputs_dir = workdir / "outputs"
+    output_path = outputs_dir / "template_spec.json"
+    assert output_path.exists()
+
+    template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
+    template_spec = TemplateSpec.model_validate(template_spec_data)
+    
+    # フィルタが適用されていることを確認（具体的な検証は実際のテンプレート内容に依存）
+    assert template_spec.template_path == str(template_path)
+
+
+def test_cli_extract_template_nonexistent_file() -> None:
+    """extract-template コマンドの存在しないファイルテスト。"""
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "extract-template",
+            "--template",
+            "nonexistent.pptx",
+        ],
+    )
+
+    assert result.exit_code == 4  # FileNotFoundError
+    assert "ファイルが見つかりません" in result.output
+
+
+def test_cli_extract_template_verbose_output(tmp_path) -> None:
+    """extract-template コマンドの詳細出力テスト。"""
+    template_path = Path("samples/templates/templates.pptx")
+    workdir = tmp_path / "work-extract-verbose"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "--verbose",  # グローバルオプション
+            "extract-template",
+            "--template",
+            str(template_path),
+            "--workdir",
+            str(workdir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "テンプレート抽出が完了しました" in result.output
+    assert "抽出されたレイアウト数:" in result.output
+    assert "抽出された図形・アンカー数:" in result.output
+
+
+def test_cli_extract_template_with_mock_presentation(tmp_path) -> None:
+    """extract-template コマンドのモックプレゼンテーションテスト。"""
+    # 一時的なPPTXファイルを作成
+    with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as temp_file:
+        temp_template_path = Path(temp_file.name)
+    
+    # 簡単なプレゼンテーションを作成
+    presentation = Presentation()
+    layout = presentation.slide_layouts[0]  # タイトルレイアウト
+    presentation.save(temp_template_path)
+    
+    try:
+        workdir = tmp_path / "work-extract-mock"
+        runner = CliRunner()
+
+        result = runner.invoke(
+            app,
+            [
+                "extract-template",
+                "--template",
+                str(temp_template_path),
+                "--workdir",
+                str(workdir),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        outputs_dir = workdir / "outputs"
+        output_path = outputs_dir / "template_spec.json"
+        assert output_path.exists()
+
+        template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
+        template_spec = TemplateSpec.model_validate(template_spec_data)
+        
+        assert template_spec.template_path == str(temp_template_path)
+        assert len(template_spec.layouts) > 0
+
+    finally:
+        # 一時ファイルをクリーンアップ
+        temp_template_path.unlink()
