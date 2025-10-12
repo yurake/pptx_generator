@@ -1,7 +1,7 @@
 ---
 目的: レンダラーでサブタイトル・ノート・テキストボックス描画を実現し、文章要素を補完する
 関連ブランチ: feat/renderer-text-enhance
-関連Issue: 未作成
+関連Issue: #171
 roadmap_item: RM-012 レンダラーテキスト強化
 ---
 
