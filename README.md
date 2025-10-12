@@ -2,6 +2,18 @@
 
 JSON 仕様から PowerPoint 提案書を自動生成するツールです。タイトルや箇条書きに加えて、ブランド設定に基づく表・画像・グラフの描画と簡易解析をサポートしています。
 
+## アーキテクチャ概要
+本プロジェクトは 6 つの工程で資料を生成します。詳細は `docs/notes/20251011-roadmap-refresh.md` および `docs/design/overview.md` を参照してください。
+
+1. **テンプレ準備**（自動）: ブランドごとの PPTX テンプレ資産を整備。
+2. **テンプレ構造抽出**（自動）: テンプレからレイアウト構造 JSON とヒント値を生成。
+3. **コンテンツ正規化**（HITL）: 入力データをスライド候補へ整形し、`content_approved.json` を承認。
+4. **ドラフト構成設計**（HITL）: 章立て・ページ順・`layout_hint` を確定し、`draft_approved.json` を承認。
+5. **マッピング**（自動）: レイアウト選定とプレースホルダ割付を行い、`rendering_ready.json` を生成。
+6. **PPTX レンダリング**（自動）: テンプレを適用し、`output.pptx` と生成ログを出力。
+
+工程 3・4 では人による承認が必要です。AI レビューの結果や承認フローの仕様は `docs/design/schema-extensions.md` と `docs/requirements/overview.md` にまとめています。
+
 ## セットアップ
 1. Python 3.12 系の仮想環境を用意します。
 2. 依存関係をインストールします。
@@ -59,6 +71,8 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 | `--verbose` | 詳細ログを表示 | 無効 |
 
 4. 生成物は `--output` 未指定の場合、`pptx gen` は `.pptx/gen/`、`tpl-extract` は `.pptx/extract/` に保存されます。
+
+> **計画中**: テンプレ構造抽出 CLI (`extract-template`) は工程 2 を支援するツールです。仕様や今後の拡張計画は `docs/design/overview.md` と `docs/requirements/overview.md` に記載しています。
 
 ## テスト・検証
 - レンダラー・CLI を含むテストスイートを pytest で実行できます。
