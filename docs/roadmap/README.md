@@ -152,6 +152,72 @@ graph TD
 - 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
 - 次のアクション: 要件整理と PoC 設計、検知ロジック導入先の選定、専用 ToDo の作成。
 
+<a id="rm-021"></a>
+### RM-021 テンプレ資産監査パイプライン（優先度: P1）
+- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照 ToDo: [docs/todo/20251012-template-audit-pipeline.md](../todo/20251012-template-audit-pipeline.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: `template_release.json` スキーマ定義と自動生成、テンプレ版比較レポート出力、ゴールデンサンプルの自動検証。
+- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
+- 次のアクション: release メタ仕様のドラフト作成、差分検証 CLI のプロトタイプ設計、ゴールデンサンプル維持手順の策定。
+
+<a id="rm-022"></a>
+### RM-022 レイアウト解析検証強化（優先度: P1）
+- ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
+- 対象工程: 2（テンプレ構造抽出）
+- 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md)
+- 参照 ToDo: [docs/todo/20251012-layout-validation-suite.md](../todo/20251012-layout-validation-suite.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: `layouts.jsonl` スキーマバリデータ、差分レポート可視化、ヒント係数・用途タグ推定ロジック。
+- 依存: RM-021（テンプレ資産監査パイプライン）、python-pptx / Open XML SDK の抽出結果、CI での JSON 検証基盤。
+- 次のアクション: スキーマ項目の定義、差分レポートフォーマットの設計、AI 補完と連動するヒント係数算出アルゴリズムの検討。
+
+<a id="rm-023"></a>
+### RM-023 コンテンツ承認オーサリング基盤（優先度: P1）
+- ゴール: 工程 3 の HITL 承認 UI / API と AI レビュー連携を整備し、承認ログを監査可能にする。
+- 対象工程: 3（コンテンツ正規化）
+- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
+- 参照 ToDo: [docs/todo/20251012-content-approval-platform.md](../todo/20251012-content-approval-platform.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: 承認 UI ワイヤーと API 設計、AI レビュー（グレード/Auto-fix）の実装方針、禁則語および必須項目のリアルタイム検知。
+- 依存: RM-022（レイアウト解析検証強化）のタグ情報、RM-001（Analyzer ルール拡張）の診断出力、監査ログ基盤。
+- 次のアクション: UI 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化。
+
+<a id="rm-024"></a>
+### RM-024 ドラフト構成承認フロー整備（優先度: P1）
+- ゴール: 工程 4 のストーリーボード UI と `layout_hint` 管理を実装し、章立て承認を確実化する。
+- 対象工程: 4（ドラフト構成設計）
+- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md)
+- 参照 ToDo: [docs/todo/20251012-draft-structuring-workbench.md](../todo/20251012-draft-structuring-workbench.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: 章レーン×カード UI、レイアウト候補スコアの可視化、多様性ルールと付録操作履歴の蓄積。
+- 依存: RM-023（コンテンツ承認基盤）、RM-022（レイアウト解析検証強化）、UI フロントエンド基盤選定。
+- 次のアクション: `layout_hint` 管理 API の設計、レイアウトスコア指標の定義、付録操作ログ仕様の整理。
+
+<a id="rm-025"></a>
+### RM-025 マッピング補完エンジン（優先度: P1）
+- ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`rendering_ready.json` の確度を高める。
+- 対象工程: 5（マッピング）
+- 参照ドキュメント: [docs/requirements/stages/stage-05-mapping.md](../requirements/stages/stage-05-mapping.md)
+- 参照 ToDo: [docs/todo/20251012-mapping-orchestrator.md](../todo/20251012-mapping-orchestrator.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`rendering_ready.json` スキーマ検証ツール。
+- 依存: RM-022（レイアウト解析検証強化）、RM-024（ドラフト構成承認フロー）、LLM 推論基盤。
+- 次のアクション: スコアリングロジックのプロトタイプ作成、フォールバックルール表の策定、スキーマ検証 CLI の設計。
+
+<a id="rm-026"></a>
+### RM-026 レンダリング監査統合（優先度: P1）
+- ゴール: 工程 6 の軽量整合チェック・監査メタ・PDF/Polisher 統合を実装し、最終出力の信頼性を確保する。
+- 対象工程: 6（PPTX 生成）
+- 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md)
+- 参照 ToDo: [docs/todo/20251012-rendering-audit-integration.md](../todo/20251012-rendering-audit-integration.md)
+- 状況: 未着手（2025-10-12 追加）
+- 期待成果: 軽量整合チェックルールセット、生成ログと承認ログの突合、PDF 変換と Open XML Polisher の統合フロー。
+- 依存: RM-025（マッピング補完エンジン）、LibreOffice / Open XML SDK の実行環境、CI でのバイナリ検証手法。
+- 次のアクション: チェックルール一覧の策定、監査メタ拡張項目の設計、PDF/Polisher 統合 PoC の準備。
+
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
