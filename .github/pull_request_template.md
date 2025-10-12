@@ -3,8 +3,7 @@
 - 既存の Issue/ToDo とのギャップがあれば追記してください。
 
 ## 関連リンク
-- Close #<番号>, #<番号>
-- Issue: #<番号>
+- Issue Close: #<番号>
 - ToDo: docs/todo/<ファイル名>.md
 - ノート／設計資料: docs/notes/<ファイル名>.md
 
