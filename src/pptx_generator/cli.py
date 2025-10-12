@@ -10,6 +10,10 @@ from typing import Optional
 
 import click
 
+from .branding_extractor import (
+    BrandingExtractionError,
+    extract_branding_config,
+)
 from .models import JobSpec, SpecValidationError
 from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
                        PdfExportStep, PipelineContext, PipelineRunner,
@@ -38,12 +42,13 @@ def app(verbose: bool) -> None:
                     readable=True, path_type=Path),
 )
 @click.option(
-    "--workdir",
-    "-w",
+    "--output",
+    "-o",
+    "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptxgen"),
+    default=Path(".pptx/gen"),
     show_default=True,
-    help="作業ディレクトリ",
+    help="生成物を保存するディレクトリ",
 )
 @click.option(
     "--template",
@@ -54,12 +59,10 @@ def app(verbose: bool) -> None:
     help="PPTX テンプレートファイル",
 )
 @click.option(
-    "--output",
-    "-o",
-    "output_filename",
+    "--pptx-name",
     default="proposal.pptx",
     show_default=True,
-    help="出力 PPTX 名",
+    help="出力 PPTX のファイル名",
 )
 @click.option(
     "--rules",
@@ -73,8 +76,8 @@ def app(verbose: bool) -> None:
     "--branding",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
-    default=DEFAULT_BRANDING_PATH,
-    show_default=True,
+    default=None,
+    show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル",
 )
 @click.option(
@@ -119,11 +122,11 @@ def app(verbose: bool) -> None:
 )
 def gen(
     spec_path: Path,
-    workdir: Path,
+    output_dir: Path,
     template: Optional[Path],
-    output_filename: str,
+    pptx_name: str,
     rules: Path,
-    branding: Path,
+    branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
     pdf_output: str,
@@ -139,15 +142,48 @@ def gen(
         raise click.exceptions.Exit(code=2) from exc
 
     rules_config = RulesConfig.load(rules)
-    branding_config = BrandingConfig.load(branding)
 
-    workdir.mkdir(parents=True, exist_ok=True)
-    context = PipelineContext(spec=spec, workdir=workdir)
+    def _load_default_branding() -> tuple[BrandingConfig, dict[str, object]]:
+        try:
+            config = BrandingConfig.load(DEFAULT_BRANDING_PATH)
+            return config, {"type": "default", "path": str(DEFAULT_BRANDING_PATH)}
+        except FileNotFoundError:
+            click.echo(
+                f"デフォルトのブランド設定が見つかりません: {DEFAULT_BRANDING_PATH}. 内蔵設定を使用します。",
+                err=True,
+            )
+            return BrandingConfig.default(), {"type": "builtin"}
+
+    branding_payload: dict[str, object] | None = None
+    if branding is not None:
+        branding_config = BrandingConfig.load(branding)
+        branding_source = {"type": "file", "path": str(branding)}
+    elif template is not None:
+        try:
+            extraction = extract_branding_config(template)
+        except BrandingExtractionError as exc:
+            click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
+            branding_config, branding_source = _load_default_branding()
+            branding_source["error"] = str(exc)
+        else:
+            branding_config = extraction.to_branding_config()
+            branding_payload = extraction.to_branding_payload()
+            branding_source = {"type": "template", "template": str(template)}
+    else:
+        branding_config, branding_source = _load_default_branding()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    context = PipelineContext(spec=spec, workdir=output_dir)
+
+    branding_artifact = {"source": branding_source}
+    if branding_payload is not None:
+        branding_artifact["config"] = branding_payload
+    context.add_artifact("branding", branding_artifact)
 
     renderer = SimpleRendererStep(
         RenderingOptions(
             template_path=template,
-            output_filename=output_filename,
+            output_filename=pptx_name,
             branding=branding_config,
         )
     )
@@ -200,6 +236,9 @@ def gen(
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
+    except BrandingExtractionError as exc:
+        click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -235,14 +274,6 @@ def gen(
     help="抽出対象の PPTX テンプレートファイル",
 )
 @click.option(
-    "--output",
-    "-o",
-    "output_path",
-    type=click.Path(dir_okay=False, path_type=Path),
-    default=None,
-    help="出力ファイルパス（未指定時は template_spec.json）",
-)
-@click.option(
     "--layout",
     type=str,
     default=None,
@@ -262,47 +293,46 @@ def gen(
     help="出力形式",
 )
 @click.option(
-    "--workdir",
-    "-w",
+    "--output",
+    "-o",
+    "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptxgen"),
+    default=Path(".pptx/extract"),
     show_default=True,
-    help="作業ディレクトリ",
+    help="テンプレート仕様とブランド設定を保存するディレクトリ",
 )
 def tpl_extract(
     template_path: Path,
-    output_path: Optional[Path],
+    output_dir: Path,
     layout: Optional[str],
     anchor: Optional[str],
     format: str,
-    workdir: Path,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
         # オプション設定
         extractor_options = TemplateExtractorOptions(
             template_path=template_path,
-            output_path=output_path,
+            output_path=None,
             layout_filter=layout,
             anchor_filter=anchor,
             format=format.lower(),
         )
         
-        # 作業ディレクトリ作成
-        workdir.mkdir(parents=True, exist_ok=True)
+        # 出力ディレクトリ作成
+        output_dir.mkdir(parents=True, exist_ok=True)
         
         # 抽出実行
         extractor = TemplateExtractor(extractor_options)
         template_spec = extractor.extract()
+        branding_result = extract_branding_config(template_path)
         
         # 出力パス決定
-        if output_path is None:
-            outputs_dir = workdir / "outputs"
-            outputs_dir.mkdir(parents=True, exist_ok=True)
-            if format.lower() == "yaml":
-                output_path = outputs_dir / "template_spec.yaml"
-            else:
-                output_path = outputs_dir / "template_spec.json"
+        if format.lower() == "yaml":
+            spec_path = output_dir / "template_spec.yaml"
+        else:
+            spec_path = output_dir / "template_spec.json"
+        branding_output_path = output_dir / "branding.json"
         
         # ファイル保存
         if format.lower() == "yaml":
@@ -321,10 +351,15 @@ def tpl_extract(
                 ensure_ascii=False
             )
         
-        output_path.write_text(content, encoding="utf-8")
-        
+        spec_path.write_text(content, encoding="utf-8")
+
+        branding_payload = branding_result.to_branding_payload()
+        branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
+        branding_output_path.write_text(branding_text, encoding="utf-8")
+
         # 結果表示
-        click.echo(f"テンプレート抽出が完了しました: {output_path}")
+        click.echo(f"テンプレート抽出が完了しました: {spec_path}")
+        click.echo(f"ブランド設定を出力しました: {branding_output_path}")
         click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
         
         total_anchors = sum(len(layout.anchors) for layout in template_spec.layouts)
@@ -358,7 +393,7 @@ def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
 
 
 def _write_audit_log(context: PipelineContext) -> Path:
-    outputs_dir = context.workdir / "outputs"
+    outputs_dir = context.workdir
     outputs_dir.mkdir(parents=True, exist_ok=True)
     audit_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -371,6 +406,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
         },
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
+        "branding": context.artifacts.get("branding"),
     }
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(

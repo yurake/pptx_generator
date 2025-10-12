@@ -1,7 +1,7 @@
 ---
 目的: PPTX 解析アナライザーを構築し、品質診断に必要な幾何・スタイル情報を収集する
 関連ブランチ: feat/pptx-analyzer
-関連Issue: 未作成
+関連Issue: #162
 roadmap_item: RM-013 PPTX 解析アナライザー実装
 ---
 
@@ -18,8 +18,8 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
   - メモ: PPTX 比較ロジックと性能計測の結果を共有
 - [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
   - メモ: CLI 統合テストを含めた結果を残す
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。

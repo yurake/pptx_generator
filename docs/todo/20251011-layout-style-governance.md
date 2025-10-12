@@ -1,7 +1,7 @@
 ---
 目的: レイアウトスタイル設定の統一設計と運用フローを具体化する
 関連ブランチ: docs/layout-style-governance
-関連Issue: 未作成
+関連Issue: #161
 roadmap_item: RM-011 レイアウトスタイル統一
 ---
 
@@ -18,8 +18,8 @@ roadmap_item: RM-011 レイアウトスタイル統一
   - メモ: `samples/` と `docs/` の更新内容を ToDo に追記
 - [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
   - メモ: 新旧レイアウトでの描画差分を確認
-- [ ] PR 作成
-  - メモ: PR を作成したら番号と URL を記入する
+- [x] PR 作成
+  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
 
 ## メモ
 - RM-008/009/010 の依存状況を確認し、整合チェックリストを用意する。

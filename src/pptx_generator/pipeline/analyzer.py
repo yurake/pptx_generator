@@ -398,9 +398,8 @@ class SimpleAnalyzerStep:
         return issue
 
     def _save(self, payload: dict[str, Any], workdir: Path) -> Path:
-        output_dir = workdir / "outputs"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / self.options.output_filename
+        workdir.mkdir(parents=True, exist_ok=True)
+        output_path = workdir / self.options.output_filename
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return output_path
 
