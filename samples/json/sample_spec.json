@@ -26,7 +26,19 @@
           "sizing": "fit"
         }
       ],
-      "notes": "Title レイアウトには cover-visual / brand-logo のアンカー図形を配置する想定。"
+      "notes": "Title レイアウトには cover-visual / brand-logo のアンカー図形を配置する想定。",
+      "textboxes": [
+        {
+          "id": "cover-summary",
+          "text": "提案の狙いを 1 行で説明します。",
+          "position": {
+            "left_in": 1.0,
+            "top_in": 4.6,
+            "width_in": 8.0,
+            "height_in": 1.2
+          }
+        }
+      ]
     },
     {
       "id": "agenda",
@@ -87,6 +99,22 @@
           "source": "samples/assets/logo.png",
           "anchor": "Logo",
           "sizing": "fit"
+        }
+      ],
+      "textboxes": [
+        {
+          "id": "agenda-note",
+          "text": "このスライドの要点を本文とは別の枠で補足します。",
+          "position": {
+            "left_in": 1.0,
+            "top_in": 5.2,
+            "width_in": 3.5,
+            "height_in": 1.2
+          },
+          "paragraph": {
+            "align": "left",
+            "level": 0
+          }
         }
       ]
     },
