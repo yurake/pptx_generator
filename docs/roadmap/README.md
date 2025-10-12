@@ -33,12 +33,13 @@ graph TD
     RM008["RM-008 カスタムテンプレート操作性向上\n(完了)"] --> RM011["RM-011 レイアウトスタイル統一\n(構想中)"]
     RM009["RM-009 テンプレート設定自動生成\n(調査中)"] --> RM011
     RM010["RM-010 テンプレート仕様エクスポート\n(完了)"] --> RM011
-    RM008 --> RM015["RM-015 テンプレート命名整合性チェッカー\n(未着手)"]
+    RM008 --> RM016["RM-016 テンプレート命名整合性チェッカー\n(未着手)"]
     RM001["RM-001 Analyzer / Refiner ルール拡張\n(実装中)"] --> RM003["RM-003 ビジュアルフィードバックコパイロット\n(調査中)"]
     RM003 --> RM006["RM-006 ライブ共同編集アシスト\n(アイデア段階)"]
     RM004["RM-004 営業ナレッジ連携自動化\n(準備中)"] --> RM005["RM-005 プレゼンストーリーモデラー\n(企画中)"]
     RM002["RM-002 エージェント運用ガイド整備\n(完了)"] --> RM017["RM-017 パイプライン機能拡張\n(完了)"]
-    RM017 --> RM016["RM-016 PDF 自動生成対応\n(完了)"]
+    RM017 --> RM019["RM-019 CLI ツールチェーン整備\n(実装中)"]
+    RM017 --> RM020["RM-020 PDF 自動生成対応\n(完了)"]
     RM017 --> RM018["RM-018 レンダラー リッチコンテンツ対応\n(完了)"]
 ```
 
@@ -225,22 +226,6 @@ graph TD
   - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
   - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
 
-<a id="rm-016"></a>
-### RM-016 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
-
-<a id="rm-016"></a>
-### RM-016 PDF 自動生成対応
-- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
-- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
-- 状況: 10 件中 10 件完了（2025-10-06 更新）
-- 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
-- 依存: RM-017（パイプライン機能拡張）による CLI/監査基盤、LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
-
 <a id="rm-017"></a>
 ### RM-017 パイプライン機能拡張
 - ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
@@ -257,6 +242,23 @@ graph TD
 - 状況: 14 件中 14 件完了（2025-10-06 更新）
 - 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
 - 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
+
+<a id="rm-019"></a>
+### RM-019 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
+- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+
+<a id="rm-020"></a>
+### RM-020 PDF 自動生成対応
+- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
+- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
+- 状況: 10 件中 10 件完了（2025-10-06 更新）
+- 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
+- 依存: RM-017（パイプライン機能拡張）による CLI/監査基盤、LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
 
 ## 更新履歴
 - 2025-10-05: 初版作成。
