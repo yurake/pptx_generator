@@ -17,6 +17,7 @@
 - 議事メモや調査結果などのラフな情報を置く場所。
 - `docs/notes/20251004-initial-deiscussion.txt`: 初期ディスカッションのメモ。
 - `docs/notes/20251010-test-coverage-alignment.md`: 要件とテストケースの対応を生成 AI に整理させる依頼テンプレートと出力例。
+- `docs/notes/20251011-branding-config-mapping.md`: PPTX テンプレートからブランド設定を抽出する際の項目マッピングと実装選択肢。
 
 ## runbooks
 - リリースや問い合わせ対応など、実務手順をまとめたドキュメント。

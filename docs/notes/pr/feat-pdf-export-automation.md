@@ -18,7 +18,7 @@
 - テスト実行時間への影響（現状 1.2s 追加）。
 
 ## TODO
-- [x] LibreOffice 実環境での最終リハーサル結果を添付（2025-10-06 ユーザー端末で成功。ログ: `.pptxgen/rehearsal/outputs/audit_log.json`、詳細: [docs/qa/pdf-export-rehearsal.md](../../qa/pdf-export-rehearsal.md)）。`--libreoffice-path /Applications/LibreOffice.app/Contents/MacOS/soffice` 指定で当環境でも成功を確認。
+- [x] LibreOffice 実環境での最終リハーサル結果を添付（2025-10-06 ユーザー端末で成功。ログ: `.pptx/gen/rehearsal/audit_log.json`、詳細: [docs/qa/pdf-export-rehearsal.md](../../qa/pdf-export-rehearsal.md)）。`--libreoffice-path /Applications/LibreOffice.app/Contents/MacOS/soffice` 指定で当環境でも成功を確認。
 - [x] レビュワー: 開発者本人がリハーサル・コードレビューを実施済み。
 - [x] リリースノート草案を docs/roadmap に追記（2025-10-06 更新履歴を追加）。
 

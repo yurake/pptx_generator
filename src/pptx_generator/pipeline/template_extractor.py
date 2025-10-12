@@ -215,13 +215,10 @@ class TemplateExtractorStep:
         if self.options.output_path:
             return self.options.output_path
         
-        # デフォルトは outputs ディレクトリ
-        outputs_dir = context.workdir / "outputs"
-        outputs_dir.mkdir(parents=True, exist_ok=True)
-        
+        context.workdir.mkdir(parents=True, exist_ok=True)
         if self.options.format == "yaml":
-            return outputs_dir / "template_spec.yaml"
-        return outputs_dir / "template_spec.json"
+            return context.workdir / "template_spec.yaml"
+        return context.workdir / "template_spec.json"
     
     def _save_template_spec(self, template_spec: TemplateSpec, output_path: Path) -> None:
         """テンプレート仕様をファイルに保存する。"""

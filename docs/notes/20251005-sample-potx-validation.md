@@ -8,7 +8,7 @@
 ## skeleton.pptx テンプレート検証結果（2025-10-05）
 
 - samples/skeleton.pptx をテンプレートとして指定し、CLI（uv run pptx gen samples/json/sample_spec.json --template samples/skeleton.pptx）で PPTX生成が正常に完了した。
-- 出力ファイル: .pptxgen/outputs/proposal.pptx
+- 出力ファイル: .pptx/gen/proposal.pptx
 - 仕様通りにレイアウト・フォント・画像が反映されていることを確認。
 - .potx形式は直接利用できないが、.pptx形式のテンプレートであれば問題なく動作する。
 
