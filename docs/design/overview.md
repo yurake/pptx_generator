@@ -96,6 +96,7 @@ slides:
     textboxes:
       - id: string
         text: string
+        anchor: string
         position:
           left_in: float
           top_in: float
@@ -116,6 +117,7 @@ assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
 ```
+- `anchor` を指定した場合はテンプレート上の図形／プレースホルダーを基準に描画し、未指定時は `position` の座標を使用する。
 - フォーマット検証は `pydantic` で実装し、必須項目不足・型不一致を例外化。
 
 ## 5. バリデーションルール

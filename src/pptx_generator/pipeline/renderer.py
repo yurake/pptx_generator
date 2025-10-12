@@ -15,6 +15,7 @@ from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.shapes import PP_PLACEHOLDER
+from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
 from ..models import (
@@ -24,6 +25,7 @@ from ..models import (
     Slide,
     SlideBullet,
     SlideBulletGroup,
+    SlideTextbox,
 )
 from ..settings import BrandingConfig, BrandingFont
 from .base import PipelineContext
@@ -74,6 +76,9 @@ class RenderingOptions:
     fallback_chart_box: LayoutBox = field(
         default_factory=lambda: LayoutBox(1.0, 1.5, 8.5, 4.0)
     )
+    fallback_textbox_box: LayoutBox = field(
+        default_factory=lambda: LayoutBox(1.0, 1.0, 8.0, 1.5)
+    )
 
 
 class SimpleRendererStep:
@@ -110,10 +115,13 @@ class SimpleRendererStep:
             layout = self._resolve_layout(presentation, slide_spec)
             slide = presentation.slides.add_slide(layout)
             self._apply_title(slide, slide_spec)
+            self._apply_subtitle(slide, slide_spec)
             self._apply_bullets(slide, slide_spec)
+            self._apply_textboxes(slide, slide_spec)
             self._apply_tables(slide, slide_spec)
             self._apply_images(slide, slide_spec)
             self._apply_charts(slide, slide_spec)
+            self._apply_notes(slide, slide_spec)
 
     def _resolve_layout(self, presentation: Presentation, slide_spec: Slide):
         for layout in presentation.slide_layouts:
@@ -190,6 +198,60 @@ class SimpleRendererStep:
         if anchor_shape is not None:
             self._remove_shape(anchor_shape)
 
+    def _apply_subtitle(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.subtitle:
+            return
+
+        subtitle_placeholder = None
+        for placeholder in slide.placeholders:
+            if placeholder.placeholder_format.type == PP_PLACEHOLDER.SUBTITLE:
+                subtitle_placeholder = placeholder
+                break
+
+        if subtitle_placeholder is not None:
+            text_frame = subtitle_placeholder.text_frame
+            text_frame.clear()
+            paragraph = text_frame.paragraphs[0]
+            paragraph.text = slide_spec.subtitle
+            self._apply_brand_font(paragraph, self._branding.body_font)
+            return
+
+        textbox = slide.shapes.add_textbox(
+            Inches(1.0), Inches(1.5), Inches(8.0), Inches(1.0)
+        )
+        text_frame = textbox.text_frame
+        text_frame.clear()
+        paragraph = text_frame.paragraphs[0]
+        paragraph.text = slide_spec.subtitle
+        self._apply_brand_font(paragraph, self._branding.body_font)
+
+    def _apply_notes(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.notes:
+            return
+        notes_slide = slide.notes_slide
+        text_frame = notes_slide.notes_text_frame
+        text_frame.clear()
+        text_frame.text = slide_spec.notes
+
+    def _apply_textboxes(self, slide, slide_spec: Slide) -> None:
+        if not slide_spec.textboxes:
+            return
+
+        for textbox_spec in slide_spec.textboxes:
+            fallback_box = self._resolve_textbox_fallback(textbox_spec)
+            resolution = self._resolve_anchor(slide, textbox_spec.anchor, fallback_box)
+            anchor_shape = resolution.shape
+
+            if resolution.is_placeholder:
+                self._prepare_placeholder(anchor_shape)
+
+            left, top, width, height = resolution.as_box()
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            self._write_textbox_content(textbox.text_frame, textbox_spec)
+
+            if anchor_shape is not None:
+                self._remove_shape(anchor_shape)
+
     def _write_bullets_to_text_frame(
         self, text_frame, bullets: list[SlideBullet]
     ) -> None:
@@ -201,6 +263,29 @@ class SimpleRendererStep:
             paragraph.text = bullet.text
             paragraph.level = bullet.level
             self._apply_font(paragraph, bullet.font)
+
+    def _write_textbox_content(self, text_frame, textbox_spec: SlideTextbox) -> None:
+        text_frame.clear()
+        text_frame.word_wrap = True
+        lines = textbox_spec.text.splitlines() or [""]
+        for index, line in enumerate(lines):
+            paragraph = (
+                text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
+            )
+            paragraph.text = line
+            self._apply_font(paragraph, textbox_spec.font)
+            self._apply_textbox_paragraph(paragraph, textbox_spec)
+
+    def _resolve_textbox_fallback(self, textbox_spec: SlideTextbox) -> LayoutBox:
+        position = textbox_spec.position
+        if position is not None:
+            return LayoutBox(
+                position.left_in,
+                position.top_in,
+                position.width_in,
+                position.height_in,
+            )
+        return self.options.fallback_textbox_box
 
     def _apply_tables(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.tables:
@@ -335,6 +420,31 @@ class SimpleRendererStep:
         font.bold = font_spec.bold
         font.italic = font_spec.italic
         font.color.rgb = RGBColor.from_string(font_spec.color_hex.lstrip("#"))
+
+    def _apply_textbox_paragraph(self, paragraph, textbox_spec: SlideTextbox) -> None:
+        paragraph_spec = textbox_spec.paragraph
+        if paragraph_spec is None:
+            paragraph.level = 0
+            return
+        paragraph.level = paragraph_spec.level
+        if paragraph_spec.align:
+            paragraph.alignment = self._resolve_alignment(paragraph_spec.align)
+        if paragraph_spec.line_spacing_pt is not None:
+            paragraph.line_spacing = Pt(paragraph_spec.line_spacing_pt)
+        if paragraph_spec.space_before_pt is not None:
+            paragraph.space_before = Pt(paragraph_spec.space_before_pt)
+        if paragraph_spec.space_after_pt is not None:
+            paragraph.space_after = Pt(paragraph_spec.space_after_pt)
+
+    def _resolve_alignment(self, align: str) -> PP_ALIGN:
+        mapping = {
+            "left": PP_ALIGN.LEFT,
+            "center": PP_ALIGN.CENTER,
+            "right": PP_ALIGN.RIGHT,
+            "justify": PP_ALIGN.JUSTIFY,
+            "distributed": PP_ALIGN.DISTRIBUTE,
+        }
+        return mapping.get(align.lower(), PP_ALIGN.LEFT)
 
     def _save(self, presentation: Presentation, workdir: Path) -> Path:
         workdir.mkdir(parents=True, exist_ok=True)
