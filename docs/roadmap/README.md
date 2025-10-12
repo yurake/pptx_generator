@@ -5,6 +5,7 @@
 - 各テーマに紐づくタスク詳細は `docs/todo/` 配下で管理し、必ず相互リンクを張る。
 - 進捗は「完了済み小項目数 / 総小項目数」を原則とし、更新日は ISO 形式で明記する。
 - 評価指標や背景の議事は `docs/notes/` と `docs/requirements/`、設計変更は `docs/design/` を参照する。
+- ロードマップから ToDo を切り出す際は、テンプレートに沿って「ブランチ→計画→設計→実装→テスト→関連Issue→PR」までの工程を明文化し、計画段階のみで完了とする場合は判断者・判断日・次判断条件をメモ欄に残す。
 
 ## 全体目標と指標
 - **北極星指標**: 月次で社内提案書 120 件を自動生成し、手戻り率（再提出件数 / 総件数）10% 以下を達成する。
@@ -94,16 +95,6 @@ graph TD
 - 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
 - 次のアクション: 要件整理と PoC 設計、検知ロジック導入先の選定、専用 ToDo の作成。
 
-<a id="rm-009"></a>
-### RM-009 テンプレート設定自動生成（優先度: P2）
-- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
-- 参照ドキュメント: 未整備（本テーマで作成予定）
-- 参照 ToDo: [docs/todo/20251009-branding-config-generator.md](../todo/20251009-branding-config-generator.md)
-- 状況: 調査中（2025-10-09 更新）
-- 期待成果: 抽出対象となるフォント・配色情報の整理、python-pptx で取得可能な属性の調査結果、変換フロー（CLI / スクリプト）の方向性。
-- 依存: python-pptx のスタイル取得制約、LibreOffice / Open XML SDK での補完可否、ブランド設定 JSON のスキーマ拡張余地。
-- 次のアクション: テンプレート XML 解析とスタイル情報マッピングの調査、補完ルール案の作成、試作ワークフローのステップ定義。
-
 <a id="rm-011"></a>
 ### RM-011 レイアウトスタイル統一
 - ゴール: テーブル・チャート・画像などのレイアウトスタイルを設定ファイルで統一管理し、ブランド統一感を維持できるようにする。
@@ -135,6 +126,15 @@ graph TD
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
+<a id="rm-016"></a>
+### RM-016 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/todo/20251011-cli-toolkit-refactor.md](../todo/20251011-cli-toolkit-refactor.md)
+- 状況: 着手前（2025-10-11 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+- 次のアクション: CLI 再編の設計方針をドキュメント化し、ToDo に沿って実装・テスト・PR 提出を行う。
+
 ## バックログ（優先検討）
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
@@ -150,6 +150,24 @@ graph TD
 - 状況: 完了（2025-10-11 更新）
 - 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
 - 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
+
+<a id="rm-009"></a>
+### RM-009 テンプレート設定自動生成（優先度: P2）
+- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
+- 参照ドキュメント: 未整備（本テーマで作成予定）
+- 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: 抽出対象となるフォント・配色情報の整理、python-pptx で取得可能な属性の調査結果、変換フロー（CLI / スクリプト）の方向性。
+- 依存: python-pptx のスタイル取得制約、LibreOffice / Open XML SDK での補完可否、ブランド設定 JSON のスキーマ拡張余地。
+
+<a id="rm-002"></a>
+### RM-002 エージェント運用ガイド整備（優先度: P1）
+- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
+- 依存: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
 
 <a id="rm-016"></a>
 ### RM-016 CLI ツールチェーン整備（優先度: P1）
@@ -184,15 +202,6 @@ graph TD
 - 状況: 完了（2025-10-11 更新）
 - 達成成果: `extract-template` CLI コマンドおよび `TemplateExtractorStep` を実装、抽出結果を JSON/YAML で出力可能にし、README に使用手順を追加。単体・統合テストを整備し、テンプレート構造解析フローを確立。
 - 依存: python-pptx による図形情報取得、テンプレート命名規則、サンプルテンプレート資産。
-
-<a id="rm-002"></a>
-### RM-002 エージェント運用ガイド整備（優先度: P1）
-- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
-- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
-- 状況: 完了（2025-10-10 更新）
-- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
-- 依存: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
 
 <a id="rm-016"></a>
 ### RM-016 PDF 自動生成対応
