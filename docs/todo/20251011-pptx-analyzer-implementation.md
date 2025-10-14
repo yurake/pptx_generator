@@ -19,7 +19,7 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
 - [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
   - メモ: CLI 統合テストを含めた結果を残す
 - [x] PR 作成
-  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
+  - メモ: PR #179 https://github.com/yurake/pptx_generator/pull/179（2025-10-14 完了）
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。
