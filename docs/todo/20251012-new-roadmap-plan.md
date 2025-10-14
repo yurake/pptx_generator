@@ -1,7 +1,7 @@
 ---
 目的: 新ロードマップの詳細設計と未実装機能のタスク化を行う
 関連ブランチ: feat/new-roadmap-plan
-関連Issue: 未確認
+関連Issue: #176
 roadmap_item: RM-016 新ロードマップ具体化
 ---
 
