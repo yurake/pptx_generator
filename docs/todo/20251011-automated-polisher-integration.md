@@ -5,21 +5,34 @@
 roadmap_item: RM-014 自動補正・仕上げ統合
 ---
 
-- [ ] まずはブランチ作成とコミット
-- [ ] 自動補正ポリシーの定義と適用範囲を整理https://github.com/yurake/pptx_generator/pull/167/conflict?name=docs%252Ftodo%252F20251011-layout-style-governance.md&base_oid=4d0632db24c1eac1d590bfaaedadfb22dac35b4f&head_oid=2500373f1b471faa8c35fef2cd65b8a877f55045
+- [ ] ブランチ作成と初期コミット
+  - メモ: feat/polisher-integration の作成と初期差分を記録する
+- [ ] 計画策定（スコープ・前提・担当の整理）
+  - メモ: 自動補正ポリシーの適用範囲と監査ログ対応、承認取得済みメッセージを整理する
   - メモ: フォントサイズ・色調整など安全適用ルールを合意
-- [ ] Open XML SDK ポリッシャー連携のスコープと実装方針を決定
-  - メモ: .NET プロジェクト構成と CLI 連携ポイントを設計
-- [ ] 監査ログへの補正記録プランとテスト戦略を策定
-  - メモ: 監査ログフォーマットと再実行フローを `docs/runbooks/` に追記する案を検討
-- [ ] Polisher 実装と CLI 連携コードを開発
+- [ ] 設計・実装方針の確定
+  - メモ: Open XML SDK 連携アーキテクチャと CLI 連携ポイントを確定する
   - メモ: Refiner からの呼び出し制御とエラーハンドリングを整理
-- [ ] ドキュメント更新と監査ログ仕様の反映を完了
-  - メモ: `docs/runbooks/` や関連ポリシーへの追記を実施
-- [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` / .NET テストなど)
-  - メモ: PDF/PPTX 出力の品質確認と再実行手順を記載
+- [ ] ドキュメント更新（要件・設計）
+  - メモ: 要件・設計の合意内容を整理し、迷う点は必ずユーザーへ相談した結果を残す
+  - [ ] docs/requirements 配下
+  - [ ] docs/design 配下
+- [ ] 実装
+  - メモ: Refiner と Polisher の連携およびエラーハンドリングを実装する
+- [ ] テスト・検証
+  - メモ: `uv run --extra dev pytest` や .NET テストで補正結果と PDF/PPTX 品質を確認する
+- [ ] ドキュメント更新
+  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+  - [ ] docs/roadmap 配下
+  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [ ] docs/runbook 配下
+  - [ ] README.md / AGENTS.md
+- [ ] 関連Issueの更新
+  - メモ: 監査ログ仕様と補正ポリシーの進捗を #160 に反映する
 - [ ] PR 作成
   - メモ: PR 番号と URL、todo-auto-complete の結果を記入する
 
 ## メモ
 - 解析結果 (RM-013) との連携前提を明文化し、.NET 8 実行環境の要件を確認する。
+- 監査ログフォーマットと再実行フローを `docs/runbooks/` に追記する案を検討する。
