@@ -3,7 +3,7 @@
 ## 構成概要
 - エントリーポイント: `pptx_generator/cli.py`（`pyproject.toml` の `pptx` スクリプト）。
 - ドメインモデル: `pptx_generator/models.py` で JSON スキーマを定義。変更時は `tests/test_models.py` と `samples/` を更新する。
-- パイプライン: `pptx_generator/pipeline/` 配下に Analyzer・Renderer・Refiner・PDF Exporter などのステップが分割配置されている。責務を跨ぐ変更は `docs/design/overview.md` のイントロ図と整合性を保つ。承認フローや中間 JSON (`content_approved.json`, `draft_approved.json`, `rendering_ready.json`) の仕様は `docs/design/schema-extensions.md` を参照する。
+- パイプライン: `pptx_generator/pipeline/` 配下に Analyzer・Renderer・Refiner・PDF Exporter などのステップが分割配置されている。責務を跨ぐ変更は `docs/design/overview.md` のイントロ図と整合性を保つ。承認フローや中間 JSON (`content_approved.json`, `draft_approved.json`, `rendering_ready.json`) の仕様は `docs/design/schema/README.md` を参照する。
 
 ## コーディングルール（Python）
 - 型ヒント必須。`mypy` でエラーが出ないことを確認する。

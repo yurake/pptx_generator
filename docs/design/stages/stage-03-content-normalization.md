@@ -53,3 +53,7 @@
 - オフライン承認（CLIベース）サポートの有無。
 - 欠損テーブルのエディタ UX。
 - Review Engine のスケール戦略（同期 vs 非同期処理）。
+
+## 関連スキーマ
+- [docs/design/schema/content.md](../schema/content.md)
+- サンプル: [docs/design/schema/samples/content_approved.jsonc](../schema/samples/content_approved.jsonc)

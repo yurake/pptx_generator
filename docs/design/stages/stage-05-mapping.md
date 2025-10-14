@@ -54,3 +54,7 @@
 - AI 補完のモデル選定とコスト管理。
 - 多様性指標の拡張（ページタイプ分布など）。
 - フォールバック結果を HITL に再提示するメカニズム。
+
+## 関連スキーマ
+- [docs/design/schema/mapping.md](../schema/mapping.md)
+- サンプル: [docs/design/schema/samples/rendering_ready.jsonc](../schema/samples/rendering_ready.jsonc), [docs/design/schema/samples/mapping_log.jsonc](../schema/samples/mapping_log.jsonc)

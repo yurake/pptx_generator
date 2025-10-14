@@ -46,3 +46,6 @@ uv run extract-template templates/libraries/acme/v1/template.pptx \
 - ヒント係数の計算式とチューニング方法。
 - 用途タグ推定に LLM / ML を使うかヒューリスティックで維持するか。
 - `diagnostics.json` を Analyzer/Renderer へ連携するインターフェース。
+
+## 関連スキーマ
+- [docs/design/schema/overview.md](../schema/overview.md)

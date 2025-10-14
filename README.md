@@ -12,7 +12,7 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 5. **マッピング**（自動）: レイアウト選定とプレースホルダ割付を行い、`rendering_ready.json` を生成。
 6. **PPTX レンダリング**（自動）: テンプレを適用し、`output.pptx` と生成ログを出力。
 
-工程 3・4 では人による承認が必要です。AI レビューの結果や承認フローの仕様は `docs/design/schema-extensions.md` と `docs/requirements/overview.md` にまとめています。
+工程 3・4 では人による承認が必要です。AI レビューの結果や承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/overview.md` にまとめています。
 
 ## セットアップ
 1. Python 3.12 系の仮想環境を用意します。

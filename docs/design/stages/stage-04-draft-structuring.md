@@ -54,3 +54,7 @@
 - 章テンプレのプリセット管理方式。
 - layout_hint 候補を AI 補完する場合の UI 提示方法。
 - 差戻し理由テンプレート化の有無。
+
+## 関連スキーマ
+- [docs/design/schema/draft.md](../schema/draft.md)
+- サンプル: [docs/design/schema/samples/draft_approved.jsonc](../schema/samples/draft_approved.jsonc)
