@@ -66,7 +66,7 @@
 - `elements.body` は文字列配列、最大 6 行、各行 40 文字以内（バリデータで検証）。
 - `ai_review` は `content_draft.json` のみ必須。`content_approved.json` では省略可。
 
-## 変更履歴
+## 変更履歴メモ
 - 2025-10-11: `ai_review.autofix_proposals.patch` を JSON Patch 形式に統一。
 - 2025-10-11: `status` フィールドを追加し、承認状態を明示化。
-（詳細は `changelog.md` を参照）
+（最新の詳細は git ログを参照）

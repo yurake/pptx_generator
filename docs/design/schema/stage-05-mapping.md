@@ -80,7 +80,7 @@
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が `content_approved` のハッシュと一致すること（任意検証）。
 
-## 変更履歴
+## 変更履歴メモ
 - 2025-10-11: `ai_patch` と `warnings` フィールドを追加。
 - 2025-10-11: `fallback.history` をリスト形式へ変更。
-（詳細は `changelog.md` を参照）
+（最新の詳細は git ログを参照）
