@@ -53,5 +53,5 @@
 - 表の画像化フォールバックの詳細設計。
 
 ## 関連スキーマ
-- [docs/design/schema/rendering.md](../schema/rendering.md)
+- [docs/design/schema/stage-06-rendering.md](../schema/stage-06-rendering.md)
 - サンプル: [docs/design/schema/samples/rendering_log.jsonc](../schema/samples/rendering_log.jsonc), [docs/design/schema/samples/audit_log.jsonc](../schema/samples/audit_log.jsonc)

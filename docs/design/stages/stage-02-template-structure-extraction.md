@@ -48,4 +48,5 @@ uv run extract-template templates/libraries/acme/v1/template.pptx \
 - `diagnostics.json` を Analyzer/Renderer へ連携するインターフェース。
 
 ## 関連スキーマ
-- [docs/design/schema/overview.md](../schema/overview.md)
+- [docs/design/schema/stage-02-template-structure-extraction.md](../schema/stage-02-template-structure-extraction.md)
+- サンプル: `docs/design/schema/samples/layouts.jsonl`（準備予定）、`docs/design/schema/samples/diagnostics.jsonc`（準備予定）

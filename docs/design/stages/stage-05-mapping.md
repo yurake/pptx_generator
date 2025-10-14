@@ -56,5 +56,5 @@
 - フォールバック結果を HITL に再提示するメカニズム。
 
 ## 関連スキーマ
-- [docs/design/schema/mapping.md](../schema/mapping.md)
+- [docs/design/schema/stage-05-mapping.md](../schema/stage-05-mapping.md)
 - サンプル: [docs/design/schema/samples/rendering_ready.jsonc](../schema/samples/rendering_ready.jsonc), [docs/design/schema/samples/mapping_log.jsonc](../schema/samples/mapping_log.jsonc)

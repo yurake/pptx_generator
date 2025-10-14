@@ -41,3 +41,7 @@
 - テンプレ差分検出アルゴリズム（図形比較 VS JSON 差分）の詳細設計。
 - ゴールデンサンプルの自動生成と削除ポリシー。
 - LibreOffice / Open XML Polisher のバージョン固定戦略。
+
+## 関連スキーマ
+- [docs/design/schema/stage-01-template-preparation.md](../schema/stage-01-template-preparation.md)
+- サンプル: `docs/design/schema/samples/template_release.jsonc`（準備予定）

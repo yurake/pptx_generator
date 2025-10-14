@@ -56,5 +56,5 @@
 - 差戻し理由テンプレート化の有無。
 
 ## 関連スキーマ
-- [docs/design/schema/draft.md](../schema/draft.md)
+- [docs/design/schema/stage-04-draft-structuring.md](../schema/stage-04-draft-structuring.md)
 - サンプル: [docs/design/schema/samples/draft_approved.jsonc](../schema/samples/draft_approved.jsonc)

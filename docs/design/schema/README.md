@@ -4,11 +4,12 @@
 工程別の利用シーンに応じてファイルを分割し、仕様変更の追跡とテスト連携を容易にする。
 
 ## ファイル構成
-- `overview.md`: スキーマ全体の目的と横断的な拡張ポイント。
-- `content.md`: 工程3で扱う `content_draft.json` / `content_approved.json` の仕様。
-- `draft.md`: 工程4の `draft_draft.json` / `draft_approved.json` の仕様。
-- `mapping.md`: 工程5の `rendering_ready.json` / `mapping_log.json` の仕様。
-- `rendering.md`: 工程6の `rendering_log.json` / `audit_log.json` の仕様。
+- `stage-01-template-preparation.md`: テンプレ受け渡しメタ (`template_release.json` など)。
+- `stage-02-template-structure-extraction.md`: `layouts.jsonl`, `diagnostics.json`, 差分レポート。
+- `stage-03-content-normalization.md`: `content_draft.json`, `content_approved.json`, 承認ログ。
+- `stage-04-draft-structuring.md`: `draft_draft.json`, `draft_approved.json`, 承認ログ。
+- `stage-05-mapping.md`: `rendering_ready.json`, `mapping_log.json`, フォールバック履歴。
+- `stage-06-rendering.md`: `rendering_log.json`, `audit_log.json`。
 - `changelog.md`: スキーマ変更履歴。
 - `samples/`: 代表的な JSON サンプル（`.jsonc`）。
 
