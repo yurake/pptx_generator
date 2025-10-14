@@ -52,6 +52,16 @@
 
 各 JSON のスキーマは `docs/design/schema-extensions.md` に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
 
+### 3.2 工程別設計ドキュメント
+| 工程 | 設計ドキュメント | 主な設計観点 |
+| --- | --- | --- |
+| 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | Release CLI、差分診断、ゴールデンサンプル運用 |
+| 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | 抽出パイプライン、スキーマ検証、差分レポート |
+| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | HITL 承認 UI、AI レビュー、監査ログ |
+| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | ストーリーボード UI、layout_hint エンジン、章承認 |
+| 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング、フォールバック制御、AI 補完 |
+| 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+
 ## 4. JSON スキーマ詳細
 ```yaml
 meta:
