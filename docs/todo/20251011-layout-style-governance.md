@@ -19,7 +19,7 @@ roadmap_item: RM-011 レイアウトスタイル統一
 - [ ] テストを実行し結果を記録 (`uv run --extra dev pytest` など)
   - メモ: 新旧レイアウトでの描画差分を確認
 - [x] PR 作成
-  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
+  - メモ: PR #179 https://github.com/yurake/pptx_generator/pull/179（2025-10-14 完了）
 
 ## メモ
 - RM-008/009/010 の依存状況を確認し、整合チェックリストを用意する。
