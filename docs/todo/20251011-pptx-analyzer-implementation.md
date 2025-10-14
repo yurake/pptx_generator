@@ -28,7 +28,7 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
 - [ ] 関連Issueの更新
   - メモ: メトリクスとテストデータ整備状況を #162 に反映する
 - [x] PR 作成
-  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
+  - メモ: PR #180 https://github.com/yurake/pptx_generator/pull/180（2025-10-14 完了）
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。

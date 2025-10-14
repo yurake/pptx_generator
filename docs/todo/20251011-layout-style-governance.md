@@ -28,7 +28,7 @@ roadmap_item: RM-011 レイアウトスタイル統一
 - [ ] 関連Issueの更新
   - メモ: #161 にスキーマ検討と描画テスト結果を反映する
 - [x] PR 作成
-  - メモ: PR #164 https://github.com/yurake/pptx_generator/pull/164（2025-10-11 完了）
+  - メモ: PR #180 https://github.com/yurake/pptx_generator/pull/180（2025-10-14 完了）
 
 ## メモ
 - RM-008/009/010 の依存状況を確認し、整合チェックリストを用意する。
