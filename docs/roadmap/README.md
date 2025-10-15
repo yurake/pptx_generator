@@ -108,17 +108,6 @@ graph TD
 - 次のアクション: RM-010 の抽出結果を参照した設計レビューを完了し、スキーマ実装とテスト完了までを ToDo に沿って遂行する。
     - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
-<a id="rm-012"></a>
-### RM-012 レンダラーテキスト強化（優先度: P1）
-- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
-- 対象工程: 5（マッピング）・6（レンダリング）
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/20251011-renderer-text-enhancement.md](../todo/20251011-renderer-text-enhancement.md)
-- 状況: 再着手（2025-10-15 更新）
-- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
-- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
-- 次のアクション: スキーマ拡張の設計レビュー後、描画実装とテスト完了までを段階的に進める。
-  - 2025-10-15: アンカー名継承とノートフォーマット整備を実施し、単体テストで検証済み。CLI 統合テストと成果共有を次ステップとして管理。
 <a id="rm-013"></a>
 ### RM-013 PPTX 解析アナライザー実装（優先度: P1）
 - ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
@@ -213,6 +202,17 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-012"></a>
+### RM-012 レンダラーテキスト強化（優先度: P1）
+- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
+- 対象工程: 5（マッピング）・6（レンダリング）
+- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/20251011-renderer-text-enhancement.md](../todo/20251011-renderer-text-enhancement.md)
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
+- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
+  - 2025-10-15: アンカー名継承とノートフォーマット整備を実施し、単体テストで検証済み。CLI 統合テストと成果共有を次ステップとして管理。
 
 <a id="rm-012"></a>
 ### RM-012 レンダラーテキスト強化（優先度: P1）
