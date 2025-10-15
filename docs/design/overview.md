@@ -140,6 +140,7 @@ slides:
           space_before_pt: float
           space_after_pt: float
           align: string
+- レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続工程が同名アンカーで参照できるようにする。
 assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
@@ -157,7 +158,7 @@ assets:
 
 ## 6. テンプレート設計
 - `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
-- ブランドカラー・フォントを `config/branding.json` に定義し、Renderer・Analyzer・Polisher が共有。
+- ブランドカラー・フォントおよびレイアウト別スタイルを `config/branding.json` (`theme` / `components` / `layouts`) に定義し、Renderer・Analyzer・Polisher が共有。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
 - 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
 - テンプレートファイルは .pptx 形式のみ対応。.potxを利用する場合は、PowerPointで新規 .pptx を作成して保存してください。

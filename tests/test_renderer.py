@@ -129,16 +129,20 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
         ],
     )
 
-    branding = BrandingConfig(
-        heading_font=BrandingFont(
-            name="HeadingBrand", size_pt=30.0, color_hex="#101010"
-        ),
-        body_font=BrandingFont(name="BodyBrand", size_pt=20.0, color_hex="#202020"),
-        primary_color="#445566",
-        secondary_color="#DDEEFF",
-        accent_color="#CC5500",
-        background_color="#FFFFFF",
+    branding = BrandingConfig.default()
+    branding.theme.heading = BrandingFont(
+        name="HeadingBrand", size_pt=30.0, color_hex="#101010"
     )
+    branding.theme.body = BrandingFont(
+        name="BodyBrand", size_pt=20.0, color_hex="#202020"
+    )
+    branding.theme.colors = branding.theme.colors.__class__(
+        primary="#445566",
+        secondary="#DDEEFF",
+        accent="#CC5500",
+        background="#FFFFFF",
+    )
+    branding.components.table.body.zebra_fill_color = "#EFEFEF"
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
@@ -162,7 +166,7 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     header_cell = table.rows[0].cells[0]
     assert header_cell.fill.fore_color.rgb == RGBColor.from_string("334455")
     data_cell = table.rows[2].cells[0]
-    assert data_cell.fill.fore_color.rgb == RGBColor.from_string("DDEEFF")
+    assert data_cell.fill.fore_color.rgb == RGBColor.from_string("EFEFEF")
 
     text_paragraph = None
     for shape in slide.shapes:
@@ -237,7 +241,10 @@ def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
     )
     assert subtitle_shape.text_frame.paragraphs[0].text == "サブタイトル"
 
-    assert slide.notes_slide.notes_text_frame.text.strip() == "ノート本文"
+    notes_frame = slide.notes_slide.notes_text_frame
+    assert [p.text for p in notes_frame.paragraphs] == ["ノート本文"]
+    for paragraph in notes_frame.paragraphs:
+        assert paragraph.font.name == renderer._branding.body_font.name
 
     textboxes = [
         shape
@@ -255,6 +262,65 @@ def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
         assert paragraph.level == 1
     assert paragraphs[0].space_before == Pt(4)
     assert paragraphs[0].space_after == Pt(2)
+
+
+def test_renderer_assigns_anchor_name_to_textbox(tmp_path: Path) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        left_box,
+        right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="アンカーテキスト"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="anchor-text",
+                layout=two_content_layout_name,
+                textboxes=[
+                    SlideTextbox(
+                        id="left-text",
+                        text="左のテキスト",
+                        anchor="Left Content Placeholder",
+                    ),
+                    SlideTextbox(
+                        id="right-text",
+                        text="右のテキスト",
+                        anchor="Right Content Placeholder",
+                    ),
+                ],
+            )
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(template_path=template_path, output_filename="anchor-text.pptx")
+    )
+    renderer.run(context)
+
+    pptx_path = context.require_artifact("pptx_path")
+    presentation = Presentation(pptx_path)
+    slide = presentation.slides[0]
+
+    def find_shape(name: str):
+        return next(shape for shape in slide.shapes if shape.name == name)
+
+    left_shape = find_shape("Left Content Placeholder")
+    right_shape = find_shape("Right Content Placeholder")
+
+    assert not getattr(left_shape, "is_placeholder", False)
+    assert not getattr(right_shape, "is_placeholder", False)
+
+    assert [p.text for p in left_shape.text_frame.paragraphs] == ["左のテキスト"]
+    assert [p.text for p in right_shape.text_frame.paragraphs] == ["右のテキスト"]
+
+    assert (left_shape.left, left_shape.top, left_shape.width, left_shape.height) == left_box
+    assert (right_shape.left, right_shape.top, right_shape.width, right_shape.height) == right_box
 
 
 def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:

@@ -190,20 +190,60 @@ def gen(
             branding=branding_config,
         )
     )
-    refiner = SimpleRefinerStep(
-        RefinerOptions(
+    analyzer_rules = rules_config.analyzer
+    refiner_rules = rules_config.refiner
+    analyzer_defaults = AnalyzerOptions()
+    body_font_size = branding_config.body_font.size_pt
+    body_font_color = branding_config.body_font.color_hex
+    primary_color = branding_config.primary_color
+    background_color = branding_config.background_color
+
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(
+            min_font_size=analyzer_rules.min_font_size
+            if analyzer_rules.min_font_size is not None
+            else body_font_size,
+            default_font_size=analyzer_rules.default_font_size
+            if analyzer_rules.default_font_size is not None
+            else body_font_size,
+            default_font_color=analyzer_rules.default_font_color or body_font_color,
+            preferred_text_color=analyzer_rules.preferred_text_color or primary_color,
+            background_color=analyzer_rules.background_color or background_color,
+            min_contrast_ratio=analyzer_rules.min_contrast_ratio
+            if analyzer_rules.min_contrast_ratio is not None
+            else analyzer_defaults.min_contrast_ratio,
+            large_text_min_contrast=analyzer_rules.large_text_min_contrast
+            if analyzer_rules.large_text_min_contrast is not None
+            else analyzer_defaults.large_text_min_contrast,
+            large_text_threshold_pt=analyzer_rules.large_text_threshold_pt
+            if analyzer_rules.large_text_threshold_pt is not None
+            else body_font_size,
+            margin_in=analyzer_rules.margin_in
+            if analyzer_rules.margin_in is not None
+            else analyzer_defaults.margin_in,
+            slide_width_in=analyzer_rules.slide_width_in
+            if analyzer_rules.slide_width_in is not None
+            else analyzer_defaults.slide_width_in,
+            slide_height_in=analyzer_rules.slide_height_in
+            if analyzer_rules.slide_height_in is not None
+            else analyzer_defaults.slide_height_in,
             max_bullet_level=rules_config.max_bullet_level,
         )
     )
-    analyzer = SimpleAnalyzerStep(
-        AnalyzerOptions(
-            min_font_size=branding_config.body_font.size_pt,
-            default_font_size=branding_config.body_font.size_pt,
-            default_font_color=branding_config.body_font.color_hex,
-            preferred_text_color=branding_config.primary_color,
-            background_color=branding_config.background_color,
+    refiner = SimpleRefinerStep(
+        RefinerOptions(
             max_bullet_level=rules_config.max_bullet_level,
-            large_text_threshold_pt=branding_config.body_font.size_pt,
+            enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
+            enable_font_raise=refiner_rules.enable_font_raise,
+            min_font_size=refiner_rules.min_font_size
+            if refiner_rules.min_font_size is not None
+            else body_font_size,
+            enable_color_adjust=refiner_rules.enable_color_adjust,
+            preferred_text_color=refiner_rules.preferred_text_color
+            or analyzer_rules.preferred_text_color
+            or primary_color,
+            fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
+            default_font_name=branding_config.body_font.name,
         )
     )
     if not export_pdf and pdf_mode != "both":

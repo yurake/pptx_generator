@@ -421,8 +421,11 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert template_spec.extracted_at is not None
 
     branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
-    assert "fonts" in branding_data
-    assert "colors" in branding_data
+    assert branding_data.get("version") == "layout-style-v1"
+    theme_section = branding_data.get("theme", {})
+    assert "fonts" in theme_section
+    assert "colors" in theme_section
+    assert "components" in branding_data
 
 
 def test_cli_tpl_extract_custom_output(tmp_path) -> None:
@@ -454,7 +457,8 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     assert template_spec.template_path == str(template_path)
 
     branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
-    assert "fonts" in branding_data
+    assert branding_data.get("version") == "layout-style-v1"
+    assert "components" in branding_data
 
 
 def test_cli_tpl_extract_with_filters(tmp_path) -> None:
@@ -575,7 +579,8 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         assert template_spec.template_path == str(temp_template_path)
         assert len(template_spec.layouts) > 0
         branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
-        assert "fonts" in branding_data
+        assert branding_data.get("version") == "layout-style-v1"
+        assert "theme" in branding_data
 
     finally:
         # 一時ファイルをクリーンアップ
