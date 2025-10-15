@@ -1,7 +1,7 @@
 ---
 目的: Analyzer / Refiner のルール拡張を実装し RM-001 の要件を満たす
 関連ブランチ: feat/rm001-analyzer-refiner-rules
-関連Issue: 未作成
+関連Issue: #185
 roadmap_item: RM-001 Analyzer / Refiner ルール拡張
 ---
 
