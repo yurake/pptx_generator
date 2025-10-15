@@ -17,10 +17,6 @@ roadmap_item: RM-008 カスタムテンプレート操作性向上
 ## メモ
 - 現状は図形名だけがアンカーに使われるため、プレースホルダーを利用した柔軟なレイアウトが難しい。
 - プレースホルダーの名称はスライド生成後に既定名へ変換される可能性があるため、ID ベースでの追跡やレイアウト段階でのメタデータ保持が必要。
-<<<<<<< HEAD
-- 再現例: `samples/sample_spec.json` の `"anchor": "Body Left"` を指定し、`uv run pptx gen samples/sample_spec.json --template samples/templates/templates2.pptx --workdir .pptxgen/full3` を実行すると、Two Column Detail レイアウトのプレースホルダーが `Content Placeholder 2` へ変換され、チャートがフォールバック位置に挿入される。
-=======
-- 再現例: `samples/sample_spec.json` の `"anchor": "Body Left"` を指定し、`uv run pptx-generator run samples/sample_spec.json --template samples/templates/templates.pptx --workdir .pptxgen/full3` を実行すると、Two Column Detail レイアウトのプレースホルダーが `Content Placeholder 2` へ変換され、チャートがフォールバック位置に挿入される。
->>>>>>> origin/main
+- 再現例: `samples/sample_spec.json` の `"anchor": "Body Left"` を指定し、`uv run pptx gen samples/sample_spec.json --template samples/templates/templates.pptx --workdir .pptxgen/full3` を実行すると、Two Column Detail レイアウトのプレースホルダーが `Content Placeholder 2` へ変換され、チャートがフォールバック位置に挿入される。
 - 設計メモ: `docs/notes/20251009-placeholder-anchor-design.md`
 - 実行環境メモ: `UV_CACHE_DIR=.uv-cache` を付けるとサンドボックス環境でも `uv run` 系が動作しやすい。

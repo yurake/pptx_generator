@@ -15,7 +15,7 @@
 | 工程 | 実行主体 | 主な入力 | 主な成果物 | 概要 |
 | --- | --- | --- | --- | --- |
 | 1. テンプレ準備 | 自動＋HITL | 既存テンプレート資産 | テンプレートファイル、版管理ノート | ブランドごとの PPTX テンプレ資産を整備し、命名ルールを適用 |
-| 2. テンプレ構造抽出 | 自動 | テンプレートファイル | レイアウト JSON、`branding.json` | テンプレからレイアウト構造 JSON とヒント値を生成 |
+| 2. テンプレ構造抽出 | 自動 | テンプレートファイル | レイアウト JSON、`branding.json` | テンプレからレイアウト構造 JSON と layout-style 定義を生成 |
 | 3. コンテンツ正規化 | HITL | プレゼン仕様 JSON (`slides`) | `content_approved.json` | 入力データをスライド候補へ整形し、承認（HITL） |
 | 4. ドラフト構成設計 | HITL | `content_approved.json` | `draft_approved.json` | 章立て・ページ順・`layout_hint` を確定し、承認（HITL） |
 | 5. マッピング | 自動 | `draft_approved.json` | `rendering_ready.json` | レイアウト選定とプレースホルダ割付を行い、中間 JSON を生成 |
@@ -61,7 +61,8 @@
    # YAML 形式で出力する場合
    uv run pptx tpl-extract --template samples/templates/templates.pptx --format yaml
    ```
-- 出力は既定で `.pptx/extract/` 以下に保存され、レイアウト JSON と `branding.json` が生成されます。
+- 出力は既定で `.pptx/extract/` 以下に保存され、レイアウト JSON と layout-style 対応の `branding.json` が生成されます。
+- `branding.json` では `theme` / `components` / `layouts` にスタイル設定が格納されるため、詳細は `docs/design/layout-style-governance.md` を参照してください。
 
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
@@ -134,7 +135,7 @@
 
 ## 設定とテンプレート
 - `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義。
-- `config/branding.json`: デフォルトのフォントやブランドカラーを定義。
+- `config/branding.json`: `version: "layout-style-v1"` のスキーマでフォント・カラー・要素別スタイル・レイアウト個別設定を定義。
 - テンプレ運用ルールやブランド設定の更新手順は `config/AGENTS.md` と `docs/policies/config-and-templates.md` を参照します。
 
 ## 開発ガイドライン
