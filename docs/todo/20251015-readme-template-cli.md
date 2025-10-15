@@ -28,8 +28,8 @@ roadmap_item: RM-019 CLI ツールチェーン整備
   - [ ] README.md / AGENTS.md
 - [ ] 関連Issueの更新
   - メモ: 関連 Issue が見つかった場合は番号を記録する
-- [ ] PR 作成
-  - メモ: PR 作成時に todo-auto-complete の挙動を確認する
+- [x] PR 作成
+  - メモ: PR #191 https://github.com/yurake/pptx_generator/pull/191（2025-10-15 完了）
 
 ## メモ
 - README の工程2 記述とスタイルを揃えることを意識する
