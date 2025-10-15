@@ -26,7 +26,7 @@
 ## 更新手順
 1. 追加・改訂する資料のカテゴリを決め、該当ディレクトリに Markdown ファイルを作成・編集する。
 2. カテゴリの README（例: `docs/README.md`, `docs/roadmap/README.md`）を更新し、新規資料へのリンクを追記する。
-3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/overview.md`・`docs/design/schema-extensions.md`・`docs/requirements/overview.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
+3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/overview.md`・`docs/design/schema/README.md`・`docs/requirements/overview.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
 4. 変更内容を ToDo のメモに反映し、必要に応じてロードマップや関連ドキュメントへリンクを追加する。
 5. コミット前に `git status` で対象ファイルを確認し、不要な差分（バイナリやキャッシュ）が混入していないかをチェックする。
 

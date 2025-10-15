@@ -1,0 +1,23 @@
+{
+  "slides": [
+    {
+      "page_no": 2,
+      "layout_id": "overview__one_col_v1",
+      "inserted_elements": {
+        "PH__Title__1": true,
+        "PH__Body__Main": true,
+        "PH__Table__KPI": true,
+        "PH__Note__1": true
+      },
+      "warnings": [
+        {"code": "table_overflow", "message": "列幅を自動調整しました"}
+      ],
+      "processing_ms": 120
+    }
+  ],
+  "meta": {
+    "template_version": "acme_v1",
+    "rendering_time_ms": 1850,
+    "warnings_total": 1
+  }
+}

@@ -27,8 +27,8 @@ roadmap_item: RM-012 レンダラーテキスト強化
   - [ ] README.md / AGENTS.md
 - [ ] 関連Issueの更新
   - メモ: #171 にスキーマ拡張とテスト計画の進捗を反映する
-- [x] PR 作成
-  - メモ: PR #180 https://github.com/yurake/pptx_generator/pull/180（2025-10-14 完了）
+- [ ] PR 作成
+  - メモ: PR 番号と URL、todo-auto-complete の結果を記入する
 
 ## メモ
 - RM-007 のアンカー仕様と整合させ、テンプレート更新が必要な場合は `samples/templates/` を見直す。

@@ -1,0 +1,33 @@
+{
+  "slides": [
+    {
+      "ref_id": "s01",
+      "selected_layout": "overview__one_col_v1",
+      "candidates": [
+        {"layout_id": "overview__one_col_v1", "score": 0.92},
+        {"layout_id": "overview__two_col_v1", "score": 0.78}
+      ],
+      "fallback": {
+        "applied": false,
+        "history": []
+      },
+      "ai_patch": [
+        {
+          "patch_id": "p03",
+          "description": "本文を45文字以内に要約",
+          "patch": {
+            "op": "replace",
+            "path": "/elements/PH__Body__Main/1",
+            "value": "海外市場は横ばい"
+          }
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "meta": {
+    "mapping_time_ms": 845,
+    "fallback_count": 0,
+    "ai_patch_count": 1
+  }
+}

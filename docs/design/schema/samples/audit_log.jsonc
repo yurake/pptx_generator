@@ -1,0 +1,19 @@
+{
+  "job_id": "job-20251011-001",
+  "template_version": "acme_v1",
+  "rendering_ready_hash": "sha256:41b4...f0",
+  "output_pptx_hash": "sha256:92ff...0a",
+  "content_review_log_hash": "sha256:33d1...70",
+  "draft_review_log_hash": "sha256:8a1c...6e",
+  "pdf_export": {
+    "enabled": true,
+    "status": "success",
+    "duration_ms": 2450
+  },
+  "polisher": {
+    "enabled": true,
+    "status": "success",
+    "ruleset": "polish-default-v1"
+  },
+  "generated_at": "2025-10-11T12:30:00+09:00"
+}
