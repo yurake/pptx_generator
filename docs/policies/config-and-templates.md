@@ -10,6 +10,17 @@
 2. Pull Request でレビューを受けるまで `draft` 状態を維持する。
 3. レビューコメントは 24 時間以内を目安に対応し、議論の結果は PR に明記する。
 
+## branding.json の構造
+- スキーマバージョンは `version: "layout-style-v1"` を既定とする。後続の拡張ではバージョンを更新し、互換性の有無をドキュメント化する。
+- `theme` 配下でブランド共通のフォント (`fonts.heading` / `fonts.body`) と基調色 (`colors.primary` など) を定義する。フォントには `bold` / `italic` も指定できる。
+- `components` 配下で要素別スタイルを管理する。
+  - `table`: フォールバック配置 (`fallback_box`)、ヘッダー／本文のフォントと塗りつぶし色、ゼブラ配色を定義。
+  - `chart`: カラーパレット、データラベル既定値、軸フォント、フォールバック配置を定義。
+  - `image`: フォールバック配置と既定の `sizing` モードを定義。
+  - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・レベル）を定義。
+- `layouts` にレイアウト名ごとの `placements` を登録すると、アンカー未指定時に要素 ID 単位で配置やフォントを上書きできる。
+- 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
+
 ## バリデーション
 - テンプレート更新時は `template_validator.py` を実行し、レイアウト・プレースホルダ構造の差分を確認する。
 - 設定ファイルは `jsonschema` に基づく検証スクリプト（未整備の場合は CLI で手動検証）を実施する。

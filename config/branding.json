@@ -1,25 +1,116 @@
 {
-  "template_version": "v1",
-  "fonts": {
-    "heading": {
-      "name": "Yu Gothic",
-      "size_pt": 32,
-      "color_hex": "#1A1A1A"
+  "version": "layout-style-v1",
+  "theme": {
+    "fonts": {
+      "heading": {
+        "name": "Yu Gothic",
+        "size_pt": 32,
+        "color_hex": "#1A1A1A",
+        "bold": false,
+        "italic": false
+      },
+      "body": {
+        "name": "Yu Gothic",
+        "size_pt": 18,
+        "color_hex": "#333333",
+        "bold": false,
+        "italic": false
+      }
     },
-    "body": {
-      "name": "Yu Gothic",
-      "size_pt": 18,
-      "color_hex": "#333333"
+    "colors": {
+      "primary": "#005BAC",
+      "secondary": "#0097A7",
+      "accent": "#FF7043",
+      "background": "#FFFFFF"
     }
   },
-  "colors": {
-    "primary": "#005BAC",
-    "secondary": "#0097A7",
-    "accent": "#FF7043",
-    "background": "#FFFFFF"
+  "components": {
+    "table": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.5,
+        "width_in": 8.5,
+        "height_in": 3.0
+      },
+      "header": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 18,
+          "color_hex": "#FFFFFF",
+          "bold": true,
+          "italic": false
+        },
+        "fill_color": "#005BAC"
+      },
+      "body": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 16,
+          "color_hex": "#333333",
+          "bold": false,
+          "italic": false
+        },
+        "fill_color": "#FFFFFF",
+        "zebra_fill_color": "#F4F7FB"
+      }
+    },
+    "chart": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.5,
+        "width_in": 8.5,
+        "height_in": 4.0
+      },
+      "palette": [
+        "#005BAC",
+        "#0097A7",
+        "#FF7043",
+        "#4CAF50",
+        "#7E57C2",
+        "#8D6E63"
+      ],
+      "data_labels": {
+        "enabled": true,
+        "format": "0"
+      },
+      "axis": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 14,
+          "color_hex": "#333333",
+          "bold": false,
+          "italic": false
+        }
+      }
+    },
+    "image": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.75,
+        "width_in": 8.0,
+        "height_in": 4.5
+      },
+      "sizing": "fit"
+    },
+    "textbox": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.0,
+        "width_in": 8.0,
+        "height_in": 1.5
+      },
+      "font": {
+        "name": "Yu Gothic",
+        "size_pt": 18,
+        "color_hex": "#333333",
+        "bold": false,
+        "italic": false
+      },
+      "paragraph": {
+        "align": "left",
+        "line_spacing_pt": 22.0
+      }
+    }
   },
-  "footer": {
-    "text": "Confidential",
-    "show_page_number": true
-  }
+  "layouts": {}
 }

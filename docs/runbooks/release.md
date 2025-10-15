@@ -2,7 +2,9 @@
 
 ## 事前準備
 - テンプレートおよび設定ファイルのバージョンを確認し、必要に応じてインクリメントする。
+- `config/branding.json` が `version: "layout-style-v1"` であること、`docs/design/layout-style-governance.md` に記載のスタイル定義とズレがないことを確認する。
 - `docs/todo/` の対応タスクを最新化し、残作業が無いことを確認する。
+- `uv run --extra dev pytest` を実行し、スタイル設定を含む全テストがグリーンであることを確認する。
 - CI がグリーンであることをダッシュボードで確認する。
 
 ## 手順
@@ -15,3 +17,4 @@
 ## ロールバック
 - 重大障害発生時は直前のタグへロールバックし、影響範囲と復旧時間を `docs/notes/` に記録する。
 - ロールバック後は原因分析と恒久対応を ToDo として整理する。
+- レイアウトスタイルに起因する不具合の場合は `config/branding.json` を直前タグから復元し、`docs/design/layout-style-governance.md` の差分を確認して関係者へ共有する。

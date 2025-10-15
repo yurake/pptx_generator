@@ -129,16 +129,20 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
         ],
     )
 
-    branding = BrandingConfig(
-        heading_font=BrandingFont(
-            name="HeadingBrand", size_pt=30.0, color_hex="#101010"
-        ),
-        body_font=BrandingFont(name="BodyBrand", size_pt=20.0, color_hex="#202020"),
-        primary_color="#445566",
-        secondary_color="#DDEEFF",
-        accent_color="#CC5500",
-        background_color="#FFFFFF",
+    branding = BrandingConfig.default()
+    branding.theme.heading = BrandingFont(
+        name="HeadingBrand", size_pt=30.0, color_hex="#101010"
     )
+    branding.theme.body = BrandingFont(
+        name="BodyBrand", size_pt=20.0, color_hex="#202020"
+    )
+    branding.theme.colors = branding.theme.colors.__class__(
+        primary="#445566",
+        secondary="#DDEEFF",
+        accent="#CC5500",
+        background="#FFFFFF",
+    )
+    branding.components.table.body.zebra_fill_color = "#EFEFEF"
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
@@ -162,7 +166,7 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     header_cell = table.rows[0].cells[0]
     assert header_cell.fill.fore_color.rgb == RGBColor.from_string("334455")
     data_cell = table.rows[2].cells[0]
-    assert data_cell.fill.fore_color.rgb == RGBColor.from_string("DDEEFF")
+    assert data_cell.fill.fore_color.rgb == RGBColor.from_string("EFEFEF")
 
     text_paragraph = None
     for shape in slide.shapes:
