@@ -10,5 +10,26 @@
     "御社",
     "弊社",
     "TODO"
-  ]
+  ],
+  "analyzer": {
+    "min_font_size": 18.0,
+    "default_font_size": 18.0,
+    "default_font_color": "#333333",
+    "preferred_text_color": "#005BAC",
+    "background_color": "#FFFFFF",
+    "min_contrast_ratio": 4.5,
+    "large_text_min_contrast": 3.0,
+    "large_text_threshold_pt": 18.0,
+    "margin_in": 0.5,
+    "slide_width_in": 10.0,
+    "slide_height_in": 7.5
+  },
+  "refiner": {
+    "enable_bullet_reindent": true,
+    "enable_font_raise": true,
+    "min_font_size": 18.0,
+    "enable_color_adjust": true,
+    "preferred_text_color": "#005BAC",
+    "fallback_font_color": "#333333"
+  }
 }
