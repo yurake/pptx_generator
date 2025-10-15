@@ -243,9 +243,109 @@ class LayoutInfo(BaseModel):
 
 class TemplateSpec(BaseModel):
     """テンプレート仕様全体を表現するモデル。"""
-    
+
     template_path: str = Field(..., description="テンプレートファイルパス")
     extracted_at: str = Field(..., description="抽出日時（ISO8601）")
     layouts: list[LayoutInfo] = Field(default_factory=list, description="レイアウト一覧")
     warnings: list[str] = Field(default_factory=list, description="警告メッセージ")
     errors: list[str] = Field(default_factory=list, description="エラーメッセージ")
+
+
+# テンプレートリリース管理用モデル
+
+
+class TemplateReleaseLayoutDetail(BaseModel):
+    """各レイアウトの要約情報。"""
+
+    name: str = Field(..., description="レイアウト名")
+    anchor_count: int = Field(..., description="図形・アンカー数")
+    placeholder_count: int = Field(..., description="プレースホルダー数")
+    anchor_names: list[str] = Field(default_factory=list, description="アンカー名一覧")
+    placeholder_names: list[str] = Field(default_factory=list, description="プレースホルダー名一覧")
+    duplicate_anchor_names: list[str] = Field(default_factory=list, description="重複しているアンカー名一覧")
+    issues: list[str] = Field(default_factory=list, description="レイアウト内で検出された問題")
+
+
+class TemplateReleaseLayouts(BaseModel):
+    """テンプレート全体のレイアウトサマリ。"""
+
+    total: int = Field(..., description="レイアウト総数")
+    placeholders_avg: float = Field(..., description="レイアウトあたりプレースホルダー平均数")
+    details: list[TemplateReleaseLayoutDetail] = Field(default_factory=list, description="レイアウト詳細一覧")
+
+
+class TemplateReleaseDiagnostics(BaseModel):
+    """テンプレートリリース時の診断結果。"""
+
+    warnings: list[str] = Field(default_factory=list, description="警告一覧")
+    errors: list[str] = Field(default_factory=list, description="エラー一覧")
+
+
+class TemplateReleaseGoldenRun(BaseModel):
+    """ゴールデンサンプルによる互換性検証の結果。"""
+
+    spec_path: str = Field(..., description="検証に使用した spec ファイルパス")
+    status: Literal["passed", "failed"] = Field(..., description="検証結果のステータス")
+    output_dir: str = Field(..., description="検証成果物を保存したディレクトリ")
+    pptx_path: str | None = Field(None, description="生成された PPTX ファイルのパス")
+    analysis_path: str | None = Field(None, description="Analyzer 出力のパス")
+    pdf_path: str | None = Field(None, description="生成された PDF のパス")
+    warnings: list[str] = Field(default_factory=list, description="検証時に検出された警告")
+    errors: list[str] = Field(default_factory=list, description="検証時に検出されたエラー")
+
+
+class TemplateRelease(BaseModel):
+    """テンプレートリリースメタ情報。"""
+
+    template_id: str = Field(..., description="テンプレート識別子")
+    brand: str = Field(..., description="ブランド名")
+    version: str = Field(..., description="テンプレートバージョン")
+    template_path: str = Field(..., description="テンプレートファイルのパス")
+    hash: str = Field(..., description="テンプレートファイルの SHA256 ハッシュ")
+    generated_at: str = Field(..., description="リリース生成日時（ISO8601）")
+    generated_by: str | None = Field(None, description="リリース生成者")
+    reviewed_by: str | None = Field(None, description="レビュー担当者")
+    extractor: dict[str, str] | None = Field(
+        default=None, description="抽出処理に関するメタ情報"
+    )
+    layouts: TemplateReleaseLayouts = Field(..., description="レイアウトの統計情報")
+    diagnostics: TemplateReleaseDiagnostics = Field(..., description="診断結果")
+    golden_runs: list[TemplateReleaseGoldenRun] = Field(
+        default_factory=list, description="ゴールデンサンプル検証の結果一覧"
+    )
+
+
+class TemplateReleaseLayoutDiff(BaseModel):
+    """レイアウト単位の差分情報。"""
+
+    name: str = Field(..., description="レイアウト名")
+    anchors_added: list[str] = Field(default_factory=list, description="追加されたアンカー名")
+    anchors_removed: list[str] = Field(default_factory=list, description="削除されたアンカー名")
+    placeholders_added: list[str] = Field(default_factory=list, description="追加されたプレースホルダー名")
+    placeholders_removed: list[str] = Field(default_factory=list, description="削除されたプレースホルダー名")
+    duplicate_anchor_names: list[str] = Field(
+        default_factory=list, description="現在のレイアウトで検出された重複アンカー名"
+    )
+
+
+class TemplateReleaseChanges(BaseModel):
+    """テンプレートリリース間の差分サマリ。"""
+
+    layouts_added: list[str] = Field(default_factory=list, description="追加されたレイアウト名")
+    layouts_removed: list[str] = Field(default_factory=list, description="削除されたレイアウト名")
+    layout_diffs: list[TemplateReleaseLayoutDiff] = Field(
+        default_factory=list, description="差分が発生したレイアウトの詳細"
+    )
+
+
+class TemplateReleaseReport(BaseModel):
+    """テンプレートリリース差分レポート。"""
+
+    template_id: str = Field(..., description="比較対象のテンプレート識別子")
+    baseline_id: str | None = Field(None, description="比較元テンプレート識別子")
+    generated_at: str = Field(..., description="レポート生成日時（ISO8601）")
+    hashes: dict[str, str | None] = Field(
+        ..., description="現在およびベースラインのハッシュ値"
+    )
+    changes: TemplateReleaseChanges = Field(..., description="差分サマリ")
+    diagnostics: TemplateReleaseDiagnostics = Field(..., description="現在テンプレートの診断結果")

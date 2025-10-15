@@ -14,12 +14,15 @@ from .branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
-from .models import JobSpec, SpecValidationError
+from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
+                     TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
                        PdfExportStep, PipelineContext, PipelineRunner,
                        RefinerOptions, RenderingOptions, SimpleAnalyzerStep,
                        SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
                        TemplateExtractor, TemplateExtractorOptions)
+from .template_audit import (build_release_report, build_template_release,
+                             load_template_release)
 from .settings import BrandingConfig, RulesConfig
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
@@ -382,6 +385,315 @@ def tpl_extract(
         logging.exception("テンプレート抽出中にエラーが発生しました")
         click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
+
+
+@app.command("tpl-release")
+@click.option(
+    "--template",
+    "-t",
+    "template_path",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    required=True,
+    help="リリース対象の PPTX テンプレートファイル",
+)
+@click.option("--brand", type=str, required=True, help="ブランド名")
+@click.option("--version", type=str, required=True, help="テンプレートバージョン")
+@click.option(
+    "--template-id",
+    type=str,
+    default=None,
+    help="テンプレート識別子（未指定時は brand_version を使用）",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/release"),
+    show_default=True,
+    help="リリース成果物を保存するディレクトリ",
+)
+@click.option(
+    "--generated-by",
+    type=str,
+    default=None,
+    help="リリースメタの生成者",
+)
+@click.option(
+    "--reviewed-by",
+    type=str,
+    default=None,
+    help="レビュー担当者",
+)
+@click.option(
+    "--baseline-release",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="比較対象となる過去の template_release.json",
+)
+@click.option(
+    "--golden-spec",
+    "golden_specs",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    multiple=True,
+    help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
+)
+def tpl_release(
+    template_path: Path,
+    brand: str,
+    version: str,
+    template_id: Optional[str],
+    output_dir: Path,
+    generated_by: Optional[str],
+    reviewed_by: Optional[str],
+    baseline_release: Optional[Path],
+    golden_specs: tuple[Path, ...],
+) -> None:
+    """テンプレート受け渡しメタと差分レポートを生成する。"""
+
+    try:
+        resolved_template_id = _resolve_template_id(template_id, brand, version)
+
+        extractor = TemplateExtractor(TemplateExtractorOptions(template_path=template_path))
+        spec = extractor.extract()
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        golden_runs: list[TemplateReleaseGoldenRun] = []
+        golden_warnings: list[str] = []
+        golden_errors: list[str] = []
+        if golden_specs:
+            golden_runs, golden_warnings, golden_errors = _run_golden_specs(
+                template_path=template_path,
+                golden_specs=list(golden_specs),
+                output_dir=output_dir,
+            )
+
+        release = build_template_release(
+            template_path=template_path,
+            spec=spec,
+            template_id=resolved_template_id,
+            brand=brand,
+            version=version,
+            generated_by=generated_by,
+            reviewed_by=reviewed_by,
+            golden_runs=golden_runs,
+            extra_warnings=golden_warnings,
+            extra_errors=golden_errors,
+        )
+        release_path = output_dir / "template_release.json"
+        release_path.write_text(
+            json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        if golden_runs:
+            golden_runs_path = output_dir / "golden_runs.json"
+            golden_runs_path.write_text(
+                json.dumps(
+                    [run.model_dump() for run in golden_runs],
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+        baseline = None
+        if baseline_release is not None:
+            baseline = load_template_release(baseline_release)
+
+        report = build_release_report(current=release, baseline=baseline)
+        report_path = output_dir / "release_report.json"
+        report_path.write_text(
+            json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        click.echo(f"テンプレートリリースメタを出力しました: {release_path}")
+        click.echo(f"差分レポートを出力しました: {report_path}")
+        if golden_runs:
+            click.echo(f"ゴールデンサンプル結果を出力しました: {golden_runs_path}")
+        if baseline_release is not None:
+            click.echo(f"比較対象: {baseline_release}")
+
+        _print_diagnostics(release.diagnostics)
+
+        if release.diagnostics.errors:
+            raise click.exceptions.Exit(code=6)
+
+    except click.exceptions.Exit:
+        raise
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("テンプレートリリース生成中にエラーが発生しました")
+        click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=1) from exc
+
+
+def _run_golden_specs(
+    *, template_path: Path, golden_specs: list[Path], output_dir: Path
+) -> tuple[list[TemplateReleaseGoldenRun], list[str], list[str]]:
+    results: list[TemplateReleaseGoldenRun] = []
+    warnings: list[str] = []
+    errors: list[str] = []
+
+    if not golden_specs:
+        return results, warnings, errors
+
+    rules_config = RulesConfig.load(DEFAULT_RULES_PATH)
+    branding_config = _load_branding_for_template(template_path, warnings)
+
+    golden_root = output_dir / "golden_runs"
+
+    for spec_path in golden_specs:
+        run_dir = golden_root / spec_path.stem
+        result = TemplateReleaseGoldenRun(
+            spec_path=str(spec_path),
+            status="passed",
+            output_dir=str(run_dir),
+        )
+
+        try:
+            spec = JobSpec.parse_file(spec_path)
+        except SpecValidationError as exc:
+            detail = json.dumps(exc.errors, ensure_ascii=False)
+            message = (
+                f"golden spec {spec_path} のスキーマ検証に失敗しました"
+            )
+            result.status = "failed"
+            result.errors.extend([message, detail])
+            errors.append(message)
+            results.append(result)
+            continue
+        except Exception as exc:  # noqa: BLE001
+            message = f"golden spec {spec_path} の読み込みに失敗しました: {exc}"
+            result.status = "failed"
+            result.errors.append(message)
+            errors.append(message)
+            results.append(result)
+            continue
+
+        run_dir.mkdir(parents=True, exist_ok=True)
+        context = PipelineContext(spec=spec, workdir=run_dir)
+
+        renderer = SimpleRendererStep(
+            RenderingOptions(
+                template_path=template_path,
+                output_filename=f"{spec_path.stem}.pptx",
+                branding=branding_config,
+            )
+        )
+        refiner = SimpleRefinerStep(
+            RefinerOptions(
+                max_bullet_level=rules_config.max_bullet_level,
+            )
+        )
+        analyzer = SimpleAnalyzerStep(
+            AnalyzerOptions(
+                min_font_size=branding_config.body_font.size_pt,
+                default_font_size=branding_config.body_font.size_pt,
+                default_font_color=branding_config.body_font.color_hex,
+                preferred_text_color=branding_config.primary_color,
+                background_color=branding_config.background_color,
+                max_bullet_level=rules_config.max_bullet_level,
+                large_text_threshold_pt=branding_config.body_font.size_pt,
+            )
+        )
+
+        steps = [
+            SpecValidatorStep(
+                max_title_length=rules_config.max_title_length,
+                max_bullet_length=rules_config.max_bullet_length,
+                max_bullet_level=rules_config.max_bullet_level,
+                forbidden_words=rules_config.forbidden_words,
+            ),
+            refiner,
+            renderer,
+            analyzer,
+        ]
+        runner = PipelineRunner(steps)
+
+        try:
+            runner.execute(context)
+        except SpecValidationError as exc:
+            detail = json.dumps(exc.errors, ensure_ascii=False)
+            message = (
+                f"golden spec {spec_path} の業務ルール検証に失敗しました"
+            )
+            result.status = "failed"
+            result.errors.extend([message, detail])
+            errors.append(message)
+        except Exception as exc:  # noqa: BLE001
+            logging.exception(
+                "ゴールデンサンプル実行中にエラーが発生しました: %s", spec_path
+            )
+            message = f"golden spec {spec_path} の実行に失敗しました: {exc}"
+            result.status = "failed"
+            result.errors.append(message)
+            errors.append(message)
+        else:
+            pptx_path = context.artifacts.get("pptx_path")
+            if pptx_path is not None:
+                result.pptx_path = str(pptx_path)
+            analysis_path = context.artifacts.get("analysis_path")
+            if analysis_path is not None:
+                result.analysis_path = str(analysis_path)
+            pdf_path = context.artifacts.get("pdf_path")
+            if pdf_path is not None:
+                result.pdf_path = str(pdf_path)
+
+            analyzer_warnings = context.artifacts.get("analyzer_warnings")
+            if isinstance(analyzer_warnings, list):
+                new_warnings = [str(item) for item in analyzer_warnings]
+                result.warnings.extend(new_warnings)
+                for warning in new_warnings:
+                    warnings.append(f"golden spec {spec_path}: {warning}")
+
+        results.append(result)
+
+    return results, warnings, errors
+
+
+def _load_branding_for_template(
+    template_path: Path, warnings: list[str]
+) -> BrandingConfig:
+    try:
+        extraction = extract_branding_config(template_path)
+    except BrandingExtractionError as exc:
+        warnings.append(
+            f"テンプレートからブランド設定を抽出できなかったためデフォルト設定を使用します: {exc}"
+        )
+        try:
+            return BrandingConfig.load(DEFAULT_BRANDING_PATH)
+        except FileNotFoundError:
+            warnings.append(
+                f"デフォルトのブランド設定が見つからないため内蔵設定を使用します: {DEFAULT_BRANDING_PATH}"
+            )
+            return BrandingConfig.default()
+    else:
+        return extraction.to_branding_config()
+
+
+def _resolve_template_id(
+    template_id: Optional[str], brand: str, version: str
+) -> str:
+    if template_id and template_id.strip():
+        return template_id.strip()
+    base = f"{brand}_{version}"
+    return base.replace(" ", "_")
+
+
+def _print_diagnostics(diagnostics: TemplateReleaseDiagnostics) -> None:
+    if diagnostics.warnings:
+        click.echo(f"警告: {len(diagnostics.warnings)} 件", err=True)
+        for warning in diagnostics.warnings:
+            click.echo(f"  - {warning}", err=True)
+    if diagnostics.errors:
+        click.echo(f"エラー: {len(diagnostics.errors)} 件", err=True)
+        for error in diagnostics.errors:
+            click.echo(f"  - {error}", err=True)
 
 
 def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
