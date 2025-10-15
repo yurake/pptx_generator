@@ -1,0 +1,33 @@
+{
+  "slides": [
+    {
+      "layout_id": "overview__one_col_v1",
+      "elements": {
+        "PH__Title__1": "市場環境の変化",
+        "PH__Body__Main": [
+          "国内需要は前年比12%増",
+          "海外市場は横ばい"
+        ],
+        "PH__Table__KPI": {
+          "headers": ["指標", "前年比"],
+          "rows": [
+            ["売上", "112%"],
+            ["利益", "108%"]
+          ]
+        },
+        "PH__Note__1": "為替前提は110円/ドル"
+      },
+      "meta": {
+        "section": "市場概況",
+        "page_no": 2,
+        "sources": ["s01"],
+        "fallback": "none"
+      }
+    }
+  ],
+  "meta": {
+    "template_version": "acme_v1",
+    "content_hash": "sha256:ac1e...f3",
+    "generated_at": "2025-10-11T12:05:00+09:00"
+  }
+}

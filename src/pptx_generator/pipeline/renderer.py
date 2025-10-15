@@ -447,9 +447,8 @@ class SimpleRendererStep:
         return mapping.get(align.lower(), PP_ALIGN.LEFT)
 
     def _save(self, presentation: Presentation, workdir: Path) -> Path:
-        output_dir = workdir / "outputs"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / self.options.output_filename
+        workdir.mkdir(parents=True, exist_ok=True)
+        output_path = workdir / self.options.output_filename
         presentation.save(output_path)
         return output_path
 
