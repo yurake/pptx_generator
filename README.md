@@ -1,23 +1,25 @@
 # pptx_generator
 
-JSON 仕様から PowerPoint 提案書を自動生成するツールです。タイトルや箇条書きだけでなく、ブランド設定に基づく表・画像・グラフの描画、PDF 変換、監査ログの出力までをワンストップで支援します。
+構造化されたプレゼン仕様を読み取り、ブランド統一された PowerPoint と PDF を短時間で作成する自動化ツールです。
 
 ## 主な機能
-- JSON 仕様 (`samples/json/*.json`) から PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
+- プレゼン仕様 JSON（例: `samples/json/sample_spec.json`、`slides` 配列や `meta` 情報を含む構造化データ）から PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
 - PPTX テンプレートからレイアウト構造とブランド設定を抽出し、再利用可能な JSON 雛形を自動生成する。
-- Analyzer／Refiner による簡易診断と監査ログ (`outputs/audit_log.json`) によるジョブ追跡を行う。
+- Analyzer／Refiner による簡易診断でスライド品質をチェックし、修正ポイントを抽出する。
+
+プレゼン仕様 JSON は工程 3・4 の HITL 作業で整備する想定です。現時点ではテキスト資料から自動変換する機能は提供していませんが、テンプレ抽出結果や既存サンプルをコピーしてカスタマイズする運用が可能です。
 
 ## アーキテクチャ概要
 本プロジェクトは 6 工程で資料を生成します。詳細は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/overview.md` を参照してください。
 
-| 工程 | 実行主体 | 概要 | 主な成果物 |
-| --- | --- | --- | --- |
-| 1. テンプレ準備 | 自動＋HITL | ブランドごとの PPTX テンプレ資産を整備し、命名ルールを適用 | テンプレートファイル、版管理ノート |
-| 2. テンプレ構造抽出 | 自動 | テンプレからレイアウト構造 JSON とヒント値を生成 | レイアウト JSON、`branding.json` |
-| 3. コンテンツ正規化 | HITL | 入力データをスライド候補へ整形し、`content_approved.json` を承認 | 承認済みコンテンツ JSON |
-| 4. ドラフト構成設計 | HITL | 章立て・ページ順・`layout_hint` を確定し、`draft_approved.json` を承認 | 承認済みドラフト JSON |
-| 5. マッピング | 自動 | レイアウト選定とプレースホルダ割付を行い、`rendering_ready.json` を生成 | マッピング済み JSON |
-| 6. PPTX レンダリング | 自動 | テンプレを適用し、`proposal.pptx` や監査ログを出力 | PPTX、PDF（任意）、`analysis.json`、`audit_log.json` |
+| 工程 | 実行主体 | 主な入力 | 主な成果物 | 概要 |
+| --- | --- | --- | --- | --- |
+| 1. テンプレ準備 | 自動＋HITL | 既存テンプレート資産 | テンプレートファイル、版管理ノート | ブランドごとの PPTX テンプレ資産を整備し、命名ルールを適用 |
+| 2. テンプレ構造抽出 | 自動 | テンプレートファイル | レイアウト JSON、`branding.json` | テンプレからレイアウト構造 JSON とヒント値を生成 |
+| 3. コンテンツ正規化 | HITL | プレゼン仕様 JSON (`slides`) | `content_approved.json` | 入力データをスライド候補へ整形し、承認（HITL） |
+| 4. ドラフト構成設計 | HITL | `content_approved.json` | `draft_approved.json` | 章立て・ページ順・`layout_hint` を確定し、承認（HITL） |
+| 5. マッピング | 自動 | `draft_approved.json` | `rendering_ready.json` | レイアウト選定とプレースホルダ割付を行い、中間 JSON を生成 |
+| 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json` | テンプレ適用と最終出力を生成 |
 
 工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/overview.md` にまとめています。
 
@@ -46,11 +48,11 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
 ## 使い方
 6 工程の流れに沿って作業します。詳細な業務フローは各ステージの要件ドキュメント（`docs/requirements/stages/`）を参照してください。
 
-### 工程 1: テンプレ準備（自動＋HITL）
+### 工程 1: テンプレ準備
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
-- 自動検査ツール（命名整合性チェックなど）は設計中です。運用中は手動レビューを併用します。
+- 自動検査ツール（命名整合性チェックなど）は設計中です。運用中は手動レビュー（HITL）を併用します。
 
-### 工程 2: テンプレ構造抽出（自動）
+### 工程 2: テンプレ構造抽出
 - 既存テンプレートからレイアウト／アンカー情報とブランド設定を抽出します。
    ```bash
    uv run pptx tpl-extract --template samples/templates/templates.pptx
@@ -61,19 +63,19 @@ JSON 仕様から PowerPoint 提案書を自動生成するツールです。タ
    ```
 - 出力は既定で `.pptx/extract/` 以下に保存され、レイアウト JSON と `branding.json` が生成されます。
 
-### 工程 3: コンテンツ正規化（HITL）
-- 入力 JSON をスライド候補へ整形し、`content_approved.json` を作成します。
+### 工程 3: コンテンツ正規化
+- 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
 - ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` にまとめています。
 
-### 工程 4: ドラフト構成設計（HITL）
-- 章立てやページ順を確定し、`draft_approved.json` を承認します。
+### 工程 4: ドラフト構成設計
+- 章立てやページ順を確定し、HITL で `draft_approved.json` を承認します。
 - レイアウト選定の指針は `docs/requirements/stages/stage-04-draft-structuring.md` を参照してください。
 
-### 工程 5: マッピング（自動）
+### 工程 5: マッピング
 - `draft_approved.json` から `rendering_ready.json` を生成します。マッピングロジックは `docs/requirements/stages/stage-05-mapping.md` に整理されています。
 - 現在は `pptx gen` 実行時に内部で処理され、個別 CLI 公開は検討中です。
 
-### 工程 6: PPTX レンダリング（自動）
+### 工程 6: PPTX レンダリング
 - `pptx gen` サブコマンドで PPTX と analysis.json、必要に応じて PDF を生成します。
    ```bash
    # 最小構成（テンプレートなし）
