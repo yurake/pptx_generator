@@ -1,7 +1,7 @@
 ---
 目的: README に工程1 テンプレ準備 CLI 利用手順を追記する
 関連ブランチ: docs/readme-template-cli
-関連Issue: 未作成
+関連Issue: #190
 roadmap_item: RM-019 CLI ツールチェーン整備
 ---
 
