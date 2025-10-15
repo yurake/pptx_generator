@@ -27,20 +27,20 @@
 
 ```mermaid
 graph TD
-    RM007["RM-007 SlideBullet アンカー拡張\n(完了)"] --> RM012["RM-012 レンダラーテキスト強化\n(未着手)"]
-    RM012 --> RM013["RM-013 PPTX 解析アナライザー実装\n(未着手)"]
-    RM013 --> RM014["RM-014 自動補正・仕上げ統合\n(未着手)"]
-    RM008["RM-008 カスタムテンプレート操作性向上\n(完了)"] --> RM011["RM-011 レイアウトスタイル統一\n(構想中)"]
-    RM009["RM-009 テンプレート設定自動生成\n(調査中)"] --> RM011
-    RM010["RM-010 テンプレート仕様エクスポート\n(完了)"] --> RM011
-    RM008 --> RM016["RM-016 テンプレート命名整合性チェッカー\n(未着手)"]
-    RM001["RM-001 Analyzer / Refiner ルール拡張\n(実装中)"] --> RM003["RM-003 ビジュアルフィードバックコパイロット\n(調査中)"]
-    RM003 --> RM006["RM-006 ライブ共同編集アシスト\n(アイデア段階)"]
-    RM004["RM-004 営業ナレッジ連携自動化\n(準備中)"] --> RM005["RM-005 プレゼンストーリーモデラー\n(企画中)"]
-    RM002["RM-002 エージェント運用ガイド整備\n(完了)"] --> RM017["RM-017 パイプライン機能拡張\n(完了)"]
-    RM017 --> RM019["RM-019 CLI ツールチェーン整備\n(実装中)"]
-    RM017 --> RM020["RM-020 PDF 自動生成対応\n(完了)"]
-    RM017 --> RM018["RM-018 レンダラー リッチコンテンツ対応\n(完了)"]
+    RM007["RM-007 SlideBullet アンカー拡張(完了)"] --> RM012["RM-012 レンダラーテキスト強化(完了)"]
+    RM012 --> RM013["RM-013 PPTX 解析アナライザー実装(未着手)"]
+    RM013 --> RM014["RM-014 自動補正・仕上げ統合(未着手)"]
+    RM008["RM-008 カスタムテンプレート操作性向上(完了)"] --> RM011["RM-011 レイアウトスタイル統一(構想中)"]
+    RM009["RM-009 テンプレート設定自動生成(完了)"] --> RM011
+    RM010["RM-010 テンプレート仕様エクスポート(完了)"] --> RM011
+    RM008 --> RM016["RM-016 テンプレート命名整合性チェッカー(完了)"]
+    RM001["RM-001 Analyzer / Refiner ルール拡張(完了)"] --> RM003["RM-003 ビジュアルフィードバックコパイロット(調査中)"]
+    RM003 --> RM006["RM-006 ライブ共同編集アシスト(アイデア段階)"]
+    RM004["RM-004 営業ナレッジ連携自動化(準備中)"] --> RM005["RM-005 プレゼンストーリーモデラー(企画中)"]
+    RM002["RM-002 エージェント運用ガイド整備(完了)"] --> RM017["RM-017 パイプライン機能拡張(完了)"]
+    RM017 --> RM019["RM-019 CLI ツールチェーン整備(完了)"]
+    RM017 --> RM020["RM-020 PDF 自動生成対応(完了)"]
+    RM017 --> RM018["RM-018 レンダラー リッチコンテンツ対応(完了)"]
 ```
 
 ## アクティブテーマ
@@ -202,35 +202,6 @@ graph TD
 - 状況: 完了（2025-10-15 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
 
-<a id="rm-012"></a>
-### RM-012 レンダラーテキスト強化（優先度: P1）
-- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/archive/20251015-renderer-text-enhancement.md](../todo/archive/20251015-renderer-text-enhancement.md)
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
-- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
-  - 2025-10-15: アンカー名継承とノートフォーマット整備を実施し、単体／CLI テストで検証済み。
-
-<a id="rm-016"></a>
-### RM-016 テンプレート命名整合性チェッカー（優先度: P3）
-- ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
-- 対象工程: 1・2（テンプレ準備 / 構造抽出）
-- 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: テンプレート読込時の名称衝突検知、CLI への警告出力、プレースホルダー命名規則の追加ガイド。
-- 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
-
-<a id="rm-019"></a>
-### RM-019 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
-- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
-
 <a id="rm-002"></a>
 ### RM-002 エージェント運用ガイド整備（優先度: P1）
 - ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
@@ -281,10 +252,11 @@ graph TD
 ### RM-012 レンダラーテキスト強化（優先度: P1）
 - ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/archive/20251011-renderer-text-enhancement.md](../todo/archive/20251011-renderer-text-enhancement.md)
-- 状況: 完了（2025-10-11 更新）
+- 参照 ToDo: [docs/todo/archive/20251015-renderer-text-enhancement.md](../todo/archive/20251015-renderer-text-enhancement.md)
+- 状況: 完了（2025-10-15 更新）
 - 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
 - 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
+  - 2025-10-15: アンカー名継承とノートフォーマット整備を実施し、単体／CLI テストで検証済み。
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計（優先度: P1）
@@ -297,6 +269,16 @@ graph TD
   - 工程3・4: レイアウトスコアリング指標の設計、AI レビュー評価指標の数値化、承認 UI / API 設計、`docs/design/schema/README.md` のモデル実装。
   - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
   - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
+
+<a id="rm-016"></a>
+### RM-016 テンプレート命名整合性チェッカー（優先度: P3）
+- ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
+- 対象工程: 1・2（テンプレ準備 / 構造抽出）
+- 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: テンプレート読込時の名称衝突検知、CLI への警告出力、プレースホルダー命名規則の追加ガイド。
+- 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
 
 <a id="rm-017"></a>
 ### RM-017 パイプライン機能拡張
@@ -314,6 +296,15 @@ graph TD
 - 状況: 14 件中 14 件完了（2025-10-06 更新）
 - 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
 - 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
+
+<a id="rm-019"></a>
+### RM-019 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
+- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
 
 <a id="rm-020"></a>
 ### RM-020 PDF 自動生成対応
