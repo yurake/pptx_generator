@@ -10,6 +10,31 @@
 2. Pull Request でレビューを受けるまで `draft` 状態を維持する。
 3. レビューコメントは 24 時間以内を目安に対応し、議論の結果は PR に明記する。
 
+## branding.json の構造
+- スキーマバージョンは `version: "layout-style-v1"` を既定とする。後続の拡張ではバージョンを更新し、互換性の有無をドキュメント化する。
+- `theme` 配下でブランド共通のフォント (`fonts.heading` / `fonts.body`) と基調色 (`colors.primary` など) を定義する。フォントには `bold` / `italic` も指定できる。
+- `components` 配下で要素別スタイルを管理する。
+  - `table`: フォールバック配置 (`fallback_box`)、ヘッダー／本文のフォントと塗りつぶし色、ゼブラ配色を定義。
+  - `chart`: カラーパレット、データラベル既定値、軸フォント、フォールバック配置を定義。
+  - `image`: フォールバック配置と既定の `sizing` モードを定義。
+  - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・レベル）を定義。
+- `layouts` にレイアウト名ごとの `placements` を登録すると、アンカー未指定時に要素 ID 単位で配置やフォントを上書きできる。
+- 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
+
+## rules.json の構成
+- `title.max_length` / `bullet.max_length` / `bullet.max_level` は従来通りタイトル・本文の長さと階層を制御する。
+- `forbidden_words` は禁則語を列挙し、バリデーションで一致したテキストを拒否する。
+- `analyzer` セクションでは自動診断の閾値を管理する。
+  - `min_font_size`, `default_font_size`: 箇条書きの最低フォントサイズと既定サイズ。
+  - `default_font_color`, `preferred_text_color`, `background_color`: コントラスト判定と修正提案で利用する色設定。
+  - `min_contrast_ratio`, `large_text_min_contrast`, `large_text_threshold_pt`: WCAG 基準に基づくコントラスト判定値。
+  - `margin_in`, `slide_width_in`, `slide_height_in`: 余白チェックに使用する寸法。
+- `refiner` セクションでは自動補正（Refiner）の適用可否と閾値を制御する。
+  - `enable_bullet_reindent`: 箇条書きレベルの再調整を有効化。
+  - `enable_font_raise`, `min_font_size`: フォントサイズを下限まで引き上げるかどうかと閾値。
+  - `enable_color_adjust`, `preferred_text_color`, `fallback_font_color`: 文字色をブランドカラーへ合わせる際の挙動。
+- `refiner` のカラー調整を有効化する場合は、ブランド設定 (`config/branding.json`) と整合する色を指定する。
+
 ## バリデーション
 - テンプレート更新時は `template_validator.py` を実行し、レイアウト・プレースホルダ構造の差分を確認する。
 - 設定ファイルは `jsonschema` に基づく検証スクリプト（未整備の場合は CLI で手動検証）を実施する。
