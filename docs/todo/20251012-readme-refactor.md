@@ -28,8 +28,8 @@ roadmap_item: RM-019 CLI ツールチェーン整備
   - [x] README.md / AGENTS.md
 - [ ] 関連Issueの更新
   - メモ: 適切な Issue があれば番号を追記し、進捗コメントを投稿。
-- [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete 結果を記録。
+- [x] PR 作成
+  - メモ: PR #182 https://github.com/yurake/pptx_generator/pull/182（2025-10-15 完了）
 
 ## メモ
 - README リファクタリングの検討内容は `docs/notes/20251012-readme-refactor.md` に記録済み。
