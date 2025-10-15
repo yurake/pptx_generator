@@ -1,0 +1,44 @@
+{
+  "sections": [
+    {
+      "name": "市場概況",
+      "order": 1,
+      "status": "approved",
+      "slides": [
+        {
+          "ref_id": "s01",
+          "order": 1,
+          "layout_hint": "overview",
+          "locked": true,
+          "status": "approved",
+          "layout_candidates": [
+            {"layout_id": "overview__one_col_v1", "score": 0.92},
+            {"layout_id": "overview__two_col_v1", "score": 0.78}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "提案価値",
+      "order": 2,
+      "status": "draft",
+      "slides": [
+        {
+          "ref_id": "s05",
+          "order": 1,
+          "layout_hint": "value_prop",
+          "locked": false,
+          "status": "draft",
+          "layout_candidates": [
+            {"layout_id": "value__two_col", "score": 0.81}
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "target_length": 12,
+    "structure_pattern": "report",
+    "appendix_limit": 5
+  }
+}

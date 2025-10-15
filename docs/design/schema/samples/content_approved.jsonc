@@ -1,0 +1,31 @@
+{
+  "slides": [
+    {
+      "id": "s01",
+      "intent": "市場動向",
+      "type_hint": "content",
+      "elements": {
+        "title": "市場環境の変化",
+        "body": [
+          "国内需要は前年比12%増",
+          "海外市場は横ばい"
+        ],
+        "table_data": {
+          "headers": ["指標", "前年比"],
+          "rows": [
+            ["売上", "112%"],
+            ["利益", "108%"]
+          ]
+        },
+        "note": "為替前提は110円/ドル"
+      },
+      "status": "approved",
+      "applied_autofix": ["p01"]
+    }
+  ],
+  "meta": {
+    "tone": "formal",
+    "audience": "management",
+    "summary": "市場トレンドと影響要因を整理したスライド群の確定版。"
+  }
+}

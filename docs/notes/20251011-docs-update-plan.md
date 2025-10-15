@@ -9,8 +9,8 @@
 | `src/AGENTS.md` | `src/` の実装ガイド | HITL／AI レビューを実装する際に編集すべきモジュールや参照ドキュメントを追記（例: 新しい JSON は `docs/design/schema-extensions.md` を参照、承認フロー変更時は `tests/AGENTS.md` とペアで更新） | 具体仕様は別資料に記述、指針のみ掲載 |
 | `tests/AGENTS.md` | テスト方針と実行ルール | 承認フロー・AI レビュー追加時のテスト対象（スタブ、生成ログ検証、差分比較）と参照先資料 (`docs/design/`, `docs/requirements/`) を追記 | テスト実装時のルールに集中し、仕様本文は引用しない |
 | `README.md` | プロジェクト概要と利用手順 | 6 工程と HITL の概要、AI レビューの位置づけを「使い方」章に追記。テンプレ構造抽出 CLI (計画中) の説明と、関連 docs へのリンクを追加 | CLI 使用例 (`uv run pptx-generator …`) とログ出力説明を更新する |
-| `docs/design/overview.md` | アーキテクチャとコンポーネント構成 | 工程別責務、承認ステップの状態遷移図、生成される中間 JSON (`content_approved.json`, `draft_approved.json`, `rendering_ready.json`) の I/F を追記 | スキーマ詳細は `schema-extensions.md` に分離し、相互リンク |
-| `docs/design/schema-extensions.md` | JSON スキーマや I/F 拡張 | 新しい承認中間データのスキーマ、レイアウトスコアリング指標、AI レビュー結果スキーマ（Auto-fix など）を追記 | 実装時はここを参照して `models.py` を調整 |
+| `docs/design/overview.md` | アーキテクチャとコンポーネント構成 | 工程別責務、承認ステップの状態遷移図、生成される中間 JSON (`content_approved.json`, `draft_approved.json`, `rendering_ready.json`) の I/F を追記 | スキーマ詳細は `schema/` に分離し、相互リンク |
+| `docs/design/schema/README.md` | JSON スキーマや I/F 拡張 | 新しい承認中間データのスキーマ、レイアウトスコアリング指標、AI レビュー結果スキーマ（Auto-fix など）を追記 | 実装時はここを参照して `models.py` を調整 |
 | `docs/requirements/overview.md` | ビジネス／機能要件 | HITL 承認基準（3/4）、AI レビュー評価レベル (A/B/C) と適用条件、監査項目 (source_id/template_version/content_hash) を追加 | KPI とロードマップの整合を確認し、必要に応じて `docs/roadmap/` とリンク |
 | `docs/policies/config-and-templates.md` | テンプレ／設定の運用ポリシー | 画像・チャート制約（ロゴのみ、テキスト構造化のみ）やテンプレ版管理の追加ルールを明文化 | テンプレ更新手順の追記。`docs/notes/20251011-roadmap-refresh.md` 参照案内 |
 | `docs/policies/task-management.md` | Approval-First Policy | HITL で新設される承認ゲート（工程 3/4）を追記し、Plan/承認フローとの整合を取る | ToDo 運用の接続（部分承認時のログ化など）も確認 |

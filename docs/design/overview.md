@@ -40,7 +40,7 @@
 6. **PPTX レンダリング**（自動）  
    `rendering_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
-工程 3・4 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema-extensions.md` にまとめている。
+工程 3・4 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-03-content-normalization.md` にまとめている。
 
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
@@ -50,7 +50,17 @@
 | マッピング | `draft_approved.json`, `content_approved.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
 | レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
 
-各 JSON のスキーマは `docs/design/schema-extensions.md` に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
+各 JSON のスキーマは `docs/design/schema/README.md` 配下に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
+
+### 3.2 工程別設計ドキュメント
+| 工程 | 設計ドキュメント | 主な設計観点 |
+| --- | --- | --- |
+| 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | Release CLI、差分診断、ゴールデンサンプル運用 |
+| 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | 抽出パイプライン、スキーマ検証、差分レポート |
+| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | HITL 承認 UI、AI レビュー、監査ログ |
+| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | ストーリーボード UI、layout_hint エンジン、章承認 |
+| 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング、フォールバック制御、AI 補完 |
+| 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
 
 ## 4. JSON スキーマ詳細
 ```yaml
