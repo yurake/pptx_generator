@@ -15,8 +15,8 @@ roadmap_item: RM-001 Analyzer / Refiner ルール拡張
   - メモ: `tests/test_settings.py` と `tests/test_refiner.py` を拡張し、`uv run --extra dev pytest` を完走
 - [x] ドキュメント更新
   - メモ: `docs/policies/config-and-templates.md` に新セクションを追記
-- [ ] PR 作成
-  - メモ: PR 作成後に番号と URL を追記
+- [x] PR 作成
+  - メモ: PR #186 https://github.com/yurake/pptx_generator/pull/186（2025-10-15 完了）
 
 ## メモ
 - 既存テンプレートやサンプルへの影響を確認すること。
