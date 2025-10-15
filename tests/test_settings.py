@@ -24,6 +24,21 @@ class TestRulesConfig:
                 "title": {"max_length": 10},
                 "bullet": {"max_length": 90, "max_level": 2},
                 "forbidden_words": ["NG", "禁止"],
+                "analyzer": {
+                    "min_font_size": 14,
+                    "default_font_color": "112233",
+                    "preferred_text_color": "#445566",
+                    "background_color": "FFFFFF",
+                    "min_contrast_ratio": 5.0,
+                },
+                "refiner": {
+                    "enable_bullet_reindent": False,
+                    "enable_font_raise": True,
+                    "min_font_size": 20,
+                    "enable_color_adjust": True,
+                    "preferred_text_color": "778899",
+                    "fallback_font_color": "#abcdef",
+                },
             },
         )
 
@@ -33,6 +48,17 @@ class TestRulesConfig:
         assert config.max_bullet_length == 90
         assert config.max_bullet_level == 2
         assert config.forbidden_words == ("NG", "禁止")
+        assert config.analyzer.min_font_size == pytest.approx(14.0)
+        assert config.analyzer.default_font_color == "#112233"
+        assert config.analyzer.preferred_text_color == "#445566"
+        assert config.analyzer.background_color == "#FFFFFF"
+        assert config.analyzer.min_contrast_ratio == pytest.approx(5.0)
+        assert config.refiner.enable_bullet_reindent is False
+        assert config.refiner.enable_font_raise is True
+        assert config.refiner.min_font_size == pytest.approx(20.0)
+        assert config.refiner.enable_color_adjust is True
+        assert config.refiner.preferred_text_color == "#778899"
+        assert config.refiner.fallback_font_color.upper() == "#ABCDEF"
 
     def test_load_fallback_to_defaults(self, tmp_path: Path) -> None:
         config_path = write_json(tmp_path / "rules.json", {})
@@ -43,6 +69,11 @@ class TestRulesConfig:
         assert config.max_bullet_length == RulesConfig().max_bullet_length
         assert config.max_bullet_level == RulesConfig().max_bullet_level
         assert config.forbidden_words == ()
+        assert config.analyzer.min_font_size is None
+        assert config.analyzer.preferred_text_color is None
+        assert config.refiner.enable_bullet_reindent is True
+        assert config.refiner.enable_font_raise is False
+        assert config.refiner.enable_color_adjust is False
 
     def test_load_invalid_json_raises(self, tmp_path: Path) -> None:
         config_path = tmp_path / "broken.json"
