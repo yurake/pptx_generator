@@ -1,0 +1,12 @@
+[
+  {
+    "spec_path": "samples/json/sample_spec.json",
+    "status": "passed",
+    "output_dir": ".pptx/release/golden_runs/sample_spec",
+    "pptx_path": ".pptx/release/golden_runs/sample_spec/sample_spec.pptx",
+    "analysis_path": ".pptx/release/golden_runs/sample_spec/analysis.json",
+    "pdf_path": null,
+    "warnings": [],
+    "errors": []
+  }
+]

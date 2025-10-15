@@ -14,7 +14,9 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.models import JobSpec, TemplateSpec
+from pptx_generator.models import (JobSpec, TemplateRelease,
+                                   TemplateReleaseGoldenRun,
+                                   TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
 
 
@@ -610,3 +612,201 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         branding_path = output_dir / "branding.json"
         assert spec_path.exists()
         assert branding_path.exists()
+
+
+def test_cli_tpl_release_generates_outputs(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "テンプレートリリースメタを出力しました" in result.output
+
+        release_path = Path(".pptx/release/template_release.json")
+        report_path = Path(".pptx/release/release_report.json")
+        assert release_path.exists()
+        assert report_path.exists()
+
+        release = TemplateRelease.model_validate_json(
+            release_path.read_text(encoding="utf-8")
+        )
+        report = TemplateReleaseReport.model_validate_json(
+            report_path.read_text(encoding="utf-8")
+        )
+
+        assert release.template_id == "Sample_1.0.0"
+        assert report.template_id == "Sample_1.0.0"
+        assert release.golden_runs == []
+        assert not (Path(".pptx/release") / "golden_runs.json").exists()
+
+
+def test_cli_tpl_release_with_baseline(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        # 1st run -> baseline release
+        first_output = Path(".pptx/release")
+        result_first = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+                "--output",
+                str(first_output),
+            ],
+            catch_exceptions=False,
+        )
+        assert result_first.exit_code == 0
+
+        baseline_path = first_output / "template_release.json"
+        assert baseline_path.exists()
+
+        # 2nd run -> compare against baseline
+        second_output = Path(".pptx/release-v2")
+        result_second = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.1.0",
+                "--output",
+                str(second_output),
+                "--baseline-release",
+                str(baseline_path),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result_second.exit_code == 0
+        report_path = second_output / "release_report.json"
+        assert report_path.exists()
+
+        report = TemplateReleaseReport.model_validate_json(
+            report_path.read_text(encoding="utf-8")
+        )
+        assert report.baseline_id == "Sample_1.0.0"
+        release_path = second_output / "template_release.json"
+        assert release_path.exists()
+        release = TemplateRelease.model_validate_json(
+            release_path.read_text(encoding="utf-8")
+        )
+        assert release.golden_runs == []
+
+
+def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+        shutil.copytree(repo_root / "config", fs_root / "config")
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+                "--golden-spec",
+                "samples/json/sample_spec.json",
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        release_path = Path(".pptx/release/template_release.json")
+        golden_path = Path(".pptx/release/golden_runs.json")
+        assert release_path.exists()
+        assert golden_path.exists()
+
+        release = TemplateRelease.model_validate_json(
+            release_path.read_text(encoding="utf-8")
+        )
+        assert len(release.golden_runs) == 1
+        golden_run = release.golden_runs[0]
+        assert golden_run.status == "passed"
+
+        golden_runs_data = json.loads(golden_path.read_text(encoding="utf-8"))
+        assert len(golden_runs_data) == 1
+        parsed_run = TemplateReleaseGoldenRun.model_validate(golden_runs_data[0])
+        assert parsed_run.status == "passed"
+        assert Path(parsed_run.output_dir).exists()
+        assert Path(parsed_run.pptx_path).exists()
+
+
+def test_cli_tpl_release_golden_spec_failure(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+        shutil.copytree(repo_root / "config", fs_root / "config")
+
+        broken_spec = Path("broken_spec.json")
+        broken_spec.write_text("{}", encoding="utf-8")  # 必須項目が欠落
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+                "--golden-spec",
+                str(broken_spec),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 6
+
+        release_path = Path(".pptx/release/template_release.json")
+        golden_path = Path(".pptx/release/golden_runs.json")
+        assert release_path.exists()
+        release = TemplateRelease.model_validate_json(
+            release_path.read_text(encoding="utf-8")
+        )
+        assert release.diagnostics.errors
+        assert release.golden_runs
+        assert release.golden_runs[0].status == "failed"
+        assert golden_path.exists()
