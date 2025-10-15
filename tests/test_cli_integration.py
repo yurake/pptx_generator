@@ -19,6 +19,8 @@ from pptx_generator.models import (JobSpec, TemplateRelease,
                                    TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
 
+SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
+
 
 def test_cli_gen_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
@@ -32,6 +34,8 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
             str(spec_path),
             "--output",
             str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
         ],
         catch_exceptions=False,
     )
@@ -60,7 +64,8 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
-    assert branding_info.get("source", {}).get("type") in {"default", "builtin"}
+    assert branding_info.get("source", {}).get("type") == "template"
+    assert branding_info.get("source", {}).get("template") == str(SAMPLE_TEMPLATE)
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
@@ -89,8 +94,7 @@ def test_cli_gen_supports_template(tmp_path) -> None:
     output_dir = tmp_path / "gen-work-template"
     template_path = tmp_path / "template.pptx"
 
-    template = Presentation()
-    template.save(template_path)
+    shutil.copyfile(SAMPLE_TEMPLATE, template_path)
 
     spec = JobSpec.parse_file(spec_path)
 
@@ -142,7 +146,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
     template_path = tmp_path / "template.pptx"
     branding_path = tmp_path / "custom-branding.json"
 
-    Presentation().save(template_path)
+    shutil.copyfile(SAMPLE_TEMPLATE, template_path)
 
     branding_payload = {
         "fonts": {
@@ -244,6 +248,8 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
             str(spec_path),
             "--output",
             str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
             "--export-pdf",
             "--pdf-output",
             "custom.pdf",
@@ -297,6 +303,8 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
             str(spec_path),
             "--output",
             str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
             "--export-pdf",
             "--pdf-mode",
             "only",
@@ -337,6 +345,8 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
             str(spec_path),
             "--output",
             str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
             "--export-pdf",
         ],
         catch_exceptions=False,
@@ -368,6 +378,8 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
             [
                 "gen",
                 "samples/json/sample_spec.json",
+                "--template",
+                "samples/templates/templates.pptx",
             ],
             catch_exceptions=False,
         )
@@ -383,7 +395,7 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
         audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
         branding_info = audit_payload.get("branding")
         assert branding_info is not None
-        assert branding_info.get("source", {}).get("type") in {"default", "builtin"}
+        assert branding_info.get("source", {}).get("type") == "template"
 
 
 def test_cli_tpl_extract_basic(tmp_path) -> None:
