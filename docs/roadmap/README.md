@@ -225,6 +225,15 @@ graph TD
 
 ## 完了テーマ
 
+<a id="rm-019"></a>
+### RM-019 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
+- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+
 <a id="rm-002"></a>
 ### RM-002 エージェント運用ガイド整備（優先度: P1）
 - ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
@@ -308,15 +317,6 @@ graph TD
 - 状況: 14 件中 14 件完了（2025-10-06 更新）
 - 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
 - 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
-
-<a id="rm-019"></a>
-### RM-019 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
-- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
 
 <a id="rm-020"></a>
 ### RM-020 PDF 自動生成対応
