@@ -35,7 +35,7 @@ roadmap_item: RM-011 レイアウトスタイル統一
 - [x] 関連Issueの更新
   - メモ: #161 へ layout-style-v1 反映報告と `uv run --extra dev pytest` 成功ログを共有するコメント案を準備済み（PR 提出時に投稿）
 - [x] PR 作成
-  - メモ: PR 本文ドラフト（概要・影響範囲・テスト結果）を作成済み。PR 作成後に todo-auto-complete の結果を追記する
+  - メモ: PR #188 https://github.com/yurake/pptx_generator/pull/188（2025-10-15 完了）
 
 ## メモ
 - RM-008/009/010 の依存状況を確認し、整合チェックリストを用意する。
