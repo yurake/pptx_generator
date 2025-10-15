@@ -28,8 +28,8 @@ roadmap_item: RM-012 レンダラーテキスト強化
   - [x] README.md / AGENTS.md（影響なしを確認）
 - [x] 関連Issueの更新
   - メモ: #171 へ進捗コメントを手動で追記し、CLI 投稿不可の旨を共有済み
-- [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete の実行結果を記録
+- [x] PR 作成
+  - メモ: PR #184 https://github.com/yurake/pptx_generator/pull/184 を作成
 
 ## メモ
 - RM-007 のアンカー仕様やテンプレート命名規約と矛盾がないか都度確認する。
