@@ -1,0 +1,37 @@
+{
+  "template_id": "acme_v1",
+  "baseline_id": "acme_v0",
+  "generated_at": "2025-10-12T10:45:01+09:00",
+  "hashes": {
+    "current": "sha256:ab12cd34ef56...ff",
+    "baseline": "sha256:9f32ee44bb55...cc"
+  },
+  "changes": {
+    "layouts_added": [
+      "overview__kpi_v2"
+    ],
+    "layouts_removed": [],
+    "layout_diffs": [
+      {
+        "name": "overview__kpi_v2",
+        "anchors_added": [
+          "PH__Note__02"
+        ],
+        "anchors_removed": [],
+        "placeholders_added": [
+          "PH__Note__02"
+        ],
+        "placeholders_removed": [],
+        "duplicate_anchor_names": [
+          "PH__Body__Main"
+        ]
+      }
+    ]
+  },
+  "diagnostics": {
+    "warnings": [
+      "layout overview__kpi_v2: duplicate anchor PH__Body__Main"
+    ],
+    "errors": []
+  }
+}

@@ -17,7 +17,8 @@
    - PH 命名規約（`PH__<Role>__<Index>`）とレイアウト命名規約を遵守。
 2. **自動診断 (仮)**  
    - Template Release CLI がテンプレを解析し、`template_release.json` と差分レポートを生成。  
-   - 重複 PH / 不正レイアウトがあれば `release_report.json` に出力し FAIL。
+   - ゴールデンサンプル指定時は `golden_runs.json` と `golden_runs/<spec_stem>/` 以下に検証ログを出力。  
+   - 重複 PH / 不正レイアウト、ゴールデンサンプル失敗があれば診断エラーとして FAIL。
 3. **互換性チェック**  
    - Golden Sample Runner が既知 spec を用いてレンダリング → Analyzer → LibreOffice まで通し、互換性指標を算出。  
    - エラー時は差分レポートにハッシュとログパスを記録。
@@ -25,8 +26,8 @@
    - Release CLI が成果物（PPTX, release.json, diagnostics）を `templates/releases/<brand>/<version>/` にまとめる。
 
 ## インターフェース
-- CLI: `uv run tools/template_release create --template templates/.../template.pptx --brand <brand> --version <version>`
-- 成果物: `template_release.json`, `release_report.json`, `golden_runs/*.log`
+- CLI: `uv run pptx tpl-release --template templates/.../template.pptx --brand <brand> --version <version> [--baseline-release <path>] [--golden-spec <spec.json>...]`
+- 成果物: `template_release.json`, `release_report.json`, `golden_runs.json`, `golden_runs/<spec_stem>/`
 - CI Hook (予定): PR 時に CLI を実行し、失敗時はレビューをブロック。
 
 ## 監視・ログ
@@ -44,4 +45,4 @@
 
 ## 関連スキーマ
 - [docs/design/schema/stage-01-template-preparation.md](../schema/stage-01-template-preparation.md)
-- サンプル: `docs/design/schema/samples/template_release.jsonc`（準備予定）
+- サンプル: `docs/design/schema/samples/template_release.jsonc`, `docs/design/schema/samples/template_release_report.jsonc`
