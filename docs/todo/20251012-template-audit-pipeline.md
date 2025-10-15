@@ -22,8 +22,8 @@ roadmap_item: RM-021 テンプレ資産監査パイプライン
   - メモ: 2025-10-12 `uv run pptx tpl-release` を成功／失敗ケースで実行し、出力物と exit code を確認済み
 - [ ] 関連Issueの更新
   - メモ: 関連 Issue を確認し、進捗コメントと差分レポート共有方法を記録する
-- [ ] PR 作成
-  - メモ: PR で release メタサンプルと差分レポートを添付し、todo-auto-complete の実行結果を記録する
+- [x] PR 作成
+  - メモ: PR #187 https://github.com/yurake/pptx_generator/pull/187（2025-10-15 完了）
 
 ## メモ
 - LibreOffice / Open XML SDK を用いた互換性検証が前提となるため、ジョブ実行環境の依存関係を整理する
