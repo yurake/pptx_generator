@@ -1,7 +1,7 @@
 ---
 目的: README を最新仕様に合わせてリファクタリングし、抜け漏れのない案内に整備する
 関連ブランチ: docs/readme-refactor
-関連Issue: 未作成
+関連Issue: #181
 roadmap_item: RM-019 CLI ツールチェーン整備
 ---
 
