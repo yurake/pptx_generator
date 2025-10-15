@@ -179,24 +179,19 @@ class SimpleRendererStep:
         self, slide, anchor_name: str, bullets: list[SlideBullet]
     ) -> None:
         fallback_box = LayoutBox(1.0, 1.5, 8.0, 4.5)
-        resolution = self._resolve_anchor(slide, anchor_name, fallback_box)
-        anchor_shape = resolution.shape
+        text_frame = self._obtain_text_frame(
+            slide=slide,
+            anchor_name=anchor_name,
+            fallback_box=fallback_box,
+            strict_anchor=True,
+        )
 
-        if anchor_shape is None:
+        if text_frame is None:
             raise ValueError(
                 f"Shape with name '{anchor_name}' not found in slide. "
                 "テンプレートの図形名を確認してください。"
             )
-
-        if resolution.is_placeholder:
-            self._prepare_placeholder(anchor_shape)
-
-        left, top, width, height = resolution.as_box()
-        target_shape = slide.shapes.add_textbox(left, top, width, height)
-        self._write_bullets_to_text_frame(target_shape.text_frame, bullets)
-
-        if anchor_shape is not None:
-            self._remove_shape(anchor_shape)
+        self._write_bullets_to_text_frame(text_frame, bullets)
 
     def _apply_subtitle(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.subtitle:
@@ -230,8 +225,16 @@ class SimpleRendererStep:
             return
         notes_slide = slide.notes_slide
         text_frame = notes_slide.notes_text_frame
+
         text_frame.clear()
-        text_frame.text = slide_spec.notes
+        lines = slide_spec.notes.splitlines() or [slide_spec.notes]
+        for index, line in enumerate(lines):
+            paragraph = (
+                text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
+            )
+            paragraph.text = line
+            self._apply_brand_font(paragraph, self._branding.body_font)
+            paragraph.level = 0
 
     def _apply_textboxes(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.textboxes:
@@ -239,18 +242,19 @@ class SimpleRendererStep:
 
         for textbox_spec in slide_spec.textboxes:
             fallback_box = self._resolve_textbox_fallback(textbox_spec)
-            resolution = self._resolve_anchor(slide, textbox_spec.anchor, fallback_box)
-            anchor_shape = resolution.shape
-
-            if resolution.is_placeholder:
-                self._prepare_placeholder(anchor_shape)
-
-            left, top, width, height = resolution.as_box()
-            textbox = slide.shapes.add_textbox(left, top, width, height)
-            self._write_textbox_content(textbox.text_frame, textbox_spec)
-
-            if anchor_shape is not None:
-                self._remove_shape(anchor_shape)
+            text_frame = self._obtain_text_frame(
+                slide=slide,
+                anchor_name=textbox_spec.anchor,
+                fallback_box=fallback_box,
+                strict_anchor=False,
+            )
+            if text_frame is None:
+                msg = (
+                    f"Shape with name '{textbox_spec.anchor}' not found in slide."
+                    " テンプレートの図形名を確認してください。"
+                )
+                raise ValueError(msg)
+            self._write_textbox_content(text_frame, textbox_spec)
 
     def _write_bullets_to_text_frame(
         self, text_frame, bullets: list[SlideBullet]
@@ -512,6 +516,37 @@ class SimpleRendererStep:
                 )
         left, top, width, height = fallback_box.to_emu()
         return AnchorResolution(None, left, top, width, height)
+
+    def _obtain_text_frame(
+        self,
+        *,
+        slide,
+        anchor_name: str | None,
+        fallback_box: LayoutBox,
+        strict_anchor: bool,
+    ):
+        resolution = self._resolve_anchor(slide, anchor_name, fallback_box)
+        shape = resolution.shape
+
+        if strict_anchor and anchor_name and shape is None:
+            return None
+
+        if shape is not None and getattr(shape, "has_text_frame", False):
+            if resolution.is_placeholder:
+                self._prepare_placeholder(shape)
+            else:
+                shape.text_frame.clear()
+
+        left, top, width, height = resolution.as_box()
+        text_shape = slide.shapes.add_textbox(left, top, width, height)
+        if shape is not None:
+            self._remove_shape(shape)
+        if anchor_name:
+            try:
+                text_shape.name = anchor_name
+            except ValueError:
+                logger.debug("アンカー名 '%s' の再設定に失敗", anchor_name, exc_info=True)
+        return text_shape.text_frame
 
     def _prepare_placeholder(self, placeholder) -> None:
         if placeholder is None:
