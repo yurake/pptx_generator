@@ -9,7 +9,7 @@ from typing import Any
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
 
-from .settings import BrandingConfig, BrandingFont
+from .settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
 
 NS = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
@@ -39,69 +39,96 @@ class BrandingExtractionResult:
     def to_branding_config(self, fallback: BrandingConfig | None = None) -> BrandingConfig:
         """抽出結果を ``BrandingConfig`` に変換する。"""
 
-        defaults = fallback or BrandingConfig.default()
-
-        heading_raw = self.fonts.get("heading", {})
-        body_raw = self.fonts.get("body", {})
-
-        heading_font = BrandingFont(
-            name=_pick_str(heading_raw.get("name")) or defaults.heading_font.name,
-            size_pt=_pick_float(heading_raw.get("size_pt"))
-            or defaults.heading_font.size_pt,
-            color_hex=_format_hex(heading_raw.get("color_hex"))
-            if heading_raw.get("color_hex")
-            else defaults.heading_font.color_hex,
-        )
-
-        body_font = BrandingFont(
-            name=_pick_str(body_raw.get("name")) or defaults.body_font.name,
-            size_pt=_pick_float(body_raw.get("size_pt"))
-            or defaults.body_font.size_pt,
-            color_hex=_format_hex(body_raw.get("color_hex"))
-            if body_raw.get("color_hex")
-            else defaults.body_font.color_hex,
-        )
-
-        return BrandingConfig(
-            heading_font=heading_font,
-            body_font=body_font,
-            primary_color=_format_hex(self.colors.get("primary"))
-            if self.colors.get("primary")
-            else defaults.primary_color,
-            secondary_color=_format_hex(self.colors.get("secondary"))
-            if self.colors.get("secondary")
-            else defaults.secondary_color,
-            accent_color=_format_hex(self.colors.get("accent"))
-            if self.colors.get("accent")
-            else defaults.accent_color,
-            background_color=_format_hex(self.colors.get("background"))
-            if self.colors.get("background")
-            else defaults.background_color,
-        )
+        payload = self.to_branding_payload(fallback)
+        return BrandingConfig.from_dict(payload)
 
     def to_branding_payload(self, fallback: BrandingConfig | None = None) -> dict[str, Any]:
         """branding.json 互換のペイロードを返す。"""
 
-        config = self.to_branding_config(fallback)
+        base = fallback or BrandingConfig.default()
+
+        heading_raw = self.fonts.get("heading", {})
+        body_raw = self.fonts.get("body", {})
+
         payload = {
-            "fonts": {
-                "heading": {
-                    "name": config.heading_font.name,
-                    "size_pt": config.heading_font.size_pt,
-                    "color_hex": config.heading_font.color_hex,
+            "version": base.version,
+            "theme": {
+                "fonts": {
+                    "heading": _font_payload(
+                        BrandingFont(
+                            name=_pick_str(heading_raw.get("name")) or base.heading_font.name,
+                            size_pt=_pick_float(heading_raw.get("size_pt"))
+                            or base.heading_font.size_pt,
+                            color_hex=_format_hex(heading_raw.get("color_hex"))
+                            if heading_raw.get("color_hex")
+                            else base.heading_font.color_hex,
+                            bold=base.heading_font.bold,
+                            italic=base.heading_font.italic,
+                        )
+                    ),
+                    "body": _font_payload(
+                        BrandingFont(
+                            name=_pick_str(body_raw.get("name")) or base.body_font.name,
+                            size_pt=_pick_float(body_raw.get("size_pt"))
+                            or base.body_font.size_pt,
+                            color_hex=_format_hex(body_raw.get("color_hex"))
+                            if body_raw.get("color_hex")
+                            else base.body_font.color_hex,
+                            bold=base.body_font.bold,
+                            italic=base.body_font.italic,
+                        )
+                    ),
                 },
-                "body": {
-                    "name": config.body_font.name,
-                    "size_pt": config.body_font.size_pt,
-                    "color_hex": config.body_font.color_hex,
+                "colors": {
+                    "primary": _format_hex(self.colors.get("primary"))
+                    if self.colors.get("primary")
+                    else base.primary_color,
+                    "secondary": _format_hex(self.colors.get("secondary"))
+                    if self.colors.get("secondary")
+                    else base.secondary_color,
+                    "accent": _format_hex(self.colors.get("accent"))
+                    if self.colors.get("accent")
+                    else base.accent_color,
+                    "background": _format_hex(self.colors.get("background"))
+                    if self.colors.get("background")
+                    else base.background_color,
                 },
             },
-            "colors": {
-                "primary": config.primary_color,
-                "secondary": config.secondary_color,
-                "accent": config.accent_color,
-                "background": config.background_color,
+            "components": {
+                "table": {
+                    "fallback_box": _box_payload(base.components.table.fallback_box),
+                    "header": {
+                        "font": _font_payload(base.components.table.header.font),
+                        "fill_color": base.components.table.header.fill_color,
+                    },
+                    "body": {
+                        "font": _font_payload(base.components.table.body.font),
+                        "fill_color": base.components.table.body.fill_color,
+                        "zebra_fill_color": base.components.table.body.zebra_fill_color,
+                    },
+                },
+                "chart": {
+                    "fallback_box": _box_payload(base.components.chart.fallback_box),
+                    "palette": list(base.components.chart.palette),
+                    "data_labels": {
+                        "enabled": base.components.chart.data_labels.enabled,
+                        "format": base.components.chart.data_labels.format,
+                    },
+                    "axis": {
+                        "font": _font_payload(base.components.chart.axis.font),
+                    },
+                },
+                "image": {
+                    "fallback_box": _box_payload(base.components.image.fallback_box),
+                    "sizing": base.components.image.sizing,
+                },
+                "textbox": {
+                    "fallback_box": _box_payload(base.components.textbox.fallback_box),
+                    "font": _font_payload(base.components.textbox.font),
+                    "paragraph": _paragraph_payload(base.components.textbox.paragraph),
+                },
             },
+            "layouts": {},
         }
 
         if self.footer:
@@ -172,6 +199,35 @@ def extract_branding_config(template_path: Path) -> BrandingExtractionResult:
         footer=footer,
         source=source,
     )
+
+
+def _font_payload(font: BrandingFont) -> dict[str, Any]:
+    return {
+        "name": font.name,
+        "size_pt": font.size_pt,
+        "color_hex": font.color_hex,
+        "bold": font.bold,
+        "italic": font.italic,
+    }
+
+
+def _box_payload(box: BoxSpec) -> dict[str, float]:
+    return {
+        "left_in": box.left_in,
+        "top_in": box.top_in,
+        "width_in": box.width_in,
+        "height_in": box.height_in,
+    }
+
+
+def _paragraph_payload(style: ParagraphStyle) -> dict[str, Any]:
+    return {
+        "align": style.align,
+        "line_spacing_pt": style.line_spacing_pt,
+        "space_before_pt": style.space_before_pt,
+        "space_after_pt": style.space_after_pt,
+        "level": style.level,
+    }
 
 
 def _load_xml(archive: ZipFile, internal_path: str) -> ET.Element:
