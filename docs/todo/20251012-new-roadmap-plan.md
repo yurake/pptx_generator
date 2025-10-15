@@ -17,8 +17,8 @@ roadmap_item: RM-016 新ロードマップ具体化
   - メモ: ドキュメントレビューやリンク整合性チェックの手段を検討
 - [ ] 関連Issueの更新
   - メモ: 該当 Issue があれば番号を記録し、進捗コメントを投稿
-- [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete 結果を記録
+- [x] PR 作成
+  - メモ: PR #183 https://github.com/yurake/pptx_generator/pull/183（2025-10-15 完了）
 
 ## メモ
 - 工程別設計ドキュメント（stage-01〜06）と RM-021〜RM-026 を追加済み。各 RM 用 ToDo を 2025-10-12 付で新規登録。
