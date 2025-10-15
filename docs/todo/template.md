@@ -27,9 +27,9 @@ roadmap_item: RM-000 <ロードマップ上のテーマ名>
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [ ] 関連Issueの更新
-  - メモ: `gh issue list --limit 50` 等で取得した Issue 番号を記載し、最新状況をコメントする
+  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。
 - [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete の結果を記入する
+  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。

@@ -140,6 +140,7 @@ slides:
           space_before_pt: float
           space_after_pt: float
           align: string
+- レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続工程が同名アンカーで参照できるようにする。
 assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
