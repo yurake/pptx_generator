@@ -27,7 +27,7 @@ roadmap_item: RM-012 レンダラーテキスト強化
   - [x] docs/runbooks 配下（変更不要を確認）
   - [x] README.md / AGENTS.md（影響なしを確認）
 - [x] 関連Issueの更新
-  - メモ: #171 へ進捗コメントを手動で追記し、CLI 投稿不可の旨を共有済み
+  - メモ: フロントマターを #171 に更新済み。
 - [x] PR 作成
   - メモ: PR #184 https://github.com/yurake/pptx_generator/pull/184（2025-10-15 完了）
 
