@@ -128,6 +128,27 @@
 | `--format <json\|yaml>` | 出力形式を選択 | `json` |
 | `--verbose` | 詳細ログを表示 | 無効 |
 
+#### `pptx tpl-release`
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--template <path>` | リリース対象のテンプレート（必須） | - |
+| `--brand <name>` | ブランド名（必須） | - |
+| `--version <value>` | テンプレートのバージョン（必須） | - |
+| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` を自動生成 | 自動生成 |
+| `--output <dir>` | リリース成果物の出力先 | `.pptx/release` |
+| `--generated-by <name>` | リリース実施者 | 空 |
+| `--reviewed-by <name>` | レビュー担当者 | 空 |
+| `--baseline-release <path>` | 過去の `template_release.json` と比較する | 比較なし |
+| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
+| `--verbose` | 詳細ログを表示 | 無効 |
+
+生成物:
+- `template_release.json`: テンプレ受け渡しメタ情報と診断結果
+- `release_report.json`: 過去バージョンとの差分レポート（`--baseline-release` 時）
+- `golden_runs.json`／`golden_runs/<spec名>/`: ゴールデンサンプル検証結果 (`--golden-spec` 指定時)
+- ゴールデンサンプルで失敗がある場合は exit code 6 で終了します
+
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
 - CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
