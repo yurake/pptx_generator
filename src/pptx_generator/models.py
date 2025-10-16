@@ -294,6 +294,102 @@ class TemplateReleaseGoldenRun(BaseModel):
     errors: list[str] = Field(default_factory=list, description="検証時に検出されたエラー")
 
 
+class TemplateReleaseAnalyzerIssueSummary(BaseModel):
+    """Analyzer が検出した指摘の件数サマリ。"""
+
+    total: int = Field(0, description="指摘件数合計")
+    by_type: dict[str, int] = Field(
+        default_factory=dict, description="issue type ごとの件数"
+    )
+    by_severity: dict[str, int] = Field(
+        default_factory=dict, description="severity ごとの件数"
+    )
+
+
+class TemplateReleaseAnalyzerFixSummary(BaseModel):
+    """Analyzer が提示した修正案の件数サマリ。"""
+
+    total: int = Field(0, description="修正案件数合計")
+    by_type: dict[str, int] = Field(
+        default_factory=dict, description="fix type ごとの件数"
+    )
+
+
+class TemplateReleaseAnalyzerRunMetrics(BaseModel):
+    """ゴールデンサンプル単位の Analyzer メトリクス。"""
+
+    spec_path: str = Field(..., description="対象となった spec ファイルパス")
+    status: Literal["included", "skipped"] = Field(
+        ..., description="集計に含めたかどうか"
+    )
+    issues: TemplateReleaseAnalyzerIssueSummary = Field(
+        ..., description="指摘サマリ"
+    )
+    fixes: TemplateReleaseAnalyzerFixSummary = Field(
+        ..., description="修正案サマリ"
+    )
+
+
+class TemplateReleaseAnalyzerSummary(BaseModel):
+    """Analyzer メトリクスの集計結果。"""
+
+    run_count: int = Field(0, description="集計対象となったゴールデンサンプル数")
+    issues: TemplateReleaseAnalyzerIssueSummary = Field(
+        default_factory=TemplateReleaseAnalyzerIssueSummary,
+        description="指摘サマリ",
+    )
+    fixes: TemplateReleaseAnalyzerFixSummary = Field(
+        default_factory=TemplateReleaseAnalyzerFixSummary,
+        description="修正案サマリ",
+    )
+
+
+class TemplateReleaseAnalyzerMetrics(BaseModel):
+    """テンプレートリリース時に集計した Analyzer メトリクス。"""
+
+    aggregated_at: str = Field(..., description="集計日時（ISO8601）")
+    runs: list[TemplateReleaseAnalyzerRunMetrics] = Field(
+        default_factory=list, description="各ゴールデンサンプルのメトリクス"
+    )
+    summary: TemplateReleaseAnalyzerSummary = Field(
+        default_factory=TemplateReleaseAnalyzerSummary, description="集計サマリ"
+    )
+
+
+class TemplateReleaseAnalyzerSummaryDelta(BaseModel):
+    """Analyzer メトリクスの差分サマリ。"""
+
+    issues: dict[str, int] = Field(
+        default_factory=dict, description="issue type ごとの件数差分"
+    )
+    severity: dict[str, int] = Field(
+        default_factory=dict, description="severity ごとの件数差分"
+    )
+    fixes: dict[str, int] = Field(
+        default_factory=dict, description="fix type ごとの件数差分"
+    )
+    total_issue_change: int = Field(
+        0, description="指摘件数合計の差分（current - baseline）"
+    )
+    total_fix_change: int = Field(
+        0, description="修正案件数合計の差分（current - baseline）"
+    )
+
+
+class TemplateReleaseAnalyzerReport(BaseModel):
+    """リリースレポートに含める Analyzer メトリクスの比較。"""
+
+    current: TemplateReleaseAnalyzerSummary = Field(
+        ..., description="現在バージョンの Analyzer サマリ"
+    )
+    baseline: TemplateReleaseAnalyzerSummary | None = Field(
+        None, description="比較元バージョンの Analyzer サマリ"
+    )
+    delta: TemplateReleaseAnalyzerSummaryDelta | None = Field(
+        None, description="差分サマリ"
+    )
+
+
 class TemplateRelease(BaseModel):
     """テンプレートリリースメタ情報。"""
 
@@ -310,6 +406,9 @@ class TemplateRelease(BaseModel):
     )
     layouts: TemplateReleaseLayouts = Field(..., description="レイアウトの統計情報")
     diagnostics: TemplateReleaseDiagnostics = Field(..., description="診断結果")
+    analyzer_metrics: TemplateReleaseAnalyzerMetrics | None = Field(
+        default=None, description="Analyzer 出力に基づく監査メトリクス"
+    )
     golden_runs: list[TemplateReleaseGoldenRun] = Field(
         default_factory=list, description="ゴールデンサンプル検証の結果一覧"
     )
@@ -349,3 +448,6 @@ class TemplateReleaseReport(BaseModel):
     )
     changes: TemplateReleaseChanges = Field(..., description="差分サマリ")
     diagnostics: TemplateReleaseDiagnostics = Field(..., description="現在テンプレートの診断結果")
+    analyzer: TemplateReleaseAnalyzerReport | None = Field(
+        default=None, description="Analyzer メトリクスの比較結果"
+    )

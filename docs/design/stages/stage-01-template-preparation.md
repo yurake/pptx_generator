@@ -19,6 +19,7 @@
    - Template Release CLI がテンプレを解析し、`template_release.json` と差分レポートを生成。  
    - ゴールデンサンプル指定時は `golden_runs.json` と `golden_runs/<spec_stem>/` 以下に検証ログを出力。  
    - 重複 PH / 不正レイアウト、ゴールデンサンプル失敗があれば診断エラーとして FAIL。
+   - Analyzer 出力から issue/fix の件数をテンプレ受け渡しメタへ収集し、`analyzer_metrics` として集計する。差分レポートには baseline との差分が `analyzer.delta` として記録される。
 3. **互換性チェック**  
    - Golden Sample Runner が既知 spec を用いてレンダリング → Analyzer → LibreOffice まで通し、互換性指標を算出。  
    - エラー時は差分レポートにハッシュとログパスを記録。

@@ -22,6 +22,20 @@
 5. 過去バージョンとの比較を行い、差分レポートを生成する。
 6. 結果をアーカイブし、工程 3 以降に引き渡す。
 
+## 推奨コマンド
+```bash
+uv run pptx tpl-extract \
+  --template templates/libraries/acme/v1/template.pptx \
+  --output .pptx/extract/acme_v1
+
+uv run pptx layout-validate \
+  --template templates/libraries/acme/v1/template.pptx \
+  --output .pptx/validation/acme_v1 \
+  --baseline releases/acme/v0/layouts.jsonl
+```
+- `tpl-extract` でレイアウト JSON (`template_spec.json`) と `branding.json` を取得し、`.pptx/extract/<template_id>/` に格納する。
+- `layout-validate` で `layouts.jsonl` / `diagnostics.json` / `diff_report.json` を生成し、差分や抽出失敗を検知する。致命的エラーがある場合は exit code 6 を返す。
+
 ## 品質ゲート
 - `layouts.jsonl` がスキーマ検証に合格すること。
 - プレースホルダ名の重複・欠落が検出された場合はエラー扱い。

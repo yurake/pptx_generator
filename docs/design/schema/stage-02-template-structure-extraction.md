@@ -78,6 +78,7 @@
 - `template_id`, `layout_id`, `placeholders[].name` は必須。
 - `placeholders[].type` は既定の enum（`title`, `body`, `note`, `table`, `image`, `chart`, `subtitle`, `label`）を推奨。
 - `diagnostics.errors` が空でない場合はテンプレ受け渡しを差し戻す。
+- `src/pptx_generator/layout_validation/schema.py` に JSON Schema を実装し、`layout-validate` コマンド実行時に `jsonschema` で検証する。
 
 ## サンプル
 - `samples/layouts.jsonl`（準備予定）
@@ -87,3 +88,4 @@
 - `layouts.jsonl` スキーマを JSON Schema として定義し、CI で検証する。
 - 差分レポート出力の標準化とサンプル追加。
 - `usage_tags` 推定ロジックの指標化とテスト整備。
+- JSON Lines サンプルを `docs/design/schema/samples/` に追加し、レポート生成例を整備する。
