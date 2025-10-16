@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from itertools import count
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
-from ..models import Slide, SlideBullet, SlideImage
+from pptx import Presentation
+from pptx.dml.color import ColorFormat
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+
+from ..models import Slide, SlideBullet, SlideImage, SlideTextbox
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
+
+EMU_PER_INCH = 914400
 
 
 @dataclass(slots=True)
@@ -29,28 +36,194 @@ class AnalyzerOptions:
     default_font_color: str = "#333333"
     preferred_text_color: str | None = None
     background_color: str = "#FFFFFF"
+    grid_size_in: float = 0.125
+    grid_tolerance_in: float = 0.02
+
+
+@dataclass(slots=True)
+class ParagraphSnapshot:
+    shape_id: int
+    shape_name: str | None
+    shape_type: int
+    paragraph_index: int
+    text: str
+    level: int
+    font_size_pt: float | None
+    color_hex: str | None
+
+
+@dataclass(slots=True)
+class ShapeSnapshot:
+    shape_id: int
+    name: str | None
+    shape_type: int
+    left_in: float
+    top_in: float
+    width_in: float
+    height_in: float
+    paragraphs: list[ParagraphSnapshot] = field(default_factory=list)
+    is_placeholder: bool = False
+    placeholder_type: int | None = None
+
+
+@dataclass(slots=True)
+class SlideSnapshot:
+    index: int
+    shapes: list[ShapeSnapshot]
+    body_placeholder_id: int | None = None
+
+    @classmethod
+    def from_slide(cls, slide, index: int) -> "SlideSnapshot":
+        shapes: list[ShapeSnapshot] = []
+        body_placeholder_id: int | None = None
+
+        for shape in slide.shapes:
+            shape_id = getattr(shape, "shape_id", id(shape))
+            left_in = _emu_to_inches(int(getattr(shape, "left", 0)))
+            top_in = _emu_to_inches(int(getattr(shape, "top", 0)))
+            width_in = _emu_to_inches(int(getattr(shape, "width", 0)))
+            height_in = _emu_to_inches(int(getattr(shape, "height", 0)))
+            shape_name = getattr(shape, "name", None)
+            shape_type = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE))
+            is_placeholder = bool(getattr(shape, "is_placeholder", False))
+            placeholder_type = None
+            if is_placeholder:
+                try:
+                    placeholder_type = int(shape.placeholder_format.type)
+                except Exception:  # noqa: BLE001
+                    placeholder_type = None
+
+            paragraphs: list[ParagraphSnapshot] = []
+            if getattr(shape, "has_text_frame", False):
+                text_frame = shape.text_frame
+                for idx, paragraph in enumerate(text_frame.paragraphs):
+                    text = paragraph.text or ""
+                    font_size_pt, color_hex = _extract_font_info(paragraph)
+                    level = paragraph.level if paragraph.level is not None else 0
+                    paragraphs.append(
+                        ParagraphSnapshot(
+                            shape_id=shape_id,
+                            shape_name=shape_name,
+                            shape_type=shape_type,
+                            paragraph_index=idx,
+                            text=text,
+                            level=level,
+                            font_size_pt=font_size_pt,
+                            color_hex=color_hex,
+                        )
+                    )
+
+            snapshot = ShapeSnapshot(
+                shape_id=shape_id,
+                name=shape_name,
+                shape_type=shape_type,
+                left_in=left_in,
+                top_in=top_in,
+                width_in=width_in,
+                height_in=height_in,
+                paragraphs=paragraphs,
+                is_placeholder=is_placeholder,
+                placeholder_type=placeholder_type,
+            )
+            shapes.append(snapshot)
+
+            if is_placeholder and placeholder_type in {
+                int(PP_PLACEHOLDER.BODY),
+                int(PP_PLACEHOLDER.VERTICAL_BODY),
+                int(PP_PLACEHOLDER.OBJECT),
+            }:
+                body_placeholder_id = shape_id
+
+        return cls(index=index, shapes=shapes, body_placeholder_id=body_placeholder_id)
+
+    def shape_by_id(self, shape_id: int) -> ShapeSnapshot | None:
+        for shape in self.shapes:
+            if shape.shape_id == shape_id:
+                return shape
+        return None
+
+    def find_shape_by_name(
+        self, name: str, *, shape_type: int | None = None
+    ) -> ShapeSnapshot | None:
+        if not name:
+            return None
+        for shape in self.shapes:
+            if shape.name != name:
+                continue
+            if shape_type is not None and shape.shape_type != shape_type:
+                continue
+            return shape
+        return None
+
+    def body_paragraphs(self) -> list[ParagraphSnapshot]:
+        if self.body_placeholder_id is None:
+            return []
+        shape = self.shape_by_id(self.body_placeholder_id)
+        return list(shape.paragraphs) if shape is not None else []
+
+
+class BulletParagraphResolver:
+    """スライド内の段落を箇条書きグループに対応づける。"""
+
+    def __init__(self, snapshot: SlideSnapshot):
+        self._anchor_iters: dict[str, Iterator[ParagraphSnapshot]] = {}
+        for shape in snapshot.shapes:
+            if not shape.name or not shape.paragraphs:
+                continue
+            self._anchor_iters.setdefault(shape.name, iter(shape.paragraphs))
+        self._fallback_iter: Iterator[ParagraphSnapshot] = iter(snapshot.body_paragraphs())
+
+    def resolve(self, anchor: str | None) -> ParagraphSnapshot | None:
+        if anchor:
+            iterator = self._anchor_iters.get(anchor)
+            if iterator is None:
+                return None
+            return next(iterator, None)
+        return next(self._fallback_iter, None)
 
 
 class SimpleAnalyzerStep:
-    """簡易的な品質診断を実行し、analysis.json を生成する。"""
+    """PPTX の実データを解析して analysis.json を生成する。"""
 
     name = "analyzer"
 
     def __init__(self, options: AnalyzerOptions | None = None) -> None:
         self.options = options or AnalyzerOptions()
-        self._sequence = 0
+        self._sequence = count(1)
 
     def run(self, context: PipelineContext) -> None:
+        try:
+            pptx_reference = context.require_artifact("pptx_path")
+        except KeyError as exc:  # pragma: no cover - 異常系
+            msg = "解析対象の PPTX が存在しません。renderer の実行順序を確認してください。"
+            raise RuntimeError(msg) from exc
+
+        pptx_path = Path(str(pptx_reference))
+        if not pptx_path.exists():  # pragma: no cover - 異常系
+            raise FileNotFoundError(f"PPTX ファイルが存在しません: {pptx_path}")
+
+        presentation = Presentation(pptx_path)
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
 
-        for slide in context.spec.slides:
-            slide_issues, slide_fixes = self._analyze_slide(slide)
+        spec_slides = context.spec.slides
+        if len(presentation.slides) < len(spec_slides):
+            logger.warning(
+                "PPTX のスライド数が不足しています: spec=%s, pptx=%s",
+                len(spec_slides),
+                len(presentation.slides),
+            )
+
+        for index, slide_spec in enumerate(spec_slides):
+            if index >= len(presentation.slides):
+                break
+            snapshot = SlideSnapshot.from_slide(presentation.slides[index], index)
+            slide_issues, slide_fixes = self._analyze_slide(slide_spec, snapshot)
             issues.extend(slide_issues)
             fixes.extend(slide_fixes)
 
         analysis = {
-            "slides": len(context.spec.slides),
+            "slides": len(spec_slides),
             "meta": context.spec.meta.model_dump(),
             "issues": issues,
             "fixes": fixes,
@@ -59,62 +232,170 @@ class SimpleAnalyzerStep:
         context.add_artifact("analysis_path", output_path)
         logger.info("analysis.json を出力しました: %s", output_path)
 
-    def _analyze_slide(self, slide: Slide) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    def _analyze_slide(
+        self, slide_spec: Slide, snapshot: SlideSnapshot
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
 
-        for bullet in slide.iter_bullets():
-            bullet_issue = self._check_bullet_depth(slide, bullet)
-            if bullet_issue:
-                issue, fix = bullet_issue
+        resolver = BulletParagraphResolver(snapshot)
+        applied_level: int | None = None
+        previous_level: int | None = None
+
+        for group in slide_spec.bullets:
+            for bullet in group.items:
+                paragraph = resolver.resolve(group.anchor)
+                actual_level = paragraph.level if paragraph else bullet.level
+                target = {
+                    "slide_id": slide_spec.id,
+                    "element_id": bullet.id,
+                    "element_type": "bullet",
+                }
+
+                depth = self._check_bullet_depth(slide_spec, bullet, actual_level, target)
+                if depth:
+                    issue, fix = depth
+                    issues.append(issue)
+                    if fix:
+                        fixes.append(fix)
+
+                font = self._check_font_size(slide_spec, bullet, paragraph, target)
+                if font:
+                    issue, fix = font
+                    issues.append(issue)
+                    if fix:
+                        fixes.append(fix)
+
+                contrast = self._check_contrast(slide_spec, bullet, paragraph, target)
+                if contrast:
+                    issue, fix = contrast
+                    issues.append(issue)
+                    if fix:
+                        fixes.append(fix)
+
+                allowed_level = (
+                    0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
+                )
+                if actual_level > allowed_level:
+                    issue_id = self._next_issue_id("layout_consistency", slide_spec.id, bullet.id)
+                    fix = {
+                        "id": f"fix-{issue_id}",
+                        "issue_id": issue_id,
+                        "type": "bullet_reindent",
+                        "target": target,
+                        "payload": {"level": allowed_level},
+                    }
+                    issue = self._make_issue(
+                        issue_id=issue_id,
+                        issue_type="layout_consistency",
+                        severity="warning",
+                        message=(
+                            f"スライド '{slide_spec.id}' の箇条書き '{bullet.id}' のレベル {actual_level} が"
+                            f" 許容ステップ {allowed_level} を超えています"
+                        ),
+                        target=target,
+                        metrics={
+                            "level": actual_level,
+                            "allowed_level": allowed_level,
+                            "previous_level": previous_level,
+                        },
+                        fix=fix,
+                    )
+                    issues.append(issue)
+                    fixes.append(fix)
+                    applied_level = allowed_level
+                else:
+                    applied_level = actual_level
+                previous_level = actual_level
+
+                if paragraph is None:
+                    logger.debug(
+                        "箇条書き '%s' に対応する PPTX 段落が見つかりませんでした (slide=%s, anchor=%s)",
+                        bullet.id,
+                        slide_spec.id,
+                        group.anchor,
+                    )
+
+        for image_spec in slide_spec.images:
+            shape = self._locate_image_shape(snapshot, image_spec)
+            if shape is None:
+                logger.debug("画像 '%s' の図形が見つかりません", image_spec.id)
+                continue
+            result = self._check_margins(slide_spec, image_spec, shape)
+            if result:
+                issue, fix = result
+                issues.append(issue)
+                if fix:
+                    fixes.append(fix)
+            grid = self._check_grid_alignment(slide_spec, image_spec.id, "image", shape)
+            if grid:
+                issue, fix = grid
                 issues.append(issue)
                 if fix:
                     fixes.append(fix)
 
-            font_issue = self._check_font_size(slide, bullet)
-            if font_issue:
-                issue, fix = font_issue
+        for textbox in slide_spec.textboxes:
+            shape = self._locate_textbox_shape(snapshot, textbox)
+            if shape is None:
+                logger.debug("テキストボックス '%s' の図形が見つかりません", textbox.id)
+                continue
+            grid = self._check_grid_alignment(slide_spec, textbox.id, "textbox", shape)
+            if grid:
+                issue, fix = grid
                 issues.append(issue)
                 if fix:
                     fixes.append(fix)
-
-            contrast_issue = self._check_contrast(slide, bullet)
-            if contrast_issue:
-                issue, fix = contrast_issue
-                issues.append(issue)
-                if fix:
-                    fixes.append(fix)
-
-        for image in slide.images:
-            margin_issue = self._check_margins(slide, image)
-            if margin_issue:
-                issue, fix = margin_issue
-                issues.append(issue)
-                if fix:
-                    fixes.append(fix)
-
-        layout_issues, layout_fixes = self._check_layout_consistency(slide)
-        issues.extend(layout_issues)
-        fixes.extend(layout_fixes)
 
         return issues, fixes
 
+    def _locate_image_shape(
+        self, snapshot: SlideSnapshot, image_spec: SlideImage
+    ) -> ShapeSnapshot | None:
+        if image_spec.anchor:
+            shape = snapshot.find_shape_by_name(
+                image_spec.anchor, shape_type=int(MSO_SHAPE_TYPE.PICTURE)
+            )
+            if shape:
+                return shape
+        shape = snapshot.find_shape_by_name(image_spec.id, shape_type=int(MSO_SHAPE_TYPE.PICTURE))
+        if shape:
+            return shape
+        for candidate in snapshot.shapes:
+            if candidate.shape_type == int(MSO_SHAPE_TYPE.PICTURE):
+                return candidate
+        return None
+
+    def _locate_textbox_shape(
+        self, snapshot: SlideSnapshot, textbox: SlideTextbox
+    ) -> ShapeSnapshot | None:
+        candidates = []
+        if textbox.anchor:
+            shape = snapshot.find_shape_by_name(textbox.anchor)
+            if shape:
+                candidates.append(shape)
+        if not candidates:
+            shape = snapshot.find_shape_by_name(textbox.id)
+            if shape:
+                candidates.append(shape)
+        for shape in candidates:
+            if shape.shape_type in {int(MSO_SHAPE_TYPE.TEXT_BOX), int(MSO_SHAPE_TYPE.PLACEHOLDER)}:
+                return shape
+        for shape in snapshot.shapes:
+            if shape.shape_type in {int(MSO_SHAPE_TYPE.TEXT_BOX), int(MSO_SHAPE_TYPE.PLACEHOLDER)}:
+                return shape
+        return None
+
     def _check_bullet_depth(
-        self, slide: Slide, bullet: SlideBullet
+        self,
+        slide: Slide,
+        bullet: SlideBullet,
+        actual_level: int,
+        target: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
-        if bullet.level <= self.options.max_bullet_level:
+        if actual_level <= self.options.max_bullet_level:
             return None
 
-        target = {
-            "slide_id": slide.id,
-            "element_id": bullet.id,
-            "element_type": "bullet",
-        }
         issue_id = self._next_issue_id("bullet_depth", slide.id, bullet.id)
-        message = (
-            f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベルが"
-            f" 上限 {self.options.max_bullet_level} を超えています"
-        )
         fix = {
             "id": f"fix-{issue_id}",
             "issue_id": issue_id,
@@ -126,31 +407,34 @@ class SimpleAnalyzerStep:
             issue_id=issue_id,
             issue_type="bullet_depth",
             severity="warning",
-            message=message,
+            message=(
+                f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベルが"
+                f" 上限 {self.options.max_bullet_level} を超えています"
+            ),
             target=target,
-            metrics={"level": bullet.level, "max_level": self.options.max_bullet_level},
+            metrics={
+                "level": actual_level,
+                "max_level": self.options.max_bullet_level,
+            },
             fix=fix,
         )
         return issue, fix
 
     def _check_font_size(
-        self, slide: Slide, bullet: SlideBullet
+        self,
+        slide: Slide,
+        bullet: SlideBullet,
+        paragraph: ParagraphSnapshot | None,
+        target: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
-        font_spec = bullet.font
-        size = font_spec.size_pt if font_spec and font_spec.size_pt else self.options.default_font_size
+        size = paragraph.font_size_pt if paragraph and paragraph.font_size_pt is not None else None
+        if size is None:
+            size = self.options.default_font_size
+
         if size >= self.options.min_font_size:
             return None
 
-        target = {
-            "slide_id": slide.id,
-            "element_id": bullet.id,
-            "element_type": "bullet",
-        }
         issue_id = self._next_issue_id("font_min", slide.id, bullet.id)
-        message = (
-            f"スライド '{slide.id}' の箇条書き '{bullet.id}' のフォントサイズ {size:.1f}pt が"
-            f" 下限 {self.options.min_font_size:.1f}pt を下回っています"
-        )
         fix = {
             "id": f"fix-{issue_id}",
             "issue_id": issue_id,
@@ -162,20 +446,32 @@ class SimpleAnalyzerStep:
             issue_id=issue_id,
             issue_type="font_min",
             severity="warning",
-            message=message,
+            message=(
+                f"スライド '{slide.id}' の箇条書き '{bullet.id}' のフォントサイズ {size:.1f}pt が"
+                f" 下限 {self.options.min_font_size:.1f}pt を下回っています"
+            ),
             target=target,
-            metrics={"size_pt": size, "min_size_pt": self.options.min_font_size},
+            metrics={
+                "size_pt": size,
+                "min_size_pt": self.options.min_font_size,
+                "shape_name": paragraph.shape_name if paragraph else None,
+            },
             fix=fix,
         )
         return issue, fix
 
     def _check_contrast(
-        self, slide: Slide, bullet: SlideBullet
+        self,
+        slide: Slide,
+        bullet: SlideBullet,
+        paragraph: ParagraphSnapshot | None,
+        target: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
-        font_spec = bullet.font
-        color_hex = font_spec.color_hex if font_spec and font_spec.color_hex else self.options.default_font_color
+        color_hex = (
+            paragraph.color_hex if paragraph and paragraph.color_hex else self.options.default_font_color
+        )
         font_size = (
-            font_spec.size_pt if font_spec and font_spec.size_pt else self.options.default_font_size
+            paragraph.font_size_pt if paragraph and paragraph.font_size_pt else self.options.default_font_size
         )
         try:
             ratio = _contrast_ratio(color_hex, self.options.background_color)
@@ -190,16 +486,7 @@ class SimpleAnalyzerStep:
         if ratio >= required_ratio:
             return None
 
-        target = {
-            "slide_id": slide.id,
-            "element_id": bullet.id,
-            "element_type": "bullet",
-        }
         issue_id = self._next_issue_id("contrast_low", slide.id, bullet.id)
-        message = (
-            f"スライド '{slide.id}' の箇条書き '{bullet.id}' の文字色と背景色のコントラスト比"
-            f" {ratio:.2f} が基準 {required_ratio:.2f} を下回っています"
-        )
         suggested_color = self.options.preferred_text_color or self.options.default_font_color
         fix = {
             "id": f"fix-{issue_id}",
@@ -212,7 +499,10 @@ class SimpleAnalyzerStep:
             issue_id=issue_id,
             issue_type="contrast_low",
             severity="warning",
-            message=message,
+            message=(
+                f"スライド '{slide.id}' の箇条書き '{bullet.id}' の文字色と背景色のコントラスト比"
+                f" {ratio:.2f} が基準 {required_ratio:.2f} を下回っています"
+            ),
             target=target,
             metrics={
                 "color_hex": _normalize_hex(color_hex),
@@ -220,122 +510,59 @@ class SimpleAnalyzerStep:
                 "contrast_ratio": ratio,
                 "required_ratio": required_ratio,
                 "font_size_pt": font_size,
+                "shape_name": paragraph.shape_name if paragraph else None,
             },
             fix=fix,
         )
         return issue, fix
 
-    def _check_layout_consistency(
-        self, slide: Slide
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        issues: list[dict[str, Any]] = []
-        fixes: list[dict[str, Any]] = []
-        previous_level: int | None = None
-        applied_level: int | None = None
-
-        for bullet in slide.iter_bullets():
-            allowed_level = 0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
-            if bullet.level <= allowed_level:
-                applied_level = bullet.level
-                previous_level = bullet.level
-                continue
-
-            target_level = allowed_level
-            target = {
-                "slide_id": slide.id,
-                "element_id": bullet.id,
-                "element_type": "bullet",
-            }
-            issue_id = self._next_issue_id("layout_consistency", slide.id, bullet.id)
-            message = (
-                f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベル {bullet.level} が"
-                f" 許容ステップ {allowed_level} を超えています"
-            )
-            fix = {
-                "id": f"fix-{issue_id}",
-                "issue_id": issue_id,
-                "type": "bullet_reindent",
-                "target": target,
-                "payload": {"level": target_level},
-            }
-            issue = self._make_issue(
-                issue_id=issue_id,
-                issue_type="layout_consistency",
-                severity="warning",
-                message=message,
-                target=target,
-                metrics={
-                    "level": bullet.level,
-                    "allowed_level": allowed_level,
-                    "previous_level": previous_level,
-                },
-                fix=fix,
-            )
-            issues.append(issue)
-            fixes.append(fix)
-            applied_level = target_level
-            previous_level = bullet.level
-
-        return issues, fixes
-
     def _check_margins(
-        self, slide: Slide, image: SlideImage
+        self,
+        slide: Slide,
+        image: SlideImage,
+        shape: ShapeSnapshot,
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
-        left = image.left_in
-        top = image.top_in
-        width = image.width_in
-        height = image.height_in
+        left = shape.left_in
+        top = shape.top_in
+        width = shape.width_in
+        height = shape.height_in
         margin = self.options.margin_in
 
         violations: list[str] = []
-        if left is not None and left < margin:
+        if left < margin:
             violations.append("left")
-        if top is not None and top < margin:
+        if top < margin:
             violations.append("top")
-        if left is not None and width is not None:
-            right = left + width
-            if right > self.options.slide_width_in - margin:
-                violations.append("right")
-        if top is not None and height is not None:
-            bottom = top + height
-            if bottom > self.options.slide_height_in - margin:
-                violations.append("bottom")
+        right = left + width
+        bottom = top + height
+        if right > self.options.slide_width_in - margin:
+            violations.append("right")
+        if bottom > self.options.slide_height_in - margin:
+            violations.append("bottom")
 
         if not violations:
             return None
 
+        issue_id = self._next_issue_id("margin", slide.id, image.id)
         target = {
             "slide_id": slide.id,
             "element_id": image.id,
             "element_type": "image",
         }
-        issue_id = self._next_issue_id("margin", slide.id, image.id)
-        message = (
-            f"スライド '{slide.id}' の画像 '{image.id}' が余白基準 {margin:.1f}in を外れています"
+
+        target_left = min(
+            max(left, margin),
+            max(self.options.slide_width_in - margin - width, margin),
+        )
+        target_top = min(
+            max(top, margin),
+            max(self.options.slide_height_in - margin - height, margin),
         )
 
-        target_left = left
-        if left is not None:
-            usable_width = self.options.slide_width_in - 2 * margin
-            shape_width = width or 0.0
-            max_left = self.options.slide_width_in - margin - shape_width
-            max_left = max(max_left, margin)
-            min_left = margin
-            target_left = min(max(left, min_left), max_left if usable_width >= 0 else margin)
-
-        target_top = top
-        if top is not None:
-            usable_height = self.options.slide_height_in - 2 * margin
-            shape_height = height or 0.0
-            max_top = self.options.slide_height_in - margin - shape_height
-            max_top = max(max_top, margin)
-            min_top = margin
-            target_top = min(max(top, min_top), max_top if usable_height >= 0 else margin)
-
         fix_payload: dict[str, float] = {}
-        if target_left is not None and left is not None and abs(target_left - left) > 1e-3:
+        if abs(target_left - left) > 1e-3:
             fix_payload["left_in"] = round(target_left, 3)
-        if target_top is not None and top is not None and abs(target_top - top) > 1e-3:
+        if abs(target_top - top) > 1e-3:
             fix_payload["top_in"] = round(target_top, 3)
 
         fix = None
@@ -352,7 +579,9 @@ class SimpleAnalyzerStep:
             issue_id=issue_id,
             issue_type="margin",
             severity="warning",
-            message=message,
+            message=(
+                f"スライド '{slide.id}' の画像 '{image.id}' が余白基準 {margin:.1f}in を外れています"
+            ),
             target=target,
             metrics={
                 "left_in": left,
@@ -361,17 +590,82 @@ class SimpleAnalyzerStep:
                 "height_in": height,
                 "margin_in": margin,
                 "violations": violations,
+                "shape_name": shape.name,
+            },
+            fix=fix,
+        )
+        return issue, fix
+
+    def _check_grid_alignment(
+        self,
+        slide: Slide,
+        element_id: str,
+        element_type: str,
+        shape: ShapeSnapshot,
+    ) -> tuple[dict[str, Any], dict[str, Any]] | None:
+        grid = self.options.grid_size_in
+        tolerance = self.options.grid_tolerance_in
+
+        deviations = {
+            "left": _grid_deviation(shape.left_in, grid),
+            "top": _grid_deviation(shape.top_in, grid),
+        }
+        out_of_grid = {axis: dev for axis, dev in deviations.items() if dev > tolerance}
+        if not out_of_grid:
+            return None
+
+        target = {
+            "slide_id": slide.id,
+            "element_id": element_id,
+            "element_type": element_type,
+        }
+        issue_id = self._next_issue_id("grid_misaligned", slide.id, element_id)
+        fix_payload: dict[str, float] = {}
+        snapped_left = _snap_to_grid(shape.left_in, grid)
+        snapped_top = _snap_to_grid(shape.top_in, grid)
+        if "left" in out_of_grid:
+            fix_payload["left_in"] = round(snapped_left, 3)
+        if "top" in out_of_grid:
+            fix_payload["top_in"] = round(snapped_top, 3)
+
+        fix = None
+        if fix_payload:
+            fix = {
+                "id": f"fix-{issue_id}",
+                "issue_id": issue_id,
+                "type": "move",
+                "target": target,
+                "payload": fix_payload,
+            }
+
+        issue = self._make_issue(
+            issue_id=issue_id,
+            issue_type="grid_misaligned",
+            severity="warning",
+            message=(
+                f"スライド '{slide.id}' の要素 '{element_id}' がグリッド {grid:.3f}in に揃っていません"
+            ),
+            target=target,
+            metrics={
+                "left_in": shape.left_in,
+                "top_in": shape.top_in,
+                "width_in": shape.width_in,
+                "height_in": shape.height_in,
+                "grid_in": grid,
+                "tolerance_in": tolerance,
+                "deviations_in": out_of_grid,
+                "shape_name": shape.name,
             },
             fix=fix,
         )
         return issue, fix
 
     def _next_issue_id(self, issue_type: str, slide_id: str, element_id: str | None) -> str:
-        self._sequence += 1
-        parts = [issue_type, slide_id]
+        sequence = next(self._sequence)
+        parts: list[str] = [issue_type, slide_id]
         if element_id:
             parts.append(element_id)
-        parts.append(str(self._sequence))
+        parts.append(str(sequence))
         return "-".join(parts)
 
     def _make_issue(
@@ -404,6 +698,50 @@ class SimpleAnalyzerStep:
         return output_path
 
 
+def _emu_to_inches(value: int) -> float:
+    return value / EMU_PER_INCH
+
+
+def _length_to_pt(length) -> float | None:
+    if length is None:
+        return None
+    try:
+        return float(length.pt)
+    except AttributeError:
+        return None
+
+
+def _color_to_hex(color: ColorFormat | None) -> str | None:
+    if color is None:
+        return None
+    try:
+        rgb = color.rgb
+    except AttributeError:
+        return None
+    if rgb is None:
+        return None
+    components = tuple(rgb)
+    return "#" + "".join(f"{component:02X}" for component in components)
+
+
+def _extract_font_info(paragraph) -> tuple[float | None, str | None]:
+    font = paragraph.font
+    size = _length_to_pt(getattr(font, "size", None))
+    color = _color_to_hex(getattr(font, "color", None))
+
+    if size is None or color is None:
+        for run in paragraph.runs:
+            run_font = run.font
+            if size is None:
+                size = _length_to_pt(getattr(run_font, "size", None))
+            if color is None:
+                color = _color_to_hex(getattr(run_font, "color", None))
+            if size is not None and color is not None:
+                break
+
+    return size, color
+
+
 def _normalize_hex(value: str) -> str:
     return value if value.startswith("#") else f"#{value}"
 
@@ -432,3 +770,13 @@ def _contrast_ratio(foreground_hex: str, background_hex: str) -> float:
     lighter = max(fg_lum, bg_lum)
     darker = min(fg_lum, bg_lum)
     return (lighter + 0.05) / (darker + 0.05)
+
+
+def _grid_deviation(value: float, grid_size: float) -> float:
+    remainder = value % grid_size
+    return min(remainder, grid_size - remainder)
+
+
+def _snap_to_grid(value: float, grid_size: float) -> float:
+    cells = round(value / grid_size)
+    return cells * grid_size

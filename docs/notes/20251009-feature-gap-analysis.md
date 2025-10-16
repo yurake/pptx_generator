@@ -20,6 +20,7 @@
 - **アナライザーの対象が PPTX ではなく JSON**
   - 要件では PPTX の実体を解析することが明記されている（`docs/requirements/overview.md:28`）が、現実装は入力 JSON を走査している（`src/pptx_generator/pipeline/analyzer.py:62`）。
   - レイアウト崩れ検知や `grid_misaligned` 等の診断（`docs/design/overview.md:136`）が実現できず、品質指標に直結するため、PPTX 解析ステップの実装が急務。
+  - 2025-10-15 更新: RM-013 の実装で PPTX 実体を解析し、余白・グリッド・フォント・コントラストを計測する `analysis.json` を出力するよう対応済み。
 - **自動補正（Refiner/Polisher）の適用範囲不足**
   - Refiner が適用するのは箇条書きレベル再調整のみで、フォント引き上げや色補正は提案止まり（`src/pptx_generator/pipeline/refiner.py:25`）。要件では安全な補正の自動適用を求めている（`docs/requirements/overview.md:31`）。
   - `.NET` 製 Polisher（Open XML SDK）も未実装で、設計ドキュメントの構成と乖離（`docs/design/overview.md:155`）。段落間隔や禁則調整など仕上げ工程が欠落している。

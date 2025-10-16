@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 
 import pytest
@@ -16,13 +17,38 @@ from pptx_generator.models import (
     SlideBulletGroup,
     SlideImage,
 )
-from pptx_generator.pipeline import AnalyzerOptions, PipelineContext, SimpleAnalyzerStep
+from pptx_generator.pipeline import (
+    AnalyzerOptions,
+    PipelineContext,
+    RenderingOptions,
+    SimpleAnalyzerStep,
+    SimpleRendererStep,
+)
+
 
 def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
     return SlideBulletGroup(anchor=anchor, items=list(bullets))
 
 
+def _write_dummy_png(path) -> None:
+    # 1px x 1px の透明 PNG
+    payload = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
+    )
+    path.write_bytes(payload)
+
+
+def _render_spec(spec: JobSpec, workdir) -> PipelineContext:
+    context = PipelineContext(spec=spec, workdir=workdir)
+    renderer = SimpleRendererStep(RenderingOptions(output_filename="test.pptx"))
+    renderer.run(context)
+    return context
+
+
 def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
+    image_path = tmp_path / "image.png"
+    _write_dummy_png(image_path)
+
     spec = JobSpec(
         meta=JobMeta(
             schema_version="1.1",
@@ -55,7 +81,7 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
                 images=[
                     SlideImage(
                         id="img-1",
-                        source="https://example.com/image.png",
+                        source=str(image_path),
                         left_in=0.1,
                         top_in=0.2,
                         width_in=9.5,
@@ -66,7 +92,7 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
         ],
     )
 
-    context = PipelineContext(spec=spec, workdir=tmp_path)
+    context = _render_spec(spec, tmp_path)
     analyzer = SimpleAnalyzerStep(
         AnalyzerOptions(
             min_font_size=16.0,
@@ -85,12 +111,18 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
     payload = json.loads(analysis_path.read_text(encoding="utf-8"))
 
     issue_types = {issue["type"] for issue in payload["issues"]}
-    assert {"margin", "font_min", "contrast_low", "bullet_depth", "layout_consistency"} <= issue_types
+    assert {
+        "margin",
+        "font_min",
+        "contrast_low",
+        "bullet_depth",
+        "layout_consistency",
+        "grid_misaligned",
+    } <= issue_types
 
     fix_types = {fix["type"] for fix in payload["fixes"]}
     assert {"move", "font_raise", "color_adjust", "bullet_cap", "bullet_reindent"} <= fix_types
 
-    # 余白補正の提案が具体値を伴うことを確認
     margin_issue = next(issue for issue in payload["issues"] if issue["type"] == "margin")
     assert margin_issue["fix"]["payload"]
 
@@ -134,7 +166,7 @@ def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None
         ],
     )
 
-    context = PipelineContext(spec=spec, workdir=tmp_path)
+    context = _render_spec(spec, tmp_path)
     analyzer = SimpleAnalyzerStep(
         AnalyzerOptions(
             min_font_size=16.0,

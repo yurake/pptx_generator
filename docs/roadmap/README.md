@@ -104,10 +104,10 @@ graph TD
 - 対象工程: 6（レンダリング後の解析）
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/20251011-pptx-analyzer-implementation.md](../todo/20251011-pptx-analyzer-implementation.md)
-- 状況: 未着手（2025-10-09 設定）
+- 状況: 実装中（2025-10-15 更新）
 - 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
 - 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
-- 次のアクション: 解析対象項目の優先順位付けと PoC を終え、アナライザー実装とテスト完了まで進める。
+- 次のアクション: PPTX 実体ベースの分析ロジックを性能計測と CLI 統合テストへ展開し、Refiner/Polisher との連携仕様を更新する。
 
 <a id="rm-014"></a>
 ### RM-014 自動補正・仕上げ統合（優先度: P1）
