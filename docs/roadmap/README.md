@@ -71,7 +71,7 @@ graph TD
 - 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
 - 状況: 完了（2025-10-11 更新）
 - 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
-- 依存: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
+- 関連テーマ: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
 
 <a id="rm-003"></a>
 ### RM-003 ビジュアルフィードバックコパイロット
@@ -101,7 +101,7 @@ graph TD
 - 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
-- 依存: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
+- 関連テーマ: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
 
 <a id="rm-006"></a>
 ### RM-006 ライブ共同編集アシスト
@@ -221,7 +221,8 @@ graph TD
 - 状況: 7 件中 7 件完了（2025-10-06 更新）、追加修正 1 件完了（2025-10-10 更新）
 - 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
 - 追加成果: auto_complete_todo.py でアーカイブ済み ToDo の成功判定を実装（PR #146）。
-- 依存: RM-002（エージェント運用ガイド整備）、RM-007/008（レンダラー拡張）、RM-010（テンプレート仕様エクスポート）。
+- 依存: RM-002（エージェント運用ガイド整備）。
+- 関連テーマ: RM-007/008（レンダラー拡張）、RM-010（テンプレート仕様エクスポート）。
 
 <a id="rm-018"></a>
 ### RM-018 レンダラー リッチコンテンツ対応
@@ -229,7 +230,8 @@ graph TD
 - 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
 - 状況: 完了（2025-10-06 更新）
 - 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
-- 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
+- 依存: RM-017（パイプライン機能拡張）。
+- 関連テーマ: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）。
 
 <a id="rm-019"></a>
 ### RM-019 CLI ツールチェーン整備（優先度: P1）
@@ -238,7 +240,8 @@ graph TD
 - 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
 - 状況: 完了（2025-10-15 更新）
 - 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+- 依存: RM-017（パイプライン機能拡張）。
+- 関連テーマ: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
 
 <a id="rm-020"></a>
 ### RM-020 PDF 自動生成対応
@@ -246,7 +249,8 @@ graph TD
 - 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
 - 状況: 完了（2025-10-06 更新）
 - 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
-- 依存: RM-017（パイプライン機能拡張）による CLI/監査基盤、LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
+- 依存: RM-017（パイプライン機能拡張）。
+- 関連テーマ: LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
 
 <a id="rm-021"></a>
 ### RM-021 テンプレ資産監査パイプライン（優先度: P1）
@@ -277,7 +281,8 @@ graph TD
 - 参照 ToDo: [docs/todo/20251012-content-approval-platform.md](../todo/20251012-content-approval-platform.md)
 - 状況: 未着手（2025-10-12 追加）
 - 期待成果: 承認 UI ワイヤーと API 設計、AI レビュー（グレード/Auto-fix）の実装方針、禁則語および必須項目のリアルタイム検知。
-- 依存: RM-022（レイアウト解析検証強化）のタグ情報、RM-001（Analyzer ルール拡張）の診断出力、監査ログ基盤。
+- 依存: RM-001（Analyzer / Refiner ルール拡張）、RM-005（プレゼンストーリーモデラー）、RM-022（レイアウト解析検証強化）。
+- 関連テーマ: 監査ログ基盤。
 - 次のアクション: UI 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化。
 
 <a id="rm-024"></a>
