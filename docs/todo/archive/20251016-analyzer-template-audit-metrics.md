@@ -23,7 +23,8 @@ roadmap_item: RM-027 Analyzer テンプレ監査メトリクス整備
 - [x] 関連Issueの更新
   - 完了条件: フロントマターと Issue トラッカーの情報を最新化する
   - メモ: GitHub Issue #199 を確認しフロントマターへ反映
-- [ ] PR 作成
+- [x] PR 作成
+  - メモ: PR #201 https://github.com/yurake/pptx_generator/pull/201（2025-10-16 完了）
   - 完了条件: テンプレートに沿った PR を作成しリンクを記録する
 
 ## メモ

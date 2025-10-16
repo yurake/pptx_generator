@@ -432,10 +432,9 @@ flowchart TB
 - ゴール: Golden Sample Runner と release レポートに Analyzer 指摘を統合し、テンプレ受け渡し時の品質メトリクスを継続的に追跡できるようにする。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 実装中（2025-10-16 着手）
+- 状況: 完了（2025-10-16 更新）
 - 期待成果: `template_release.json` への指摘件数・種別集約、差分レポートでの件数推移可視化、テンプレ修正手順の runbook 化。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-021（テンプレ資産監査パイプライン）。
-- 次のアクション: release レポート指標の追加フィールド検証、Analyzer メトリクスのダッシュボード化検討、制作チーム向けフィードバックフローのドラフト作成。
 
 <a id="rm-028"></a>
 ### RM-028 Analyzer 構造抽出差分連携
