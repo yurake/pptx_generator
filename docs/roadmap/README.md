@@ -120,17 +120,6 @@ graph TD
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
-<a id="rm-021"></a>
-### RM-021 テンプレ資産監査パイプライン（優先度: P1）
-- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
-- 対象工程: 1（テンプレ準備）
-- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
-- 参照 ToDo: [docs/todo/20251012-template-audit-pipeline.md](../todo/20251012-template-audit-pipeline.md)
-- 状況: 未着手（2025-10-12 追加）
-- 期待成果: `template_release.json` スキーマ定義と自動生成、テンプレ版比較レポート出力、ゴールデンサンプルの自動検証。
-- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
-- 次のアクション: release メタ仕様のドラフト作成、差分検証 CLI のプロトタイプ設計、ゴールデンサンプル維持手順の策定。
-
 <a id="rm-022"></a>
 ### RM-022 レイアウト解析検証強化（優先度: P1）
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
