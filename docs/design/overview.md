@@ -165,6 +165,8 @@ assets:
 
 ## 7. 自動診断・補正ロジック
 - Analyzer: PPTX の DrawingML を解析し、図形位置 (EMU)、サイズ、フォント情報を抽出。
+  - レンダラーで付与したアンカー名／図形 ID を基に箇条書き・テキストボックス・画像を突合し、実体から得たメトリクスを `analysis.json` へ記録する。
+  - スライド余白 (10.0in × 7.5in) とグリッド 0.125in を基準に `margin` と `grid_misaligned` を判定し、移動提案を `fix.payload` に含める。
 - Issue タイプ:
   - `margin`: スライド余白からの逸脱。
   - `grid_misaligned`: グリッド 0.125in からのズレ。
