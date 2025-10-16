@@ -17,7 +17,7 @@
 ## テスト
 ```bash
 uv run --extra dev pytest
-uv run pptx gen samples/json/sample_spec.json
+uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
 ```
 
 ## 残課題
