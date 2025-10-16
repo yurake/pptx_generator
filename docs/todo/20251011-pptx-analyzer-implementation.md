@@ -32,8 +32,8 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
 - [x] 関連Issueの更新
   - メモ: メトリクスとテストデータ整備状況を #162 に反映する
   - [x] #162 コメント草案の確認と投稿
-- [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete の結果を記入する
+- [x] PR 作成
+  - メモ: PR #198（docs: add analyzer runbook guidance）を作成。todo-auto-complete の結果確認待ち。
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。
