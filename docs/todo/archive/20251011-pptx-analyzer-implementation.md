@@ -33,7 +33,7 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
   - メモ: メトリクスとテストデータ整備状況を #162 に反映する
   - [x] #162 コメント草案の確認と投稿
 - [x] PR 作成
-  - メモ: PR #198（docs: add analyzer runbook guidance）を作成。todo-auto-complete の結果確認待ち。
+  - メモ: PR #198 https://github.com/yurake/pptx_generator/pull/198（2025-10-16 完了）
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。

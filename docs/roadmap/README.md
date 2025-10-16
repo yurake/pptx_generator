@@ -98,17 +98,6 @@ graph TD
 - 次のアクション: CLI 全体テストとドキュメント同期（requirements/design/policies）の完了、テンプレート運用手順への反映を行う。
     - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
-<a id="rm-013"></a>
-### RM-013 PPTX 解析アナライザー実装（優先度: P1）
-- ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
-- 対象工程: 6（レンダリング後の解析）
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/20251011-pptx-analyzer-implementation.md](../todo/20251011-pptx-analyzer-implementation.md)
-- 状況: 実装中（2025-10-15 更新）
-- 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
-- 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
-- 次のアクション: PPTX 実体ベースの分析ロジックを性能計測と CLI 統合テストへ展開し、Refiner/Polisher との連携仕様を更新する。
-
 <a id="rm-014"></a>
 ### RM-014 自動補正・仕上げ統合（優先度: P1）
 - ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
@@ -181,6 +170,16 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-013"></a>
+### RM-013 PPTX 解析アナライザー実装（優先度: P1）
+- ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
+- 対象工程: 6（レンダリング後の解析）
+- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/archive/20251011-pptx-analyzer-implementation.md](../todo/archive/20251011-pptx-analyzer-implementation.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
+- 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
 
 <a id="rm-019"></a>
 ### RM-019 CLI ツールチェーン整備（優先度: P1）
