@@ -27,13 +27,19 @@ roadmap_item: RM-013 PPTX 解析アナライザー実装
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
-- [ ] 関連Issueの更新
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
+- [x] 関連Issueの更新
   - メモ: メトリクスとテストデータ整備状況を #162 に反映する
+  - [x] #162 コメント草案の確認と投稿
 - [ ] PR 作成
   - メモ: PR 番号と URL、todo-auto-complete の結果を記入する
 
 ## メモ
 - RM-012 の描画強化結果と整合するよう入力スキーマの最新化を確認する。
 - 2025-10-15: 実装・テスト内容のメモは `docs/notes/20251015-pptx-analyzer.md` にまとめた。CLI 統合テストを完了済。性能測定の詳細検証は継続課題。
+- 2025-10-17: `docs/runbooks/pptx-analyzer.md` を追加し、README と AGENTS に導線を追記。Issue #162 へのサマリ投稿草案は次の更新で整理する。
+- #162 投稿草案（2025-10-17 投稿済メモ）
+  - 追加: `docs/runbooks/pptx-analyzer.md`、README/AGENTS/Docs README からの導線追記
+  - 確認: `analysis.json` の issue/fix 種別表、運用フロー、トラブルシューティングを整理
+  - 残課題: 性能計測の詳細検証、Refiner との自動修正連携強化、通知フロー連携案の検討
