@@ -119,17 +119,6 @@ graph TD
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
-<a id="rm-021"></a>
-### RM-021 テンプレ資産監査パイプライン（優先度: P1）
-- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
-- 対象工程: 1（テンプレ準備）
-- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
-- 参照 ToDo: [docs/todo/20251012-template-audit-pipeline.md](../todo/20251012-template-audit-pipeline.md)
-- 状況: 未着手（2025-10-12 追加）
-- 期待成果: `template_release.json` スキーマ定義と自動生成、テンプレ版比較レポート出力、ゴールデンサンプルの自動検証。
-- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
-- 次のアクション: release メタ仕様のドラフト作成、差分検証 CLI のプロトタイプ設計、ゴールデンサンプル維持手順の策定。
-
 <a id="rm-022"></a>
 ### RM-022 レイアウト解析検証強化（優先度: P1）
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
@@ -191,6 +180,25 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-019"></a>
+### RM-019 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
+- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+
+<a id="rm-021"></a>
+### RM-021 テンプレ資産監査パイプライン（優先度: P1）
+- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照 ToDo: [docs/todo/archive/20251012-template-audit-pipeline.md](../todo/archive/20251012-template-audit-pipeline.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
+- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
 
 <a id="rm-001"></a>
 ### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
