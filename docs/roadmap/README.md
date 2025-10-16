@@ -28,17 +28,17 @@
 ```mermaid
 graph TD
     RM007["RM-007 SlideBullet アンカー拡張(完了)"] --> RM012["RM-012 レンダラーテキスト強化(完了)"]
-    RM012 --> RM013["RM-013 PPTX 解析アナライザー実装(未着手)"]
+    RM012 --> RM013["RM-013 PPTX 解析アナライザー実装(完了)"]
     RM013 --> RM014["RM-014 自動補正・仕上げ統合(未着手)"]
     RM008["RM-008 カスタムテンプレート操作性向上(完了)"] --> RM011["RM-011 レイアウトスタイル統一(実装中)"]
     RM009["RM-009 テンプレート設定自動生成(完了)"] --> RM011
     RM010["RM-010 テンプレート仕様エクスポート(完了)"] --> RM011
     RM008 --> RM016["RM-016 テンプレート命名整合性チェッカー(完了)"]
-    RM016 --> RM021["RM-021 テンプレ資産監査パイプライン(未着手)"]
+    RM016 --> RM021["RM-021 テンプレ資産監査パイプライン(完了)"]
     RM001["RM-001 Analyzer / Refiner ルール拡張(完了)"] --> RM003["RM-003 ビジュアルフィードバックコパイロット(調査中)"]
     RM001 --> RM023["RM-023 コンテンツ承認オーサリング基盤(未着手)"]
-    RM005["RM-005 プレゼンストーリーモデラー(企画中)"] --> RM023
-    RM003 --> RM006["RM-006 ライブ共同編集アシスト(アイデア段階)"]
+    RM005["RM-005 プレゼンストーリーモデラー(完了)"] --> RM023
+    RM003 --> RM006["RM-006 ライブ共同編集アシスト(検討中)"]
     RM002["RM-002 エージェント運用ガイド整備(完了)"] --> RM017["RM-017 パイプライン機能拡張(完了)"]
     RM017 --> RM019["RM-019 CLI ツールチェーン整備(完了)"]
     RM017 --> RM020["RM-020 PDF 自動生成対応(完了)"]
@@ -52,28 +52,103 @@ graph TD
     RM025 --> RM026["RM-026 レンダリング監査統合(未着手)"]
 ```
 
-## アクティブテーマ
+## 個別状況
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
+
+<a id="rm-001"></a>
+### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
+- ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
+- 対象工程: 5（マッピング）・6（PPTX レンダリング）に付随する Analyzer / Refiner 処理
+- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
+- 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
+
+<a id="rm-002"></a>
+### RM-002 エージェント運用ガイド整備（優先度: P1）
+- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
+- 依存: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
 
 <a id="rm-003"></a>
 ### RM-003 ビジュアルフィードバックコパイロット
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。
 - 対象工程: 5・6（レンダリング後の評価）＋ フィードバック API 全体
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
-- 状況: 調査中（2025-10-05 更新）
+- 状況: 検討中（2025-10-05 更新）
 - 期待成果: スライド PNG + 幾何情報を入力としたフィードバック API、ダッシュボード UI モック、Fix への反映ルール策定。
 - 依存: RM-001（Analyzer / Refiner ルール拡張）のログ・指標整備、画像生成モデルの選定、GPU 実行基盤との連携。
 - 次のアクション: 参考事例のリサーチ、モデル推論コスト試算、UI プロトタイピング。
+
+<a id="rm-004"></a>
+### RM-004 営業ナレッジ連携自動化
+- ゴール: CRM や案件管理システムから取得した勝ちパターン・競合情報を提案書自動生成に組み込み、ユーザーにとっての「次の一手」を提案する。
+- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）への外部データ統合
+- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md)
+- 状況: 完了（2025-10-15 更新）
+- 完了理由: 案件連携のニーズが解消されたため開発を終了。
+- 期待成果: （クローズ時点で未着手）CRM 連携スキーマ定義、勝因レビューの LLM 要約、提案書内へのサジェストブロック挿入。
+- 依存: CRM API トークン管理、個人情報マスキング、ジョブスケジューラ。
+- 次のアクション: なし（ニーズ解消のためクローズ済み）。
+
+<a id="rm-005"></a>
+### RM-005 プレゼンストーリーモデラー
+- ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
+- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
+- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
+- 依存: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
 
 <a id="rm-006"></a>
 ### RM-006 ライブ共同編集アシスト
 - ゴール: 提案会議中でも AI がライブでスライド修正案・説明コメント・補足資料リンクを提示し、即応性の高いプレゼンを実現する。
 - 対象工程: 3・4・5（リアルタイム編集とマッピング）の拡張
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
-- 状況: アイデア段階（2025-10-05 更新）
+- 状況: 検討中（2025-10-05 更新）
 - 期待成果: WebSocket ベースの共同編集プロトコル設計、リアルタイム要約と修正提案、セッション監査ログ。
 - 依存: RM-003（ビジュアルフィードバックコパイロット）のフィードバック API、低遅延インフラ、アクセス制御、UI コンポーネント設計。
 - 次のアクション: 技術スタック比較、遅延要件の整理、UI ワイヤーフレーム作成。
+
+<a id="rm-007"></a>
+### RM-007 SlideBullet アンカー拡張（優先度: P2）
+- ゴール: SlideBullet 要素がテンプレート内の任意テキスト図形へ挿入できるようレンダラーを拡張し、複数レイアウトでの再利用性を高める。
+- 対象工程: 5（マッピング）
+- 参照ドキュメント: [docs/AGENTS.md](../AGENTS.md)
+- 参照 ToDo: [docs/todo/archive/20251010-renderer-slidebullet-anchor.md](../todo/archive/20251010-renderer-slidebullet-anchor.md)
+- 状況: 完了（2025-10-11 更新）
+- 達成成果: JSON 仕様でのアンカー指定対応完了、`_resolve_anchor` を用いた統一的な処理実装、プレースホルダー削除機能実装、テストケース追加（全 10 件成功）、CLI 統合テスト検証完了（全 5 件成功）。
+- 依存: テンプレートレイアウト命名規則、Open XML SDK による仕上げ処理、PDF 変換時の段落整形。
+
+<a id="rm-008"></a>
+### RM-008 カスタムテンプレート操作性向上（優先度: P2）
+- ゴール: プレースホルダー名称を活用して画像・テーブル・チャートを配置し、テンプレート側で図形種類を固定しなくてもアンカー指定が有効になる状態を実現する。
+- 対象工程: 1・2（テンプレ準備 / 構造抽出）と 5（マッピング）への影響
+- 参照 ToDo: [docs/todo/archive/20251009-placeholder-anchor.md](../todo/archive/20251009-placeholder-anchor.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: プレースホルダーと図形のアンカー混在対応、テンプレート準備ガイドの更新、回帰テストによる互換性確認。
+- 依存: レンダラーのアンカー解決ロジック、テンプレート操作ドキュメント、CLI テストスイート。
+
+<a id="rm-009"></a>
+### RM-009 テンプレート設定自動生成（優先度: P2）
+- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
+- 参照ドキュメント: 未整備（本テーマで作成予定）
+- 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: 抽出対象となるフォント・配色情報の整理、python-pptx で取得可能な属性の調査結果、変換フロー（CLI / スクリプト）の方向性。
+- 依存: python-pptx のスタイル取得制約、LibreOffice / Open XML SDK での補完可否、ブランド設定 JSON のスキーマ拡張余地。
+
+<a id="rm-010"></a>
+### RM-010 テンプレート仕様エクスポート（優先度: P2）
+- ゴール: PPTX テンプレートから `samples/json/sample_spec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
+- 参照ドキュメント: [README.md](../README.md)（extract-template セクション）
+- 参照 ToDo: [docs/todo/archive/20251009-template-spec-export.md](../todo/archive/20251009-template-spec-export.md)
+- 状況: 完了（2025-10-11 更新）
+- 達成成果: `extract-template` CLI コマンドおよび `TemplateExtractorStep` を実装、抽出結果を JSON/YAML で出力可能にし、README に使用手順を追加。単体・統合テストを整備し、テンプレート構造解析フローを確立。
+- 依存: python-pptx による図形情報取得、テンプレート命名規則、サンプルテンプレート資産。
 
 <a id="rm-011"></a>
 ### RM-011 レイアウトスタイル統一
@@ -87,16 +162,24 @@ graph TD
 - 次のアクション: CLI 全体テストとドキュメント同期（requirements/design/policies）の完了、テンプレート運用手順への反映を行う。
     - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
+<a id="rm-012"></a>
+### RM-012 レンダラーテキスト強化（優先度: P1）
+- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
+- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照 ToDo: [docs/todo/archive/20251011-renderer-text-enhancement.md](../todo/archive/20251011-renderer-text-enhancement.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
+- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
+
 <a id="rm-013"></a>
 ### RM-013 PPTX 解析アナライザー実装（優先度: P1）
 - ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
 - 対象工程: 6（レンダリング後の解析）
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/20251011-pptx-analyzer-implementation.md](../todo/20251011-pptx-analyzer-implementation.md)
-- 状況: 未着手（2025-10-09 設定）
+- 参照 ToDo: [docs/todo/archive/20251011-pptx-analyzer-implementation.md](../todo/archive/20251011-pptx-analyzer-implementation.md)
+- 状況: 完了（2025-10-16 更新）
 - 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
 - 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
-- 次のアクション: 解析対象項目の優先順位付けと PoC を終え、アナライザー実装とテスト完了まで進める。
 
 <a id="rm-014"></a>
 ### RM-014 自動補正・仕上げ統合（優先度: P1）
@@ -108,6 +191,72 @@ graph TD
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
+
+<a id="rm-015"></a>
+### RM-015 ロードマップ再設計（優先度: P1）
+- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
+- 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
+- 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
+- 状況: 完了（2025-10-11 更新）
+- 期待成果: 工程ごとのタスク整理、レイアウト選定/縮約ポリシーの方針化、HITL 承認フローと監査ログ方針整理。
+  - 工程1・2: テンプレ構造抽出 CLI 要件定義と PoC 設計（ToDo 発行予定）、テンプレ運用ポリシー更新。
+  - 工程3・4: レイアウトスコアリング指標の設計、AI レビュー評価指標の数値化、承認 UI / API 設計、`docs/design/schema/README.md` のモデル実装。
+  - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
+  - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
+
+<a id="rm-016"></a>
+### RM-016 テンプレート命名整合性チェッカー（優先度: P3）
+- ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
+- 対象工程: 1・2（テンプレ準備 / 構造抽出）
+- 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: テンプレート読込時の名称衝突検知、CLI への警告出力、プレースホルダー命名規則の追加ガイド。
+- 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
+
+<a id="rm-017"></a>
+### RM-017 パイプライン機能拡張
+- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
+- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md), [docs/todo/archive/20251010-auto-complete-archive-handling.md](../todo/archive/20251010-auto-complete-archive-handling.md)
+- 状況: 7 件中 7 件完了（2025-10-06 更新）、追加修正 1 件完了（2025-10-10 更新）
+- 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
+- 追加成果: auto_complete_todo.py でアーカイブ済み ToDo の成功判定を実装（PR #146）。
+- 依存: RM-002（エージェント運用ガイド整備）、RM-007/008（レンダラー拡張）、RM-010（テンプレート仕様エクスポート）。
+
+<a id="rm-018"></a>
+### RM-018 レンダラー リッチコンテンツ対応
+- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
+- 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
+- 状況: 完了（2025-10-06 更新）
+- 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
+- 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
+
+<a id="rm-019"></a>
+### RM-019 CLI ツールチェーン整備（優先度: P1）
+- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
+- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
+- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
+- 状況: 完了（2025-10-15 更新）
+- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
+- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
+
+<a id="rm-020"></a>
+### RM-020 PDF 自動生成対応
+- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
+- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
+- 状況: 完了（2025-10-06 更新）
+- 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
+- 依存: RM-017（パイプライン機能拡張）による CLI/監査基盤、LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
+
+<a id="rm-021"></a>
+### RM-021 テンプレ資産監査パイプライン（優先度: P1）
+- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照 ToDo: [docs/todo/archive/20251012-template-audit-pipeline.md](../todo/archive/20251012-template-audit-pipeline.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
+- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
 
 <a id="rm-022"></a>
 ### RM-022 レイアウト解析検証強化（優先度: P1）
@@ -164,161 +313,10 @@ graph TD
 - 依存: RM-025（マッピング補完エンジン）、LibreOffice / Open XML SDK の実行環境、CI でのバイナリ検証手法。
 - 次のアクション: チェックルール一覧の策定、監査メタ拡張項目の設計、PDF/Polisher 統合 PoC の準備。
 
-## バックログ（優先検討）
+## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
-
-## 完了テーマ
-
-<a id="rm-005"></a>
-### RM-005 プレゼンストーリーモデラー
-- ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
-- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
-- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
-- 状況: 完了（2025-10-16 更新）
-- 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
-- 依存: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
-
-<a id="rm-019"></a>
-### RM-019 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
-- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
-- 状況: 完了（2025-10-16 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
-
-<a id="rm-001"></a>
-### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
-- ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
-- 対象工程: 5（マッピング）・6（PPTX レンダリング）に付随する Analyzer / Refiner 処理
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
-- 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
-
-<a id="rm-002"></a>
-### RM-002 エージェント運用ガイド整備（優先度: P1）
-- ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
-- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
-- 依存: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
-
-<a id="rm-004"></a>
-### RM-004 営業ナレッジ連携自動化
-- ゴール: CRM や案件管理システムから取得した勝ちパターン・競合情報を提案書自動生成に組み込み、ユーザーにとっての「次の一手」を提案する。
-- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）への外部データ統合
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md)
-- 状況: 完了（2025-10-15 更新）
-- 完了理由: 案件連携のニーズが解消されたため開発を終了。
-- 期待成果: （クローズ時点で未着手）CRM 連携スキーマ定義、勝因レビューの LLM 要約、提案書内へのサジェストブロック挿入。
-- 依存: CRM API トークン管理、個人情報マスキング、ジョブスケジューラ。
-- 次のアクション: なし（ニーズ解消のためクローズ済み）。
-
-<a id="rm-007"></a>
-### RM-007 SlideBullet アンカー拡張（優先度: P2）
-- ゴール: SlideBullet 要素がテンプレート内の任意テキスト図形へ挿入できるようレンダラーを拡張し、複数レイアウトでの再利用性を高める。
-- 対象工程: 5（マッピング）
-- 参照ドキュメント: [docs/AGENTS.md](../AGENTS.md)
-- 参照 ToDo: [docs/todo/archive/20251010-renderer-slidebullet-anchor.md](../todo/archive/20251010-renderer-slidebullet-anchor.md)
-- 状況: 完了（2025-10-11 更新）
-- 達成成果: JSON 仕様でのアンカー指定対応完了、`_resolve_anchor` を用いた統一的な処理実装、プレースホルダー削除機能実装、テストケース追加（全 10 件成功）、CLI 統合テスト検証完了（全 5 件成功）。
-- 依存: テンプレートレイアウト命名規則、Open XML SDK による仕上げ処理、PDF 変換時の段落整形。
-
-<a id="rm-008"></a>
-### RM-008 カスタムテンプレート操作性向上（優先度: P2）
-- ゴール: プレースホルダー名称を活用して画像・テーブル・チャートを配置し、テンプレート側で図形種類を固定しなくてもアンカー指定が有効になる状態を実現する。
-- 対象工程: 1・2（テンプレ準備 / 構造抽出）と 5（マッピング）への影響
-- 参照 ToDo: [docs/todo/archive/20251009-placeholder-anchor.md](../todo/archive/20251009-placeholder-anchor.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: プレースホルダーと図形のアンカー混在対応、テンプレート準備ガイドの更新、回帰テストによる互換性確認。
-- 依存: レンダラーのアンカー解決ロジック、テンプレート操作ドキュメント、CLI テストスイート。
-
-<a id="rm-009"></a>
-### RM-009 テンプレート設定自動生成（優先度: P2）
-- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
-- 参照ドキュメント: 未整備（本テーマで作成予定）
-- 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: 抽出対象となるフォント・配色情報の整理、python-pptx で取得可能な属性の調査結果、変換フロー（CLI / スクリプト）の方向性。
-- 依存: python-pptx のスタイル取得制約、LibreOffice / Open XML SDK での補完可否、ブランド設定 JSON のスキーマ拡張余地。
-
-<a id="rm-010"></a>
-### RM-010 テンプレート仕様エクスポート（優先度: P2）
-- ゴール: PPTX テンプレートから `samples/json/sample_spec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
-- 参照ドキュメント: [README.md](../README.md)（extract-template セクション）
-- 参照 ToDo: [docs/todo/archive/20251009-template-spec-export.md](../todo/archive/20251009-template-spec-export.md)
-- 状況: 完了（2025-10-11 更新）
-- 達成成果: `extract-template` CLI コマンドおよび `TemplateExtractorStep` を実装、抽出結果を JSON/YAML で出力可能にし、README に使用手順を追加。単体・統合テストを整備し、テンプレート構造解析フローを確立。
-- 依存: python-pptx による図形情報取得、テンプレート命名規則、サンプルテンプレート資産。
-
-<a id="rm-012"></a>
-### RM-012 レンダラーテキスト強化（優先度: P1）
-- ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/archive/20251011-renderer-text-enhancement.md](../todo/archive/20251011-renderer-text-enhancement.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
-- 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
-
-<a id="rm-015"></a>
-### RM-015 ロードマップ再設計（優先度: P1）
-- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
-- 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
-- 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
-- 状況: 完了（2025-10-11 更新）
-- 期待成果: 工程ごとのタスク整理、レイアウト選定/縮約ポリシーの方針化、HITL 承認フローと監査ログ方針整理。
-  - 工程1・2: テンプレ構造抽出 CLI 要件定義と PoC 設計（ToDo 発行予定）、テンプレ運用ポリシー更新。
-  - 工程3・4: レイアウトスコアリング指標の設計、AI レビュー評価指標の数値化、承認 UI / API 設計、`docs/design/schema/README.md` のモデル実装。
-  - 工程5・6: 監査ログ項目と承認状態遷移の最小セット定義、軽量整合チェックと Polisher 連携の拡張。
-  - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
-
-<a id="rm-016"></a>
-### RM-016 テンプレート命名整合性チェッカー（優先度: P3）
-- ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
-- 対象工程: 1・2（テンプレ準備 / 構造抽出）
-- 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: テンプレート読込時の名称衝突検知、CLI への警告出力、プレースホルダー命名規則の追加ガイド。
-- 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
-
-<a id="rm-017"></a>
-### RM-017 パイプライン機能拡張
-- ゴール: JSON スキーマ拡張と自動診断強化によって生成品質を底上げする。
-- 参照 ToDo: [docs/todo/archive/20251004-pipeline-enhancements.md](../todo/archive/20251004-pipeline-enhancements.md), [docs/todo/archive/20251010-auto-complete-archive-handling.md](../todo/archive/20251010-auto-complete-archive-handling.md)
-- 状況: 7 件中 7 件完了（2025-10-06 更新）、追加修正 1 件完了（2025-10-10 更新）
-- 成果: スキーマ拡張、Analyzer 出力整備、テスト追加、関連ドキュメント更新。
-- 追加成果: auto_complete_todo.py でアーカイブ済み ToDo の成功判定を実装（PR #146）。
-- 依存: RM-002（エージェント運用ガイド整備）、RM-007/008（レンダラー拡張）、RM-010（テンプレート仕様エクスポート）。
-
-<a id="rm-018"></a>
-### RM-018 レンダラー リッチコンテンツ対応
-- ゴール: 表・画像・グラフをブランドスタイル付きで描画できるレンダラーを実装する。
-- 参照 ToDo: [docs/todo/archive/20251005-renderer-rich-content.md](../todo/archive/20251005-renderer-rich-content.md)
-- 状況: 14 件中 14 件完了（2025-10-06 更新）
-- 成果: リッチコンテンツ描画処理、テンプレート改善、検証手順の追加。
-- 依存: RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）、RM-017（パイプライン機能拡張）。
-
-<a id="rm-019"></a>
-### RM-019 CLI ツールチェーン整備（優先度: P1）
-- ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
-- 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
-- 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
-- 状況: 完了（2025-10-15 更新）
-- 期待成果: エントリーポイント `pptx` への改称、`gen` / `tpl-extract` サブコマンドの実装、将来の `spec-generate` など支援系機能の導線整備。
-- 依存: CLI 運用ガイド（`docs/AGENTS.md`）、既存パイプライン構成、PyYAML などの依存パッケージ管理。
-
-<a id="rm-020"></a>
-### RM-020 PDF 自動生成対応
-- ゴール: PPTX 生成直後に PDF 化までを自動化し、配布用資料をワンステップで提供する。
-- 参照 ToDo: [docs/todo/archive/20251005-pdf-export-automation.md](../todo/archive/20251005-pdf-export-automation.md)
-- 状況: 10 件中 10 件完了（2025-10-06 更新）
-- 成果: PR #152 https://github.com/yurake/pptx_generator/pull/152
-- 依存: RM-017（パイプライン機能拡張）による CLI/監査基盤、LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
 
 ## 更新履歴
 - 2025-10-05: 初版作成。
