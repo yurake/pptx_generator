@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,6 +11,13 @@ from typing import Iterable
 
 from ..models import (
     TemplateRelease,
+    TemplateReleaseAnalyzerFixSummary,
+    TemplateReleaseAnalyzerIssueSummary,
+    TemplateReleaseAnalyzerMetrics,
+    TemplateReleaseAnalyzerReport,
+    TemplateReleaseAnalyzerRunMetrics,
+    TemplateReleaseAnalyzerSummary,
+    TemplateReleaseAnalyzerSummaryDelta,
     TemplateReleaseChanges,
     TemplateReleaseDiagnostics,
     TemplateReleaseGoldenRun,
@@ -109,6 +117,10 @@ def build_template_release(
         for message in extra_errors:
             _append_unique(errors, message)
 
+    analyzer_metrics, analyzer_warnings = _collect_analyzer_metrics(golden_runs or [])
+    for message in analyzer_warnings:
+        _append_unique(warnings, message)
+
     total_layouts = len(details)
     if total_layouts:
         placeholder_total = sum(detail.placeholder_count for detail in details)
@@ -139,6 +151,7 @@ def build_template_release(
         },
         layouts=layouts,
         diagnostics=diagnostics,
+        analyzer_metrics=analyzer_metrics,
         golden_runs=golden_runs or [],
     )
     return release
@@ -215,6 +228,25 @@ def build_release_report(
         layout_diffs=layout_diffs,
     )
 
+    analyzer_report = None
+    if current.analyzer_metrics is not None:
+        current_summary = current.analyzer_metrics.summary
+        baseline_summary = (
+            baseline.analyzer_metrics.summary
+            if baseline is not None and baseline.analyzer_metrics is not None
+            else None
+        )
+        delta = (
+            _compute_analyzer_delta(current_summary, baseline_summary)
+            if baseline_summary is not None
+            else None
+        )
+        analyzer_report = TemplateReleaseAnalyzerReport(
+            current=current_summary,
+            baseline=baseline_summary,
+            delta=delta,
+        )
+
     report = TemplateReleaseReport(
         template_id=current.template_id,
         baseline_id=baseline.template_id if baseline is not None else None,
@@ -225,8 +257,199 @@ def build_release_report(
         },
         changes=changes,
         diagnostics=current.diagnostics,
+        analyzer=analyzer_report,
     )
     return report
+
+
+def _collect_analyzer_metrics(
+    golden_runs: list[TemplateReleaseGoldenRun],
+) -> tuple[TemplateReleaseAnalyzerMetrics | None, list[str]]:
+    if not golden_runs:
+        return None, []
+
+    warnings: list[str] = []
+    run_metrics: list[TemplateReleaseAnalyzerRunMetrics] = []
+    summary_issues_by_type: dict[str, int] = {}
+    summary_issues_by_severity: dict[str, int] = {}
+    summary_fixes_by_type: dict[str, int] = {}
+    total_issues = 0
+    total_fixes = 0
+    included_runs = 0
+
+    for run in golden_runs:
+        spec_path = run.spec_path
+
+        if run.status != "passed":
+            warnings.append(
+                f"golden spec {spec_path}: status={run.status} のため Analyzer メトリクスを集計しませんでした"
+            )
+            run_metrics.append(
+                TemplateReleaseAnalyzerRunMetrics(
+                    spec_path=spec_path,
+                    status="skipped",
+                    issues=TemplateReleaseAnalyzerIssueSummary(),
+                    fixes=TemplateReleaseAnalyzerFixSummary(),
+                )
+            )
+            continue
+
+        analysis_path = run.analysis_path
+        if not analysis_path:
+            warnings.append(
+                f"golden spec {spec_path}: analysis.json が存在しないため Analyzer メトリクスを集計しませんでした"
+            )
+            run_metrics.append(
+                TemplateReleaseAnalyzerRunMetrics(
+                    spec_path=spec_path,
+                    status="skipped",
+                    issues=TemplateReleaseAnalyzerIssueSummary(),
+                    fixes=TemplateReleaseAnalyzerFixSummary(),
+                )
+            )
+            continue
+
+        file_path = Path(analysis_path)
+        if not file_path.exists():
+            warnings.append(
+                f"golden spec {spec_path}: analysis.json が見つからないため Analyzer メトリクスを集計しませんでした"
+            )
+            run_metrics.append(
+                TemplateReleaseAnalyzerRunMetrics(
+                    spec_path=spec_path,
+                    status="skipped",
+                    issues=TemplateReleaseAnalyzerIssueSummary(),
+                    fixes=TemplateReleaseAnalyzerFixSummary(),
+                )
+            )
+            continue
+
+        try:
+            payload = json.loads(file_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:  # pragma: no cover - 異常系
+            warnings.append(
+                f"golden spec {spec_path}: analysis.json の読み込みに失敗しました ({exc})"
+            )
+            run_metrics.append(
+                TemplateReleaseAnalyzerRunMetrics(
+                    spec_path=spec_path,
+                    status="skipped",
+                    issues=TemplateReleaseAnalyzerIssueSummary(),
+                    fixes=TemplateReleaseAnalyzerFixSummary(),
+                )
+            )
+            continue
+
+        issues_payload = payload.get("issues") or []
+        fixes_payload = payload.get("fixes") or []
+
+        issue_summary = _summarize_issues(issues_payload)
+        fix_summary = _summarize_fixes(fixes_payload)
+
+        included_runs += 1
+        total_issues += issue_summary.total
+        total_fixes += fix_summary.total
+        _merge_counts(summary_issues_by_type, issue_summary.by_type)
+        _merge_counts(summary_issues_by_severity, issue_summary.by_severity)
+        _merge_counts(summary_fixes_by_type, fix_summary.by_type)
+
+        run_metrics.append(
+            TemplateReleaseAnalyzerRunMetrics(
+                spec_path=spec_path,
+                status="included",
+                issues=issue_summary,
+                fixes=fix_summary,
+            )
+        )
+
+    aggregated_at = datetime.now(timezone.utc).isoformat()
+    summary = TemplateReleaseAnalyzerSummary(
+        run_count=included_runs,
+        issues=TemplateReleaseAnalyzerIssueSummary(
+            total=total_issues,
+            by_type=_sorted_dict(summary_issues_by_type),
+            by_severity=_sorted_dict(summary_issues_by_severity),
+        ),
+        fixes=TemplateReleaseAnalyzerFixSummary(
+            total=total_fixes,
+            by_type=_sorted_dict(summary_fixes_by_type),
+        ),
+    )
+
+    metrics = TemplateReleaseAnalyzerMetrics(
+        aggregated_at=aggregated_at,
+        runs=run_metrics,
+        summary=summary,
+    )
+    return metrics, warnings
+
+
+def _summarize_issues(payload: list[dict[str, object]]) -> TemplateReleaseAnalyzerIssueSummary:
+    by_type: dict[str, int] = {}
+    by_severity: dict[str, int] = {}
+
+    for item in payload:
+        issue_type = str(item.get("type") or "unknown")
+        severity = str(item.get("severity") or "unknown")
+        _increment(by_type, issue_type)
+        _increment(by_severity, severity)
+
+    return TemplateReleaseAnalyzerIssueSummary(
+        total=len(payload),
+        by_type=_sorted_dict(by_type),
+        by_severity=_sorted_dict(by_severity),
+    )
+
+
+def _summarize_fixes(payload: list[dict[str, object]]) -> TemplateReleaseAnalyzerFixSummary:
+    by_type: dict[str, int] = {}
+
+    for item in payload:
+        fix_type = str(item.get("type") or "unknown")
+        _increment(by_type, fix_type)
+
+    return TemplateReleaseAnalyzerFixSummary(
+        total=len(payload),
+        by_type=_sorted_dict(by_type),
+    )
+
+
+def _increment(target: dict[str, int], key: str) -> None:
+    target[key] = target.get(key, 0) + 1
+
+
+def _merge_counts(target: dict[str, int], source: dict[str, int]) -> None:
+    for key, value in source.items():
+        target[key] = target.get(key, 0) + value
+
+
+def _sorted_dict(source: dict[str, int]) -> dict[str, int]:
+    return dict(sorted(source.items()))
+
+
+def _compute_analyzer_delta(
+    current: TemplateReleaseAnalyzerSummary,
+    baseline: TemplateReleaseAnalyzerSummary,
+) -> TemplateReleaseAnalyzerSummaryDelta:
+    issue_delta = _subtract_counts(current.issues.by_type, baseline.issues.by_type)
+    severity_delta = _subtract_counts(
+        current.issues.by_severity, baseline.issues.by_severity
+    )
+    fix_delta = _subtract_counts(current.fixes.by_type, baseline.fixes.by_type)
+    return TemplateReleaseAnalyzerSummaryDelta(
+        issues=_sorted_dict(issue_delta),
+        severity=_sorted_dict(severity_delta),
+        fixes=_sorted_dict(fix_delta),
+        total_issue_change=current.issues.total - baseline.issues.total,
+        total_fix_change=current.fixes.total - baseline.fixes.total,
+    )
+
+
+def _subtract_counts(
+    current: dict[str, int], baseline: dict[str, int]
+) -> dict[str, int]:
+    keys = set(current.keys()) | set(baseline.keys())
+    return {key: current.get(key, 0) - baseline.get(key, 0) for key in keys}
 
 
 def _compute_sha256(template_path: Path) -> str:

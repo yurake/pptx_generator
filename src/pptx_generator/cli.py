@@ -14,6 +14,8 @@ from .branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
+from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
+                                LayoutValidationSuite)
 from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
                      TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
@@ -425,6 +427,67 @@ def tpl_extract(
         logging.exception("テンプレート抽出中にエラーが発生しました")
         click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
+
+
+@app.command("layout-validate")
+@click.option(
+    "--template",
+    "-t",
+    "template_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    required=True,
+    help="検証対象の PPTX テンプレートファイル",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/validation"),
+    show_default=True,
+    help="検証成果物の出力ディレクトリ",
+)
+@click.option(
+    "--template-id",
+    type=str,
+    default=None,
+    help="layouts.jsonl に記録するテンプレート ID",
+)
+@click.option(
+    "--baseline",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="比較対象となる過去の layouts.jsonl",
+)
+def layout_validate(
+    template_path: Path,
+    output_dir: Path,
+    template_id: Optional[str],
+    baseline: Optional[Path],
+) -> None:
+    """テンプレート構造の検証スイートを実行する。"""
+
+    options = LayoutValidationOptions(
+        template_path=template_path,
+        output_dir=output_dir,
+        template_id=template_id,
+        baseline_path=baseline,
+    )
+    suite = LayoutValidationSuite(options)
+
+    try:
+        result = suite.run()
+    except LayoutValidationError as exc:
+        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
+
+    click.echo(f"Layouts: {result.layouts_path}")
+    click.echo(f"Diagnostics: {result.diagnostics_path}")
+    if result.diff_report_path is not None:
+        click.echo(f"Diff: {result.diff_report_path}")
+    click.echo(
+        "検出結果: warnings=%d, errors=%d" % (result.warnings_count, result.errors_count)
+    )
 
 
 @app.command("tpl-release")
