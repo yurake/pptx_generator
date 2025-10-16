@@ -36,7 +36,19 @@
 - `refiner` のカラー調整を有効化する場合は、ブランド設定 (`config/branding.json`) と整合する色を指定する。
 
 ## バリデーション
-- テンプレート更新時は `template_validator.py` を実行し、レイアウト・プレースホルダ構造の差分を確認する。
+- テンプレート更新時は次のコマンドで抽出結果と差分を検証する。
+  ```bash
+  uv run pptx tpl-extract \
+    --template templates/libraries/<brand>/<version>/template.pptx \
+    --output .pptx/extract/<brand>_<version>
+
+  uv run pptx layout-validate \
+    --template templates/libraries/<brand>/<version>/template.pptx \
+    --output .pptx/validation/<brand>_<version> \
+    --baseline releases/<brand>/<prev_version>/layouts.jsonl
+  ```
+  - `tpl-extract` で最新テンプレのレイアウト仕様と `branding.json` を生成し、保管する。
+  - `layout-validate` で `layouts.jsonl` と `diagnostics.json` を検証し、ベースラインとの差分レポート (`diff_report.json`) を確認する。致命的エラーが検出された場合は exit code 6 で停止する。
 - 設定ファイルは `jsonschema` に基づく検証スクリプト（未整備の場合は CLI で手動検証）を実施する。
 
 ## テンプレート利用要件
@@ -47,7 +59,6 @@
 - 利用者向けテンプレートは `templates/` ディレクトリ配下に管理し、案件固有のテンプレートは `samples/` など任意の場所に置いたうえで CLI 実行時にパスを明示する。
 - 具体例として、`samples/templates/templates.pptx` にレイアウト名とアンカー命名例を添付している。
 - 画像は連携済みロゴのみを想定する。写真・アイコンなど任意画像はテンプレート側に含めず、必要に応じて後工程で人手挿入とする。チャートはテキストで構造化可能なデータのみ表形式で表現する。
-- テンプレ構造抽出 CLI (`uv run pptx-generator extract-template …`) は工程 2 を支援する。テンプレ更新時は CLI を実行して `layouts.jsonl` と `diagnostics.json` を更新し、差分を確認する。
 
 ### サンプル準拠レイアウト（参考）
 | layout 名 | 想定用途 | 主なアンカー |

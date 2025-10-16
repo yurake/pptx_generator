@@ -23,10 +23,9 @@
 
 ## CLI 実行例
 ```bash
-uv run extract-template templates/libraries/acme/v1/template.pptx \
-  --output layouts.jsonl \
-  --diagnostics diagnostics.json \
-  --baseline releases/acme/v0/layouts.jsonl
+uv run pptx tpl-extract \
+  --template templates/libraries/acme/v1/template.pptx \
+  --output .pptx/extract/acme_v1
 ```
 
 ### 検証スイート
