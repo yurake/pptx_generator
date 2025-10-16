@@ -24,57 +24,81 @@
 | 6 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
-graph TD
+flowchart TB
     subgraph GOV["Cross-Stage / Governance"]
-        RM001["RM-001 Analyzer / Refiner ルール拡張(完了)"]
-        RM002["RM-002 エージェント運用ガイド整備(完了)"]
-        RM003["RM-003 ビジュアルフィードバックコパイロット(検討中)"]
-        RM006["RM-006 ライブ共同編集アシスト(検討中)"]
+        direction TB
+        GOV_ANCHOR(( ))
+        RM001["RM-001<br/>Analyzer / Refiner ルール拡張<br/>(完了)"]
+        RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
+        RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(検討中)"]
+        RM006["RM-006<br/>ライブ共同編集アシスト<br/>(検討中)"]
     end
 
     subgraph ST1["Stage 1: テンプレ準備"]
-        RM016["RM-016 テンプレート命名整合性チェッカー(完了)"]
-        RM021["RM-021 テンプレ資産監査パイプライン(完了)"]
-        RM027["RM-027 Analyzer テンプレ監査メトリクス整備(未着手)"]
+        direction TB
+        ST1_ANCHOR(( ))
+        RM016["RM-016<br/>テンプレート命名整合性<br/>チェッカー<br/>(完了)"]
+        RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
+        RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
-        RM008["RM-008 カスタムテンプレート操作性向上(完了)"]
-        RM009["RM-009 テンプレート設定自動生成(完了)"]
-        RM010["RM-010 テンプレート仕様エクスポート(完了)"]
-        RM011["RM-011 レイアウトスタイル統一(実装中)"]
-        RM022["RM-022 レイアウト解析検証強化(未着手)"]
-        RM028["RM-028 Analyzer 構造抽出差分連携(未着手)"]
+        direction TB
+        ST2_ANCHOR(( ))
+        RM008["RM-008<br/>カスタムテンプレート<br/>操作性向上<br/>(完了)"]
+        RM009["RM-009<br/>テンプレート設定自動生成<br/>(完了)"]
+        RM010["RM-010<br/>テンプレート仕様<br/>エクスポート<br/>(完了)"]
+        RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
+        RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(未着手)"]
+        RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(未着手)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
-        RM005["RM-005 プレゼンストーリーモデラー(完了)"]
-        RM023["RM-023 コンテンツ承認オーサリング基盤(未着手)"]
-        RM029["RM-029 Analyzer Review Engine 連携(未着手)"]
+        direction TB
+        ST3_ANCHOR(( ))
+        RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
+        RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(未着手)"]
+        RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
-        RM024["RM-024 ドラフト構成承認フロー整備(未着手)"]
-        RM030["RM-030 Analyzer ドラフト評価ダッシュボード(未着手)"]
+        direction TB
+        ST4_ANCHOR(( ))
+        RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(未着手)"]
+        RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(未着手)"]
     end
 
     subgraph ST5["Stage 5: マッピング"]
-        RM007["RM-007 SlideBullet アンカー拡張(完了)"]
-        RM017["RM-017 パイプライン機能拡張(完了)"]
-        RM018["RM-018 レンダラー リッチコンテンツ対応(完了)"]
-        RM019["RM-019 CLI ツールチェーン整備(完了)"]
-        RM025["RM-025 マッピング補完エンジン(未着手)"]
-        RM031["RM-031 Analyzer マッピング補完連動(未着手)"]
+        direction TB
+        ST5_ANCHOR(( ))
+        RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
+        RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
+        RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
+        RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
+        RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(未着手)"]
+        RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(未着手)"]
     end
 
     subgraph ST6["Stage 6: レンダリング・仕上げ"]
-        RM012["RM-012 レンダラーテキスト強化(完了)"]
-        RM013["RM-013 PPTX 解析アナライザー実装(完了)"]
-        RM014["RM-014 自動補正・仕上げ統合(未着手)"]
-        RM020["RM-020 PDF 自動生成対応(完了)"]
-        RM026["RM-026 レンダリング監査統合(未着手)"]
-        RM032["RM-032 Analyzer レンダリング監視統合(未着手)"]
+        direction TB
+        ST6_ANCHOR(( ))
+        RM012["RM-012<br/>レンダラー<br/>テキスト強化<br/>(完了)"]
+        RM013["RM-013<br/>PPTX 解析<br/>アナライザー実装<br/>(完了)"]
+        RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(未着手)"]
+        RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
+        RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(未着手)"]
+        RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
     end
+
+    style GOV_ANCHOR fill:transparent,stroke:transparent
+    style ST1_ANCHOR fill:transparent,stroke:transparent
+    style ST2_ANCHOR fill:transparent,stroke:transparent
+    style ST3_ANCHOR fill:transparent,stroke:transparent
+    style ST4_ANCHOR fill:transparent,stroke:transparent
+    style ST5_ANCHOR fill:transparent,stroke:transparent
+    style ST6_ANCHOR fill:transparent,stroke:transparent
+
+    GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR --> ST5_ANCHOR --> ST6_ANCHOR
 
     RM001 --> RM003
     RM013 --> RM003
@@ -243,11 +267,11 @@ graph TD
 - 対象工程: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/design/layout-style-governance.md](../design/layout-style-governance.md)
 - 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
-- 状況: 実装中（2025-10-12 更新）
+- 状況: 完了（2025-10-17 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
 - 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、`config/branding.json` の拡張設計。
-- 次のアクション: CLI 全体テストとドキュメント同期（requirements/design/policies）の完了、テンプレート運用手順への反映を行う。
-    - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
+- 成果: `layout-style-v1` スキーマとブランド設定テンプレートを確立し、`config/branding.json`／レンダラー適用ロジック／CLI ドキュメントを更新済み。
+   - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
 <a id="rm-012"></a>
 ### RM-012 レンダラーテキスト強化
@@ -353,11 +377,10 @@ graph TD
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
 - 対象工程: 2（テンプレ構造抽出）
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md)
-- 参照 ToDo: [docs/todo/20251012-layout-validation-suite.md](../todo/20251012-layout-validation-suite.md)
-- 状況: 未着手（2025-10-12 追加）
+- 参照 ToDo: [docs/todo/archive/20251012-layout-validation-suite.md](../todo/archive/20251012-layout-validation-suite.md)
+- 状況: 完了（2025-10-16 更新）
 - 期待成果: `layouts.jsonl` スキーマバリデータ、差分レポート可視化、ヒント係数・用途タグ推定ロジック。
 - 依存: RM-021（テンプレ資産監査パイプライン）、RM-010（テンプレート仕様エクスポート）、RM-017（パイプライン機能拡張）、python-pptx / Open XML SDK の抽出結果、CI での JSON 検証基盤。
-- 次のアクション: スキーマ項目の定義、差分レポートフォーマットの設計、AI 補完と連動するヒント係数算出アルゴリズムの検討。
 
 <a id="rm-023"></a>
 ### RM-023 コンテンツ承認オーサリング基盤

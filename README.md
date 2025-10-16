@@ -66,14 +66,34 @@
 ### 工程 2: テンプレ構造抽出
 - 既存テンプレートからレイアウト／アンカー情報とブランド設定を抽出します。
    ```bash
-   uv run pptx tpl-extract --template samples/templates/templates.pptx
+   uv run pptx tpl-extract \
+     --template templates/libraries/acme/v1/template.pptx \
+     --output .pptx/extract/acme_v1
    # レイアウト名で絞り込む場合
-   uv run pptx tpl-extract --template samples/templates/templates.pptx --layout "タイトルスライド"
+   uv run pptx tpl-extract \
+     --template templates/libraries/acme/v1/template.pptx \
+     --output .pptx/extract/acme_v1 \
+     --layout "タイトルスライド"
    # YAML 形式で出力する場合
-   uv run pptx tpl-extract --template samples/templates/templates.pptx --format yaml
+   uv run pptx tpl-extract \
+     --template templates/libraries/acme/v1/template.pptx \
+     --output .pptx/extract/acme_v1 \
+     --format yaml
    ```
-- 出力は既定で `.pptx/extract/` 以下に保存され、レイアウト JSON と layout-style 対応の `branding.json` が生成されます。
-- `branding.json` では `theme` / `components` / `layouts` にスタイル設定が格納されるため、詳細は `docs/design/layout-style-governance.md` を参照してください。
+- 出力は既定で `.pptx/extract/` 以下に保存され、レイアウト JSON と layout-style 対応の `branding.json` が生成されます。サンプルで試す場合は `samples/templates/templates.pptx` を指定してください。
+- `branding.json` では `theme` / `components` / `layouts` にスタイル設定が格納されます。詳細は `docs/design/layout-style-governance.md` を参照してください。
+- 抽出結果の健全性や差分確認には検証スイートを利用します。
+   ```bash
+   uv run pptx layout-validate \
+     --template templates/libraries/acme/v1/template.pptx \
+     --output .pptx/validation/acme_v1
+   # 過去の layouts.jsonl と比較する場合
+   uv run pptx layout-validate \
+     --template templates/libraries/acme/v1/template.pptx \
+     --output .pptx/validation/acme_v1 \
+     --baseline releases/acme/v0/layouts.jsonl
+   ```
+- 生成される `layouts.jsonl` / `diagnostics.json` / `diff_report.json` は工程 2 の成果物品質を可視化し、CI などでの回帰チェックにも利用できます。
 
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
@@ -160,6 +180,21 @@
 - `release_report.json`: 過去バージョンとの差分レポート（`--baseline-release` 時）
 - `golden_runs.json`／`golden_runs/<spec名>/`: ゴールデンサンプル検証結果 (`--golden-spec` 指定時)
 - ゴールデンサンプルで失敗がある場合は exit code 6 で終了します
+
+#### `pptx layout-validate`
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--template <path>` | 検証対象の `.pptx` テンプレート（必須） | - |
+| `--output <dir>` | 検証成果物を保存するディレクトリ | `.pptx/validation` |
+| `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 | 自動導出 |
+| `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する | 比較なし |
+
+生成物:
+- `layouts.jsonl`: レイアウト ID／プレースホルダー構成／ヒント情報を JSON Lines 形式で保存
+- `diagnostics.json`: 未知プレースホルダー種別や抽出エラーを `warnings` / `errors` に集計
+- `diff_report.json`: `--baseline` 指定時にプレースホルダー追加・削除・座標変更を記録
+- exit code 6 で致命的エラー（抽出失敗・必須項目欠落など）を通知
 
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
