@@ -26,10 +26,10 @@ roadmap_item: RM-019 CLI ツールチェーン整備
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issueの更新
+- [x] 関連Issueの更新
   - メモ: Issue #190 への進捗コメントは今後対応。
 - [x] PR 作成
-  - メモ: PR #191 https://github.com/yurake/pptx_generator/pull/191（2025-10-15 完了）
+  - メモ: PR #192 https://github.com/yurake/pptx_generator/pull/192（2025-10-16 完了）
 
 ## メモ
 - README の工程2 記述とスタイルを揃えることを意識する
