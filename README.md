@@ -51,6 +51,17 @@
 ### 工程 1: テンプレ準備
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
 - 自動検査ツール（命名整合性チェックなど）は設計中です。運用中は手動レビュー（HITL）を併用します。
+- テンプレ受け渡しメタを生成する場合はテンプレリリース CLI を利用します。
+   ```bash
+   uv run pptx tpl-release \
+     --template templates/libraries/<brand>/<version>/template.pptx \
+     --brand <brand> \
+     --version <version> \
+     --baseline-release templates/releases/<brand>/<prev_version>/template_release.json \
+     --golden-spec samples/json/sample_spec.json
+   ```
+   - 既定の出力先は `.pptx/release/` です。`template_release.json`（受け渡しメタ）や `release_report.json`（差分レポート）、`golden_runs/`（ゴールデンサンプル検証ログ）が保存されます。
+   - `--baseline-release` で過去バージョンとの差分比較が可能です。`--golden-spec` を複数指定すると代表 spec でのレンダリング検証をまとめて実行します。
 
 ### 工程 2: テンプレ構造抽出
 - 既存テンプレートからレイアウト／アンカー情報とブランド設定を抽出します。

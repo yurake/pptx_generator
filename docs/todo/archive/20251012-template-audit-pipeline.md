@@ -25,6 +25,7 @@ roadmap_item: RM-021 テンプレ資産監査パイプライン
   - メモ: 2025-10-16 Issue #178 に運用方針（差分共有手順・検証結果）をコメントで共有済み
 - [x] PR 作成
   - メモ: PR #193 https://github.com/yurake/pptx_generator/pull/193（2025-10-16 完了）
+  - メモ: PR #189 https://github.com/yurake/pptx_generator/pull/189（2025-10-15 完了）
 
 ## メモ
 - LibreOffice / Open XML SDK を用いた互換性検証が前提となるため、ジョブ実行環境の依存関係を整理する
