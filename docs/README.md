@@ -23,6 +23,7 @@
 - リリースや問い合わせ対応など、実務手順をまとめたドキュメント。
 - `docs/runbooks/release.md`: リリース計画からロールバックまでの手順。
 - `docs/runbooks/support.md`: 緊急連絡と問い合わせ対応フロー。
+- `docs/runbooks/story-outline-ops.md`: ストーリー骨子の適用・レビュー・ロールバック手順。
 
 ## roadmap
 - 開発テーマ単位の大項目 ToDo を整理する場所。
