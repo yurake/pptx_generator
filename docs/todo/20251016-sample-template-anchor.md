@@ -27,7 +27,7 @@ roadmap_item: RM-019 CLI ツールチェーン整備
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issueの更新
-  - メモ: レビュー対応につき新規 Issue なし。PR #192 レビューコメントを PR #195 で処理。
+  - メモ: Issue #194 を参照。PR #195 で PR #192 のレビューコメントを処理。
 - [x] PR 作成
   - メモ: PR #195 https://github.com/yurake/pptx_generator/pull/195 を作成。
 
