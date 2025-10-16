@@ -29,7 +29,7 @@ roadmap_item: RM-005 プレゼンストーリーモデラー
 - [x] 関連Issueの更新
   - メモ: Issue #196 へドキュメント整備完了と今後の実装タスク切り出し方針をコメント
 - [x] PR 作成
-  - メモ: PR #197 でテンプレートに ToDo/承認メッセージを記載済み
+  - メモ: PR #197 https://github.com/yurake/pptx_generator/pull/197（2025-10-16 完了）
 
 ## メモ
 - `stage-03-content-normalization` のストーリー要素追記は本タスクで実施する。

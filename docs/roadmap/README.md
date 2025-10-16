@@ -65,16 +65,6 @@ graph TD
 - 依存: RM-001（Analyzer / Refiner ルール拡張）のログ・指標整備、画像生成モデルの選定、GPU 実行基盤との連携。
 - 次のアクション: 参考事例のリサーチ、モデル推論コスト試算、UI プロトタイピング。
 
-<a id="rm-005"></a>
-### RM-005 プレゼンストーリーモデラー
-- ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
-- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
-- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
-- 状況: 企画中（2025-10-16 更新）
-- 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
-- 依存: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
-- 次のアクション: ストーリー作成コンセプトの整理、要件ドラフト（入力メタ・出力スキーマ）の作成、設計ドキュメントのアウトライン化（docs/todo/20251016-story-modeler-docs.md 参照）。
-
 <a id="rm-006"></a>
 ### RM-006 ライブ共同編集アシスト
 - ゴール: 提案会議中でも AI がライブでスライド修正案・説明コメント・補足資料リンクを提示し、即応性の高いプレゼンを実現する。
@@ -180,6 +170,15 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-005"></a>
+### RM-005 プレゼンストーリーモデラー
+- ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
+- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
+- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
+- 依存: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
 
 <a id="rm-019"></a>
 ### RM-019 CLI ツールチェーン整備（優先度: P1）
