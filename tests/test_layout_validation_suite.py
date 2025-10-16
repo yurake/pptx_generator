@@ -10,6 +10,7 @@ from pptx_generator.layout_validation import (
     LayoutValidationOptions,
     LayoutValidationSuite,
 )
+from pptx_generator.models import LayoutInfo, TemplateSpec
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -98,3 +99,40 @@ def test_cli_layout_validate_command(tmp_path) -> None:
     assert result.exit_code == 0, result.output
     assert (output_dir / "layouts.jsonl").exists()
     assert (output_dir / "diagnostics.json").exists()
+
+
+def test_layout_diff_uses_stable_ids_for_duplicate_names(tmp_path) -> None:
+    layout_a = LayoutInfo(name="Title", identifier="1001", anchors=[])
+    layout_b = LayoutInfo(name="Title", identifier="1002", anchors=[])
+    spec = TemplateSpec(
+        template_path="dummy",
+        extracted_at="2024-10-15T00:00:00Z",
+        layouts=[layout_a, layout_b],
+        warnings=[],
+        errors=[],
+    )
+    options = LayoutValidationOptions(
+        template_path=tmp_path / "template.pptx",
+        output_dir=tmp_path,
+        template_id="sample",
+    )
+    suite = LayoutValidationSuite(options)
+
+    records, _, _ = suite._build_layout_records(spec, "sample")
+
+    baseline_path = tmp_path / "baseline.jsonl"
+    with baseline_path.open("w", encoding="utf-8") as file:
+        for record in reversed(records):
+            file.write(json.dumps(record, ensure_ascii=False))
+            file.write("\n")
+
+    diff_report = suite._build_diff_report(
+        records=records,
+        target_template_id="sample",
+        baseline_path=baseline_path,
+    )
+
+    assert diff_report is not None
+    assert diff_report["layouts_added"] == []
+    assert diff_report["layouts_removed"] == []
+    assert diff_report["placeholders_changed"] == []
