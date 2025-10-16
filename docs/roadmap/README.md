@@ -23,34 +23,58 @@
 | 5 | マッピング | レイアウト割付と `rendering_ready.json` 作成 |
 | 6 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
-状況に応じて優先工程は変動するため、各 RM の「対象工程」欄を参照してタスクを選択する。
-
 ```mermaid
 graph TD
-    RM001["RM-001 Analyzer / Refiner ルール拡張(完了)"]
-    RM002["RM-002 エージェント運用ガイド整備(完了)"]
-    RM003["RM-003 ビジュアルフィードバックコパイロット(検討中)"]
-    RM005["RM-005 プレゼンストーリーモデラー(完了)"]
-    RM006["RM-006 ライブ共同編集アシスト(検討中)"]
-    RM007["RM-007 SlideBullet アンカー拡張(完了)"]
-    RM008["RM-008 カスタムテンプレート操作性向上(完了)"]
-    RM009["RM-009 テンプレート設定自動生成(完了)"]
-    RM010["RM-010 テンプレート仕様エクスポート(完了)"]
-    RM011["RM-011 レイアウトスタイル統一(実装中)"]
-    RM012["RM-012 レンダラーテキスト強化(完了)"]
-    RM013["RM-013 PPTX 解析アナライザー実装(完了)"]
-    RM014["RM-014 自動補正・仕上げ統合(未着手)"]
-    RM016["RM-016 テンプレート命名整合性チェッカー(完了)"]
-    RM017["RM-017 パイプライン機能拡張(完了)"]
-    RM018["RM-018 レンダラー リッチコンテンツ対応(完了)"]
-    RM019["RM-019 CLI ツールチェーン整備(完了)"]
-    RM020["RM-020 PDF 自動生成対応(完了)"]
-    RM021["RM-021 テンプレ資産監査パイプライン(完了)"]
-    RM022["RM-022 レイアウト解析検証強化(未着手)"]
-    RM023["RM-023 コンテンツ承認オーサリング基盤(未着手)"]
-    RM024["RM-024 ドラフト構成承認フロー整備(未着手)"]
-    RM025["RM-025 マッピング補完エンジン(未着手)"]
-    RM026["RM-026 レンダリング監査統合(未着手)"]
+    subgraph GOV["Cross-Stage / Governance"]
+        RM001["RM-001 Analyzer / Refiner ルール拡張(完了)"]
+        RM002["RM-002 エージェント運用ガイド整備(完了)"]
+        RM003["RM-003 ビジュアルフィードバックコパイロット(検討中)"]
+        RM006["RM-006 ライブ共同編集アシスト(検討中)"]
+    end
+
+    subgraph ST1["Stage 1: テンプレ準備"]
+        RM016["RM-016 テンプレート命名整合性チェッカー(完了)"]
+        RM021["RM-021 テンプレ資産監査パイプライン(完了)"]
+        RM027["RM-027 Analyzer テンプレ監査メトリクス整備(未着手)"]
+    end
+
+    subgraph ST2["Stage 2: テンプレ構造抽出"]
+        RM008["RM-008 カスタムテンプレート操作性向上(完了)"]
+        RM009["RM-009 テンプレート設定自動生成(完了)"]
+        RM010["RM-010 テンプレート仕様エクスポート(完了)"]
+        RM011["RM-011 レイアウトスタイル統一(実装中)"]
+        RM022["RM-022 レイアウト解析検証強化(未着手)"]
+        RM028["RM-028 Analyzer 構造抽出差分連携(未着手)"]
+    end
+
+    subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
+        RM005["RM-005 プレゼンストーリーモデラー(完了)"]
+        RM023["RM-023 コンテンツ承認オーサリング基盤(未着手)"]
+        RM029["RM-029 Analyzer Review Engine 連携(未着手)"]
+    end
+
+    subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
+        RM024["RM-024 ドラフト構成承認フロー整備(未着手)"]
+        RM030["RM-030 Analyzer ドラフト評価ダッシュボード(未着手)"]
+    end
+
+    subgraph ST5["Stage 5: マッピング"]
+        RM007["RM-007 SlideBullet アンカー拡張(完了)"]
+        RM017["RM-017 パイプライン機能拡張(完了)"]
+        RM018["RM-018 レンダラー リッチコンテンツ対応(完了)"]
+        RM019["RM-019 CLI ツールチェーン整備(完了)"]
+        RM025["RM-025 マッピング補完エンジン(未着手)"]
+        RM031["RM-031 Analyzer マッピング補完連動(未着手)"]
+    end
+
+    subgraph ST6["Stage 6: レンダリング・仕上げ"]
+        RM012["RM-012 レンダラーテキスト強化(完了)"]
+        RM013["RM-013 PPTX 解析アナライザー実装(完了)"]
+        RM014["RM-014 自動補正・仕上げ統合(未着手)"]
+        RM020["RM-020 PDF 自動生成対応(完了)"]
+        RM026["RM-026 レンダリング監査統合(未着手)"]
+        RM032["RM-032 Analyzer レンダリング監視統合(未着手)"]
+    end
 
     RM001 --> RM003
     RM013 --> RM003
@@ -95,13 +119,31 @@ graph TD
     RM016 --> RM021
     RM010 --> RM021
     RM019 --> RM021
+    RM013 --> RM027
+    RM021 --> RM027
+    RM013 --> RM028
+    RM022 --> RM028
+    RM013 --> RM029
+    RM017 --> RM029
+    RM023 --> RM029
+    RM013 --> RM030
+    RM024 --> RM030
+    RM005 --> RM030
+    RM013 --> RM031
+    RM017 --> RM031
+    RM018 --> RM031
+    RM025 --> RM031
+    RM013 --> RM032
+    RM026 --> RM032
+    RM014 --> RM032
+    RM020 --> RM032
 ```
 
 ## 個別状況
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
 
 <a id="rm-001"></a>
-### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
+### RM-001 Analyzer / Refiner ルール拡張
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
 - 対象工程: 5（マッピング）・6（PPTX レンダリング）に付随する Analyzer / Refiner 処理
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
@@ -110,7 +152,7 @@ graph TD
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
 
 <a id="rm-002"></a>
-### RM-002 エージェント運用ガイド整備（優先度: P1）
+### RM-002 エージェント運用ガイド整備
 - ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
 - 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
@@ -159,7 +201,7 @@ graph TD
 - 次のアクション: 技術スタック比較、遅延要件の整理、UI ワイヤーフレーム作成。
 
 <a id="rm-007"></a>
-### RM-007 SlideBullet アンカー拡張（優先度: P2）
+### RM-007 SlideBullet アンカー拡張
 - ゴール: SlideBullet 要素がテンプレート内の任意テキスト図形へ挿入できるようレンダラーを拡張し、複数レイアウトでの再利用性を高める。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/AGENTS.md](../AGENTS.md)
@@ -169,7 +211,7 @@ graph TD
 - 依存: テンプレートレイアウト命名規則、Open XML SDK による仕上げ処理、PDF 変換時の段落整形。
 
 <a id="rm-008"></a>
-### RM-008 カスタムテンプレート操作性向上（優先度: P2）
+### RM-008 カスタムテンプレート操作性向上
 - ゴール: プレースホルダー名称を活用して画像・テーブル・チャートを配置し、テンプレート側で図形種類を固定しなくてもアンカー指定が有効になる状態を実現する。
 - 対象工程: 1・2（テンプレ準備 / 構造抽出）と 5（マッピング）への影響
 - 参照 ToDo: [docs/todo/archive/20251009-placeholder-anchor.md](../todo/archive/20251009-placeholder-anchor.md)
@@ -178,7 +220,7 @@ graph TD
 - 依存: レンダラーのアンカー解決ロジック、テンプレート操作ドキュメント、CLI テストスイート。
 
 <a id="rm-009"></a>
-### RM-009 テンプレート設定自動生成（優先度: P2）
+### RM-009 テンプレート設定自動生成
 - ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
 - 参照ドキュメント: 未整備（本テーマで作成予定）
 - 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
@@ -187,7 +229,7 @@ graph TD
 - 依存: python-pptx のスタイル取得制約、LibreOffice / Open XML SDK での補完可否、ブランド設定 JSON のスキーマ拡張余地。
 
 <a id="rm-010"></a>
-### RM-010 テンプレート仕様エクスポート（優先度: P2）
+### RM-010 テンプレート仕様エクスポート
 - ゴール: PPTX テンプレートから `samples/json/sample_spec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
 - 参照ドキュメント: [README.md](../README.md)（extract-template セクション）
 - 参照 ToDo: [docs/todo/archive/20251009-template-spec-export.md](../todo/archive/20251009-template-spec-export.md)
@@ -208,7 +250,7 @@ graph TD
     - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
 <a id="rm-012"></a>
-### RM-012 レンダラーテキスト強化（優先度: P1）
+### RM-012 レンダラーテキスト強化
 - ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/archive/20251011-renderer-text-enhancement.md](../todo/archive/20251011-renderer-text-enhancement.md)
@@ -217,7 +259,7 @@ graph TD
 - 依存: RM-007（SlideBullet アンカー拡張）の仕様調整、`samples/templates/` のレイアウト更新、CLI 統合テスト。
 
 <a id="rm-013"></a>
-### RM-013 PPTX 解析アナライザー実装（優先度: P1）
+### RM-013 PPTX 解析アナライザー実装
 - ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
 - 対象工程: 6（レンダリング後の解析）
 - 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
@@ -227,7 +269,7 @@ graph TD
 - 依存: LibreOffice / Open XML SDK 等の解析ツール選定、RM-012 で追加する描画仕様、CI 環境でのバイナリ比較手法。
 
 <a id="rm-014"></a>
-### RM-014 自動補正・仕上げ統合（優先度: P1）
+### RM-014 自動補正・仕上げ統合
 - ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
 - 対象工程: 5（マッピング）・6（レンダリング）および仕上げ工程
 - 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
@@ -238,7 +280,7 @@ graph TD
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
 <a id="rm-015"></a>
-### RM-015 ロードマップ再設計（優先度: P1）
+### RM-015 ロードマップ再設計
 - ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
 - 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
 - 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
@@ -250,7 +292,7 @@ graph TD
   - ドキュメント反映タスクの推進（[docs/notes/20251011-docs-update-plan.md](../notes/20251011-docs-update-plan.md) / [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)）
 
 <a id="rm-016"></a>
-### RM-016 テンプレート命名整合性チェッカー（優先度: P3）
+### RM-016 テンプレート命名整合性チェッカー
 - ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
 - 対象工程: 1・2（テンプレ準備 / 構造抽出）
 - 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
@@ -278,7 +320,7 @@ graph TD
 - 依存: RM-017（パイプライン機能拡張）、RM-007（SlideBullet アンカー拡張）、RM-008（テンプレート操作性向上）。
 
 <a id="rm-019"></a>
-### RM-019 CLI ツールチェーン整備（優先度: P1）
+### RM-019 CLI ツールチェーン整備
 - ゴール: 提案書生成と周辺支援機能を単一 CLI へ統合し、テンプレ抽出やサンプル spec 生成を含むワークフロー整備を加速する。
 - 参照ドキュメント: [docs/notes/20251011-branding-config-mapping.md](../notes/20251011-branding-config-mapping.md)
 - 参照 ToDo: [docs/todo/archive/20251011-cli-toolkit-refactor.md](../todo/archive/20251011-cli-toolkit-refactor.md)
@@ -297,7 +339,7 @@ graph TD
 - 関連テーマ: LibreOffice 実行環境整備、テンプレート運用ガイド（RM-002）。
 
 <a id="rm-021"></a>
-### RM-021 テンプレ資産監査パイプライン（優先度: P1）
+### RM-021 テンプレ資産監査パイプライン
 - ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
@@ -307,7 +349,7 @@ graph TD
 - 依存: RM-016（テンプレ命名整合性チェッカー）、RM-019（CLI ツールチェーン整備）、RM-010（テンプレート仕様エクスポート）、LibreOffice / Open XML SDK の差分検証ワークフロー。
 
 <a id="rm-022"></a>
-### RM-022 レイアウト解析検証強化（優先度: P1）
+### RM-022 レイアウト解析検証強化
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
 - 対象工程: 2（テンプレ構造抽出）
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md)
@@ -318,7 +360,7 @@ graph TD
 - 次のアクション: スキーマ項目の定義、差分レポートフォーマットの設計、AI 補完と連動するヒント係数算出アルゴリズムの検討。
 
 <a id="rm-023"></a>
-### RM-023 コンテンツ承認オーサリング基盤（優先度: P1）
+### RM-023 コンテンツ承認オーサリング基盤
 - ゴール: 工程 3 の HITL 承認 UI / API と AI レビュー連携を整備し、承認ログを監査可能にする。
 - 対象工程: 3（コンテンツ正規化）
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
@@ -330,7 +372,7 @@ graph TD
 - 次のアクション: UI 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化。
 
 <a id="rm-024"></a>
-### RM-024 ドラフト構成承認フロー整備（優先度: P1）
+### RM-024 ドラフト構成承認フロー整備
 - ゴール: 工程 4 のストーリーボード UI と `layout_hint` 管理を実装し、章立て承認を確実化する。
 - 対象工程: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md)
@@ -341,7 +383,7 @@ graph TD
 - 次のアクション: `layout_hint` 管理 API の設計、レイアウトスコア指標の定義、付録操作ログ仕様の整理。
 
 <a id="rm-025"></a>
-### RM-025 マッピング補完エンジン（優先度: P1）
+### RM-025 マッピング補完エンジン
 - ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`rendering_ready.json` の確度を高める。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/requirements/stages/stage-05-mapping.md](../requirements/stages/stage-05-mapping.md)
@@ -352,7 +394,7 @@ graph TD
 - 次のアクション: スコアリングロジックのプロトタイプ作成、フォールバックルール表の策定、スキーマ検証 CLI の設計。
 
 <a id="rm-026"></a>
-### RM-026 レンダリング監査統合（優先度: P1）
+### RM-026 レンダリング監査統合
 - ゴール: 工程 6 の軽量整合チェック・監査メタ・PDF/Polisher 統合を実装し、最終出力の信頼性を確保する。
 - 対象工程: 6（PPTX 生成）
 - 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md)
@@ -362,8 +404,68 @@ graph TD
 - 依存: RM-025（マッピング補完エンジン）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）、LibreOffice / Open XML SDK の実行環境、CI でのバイナリ検証手法。
 - 次のアクション: チェックルール一覧の策定、監査メタ拡張項目の設計、PDF/Polisher 統合 PoC の準備。
 
+<a id="rm-027"></a>
+### RM-027 Analyzer テンプレ監査メトリクス整備
+- ゴール: Golden Sample Runner と release レポートに Analyzer 指摘を統合し、テンプレ受け渡し時の品質メトリクスを継続的に追跡できるようにする。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: `template_release.json` への指摘件数・種別集約、月次トレンドの可視化、テンプレ修正手順の runbook 化。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-021（テンプレ資産監査パイプライン）。
+- 次のアクション: release レポート指標の設計、Analyzer 出力取り込みバッチの計画、制作チーム向けフィードバックフローのドラフト作成。
+
+<a id="rm-028"></a>
+### RM-028 Analyzer 構造抽出差分連携
+- ゴール: 抽出したプレースホルダー情報と Analyzer スナップショットを突合し、命名漏れやアンカー欠落を差分レポートで提示できるようにする。
+- 対象工程: 2（テンプレ構造抽出）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: `diagnostics.json` への Analyzer 警告統合、抽出結果と PPTX 実体を比較する diff レポート出力、命名規約逸脱の自動検知。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-022（レイアウト解析検証強化）。
+- 次のアクション: diff レポート仕様の策定、構造抽出 CLI への Analyzer 連携インターフェース実装方針の整理、設計ドキュメント更新。
+
+<a id="rm-029"></a>
+### RM-029 Analyzer Review Engine 連携
+- ゴール: `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー判断に Analyzer 情報を反映できるようにする。
+- 対象工程: 3（コンテンツ正規化）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: Analyzer `severity` に基づく差戻しカテゴリタグの UI 表示、Auto-fix 推論での Analyzer 補助、HITL レビューでの効率化指標。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-023（コンテンツ承認オーサリング基盤）。
+- 次のアクション: Review Engine と Analyzer のスキーママッピング定義、UI ワイヤーの更新、Auto-fix ルール拡張の PoC 設計。
+
+<a id="rm-030"></a>
+### RM-030 Analyzer ドラフト評価ダッシュボード
+- ゴール: layout_hint 承認に Analyzer 指摘件数や `layout_consistency` 警告を活用し、構成調整の判断材料を提供する。
+- 対象工程: 4（ドラフト構成設計）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: Analyzer 統計をドラフトダッシュボードへ表示、`layout_consistency` を再インデント候補へ変換する API、HITL 作業の再作業削減。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-024（ドラフト構成承認フロー）、RM-005（プレゼンストーリーモデラー）。
+- 次のアクション: ダッシュボード UI のモック作成、Analyzer 指標の集計バッチ設計、構成承認ワークフローへの組み込み案策定。
+
+<a id="rm-031"></a>
+### RM-031 Analyzer マッピング補完連動
+- ゴール: マッピング結果に Analyzer 警告を併記し、AI 補完やフォールバック制御のトリガーに活用する。
+- 対象工程: 5（マッピング）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: `mapping_log.json` への Analyzer 情報追加、`font_min` や `contrast_low` に基づく補完トリガー、自動フォローアップ候補の生成。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、RM-025（マッピング補完エンジン）。
+- 次のアクション: 補完ルールと Analyzer 指摘のマッピング整理、マッピングログ拡張設計、AI 補完シミュレーションの検証計画立案。
+
+<a id="rm-032"></a>
+### RM-032 Analyzer レンダリング監視統合
+- ゴール: レンダリング監査ログと Analyzer 出力を突合し、CI・通知チャネルで品質アラートを自動配信する。
+- 対象工程: 6（PPTX レンダリング）
+- 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 状況: 未着手（2025-10-16 追加）
+- 期待成果: Analyzer と監査ログの突合による通知連携、LibreOffice / Polisher 実行後の Analyzer 再走、改善度メトリクスの自動算出。
+- 依存: RM-013（PPTX 解析アナライザー実装）、RM-026（レンダリング監査統合）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）。
+- 次のアクション: 通知チャネル PoC の設計、再解析ジョブのスケジュール定義、CI ブリッジロジックのプロトタイプ作成。
+
 ## バックログ
-- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき優先度を再評価する。
+- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 

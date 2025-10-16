@@ -38,7 +38,7 @@
 
 ### フィールド補足
 - `order`: 章 / スライドの表示順。整数で連番管理。
-- `layout_hint`: 工程5で優先的に使用するレイアウト ID またはカテゴリ。必須。
+- `layout_hint`: 工程5で推奨されるレイアウト ID またはカテゴリ。必須。
 - `layout_candidates`: Layout Hint Engine が算出した候補。`score` は 0〜1。
 - `locked`: 承認済みフラグ。`true` の場合、工程3の再生成で上書き不可。
 - `status`: `draft` / `approved` / `returned`。章単位とスライド単位の両方に付与。
