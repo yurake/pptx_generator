@@ -214,11 +214,27 @@ class SimpleAnalyzerStep:
                 len(presentation.slides),
             )
 
+        presentation_width_in = _emu_to_inches(int(getattr(presentation, "slide_width", 0)))
+        presentation_height_in = _emu_to_inches(int(getattr(presentation, "slide_height", 0)))
+        if presentation_width_in <= 0:
+            presentation_width_in = self.options.slide_width_in
+        if presentation_height_in <= 0:
+            presentation_height_in = self.options.slide_height_in
+
         for index, slide_spec in enumerate(spec_slides):
             if index >= len(presentation.slides):
                 break
-            snapshot = SlideSnapshot.from_slide(presentation.slides[index], index)
-            slide_issues, slide_fixes = self._analyze_slide(slide_spec, snapshot)
+            slide = presentation.slides[index]
+            slide_width_in = _emu_to_inches(int(getattr(slide, "slide_width", 0)))
+            slide_height_in = _emu_to_inches(int(getattr(slide, "slide_height", 0)))
+            if slide_width_in <= 0:
+                slide_width_in = presentation_width_in
+            if slide_height_in <= 0:
+                slide_height_in = presentation_height_in
+            snapshot = SlideSnapshot.from_slide(slide, index)
+            slide_issues, slide_fixes = self._analyze_slide(
+                slide_spec, snapshot, slide_width_in, slide_height_in
+            )
             issues.extend(slide_issues)
             fixes.extend(slide_fixes)
 
@@ -233,7 +249,11 @@ class SimpleAnalyzerStep:
         logger.info("analysis.json を出力しました: %s", output_path)
 
     def _analyze_slide(
-        self, slide_spec: Slide, snapshot: SlideSnapshot
+        self,
+        slide_spec: Slide,
+        snapshot: SlideSnapshot,
+        slide_width_in: float,
+        slide_height_in: float,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
@@ -321,7 +341,13 @@ class SimpleAnalyzerStep:
             if shape is None:
                 logger.debug("画像 '%s' の図形が見つかりません", image_spec.id)
                 continue
-            result = self._check_margins(slide_spec, image_spec, shape)
+            result = self._check_margins(
+                slide_spec,
+                image_spec,
+                shape,
+                slide_width_in=slide_width_in,
+                slide_height_in=slide_height_in,
+            )
             if result:
                 issue, fix = result
                 issues.append(issue)
@@ -521,12 +547,20 @@ class SimpleAnalyzerStep:
         slide: Slide,
         image: SlideImage,
         shape: ShapeSnapshot,
+        *,
+        slide_width_in: float,
+        slide_height_in: float,
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
         left = shape.left_in
         top = shape.top_in
         width = shape.width_in
         height = shape.height_in
         margin = self.options.margin_in
+        base_width = slide_width_in if slide_width_in > 0 else self.options.slide_width_in
+        base_height = slide_height_in if slide_height_in > 0 else self.options.slide_height_in
+
+        if base_width is None or base_height is None:
+            return None
 
         violations: list[str] = []
         if left < margin:
@@ -535,9 +569,9 @@ class SimpleAnalyzerStep:
             violations.append("top")
         right = left + width
         bottom = top + height
-        if right > self.options.slide_width_in - margin:
+        if right > base_width - margin:
             violations.append("right")
-        if bottom > self.options.slide_height_in - margin:
+        if bottom > base_height - margin:
             violations.append("bottom")
 
         if not violations:
@@ -552,11 +586,11 @@ class SimpleAnalyzerStep:
 
         target_left = min(
             max(left, margin),
-            max(self.options.slide_width_in - margin - width, margin),
+            max(base_width - margin - width, margin),
         )
         target_top = min(
             max(top, margin),
-            max(self.options.slide_height_in - margin - height, margin),
+            max(base_height - margin - height, margin),
         )
 
         fix_payload: dict[str, float] = {}
@@ -589,6 +623,8 @@ class SimpleAnalyzerStep:
                 "width_in": width,
                 "height_in": height,
                 "margin_in": margin,
+                "slide_width_in": base_width,
+                "slide_height_in": base_height,
                 "violations": violations,
                 "shape_name": shape.name,
             },

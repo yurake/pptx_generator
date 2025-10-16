@@ -7,6 +7,9 @@ import json
 
 import pytest
 
+from pptx import Presentation
+from pptx.util import Inches
+
 from pptx_generator.models import (
     FontSpec,
     JobAuth,
@@ -38,9 +41,12 @@ def _write_dummy_png(path) -> None:
     path.write_bytes(payload)
 
 
-def _render_spec(spec: JobSpec, workdir) -> PipelineContext:
+def _render_spec(spec: JobSpec, workdir, template_path=None) -> PipelineContext:
     context = PipelineContext(spec=spec, workdir=workdir)
-    renderer = SimpleRendererStep(RenderingOptions(output_filename="test.pptx"))
+    options = RenderingOptions(output_filename="test.pptx")
+    if template_path is not None:
+        options.template_path = template_path
+    renderer = SimpleRendererStep(options)
     renderer.run(context)
     return context
 
@@ -131,6 +137,62 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
     contrast_issue = next(issue for issue in payload["issues"] if issue["type"] == "contrast_low")
     assert contrast_issue["metrics"]["required_ratio"] == pytest.approx(4.5)
     assert contrast_issue["metrics"]["font_size_pt"] == pytest.approx(12.0)
+
+
+def test_margin_check_respects_actual_slide_size(tmp_path) -> None:
+    template_path = tmp_path / "widescreen.pptx"
+    template = Presentation()
+    template.slide_width = Inches(13.333333)
+    template.slide_height = Inches(7.5)
+    template.save(template_path)
+
+    image_path = tmp_path / "wide.png"
+    _write_dummy_png(image_path)
+
+    spec = JobSpec(
+        meta=JobMeta(
+            schema_version="1.1",
+            title="ワイドスライド",
+            client="Zeta",
+            author="営業部",
+            created_at="2025-10-08",
+            theme="corporate",
+        ),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="wide-1",
+                layout="Title and Content",
+                images=[
+                    SlideImage(
+                        id="wide-img",
+                        source=str(image_path),
+                        left_in=1.0,
+                        top_in=1.0,
+                        width_in=11.0,
+                        height_in=5.5,
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = _render_spec(spec, tmp_path, template_path=template_path)
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(
+            margin_in=0.5,
+            grid_size_in=0.125,
+            grid_tolerance_in=0.02,
+        )
+    )
+
+    analyzer.run(context)
+
+    analysis_path = context.require_artifact("analysis_path")
+    payload = json.loads(analysis_path.read_text(encoding="utf-8"))
+
+    margin_issues = [issue for issue in payload["issues"] if issue["type"] == "margin"]
+    assert not margin_issues
 
 
 def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None:
