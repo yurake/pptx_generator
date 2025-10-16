@@ -119,23 +119,28 @@ def update_roadmap(
         block = re.sub(r"- 成果:.*", achievement_line, block, count=1)
 
     block = re.sub(r"\n{3,}", "\n\n", block).strip() + "\n"
-
-    updated_content = content[: match.start()] + content[match.end() :]
+    remaining_content = content[: match.start()] + content[match.end() :]
 
     completed_section_pattern = re.compile(r"(## 完了テーマ\n)")
-    completed_match = completed_section_pattern.search(updated_content)
-    if not completed_match:
-        raise ValueError("ロードマップに完了テーマセクションが存在しません")
+    completed_match = completed_section_pattern.search(remaining_content)
 
-    insertion_point = completed_match.end()
-    updated_content = (
-        updated_content[:insertion_point]
-        + "\n"
-        + block
-        + "\n"
-        + updated_content[insertion_point:]
-    )
-    updated_content = re.sub(r"\n{3,}", "\n\n", updated_content).rstrip() + "\n"
+    if completed_match:
+        insertion_point = completed_match.end()
+        updated_content = (
+            remaining_content[:insertion_point]
+            + "\n"
+            + block
+            + "\n"
+            + remaining_content[insertion_point:]
+        )
+        updated_content = re.sub(r"\n{3,}", "\n\n", updated_content).rstrip() + "\n"
+    else:
+        updated_content = (
+            content[: match.start()]
+            + block
+            + content[match.end() :]
+        )
+        updated_content = re.sub(r"\n{3,}", "\n\n", updated_content).rstrip() + "\n"
 
     if dry_run:
         return content != updated_content
