@@ -245,6 +245,14 @@ class SimpleRendererStep:
                     " テンプレートの図形名を確認してください。"
                 )
                 raise ValueError(msg)
+            shape = getattr(text_frame, "_parent", None)
+            if shape is not None:
+                target_name = textbox_spec.anchor or textbox_spec.id
+                if target_name:
+                    try:
+                        shape.name = target_name
+                    except ValueError:
+                        logger.debug("テキストボックス名 '%s' の設定に失敗", target_name, exc_info=True)
             self._write_textbox_content(slide_spec, textbox_spec, text_frame)
 
     def _write_bullets_to_text_frame(
@@ -395,6 +403,12 @@ class SimpleRendererStep:
             self._resize_picture(
                 picture, target_width, target_height, image_spec.sizing
             )
+            target_name = image_spec.anchor or image_spec.id
+            if target_name:
+                try:
+                    picture.name = target_name
+                except ValueError:
+                    logger.debug("画像図形名 '%s' の設定に失敗", target_name, exc_info=True)
 
             if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
@@ -440,7 +454,11 @@ class SimpleRendererStep:
 
     def _find_body_placeholder(self, slide):
         for shape in slide.placeholders:
-            if shape.placeholder_format.type == PP_PLACEHOLDER.BODY:
+            if shape.placeholder_format.type in {
+                PP_PLACEHOLDER.BODY,
+                PP_PLACEHOLDER.VERTICAL_BODY,
+                PP_PLACEHOLDER.OBJECT,
+            }:
                 return shape
         logger.debug("本文用プレースホルダがないためテキストボックスを追加")
         return slide.shapes.add_textbox(

@@ -108,6 +108,7 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
+- 解析結果の詳細な読み方と運用手順は `docs/runbooks/pptx-analyzer.md` を参照。
 
 ### コマンドリファレンス
 

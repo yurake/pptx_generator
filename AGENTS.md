@@ -75,6 +75,7 @@
 
 # 10 サブディレクトリ専用ガイド
 - `docs/`: ドキュメントカテゴリと更新手順は `docs/AGENTS.md` を参照。
+- `docs/runbooks/`: リリース・サポート・PPTX アナライザーなど運用手順を管理。
 - `src/`: コード構成とテスト方針は `src/AGENTS.md` を参照。
 - `tests/`: テストケースの追加規則は `tests/AGENTS.md` を参照。
 - `scripts/`: GitHub 連携スクリプトの実行条件は `scripts/AGENTS.md` を参照。
