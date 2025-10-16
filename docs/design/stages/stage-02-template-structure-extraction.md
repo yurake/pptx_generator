@@ -29,6 +29,18 @@ uv run extract-template templates/libraries/acme/v1/template.pptx \
   --baseline releases/acme/v0/layouts.jsonl
 ```
 
+### 検証スイート
+```bash
+uv run pptx layout-validate \
+  --template templates/libraries/acme/v1/template.pptx \
+  --output .pptx/validation/acme \
+  --baseline releases/acme/v0/layouts.jsonl
+```
+
+- `layouts.jsonl` / `diagnostics.json` / `diff_report.json` を同時生成し、`jsonschema` でスキーマ検証を実施。
+- `--template-id` でテンプレート識別子を上書き可能。未指定時はファイル名から導出する。
+- `warnings`（重複 PH、未知種別など）と `errors`（抽出失敗、必須項目欠落）を集計し、差分レポートではプレースホルダーの追加・削除・位置変更を検知する。
+
 ## エラーハンドリング
 - PH 抽出失敗 → `diagnostics.json` に `error` レベルで記録し exit code 1。
 - 未対応 PH 種別 → `warning` で `placeholders[i].type=unknown` とする。
@@ -41,6 +53,7 @@ uv run extract-template templates/libraries/acme/v1/template.pptx \
 ## テスト
 - 単体: 代表テンプレの解析結果を golden JSON と比較。
 - 回帰: CI で `tests/data/templates/*.pptx` を解析し、差分ゼロを確認。
+- `tests/test_layout_validation_suite.py` で CLI・差分検証・スキーマ検証の回帰を担保。
 
 ## 未解決事項
 - ヒント係数の計算式とチューニング方法。
