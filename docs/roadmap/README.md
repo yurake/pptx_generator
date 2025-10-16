@@ -126,10 +126,10 @@ graph TD
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
 - 参照 ToDo: [docs/todo/20251012-template-audit-pipeline.md](../todo/20251012-template-audit-pipeline.md)
-- 状況: 未着手（2025-10-12 追加）
-- 期待成果: `template_release.json` スキーマ定義と自動生成、テンプレ版比較レポート出力、ゴールデンサンプルの自動検証。
+- 状況: 運用準備完了（2025-10-16 更新）
+- 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
 - 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
-- 次のアクション: release メタ仕様のドラフト作成、差分検証 CLI のプロトタイプ設計、ゴールデンサンプル維持手順の策定。
+- 次のアクション: `.pptx/release/` 出力を ZIP 化して社内ストレージへ共有し、Slack `#pptx-template-review` で通知する定常運用リハーサルを完了させる。
 
 <a id="rm-022"></a>
 ### RM-022 レイアウト解析検証強化（優先度: P1）
