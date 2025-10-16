@@ -120,17 +120,6 @@ graph TD
 - 依存: RM-013 の解析結果、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
-<a id="rm-021"></a>
-### RM-021 テンプレ資産監査パイプライン（優先度: P1）
-- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
-- 対象工程: 1（テンプレ準備）
-- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
-- 参照 ToDo: [docs/todo/20251012-template-audit-pipeline.md](../todo/20251012-template-audit-pipeline.md)
-- 状況: 運用準備完了（2025-10-16 更新）
-- 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
-- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
-- 次のアクション: `.pptx/release/` 出力を ZIP 化して社内ストレージへ共有し、Slack `#pptx-template-review` で通知する定常運用リハーサルを完了させる。
-
 <a id="rm-022"></a>
 ### RM-022 レイアウト解析検証強化（優先度: P1）
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
@@ -192,6 +181,16 @@ graph TD
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 
 ## 完了テーマ
+
+<a id="rm-021"></a>
+### RM-021 テンプレ資産監査パイプライン（優先度: P1）
+- ゴール: テンプレ改訂時に差分と品質を自動診断し、工程 1 の受け渡しを自動化する。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照 ToDo: [docs/todo/archive/20251012-template-audit-pipeline.md](../todo/archive/20251012-template-audit-pipeline.md)
+- 状況: 完了（2025-10-16 更新）
+- 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
+- 依存: RM-016（テンプレ命名整合性チェッカー）、LibreOffice / Open XML SDK の差分検証ワークフロー。
 
 <a id="rm-001"></a>
 ### RM-001 Analyzer / Refiner ルール拡張（優先度: P2）
