@@ -666,6 +666,8 @@ def test_cli_tpl_release_generates_outputs(tmp_path) -> None:
         assert release.template_id == "Sample_1.0.0"
         assert report.template_id == "Sample_1.0.0"
         assert release.golden_runs == []
+        assert release.analyzer_metrics is None
+        assert report.analyzer is None
         assert not (Path(".pptx/release") / "golden_runs.json").exists()
 
 
@@ -733,6 +735,8 @@ def test_cli_tpl_release_with_baseline(tmp_path) -> None:
             release_path.read_text(encoding="utf-8")
         )
         assert release.golden_runs == []
+        assert release.analyzer_metrics is None
+        assert report.analyzer is None
 
 
 def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
@@ -773,6 +777,10 @@ def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
         assert len(release.golden_runs) == 1
         golden_run = release.golden_runs[0]
         assert golden_run.status == "passed"
+        metrics = release.analyzer_metrics
+        assert metrics is not None
+        assert metrics.summary.run_count == 1
+        assert metrics.runs[0].status == "included"
 
         golden_runs_data = json.loads(golden_path.read_text(encoding="utf-8"))
         assert len(golden_runs_data) == 1
@@ -780,6 +788,15 @@ def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
         assert parsed_run.status == "passed"
         assert Path(parsed_run.output_dir).exists()
         assert Path(parsed_run.pptx_path).exists()
+
+        report_path = Path(".pptx/release/release_report.json")
+        report = TemplateReleaseReport.model_validate_json(
+            report_path.read_text(encoding="utf-8")
+        )
+        assert report.analyzer is not None
+        assert report.analyzer.current.issues.total >= 0
+        assert report.analyzer.baseline is None
+        assert report.analyzer.delta is None
 
 
 def test_cli_tpl_release_golden_spec_failure(tmp_path) -> None:
@@ -821,4 +838,12 @@ def test_cli_tpl_release_golden_spec_failure(tmp_path) -> None:
         assert release.diagnostics.errors
         assert release.golden_runs
         assert release.golden_runs[0].status == "failed"
+        metrics = release.analyzer_metrics
+        assert metrics is not None
+        assert metrics.summary.run_count == 0
+        assert metrics.runs[0].status == "skipped"
         assert golden_path.exists()
+        golden_runs = json.loads(golden_path.read_text(encoding="utf-8"))
+        assert len(golden_runs) == 1
+        parsed_run = TemplateReleaseGoldenRun.model_validate(golden_runs[0])
+        assert parsed_run.status == "failed"
