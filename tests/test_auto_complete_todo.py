@@ -35,13 +35,13 @@ def _sample_roadmap_content(todo_filename: str) -> str:
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
 
 <a id="rm-001"></a>
-### RM-001 別テーマ（優先度: P2）
+### RM-001 別テーマ
 - ゴール: dummy
 - 参照 ToDo: [docs/todo/archive/old.md](../todo/archive/old.md)
 - 状況: 完了（2025-10-01 更新）
 
 <a id="rm-002"></a>
-### RM-002 サンプルテーマ（優先度: P1）
+### RM-002 サンプルテーマ
 - ゴール: サンプルゴール
 - 参照 ToDo: [docs/todo/{todo_filename}](../todo/{todo_filename})
 - 状況: 4/5 件完了（2025-10-09 更新）
