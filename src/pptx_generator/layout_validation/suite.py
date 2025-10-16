@@ -159,8 +159,10 @@ class LayoutValidationSuite:
         warnings: list[dict[str, Any]] = []
         errors: list[dict[str, Any]] = []
 
-        for idx, layout in enumerate(template_spec.layouts, start=1):
-            layout_id = self._normalise_layout_id(layout.name, idx)
+        seen_layout_ids: dict[str, int] = {}
+
+        for layout in template_spec.layouts:
+            layout_id = self._generate_layout_id(layout.name, seen_layout_ids)
             if layout.error:
                 errors.append(
                     {
@@ -583,18 +585,26 @@ class LayoutValidationSuite:
         return records
 
     @staticmethod
-    def _normalise_layout_id(name: str, index: int) -> str:
-        normalised = unicodedata.normalize("NFKC", name).strip()
+    def _generate_layout_id(name: str, seen: dict[str, int]) -> str:
+        base = LayoutValidationSuite._slugify_layout_name(name)
+        if not base:
+            base = "layout"
+        count = seen.get(base, 0) + 1
+        seen[base] = count
+        if count == 1:
+            return base
+        return f"{base}__{count:02d}"
+
+    @staticmethod
+    def _slugify_layout_name(name: str) -> str:
+        normalised = unicodedata.normalize("NFKC", name or "").strip()
         normalised = normalised.replace(" ", "_")
         normalised = re.sub(r"[\s/\\]+", "_", normalised)
         normalised = re.sub(r"[^0-9A-Za-z_\-一-龯ぁ-んァ-ンー]+", "", normalised)
-        if not normalised:
-            normalised = f"layout_{index:02d}"
-        return f"{normalised.lower()}__{index:02d}"
+        return normalised.lower()
 
     @staticmethod
     def _derive_template_id(path: Path) -> str:
         stem = unicodedata.normalize("NFKC", path.stem)
         stem = re.sub(r"[^0-9A-Za-z_\-一-龯ぁ-んァ-ンー]+", "", stem)
         return stem or "template"
-
