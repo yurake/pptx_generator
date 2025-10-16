@@ -377,11 +377,10 @@ flowchart TB
 - ゴール: 工程 2 の抽出結果をスキーマ検証・差分可視化で保証し、マッピング前の品質を高める。
 - 対象工程: 2（テンプレ構造抽出）
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md)
-- 参照 ToDo: [docs/todo/20251012-layout-validation-suite.md](../todo/20251012-layout-validation-suite.md)
-- 状況: 未着手（2025-10-12 追加）
+- 参照 ToDo: [docs/todo/archive/20251012-layout-validation-suite.md](../todo/archive/20251012-layout-validation-suite.md)
+- 状況: 完了（2025-10-16 更新）
 - 期待成果: `layouts.jsonl` スキーマバリデータ、差分レポート可視化、ヒント係数・用途タグ推定ロジック。
 - 依存: RM-021（テンプレ資産監査パイプライン）、RM-010（テンプレート仕様エクスポート）、RM-017（パイプライン機能拡張）、python-pptx / Open XML SDK の抽出結果、CI での JSON 検証基盤。
-- 次のアクション: スキーマ項目の定義、差分レポートフォーマットの設計、AI 補完と連動するヒント係数算出アルゴリズムの検討。
 
 <a id="rm-023"></a>
 ### RM-023 コンテンツ承認オーサリング基盤
