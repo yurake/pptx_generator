@@ -100,8 +100,15 @@ class TemplateExtractorStep:
     def _extract_layout_info(self, slide_layout) -> LayoutInfo:
         """単一レイアウトから図形情報を抽出する。"""
         layout_name = slide_layout.name
+        identifier = None
+        try:
+            layout_identifier = getattr(slide_layout, "slide_layout_id", None)
+        except Exception:  # noqa: BLE001
+            layout_identifier = None
+        if layout_identifier is not None:
+            identifier = str(layout_identifier)
         anchors = []
-        
+
         for shape in slide_layout.shapes:
             try:
                 shape_info = self._extract_shape_info(shape)
@@ -129,8 +136,8 @@ class TemplateExtractorStep:
                     error=error_msg,
                 )
                 anchors.append(error_shape)
-        
-        return LayoutInfo(name=layout_name, anchors=anchors)
+
+        return LayoutInfo(name=layout_name, identifier=identifier, anchors=anchors)
     
     def _extract_shape_info(self, shape: BaseShape) -> ShapeInfo:
         """単一図形から情報を抽出する。"""

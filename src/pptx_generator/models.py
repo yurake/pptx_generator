@@ -235,8 +235,9 @@ class ShapeInfo(BaseModel):
 
 class LayoutInfo(BaseModel):
     """レイアウト情報を表現するモデル。"""
-    
+
     name: str = Field(..., description="レイアウト名")
+    identifier: str | None = Field(None, description="レイアウト固有識別子")
     anchors: list[ShapeInfo] = Field(default_factory=list, description="図形・プレースホルダー一覧")
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
 
