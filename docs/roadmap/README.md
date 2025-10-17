@@ -64,7 +64,7 @@ flowchart TB
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
         direction TB
         ST4_ANCHOR(( ))
-        RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(未着手)"]
+        RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(未着手)"]
     end
 
@@ -395,14 +395,13 @@ flowchart TB
 
 <a id="rm-024"></a>
 ### RM-024 ドラフト構成承認フロー整備
-- ゴール: 工程 4 のストーリーボード UI と `layout_hint` 管理を実装し、章立て承認を確実化する。
+- ゴール: 工程 4 の構成管理 API と `layout_hint` 管理を実装し、章立て承認を CLI / API ベースで確実化する。
 - 対象工程: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md)
-- 参照 ToDo: [docs/todo/20251012-draft-structuring-workbench.md](../todo/20251012-draft-structuring-workbench.md)
-- 状況: 未着手（2025-10-12 追加）
-- 期待成果: 章レーン×カード UI、レイアウト候補スコアの可視化、多様性ルールと付録操作履歴の蓄積。
-- 依存: RM-023（コンテンツ承認基盤）、RM-022（レイアウト解析検証強化）、RM-005（プレゼンストーリーモデラー）、UI フロントエンド基盤選定。
-- 次のアクション: `layout_hint` 管理 API の設計、レイアウトスコア指標の定義、付録操作ログ仕様の整理。
+- 参照 ToDo: [docs/todo/archive/20251012-draft-structuring-workbench.md](../todo/archive/20251012-draft-structuring-workbench.md)
+- 状況: 完了（2025-10-17 更新）
+- 期待成果: layout_hint 候補スコアリング、付録操作履歴、章承認ログを備えた CLI / API、`draft_draft.json`／`draft_approved.json` の出力整備。
+- 依存: RM-023（コンテンツ承認基盤）、RM-022（レイアウト解析検証強化）、RM-005（プレゼンストーリーモデラー）、RM-017（パイプライン機能拡張）。
 
 <a id="rm-025"></a>
 ### RM-025 マッピング補完エンジン
