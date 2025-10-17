@@ -448,10 +448,9 @@ flowchart TB
 - ゴール: `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー判断に Analyzer 情報を反映できるようにする。
 - 対象工程: 3（コンテンツ正規化）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
-- 期待成果: Analyzer `severity` に基づく差戻しカテゴリタグの UI 表示、Auto-fix 推論での Analyzer 補助、HITL レビューでの効率化指標。
+- 状況: 完了（2025-10-17 更新）
+- 期待成果: Analyzer `severity` に基づく差戻しカテゴリタグの UI 表示、Auto-fix 推論での Analyzer 補助、HITL レビューでの効率化指標。`review_engine_analyzer.json` で CLI から Review Engine 連携用データを出力済み。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-023（コンテンツ承認オーサリング基盤）。
-- 次のアクション: Review Engine と Analyzer のスキーママッピング定義、UI ワイヤーの更新、Auto-fix ルール拡張の PoC 設計。
 
 <a id="rm-030"></a>
 ### RM-030 Analyzer ドラフト評価ダッシュボード

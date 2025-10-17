@@ -19,7 +19,7 @@
 | 3. コンテンツ正規化 | HITL | プレゼン仕様 JSON (`slides`) | `content_approved.json` | 入力データをスライド候補へ整形し、承認（HITL） |
 | 4. ドラフト構成設計 | HITL | `content_approved.json` | `draft_approved.json` | 章立て・ページ順・`layout_hint` を確定し、承認（HITL） |
 | 5. マッピング | 自動 | `draft_approved.json` | `rendering_ready.json` | レイアウト選定とプレースホルダ割付を行い、中間 JSON を生成 |
-| 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json` | テンプレ適用と最終出力を生成 |
+| 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json`、`review_engine_analyzer.json` | テンプレ適用と最終出力を生成 |
 
 工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/overview.md` にまとめています。
 
@@ -109,7 +109,7 @@
 - 現在は `pptx gen` 実行時に内部で処理され、個別 CLI 公開は検討中です。
 
 ### 工程 6: PPTX レンダリング
-- `pptx gen` サブコマンドで PPTX と analysis.json、必要に応じて PDF を生成します。
+- `pptx gen` サブコマンドで PPTX と analysis.json、Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
    ```bash
    # 最小構成（テンプレートなし）
    uv run pptx gen samples/json/sample_spec_minimal.json
@@ -121,12 +121,13 @@
      --branding .pptx/extract/branding.json \
      --export-pdf
    ```
-- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
+- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
 
 ### 生成物の確認
 - PPTX: `proposal.pptx`（`--pptx-name` で変更可能）
 - PDF: `proposal.pdf`（`--export-pdf` 指定時）
 - `analysis.json`: Analyzer/Refiner の診断結果
+- `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）

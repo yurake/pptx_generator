@@ -25,6 +25,12 @@
 4. `Approve` で `content_approved.json` へ反映しロック。  
 5. 差戻しは `status=rework` として再生成対象に戻す。
 
+### Analyzer 連携
+- CLI の工程 6 実行後、Analyzer が出力する `analysis.json` を Review Engine 向け形式 (`review_engine_analyzer.json`) に変換するアダプタを追加した。  
+- スライドごとの `issues` を `AIReviewIssue` へマッピングし、`severity` に応じて `grade`（`A/B/C`）を算出する。  
+- `bullet_reindent` / `bullet_cap` / `font_raise` / `color_adjust` は JSON Patch 形式の Auto-fix (`AutoFixProposal`) として出力し、未対応タイプは `notes.unsupported_fix_types` に記録する。  
+- 出力ファイルは `analysis.json` と同じディレクトリに `review_engine_analyzer.json` として保存し、`audit_log.json` の `artifacts.review_engine_analysis` にもパスを記録する。
+
 ## API 概要
 - `POST /content/cards`: 初期カード作成
 - `PATCH /content/cards/{slide_uid}`: 編集・Auto-fix 適用

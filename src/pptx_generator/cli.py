@@ -26,12 +26,15 @@ from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
                        SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
                        TemplateExtractorOptions)
+from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 from .settings import BrandingConfig, RulesConfig
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(help="JSON 仕様から PPTX を生成する CLI")
@@ -358,15 +361,19 @@ def gen(
         logging.exception("パイプライン実行中にエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
+    analysis_path = context.artifacts.get("analysis_path")
+    review_engine_path = _emit_review_engine_analysis(context, analysis_path)
     audit_path = _write_audit_log(context)
 
     pptx_path = context.artifacts.get("pptx_path")
-    analysis_path = context.artifacts.get("analysis_path")
+
     if pptx_path is not None:
         click.echo(f"PPTX: {pptx_path}")
     else:
         click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
     click.echo(f"Analysis: {analysis_path}")
+    if review_engine_path is not None:
+        click.echo(f"ReviewEngine Analysis: {review_engine_path}")
     snapshot_path = context.artifacts.get("analyzer_snapshot_path")
     if snapshot_path is not None:
         click.echo(f"Analyzer Snapshot: {snapshot_path}")
@@ -888,6 +895,47 @@ def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
     click.echo(formatted, err=True)
 
 
+def _emit_review_engine_analysis(
+    context: PipelineContext, analysis_path: object | None
+) -> Path | None:
+    if analysis_path is None:
+        return None
+
+    path = Path(str(analysis_path))
+    if not path.exists():
+        logger.warning(
+            "Review Engine 連携ファイル生成のため analysis.json が見つかりません: %s", path
+        )
+        return None
+
+    adapter = AnalyzerReviewEngineAdapter()
+    try:
+        analysis_payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "analysis.json の読み込みに失敗したため Review Engine 連携ファイルを生成しません: %s",
+            exc,
+        )
+        return None
+
+    try:
+        payload = adapter.build_payload(analysis_payload, context.spec)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Review Engine 連携ペイロードの生成に失敗しました: %s",
+            exc,
+        )
+        return None
+
+    output_path = path.with_name("review_engine_analyzer.json")
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    context.add_artifact("review_engine_analysis_path", output_path)
+    return output_path
+
+
 def _write_audit_log(context: PipelineContext) -> Path:
     outputs_dir = context.workdir
     outputs_dir.mkdir(parents=True, exist_ok=True)
@@ -898,6 +946,9 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "artifacts": {
             "pptx": _artifact_str(context.artifacts.get("pptx_path")),
             "analysis": _artifact_str(context.artifacts.get("analysis_path")),
+            "review_engine_analysis": _artifact_str(
+                context.artifacts.get("review_engine_analysis_path")
+            ),
             "pdf": _artifact_str(context.artifacts.get("pdf_path")),
         },
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
