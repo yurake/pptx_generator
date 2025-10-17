@@ -28,8 +28,8 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: #211 を紐付け済み。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #212 https://github.com/yurake/pptx_generator/pull/212（2025-10-17 完了）
 
 ## メモ
 - 
