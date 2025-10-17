@@ -64,7 +64,7 @@ flowchart TB
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
         direction TB
         ST4_ANCHOR(( ))
-        RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(未着手)"]
+        RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(未着手)"]
     end
 
