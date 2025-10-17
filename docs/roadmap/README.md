@@ -398,10 +398,11 @@ flowchart TB
 - ゴール: 工程 4 の構成管理 API と `layout_hint` 管理を実装し、章立て承認を CLI / API ベースで確実化する。
 - 対象工程: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md)
-- 参照 ToDo: [docs/todo/archive/20251012-draft-structuring-workbench.md](../todo/archive/20251012-draft-structuring-workbench.md)
-- 状況: 完了（2025-10-17 更新）
+- 参照 ToDo: [docs/todo/20251012-draft-structuring-workbench.md](../todo/20251012-draft-structuring-workbench.md)
+- 状況: 未着手（2025-10-12 追加）
 - 期待成果: layout_hint 候補スコアリング、付録操作履歴、章承認ログを備えた CLI / API、`draft_draft.json`／`draft_approved.json` の出力整備。
 - 依存: RM-023（コンテンツ承認基盤）、RM-022（レイアウト解析検証強化）、RM-005（プレゼンストーリーモデラー）、RM-017（パイプライン機能拡張）。
+- 次のアクション: `layout_hint` 管理 API の設計、スコア指標とログ仕様の定義、CLI 連携フローの整理。
 
 <a id="rm-025"></a>
 ### RM-025 マッピング補完エンジン
