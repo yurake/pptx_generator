@@ -162,7 +162,7 @@ class LayoutValidationSuite:
         seen_layout_ids: dict[str, int] = {}
 
         for layout in template_spec.layouts:
-            layout_id = self._generate_layout_id(layout.name, seen_layout_ids)
+            layout_id = self._resolve_layout_id(layout, seen_layout_ids)
             if layout.error:
                 errors.append(
                     {
@@ -585,8 +585,11 @@ class LayoutValidationSuite:
         return records
 
     @staticmethod
-    def _generate_layout_id(name: str, seen: dict[str, int]) -> str:
-        base = LayoutValidationSuite._slugify_layout_name(name)
+    def _resolve_layout_id(layout: LayoutInfo, seen: dict[str, int]) -> str:
+        if layout.identifier:
+            base = f"id_{layout.identifier}"
+        else:
+            base = LayoutValidationSuite._slugify_layout_name(layout.name)
         if not base:
             base = "layout"
         count = seen.get(base, 0) + 1
