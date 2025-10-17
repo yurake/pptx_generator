@@ -2,17 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Iterator, Literal
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    HttpUrl,
-    ValidationError,
-    field_validator,
-)
+from pydantic import (BaseModel, ConfigDict, Field, HttpUrl, ValidationError,
+                      ValidationInfo, field_validator)
 
 
 class FontSpec(BaseModel):
@@ -198,6 +193,170 @@ class JobSpec(BaseModel):
             return cls.model_validate_json(source)
         except ValidationError as exc:
             raise SpecValidationError.from_validation_error(exc) from exc
+
+
+ContentSlideStatus = Literal["draft", "approved", "returned"]
+
+
+class ContentTableData(BaseModel):
+    headers: list[str] = Field(default_factory=list)
+    rows: list[list[str]] = Field(default_factory=list)
+
+    @field_validator("rows", mode="before")
+    @classmethod
+    def normalize_rows(cls, value: list[list[str | int | float]]) -> list[list[str]]:
+        return [[str(cell) for cell in row] for row in value]
+
+    @field_validator("rows")
+    @classmethod
+    def validate_row_length(
+        cls, value: list[list[str]], info: ValidationInfo
+    ) -> list[list[str]]:
+        headers: list[str] = info.data.get("headers", [])
+        if headers:
+            expected = len(headers)
+            for row in value:
+                if len(row) != expected:
+                    msg = "各行の列数は headers と一致する必要があります"
+                    raise ValueError(msg)
+        return value
+
+
+class ContentElements(BaseModel):
+    title: str = Field(..., max_length=120)
+    body: list[str] = Field(default_factory=list)
+    table_data: ContentTableData | None = None
+    note: str | None = None
+
+    @field_validator("body")
+    @classmethod
+    def validate_body(cls, value: list[str]) -> list[str]:
+        if len(value) > 6:
+            msg = "body は最大 6 行までです"
+            raise ValueError(msg)
+        for line in value:
+            if len(line) > 40:
+                msg = "body の各行は 40 文字以内で入力してください"
+                raise ValueError(msg)
+        return value
+
+
+JsonPatchOp = Literal["add", "remove", "replace", "move", "copy", "test"]
+
+
+class JsonPatchOperation(BaseModel):
+    op: JsonPatchOp
+    path: str
+    value: object | None = None
+    from_path: str | None = Field(default=None, alias="from")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @field_validator("path")
+    @classmethod
+    def ensure_absolute_path(cls, value: str) -> str:
+        if not value.startswith("/"):
+            msg = "JSON Patch path は '/' で開始する必要があります"
+            raise ValueError(msg)
+        return value
+
+    @field_validator("from_path")
+    @classmethod
+    def ensure_from_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not value.startswith("/"):
+            msg = "JSON Patch from は '/' で開始する必要があります"
+            raise ValueError(msg)
+        return value
+
+
+class AutoFixProposal(BaseModel):
+    patch_id: str
+    description: str
+    patch: list[JsonPatchOperation] = Field(default_factory=list)
+
+    @field_validator("patch", mode="before")
+    @classmethod
+    def normalize_patch(
+        cls, value: list[JsonPatchOperation] | JsonPatchOperation | None
+    ) -> list[JsonPatchOperation]:
+        if value is None:
+            return []
+        if isinstance(value, JsonPatchOperation):
+            return [value]
+        return value
+
+    @field_validator("patch")
+    @classmethod
+    def ensure_non_empty(cls, value: list[JsonPatchOperation]) -> list[JsonPatchOperation]:
+        if not value:
+            msg = "Auto-fix 提案には少なくとも 1 件の JSON Patch を含めてください"
+            raise ValueError(msg)
+        return value
+
+
+class AIReviewIssue(BaseModel):
+    code: str
+    message: str
+    severity: Literal["info", "warning", "critical"] | None = None
+
+
+class AIReviewResult(BaseModel):
+    grade: Literal["A", "B", "C"]
+    issues: list[AIReviewIssue] = Field(default_factory=list)
+    autofix_proposals: list[AutoFixProposal] = Field(default_factory=list)
+
+
+class ContentSlide(BaseModel):
+    id: str
+    intent: str
+    type_hint: str | None = None
+    elements: ContentElements
+    status: ContentSlideStatus = "draft"
+    ai_review: AIReviewResult | None = None
+    applied_autofix: list[str] = Field(default_factory=list)
+
+    @field_validator("applied_autofix", mode="before")
+    @classmethod
+    def normalize_autofix_ids(cls, value: list[str] | None) -> list[str]:
+        if value is None:
+            return []
+        return value
+
+
+class ContentDocumentMeta(BaseModel):
+    tone: str | None = None
+    audience: str | None = None
+    summary: str | None = None
+
+
+class ContentApprovalDocument(BaseModel):
+    slides: list[ContentSlide] = Field(default_factory=list)
+    meta: ContentDocumentMeta | None = None
+
+    def ensure_all_approved(self) -> None:
+        not_approved = [slide.id for slide in self.slides if slide.status != "approved"]
+        if not_approved:
+            msg = f"承認済みドキュメント内に未承認のカードがあります: {', '.join(not_approved)}"
+            raise ValueError(msg)
+
+
+class ContentReviewLogEntry(BaseModel):
+    slide_id: str
+    action: Literal["approve", "return", "comment", "autofix"]
+    actor: str
+    timestamp: datetime
+    notes: str | None = None
+    ai_grade: Literal["A", "B", "C"] | None = None
+    applied_autofix: list[str] = Field(default_factory=list)
+
+    @field_validator("applied_autofix", mode="before")
+    @classmethod
+    def normalize_autofix(cls, value: list[str] | None) -> list[str]:
+        if value is None:
+            return []
+        return value
 
 
 class SpecValidationError(RuntimeError):
