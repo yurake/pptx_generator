@@ -65,7 +65,7 @@ flowchart TB
         direction TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
-        RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(未着手)"]
+        RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
     end
 
     subgraph ST5["Stage 5: マッピング"]
@@ -300,7 +300,7 @@ flowchart TB
 - 参照 ToDo: [docs/todo/20251011-automated-polisher-integration.md](../todo/20251011-automated-polisher-integration.md)
 - 状況: 未着手（2025-10-09 設定）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
-- 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
+- 依存: RM-013 の解析結果、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
 
 <a id="rm-015"></a>
@@ -457,10 +457,10 @@ flowchart TB
 - ゴール: layout_hint 承認に Analyzer 指摘件数や `layout_consistency` 警告を活用し、構成調整の判断材料を提供する。
 - 対象工程: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
+- 状況: 保留（2025-10-17 更新）
 - 期待成果: Analyzer 統計をドラフトダッシュボードへ表示、`layout_consistency` を再インデント候補へ変換する API、HITL 作業の再作業削減。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-024（ドラフト構成承認フロー）、RM-005（プレゼンストーリーモデラー）。
-- 次のアクション: ダッシュボード UI のモック作成、Analyzer 指標の集計バッチ設計、構成承認ワークフローへの組み込み案策定。
+- 再開条件: ユーザーが明示的に再開指示を出すこと。
 
 <a id="rm-031"></a>
 ### RM-031 Analyzer マッピング補完連動
