@@ -3,7 +3,7 @@
 関連ブランチ: fix/auto-complete-archive
 関連Issue: #144
 roadmap_item: パイプライン機能拡張
-roadmap_link: [パイプライン機能拡張](../roadmap/README.md#パイプライン機能拡張)
+roadmap_link: [パイプライン機能拡張](../roadmap/roadmap.md#パイプライン機能拡張)
 ---
 
 - [x] まずはブランチ作成
@@ -14,7 +14,7 @@ roadmap_link: [パイプライン機能拡張](../roadmap/README.md#パイプラ
 - [x] 単体テストまたはスクリプト実行で想定パスの動作を検証する
   - メモ: pytest で `docs/todo/archive/` を直接指定するケースとアーカイブ側フォールバックを踏むケースを追加し、どちらも INFO ログを出して異常終了しないことを確認した。
 - [x] ドキュメントとロードマップ、ToDo の相互リンクを更新する
-  - メモ: docs/roadmap/README.md のパイプライン機能拡張に追加成果として記載し、TODO ファイルに roadmap へのリンクを追加した
+  - メモ: docs/roadmap/roadmap.md のパイプライン機能拡張に追加成果として記載し、TODO ファイルに roadmap へのリンクを追加した
 - [x] PR 作成
   - メモ: PR #146 https://github.com/yurake/pptx_generator/pull/146（2025-10-10 完了）
 

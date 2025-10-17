@@ -8,7 +8,7 @@
 
 - [x] CLI に `--export-pdf` オプションを追加し、LibreOffice を利用した変換フローを実装する
   - メモ: PATH に `soffice` が無い場合のフォールバックとエラーメッセージを設計する
-- [x] CLI オプションの UX 定義を行い、`docs/design/overview.md` に反映する
+- [x] CLI オプションの UX 定義を行い、`docs/design/design.md` に反映する
   - メモ: `--export-pdf` 単独実行／`--export-pdf=only` の選択肢を評価し、互換性を記載する
 - [x] パイプラインへ PDF 生成ステップを追加し、`outputs` ディレクトリへ保存する
   - メモ: 変換所要時間・失敗時の再実行戦略を検討する

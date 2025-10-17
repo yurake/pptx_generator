@@ -12,7 +12,7 @@
   - `uv run --extra dev pytest` を実行し、86 件のテストがすべて成功（実行時間 2.42s）。CLI 統合テストでは `samples/json/sample_spec.json` 起点の PPTX 生成フローとアナライザー処理が通過することを確認。
 - 影響範囲:
   - レンダラーが画像／テキストボックスへ ID 名を再設定し、解析側で図形特定が可能になった。
-  - `docs/requirements/overview.md` と `docs/design/overview.md` に PPTX 実体解析前提と新しい診断メトリクスを追記。
+  - `docs/requirements/requirements.md` と `docs/design/design.md` に PPTX 実体解析前提と新しい診断メトリクスを追記。
   - `tests/test_analyzer.py` を PPTX 実体ベースへ移行し、ダミー画像を用意して回帰主要ケースを固定。
 - 未決事項・フォローアップ:
   - 大規模スライドでの性能計測と、`analysis.json` メトリクスのサマリ項目（平均フォントサイズなど）拡張は別途検討。

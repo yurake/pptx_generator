@@ -17,7 +17,7 @@
   - メモ: PR #113 (https://github.com/yurake/pptx_generator/pull/113) を作成・マージ済み
 
 ## メモ
-- 参照: docs/roadmap/README.md#L33
+- 参照: docs/roadmap/roadmap.md#L33
 - LibreOffice 依存変更なし。Analyzer 機能の Python 側に限定して実装する。
 - テスト: `uv run --extra dev pytest tests/test_refiner.py tests/test_analyzer.py tests/test_cli_integration.py`
 - SimpleRefinerStep を追加し、`refiner_adjustments` アーティファクトで調整ログを記録。

@@ -22,7 +22,7 @@
 ### ドキュメント / テスト更新方針
 - `samples/AGENTS.md` に最小・フルサンプルの位置付けと利用例を追記
 - `docs/policies/config-and-templates.md` への参照リンクや補足（アンカー命名例）を検討
-- `README.md` / `docs/requirements/overview.md` など、サンプルコマンド記載箇所の更新
+- `README.md` / `docs/requirements/requirements.md` など、サンプルコマンド記載箇所の更新
 - 統合テスト: 既存ケースはフルサンプルを参照し続ける想定。必要に応じて最小サンプルを用いた軽量ケースを追加
 
 ### リスクと対応

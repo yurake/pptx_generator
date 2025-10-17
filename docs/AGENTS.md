@@ -8,7 +8,7 @@
 - 追加・更新する資料のカテゴリが `docs/README.md` に定義されているかを確認する。
 - 既存資料に関連する ADR やポリシーがある場合は先に参照し、整合性の取れた更新内容にする。
 - 作業開始前に Plan を提示し承認を得る。承認方針は `docs/policies/task-management.md` の「Approval-First Development Policy」を参照。
-- 生成フローや承認ステップに関する仕様は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/overview.md` を起点に確認し、実装・要件ドキュメント側で詳細を更新する。`docs/AGENTS.md` には概要のみを残し、重複記述を避ける。
+- 生成フローや承認ステップに関する仕様は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/design.md` を起点に確認し、実装・要件ドキュメント側で詳細を更新する。`docs/AGENTS.md` には概要のみを残し、重複記述を避ける。
 
 ## ToDo 運用との連携
 - ToDo 作成手順・更新ルール・アーカイブ方法は `docs/todo/README.md` に記載している。`docs/` 配下の作業では同ガイドを常に参照し、進捗ログを一元管理する。
@@ -26,8 +26,8 @@
 
 ## 更新手順
 1. 追加・改訂する資料のカテゴリを決め、該当ディレクトリに Markdown ファイルを作成・編集する。
-2. カテゴリの README（例: `docs/README.md`, `docs/roadmap/README.md`）を更新し、新規資料へのリンクを追記する。
-3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/overview.md`・`docs/design/layout-style-governance.md`・`docs/design/schema/README.md`・`docs/requirements/overview.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
+2. カテゴリの README（例: `docs/README.md`, `docs/roadmap/roadmap.md`）を更新し、新規資料へのリンクを追記する。
+3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/design.md`・`docs/design/layout-style-governance.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
 4. 変更内容を ToDo のメモに反映し、必要に応じてロードマップや関連ドキュメントへリンクを追加する。
 5. コミット前に `git status` で対象ファイルを確認し、不要な差分（バイナリやキャッシュ）が混入していないかをチェックする。
 

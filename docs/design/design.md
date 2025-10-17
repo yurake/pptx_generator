@@ -32,7 +32,7 @@
 2. **テンプレ構造抽出**（自動）  
    テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
 3. **コンテンツ正規化**（HITL）  
-   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/overview.md` を参照。
+   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/requirements.md` を参照。
 4. **ドラフト構成設計**（HITL）  
    章立て・ページ順・`layout_hint` を決定し、`draft_approved.json` を確定。承認ゲートは Approval-First Policy (`docs/policies/task-management.md`) と連携する。
 5. **マッピング**（自動）  

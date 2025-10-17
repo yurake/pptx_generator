@@ -12,7 +12,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 - [x] 設計・実装方針の確定
   - メモ: テンプレート刷新とガイド更新で工程明文化＋計画完了条件追記
 - [x] 実装
-  - メモ: docs/todo/template.md, docs/todo/README.md, docs/roadmap/README.md, AGENTS.md を更新
+  - メモ: docs/todo/template.md, docs/todo/README.md, docs/roadmap/roadmap.md, AGENTS.md を更新
 - [x] テスト・検証
   - メモ: ドキュメント更新のみのためテスト対象外（確認済）
 - [x] 関連Issueの更新
