@@ -168,6 +168,48 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert "監査ログ要件を強調（承認済み）。" in notes_text
 
 
+def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    content_path = tmp_path / "content_approved_violation.json"
+    payload = {
+        "slides": [
+            {
+                "id": "agenda",
+                "intent": "アジェンダ",
+                "elements": {
+                    "title": "アジェンダ",
+                    "body": ["御社向け改善プラン"]
+                },
+                "status": "approved"
+            }
+        ]
+    }
+    content_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    output_dir = tmp_path / "gen-content-forbidden"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--content-approved",
+            str(content_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 3
+    assert "業務ルール検証に失敗しました" in result.output
+    audit_path = output_dir / "audit_log.json"
+    assert not audit_path.exists()
+
+
 def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     content_path = tmp_path / "content_approved.json"

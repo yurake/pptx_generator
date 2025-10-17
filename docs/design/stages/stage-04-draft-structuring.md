@@ -2,15 +2,16 @@
 
 ## 目的
 - 承認済みコンテンツを章立て・ページ順へ並べ、`layout_hint` を確定する。
-- 付録送りや統合といった構成操作を UI で提供し、承認ログを監査可能にする。
+- 付録送りや統合といった構成操作を Draft API / CLI で提供し、承認ログを監査可能にする。
 
 ## コンポーネント構成
 | コンポーネント | 概要 | 技術 |
 | --- | --- | --- |
-| Storyboard UI | 章レーン + スライドカードの視覚編集 | React / Next.js (予定) |
 | Draft Service API | 章/カード管理、layout_hint 候補計算 | FastAPI |
+| CLI / Integration Scripts | Draft API を操作し、構成データを確認・更新 | Python |
 | Layout Hint Engine | 工程2の `layouts.jsonl` を参照し候補提示 | Python |
 | Draft Log Store | `draft_review_log.json` と履歴管理 | PostgreSQL / SQLite |
+| Storyboard UI（バックログ） | 章レーン + スライドカードの視覚編集 | React / Next.js 等（検討中） |
 
 ## データモデル
 - `chapter`: `chapter_id`, `title`, `order`, `status`
@@ -20,7 +21,7 @@
 ## ワークフロー
 1. `content_approved.json` から候補カードを生成し章レーンへ配置。  
 2. Layout Hint Engine が用途タグと必須要素に基づき候補スコアを算出。  
-3. ユーザーがドラッグ＆ドロップで章・順序・付録を操作。  
+3. ユーザーが CLI / 内製ツールから章・順序・付録を操作。  
 4. layout_hint 決定 → 章単位で承認。  
 5. 承認完了で `draft_approved.json` を書き出し、ログに記録。
 
@@ -47,12 +48,12 @@
 
 ## テスト戦略
 - API 単体テスト: move/hint/approve のバリデーション。
-- UI E2E: 章入れ替え、付録移動、承認フローをシナリオ化。
+- CLI / API シナリオテスト: 章入れ替え、付録移動、承認フローを一連で検証。
 - 負荷: 大規模案件（50+ スライド）での操作レスポンスを計測。
 
 ## 未解決事項
 - 章テンプレのプリセット管理方式。
-- layout_hint 候補を AI 補完する場合の UI 提示方法。
+- layout_hint 候補を AI 補完する場合の提示方法（将来 UI / 内製ツールで提供予定）。
 - 差戻し理由テンプレート化の有無。
 
 ## 関連スキーマ

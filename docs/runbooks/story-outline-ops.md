@@ -14,12 +14,12 @@
 2. 工程3 のカード生成設定に骨子ファイルのパスを渡し、`story.phase` / `story.chapter_id` / `story.angle` がカード単位で埋まることを確認する。
 3. HITL 承認 API を利用するツール（CLI など）で章・フェーズ表示を確認し、必要に応じて再割当を行う。差分はレビューコメントとして記録する。
 4. 承認後の `content_approved.json` を確認し、全カードにストーリー情報が保存されていること、章ごとのスライド数が骨子の想定範囲内であることをチェックする。
-5. 工程4 へ引き渡す前に `draft_structuring` プロセスで `story_outline` と `layout_hint` の整合チェックを実行し、齟齬があれば差戻し理由を明示する。
+5. 工程4 へ引き渡す前に Draft CLI（`uv run pptx gen --content-approved ... --layouts ... --draft-output .pptx/draft`）を実行し、出力された `draft_approved.json` と `draft_review_log.json` で `story_outline` と `layout_hint` の整合チェックを行う。齟齬があれば差戻し理由を明示し、必要に応じて再承認する。
 
 ## レビュー観点
 - フェーズ必須項目（導入／課題／解決）は欠落していないか。
 - 骨子の `default_slide_count` と実際のカード数が大きく乖離していないか。
-- 付録送りや統合を行ったスライドの章情報が正しく更新されているか。
+- 付録送りや統合を行ったスライドの章情報が `draft_review_log.json` と一致しており、章承認後は `locked` が設定されているか。
 - ストーリー骨子の更新履歴・レビュー記録が `docs/todo/` や関連 Issue に残っているか。
 
 ## ロールバックとエスカレーション
