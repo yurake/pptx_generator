@@ -75,8 +75,8 @@
 
 ## ドキュメント更新
 - `config/branding.json` のサンプルを新スキーマに差し替え、`docs/policies/config-and-templates.md` に更新手順を追記する。
-- `docs/requirements/overview.md` / `docs/design/overview.md` に「レイアウトスタイル設定を設定ファイルで制御する」旨を反映する。
-- `docs/roadmap/README.md` の RM-011 ステータスを「設計完了」へ更新予定。
+- `docs/requirements/requirements.md` / `docs/design/design.md` に「レイアウトスタイル設定を設定ファイルで制御する」旨を反映する。
+- `docs/roadmap/roadmap.md` の RM-011 ステータスを「設計完了」へ更新予定。
 - ToDo (`docs/todo/20251011-layout-style-governance.md`) に設計完了メモと次工程の記録を追加する。
 
 ## マイグレーション手順

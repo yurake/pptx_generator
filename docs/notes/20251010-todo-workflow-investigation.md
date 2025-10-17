@@ -6,7 +6,7 @@
 
 ## 現状把握
 - 上記 ToDo は main に存在し、PR 作成チェックのみ未完のまま。PR 番号や URL 記載もなく、自動化ワークフローが未実行と判断できる。 【F:docs/todo/20251009-samples-expansion.md†L15-L16】【F:docs/todo/20251009-samples-json-reorg.md†L15-L16】
-- ロードマップ側では RM-002 が「完了」となっているが参照先が `docs/todo/` のままで、アーカイブ移動が未実施。 【F:docs/roadmap/README.md†L154-L164】
+- ロードマップ側では RM-002 が「完了」となっているが参照先が `docs/todo/` のままで、アーカイブ移動が未実施。 【F:docs/roadmap/roadmap.md†L154-L164】
 
 ## ワークフロー調査
 - `todo-auto-complete` ワークフローは PR 本文から `docs/todo/YYYYMMDD-<slug>.md` 形式のパスを grep し、検出できた場合のみスクリプトを実行する。 【F:.github/workflows/todo-auto-complete.yml†L30-L62】

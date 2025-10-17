@@ -86,6 +86,27 @@ def split_roadmap_item(roadmap_item: str) -> Tuple[str, str]:
     return match.group(1), match.group(2).strip()
 
 
+def mark_mermaid_task_complete(content: str, item_code: str) -> Tuple[str, bool]:
+    """Mark the corresponding Mermaid node as 完了."""
+    mermaid_id = item_code.replace("-", "")
+    pattern = re.compile(
+        rf'({mermaid_id}\["{re.escape(item_code)}<br/>.*?<br/>)\(([^)]*?)\)("])'
+    )
+
+    updated = False
+
+    def repl(match: re.Match[str]) -> str:
+        nonlocal updated
+        current_status = match.group(2)
+        if current_status == "完了":
+            return match.group(0)
+        updated = True
+        return f'{match.group(1)}(完了){match.group(3)}'
+
+    updated_content = pattern.sub(repl, content, count=1)
+    return updated_content, updated
+
+
 def update_roadmap(
     roadmap_path: Path,
     roadmap_item: str,
@@ -142,6 +163,8 @@ def update_roadmap(
         )
         updated_content = re.sub(r"\n{3,}", "\n\n", updated_content).rstrip() + "\n"
 
+    updated_content, _ = mark_mermaid_task_complete(updated_content, item_code)
+
     if dry_run:
         return content != updated_content
     write_text(roadmap_path, updated_content)
@@ -179,7 +202,7 @@ def main() -> None:
     parser.add_argument("--todo", action="append", required=True, help="対象の ToDo ファイルパス")
     parser.add_argument("--pr-number", type=int, required=True, help="マージ済み PR の番号")
     parser.add_argument("--pr-url", required=True, help="マージ済み PR の URL")
-    parser.add_argument("--roadmap", default="docs/roadmap/README.md", help="ロードマップファイルのパス")
+    parser.add_argument("--roadmap", default="docs/roadmap/roadmap.md", help="ロードマップファイルのパス")
     parser.add_argument("--archive-dir", default="docs/todo/archive", help="アーカイブ先ディレクトリ")
     parser.add_argument("--dry-run", action="store_true", help="ファイルを更新せず差分のみ出力")
     args = parser.parse_args()
