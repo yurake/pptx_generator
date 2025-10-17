@@ -184,7 +184,7 @@ def build_issue_body(rel_path: str, fields: Dict[str, str], tasks: str, notes: s
     lines.append(f"## {title}")
     lines.append("")
     lines.append(f"- パス: `{rel_path}`")
-    for key in ("目的", "担当者", "関連ブランチ", "期限"):
+    for key in ("目的", "関連ブランチ", "roadmap_item"):
         if key in fields:
             lines.append(f"- {key}: {fields[key]}")
     if "関連Issue" in fields:
