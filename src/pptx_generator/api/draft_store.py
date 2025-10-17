@@ -32,6 +32,10 @@ class BoardAlreadyExistsError(RuntimeError):
     """既に存在するボードを作成しようとした。"""
 
 
+class SlideLockedError(RuntimeError):
+    """ロックされたスライドを変更しようとした。"""
+
+
 def _etag_from_revision(revision: int) -> str:
     return f'W/"draft-{revision}"'
 
@@ -132,6 +136,7 @@ class DraftStore:
         self._ensure_revision(state, expected_revision)
 
         section, slide = self._find_slide(state.board, slide_id)
+        self._ensure_slide_unlocked(slide, slide_id)
         slide["layout_hint"] = layout_hint
 
         candidates = slide.setdefault("layout_candidates", [])
@@ -169,6 +174,7 @@ class DraftStore:
         self._ensure_revision(state, expected_revision)
 
         source_section, slide = self._find_slide(state.board, slide_id)
+        self._ensure_slide_unlocked(slide, slide_id)
         source_section["slides"] = [item for item in source_section["slides"] if item["ref_id"] != slide_id]
 
         destination = self._find_section(state.board, target_section)
@@ -249,6 +255,7 @@ class DraftStore:
         self._ensure_revision(state, expected_revision)
 
         _, slide = self._find_slide(state.board, slide_id)
+        self._ensure_slide_unlocked(slide, slide_id)
         slide["appendix"] = appendix
 
         state.revision += 1
@@ -329,3 +336,8 @@ class DraftStore:
     @staticmethod
     def _append_log(state: DraftState, entry: dict[str, Any]) -> None:
         state.logs.append(entry)
+
+    @staticmethod
+    def _ensure_slide_unlocked(slide: dict[str, Any], slide_id: str) -> None:
+        if slide.get("locked"):
+            raise SlideLockedError(f"slide '{slide_id}' は承認済みのため変更できません")
