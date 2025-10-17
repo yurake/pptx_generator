@@ -323,14 +323,16 @@ def gen(
         )
     )
 
+    spec_validator = SpecValidatorStep(
+        max_title_length=rules_config.max_title_length,
+        max_bullet_length=rules_config.max_bullet_length,
+        max_bullet_level=rules_config.max_bullet_level,
+        forbidden_words=rules_config.forbidden_words,
+    )
+
     steps = [
-        SpecValidatorStep(
-            max_title_length=rules_config.max_title_length,
-            max_bullet_length=rules_config.max_bullet_length,
-            max_bullet_level=rules_config.max_bullet_level,
-            forbidden_words=rules_config.forbidden_words,
-        ),
         content_step,
+        spec_validator,
         draft_step,
         refiner,
         renderer,
