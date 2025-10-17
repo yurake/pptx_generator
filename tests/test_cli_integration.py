@@ -236,9 +236,11 @@ def test_cli_gen_supports_template(tmp_path) -> None:
 
     pptx_path = output_dir / "with-template.pptx"
     analysis_path = output_dir / "analysis.json"
+    review_engine_path = output_dir / "review_engine_analyzer.json"
     audit_path = output_dir / "audit_log.json"
     assert pptx_path.exists()
     assert analysis_path.exists()
+    assert review_engine_path.exists()
     assert audit_path.exists()
 
     presentation = Presentation(pptx_path)
@@ -250,6 +252,10 @@ def test_cli_gen_supports_template(tmp_path) -> None:
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "template"
     assert "config" in branding_info
+
+    review_payload = json.loads(review_engine_path.read_text(encoding="utf-8"))
+    assert review_payload.get("slides")
+    assert review_payload["slides"][0]["issues"]
 
     for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
         if slide_spec.title is None:
