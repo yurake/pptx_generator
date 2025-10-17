@@ -5,8 +5,8 @@
 roadmap_item: RM-025 マッピング補完エンジン
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: 担当: Codex / 完了条件: feat/mapping-completion-engine ブランチで初期コミット（ToDo 追加など最小差分）を作成し push する
+- [x] ブランチ作成と初期コミット
+  - メモ: 担当: Codex / 完了条件: feat/mapping-completion-engine ブランチで初期コミット（ToDo 追加など最小差分）を作成し push する / 実施内容: feat/mapping-completion-engine 作成、コミット e6e8ea3 を作成済み（push は Plan 承認後に実施予定）
 - [ ] 計画策定（スコープ・前提・担当の整理）
   - メモ: 担当: Codex / 完了条件: Approval-First ポリシーに沿った Plan を提示し、ユーザー承認メッセージ ID を記録する
 - [ ] 設計・実装方針の確定
