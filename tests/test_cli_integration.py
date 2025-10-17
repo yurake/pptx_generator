@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 from click.testing import CliRunner
+from collections import Counter
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -20,6 +21,20 @@ from pptx_generator.models import (JobSpec, TemplateRelease,
 from pptx_generator.pipeline import pdf_exporter
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
+CONTENT_APPROVED_SAMPLE = Path("samples/json/sample_content_approved.json")
+CONTENT_REVIEW_LOG_SAMPLE = Path("samples/json/sample_content_review_log.json")
+
+
+def _collect_paragraph_texts(slide) -> list[str]:
+    texts: list[str] = []
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False):
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            text = paragraph.text.strip()
+            if text:
+                texts.append(text)
+    return texts
 
 
 def test_cli_gen_generates_outputs(tmp_path) -> None:
@@ -87,6 +102,109 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     metrics_slide = presentation.slides[metrics_index]
     charts = [shape for shape in metrics_slide.shapes if getattr(shape, "has_chart", False)]
     assert charts, "チャートが描画されていること"
+
+
+def test_cli_gen_with_content_approved(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    content_path = CONTENT_APPROVED_SAMPLE
+    review_log_path = CONTENT_REVIEW_LOG_SAMPLE
+
+    approved_payload = json.loads(content_path.read_text(encoding="utf-8"))
+    review_log_payload = json.loads(review_log_path.read_text(encoding="utf-8"))
+    output_dir = tmp_path / "gen-content"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--content-approved",
+            str(content_path),
+            "--content-review-log",
+            str(review_log_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    audit_path = output_dir / "audit_log.json"
+    assert audit_path.exists()
+
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    assert isinstance(audit_payload.get("refiner_adjustments"), list)
+    content_meta = audit_payload.get("content_approval")
+    assert content_meta is not None
+    assert content_meta["slides"] == len(approved_payload["slides"])
+    assert content_meta["path"] == str(content_path.resolve())
+    assert content_meta["hash"].startswith("sha256:")
+    assert content_meta["slide_ids"] == [slide["id"] for slide in approved_payload["slides"]]
+    assert content_meta["applied_to_spec"] is True
+    assert set(content_meta["updated_slide_ids"]) == {slide["id"] for slide in approved_payload["slides"]}
+
+    review_meta = audit_payload.get("content_review_log")
+    assert review_meta is not None
+    assert review_meta["events"] == len(review_log_payload)
+    assert review_meta["path"] == str(review_log_path.resolve())
+    assert review_meta["hash"].startswith("sha256:")
+    expected_actions = Counter(entry["action"] for entry in review_log_payload)
+    assert review_meta["actions"] == dict(expected_actions)
+
+    presentation = Presentation(output_dir / "proposal.pptx")
+
+    agenda_slide = presentation.slides[1]
+    agenda_texts = _collect_paragraph_texts(agenda_slide)
+    assert "背景整理（承認済み）" in agenda_texts
+    assert "提案サマリー（承認済み）" in agenda_texts
+    assert "ロードマップと体制（承認済み）" in agenda_texts
+
+    problem_slide = presentation.slides[2]
+    notes_text = problem_slide.notes_slide.notes_text_frame.text
+    assert "監査ログ要件を強調（承認済み）。" in notes_text
+
+
+def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    content_path = tmp_path / "content_approved.json"
+    payload = {
+        "slides": [
+            {
+                "id": "s01",
+                "intent": "市場動向",
+                "status": "draft",
+                "elements": {"title": "市場", "body": ["需要は増加"]},
+            }
+        ]
+    }
+    content_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    output_dir = tmp_path / "gen-content-fail"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--content-approved",
+            str(content_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "承認済みコンテンツの読み込みに失敗しました" in result.output
+    audit_path = output_dir / "audit_log.json"
+    assert not audit_path.exists()
 
 
 def test_cli_gen_supports_template(tmp_path) -> None:

@@ -66,6 +66,12 @@
 - `elements.body` は文字列配列、最大 6 行、各行 40 文字以内（バリデータで検証）。
 - `ai_review` は `content_draft.json` のみ必須。`content_approved.json` では省略可。
 
+## 実装メモ
+- CLI／サービス実装では `ContentApprovalDocument`（Pydantic モデル）を用いて `content_draft.json` / `content_approved.json` を取り扱う。
+- 承認ログは `ContentReviewLogEntry` モデルを通じて検証し、ISO8601 のタイムスタンプと Auto-fix 適用履歴を保証する。
+- 詳細なモデル定義とパイプライン連携案は [docs/notes/20251017-content-approval-platform.md](../notes/20251017-content-approval-platform.md) を参照。
+- CLI 監査ログ (`audit_log.json`) には `content_approval` / `content_review_log` メタ情報を出力する。パス・件数・SHA256 ハッシュに加え、`content_approval.applied_to_spec` / `updated_slide_ids`、`content_review_log.actions`（アクション別件数）が含まれる。
+
 ## 変更履歴メモ
 - 2025-10-11: `ai_review.autofix_proposals.patch` を JSON Patch 形式に統一。
 - 2025-10-11: `status` フィールドを追加し、承認状態を明示化。

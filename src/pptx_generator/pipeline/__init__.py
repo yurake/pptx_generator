@@ -2,6 +2,8 @@
 
 from .analyzer import AnalyzerOptions, SimpleAnalyzerStep
 from .base import PipelineContext, PipelineRunner, PipelineStep
+from .content_approval import (ContentApprovalError, ContentApprovalOptions,
+                               ContentApprovalStep)
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
 from .renderer import RenderingOptions, SimpleRendererStep
 from .refiner import RefinerOptions, SimpleRefinerStep
@@ -10,6 +12,9 @@ from .validator import SpecValidatorStep
 
 __all__ = [
     "AnalyzerOptions",
+    "ContentApprovalError",
+    "ContentApprovalOptions",
+    "ContentApprovalStep",
     "RefinerOptions",
     "PipelineContext",
     "PipelineRunner",

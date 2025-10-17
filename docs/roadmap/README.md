@@ -384,15 +384,15 @@ flowchart TB
 
 <a id="rm-023"></a>
 ### RM-023 コンテンツ承認オーサリング基盤
-- ゴール: 工程 3 の HITL 承認 UI / API と AI レビュー連携を整備し、承認ログを監査可能にする。
+- ゴール: 工程 3 の HITL 承認 API と AI レビュー連携を整備し、承認ログを監査可能にする（UI は将来バックログ）。
 - 対象工程: 3（コンテンツ正規化）
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
 - 参照 ToDo: [docs/todo/20251012-content-approval-platform.md](../todo/20251012-content-approval-platform.md)
 - 状況: 未着手（2025-10-12 追加）
-- 期待成果: 承認 UI ワイヤーと API 設計、AI レビュー（グレード/Auto-fix）の実装方針、禁則語および必須項目のリアルタイム検知。
+- 期待成果: 承認 API 設計、AI レビュー（グレード/Auto-fix）の実装方針、禁則語および必須項目のリアルタイム検知。UI ワイヤーは参考資料として整理しつつ実装は後続へ委譲。
 - 依存: RM-001（Analyzer / Refiner ルール拡張）、RM-005（プレゼンストーリーモデラー）、RM-022（レイアウト解析検証強化）、RM-017（パイプライン機能拡張）、RM-019（CLI ツールチェーン整備）。
 - 関連テーマ: 監査ログ基盤。
-- 次のアクション: UI 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化。
+- 次のアクション: API 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化（専用 UI は後続タスクで検討）。
 
 <a id="rm-024"></a>
 ### RM-024 ドラフト構成承認フロー整備
@@ -489,6 +489,7 @@ flowchart TB
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
+- 専用 UI（Content Board / Storyboard）の実装および操作ログ整備。現フェーズは API／CLI ベースで運用し、UI は後続で再評価する。
 
 ## 更新履歴
 - 2025-10-05: 初版作成。
