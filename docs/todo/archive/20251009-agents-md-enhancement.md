@@ -33,7 +33,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 ## メモ
 - 参照資料: README.md, CONTRIBUTING.md, docs/policies/config-and-templates.md
 - セットアップ・テスト・スタイル・タスク管理・テンプレート運用に関する指示を AGENTS.md に集約済み
-- ロードマップ: [docs/roadmap/README.md#rm-002](../roadmap/README.md#rm-002) に位置付け
+- ロードマップ: [docs/roadmap/roadmap.md#rm-002](../roadmap/roadmap.md#rm-002) に位置付け
 - 反復更新: レビューの度に AGENTS.md と Roadmap の整合性を見直す
 - 今後追加された例の参照元や抜粋ポイントもメモに追記すること
 - コミット運用ルール追加済み: AGENTS.md, docs/policies/task-management.md, docs/todo/README.md

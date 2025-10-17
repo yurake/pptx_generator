@@ -10,7 +10,7 @@
 プレゼン仕様 JSON は工程 3・4 の HITL 作業で整備する想定です。現時点ではテキスト資料から自動変換する機能は提供していませんが、テンプレ抽出結果や既存サンプルをコピーしてカスタマイズする運用が可能です。
 
 ## アーキテクチャ概要
-本プロジェクトは 6 工程で資料を生成します。詳細は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/overview.md` を参照してください。
+本プロジェクトは 6 工程で資料を生成します。詳細は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/design.md` を参照してください。
 
 | 工程 | 実行主体 | 主な入力 | 主な成果物 | 概要 |
 | --- | --- | --- | --- | --- |
@@ -21,7 +21,7 @@
 | 5. マッピング | 自動 | `draft_approved.json` | `rendering_ready.json` | レイアウト選定とプレースホルダ割付を行い、中間 JSON を生成 |
 | 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json`、`review_engine_analyzer.json` | テンプレ適用と最終出力を生成 |
 
-工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/overview.md` にまとめています。
+工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/requirements.md` にまとめています。
 
 ## 環境要件
 - Python 3.12 系
@@ -229,12 +229,12 @@
 - .NET 関連の整形は `dotnet format` を利用します。
 
 ## 参考ドキュメント
-- `docs/design/overview.md`: アーキテクチャ全体像
+- `docs/design/design.md`: アーキテクチャ全体像
 - `docs/design/schema/README.md`: 中間 JSON スキーマと AI レビュー仕様
-- `docs/requirements/overview.md`: ビジネス／機能要件
+- `docs/requirements/requirements.md`: ビジネス／機能要件
 - `docs/requirements/stages/stage-0x-*.md`: 各工程の詳細要件
 - `docs/notes/20251012-readme-refactor.md`: README リファクタリングの検討メモ
-- `docs/roadmap/README.md`: ロードマップとテーマ一覧
+- `docs/roadmap/roadmap.md`: ロードマップとテーマ一覧
 
 ## ライセンス / サポート
 - ライセンス: 社内利用を前提としており、公開ライセンスは未定です。

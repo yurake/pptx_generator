@@ -30,8 +30,8 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM001["RM-001<br/>Analyzer / Refiner ルール拡張<br/>(完了)"]
         RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
-        RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(検討中)"]
-        RM006["RM-006<br/>ライブ共同編集アシスト<br/>(検討中)"]
+        RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
+        RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
     end
 
     subgraph ST1["Stage 1: テンプレ準備"]
@@ -170,7 +170,7 @@ flowchart TB
 ### RM-001 Analyzer / Refiner ルール拡張
 - ゴール: 品質診断と自動補正の精度を高め、要件定義書 4.3〜4.4 節の達成度を引き上げる。
 - 対象工程: 5（マッピング）・6（PPTX レンダリング）に付随する Analyzer / Refiner 処理
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md)
+- 参照ドキュメント: [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
 - 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
 - 状況: 完了（2025-10-15 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
@@ -180,7 +180,7 @@ flowchart TB
 - ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
 - 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
-- 状況: 完了（2025-10-11 更新）
+- 状況: 完了（2025-10-17 更新）
 - 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
 - 関連テーマ: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
 
@@ -188,17 +188,17 @@ flowchart TB
 ### RM-003 ビジュアルフィードバックコパイロット
 - ゴール: 生成されたスライドに対し、視覚モデル＋LLM がリアルタイムで「目線導線」「情報の密度」「ブランド逸脱」を可視化し、プレゼンターが WOW と感じる改善提案を提示する。
 - 対象工程: 5・6（レンダリング後の評価）＋ フィードバック API 全体
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
-- 状況: 検討中（2025-10-05 更新）
+- 参照ドキュメント: [docs/design/design.md](../design/design.md)
+- 状況: 保留（2025-10-17 更新）
 - 期待成果: スライド PNG + 幾何情報を入力としたフィードバック API、ダッシュボード UI モック、Fix への反映ルール策定。
 - 依存: RM-001（Analyzer / Refiner ルール拡張）のログ・指標整備、RM-013（PPTX 解析アナライザー実装）による幾何情報取得、画像生成モデルの選定、GPU 実行基盤との連携。
-- 次のアクション: 参考事例のリサーチ、モデル推論コスト試算、UI プロトタイピング。
+- 再開条件: ユーザーが明示的に再開指示を出すこと。
 
 <a id="rm-004"></a>
 ### RM-004 営業ナレッジ連携自動化
 - ゴール: CRM や案件管理システムから取得した勝ちパターン・競合情報を提案書自動生成に組み込み、ユーザーにとっての「次の一手」を提案する。
 - 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）への外部データ統合
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md)
+- 参照ドキュメント: [docs/requirements/requirements.md](../requirements/requirements.md)
 - 状況: 完了（2025-10-15 更新）
 - 完了理由: 案件連携のニーズが解消されたため開発を終了。
 - 期待成果: （クローズ時点で未着手）CRM 連携スキーマ定義、勝因レビューの LLM 要約、提案書内へのサジェストブロック挿入。
@@ -209,7 +209,7 @@ flowchart TB
 ### RM-005 プレゼンストーリーモデラー
 - ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
 - 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
-- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/overview.md](../requirements/overview.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
+- 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
 - 関連テーマ: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
@@ -218,11 +218,11 @@ flowchart TB
 ### RM-006 ライブ共同編集アシスト
 - ゴール: 提案会議中でも AI がライブでスライド修正案・説明コメント・補足資料リンクを提示し、即応性の高いプレゼンを実現する。
 - 対象工程: 3・4・5（リアルタイム編集とマッピング）の拡張
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md)
-- 状況: 検討中（2025-10-05 更新）
+- 参照ドキュメント: [docs/design/design.md](../design/design.md)
+- 状況: 保留（2025-10-17 更新）
 - 期待成果: WebSocket ベースの共同編集プロトコル設計、リアルタイム要約と修正提案、セッション監査ログ。
 - 依存: RM-003（ビジュアルフィードバックコパイロット）のフィードバック API、RM-025（マッピング補完エンジン）のリアルタイム適用、RM-026（レンダリング監査統合）の監査メタ連携、低遅延インフラ、アクセス制御、UI コンポーネント設計。
-- 次のアクション: 技術スタック比較、遅延要件の整理、UI ワイヤーフレーム作成。
+- 再開条件: ユーザーが明示的に再開指示を出すこと。
 
 <a id="rm-007"></a>
 ### RM-007 SlideBullet アンカー拡張
@@ -276,7 +276,7 @@ flowchart TB
 <a id="rm-012"></a>
 ### RM-012 レンダラーテキスト強化
 - ゴール: スライドのサブタイトル・ノート・テキストボックスを含む文章要素をレンダラーで描画し、基本レイアウト要件を満たす。
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照ドキュメント: [docs/design/design.md](../design/design.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/archive/20251011-renderer-text-enhancement.md](../todo/archive/20251011-renderer-text-enhancement.md)
 - 状況: 完了（2025-10-11 更新）
 - 期待成果: `Slide.subtitle` と `notes` の描画処理実装、`slides[].textboxes[]` スキーマと描画サポート、サンプル／テストの反映。
@@ -286,7 +286,7 @@ flowchart TB
 ### RM-013 PPTX 解析アナライザー実装
 - ゴール: 生成された PPTX を解析して幾何・スタイル情報を収集し、`grid_misaligned` など設計済みルールを含む品質診断を実現する。
 - 対象工程: 6（レンダリング後の解析）
-- 参照ドキュメント: [docs/requirements/overview.md](../requirements/overview.md), [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照ドキュメント: [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/archive/20251011-pptx-analyzer-implementation.md](../todo/archive/20251011-pptx-analyzer-implementation.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: PPTX 読み取りロジックと issue/fix 出力、既存 JSON ベース診断からの移行計画、テストデータ（PPTX）を用いた検証。
@@ -296,7 +296,7 @@ flowchart TB
 ### RM-014 自動補正・仕上げ統合
 - ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
 - 対象工程: 5（マッピング）・6（レンダリング）および仕上げ工程
-- 参照ドキュメント: [docs/design/overview.md](../design/overview.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
+- 参照ドキュメント: [docs/design/design.md](../design/design.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/20251011-automated-polisher-integration.md](../todo/20251011-automated-polisher-integration.md)
 - 状況: 未着手（2025-10-09 設定）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
@@ -483,7 +483,7 @@ flowchart TB
 - 次のアクション: 通知チャネル PoC の設計、再解析ジョブのスケジュール定義、CI ブリッジロジックのプロトタイプ作成。
 
 ## バックログ
-- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/overview.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
+- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 - 専用 UI（Content Board / Storyboard）の実装および操作ログ整備。現フェーズは API／CLI ベースで運用し、UI は後続で再評価する。

@@ -98,6 +98,6 @@
 ## 参考資料
 - `docs/notes/20251015-pptx-analyzer.md`: 実装概要と既知課題。
 - `docs/design/stages/stage-03-content-normalization.md`: Review Engine 連携仕様と Auto-fix 対応範囲。
-- `docs/requirements/overview.md`: 品質診断に関する要件。
+- `docs/requirements/requirements.md`: 品質診断に関する要件。
 - `tests/test_analyzer.py`: 解析結果の期待動作をカバーする単体テスト。
 - `README.md` / `AGENTS.md`: CLI 使い方とタスク管理ポリシー。

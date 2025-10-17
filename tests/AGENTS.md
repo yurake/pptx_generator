@@ -12,7 +12,7 @@
 - PDF 変換を含むテストは LibreOffice が必要なため、実行前に `soffice --headless --version` で環境確認する。
 
 ## 追加・更新ポリシー
-- 新機能やバグフィックスでは必ず失敗パターンを先に再現させるテストを追加し、緑化を確認する。承認フローや AI レビューのテストを追加する場合は、仕様を `docs/design/overview.md`・`docs/design/schema/README.md`・`docs/requirements/overview.md` で確認する。
+- 新機能やバグフィックスでは必ず失敗パターンを先に再現させるテストを追加し、緑化を確認する。承認フローや AI レビューのテストを追加する場合は、仕様を `docs/design/design.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` で確認する。
 - 大きな生成物（PPTX/PDF）の内容確認は、ハッシュ比較や `analysis.json` のメタ情報で検証し、バイナリをリポジトリに含めない。
 - テストデータを追加する場合は `samples/` に配置し、目的や前提条件をファイル冒頭にコメントとして記載する。
 
