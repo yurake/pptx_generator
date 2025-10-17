@@ -20,6 +20,7 @@ from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
                      TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
+                       DraftStructuringOptions, DraftStructuringStep,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, RefinerOptions,
                        RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
@@ -146,6 +147,19 @@ def app(verbose: bool) -> None:
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
 )
+@click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程2で生成した layouts.jsonl のパス",
+)
+@click.option(
+    "--draft-output",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/draft"),
+    show_default=True,
+    help="draft_draft.json / draft_approved.json の出力ディレクトリ",
+)
 def gen(
     spec_path: Path,
     output_dir: Path,
@@ -162,6 +176,8 @@ def gen(
     pdf_timeout: int,
     pdf_retries: int,
     emit_structure_snapshot: bool,
+    layouts: Optional[Path],
+    draft_output: Path,
 ) -> None:
     """JSON 仕様から PPTX を生成する。"""
     try:
@@ -297,6 +313,13 @@ def gen(
         )
     )
 
+    draft_step = DraftStructuringStep(
+        DraftStructuringOptions(
+            layouts_path=layouts,
+            output_dir=draft_output,
+        )
+    )
+
     steps = [
         SpecValidatorStep(
             max_title_length=rules_config.max_title_length,
@@ -305,6 +328,7 @@ def gen(
             forbidden_words=rules_config.forbidden_words,
         ),
         content_step,
+        draft_step,
         refiner,
         renderer,
         analyzer,
@@ -349,6 +373,12 @@ def gen(
     pdf_path = context.artifacts.get("pdf_path")
     if pdf_path is not None:
         click.echo(f"PDF: {pdf_path}")
+    draft_path = context.artifacts.get("draft_document_path")
+    if draft_path is not None:
+        click.echo(f"Draft: {draft_path}")
+    draft_log_path = context.artifacts.get("draft_review_log_path")
+    if draft_log_path is not None:
+        click.echo(f"Draft Log: {draft_log_path}")
     click.echo(f"Audit: {audit_path}")
 
 

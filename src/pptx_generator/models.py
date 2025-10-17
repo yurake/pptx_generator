@@ -359,6 +359,70 @@ class ContentReviewLogEntry(BaseModel):
         return value
 
 
+DraftStatus = Literal["draft", "approved", "returned"]
+
+
+class DraftLayoutCandidate(BaseModel):
+    layout_id: str
+    score: float = Field(ge=0.0, le=1.0)
+
+
+class DraftSlideCard(BaseModel):
+    ref_id: str
+    order: int
+    layout_hint: str
+    locked: bool = False
+    status: DraftStatus = "draft"
+    layout_candidates: list[DraftLayoutCandidate] = Field(default_factory=list)
+    appendix: bool = False
+
+
+class DraftSection(BaseModel):
+    name: str
+    order: int
+    status: DraftStatus = "draft"
+    slides: list[DraftSlideCard] = Field(default_factory=list)
+
+    @field_validator("slides")
+    @classmethod
+    def ensure_unique_slide_refs(cls, value: list[DraftSlideCard]) -> list[DraftSlideCard]:
+        ref_ids = {card.ref_id for card in value}
+        if len(ref_ids) != len(value):
+            msg = "セクション内の ref_id は一意である必要があります"
+            raise ValueError(msg)
+        return value
+
+
+class DraftMeta(BaseModel):
+    target_length: int | None = None
+    structure_pattern: str | None = None
+    appendix_limit: int | None = None
+
+
+class DraftDocument(BaseModel):
+    sections: list[DraftSection] = Field(default_factory=list)
+    meta: DraftMeta = Field(default_factory=DraftMeta)
+
+    @field_validator("sections")
+    @classmethod
+    def ensure_section_order(cls, value: list[DraftSection]) -> list[DraftSection]:
+        orders = {section.order for section in value}
+        if len(orders) != len(value):
+            msg = "セクション order が重複しています"
+            raise ValueError(msg)
+        return value
+
+
+class DraftLogEntry(BaseModel):
+    target_type: Literal["section", "slide"]
+    target_id: str
+    action: Literal["generate", "move", "hint", "approve", "appendix", "return"]
+    actor: str | None = None
+    timestamp: datetime
+    notes: str | None = None
+    changes: dict[str, object] | None = None
+
+
 class SpecValidationError(RuntimeError):
     """入力仕様の検証エラー。"""
 

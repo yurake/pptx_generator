@@ -129,6 +129,8 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
+- `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
+- `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
 - 解析結果の詳細な読み方と運用手順は `docs/runbooks/pptx-analyzer.md` を参照。
 
@@ -149,6 +151,10 @@
 | `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
+| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
+| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
+| `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 
