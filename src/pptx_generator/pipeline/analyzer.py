@@ -38,6 +38,7 @@ class AnalyzerOptions:
     background_color: str = "#FFFFFF"
     grid_size_in: float = 0.125
     grid_tolerance_in: float = 0.02
+    snapshot_output_filename: str | None = None
 
 
 @dataclass(slots=True)
@@ -205,6 +206,7 @@ class SimpleAnalyzerStep:
         presentation = Presentation(pptx_path)
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
+        snapshot_slides: list[dict[str, Any]] = []
 
         spec_slides = context.spec.slides
         if len(presentation.slides) < len(spec_slides):
@@ -237,6 +239,10 @@ class SimpleAnalyzerStep:
             )
             issues.extend(slide_issues)
             fixes.extend(slide_fixes)
+            if self.options.snapshot_output_filename:
+                snapshot_slides.append(
+                    self._export_snapshot_slide(slide_spec, snapshot)
+                )
 
         analysis = {
             "slides": len(spec_slides),
@@ -247,6 +253,14 @@ class SimpleAnalyzerStep:
         output_path = self._save(analysis, context.workdir)
         context.add_artifact("analysis_path", output_path)
         logger.info("analysis.json を出力しました: %s", output_path)
+        if self.options.snapshot_output_filename:
+            snapshot_path = self._save_snapshot(
+                snapshot_slides, context.workdir
+            )
+            context.add_artifact("analyzer_snapshot_path", snapshot_path)
+            logger.info(
+                "構造スナップショットを出力しました: %s", snapshot_path
+            )
 
     def _analyze_slide(
         self,
@@ -373,6 +387,90 @@ class SimpleAnalyzerStep:
                     fixes.append(fix)
 
         return issues, fixes
+
+    def _export_snapshot_slide(
+        self, slide_spec: Slide, snapshot: SlideSnapshot
+    ) -> dict[str, Any]:
+        named_shapes: list[dict[str, Any]] = []
+        placeholders: list[dict[str, Any]] = []
+
+        for shape in snapshot.shapes:
+            base_record = {
+                "shape_id": shape.shape_id,
+                "name": shape.name or "",
+                "shape_type": self._shape_type_name(shape.shape_type),
+                "left_in": shape.left_in,
+                "top_in": shape.top_in,
+                "width_in": shape.width_in,
+                "height_in": shape.height_in,
+            }
+            if shape.is_placeholder or shape.placeholder_type is not None:
+                placeholders.append(
+                    {
+                        **base_record,
+                        "is_placeholder": shape.is_placeholder,
+                        "placeholder_type": self._placeholder_type_name(
+                            shape.placeholder_type
+                        ),
+                    }
+                )
+            if shape.name:
+                named_shapes.append(base_record)
+
+        spec_anchors = sorted(
+            {
+                *(group.anchor for group in slide_spec.bullets if group.anchor),
+                *(image.anchor for image in slide_spec.images if image.anchor),
+                *(table.anchor for table in slide_spec.tables if table.anchor),
+                *(chart.anchor for chart in slide_spec.charts if chart.anchor),
+                *(textbox.anchor for textbox in slide_spec.textboxes if textbox.anchor),
+            }
+        )
+
+        return {
+            "index": snapshot.index,
+            "slide_id": slide_spec.id,
+            "layout": slide_spec.layout,
+            "placeholders": placeholders,
+            "named_shapes": named_shapes,
+            "spec_anchors": spec_anchors,
+        }
+
+    def _save_snapshot(
+        self, slides: list[dict[str, Any]], workdir: Path
+    ) -> Path:
+        if not self.options.snapshot_output_filename:
+            raise ValueError("snapshot_output_filename が設定されていません")
+        payload = {
+            "schema_version": "1.0.0",
+            "slides": slides,
+        }
+        path = workdir / self.options.snapshot_output_filename
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return path
+
+    @staticmethod
+    def _shape_type_name(shape_type: int | None) -> str:
+        if shape_type is None:
+            return "unknown"
+        try:
+            return MSO_SHAPE_TYPE(shape_type).name
+        except ValueError:  # pragma: no cover - 予期しない値
+            return str(shape_type)
+
+    @staticmethod
+    def _placeholder_type_name(
+        placeholder_type: int | None,
+    ) -> str | None:
+        if placeholder_type is None:
+            return None
+        try:
+            return PP_PLACEHOLDER(placeholder_type).name
+        except ValueError:  # pragma: no cover - 予期しない値
+            return str(placeholder_type)
 
     def _locate_image_shape(
         self, snapshot: SlideSnapshot, image_spec: SlideImage

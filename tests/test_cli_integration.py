@@ -220,6 +220,64 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     assert branding_info.get("source", {}).get("error") == "boom"
 
 
+def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    template_path = SAMPLE_TEMPLATE
+    gen_output = tmp_path / "gen-with-snapshot"
+    validation_output = tmp_path / "validation-with-snapshot"
+
+    runner = CliRunner()
+    gen_result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(gen_output),
+            "--template",
+            str(template_path),
+            "--emit-structure-snapshot",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert gen_result.exit_code == 0, gen_result.output
+
+    snapshot_path = gen_output / "analysis_snapshot.json"
+    assert snapshot_path.exists(), "Analyzer スナップショットが生成されていること"
+
+    validate_result = runner.invoke(
+        app,
+        [
+            "layout-validate",
+            "--template",
+            str(template_path),
+            "--output",
+            str(validation_output),
+            "--analyzer-snapshot",
+            str(snapshot_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert validate_result.exit_code == 0, validate_result.output
+
+    diagnostics_path = validation_output / "diagnostics.json"
+    diff_path = validation_output / "diff_report.json"
+    assert diagnostics_path.exists()
+    assert diff_path.exists()
+
+    diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+    warning_codes = {entry["code"] for entry in diagnostics.get("warnings", [])}
+    assert "analyzer_anchor_missing" in warning_codes
+    assert "analyzer_anchor_unexpected" in warning_codes
+    assert diagnostics["stats"]["layouts_total"] > 0
+
+    diff_payload = json.loads(diff_path.read_text(encoding="utf-8"))
+    issue_codes = {issue["code"] for issue in diff_payload.get("issues", [])}
+    assert "analyzer_anchor_missing" in issue_codes
+
+
 def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     output_dir = tmp_path / "gen-work-pdf"
