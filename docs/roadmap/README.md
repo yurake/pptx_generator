@@ -387,12 +387,11 @@ flowchart TB
 - ゴール: 工程 3 の HITL 承認 API と AI レビュー連携を整備し、承認ログを監査可能にする（UI は将来バックログ）。
 - 対象工程: 3（コンテンツ正規化）
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
-- 参照 ToDo: [docs/todo/20251012-content-approval-platform.md](../todo/20251012-content-approval-platform.md)
-- 状況: 未着手（2025-10-12 追加）
+- 参照 ToDo: [docs/todo/archive/20251012-content-approval-platform.md](../todo/archive/20251012-content-approval-platform.md)
+- 状況: 完了（2025-10-17 更新）
 - 期待成果: 承認 API 設計、AI レビュー（グレード/Auto-fix）の実装方針、禁則語および必須項目のリアルタイム検知。UI ワイヤーは参考資料として整理しつつ実装は後続へ委譲。
 - 依存: RM-001（Analyzer / Refiner ルール拡張）、RM-005（プレゼンストーリーモデラー）、RM-022（レイアウト解析検証強化）、RM-017（パイプライン機能拡張）、RM-019（CLI ツールチェーン整備）。
 - 関連テーマ: 監査ログ基盤。
-- 次のアクション: API 要件整理、承認ログスキーマ設計、AI レビュー評価指標のドラフト化（専用 UI は後続タスクで検討）。
 
 <a id="rm-024"></a>
 ### RM-024 ドラフト構成承認フロー整備

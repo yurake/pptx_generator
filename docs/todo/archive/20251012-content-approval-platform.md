@@ -29,8 +29,8 @@ roadmap_item: RM-023 コンテンツ承認オーサリング基盤
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: #172 に進捗コメントを追加し、API 実装完了と今後の課題を共有する
-- [ ] PR 作成
-  - メモ: PR で UI キャプチャと API スキーマを添付し、todo-auto-complete の結果を記録する
+- [x] PR 作成
+  - メモ: PR #206 https://github.com/yurake/pptx_generator/pull/206（2025-10-17 完了）
 
 ## メモ
 - 監査要件との整合性を確保するため、承認ログの保管場所とアクセス制御を先行定義する
