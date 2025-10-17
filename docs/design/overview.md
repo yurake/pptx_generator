@@ -32,9 +32,9 @@
 2. **テンプレ構造抽出**（自動）  
    テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
 3. **コンテンツ正規化**（HITL）  
-   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/overview.md` を参照。
+   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI はバックログとし、現状は API / CLI を前提に運用する（仕様は `docs/requirements/overview.md` を参照）。
 4. **ドラフト構成設計**（HITL）  
-   章立て・ページ順・`layout_hint` を決定し、`draft_approved.json` を確定。承認ゲートは Approval-First Policy (`docs/policies/task-management.md`) と連携する。
+   章立て・ページ順・`layout_hint` を決定し、`draft_approved.json` を確定。構成操作は Draft API / CLI を通じて実行し、承認ゲートは Approval-First Policy (`docs/policies/task-management.md`) と連携する。
 5. **マッピング**（自動）  
    テンプレ構造（工程 2）と承認済みデータ（工程 3/4）を突合し、レイアウト選定とプレースホルダ割付を行う。結果は `rendering_ready.json` と `mapping_log.json` に記録。
 6. **PPTX レンダリング**（自動）  
@@ -46,7 +46,7 @@
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
 | コンテンツ正規化 | `spec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
-| ドラフト構成 | `content_approved.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン UI、付録への退避、承認ログ（`draft_review_log.json`） |
+| ドラフト構成 | `content_approved.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン構成データ（CLI / API 提供）、付録への退避、承認ログ（`draft_review_log.json`） |
 | マッピング | `draft_approved.json`, `content_approved.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
 | レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
 
@@ -57,8 +57,8 @@
 | --- | --- | --- |
 | 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | Release CLI、差分診断、ゴールデンサンプル運用 |
 | 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | 抽出パイプライン、スキーマ検証、差分レポート |
-| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | HITL 承認 UI、AI レビュー、監査ログ |
-| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | ストーリーボード UI、layout_hint エンジン、章承認 |
+| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | 承認 API（UI はバックログ）、AI レビュー、監査ログ |
+| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | layout_hint 管理 API、スコアリング、章承認ログ |
 | 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング、フォールバック制御、AI 補完 |
 | 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
 

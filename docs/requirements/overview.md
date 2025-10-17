@@ -101,7 +101,7 @@
 - ジョブ実行プラットフォーム（Azure Functions, Container Apps, AWS Lambda, GCP Cloud Run 等）の最終決定。
 - 社員向け配布ポータルの提供方法。
 - テンプレ差分通知の実装方式と配信チャネル。
-- HITL 承認 UI を提供するプラットフォーム（Web / Desktop）の選定。
+- HITL 承認 UI を提供するプラットフォーム（バックログ、現状は API / CLI 運用）の選定。
 - Open XML Polisher と PDF 変換ジョブの配置（CLI 内包 / 外部サービス）。
 
 ## 11. 工程別詳細ドキュメント
@@ -109,7 +109,7 @@
 | --- | --- | --- |
 | 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | テンプレ差分レポート、受け渡しメタ生成、ゴールデンサンプル自動検証 |
 | 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | JSON スキーマ検証、差分可視化、ヒント係数推定 |
-| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | 承認 UI/API、AI レビューと Auto-fix、禁則チェック |
-| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | ストーリーボード UI、多様性スコア、付録操作履歴 |
+| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
+| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | layout_hint 管理 API、スコアリング、多様性ログ・付録操作履歴 |
 | 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング/フォールバック制御、AI 補完監査、スキーマ検証 |
 | 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |
