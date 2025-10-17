@@ -28,8 +28,8 @@ roadmap_item: RM-028 Analyzer 構造抽出差分連携
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 関連 Issue は未発行のため保留（対応不要）。
-- [ ] PR 作成
-  - メモ: PR 作成時に番号と URL を記録する。todo-auto-complete の結果も確認する。
+- [x] PR 作成
+  - メモ: PR #205 https://github.com/yurake/pptx_generator/pull/205（2025-10-17 完了）
 
 ## メモ
 - 計画のみで完了とする場合は判断内容を記録する。
