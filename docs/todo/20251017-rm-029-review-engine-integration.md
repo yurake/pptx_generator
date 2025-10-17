@@ -13,21 +13,21 @@ roadmap_item: RM-029 Analyzer Review Engine 連携
   - メモ: `AnalyzerReviewEngineAdapter` 設計（grade 算出・JSON Patch 変換・未対応 Fix 記録）を決定
 - [x] ドキュメント更新（要件・設計）
   - メモ: Stage-03 設計ドキュメントへ Analyzer 連携フローを追記、ノートで進捗を更新
-  - [ ] docs/requirements 配下
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: `review_engine_analyzer.json` 生成処理・アダプタ・監査ログ出力・テスト追加を実装
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_review_engine_adapter.py tests/test_cli_integration.py`
-- [ ] ドキュメント更新
-  - メモ: roadmap/requirements/runbook 反映は後続（未着手）
+- [x] ドキュメント更新
+  - メモ: roadmap/requirements/runbook/README 反映を実施済み。今後は Review Engine UI への展開を別タスクで管理
   - [x] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新
-  - メモ: 
+  - メモ: 対応する Issue 未発行（2025-10-17 時点）※ロードマップ上の RM-029 管理のみ
 - [ ] PR 作成
   - メモ: 
 
