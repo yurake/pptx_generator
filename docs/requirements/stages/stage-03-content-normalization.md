@@ -14,6 +14,7 @@
 - `content_approved.json`: スライド候補ごとのタイトル、本文、箇条書き、表、意図タグ、ストーリー要素（章分類、ストーリーフェーズ、メッセージアングル）。
 - レビューアクションログ: 承認/差戻し/付録送り等の操作履歴。
 - AI レビュー結果（グレード、改善提案、Auto-fix 案）。
+- `review_engine_analyzer.json`: Analyzer が出力した `issues` / `fixes` を Review Engine が消費できる形式に変換したファイル。スライド単位の `grade`（A/B/C）とサポートされている Auto-fix の JSON Patch を含む。
 - ストーリー骨子サマリ: RM-005 で規定する `story_outline.json` などドラフト構成連携用メタデータ。
 
 ## ワークフロー
@@ -41,13 +42,16 @@
 - 数値と単位が整合し、禁則語が含まれていないこと。
 - 意図タグが設定されていること。
 - Auto-fix 適用箇所がログに記録され、再現可能であること。
+- Analyzer の `severity` に応じてスライド単位のグレードが算出され、Review Engine UI で優先度判断に利用できること。
 
 ## ログ・インターフェース
 - `slide_id`, `action`, `actor`, `timestamp`, `notes` を最小セットとする監査ログ。
 - AI レビューの結果（評価レベル A/B/C、改善提案一覧、リスク警告）。
 - 差戻し理由と再生成履歴を連携し、再レビュー対象を特定できるようにする。
+- Analyzer 連携ログ: `review_engine_analyzer.json` を生成し、`audit_log.json` の `artifacts.review_engine_analysis` へ保存パスを記録する。サポート対象の Auto-fix タイプ（箇条書きレベル調整・フォントサイズ・文字色）のみ JSON Patch として出力し、それ以外は `notes.unsupported_fix_types` に列挙する。
 
 ## 未実装項目（機能単位）
+- Review Engine UI での新グレード表示と未対応 Fix タイプのハンドリング。
 - コンテンツ承認 API と監査ログ整備。
 - AI レビューのスコアリングと Auto-fix ワークフロー。
 - 禁則語・必須項目のリアルタイム検知ルール。

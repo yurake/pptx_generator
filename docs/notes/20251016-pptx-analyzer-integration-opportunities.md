@@ -31,6 +31,8 @@
 - 追加アイデア  
   - `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー優先度の指標に利用。
   - `severity` に基づく差戻し優先度タグを UI に表示し、HITL レビューの効率化を図る。
+- 2025-10-17 更新  
+  - CLI で `review_engine_analyzer.json` を生成し、Analyzer 指摘を Review Engine 用の `AIReviewIssue` / `AutoFixProposal` に変換する処理を追加済み（未対応 Fix 種別は notes に記録）。
 - 未反映領域  
   - 要件・設計・ロードマップでの記載なし。HITL 系ロードマップ項目（例: RM-024）への組み込みを検討。
 

@@ -22,9 +22,10 @@
      --export-pdf
    ```  
    - `analysis.json` は `--output` で指定したディレクトリに保存される。既定値は `.pptx/gen/analysis.json`。
+   - Review Engine 連携用に `review_engine_analyzer.json` も併せて出力される。設計と一致しない場合は CLI バージョンを確認する。
    - `--export-pdf` は任意。LibreOffice が利用できない場合は外してもよい。
 3. 実行ログを確認する  
-   - CLI 出力に `Analysis: <path>` が表示されることを確認する。
+   - CLI 出力に `Analysis: <path>` と `ReviewEngine Analysis: <path>` が表示されることを確認する。
    - `Audit: <path>` のログ（`audit_log.json`）にステップの開始・終了と処理時間が記録される。
 
 ## 出力物の読み方
@@ -55,8 +56,32 @@
   | `bullet_depth` | 許容段落レベルを超過 | `bullet_cap` |
   | `layout_consistency` | 直前段との段差が大きい | `bullet_reindent` |
   | `margin` | 画像がスライド余白に接近・はみ出し | `move` |
-  | `grid_misaligned` | グリッド（0.125in）へスナップできていない | `move` |
+| `grid_misaligned` | グリッド（0.125in）へスナップできていない | `move` |
 - Severity は `info` / `warning` / `error` を想定。`error` は必ず対処し、`warning` はテンプレ側の意図と照合して判断する。
+- `review_engine_analyzer.json` の概要
+  ```json
+  {
+    "schema_version": "1.0.0",
+    "generated_at": "...",
+    "slides": [
+      {
+        "slide_id": "agenda",
+        "grade": "B",
+        "issues": [{"code": "font_min", "message": "...", "severity": "warning"}],
+        "autofix_proposals": [
+          {
+            "patch_id": "fix-font",
+            "description": "...",
+            "patch": [{"op": "replace", "path": "/slides/1/bullets/0/items/0/font/size_pt", "value": 20.0}]
+          }
+        ],
+        "notes": {"unsupported_fix_types": ["move"]}
+      }
+    ]
+  }
+  ```
+  - `grade` は Analyzer `severity` に基づき `A` / `B` / `C` を付与。
+  - Auto-fix 変換は箇条書きレベル調整・フォントサイズ・文字色のみ対応。それ以外の Fix は `notes.unsupported_fix_types` に記録する。
 
 ## 運用フロー
 1. `analysis.json` を参照し、`issues` の `target.slide_id` / `element_id` を起点に差戻し対象を抽出する。
@@ -72,6 +97,7 @@
 
 ## 参考資料
 - `docs/notes/20251015-pptx-analyzer.md`: 実装概要と既知課題。
+- `docs/design/stages/stage-03-content-normalization.md`: Review Engine 連携仕様と Auto-fix 対応範囲。
 - `docs/requirements/overview.md`: 品質診断に関する要件。
 - `tests/test_analyzer.py`: 解析結果の期待動作をカバーする単体テスト。
 - `README.md` / `AGENTS.md`: CLI 使い方とタスク管理ポリシー。
