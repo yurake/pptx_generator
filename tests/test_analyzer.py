@@ -249,3 +249,49 @@ def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None
 
     issue_types = {issue["type"] for issue in payload["issues"]}
     assert "contrast_low" not in issue_types
+
+
+def test_analyzer_outputs_structure_snapshot(tmp_path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(
+            schema_version="1.1",
+            title="スナップショット検証",
+            client="Zeta",
+            author="営業部",
+            created_at="2025-10-17",
+            theme="corporate",
+        ),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-structure",
+                layout="Title and Content",
+                bullets=[
+                    _group(
+                        SlideBullet(
+                            id="bullet-structure",
+                            text="アンカー検証",
+                            level=1,
+                        ),
+                    )
+                ],
+            )
+        ],
+    )
+
+    context = _render_spec(spec, tmp_path)
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(snapshot_output_filename="analysis_snapshot.json")
+    )
+
+    analyzer.run(context)
+
+    snapshot_path = context.require_artifact("analyzer_snapshot_path")
+    payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+
+    assert payload["schema_version"] == "1.0.0"
+    assert payload["slides"], "スナップショットにスライドが含まれていません"
+    slide_entry = payload["slides"][0]
+    assert slide_entry["slide_id"] == "slide-structure"
+    assert slide_entry["layout"] == "Title and Content"
+    assert "placeholders" in slide_entry

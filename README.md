@@ -91,7 +91,8 @@
    uv run pptx layout-validate \
      --template templates/libraries/acme/v1/template.pptx \
      --output .pptx/validation/acme_v1 \
-     --baseline releases/acme/v0/layouts.jsonl
+     --baseline releases/acme/v0/layouts.jsonl \
+     --analyzer-snapshot .pptx/gen/analysis_snapshot.json
    ```
 - 生成される `layouts.jsonl` / `diagnostics.json` / `diff_report.json` は工程 2 の成果物品質を可視化し、CI などでの回帰チェックにも利用できます。
 
@@ -120,12 +121,13 @@
      --branding .pptx/extract/branding.json \
      --export-pdf
    ```
-- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`outputs/audit_log.json` にはジョブ履歴が追記されます。
+- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
 
 ### 生成物の確認
 - PPTX: `proposal.pptx`（`--pptx-name` で変更可能）
 - PDF: `proposal.pdf`（`--export-pdf` 指定時）
 - `analysis.json`: Analyzer/Refiner の診断結果
+- `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
 - 解析結果の詳細な読み方と運用手順は `docs/runbooks/pptx-analyzer.md` を参照。
@@ -147,6 +149,7 @@
 | `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 
 #### `pptx tpl-extract`
@@ -189,11 +192,12 @@
 | `--output <dir>` | 検証成果物を保存するディレクトリ | `.pptx/validation` |
 | `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 | 自動導出 |
 | `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する | 比較なし |
+| `--analyzer-snapshot <path>` | `pptx gen --emit-structure-snapshot` が生成した `analysis_snapshot.json` を突合する | 未指定 |
 
 生成物:
 - `layouts.jsonl`: レイアウト ID／プレースホルダー構成／ヒント情報を JSON Lines 形式で保存
 - `diagnostics.json`: 未知プレースホルダー種別や抽出エラーを `warnings` / `errors` に集計
-- `diff_report.json`: `--baseline` 指定時にプレースホルダー追加・削除・座標変更を記録
+- `diff_report.json`: `--baseline` 指定時にプレースホルダー追加・削除・座標変更を記録。Analyzer 突合のみでもアンカー差分を `issues` に含めたレポートを生成。
 - exit code 6 で致命的エラー（抽出失敗・必須項目欠落など）を通知
 
 ## テスト・検証

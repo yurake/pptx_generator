@@ -56,6 +56,7 @@ class LayoutValidationOptions:
     output_dir: Path
     template_id: str | None = None
     baseline_path: Path | None = None
+    analyzer_snapshot_path: Path | None = None
 
 
 @dataclass(slots=True)
@@ -98,6 +99,15 @@ class LayoutValidationSuite:
 
         records, warnings, errors = self._build_layout_records(template_spec, template_id)
 
+        analyzer_snapshot_issues: list[dict[str, Any]] = []
+        if self.options.analyzer_snapshot_path is not None:
+            snapshot_warnings, snapshot_errors, snapshot_issues = (
+                self._compare_with_analyzer_snapshot(records, template_id)
+            )
+            warnings.extend(snapshot_warnings)
+            errors.extend(snapshot_errors)
+            analyzer_snapshot_issues.extend(snapshot_issues)
+
         extraction_time_ms = int((perf_counter() - start) * 1000)
         diagnostics = {
             "template_id": template_id,
@@ -127,6 +137,7 @@ class LayoutValidationSuite:
         )
 
         diff_report_path: Path | None = None
+        diff_report: dict[str, Any] | None = None
         if self.options.baseline_path is not None:
             diff_report = self._build_diff_report(
                 records=records,
@@ -135,11 +146,28 @@ class LayoutValidationSuite:
             )
             if diff_report is not None:
                 self._validate_diff_report(diff_report)
+                if analyzer_snapshot_issues:
+                    diff_report.setdefault("issues", []).extend(analyzer_snapshot_issues)
                 diff_report_path = output_dir / "diff_report.json"
                 diff_report_path.write_text(
                     json.dumps(diff_report, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
+        elif analyzer_snapshot_issues:
+            diff_report = {
+                "baseline_template_id": "__analyzer_snapshot__",
+                "target_template_id": template_id,
+                "layouts_added": [],
+                "layouts_removed": [],
+                "placeholders_changed": [],
+                "issues": analyzer_snapshot_issues,
+            }
+            self._validate_diff_report(diff_report)
+            diff_report_path = output_dir / "diff_report.json"
+            diff_report_path.write_text(
+                json.dumps(diff_report, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
 
         return LayoutValidationResult(
             layouts_path=layouts_path,
@@ -345,6 +373,147 @@ class LayoutValidationSuite:
         if shape.missing_fields:
             flags.append("missing_fields")
         return flags
+
+    def _compare_with_analyzer_snapshot(
+        self, records: list[dict[str, Any]], template_id: str
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        warnings: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
+
+        snapshot_path = self.options.analyzer_snapshot_path
+        if snapshot_path is None:
+            return warnings, errors, issues
+
+        try:
+            payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            errors.append(
+                {
+                    "code": "analyzer_snapshot_missing",
+                    "layout_id": "__analyzer__",
+                    "name": snapshot_path.name,
+                    "detail": "Analyzer スナップショットが見つかりません",
+                }
+            )
+            return warnings, errors, issues
+        except json.JSONDecodeError as exc:
+            errors.append(
+                {
+                    "code": "analyzer_snapshot_invalid",
+                    "layout_id": "__analyzer__",
+                    "name": snapshot_path.name,
+                    "detail": f"JSON デコードに失敗しました ({exc})",
+                }
+            )
+            return warnings, errors, issues
+
+        slides = payload.get("slides", [])
+        template_layout_anchors: dict[str, set[str]] = {}
+        layout_name_to_id: dict[str, str] = {}
+        for record in records:
+            layout_name = record["layout_name"]
+            layout_id = record["layout_id"]
+            layout_name_to_id[layout_name] = layout_id
+            anchors = {
+                placeholder["name"]
+                for placeholder in record["placeholders"]
+                if placeholder["name"]
+            }
+            template_layout_anchors[layout_name] = anchors
+
+        snapshot_layout_anchors: dict[str, set[str]] = {}
+        anchor_sources: dict[str, dict[str, str]] = {}
+
+        for slide in slides:
+            layout_name = slide.get("layout")
+            slide_id = slide.get("slide_id", "unknown")
+            placeholders = slide.get("placeholders", [])
+            named_shapes = slide.get("named_shapes", [])
+
+            for placeholder in placeholders:
+                name = (placeholder.get("name") or "").strip()
+                if not name:
+                    display_name = placeholder.get("placeholder_type") or "__unnamed__"
+                    warnings.append(
+                        {
+                            "code": "analyzer_placeholder_unnamed",
+                            "layout_id": layout_name or "__unknown__",
+                            "name": display_name,
+                            "detail": f"slide={slide_id}",
+                        }
+                    )
+                    continue
+                snapshot_layout_anchors.setdefault(layout_name, set()).add(name)
+                anchor_sources.setdefault(layout_name, {}).setdefault(name, slide_id)
+
+            for shape in named_shapes:
+                name = (shape.get("name") or "").strip()
+                if not name:
+                    continue
+                snapshot_layout_anchors.setdefault(layout_name, set()).add(name)
+                anchor_sources.setdefault(layout_name, {}).setdefault(name, slide_id)
+
+        for layout_name, template_anchors in template_layout_anchors.items():
+            snapshot_anchors = snapshot_layout_anchors.get(layout_name, set())
+            missing = sorted(template_anchors - snapshot_anchors)
+            for anchor in missing:
+                layout_id = layout_name_to_id.get(layout_name)
+                if layout_id is None:
+                    layout_id = layout_name or "__unknown__"
+                entry = {
+                    "code": "analyzer_anchor_missing",
+                    "layout_id": layout_id,
+                    "name": anchor,
+                    "detail": "Analyzer スナップショットに対応するアンカーがありません",
+                }
+                warnings.append(entry)
+                issues.append(
+                    {
+                        "code": "analyzer_anchor_missing",
+                        "layout_id": layout_id,
+                        "detail": entry["detail"],
+                        "anchor": anchor,
+                    }
+                )
+
+        for layout_name, snapshot_anchors in snapshot_layout_anchors.items():
+            template_anchors = template_layout_anchors.get(layout_name, set())
+            extra = sorted(snapshot_anchors - template_anchors)
+            for anchor in extra:
+                source_slide = anchor_sources.get(layout_name, {}).get(anchor)
+                detail = f"slide={source_slide}" if source_slide else None
+                layout_id = layout_name_to_id.get(layout_name)
+                if layout_id is None:
+                    layout_id = layout_name or "__unknown__"
+                entry = {
+                    "code": "analyzer_anchor_unexpected",
+                    "layout_id": layout_id,
+                    "name": anchor,
+                }
+                if detail:
+                    entry["detail"] = detail
+                warnings.append(entry)
+                issues.append(
+                    {
+                        "code": "analyzer_anchor_unexpected",
+                        "layout_id": layout_id,
+                        "detail": detail or "",
+                        "anchor": anchor,
+                    }
+                )
+
+            if layout_name not in template_layout_anchors:
+                warnings.append(
+                    {
+                        "code": "analyzer_layout_unknown",
+                        "layout_id": layout_name or "__unknown__",
+                        "name": template_id,
+                        "detail": "テンプレ抽出結果に存在しないレイアウトです",
+                    }
+                )
+
+        return warnings, errors, issues
 
     def _derive_usage_tags(
         self, layout: LayoutInfo, placeholders: Iterable[dict[str, Any]]
