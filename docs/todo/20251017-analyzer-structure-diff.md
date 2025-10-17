@@ -1,7 +1,7 @@
 ---
 目的: Analyzer 構造抽出結果とスナップショット差分レポートの仕様策定と実装準備
 関連ブランチ: feat/rm028-analyzer-diff
-関連Issue: 未作成
+関連Issue: #204
 roadmap_item: RM-028 Analyzer 構造抽出差分連携
 ---
 
