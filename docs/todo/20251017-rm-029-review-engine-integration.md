@@ -1,7 +1,7 @@
 ---
 目的: Analyzer と Review Engine の連携仕様を整理し、issues/fixes 連携の実装方針を確定する
 関連ブランチ: feat/rm-029-review-engine-integration
-関連Issue: 未作成
+関連Issue: #208
 roadmap_item: RM-029 Analyzer Review Engine 連携
 ---
 
