@@ -28,7 +28,7 @@ roadmap_item: RM-029 Analyzer Review Engine 連携
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: GitHub Issue #208 と紐付け（2025-10-17）
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #210 https://github.com/yurake/pptx_generator/pull/210（2025-10-17 完了）
 
 ## メモ
