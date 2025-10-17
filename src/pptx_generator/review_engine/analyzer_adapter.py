@@ -48,15 +48,15 @@ class AnalyzerReviewEngineAdapter:
             slide_id = target.get("slide_id")
             if slide_id not in slide_state:
                 continue
+            normalized_severity = self._normalize_severity(issue.get("severity"))
             ai_issue = AIReviewIssue(
                 code=str(issue.get("type", "")),
                 message=str(issue.get("message", "")),
-                severity=self._normalize_severity(issue.get("severity")),
+                severity=normalized_severity,
             )
             slide_state[slide_id]["issues"].append(ai_issue)
-            severity = issue.get("severity")
-            if severity:
-                slide_state[slide_id]["severities"].append(str(severity))
+            if normalized_severity is not None:
+                slide_state[slide_id]["severities"].append(normalized_severity)
 
         existing_fix_ids: set[str] = set()
         for fix in analysis.get("fixes", []):
@@ -147,7 +147,12 @@ class AnalyzerReviewEngineAdapter:
     def _normalize_severity(severity: Any) -> str | None:
         if severity is None:
             return None
-        return str(severity).lower()
+        value = str(severity).lower()
+        if value == "error":
+            return "critical"
+        if value in {"info", "warning", "critical"}:
+            return value
+        return None
 
     @staticmethod
     def _build_bullet_lookup(slides: list[Slide]) -> dict[str, dict[str, tuple[int, int]]]:

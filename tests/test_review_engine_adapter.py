@@ -53,7 +53,18 @@ def test_build_payload_converts_issue_and_fix() -> None:
                     "element_id": "b1",
                     "element_type": "bullet",
                 },
-            }
+            },
+            {
+                "id": "contrast-slide-1-b1-2",
+                "type": "contrast_low",
+                "severity": "error",
+                "message": "コントラストが不足しています",
+                "target": {
+                    "slide_id": "slide-1",
+                    "element_id": "b1",
+                    "element_type": "bullet",
+                },
+            },
         ],
         "fixes": [
             {
@@ -88,8 +99,9 @@ def test_build_payload_converts_issue_and_fix() -> None:
 
     slide_payload = payload["slides"][0]
     assert slide_payload["slide_id"] == "slide-1"
-    assert slide_payload["grade"] == "B"
+    assert slide_payload["grade"] == "C"
     assert slide_payload["issues"][0]["code"] == "font_min"
+    assert slide_payload["issues"][1]["severity"] == "critical"
 
     autofix = slide_payload["autofix_proposals"][0]
     patch = autofix["patch"][0]
