@@ -18,10 +18,22 @@
 
 ## ワークフロー
 1. AI が候補コンテンツを生成し、カード単位で提示する（章／ストーリーフェーズ案を含む）。
-2. レビュー UI で人が文面・数値・意図タグを調整する。
+2. レビュワーが API クライアント（CLI や社内ツール）で文面・数値・意図タグを調整する。
 3. Auto-fix（安全な軽微修正）を適用し、AI レビューの診断結果とストーリー整合性の警告を確認する。
 4. 承認済み要素をロックし、差戻しは理由付きでログ化する。
 5. 承認データを `content_approved.json` として確定し、工程4へ送る。
+
+## API 要件
+- 認証は OAuth2 Client Credentials（Bearer Token）。未認証時は `401`、権限不足は `403` を返す。
+- ETag (`If-Match`) を用いた楽観的ロックを実装し、競合時は `412 Precondition Failed`。
+- サポートするエンドポイント（詳細は `docs/design/stages/stage-03-content-normalization.md` 参照）:
+  - `POST /v1/content/cards` – 初期カード登録。
+  - `PATCH /v1/content/cards/{slide_id}` – 本文・テーブルの更新、Auto-fix 適用。
+  - `POST /v1/content/cards/{slide_id}/approve` – 承認・ロック。
+  - `POST /v1/content/cards/{slide_id}/return` – 差戻し。
+  - `GET /v1/content/cards/{slide_id}` – 最新内容・履歴の取得。
+  - `GET /v1/content/logs` – 監査ログ取得（ページング／フィルタ対応）。
+- すべての更新系 API は `X-Actor`（操作者）、`X-Request-ID`（トレース ID）ヘッダを必須とする。
 
 ## 品質ゲート
 - 各カードに必須要素（タイトル・本文）が揃っていること。
@@ -36,7 +48,7 @@
 - 差戻し理由と再生成履歴を連携し、再レビュー対象を特定できるようにする。
 
 ## 未実装項目（機能単位）
-- コンテンツ承認 UI と承認ログ API。
+- コンテンツ承認 API と監査ログ整備。
 - AI レビューのスコアリングと Auto-fix ワークフロー。
 - 禁則語・必須項目のリアルタイム検知ルール。
-- ストーリー骨子の生成・編集 UI と `story_outline` のバージョン管理（RM-005 で検討）。
+- ストーリー骨子の生成・編集手順（UI は将来計画、現時点では API を前提）。

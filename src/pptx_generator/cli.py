@@ -18,11 +18,13 @@ from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
 from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
                      TemplateReleaseGoldenRun)
-from .pipeline import (AnalyzerOptions, PdfExportError, PdfExportOptions,
-                       PdfExportStep, PipelineContext, PipelineRunner,
-                       RefinerOptions, RenderingOptions, SimpleAnalyzerStep,
-                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
+from .pipeline import (AnalyzerOptions, ContentApprovalError,
+                       ContentApprovalOptions, ContentApprovalStep,
+                       PdfExportError, PdfExportOptions, PdfExportStep,
+                       PipelineContext, PipelineRunner, RefinerOptions,
+                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
+                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
+                       TemplateExtractorOptions)
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 from .settings import BrandingConfig, RulesConfig
@@ -76,6 +78,20 @@ def app(verbose: bool) -> None:
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
+)
+@click.option(
+    "--content-approved",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=None,
+    help="工程3で承認済みのコンテンツ JSON（content_approved.json）",
+)
+@click.option(
+    "--content-review-log",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認イベントログ JSON（content_review_log.json）",
 )
 @click.option(
     "--branding",
@@ -136,6 +152,8 @@ def gen(
     template: Optional[Path],
     pptx_name: str,
     rules: Path,
+    content_approved: Optional[Path],
+    content_review_log: Optional[Path],
     branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
@@ -270,6 +288,15 @@ def gen(
         max_retries=pdf_retries,
     )
 
+    content_step = ContentApprovalStep(
+        ContentApprovalOptions(
+            approved_path=content_approved,
+            review_log_path=content_review_log,
+            require_document=False,
+            require_all_approved=True,
+        )
+    )
+
     steps = [
         SpecValidatorStep(
             max_title_length=rules_config.max_title_length,
@@ -277,6 +304,7 @@ def gen(
             max_bullet_level=rules_config.max_bullet_level,
             forbidden_words=rules_config.forbidden_words,
         ),
+        content_step,
         refiner,
         renderer,
         analyzer,
@@ -290,6 +318,9 @@ def gen(
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
+    except ContentApprovalError as exc:
+        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
     except BrandingExtractionError as exc:
         click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -843,6 +874,12 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
         "branding": context.artifacts.get("branding"),
     }
+    content_meta = context.artifacts.get("content_approved_meta")
+    if content_meta is not None:
+        audit_payload["content_approval"] = content_meta
+    review_meta = context.artifacts.get("content_review_log_meta")
+    if review_meta is not None:
+        audit_payload["content_review_log"] = review_meta
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(
         audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -1,0 +1,54 @@
+{
+  "slides": [
+    {
+      "id": "cover",
+      "intent": "表紙",
+      "type_hint": "title",
+      "elements": {
+        "title": "次期プロジェクト提案",
+        "body": [
+          "2025 年度 上期 提案書（承認済み版）"
+        ],
+        "note": "カバースライドのサブタイトルと補足を保持しています。"
+      },
+      "status": "approved"
+    },
+    {
+      "id": "agenda",
+      "intent": "アジェンダ",
+      "type_hint": "outline",
+      "elements": {
+        "title": "アジェンダ",
+        "body": [
+          "背景整理（承認済み）",
+          "提案サマリー（承認済み）",
+          "ロードマップと体制（承認済み）"
+        ]
+      },
+      "status": "approved",
+      "applied_autofix": [
+        "p-agenda-bullet"
+      ]
+    },
+    {
+      "id": "problem",
+      "intent": "課題整理",
+      "type_hint": "content",
+      "elements": {
+        "title": "現状課題",
+        "body": [
+          "提案作成に 10 時間以上を要している（再確認済み）",
+          "承認待ちでリードタイムが延伸している（承認コメント反映）",
+          "監査ログ作成が手作業で属人化している（改善要）"
+        ],
+        "note": "課題は 3 点に集約。監査ログ要件を強調（承認済み）。"
+      },
+      "status": "approved"
+    }
+  ],
+  "meta": {
+    "tone": "formal",
+    "audience": "経営層",
+    "summary": "提案書ドラフトの確定版。表紙・アジェンダ・課題整理を承認済み。"
+  }
+}
