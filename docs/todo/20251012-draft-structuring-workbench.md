@@ -1,6 +1,6 @@
 ---
 目的: ドラフト構成承認 UI と layout_hint 管理を構築し、工程4の章立て承認を確実化する
-関連ブランチ: 未作成
+関連ブランチ: feat/rm024-draft-structuring
 関連Issue: #173
 roadmap_item: RM-024 ドラフト構成承認フロー整備
 ---
