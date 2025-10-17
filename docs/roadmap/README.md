@@ -441,10 +441,10 @@ flowchart TB
 - ゴール: 抽出したプレースホルダー情報と Analyzer スナップショットを突合し、命名漏れやアンカー欠落を差分レポートで提示できるようにする。
 - 対象工程: 2（テンプレ構造抽出）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
+- 状況: 進行中（2025-10-17 更新）
 - 期待成果: `diagnostics.json` への Analyzer 警告統合、抽出結果と PPTX 実体を比較する diff レポート出力、命名規約逸脱の自動検知。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-022（レイアウト解析検証強化）。
-- 次のアクション: diff レポート仕様の策定、構造抽出 CLI への Analyzer 連携インターフェース実装方針の整理、設計ドキュメント更新。
+- 次のアクション: Analyzer スナップショットのスキーマ整備、追加警告のレビュー手順策定、CI での突合ケース拡充。
 
 <a id="rm-029"></a>
 ### RM-029 Analyzer Review Engine 連携

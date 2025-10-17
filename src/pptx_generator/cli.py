@@ -125,6 +125,11 @@ def app(verbose: bool) -> None:
     show_default=True,
     help="LibreOffice 変換の最大リトライ回数",
 )
+@click.option(
+    "--emit-structure-snapshot",
+    is_flag=True,
+    help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
+)
 def gen(
     spec_path: Path,
     output_dir: Path,
@@ -138,6 +143,7 @@ def gen(
     libreoffice_path: Optional[Path],
     pdf_timeout: int,
     pdf_retries: int,
+    emit_structure_snapshot: bool,
 ) -> None:
     """JSON 仕様から PPTX を生成する。"""
     try:
@@ -230,6 +236,9 @@ def gen(
             if analyzer_rules.slide_height_in is not None
             else analyzer_defaults.slide_height_in,
             max_bullet_level=rules_config.max_bullet_level,
+            snapshot_output_filename="analysis_snapshot.json"
+            if emit_structure_snapshot
+            else None,
         )
     )
     refiner = SimpleRefinerStep(
@@ -303,6 +312,9 @@ def gen(
     else:
         click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
     click.echo(f"Analysis: {analysis_path}")
+    snapshot_path = context.artifacts.get("analyzer_snapshot_path")
+    if snapshot_path is not None:
+        click.echo(f"Analyzer Snapshot: {snapshot_path}")
     pdf_path = context.artifacts.get("pdf_path")
     if pdf_path is not None:
         click.echo(f"PDF: {pdf_path}")
@@ -459,11 +471,18 @@ def tpl_extract(
     default=None,
     help="比較対象となる過去の layouts.jsonl",
 )
+@click.option(
+    "--analyzer-snapshot",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Analyzer が出力した構造スナップショット JSON",
+)
 def layout_validate(
     template_path: Path,
     output_dir: Path,
     template_id: Optional[str],
     baseline: Optional[Path],
+    analyzer_snapshot: Optional[Path],
 ) -> None:
     """テンプレート構造の検証スイートを実行する。"""
 
@@ -472,6 +491,7 @@ def layout_validate(
         output_dir=output_dir,
         template_id=template_id,
         baseline_path=baseline,
+        analyzer_snapshot_path=analyzer_snapshot,
     )
     suite = LayoutValidationSuite(options)
 
