@@ -1,7 +1,7 @@
 ---
 目的: Analyzer と Review Engine の連携仕様を整理し、issues/fixes 連携の実装方針を確定する
 関連ブランチ: feat/rm-029-review-engine-integration
-関連Issue: 未作成
+関連Issue: #208
 roadmap_item: RM-029 Analyzer Review Engine 連携
 ---
 
@@ -26,8 +26,8 @@ roadmap_item: RM-029 Analyzer Review Engine 連携
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
-  - メモ: 対応する Issue 未発行（2025-10-17 時点）※ロードマップ上の RM-029 管理のみ
+- [x] 関連Issue 行の更新
+  - メモ: GitHub Issue #208 と紐付け（2025-10-17）
 - [ ] PR 作成
   - メモ: 
 
