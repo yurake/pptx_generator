@@ -75,7 +75,7 @@ flowchart TB
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
         RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
-        RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(未着手)"]
+        RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(完了)"]
         RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(未着手)"]
     end
 
@@ -409,10 +409,9 @@ flowchart TB
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/requirements/stages/stage-05-mapping.md](../requirements/stages/stage-05-mapping.md)
 - 参照 ToDo: [docs/todo/20251012-mapping-orchestrator.md](../todo/20251012-mapping-orchestrator.md)
-- 状況: 未着手（2025-10-12 追加）
+- 状況: 完了（2025-10-18 更新）
 - 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`rendering_ready.json` スキーマ検証ツール。
 - 依存: RM-022（レイアウト解析検証強化）、RM-024（ドラフト構成承認フロー）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、LLM 推論基盤。
-- 次のアクション: スコアリングロジックのプロトタイプ作成、フォールバックルール表の策定、スキーマ検証 CLI の設計。
 
 <a id="rm-026"></a>
 ### RM-026 レンダリング監査統合

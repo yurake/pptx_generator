@@ -31,8 +31,8 @@ roadmap_item: RM-025 マッピング補完エンジン
     - メモ: README に生成物一覧を追記、AGENTS.md は差分なしと判断
 - [x] 関連Issue 行の更新
   - メモ: 担当: Codex / 完了条件: ToDo フロントマターの `関連Issue` を最新の Issue 番号へ更新し、追記メモを残す / 実施内容: `gh issue list --limit 50` で #175 の継続を確認、進捗メモを本 ToDo に記録
-- [ ] PR 作成
-  - メモ: 担当: Codex / 完了条件: PR 作成後に todo-auto-complete ワークフローの結果を確認し、PR 番号と URL を記録する
+- [x] PR 作成
+  - メモ: PR #214 https://github.com/yurake/pptx_generator/pull/214（2025-10-18 完了）
 
 ## メモ
 - 承認メッセージ ID、テスト結果、検討メモを随時追記する
