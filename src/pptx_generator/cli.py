@@ -21,10 +21,11 @@ from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
                        DraftStructuringOptions, DraftStructuringStep,
-                       PdfExportError, PdfExportOptions, PdfExportStep,
-                       PipelineContext, PipelineRunner, RefinerOptions,
-                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
+                       MappingOptions, MappingStep, PdfExportError,
+                       PdfExportOptions, PdfExportStep, PipelineContext,
+                       PipelineRunner, RefinerOptions, RenderingOptions,
+                       SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
+                       SpecValidatorStep, TemplateExtractor,
                        TemplateExtractorOptions)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
@@ -294,6 +295,13 @@ def gen(
             default_font_name=branding_config.body_font.name,
         )
     )
+    mapping = MappingStep(
+        MappingOptions(
+            layouts_path=layouts,
+            output_dir=output_dir,
+            template_path=template,
+        )
+    )
     if not export_pdf and pdf_mode != "both":
         click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
         raise click.exceptions.Exit(code=2)
@@ -335,6 +343,7 @@ def gen(
         spec_validator,
         draft_step,
         refiner,
+        mapping,
         renderer,
         analyzer,
     ]
@@ -388,6 +397,15 @@ def gen(
     draft_log_path = context.artifacts.get("draft_review_log_path")
     if draft_log_path is not None:
         click.echo(f"Draft Log: {draft_log_path}")
+    rendering_ready_path = context.artifacts.get("rendering_ready_path")
+    if rendering_ready_path is not None:
+        click.echo(f"Rendering Ready: {rendering_ready_path}")
+    mapping_log_path = context.artifacts.get("mapping_log_path")
+    if mapping_log_path is not None:
+        click.echo(f"Mapping Log: {mapping_log_path}")
+    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
+    if fallback_report_path is not None:
+        click.echo(f"Fallback Report: {fallback_report_path}")
     click.echo(f"Audit: {audit_path}")
 
 
@@ -952,6 +970,15 @@ def _write_audit_log(context: PipelineContext) -> Path:
                 context.artifacts.get("review_engine_analysis_path")
             ),
             "pdf": _artifact_str(context.artifacts.get("pdf_path")),
+            "rendering_ready": _artifact_str(
+                context.artifacts.get("rendering_ready_path")
+            ),
+            "mapping_log": _artifact_str(
+                context.artifacts.get("mapping_log_path")
+            ),
+            "mapping_fallback_report": _artifact_str(
+                context.artifacts.get("mapping_fallback_report_path")
+            ),
         },
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
@@ -963,6 +990,9 @@ def _write_audit_log(context: PipelineContext) -> Path:
     review_meta = context.artifacts.get("content_review_log_meta")
     if review_meta is not None:
         audit_payload["content_review_log"] = review_meta
+    mapping_meta = context.artifacts.get("mapping_meta")
+    if mapping_meta is not None:
+        audit_payload["mapping"] = mapping_meta
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(
         audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")

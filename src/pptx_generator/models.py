@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Iterator, Literal
+from typing import Any, Iterable, Iterator, Literal
 
 from pydantic import (BaseModel, ConfigDict, Field, HttpUrl, ValidationError,
                       ValidationInfo, field_validator)
@@ -421,6 +421,67 @@ class DraftLogEntry(BaseModel):
     timestamp: datetime
     notes: str | None = None
     changes: dict[str, object] | None = None
+
+
+class MappingSlideMeta(BaseModel):
+    section: str | None = None
+    page_no: int | None = None
+    sources: list[str] = Field(default_factory=list)
+    fallback: str = "none"
+
+
+class RenderingReadySlide(BaseModel):
+    layout_id: str
+    elements: dict[str, Any] = Field(default_factory=dict)
+    meta: MappingSlideMeta
+
+
+class RenderingReadyMeta(BaseModel):
+    template_version: str | None = None
+    content_hash: str | None = None
+    generated_at: str
+
+
+class RenderingReadyDocument(BaseModel):
+    slides: list[RenderingReadySlide] = Field(default_factory=list)
+    meta: RenderingReadyMeta
+
+
+class MappingCandidate(BaseModel):
+    layout_id: str
+    score: float = Field(ge=0.0, le=1.0)
+
+
+class MappingFallbackState(BaseModel):
+    applied: bool = False
+    history: list[str] = Field(default_factory=list)
+    reason: str | None = None
+
+
+class MappingAIPatch(BaseModel):
+    patch_id: str
+    description: str
+    patch: list[JsonPatchOperation] = Field(default_factory=list)
+
+
+class MappingLogSlide(BaseModel):
+    ref_id: str
+    selected_layout: str
+    candidates: list[MappingCandidate] = Field(default_factory=list)
+    fallback: MappingFallbackState = Field(default_factory=MappingFallbackState)
+    ai_patch: list[MappingAIPatch] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class MappingLogMeta(BaseModel):
+    mapping_time_ms: int | None = None
+    fallback_count: int = 0
+    ai_patch_count: int = 0
+
+
+class MappingLog(BaseModel):
+    slides: list[MappingLogSlide] = Field(default_factory=list)
+    meta: MappingLogMeta = Field(default_factory=MappingLogMeta)
 
 
 class SpecValidationError(RuntimeError):
