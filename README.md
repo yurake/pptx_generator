@@ -129,6 +129,9 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
+- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付
+- `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
+- `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
 - `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）

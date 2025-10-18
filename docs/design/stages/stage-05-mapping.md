@@ -58,3 +58,8 @@
 ## 関連スキーマ
 - [docs/design/schema/stage-05-mapping.md](../schema/stage-05-mapping.md)
 - サンプル: [docs/design/schema/samples/rendering_ready.jsonc](../schema/samples/rendering_ready.jsonc), [docs/design/schema/samples/mapping_log.jsonc](../schema/samples/mapping_log.jsonc)
+
+## 現行実装の補足
+- 2025-10-17 実装では、レイアウトスコアリングをヒューリスティック（用途タグ、容量、表許容、直前レイアウトとの重複抑制）で計算し、ドラフト未生成時はジョブ仕様から簡易ドラフトを構築して欠落を補う。
+- 容量超過時は `shrink_text` フォールバックを適用し、本文を `max_lines` に合わせて短縮する。変更内容は JSON Patch として `mapping_log.json` に記録され、`fallback_report.json` にサマリを出力する。
+- AI 補完インターフェースは JSON Patch ログを前提としたスタブ実装（ルールベース補正）であり、将来的な LLM 置換を想定した API 形状にしている。
