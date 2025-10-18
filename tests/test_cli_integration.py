@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -56,6 +57,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     )
 
     assert result.exit_code == 0
+    assert "Polisher: disabled" in result.output
 
     spec = JobSpec.parse_file(spec_path)
 
@@ -81,6 +83,9 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "template"
     assert branding_info.get("source", {}).get("template") == str(SAMPLE_TEMPLATE)
+    polisher_meta = audit_payload.get("polisher")
+    assert polisher_meta is not None
+    assert polisher_meta.get("status") == "disabled"
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
@@ -154,6 +159,9 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert review_meta["hash"].startswith("sha256:")
     expected_actions = Counter(entry["action"] for entry in review_log_payload)
     assert review_meta["actions"] == dict(expected_actions)
+    polisher_meta = audit_payload.get("polisher")
+    assert polisher_meta is not None
+    assert polisher_meta.get("status") == "disabled"
 
     presentation = Presentation(output_dir / "proposal.pptx")
 
@@ -304,6 +312,75 @@ def test_cli_gen_supports_template(tmp_path) -> None:
             continue
         actual = slide.shapes.title.text if slide.shapes.title else None
         assert actual == slide_spec.title
+
+
+def test_cli_gen_with_polisher_stub(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    output_dir = tmp_path / "gen-polisher"
+    rules_path = tmp_path / "polisher-rules.json"
+    rules_path.write_text(json.dumps({"min_font_size_pt": 18.0}), encoding="utf-8")
+
+    script_path = tmp_path / "polisher_stub.py"
+    script_path.write_text(
+        "\n".join(
+            [
+                "import argparse",
+                "import json",
+                "from pathlib import Path",
+                "",
+                "parser = argparse.ArgumentParser()",
+                "parser.add_argument('--input', required=True)",
+                "parser.add_argument('--rules', required=True)",
+                "args = parser.parse_args()",
+                "path = Path(args.input)",
+                "path.read_bytes()",  # ensureファイル存在
+                "Path(args.rules).touch(exist_ok=True)",
+                "print(json.dumps({'stub': 'ok', 'adjusted_font_size': 0}))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--polisher",
+            "--polisher-path",
+            sys.executable,
+            "--polisher-arg",
+            str(script_path),
+            "--polisher-arg",
+            "--input",
+            "--polisher-arg",
+            "{pptx}",
+            "--polisher-arg",
+            "--rules",
+            "--polisher-arg",
+            "{rules}",
+            "--polisher-rules",
+            str(rules_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "Polisher: success" in result.output
+
+    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    polisher_meta = audit_payload.get("polisher")
+    assert polisher_meta is not None
+    assert polisher_meta.get("status") == "success"
+    assert polisher_meta.get("rules_path") == str(rules_path)
+    summary = polisher_meta.get("summary")
+    assert isinstance(summary, dict)
+    assert summary.get("stub") == "ok"
 
 
 def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:

@@ -44,6 +44,15 @@
    ```bash
    soffice --headless --version
    ```
+5. Open XML Polisher (.NET 8) を利用する場合はビルド済みバイナリを用意します（任意）。
+   ```bash
+   dotnet restore dotnet/Polisher/Polisher.csproj
+   dotnet publish dotnet/Polisher/Polisher.csproj \
+     --configuration Release \
+     --output dist/polisher
+   ```
+   - `config/rules.json` の `polisher.executable` を `dist/polisher/Polisher.dll` など生成物に合わせて設定します。
+   - ルールは `config/polisher-rules.json` を編集し、`--polisher-rules` オプションで差し替え可能です。
 
 ## 使い方
 6 工程の流れに沿って作業します。詳細な業務フローは各ステージの要件ドキュメント（`docs/requirements/stages/`）を参照してください。
@@ -125,6 +134,13 @@
      --template samples/templates/templates.pptx \
      --branding .pptx/extract/branding.json \
      --export-pdf
+
+   # Polisher を併用する例（事前に dotnet publish 済みの DLL を指定）
+   uv run pptx gen \
+     samples/json/sample_spec.json \
+     --template samples/templates/templates.pptx \
+     --polisher \
+     --polisher-path dist/polisher/Polisher.dll
    ```
 - `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
 
@@ -160,6 +176,12 @@
 | `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` もしくは環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
 | `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
 | `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
 | `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
@@ -218,10 +240,12 @@
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
 - CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
+- Polisher (.NET) 単体テスト: `dotnet run --project dotnet/Polisher.Tests`
 - テスト実行後は `.pptx/gen/` や `.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
 
 ## 設定とテンプレート
-- `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義。
+- `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワード、`polisher` セクションでの .NET Polisher 設定を定義。
+- `config/polisher-rules.json`: Polisher が適用するフォント・色・段落調整ルール。`--polisher-rules` で差し替え可能。
 - `config/branding.json`: `version: "layout-style-v1"` のスキーマでフォント・カラー・要素別スタイル・レイアウト個別設定を定義。
 - テンプレ運用ルールやブランド設定の更新手順は `config/AGENTS.md` と `docs/policies/config-and-templates.md` を参照します。
 

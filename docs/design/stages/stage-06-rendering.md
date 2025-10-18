@@ -19,23 +19,25 @@
 3. Consistency Checker が空 PH、表の溢れ、layout mismatch をチェック。  
 4. 問題があれば自動修正 or 警告として `rendering_log.json` に記録。  
 5. 監査メタ (`audit_log.json`) と生成ログを保存。  
-6. `--export-pdf` 指定時は LibreOffice を呼び出し PDF を生成。  
-7. Polisher Bridge を起動して Open XML Polisher を実行（任意）。
+6. Polisher Bridge を起動して Open XML Polisher を実行（`polisher.enabled` または `--polisher` 指定時）。  
+7. Analyzer が Polisher 適用済みの PPTX を解析し、`analysis.json` とスナップショットを出力。  
+8. `--export-pdf` 指定時は LibreOffice を呼び出し PDF を生成。  
 
 ## ログ / 成果物
 - `rendering_log.json`: スライド毎の `layout_id`, 挿入要素数, 警告一覧, 所要時間。
-- `audit_log.json`: テンプレ版、入力ハッシュ、生成ハッシュ、処理パイプライン履歴。
-- `stdout`: 主要な処理ステップと警告を INFO レベルで出力。
+- `audit_log.json`: テンプレ版、入力ハッシュ、生成ハッシュ、処理パイプライン履歴に加え `polisher` / `pdf_export` メタを保持。
+- `stdout`: 主要な処理ステップと警告を INFO レベルで出力。Polisher 有効時は `Polisher: success` と JSON サマリを表示し、無効時は `Polisher: disabled` を表示。
 
 ## エラーハンドリング
 - 要素挿入失敗 → スライド番号と PH を特定してログ化、exit code 1。
 - LibreOffice 失敗 → 再試行制御（最大 3 回）、それでも失敗なら `pdf_status=failed`。
-- Polisher 失敗 → PPTX は保持しつつ警告を出力。
+- Polisher 失敗 → PPTX は保持しつつ警告を出力し、CLI は exit code 6 で異常終了。
 
 ## 設定項目
 - `rendering.max_table_width_pt`, `rendering.bullet_line_spacing`, `rendering.default_note_template`
 - `pdf.retry_limit`, `pdf.timeout_sec`
-- `polisher.enabled`, `polisher.binary_path`, `polisher.rules_path`
+- `polisher.enabled`, `polisher.executable`, `polisher.rules_path`, `polisher.timeout_sec`, `polisher.arguments`
+- `config/polisher-rules.json`: Polisher 用のルールファイル（フォントサイズ、色、段落間隔）を JSON で定義
 
 ## モニタリング
 - メトリクス: レンダリング時間、PDF 生成時間、警告件数、Polisher 実行率。

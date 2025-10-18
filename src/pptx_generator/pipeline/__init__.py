@@ -7,6 +7,7 @@ from .content_approval import (ContentApprovalError, ContentApprovalOptions,
 from .draft_structuring import DraftStructuringOptions, DraftStructuringStep
 from .mapping import MappingOptions, MappingStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
+from .polisher import PolisherError, PolisherOptions, PolisherStep
 from .renderer import RenderingOptions, SimpleRendererStep
 from .refiner import RefinerOptions, SimpleRefinerStep
 from .template_extractor import TemplateExtractor, TemplateExtractorOptions, TemplateExtractorStep
@@ -30,6 +31,9 @@ __all__ = [
     "PdfExportStep",
     "MappingOptions",
     "MappingStep",
+    "PolisherError",
+    "PolisherOptions",
+    "PolisherStep",
     "SimpleAnalyzerStep",
     "SimpleRefinerStep",
     "SimpleRendererStep",

@@ -298,10 +298,11 @@ flowchart TB
 - 対象工程: 5（マッピング）・6（レンダリング）および仕上げ工程
 - 参照ドキュメント: [docs/design/design.md](../design/design.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
 - 参照 ToDo: [docs/todo/20251011-automated-polisher-integration.md](../todo/20251011-automated-polisher-integration.md)
-- 状況: 未着手（2025-10-09 設定）
+- 状況: 進行中（2025-10-18 更新）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
-- 依存: RM-013 の解析結果、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
-- 次のアクション: 自動補正ポリシーを確定し、Polisher 実装とテスト完了までを ToDo に従って進める。
+- 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`config/rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
+- 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
+- 次のアクション: 自動補正ポリシーを確定しつつ、Polisher ルールセットと差分ログの整備、docs/runbooks への適用フロー追記、.NET 実装側の単体テストと CI 統合を完了させる。
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計
