@@ -105,7 +105,12 @@
 - レイアウト選定の指針は `docs/requirements/stages/stage-04-draft-structuring.md` を参照してください。
 
 ### 工程 5: マッピング
-- `draft_approved.json` から `rendering_ready.json` を生成します。マッピングロジックは `docs/requirements/stages/stage-05-mapping.md` に整理されています。
+- `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
+- 実行手順: 工程 6 と同様に `uv run pptx gen ...` を実行すると工程 5 が自動的に走り、出力ディレクトリ（既定 `.pptx/gen/`）へ成果物を保存します。
+  ```bash
+  uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
+  # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
+  ```
 - 現在は `pptx gen` 実行時に内部で処理され、個別 CLI 公開は検討中です。
 
 ### 工程 6: PPTX レンダリング
