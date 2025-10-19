@@ -88,7 +88,8 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(未着手)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
-        RM033["RM-033<br/>Renderer 段落スタイル<br/>再設計<br/>(未着手)"]
+        RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(未着手)"]
+        RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(未着手)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -165,6 +166,9 @@ flowchart TB
     RM018 --> RM033
     RM019 --> RM033
     RM014 --> RM033
+    RM018 --> RM034
+    RM019 --> RM034
+    RM014 --> RM034
 ```
 
 ## 個別状況
@@ -306,17 +310,6 @@ flowchart TB
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
 - 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`config/rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
 - 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
-
-<a id="rm-033"></a>
-### RM-033 Renderer 段落スタイル再設計
-- ゴール: Renderer／Refiner 側でブランド定義に基づく段落スタイル（揃え・行間・余白・インデント）を確実に適用し、Polisher での補正を最小限に抑える。
-- 対象工程: 6（PPTX レンダリング）
-- 参照ドキュメント: [docs/notes/20251019-polisher-scope-review.md](../notes/20251019-polisher-scope-review.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-19 追加）
-- 期待成果: Renderer が段落揃え・行間・段落前後余白・箇条書きインデントをテンプレート／ブランド設定と一致させる。Refiner でのフォント・カラー補正と重複しないよう整理し、Polisher はテンプレ差分と監査ログ出力にフォーカスする。
-- 依存: RM-018（レンダラー リッチコンテンツ対応）、RM-019（CLI ツールチェーン整備）、RM-014（自動補正・仕上げ統合）。
-- 次のアクション: Renderer の段落スタイル適用実装、対応テストの追加、Polisher Scope ドキュメントの更新。
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計
@@ -504,6 +497,17 @@ flowchart TB
   1. 工程3/4 CLI 分離要件の調査と設計方針整理（ToDo: フォローアップタスク）。
   2. テスト観点棚卸しと再実行手順のドキュメント化。
   3. CLI 実装案のプロトタイプと影響範囲評価。
+
+<a id="rm-034"></a>
+### RM-034 Renderer 段落スタイル再設計
+- ゴール: Renderer／Refiner 側でブランド定義に基づく段落スタイル（揃え・行間・余白・インデント）を確実に適用し、Polisher での補正を最小限に抑える。
+- 対象工程: 6（PPTX レンダリング）
+- 参照ドキュメント: [docs/notes/20251019-polisher-scope-review.md](../notes/20251019-polisher-scope-review.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-19 追加）
+- 期待成果: Renderer が段落揃え・行間・段落前後余白・箇条書きインデントをテンプレート／ブランド設定と一致させる。Refiner でのフォント・カラー補正と重複しないよう整理し、Polisher はテンプレ差分と監査ログ出力にフォーカスする。
+- 依存: RM-018（レンダラー リッチコンテンツ対応）、RM-019（CLI ツールチェーン整備）、RM-014（自動補正・仕上げ統合）。
+- 次のアクション: Renderer の段落スタイル適用実装、対応テストの追加、Polisher Scope ドキュメントの更新。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
