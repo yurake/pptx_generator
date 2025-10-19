@@ -30,7 +30,20 @@
   "meta": {
     "template_version": "acme_v1",
     "content_hash": "sha256:...",
-    "generated_at": "2025-10-11T12:05:00+09:00"
+    "generated_at": "2025-10-11T12:05:00+09:00",
+    "job_meta": {
+      "schema_version": "1.1",
+      "title": "次期プロジェクト提案",
+      "client": "ABC 株式会社",
+      "author": "営業部",
+      "created_at": "2025-10-04",
+      "theme": "corporate",
+      "locale": "ja-JP"
+    },
+    "job_auth": {
+      "created_by": "codex",
+      "department": "solution"
+    }
   }
 }
 ```
@@ -70,6 +83,7 @@
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
+- `meta.job_meta` / `meta.job_auth`: 元 `JobSpec` のメタ情報を保持し、工程6での `JobSpec` 再構築に利用する。
 
 ## サンプル
 - `samples/rendering_ready.jsonc`
@@ -81,6 +95,7 @@
 - `meta.content_hash` が `content_approved` のハッシュと一致すること（任意検証）。
 
 ## 変更履歴メモ
+- 2025-10-18: `meta.job_meta` / `meta.job_auth` を追加。
 - 2025-10-11: `ai_patch` と `warnings` フィールドを追加。
 - 2025-10-11: `fallback.history` をリスト形式へ変更。
 （最新の詳細は git ログを参照）
