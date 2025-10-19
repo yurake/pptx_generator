@@ -29,8 +29,8 @@ roadmap_item: RM-023 コンテンツ承認オーサリング基盤
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue #215 を関連付け済み。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。todo-auto-complete が自動更新できない場合は理由を記載。
+- [x] PR 作成
+  - メモ: PR #217 https://github.com/yurake/pptx_generator/pull/217（2025-10-19 完了）
 ## メモ
 -
 - [ ] 次タスク: RM-033 パイプライン工程3/4独立化準備
