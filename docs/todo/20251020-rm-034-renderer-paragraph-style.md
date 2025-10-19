@@ -1,7 +1,7 @@
 ---
 目的: Renderer でブランド段落スタイルを適用し Polisher 依存を縮小する
 関連ブランチ: feat/rm034-paragraph-style
-関連Issue: 未作成（確認後に更新）
+関連Issue: #220
 roadmap_item: RM-034 Renderer 段落スタイル再設計
 ---
 
