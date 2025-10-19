@@ -84,7 +84,7 @@ flowchart TB
         ST6_ANCHOR(( ))
         RM012["RM-012<br/>レンダラー<br/>テキスト強化<br/>(完了)"]
         RM013["RM-013<br/>PPTX 解析<br/>アナライザー実装<br/>(完了)"]
-        RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(未着手)"]
+        RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(完了)"]
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(未着手)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
@@ -301,12 +301,11 @@ flowchart TB
 - ゴール: Refiner の自動補正範囲を拡張し、Open XML SDK ベースの Polisher を組み込んで仕上げ工程を自動化する。
 - 対象工程: 5（マッピング）・6（レンダリング）および仕上げ工程
 - 参照ドキュメント: [docs/design/design.md](../design/design.md), [docs/notes/20251009-feature-gap-analysis.md](../notes/20251009-feature-gap-analysis.md)
-- 参照 ToDo: [docs/todo/20251011-automated-polisher-integration.md](../todo/20251011-automated-polisher-integration.md)
-- 状況: 進行中（2025-10-18 更新）
+- 参照 ToDo: [docs/todo/archive/20251011-automated-polisher-integration.md](../todo/archive/20251011-automated-polisher-integration.md)
+- 状況: 完了（2025-10-19 更新）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
 - 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`config/rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
 - 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
-- 次のアクション: 自動補正ポリシーを確定しつつ、Polisher ルールセットと差分ログの整備、docs/runbooks への適用フロー追記、.NET 実装側の単体テストと CI 統合を完了させる。
 
 <a id="rm-033"></a>
 ### RM-033 Renderer 段落スタイル再設計

@@ -31,7 +31,8 @@ roadmap_item: RM-014 自動補正・仕上げ統合
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 監査ログ仕様と補正ポリシーの進捗を #160 に反映する
-- [ ] PR 作成
+- [x] PR 作成
+  - メモ: PR #216 https://github.com/yurake/pptx_generator/pull/216（2025-10-19 完了）
 
 ## メモ
 - 解析結果 (RM-013) との連携前提を明文化し、.NET 8 実行環境の要件を確認する。
