@@ -23,7 +23,8 @@ from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        DraftStructuringOptions, DraftStructuringStep,
                        MappingOptions, MappingStep, PdfExportError,
                        PdfExportOptions, PdfExportStep, PipelineContext,
-                       PipelineRunner, RefinerOptions, RenderingOptions,
+                       PipelineRunner, PolisherError, PolisherOptions,
+                       PolisherStep, RefinerOptions, RenderingOptions,
                        SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
                        SpecValidatorStep, TemplateExtractor,
                        TemplateExtractorOptions)
@@ -37,6 +38,25 @@ DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
+    """設定ファイルで指定されたパスを解決する。"""
+    candidate = Path(value)
+    if candidate.is_absolute():
+        resolved = candidate
+    else:
+        if candidate.parts and candidate.parts[0] == "config":
+            resolved = Path.cwd() / candidate
+        elif base_dir is not None:
+            resolved = base_dir / candidate
+        else:
+            resolved = Path.cwd() / candidate
+    resolved = resolved.resolve()
+    if not resolved.exists():
+        msg = f"設定ファイルで指定されたパスが見つかりません: {resolved}"
+        raise FileNotFoundError(msg)
+    return resolved
 
 
 @click.group(help="JSON 仕様から PPTX を生成する CLI")
@@ -158,6 +178,41 @@ def _build_refiner_options(
     )
 
 
+def _build_polisher_options(
+    rules_config: RulesConfig,
+    *,
+    polisher_toggle: bool | None,
+    polisher_path: Optional[Path],
+    polisher_rules: Optional[Path],
+    polisher_timeout: Optional[int],
+    polisher_args: tuple[str, ...],
+    polisher_cwd: Optional[Path],
+    rules_path: Path,
+) -> PolisherOptions:
+    config = rules_config.polisher
+    enabled = polisher_toggle if polisher_toggle is not None else config.enabled
+
+    executable: Path | None = polisher_path
+    if executable is None and config.executable:
+        executable = _resolve_config_path(config.executable, base_dir=rules_path.parent)
+
+    rules_file: Path | None = polisher_rules
+    if rules_file is None and config.rules_path:
+        rules_file = _resolve_config_path(config.rules_path, base_dir=rules_path.parent)
+
+    timeout_sec = polisher_timeout or config.timeout_sec
+    arguments = tuple(config.arguments) + tuple(polisher_args)
+
+    return PolisherOptions(
+        enabled=enabled,
+        executable=executable,
+        rules_path=rules_file,
+        timeout_sec=timeout_sec,
+        arguments=arguments,
+        working_dir=polisher_cwd,
+    )
+
+
 def _run_mapping_pipeline(
     *,
     spec: JobSpec,
@@ -228,6 +283,7 @@ def _run_render_pipeline(
     branding_artifact: dict[str, object],
     analyzer_options: AnalyzerOptions,
     pdf_options: PdfExportOptions,
+    polisher_options: PolisherOptions | None = None,
     base_artifacts: dict[str, object] | None = None,
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -254,7 +310,9 @@ def _run_render_pipeline(
     )
     analyzer = SimpleAnalyzerStep(analyzer_options)
 
-    steps = [renderer, analyzer]
+    polisher_step = PolisherStep(polisher_options or PolisherOptions())
+
+    steps = [renderer, polisher_step, analyzer]
     if pdf_options.enabled:
         steps.append(PdfExportStep(pdf_options))
 
@@ -297,6 +355,16 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     pdf_path = context.artifacts.get("pdf_path")
     if pdf_path is not None:
         click.echo(f"PDF: {pdf_path}")
+    polisher_meta = context.artifacts.get("polisher_metadata")
+    if isinstance(polisher_meta, dict):
+        status = polisher_meta.get("status", "unknown")
+        click.echo(f"Polisher: {status}")
+        summary = polisher_meta.get("summary")
+        if isinstance(summary, dict) and summary:
+            click.echo(
+                "Polisher Summary: "
+                + json.dumps(summary, ensure_ascii=False, sort_keys=True)
+            )
     draft_path = context.artifacts.get("draft_document_path")
     if draft_path is not None:
         click.echo(f"Draft: {draft_path}")
@@ -416,6 +484,42 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     help="LibreOffice 変換の最大リトライ回数",
 )
 @click.option(
+    "--polisher/--no-polisher",
+    "polisher_toggle",
+    default=None,
+    help="Open XML Polisher を実行するかを明示的に指定する（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
+)
+@click.option(
+    "--polisher-rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Polisher へ渡すルール設定ファイル",
+)
+@click.option(
+    "--polisher-timeout",
+    type=int,
+    default=None,
+    help="Polisher 実行のタイムアウト秒（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-arg",
+    "polisher_args",
+    multiple=True,
+    help="Polisher へ渡す追加引数（{pptx}, {rules} をプレースホルダーとして利用可能）",
+)
+@click.option(
+    "--polisher-cwd",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Polisher 実行時のカレントディレクトリ",
+)
+@click.option(
     "--emit-structure-snapshot",
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
@@ -448,6 +552,12 @@ def gen(
     libreoffice_path: Optional[Path],
     pdf_timeout: int,
     pdf_retries: int,
+    polisher_toggle: bool | None,
+    polisher_path: Optional[Path],
+    polisher_rules: Optional[Path],
+    polisher_timeout: Optional[int],
+    polisher_args: tuple[str, ...],
+    polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
     layouts: Optional[Path],
     draft_output: Path,
@@ -476,6 +586,16 @@ def gen(
         soffice_path=libreoffice_path,
         timeout_sec=pdf_timeout,
         max_retries=pdf_retries,
+    )
+    polisher_options = _build_polisher_options(
+        rules_config,
+        polisher_toggle=polisher_toggle,
+        polisher_path=polisher_path,
+        polisher_rules=polisher_rules,
+        polisher_timeout=polisher_timeout,
+        polisher_args=polisher_args,
+        polisher_cwd=polisher_cwd,
+        rules_path=rules,
     )
 
     try:
@@ -523,11 +643,15 @@ def gen(
             branding_artifact=branding_artifact,
             analyzer_options=analyzer_options,
             pdf_options=pdf_options,
+            polisher_options=polisher_options,
             base_artifacts=dict(mapping_context.artifacts),
         )
     except PdfExportError as exc:
         click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=5) from exc
+    except PolisherError as exc:
+        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -730,6 +854,42 @@ def mapping(  # noqa: PLR0913
     help="LibreOffice 変換の最大リトライ回数",
 )
 @click.option(
+    "--polisher/--no-polisher",
+    "polisher_toggle",
+    default=None,
+    help="Open XML Polisher を実行するかを明示的に指定する（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
+)
+@click.option(
+    "--polisher-rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Polisher へ渡すルール設定ファイル",
+)
+@click.option(
+    "--polisher-timeout",
+    type=int,
+    default=None,
+    help="Polisher 実行のタイムアウト秒（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-arg",
+    "polisher_args",
+    multiple=True,
+    help="Polisher へ渡す追加引数（{pptx}, {rules} をプレースホルダーとして利用可能）",
+)
+@click.option(
+    "--polisher-cwd",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Polisher 実行時のカレントディレクトリ",
+)
+@click.option(
     "--emit-structure-snapshot",
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
@@ -747,6 +907,12 @@ def render(  # noqa: PLR0913
     libreoffice_path: Optional[Path],
     pdf_timeout: int,
     pdf_retries: int,
+    polisher_toggle: bool | None,
+    polisher_path: Optional[Path],
+    polisher_rules: Optional[Path],
+    polisher_timeout: Optional[int],
+    polisher_args: tuple[str, ...],
+    polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
 ) -> None:
     """工程6 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
@@ -767,6 +933,16 @@ def render(  # noqa: PLR0913
         timeout_sec=pdf_timeout,
         max_retries=pdf_retries,
     )
+    polisher_options = _build_polisher_options(
+        rules_config,
+        polisher_toggle=polisher_toggle,
+        polisher_path=polisher_path,
+        polisher_rules=polisher_rules,
+        polisher_timeout=polisher_timeout,
+        polisher_args=polisher_args,
+        polisher_cwd=polisher_cwd,
+        rules_path=rules,
+    )
 
     try:
         rendering_ready = RenderingReadyDocument.parse_file(rendering_ready_path)
@@ -785,10 +961,14 @@ def render(  # noqa: PLR0913
             branding_artifact=branding_artifact,
             analyzer_options=analyzer_options,
             pdf_options=pdf_options,
+            polisher_options=polisher_options,
         )
     except PdfExportError as exc:
         click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=5) from exc
+    except PolisherError as exc:
+        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -1376,6 +1556,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "pdf_export": context.artifacts.get("pdf_export_metadata"),
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
         "branding": context.artifacts.get("branding"),
+        "polisher": context.artifacts.get("polisher_metadata"),
     }
     content_meta = context.artifacts.get("content_approved_meta")
     if content_meta is not None:

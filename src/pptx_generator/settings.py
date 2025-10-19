@@ -105,6 +105,53 @@ class RefinerRuleConfig:
 
 
 @dataclass(slots=True)
+class PolisherRuleConfig:
+    enabled: bool = False
+    executable: str | None = None
+    rules_path: str | None = None
+    timeout_sec: int = 90
+    arguments: tuple[str, ...] = ()
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object] | None) -> "PolisherRuleConfig":
+        if not payload:
+            return cls()
+
+        def _maybe_bool(value: object, default: bool) -> bool:
+            if isinstance(value, bool):
+                return value
+            return default
+
+        def _maybe_str(value: object) -> str | None:
+            if isinstance(value, str) and value.strip():
+                return value
+            return None
+
+        def _maybe_args(value: object) -> tuple[str, ...]:
+            if isinstance(value, (list, tuple)):
+                result: list[str] = []
+                for item in value:
+                    if isinstance(item, str) and item.strip():
+                        result.append(item)
+                return tuple(result)
+            if isinstance(value, str) and value.strip():
+                return (value,)
+            return ()
+
+        timeout = _maybe_int(payload.get("timeout_sec"))
+        if timeout is None or timeout <= 0:
+            timeout = 90
+
+        return cls(
+            enabled=_maybe_bool(payload.get("enabled"), False),
+            executable=_maybe_str(payload.get("executable")),
+            rules_path=_maybe_str(payload.get("rules_path")),
+            timeout_sec=timeout,
+            arguments=_maybe_args(payload.get("arguments")),
+        )
+
+
+@dataclass(slots=True)
 class RulesConfig:
     max_title_length: int = 25
     max_bullet_length: int = 120
@@ -112,6 +159,7 @@ class RulesConfig:
     forbidden_words: tuple[str, ...] = ()
     analyzer: AnalyzerRuleConfig = field(default_factory=AnalyzerRuleConfig)
     refiner: RefinerRuleConfig = field(default_factory=RefinerRuleConfig)
+    polisher: PolisherRuleConfig = field(default_factory=PolisherRuleConfig)
 
     @classmethod
     def load(cls, path: Path) -> "RulesConfig":
@@ -121,6 +169,7 @@ class RulesConfig:
         defaults = cls()
         analyzer = AnalyzerRuleConfig.from_dict(data.get("analyzer", {}))
         refiner = RefinerRuleConfig.from_dict(data.get("refiner", {}))
+        polisher = PolisherRuleConfig.from_dict(data.get("polisher", {}))
         return cls(
             max_title_length=title.get("max_length", defaults.max_title_length),
             max_bullet_length=bullet.get("max_length", defaults.max_bullet_length),
@@ -128,6 +177,7 @@ class RulesConfig:
             forbidden_words=tuple(data.get("forbidden_words", defaults.forbidden_words)),
             analyzer=analyzer,
             refiner=refiner,
+            polisher=polisher,
         )
 
 

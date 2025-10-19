@@ -29,3 +29,11 @@ jobs:
 
       - name: Run pytest
         run: uv run --extra dev pytest
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run Polisher .NET tests
+        run: dotnet run --project dotnet/Polisher.Tests

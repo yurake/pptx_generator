@@ -31,5 +31,10 @@
     "enable_color_adjust": true,
     "preferred_text_color": "#005BAC",
     "fallback_font_color": "#333333"
+  },
+  "polisher": {
+    "enabled": false,
+    "timeout_sec": 90,
+    "rules_path": "config/polisher-rules.json"
   }
 }

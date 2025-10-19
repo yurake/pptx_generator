@@ -39,6 +39,13 @@ class TestRulesConfig:
                     "preferred_text_color": "778899",
                     "fallback_font_color": "#abcdef",
                 },
+                "polisher": {
+                    "enabled": True,
+                    "executable": "tools/polisher.exe",
+                    "rules_path": "config/polisher-rules.json",
+                    "timeout_sec": 120,
+                    "arguments": ["--profile", "default"],
+                },
             },
         )
 
@@ -59,6 +66,11 @@ class TestRulesConfig:
         assert config.refiner.enable_color_adjust is True
         assert config.refiner.preferred_text_color == "#778899"
         assert config.refiner.fallback_font_color.upper() == "#ABCDEF"
+        assert config.polisher.enabled is True
+        assert config.polisher.executable == "tools/polisher.exe"
+        assert config.polisher.rules_path == "config/polisher-rules.json"
+        assert config.polisher.timeout_sec == 120
+        assert config.polisher.arguments == ("--profile", "default")
 
     def test_load_fallback_to_defaults(self, tmp_path: Path) -> None:
         config_path = write_json(tmp_path / "rules.json", {})
@@ -74,6 +86,11 @@ class TestRulesConfig:
         assert config.refiner.enable_bullet_reindent is True
         assert config.refiner.enable_font_raise is False
         assert config.refiner.enable_color_adjust is False
+        assert config.polisher.enabled is False
+        assert config.polisher.executable is None
+        assert config.polisher.rules_path is None
+        assert config.polisher.timeout_sec == 90
+        assert config.polisher.arguments == ()
 
     def test_load_invalid_json_raises(self, tmp_path: Path) -> None:
         config_path = tmp_path / "broken.json"
