@@ -5,10 +5,10 @@
 roadmap_item: RM-033 パイプライン工程3/4独立化準備
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: `feat/rm033-pipeline-decoupling` を main から作成済み。Plan 承認メッセージ（2025-10-19 ユーザー指示）をコミットログへ記録予定。初期コミットではガイド更新と ToDo 追加を含める。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: scope／影響範囲／テスト戦略／ロールバック案をまとめた Plan を提示済み。承認メッセージ ID を記録する。
+- [x] ブランチ作成と初期コミット
+  - メモ: `feat/rm033-pipeline-decoupling` を main から作成し、初期コミット `docs(task-management): align todo flow with approval-first policy` を作成。承認メッセージ（ユーザー 2025-10-19 指示）をコミット本文へ記録済み。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: Plan を提示済み。ユーザー質問・指示を踏まえて承認済みとして進行。
 - [ ] 設計・実装方針の確定
   - メモ: CLI サブコマンド構成、`rendering_ready_to_jobspec` 等のヘルパー設計、監査ログ拡張の方針を確定し、必要に応じて `docs/design/` / `docs/requirements/` を更新する。
 - [ ] ドキュメント更新（要件・設計）
