@@ -16,29 +16,23 @@ from .branding_extractor import (
 )
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
-from .models import (JobSpec, SpecValidationError, TemplateReleaseDiagnostics,
-                     TemplateReleaseGoldenRun)
+from .models import (JobSpec, RenderingReadyDocument, SpecValidationError,
+                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
                        DraftStructuringOptions, DraftStructuringStep,
-<<<<<<< HEAD
                        MappingOptions, MappingStep, PdfExportError,
                        PdfExportOptions, PdfExportStep, PipelineContext,
-                       PipelineRunner, RefinerOptions, RenderingOptions,
+                       PipelineRunner, PolisherError, PolisherOptions,
+                       PolisherStep, RefinerOptions, RenderingOptions,
                        SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
                        SpecValidatorStep, TemplateExtractor,
-=======
-                       PdfExportError, PdfExportOptions, PdfExportStep,
-                       PipelineContext, PipelineRunner, PolisherError,
-                       PolisherOptions, PolisherStep, RefinerOptions,
-                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
->>>>>>> 4d4cd2c (feat(polisher): add dotnet polisher bridge and tests)
                        TemplateExtractorOptions)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 from .settings import BrandingConfig, RulesConfig
+from .rendering_ready import rendering_ready_to_jobspec
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
@@ -46,16 +40,23 @@ DEFAULT_BRANDING_PATH = Path("config/branding.json")
 logger = logging.getLogger(__name__)
 
 
-def _resolve_config_path(value: str, *, base_dir: Path) -> Path:
+def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
     """設定ファイルで指定されたパスを解決する。"""
     candidate = Path(value)
-    if not candidate.is_absolute():
-        candidate = base_dir / candidate
-    candidate = candidate.resolve()
-    if not candidate.exists():
-        msg = f"設定ファイルで指定されたパスが見つかりません: {candidate}"
+    if candidate.is_absolute():
+        resolved = candidate
+    else:
+        if candidate.parts and candidate.parts[0] == "config":
+            resolved = Path.cwd() / candidate
+        elif base_dir is not None:
+            resolved = base_dir / candidate
+        else:
+            resolved = Path.cwd() / candidate
+    resolved = resolved.resolve()
+    if not resolved.exists():
+        msg = f"設定ファイルで指定されたパスが見つかりません: {resolved}"
         raise FileNotFoundError(msg)
-    return candidate
+    return resolved
 
 
 @click.group(help="JSON 仕様から PPTX を生成する CLI")
@@ -65,6 +66,322 @@ def app(verbose: bool) -> None:
     level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+
+
+def _prepare_branding(
+    template: Optional[Path], branding: Optional[Path]
+) -> tuple[BrandingConfig, dict[str, object]]:
+    def _load_default_branding() -> tuple[BrandingConfig, dict[str, object]]:
+        try:
+            config = BrandingConfig.load(DEFAULT_BRANDING_PATH)
+            return config, {"type": "default", "path": str(DEFAULT_BRANDING_PATH)}
+        except FileNotFoundError:
+            click.echo(
+                f"デフォルトのブランド設定が見つかりません: {DEFAULT_BRANDING_PATH}. 内蔵設定を使用します。",
+                err=True,
+            )
+            return BrandingConfig.default(), {"type": "builtin"}
+
+    branding_payload: dict[str, object] | None = None
+    if branding is not None:
+        branding_config = BrandingConfig.load(branding)
+        branding_source = {"type": "file", "path": str(branding)}
+    elif template is not None:
+        try:
+            extraction = extract_branding_config(template)
+        except BrandingExtractionError as exc:
+            click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
+            branding_config, branding_source = _load_default_branding()
+            branding_source["error"] = str(exc)
+        else:
+            branding_config = extraction.to_branding_config()
+            branding_payload = extraction.to_branding_payload()
+            branding_source = {"type": "template", "template": str(template)}
+    else:
+        branding_config, branding_source = _load_default_branding()
+
+    artifact = {"source": branding_source}
+    if branding_payload is not None:
+        artifact["config"] = branding_payload
+    return branding_config, artifact
+
+
+def _build_analyzer_options(
+    rules_config: RulesConfig,
+    branding_config: BrandingConfig,
+    emit_structure_snapshot: bool,
+) -> AnalyzerOptions:
+    analyzer_rules = rules_config.analyzer
+    analyzer_defaults = AnalyzerOptions()
+    body_font_size = branding_config.body_font.size_pt
+    body_font_color = branding_config.body_font.color_hex
+    primary_color = branding_config.primary_color
+    background_color = branding_config.background_color
+
+    return AnalyzerOptions(
+        min_font_size=analyzer_rules.min_font_size
+        if analyzer_rules.min_font_size is not None
+        else body_font_size,
+        default_font_size=analyzer_rules.default_font_size
+        if analyzer_rules.default_font_size is not None
+        else body_font_size,
+        default_font_color=analyzer_rules.default_font_color or body_font_color,
+        preferred_text_color=analyzer_rules.preferred_text_color or primary_color,
+        background_color=analyzer_rules.background_color or background_color,
+        min_contrast_ratio=analyzer_rules.min_contrast_ratio
+        if analyzer_rules.min_contrast_ratio is not None
+        else analyzer_defaults.min_contrast_ratio,
+        large_text_min_contrast=analyzer_rules.large_text_min_contrast
+        if analyzer_rules.large_text_min_contrast is not None
+        else analyzer_defaults.large_text_min_contrast,
+        large_text_threshold_pt=analyzer_rules.large_text_threshold_pt
+        if analyzer_rules.large_text_threshold_pt is not None
+        else body_font_size,
+        margin_in=analyzer_rules.margin_in
+        if analyzer_rules.margin_in is not None
+        else analyzer_defaults.margin_in,
+        slide_width_in=analyzer_rules.slide_width_in
+        if analyzer_rules.slide_width_in is not None
+        else analyzer_defaults.slide_width_in,
+        slide_height_in=analyzer_rules.slide_height_in
+        if analyzer_rules.slide_height_in is not None
+        else analyzer_defaults.slide_height_in,
+        max_bullet_level=rules_config.max_bullet_level,
+        snapshot_output_filename="analysis_snapshot.json"
+        if emit_structure_snapshot
+        else None,
+    )
+
+
+def _build_refiner_options(
+    rules_config: RulesConfig, branding_config: BrandingConfig
+) -> RefinerOptions:
+    analyzer_rules = rules_config.analyzer
+    refiner_rules = rules_config.refiner
+    body_font_size = branding_config.body_font.size_pt
+    body_font_color = branding_config.body_font.color_hex
+    primary_color = branding_config.primary_color
+
+    return RefinerOptions(
+        max_bullet_level=rules_config.max_bullet_level,
+        enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
+        enable_font_raise=refiner_rules.enable_font_raise,
+        min_font_size=refiner_rules.min_font_size
+        if refiner_rules.min_font_size is not None
+        else body_font_size,
+        enable_color_adjust=refiner_rules.enable_color_adjust,
+        preferred_text_color=refiner_rules.preferred_text_color
+        or analyzer_rules.preferred_text_color
+        or primary_color,
+        fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
+        default_font_name=branding_config.body_font.name,
+    )
+
+
+def _build_polisher_options(
+    rules_config: RulesConfig,
+    *,
+    polisher_toggle: bool | None,
+    polisher_path: Optional[Path],
+    polisher_rules: Optional[Path],
+    polisher_timeout: Optional[int],
+    polisher_args: tuple[str, ...],
+    polisher_cwd: Optional[Path],
+    rules_path: Path,
+) -> PolisherOptions:
+    config = rules_config.polisher
+    enabled = polisher_toggle if polisher_toggle is not None else config.enabled
+
+    executable: Path | None = polisher_path
+    if executable is None and config.executable:
+        executable = _resolve_config_path(config.executable, base_dir=rules_path.parent)
+
+    rules_file: Path | None = polisher_rules
+    if rules_file is None and config.rules_path:
+        rules_file = _resolve_config_path(config.rules_path, base_dir=rules_path.parent)
+
+    timeout_sec = polisher_timeout or config.timeout_sec
+    arguments = tuple(config.arguments) + tuple(polisher_args)
+
+    return PolisherOptions(
+        enabled=enabled,
+        executable=executable,
+        rules_path=rules_file,
+        timeout_sec=timeout_sec,
+        arguments=arguments,
+        working_dir=polisher_cwd,
+    )
+
+
+def _run_mapping_pipeline(
+    *,
+    spec: JobSpec,
+    output_dir: Path,
+    rules_config: RulesConfig,
+    refiner_options: RefinerOptions,
+    branding_artifact: dict[str, object],
+    content_approved: Optional[Path],
+    content_review_log: Optional[Path],
+    layouts: Optional[Path],
+    draft_output: Path,
+    template: Optional[Path],
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    draft_output.mkdir(parents=True, exist_ok=True)
+
+    context = PipelineContext(spec=spec, workdir=output_dir)
+    context.add_artifact("branding", branding_artifact)
+
+    content_step = ContentApprovalStep(
+        ContentApprovalOptions(
+            approved_path=content_approved,
+            review_log_path=content_review_log,
+            require_document=False,
+            require_all_approved=True,
+        )
+    )
+    draft_step = DraftStructuringStep(
+        DraftStructuringOptions(
+            layouts_path=layouts,
+            output_dir=draft_output,
+        )
+    )
+    spec_validator = SpecValidatorStep(
+        max_title_length=rules_config.max_title_length,
+        max_bullet_length=rules_config.max_bullet_length,
+        max_bullet_level=rules_config.max_bullet_level,
+        forbidden_words=rules_config.forbidden_words,
+    )
+    refiner = SimpleRefinerStep(refiner_options)
+    mapping = MappingStep(
+        MappingOptions(
+            layouts_path=layouts,
+            output_dir=output_dir,
+            template_path=template,
+        )
+    )
+
+    steps = [
+        content_step,
+        spec_validator,
+        draft_step,
+        refiner,
+        mapping,
+    ]
+    PipelineRunner(steps).execute(context)
+    return context
+
+
+def _run_render_pipeline(
+    *,
+    rendering_ready: RenderingReadyDocument,
+    rendering_ready_path: Optional[Path],
+    output_dir: Path,
+    template: Optional[Path],
+    pptx_name: str,
+    branding_config: BrandingConfig,
+    branding_artifact: dict[str, object],
+    analyzer_options: AnalyzerOptions,
+    pdf_options: PdfExportOptions,
+    polisher_options: PolisherOptions | None = None,
+    base_artifacts: dict[str, object] | None = None,
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    render_spec = rendering_ready_to_jobspec(rendering_ready)
+    artifacts = dict(base_artifacts or {})
+
+    context = PipelineContext(
+        spec=render_spec,
+        workdir=output_dir,
+        artifacts=artifacts,
+    )
+    context.add_artifact("branding", branding_artifact)
+    context.add_artifact("rendering_ready", rendering_ready)
+    if rendering_ready_path is not None:
+        context.add_artifact("rendering_ready_path", str(rendering_ready_path))
+
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template,
+            output_filename=pptx_name,
+            branding=branding_config,
+        )
+    )
+    analyzer = SimpleAnalyzerStep(analyzer_options)
+
+    polisher_step = PolisherStep(polisher_options or PolisherOptions())
+
+    steps = [renderer, polisher_step, analyzer]
+    if pdf_options.enabled:
+        steps.append(PdfExportStep(pdf_options))
+
+    PipelineRunner(steps).execute(context)
+    return context
+
+
+def _echo_mapping_outputs(context: PipelineContext) -> None:
+    draft_path = context.artifacts.get("draft_document_path")
+    if draft_path is not None:
+        click.echo(f"Draft: {draft_path}")
+    draft_log_path = context.artifacts.get("draft_review_log_path")
+    if draft_log_path is not None:
+        click.echo(f"Draft Log: {draft_log_path}")
+    rendering_ready_path = context.artifacts.get("rendering_ready_path")
+    if rendering_ready_path is not None:
+        click.echo(f"Rendering Ready: {rendering_ready_path}")
+    mapping_log_path = context.artifacts.get("mapping_log_path")
+    if mapping_log_path is not None:
+        click.echo(f"Mapping Log: {mapping_log_path}")
+    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
+    if fallback_report_path is not None:
+        click.echo(f"Fallback Report: {fallback_report_path}")
+
+
+def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> None:
+    pptx_path = context.artifacts.get("pptx_path")
+    if pptx_path is not None:
+        click.echo(f"PPTX: {pptx_path}")
+    else:
+        click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
+    analysis_path = context.artifacts.get("analysis_path")
+    click.echo(f"Analysis: {analysis_path}")
+    review_engine_path = context.artifacts.get("review_engine_analysis_path")
+    if review_engine_path is not None:
+        click.echo(f"ReviewEngine Analysis: {review_engine_path}")
+    snapshot_path = context.artifacts.get("analyzer_snapshot_path")
+    if snapshot_path is not None:
+        click.echo(f"Analyzer Snapshot: {snapshot_path}")
+    pdf_path = context.artifacts.get("pdf_path")
+    if pdf_path is not None:
+        click.echo(f"PDF: {pdf_path}")
+    polisher_meta = context.artifacts.get("polisher_metadata")
+    if isinstance(polisher_meta, dict):
+        status = polisher_meta.get("status", "unknown")
+        click.echo(f"Polisher: {status}")
+        summary = polisher_meta.get("summary")
+        if isinstance(summary, dict) and summary:
+            click.echo(
+                "Polisher Summary: "
+                + json.dumps(summary, ensure_ascii=False, sort_keys=True)
+            )
+    draft_path = context.artifacts.get("draft_document_path")
+    if draft_path is not None:
+        click.echo(f"Draft: {draft_path}")
+    draft_log_path = context.artifacts.get("draft_review_log_path")
+    if draft_log_path is not None:
+        click.echo(f"Draft Log: {draft_log_path}")
+    rendering_ready_path = context.artifacts.get("rendering_ready_path")
+    if rendering_ready_path is not None:
+        click.echo(f"Rendering Ready: {rendering_ready_path}")
+    mapping_log_path = context.artifacts.get("mapping_log_path")
+    if mapping_log_path is not None:
+        click.echo(f"Mapping Log: {mapping_log_path}")
+    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
+    if fallback_report_path is not None:
+        click.echo(f"Fallback Report: {fallback_report_path}")
+    if audit_path is not None:
+        click.echo(f"Audit: {audit_path}")
 
 
 @app.command("gen")
@@ -246,6 +563,10 @@ def gen(
     draft_output: Path,
 ) -> None:
     """JSON 仕様から PPTX を生成する。"""
+    if not export_pdf and pdf_mode != "both":
+        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
+        raise click.exceptions.Exit(code=2)
+
     try:
         spec = JobSpec.parse_file(spec_path)
     except SpecValidationError as exc:
@@ -253,121 +574,11 @@ def gen(
         raise click.exceptions.Exit(code=2) from exc
 
     rules_config = RulesConfig.load(rules)
-
-    def _load_default_branding() -> tuple[BrandingConfig, dict[str, object]]:
-        try:
-            config = BrandingConfig.load(DEFAULT_BRANDING_PATH)
-            return config, {"type": "default", "path": str(DEFAULT_BRANDING_PATH)}
-        except FileNotFoundError:
-            click.echo(
-                f"デフォルトのブランド設定が見つかりません: {DEFAULT_BRANDING_PATH}. 内蔵設定を使用します。",
-                err=True,
-            )
-            return BrandingConfig.default(), {"type": "builtin"}
-
-    branding_payload: dict[str, object] | None = None
-    if branding is not None:
-        branding_config = BrandingConfig.load(branding)
-        branding_source = {"type": "file", "path": str(branding)}
-    elif template is not None:
-        try:
-            extraction = extract_branding_config(template)
-        except BrandingExtractionError as exc:
-            click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
-            branding_config, branding_source = _load_default_branding()
-            branding_source["error"] = str(exc)
-        else:
-            branding_config = extraction.to_branding_config()
-            branding_payload = extraction.to_branding_payload()
-            branding_source = {"type": "template", "template": str(template)}
-    else:
-        branding_config, branding_source = _load_default_branding()
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    context = PipelineContext(spec=spec, workdir=output_dir)
-
-    branding_artifact = {"source": branding_source}
-    if branding_payload is not None:
-        branding_artifact["config"] = branding_payload
-    context.add_artifact("branding", branding_artifact)
-
-    renderer = SimpleRendererStep(
-        RenderingOptions(
-            template_path=template,
-            output_filename=pptx_name,
-            branding=branding_config,
-        )
+    branding_config, branding_artifact = _prepare_branding(template, branding)
+    analyzer_options = _build_analyzer_options(
+        rules_config, branding_config, emit_structure_snapshot
     )
-    analyzer_rules = rules_config.analyzer
-    refiner_rules = rules_config.refiner
-    analyzer_defaults = AnalyzerOptions()
-    body_font_size = branding_config.body_font.size_pt
-    body_font_color = branding_config.body_font.color_hex
-    primary_color = branding_config.primary_color
-    background_color = branding_config.background_color
-
-    analyzer = SimpleAnalyzerStep(
-        AnalyzerOptions(
-            min_font_size=analyzer_rules.min_font_size
-            if analyzer_rules.min_font_size is not None
-            else body_font_size,
-            default_font_size=analyzer_rules.default_font_size
-            if analyzer_rules.default_font_size is not None
-            else body_font_size,
-            default_font_color=analyzer_rules.default_font_color or body_font_color,
-            preferred_text_color=analyzer_rules.preferred_text_color or primary_color,
-            background_color=analyzer_rules.background_color or background_color,
-            min_contrast_ratio=analyzer_rules.min_contrast_ratio
-            if analyzer_rules.min_contrast_ratio is not None
-            else analyzer_defaults.min_contrast_ratio,
-            large_text_min_contrast=analyzer_rules.large_text_min_contrast
-            if analyzer_rules.large_text_min_contrast is not None
-            else analyzer_defaults.large_text_min_contrast,
-            large_text_threshold_pt=analyzer_rules.large_text_threshold_pt
-            if analyzer_rules.large_text_threshold_pt is not None
-            else body_font_size,
-            margin_in=analyzer_rules.margin_in
-            if analyzer_rules.margin_in is not None
-            else analyzer_defaults.margin_in,
-            slide_width_in=analyzer_rules.slide_width_in
-            if analyzer_rules.slide_width_in is not None
-            else analyzer_defaults.slide_width_in,
-            slide_height_in=analyzer_rules.slide_height_in
-            if analyzer_rules.slide_height_in is not None
-            else analyzer_defaults.slide_height_in,
-            max_bullet_level=rules_config.max_bullet_level,
-            snapshot_output_filename="analysis_snapshot.json"
-            if emit_structure_snapshot
-            else None,
-        )
-    )
-    refiner = SimpleRefinerStep(
-        RefinerOptions(
-            max_bullet_level=rules_config.max_bullet_level,
-            enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
-            enable_font_raise=refiner_rules.enable_font_raise,
-            min_font_size=refiner_rules.min_font_size
-            if refiner_rules.min_font_size is not None
-            else body_font_size,
-            enable_color_adjust=refiner_rules.enable_color_adjust,
-            preferred_text_color=refiner_rules.preferred_text_color
-            or analyzer_rules.preferred_text_color
-            or primary_color,
-            fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
-            default_font_name=branding_config.body_font.name,
-        )
-    )
-    mapping = MappingStep(
-        MappingOptions(
-            layouts_path=layouts,
-            output_dir=output_dir,
-            template_path=template,
-        )
-    )
-    if not export_pdf and pdf_mode != "both":
-        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
-        raise click.exceptions.Exit(code=2)
-
+    refiner_options = _build_refiner_options(rules_config, branding_config)
     pdf_options = PdfExportOptions(
         enabled=export_pdf,
         mode=pdf_mode,
@@ -376,149 +587,399 @@ def gen(
         timeout_sec=pdf_timeout,
         max_retries=pdf_retries,
     )
-
-    polisher_rules_config = rules_config.polisher
-    polisher_enabled = (
-        polisher_toggle if polisher_toggle is not None else polisher_rules_config.enabled
+    polisher_options = _build_polisher_options(
+        rules_config,
+        polisher_toggle=polisher_toggle,
+        polisher_path=polisher_path,
+        polisher_rules=polisher_rules,
+        polisher_timeout=polisher_timeout,
+        polisher_args=polisher_args,
+        polisher_cwd=polisher_cwd,
+        rules_path=rules,
     )
-
-    polisher_executable: Path | None = None
-    polisher_rules_path: Path | None = None
-
-    if polisher_enabled:
-        if polisher_path is not None:
-            polisher_executable = polisher_path
-        elif polisher_rules_config.executable:
-            polisher_executable = _resolve_config_path(
-                polisher_rules_config.executable, base_dir=rules.parent
-            )
-
-        if polisher_rules is not None:
-            polisher_rules_path = polisher_rules
-        elif polisher_rules_config.rules_path:
-            polisher_rules_path = _resolve_config_path(
-                polisher_rules_config.rules_path, base_dir=rules.parent
-            )
-
-    polisher_timeout_sec = polisher_timeout or polisher_rules_config.timeout_sec
-    polisher_arguments = tuple(polisher_rules_config.arguments) + tuple(polisher_args)
-    polisher_step = PolisherStep(
-        PolisherOptions(
-            enabled=polisher_enabled,
-            executable=polisher_executable,
-            rules_path=polisher_rules_path,
-            timeout_sec=polisher_timeout_sec,
-            arguments=polisher_arguments,
-            working_dir=polisher_cwd,
-        )
-    )
-
-    content_step = ContentApprovalStep(
-        ContentApprovalOptions(
-            approved_path=content_approved,
-            review_log_path=content_review_log,
-            require_document=False,
-            require_all_approved=True,
-        )
-    )
-
-    draft_step = DraftStructuringStep(
-        DraftStructuringOptions(
-            layouts_path=layouts,
-            output_dir=draft_output,
-        )
-    )
-
-    spec_validator = SpecValidatorStep(
-        max_title_length=rules_config.max_title_length,
-        max_bullet_length=rules_config.max_bullet_length,
-        max_bullet_level=rules_config.max_bullet_level,
-        forbidden_words=rules_config.forbidden_words,
-    )
-
-    steps = [
-        content_step,
-        spec_validator,
-        draft_step,
-        refiner,
-        mapping,
-        renderer,
-        polisher_step,
-        analyzer,
-    ]
-    if pdf_options.enabled:
-        steps.append(PdfExportStep(pdf_options))
-    runner = PipelineRunner(steps)
 
     try:
-        runner.execute(context)
+        mapping_context = _run_mapping_pipeline(
+            spec=spec,
+            output_dir=output_dir,
+            rules_config=rules_config,
+            refiner_options=refiner_options,
+            branding_artifact=branding_artifact,
+            content_approved=content_approved,
+            content_review_log=content_review_log,
+            layouts=layouts,
+            draft_output=draft_output,
+            template=template,
+        )
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
     except ContentApprovalError as exc:
         click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
-    except BrandingExtractionError as exc:
-        click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("パイプライン実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    rendering_ready_obj = mapping_context.artifacts.get("rendering_ready")
+    if not isinstance(rendering_ready_obj, RenderingReadyDocument):
+        click.echo("rendering_ready.json が生成されませんでした", err=True)
+        raise click.exceptions.Exit(code=4)
+    rendering_ready_path_value = mapping_context.artifacts.get("rendering_ready_path")
+    rendering_ready_path = (
+        Path(str(rendering_ready_path_value))
+        if rendering_ready_path_value is not None
+        else None
+    )
+
+    try:
+        render_context = _run_render_pipeline(
+            rendering_ready=rendering_ready_obj,
+            rendering_ready_path=rendering_ready_path,
+            output_dir=output_dir,
+            template=template,
+            pptx_name=pptx_name,
+            branding_config=branding_config,
+            branding_artifact=branding_artifact,
+            analyzer_options=analyzer_options,
+            pdf_options=pdf_options,
+            polisher_options=polisher_options,
+            base_artifacts=dict(mapping_context.artifacts),
+        )
     except PdfExportError as exc:
         click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=5) from exc
     except PolisherError as exc:
         click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=6) from exc
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
         logging.exception("パイプライン実行中にエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
+    analysis_path = render_context.artifacts.get("analysis_path")
+    _emit_review_engine_analysis(render_context, analysis_path)
+    audit_path = _write_audit_log(render_context)
+    _echo_render_outputs(render_context, audit_path)
+
+
+@app.command("mapping")
+@click.argument(
+    "spec_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/gen"),
+    show_default=True,
+    help="rendering_ready.json 等の出力ディレクトリ",
+)
+@click.option(
+    "--rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=DEFAULT_RULES_PATH,
+    show_default=True,
+    help="検証ルール設定ファイル",
+)
+@click.option(
+    "--content-approved",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認済みコンテンツ JSON",
+)
+@click.option(
+    "--content-review-log",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認イベントログ JSON",
+)
+@click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="layouts.jsonl のパス",
+)
+@click.option(
+    "--draft-output",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/draft"),
+    show_default=True,
+    help="draft_draft.json / draft_approved.json の出力先",
+)
+@click.option(
+    "--template",
+    "-t",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="ブランド抽出に利用するテンプレートファイル（任意）",
+)
+@click.option(
+    "--branding",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    show_default=str(DEFAULT_BRANDING_PATH),
+    help="ブランド設定ファイル（任意）",
+)
+def mapping(  # noqa: PLR0913
+    spec_path: Path,
+    output_dir: Path,
+    rules: Path,
+    content_approved: Optional[Path],
+    content_review_log: Optional[Path],
+    layouts: Optional[Path],
+    draft_output: Path,
+    template: Optional[Path],
+    branding: Optional[Path],
+) -> None:
+    """工程5 マッピングを実行し rendering_ready.json を生成する。"""
+    try:
+        spec = JobSpec.parse_file(spec_path)
+    except SpecValidationError as exc:
+        _echo_errors("スキーマ検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=2) from exc
+
+    rules_config = RulesConfig.load(rules)
+    branding_config, branding_artifact = _prepare_branding(template, branding)
+    refiner_options = _build_refiner_options(rules_config, branding_config)
+
+    try:
+        context = _run_mapping_pipeline(
+            spec=spec,
+            output_dir=output_dir,
+            rules_config=rules_config,
+            refiner_options=refiner_options,
+            branding_artifact=branding_artifact,
+            content_approved=content_approved,
+            content_review_log=content_review_log,
+            layouts=layouts,
+            draft_output=draft_output,
+            template=template,
+        )
+    except SpecValidationError as exc:
+        _echo_errors("業務ルール検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=3) from exc
+    except ContentApprovalError as exc:
+        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("マッピング実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    _echo_mapping_outputs(context)
+
+
+@app.command("render")
+@click.argument(
+    "rendering_ready_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/gen"),
+    show_default=True,
+    help="レンダリング成果物の出力ディレクトリ",
+)
+@click.option(
+    "--template",
+    "-t",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="PPTX テンプレートファイル",
+)
+@click.option(
+    "--pptx-name",
+    default="proposal.pptx",
+    show_default=True,
+    help="出力 PPTX のファイル名",
+)
+@click.option(
+    "--rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=DEFAULT_RULES_PATH,
+    show_default=True,
+    help="Analyzer 設定を含むルールファイル",
+)
+@click.option(
+    "--branding",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    show_default=str(DEFAULT_BRANDING_PATH),
+    help="ブランド設定ファイル",
+)
+@click.option(
+    "--export-pdf",
+    is_flag=True,
+    help="LibreOffice を利用して PDF を追加出力する",
+)
+@click.option(
+    "--pdf-mode",
+    type=click.Choice(["both", "only"], case_sensitive=False),
+    default="both",
+    show_default=True,
+    help="PDF 出力時の挙動。only では PPTX を保存しない",
+)
+@click.option(
+    "--pdf-output",
+    type=str,
+    default="proposal.pdf",
+    show_default=True,
+    help="出力 PDF ファイル名",
+)
+@click.option(
+    "--libreoffice-path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="LibreOffice (soffice) 実行ファイルのパス",
+)
+@click.option(
+    "--pdf-timeout",
+    type=int,
+    default=120,
+    show_default=True,
+    help="LibreOffice 変換のタイムアウト秒",
+)
+@click.option(
+    "--pdf-retries",
+    type=int,
+    default=2,
+    show_default=True,
+    help="LibreOffice 変換の最大リトライ回数",
+)
+@click.option(
+    "--polisher/--no-polisher",
+    "polisher_toggle",
+    default=None,
+    help="Open XML Polisher を実行するかを明示的に指定する（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
+)
+@click.option(
+    "--polisher-rules",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Polisher へ渡すルール設定ファイル",
+)
+@click.option(
+    "--polisher-timeout",
+    type=int,
+    default=None,
+    help="Polisher 実行のタイムアウト秒（設定ファイル値を上書き）",
+)
+@click.option(
+    "--polisher-arg",
+    "polisher_args",
+    multiple=True,
+    help="Polisher へ渡す追加引数（{pptx}, {rules} をプレースホルダーとして利用可能）",
+)
+@click.option(
+    "--polisher-cwd",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Polisher 実行時のカレントディレクトリ",
+)
+@click.option(
+    "--emit-structure-snapshot",
+    is_flag=True,
+    help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
+)
+def render(  # noqa: PLR0913
+    rendering_ready_path: Path,
+    output_dir: Path,
+    template: Optional[Path],
+    pptx_name: str,
+    rules: Path,
+    branding: Optional[Path],
+    export_pdf: bool,
+    pdf_mode: str,
+    pdf_output: str,
+    libreoffice_path: Optional[Path],
+    pdf_timeout: int,
+    pdf_retries: int,
+    polisher_toggle: bool | None,
+    polisher_path: Optional[Path],
+    polisher_rules: Optional[Path],
+    polisher_timeout: Optional[int],
+    polisher_args: tuple[str, ...],
+    polisher_cwd: Optional[Path],
+    emit_structure_snapshot: bool,
+) -> None:
+    """工程6 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
+    if not export_pdf and pdf_mode != "both":
+        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
+        raise click.exceptions.Exit(code=2)
+
+    rules_config = RulesConfig.load(rules)
+    branding_config, branding_artifact = _prepare_branding(template, branding)
+    analyzer_options = _build_analyzer_options(
+        rules_config, branding_config, emit_structure_snapshot
+    )
+    pdf_options = PdfExportOptions(
+        enabled=export_pdf,
+        mode=pdf_mode,
+        output_filename=pdf_output,
+        soffice_path=libreoffice_path,
+        timeout_sec=pdf_timeout,
+        max_retries=pdf_retries,
+    )
+    polisher_options = _build_polisher_options(
+        rules_config,
+        polisher_toggle=polisher_toggle,
+        polisher_path=polisher_path,
+        polisher_rules=polisher_rules,
+        polisher_timeout=polisher_timeout,
+        polisher_args=polisher_args,
+        polisher_cwd=polisher_cwd,
+        rules_path=rules,
+    )
+
+    try:
+        rendering_ready = RenderingReadyDocument.parse_file(rendering_ready_path)
+    except Exception as exc:  # noqa: BLE001
+        click.echo(f"rendering_ready.json の読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    try:
+        context = _run_render_pipeline(
+            rendering_ready=rendering_ready,
+            rendering_ready_path=rendering_ready_path,
+            output_dir=output_dir,
+            template=template,
+            pptx_name=pptx_name,
+            branding_config=branding_config,
+            branding_artifact=branding_artifact,
+            analyzer_options=analyzer_options,
+            pdf_options=pdf_options,
+            polisher_options=polisher_options,
+        )
+    except PdfExportError as exc:
+        click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=5) from exc
+    except PolisherError as exc:
+        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("レンダリング実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
     analysis_path = context.artifacts.get("analysis_path")
-    review_engine_path = _emit_review_engine_analysis(context, analysis_path)
+    _emit_review_engine_analysis(context, analysis_path)
     audit_path = _write_audit_log(context)
-
-    pptx_path = context.artifacts.get("pptx_path")
-
-    if pptx_path is not None:
-        click.echo(f"PPTX: {pptx_path}")
-    else:
-        click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
-    click.echo(f"Analysis: {analysis_path}")
-    if review_engine_path is not None:
-        click.echo(f"ReviewEngine Analysis: {review_engine_path}")
-    snapshot_path = context.artifacts.get("analyzer_snapshot_path")
-    if snapshot_path is not None:
-        click.echo(f"Analyzer Snapshot: {snapshot_path}")
-    pdf_path = context.artifacts.get("pdf_path")
-    if pdf_path is not None:
-        click.echo(f"PDF: {pdf_path}")
-    polisher_meta = context.artifacts.get("polisher_metadata")
-    if isinstance(polisher_meta, dict):
-        status = polisher_meta.get("status", "unknown")
-        click.echo(f"Polisher: {status}")
-        summary = polisher_meta.get("summary")
-        if isinstance(summary, dict) and summary:
-            click.echo(
-                "Polisher Summary: "
-                + json.dumps(summary, ensure_ascii=False, sort_keys=True)
-            )
-    draft_path = context.artifacts.get("draft_document_path")
-    if draft_path is not None:
-        click.echo(f"Draft: {draft_path}")
-    draft_log_path = context.artifacts.get("draft_review_log_path")
-    if draft_log_path is not None:
-        click.echo(f"Draft Log: {draft_log_path}")
-    rendering_ready_path = context.artifacts.get("rendering_ready_path")
-    if rendering_ready_path is not None:
-        click.echo(f"Rendering Ready: {rendering_ready_path}")
-    mapping_log_path = context.artifacts.get("mapping_log_path")
-    if mapping_log_path is not None:
-        click.echo(f"Mapping Log: {mapping_log_path}")
-    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
-    if fallback_report_path is not None:
-        click.echo(f"Fallback Report: {fallback_report_path}")
-    click.echo(f"Audit: {audit_path}")
+    _echo_render_outputs(context, audit_path)
 
 
 @app.command("tpl-extract")

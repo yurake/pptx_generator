@@ -10,7 +10,7 @@
 - `layouts.jsonl`, `diagnostics.json`: レイアウト構造と警告情報。
 
 ## 出力
-- `rendering_ready.json`: スライドごとの `layout_id`、PH → 要素マッピング、メタ情報。
+- `rendering_ready.json`: スライドごとの `layout_id`、PH → 要素マッピング、メタ情報（`job_meta` / `job_auth` を含む）。
 - `mapping_log.json`: スコアリング結果、AI 補完箇所、フォールバック履歴。
 - 失敗レポート: 未割付要素や収容不能スライドの一覧。
 
@@ -42,3 +42,4 @@
 - 2025-10-17 時点では、`shrink_text` フォールバック（本文行数の縮約）をルールベースで提供し、その結果を JSON Patch 形式で `mapping_log.json` に記録する。AI モデル連携は将来拡張予定。
 - `layouts.jsonl` が未指定の場合はドラフト情報を自動補完し、スコアリングはヒューリスティックに実行する。
 - 生成物は `rendering_ready.json`、`mapping_log.json`、必要に応じて `fallback_report.json` を CLI 出力ディレクトリ直下へ保存する。
+- CLI では `uv run pptx mapping <spec.json>` が工程5の実行パスであり、`pptx gen` 実行時もこのコマンドを内部的に呼び出す。

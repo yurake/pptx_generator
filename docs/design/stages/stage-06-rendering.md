@@ -1,7 +1,8 @@
 # 工程6 PPTX レンダリング 設計
 
 ## 目的
-- `rendering_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。
+- `rendering_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。工程3/4の成果物は `rendering_ready` 内の `job_meta` / `job_auth` を通じて参照する。
+- CLI では `uv run pptx render <rendering_ready.json>` で単体実行でき、`uv run pptx gen` は内部で `mapping` → `render` を順に呼び出す。
 - LibreOffice PDF 変換や Open XML Polisher との統合を考慮した拡張性を持たせる。
 
 ## コンポーネント
@@ -14,7 +15,7 @@
 | Polisher Bridge | Open XML SDK プロジェクト呼び出し | .NET 8 CLI |
 
 ## フロー
-1. Rendering Orchestrator がテンプレートを開き、章情報を元にスライドを生成。  
+1. Rendering Orchestrator がテンプレートを開き、`rendering_ready.json` から再構築した `JobSpec` を基にスライドを生成。  
 2. 各 PH にテキスト・表・画像を挿入し、フォーマット調整。  
 3. Consistency Checker が空 PH、表の溢れ、layout mismatch をチェック。  
 4. 問題があれば自動修正 or 警告として `rendering_log.json` に記録。  

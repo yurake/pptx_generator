@@ -32,7 +32,7 @@
 - 安全チェック（必須項目削除、意図タグ変更は禁止）を通過した場合のみ反映。
 
 ## 出力
-- `rendering_ready.json`: スライド配列、`layout_id`, `elements[]`, `meta`。
+- `rendering_ready.json`: スライド配列、`layout_id`, `elements[]`, `meta`（元 `JobSpec` の `job_meta` / `job_auth` を含む）。
 - `mapping_log.json`: 候補スコア一覧、補完箇所、フォールバック履歴、警告。
 - `fallback_report.json`（任意）: 失敗スライドの対応指針を列挙。
 

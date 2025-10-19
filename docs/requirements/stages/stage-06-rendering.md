@@ -1,11 +1,12 @@
 # 工程6 PPTX 生成 要件詳細
 
 ## 概要
-- テンプレ PPTX と `rendering_ready.json` を使用し、最終 `output.pptx` と付随ログを生成する。
+- テンプレ PPTX と `rendering_ready.json` を使用し、最終 `output.pptx` と付随ログを生成する。`rendering_ready` に含まれる `job_meta` / `job_auth` から `JobSpec` を再構成する。
 - 軽量整合チェックと監査メタの付与を自動化し、配布前の品質を確保する。
+- CLI は `uv run pptx render <rendering_ready.json>` を基本とし、`uv run pptx gen` は工程5/6をまとめて実行する。
 
 ## 入力
-- 工程5の `rendering_ready.json`。
+- 工程5の `rendering_ready.json`（`job_meta` / `job_auth` を内包）。
 - 工程1のテンプレ PPTX、および任意のロゴアセット。
 - ブランド設定 JSON、レンダリング構成（フォント置換、行間調整などのポリシー）。
 - Polisher ルール (`config/polisher-rules.json` など任意ファイル)。有効化時に必須。
@@ -18,7 +19,7 @@
 - 実行ログ: CLI 標準出力に `Polisher: <status>` とサマリ JSON を出力し、運用フローから確認可能にする。
 
 ## ワークフロー
-1. テンプレ PPTX を読み込み、章構造とスライドを初期化する。
+1. テンプレ PPTX を読み込み、`rendering_ready.json` から再構築した章構造とスライドを初期化する。
 2. 章順にスライドを追加し、各 PH にテキスト・表・注記・ロゴを挿入する。
 3. ノート欄やフッター等のテンプレ設定を反映する。
 4. 軽量整合チェック（空要素、表のはみ出し、layout mismatch、過剰改行）を実施する。

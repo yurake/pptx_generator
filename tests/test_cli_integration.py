@@ -463,6 +463,83 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     assert branding_info.get("source", {}).get("error") == "boom"
 
 
+def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    output_dir = tmp_path / "mapping-work"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    rendering_ready_path = output_dir / "rendering_ready.json"
+    mapping_log_path = output_dir / "mapping_log.json"
+    assert rendering_ready_path.exists()
+    assert mapping_log_path.exists()
+
+    payload = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
+    assert payload["meta"]["job_meta"]["title"] == "次期プロジェクト提案"
+    assert payload["meta"]["job_auth"]["created_by"] == "codex"
+
+
+def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    mapping_dir = tmp_path / "mapping-work"
+    render_dir = tmp_path / "render-work"
+    runner = CliRunner()
+
+    mapping_result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--output",
+            str(mapping_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+        ],
+        catch_exceptions=False,
+    )
+    assert mapping_result.exit_code == 0
+
+    rendering_ready_path = mapping_dir / "rendering_ready.json"
+    assert rendering_ready_path.exists()
+
+    render_result = runner.invoke(
+        app,
+        [
+            "render",
+            str(rendering_ready_path),
+            "--output",
+            str(render_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert render_result.exit_code == 0
+
+    pptx_path = render_dir / "proposal.pptx"
+    audit_path = render_dir / "audit_log.json"
+    assert pptx_path.exists()
+    assert audit_path.exists()
+
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    assert audit_payload["artifacts"]["rendering_ready"] == str(rendering_ready_path)
+    spec = JobSpec.parse_file(spec_path)
+    assert audit_payload["slides"] == len(spec.slides)
+
+
 def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
     spec_path = Path("samples/json/sample_spec.json")
     template_path = SAMPLE_TEMPLATE

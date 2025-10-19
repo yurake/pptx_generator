@@ -44,15 +44,6 @@
    ```bash
    soffice --headless --version
    ```
-5. Open XML Polisher (.NET 8) を利用する場合はビルド済みバイナリを用意します（任意）。
-   ```bash
-   dotnet restore dotnet/Polisher/Polisher.csproj
-   dotnet publish dotnet/Polisher/Polisher.csproj \
-     --configuration Release \
-     --output dist/polisher
-   ```
-   - `config/rules.json` の `polisher.executable` を `dist/polisher/Polisher.dll` など生成物に合わせて設定します。
-   - ルールは `config/polisher-rules.json` を編集し、`--polisher-rules` オプションで差し替え可能です。
 
 ## 使い方
 6 工程の流れに沿って作業します。詳細な業務フローは各ステージの要件ドキュメント（`docs/requirements/stages/`）を参照してください。
@@ -115,34 +106,32 @@
 
 ### 工程 5: マッピング
 - `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
-- 実行手順: 工程 6 と同様に `uv run pptx gen ...` を実行すると工程 5 が自動的に走り、出力ディレクトリ（既定 `.pptx/gen/`）へ成果物を保存します。
+- 実行手順:
   ```bash
-  uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
+  uv run pptx mapping samples/json/sample_spec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --content-review-log samples/json/sample_content_review_log.json \
+    --template samples/templates/templates.pptx
   # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
   ```
-- 現在は `pptx gen` 実行時に内部で処理され、個別 CLI 公開は検討中です。
+- `pptx gen` を実行した場合も内部で `mapping` → `render` が順に呼び出され、従来どおりの成果物を `.pptx/gen/` に保存します。
 
 ### 工程 6: PPTX レンダリング
-- `pptx gen` サブコマンドで PPTX と analysis.json、Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
+- `pptx render` サブコマンドで `rendering_ready.json` を入力し、PPTX・analysis.json・Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
    ```bash
-   # 最小構成（テンプレートなし）
-   uv run pptx gen samples/json/sample_spec_minimal.json
-
-   # テンプレートとブランド設定を指定する例
-   uv run pptx gen \
-     samples/json/sample_spec.json \
+   # 工程5の成果物からレンダリングのみを再実行する例
+   uv run pptx mapping samples/json/sample_spec.json --output .pptx/gen
+   uv run pptx render .pptx/gen/rendering_ready.json \
      --template samples/templates/templates.pptx \
-     --branding .pptx/extract/branding.json \
-     --export-pdf
+     --output .pptx/gen
 
-   # Polisher を併用する例（事前に dotnet publish 済みの DLL を指定）
-   uv run pptx gen \
-     samples/json/sample_spec.json \
+   # Polisher を併用して仕上げ工程を有効化する例
+   uv run pptx render .pptx/gen/rendering_ready.json \
      --template samples/templates/templates.pptx \
      --polisher \
      --polisher-path dist/polisher/Polisher.dll
    ```
-- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
+- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
 
 ### 生成物の確認
 - PPTX: `proposal.pptx`（`--pptx-name` で変更可能）
@@ -150,10 +139,10 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
-- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付
+- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
-- `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
+- `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴。Polisher 実行時は `polisher` メタにステータスとサマリが記録される。
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
 - `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
@@ -177,7 +166,7 @@
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
 | `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` もしくは環境変数 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` または環境変数 |
 | `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
@@ -188,6 +177,49 @@
 | `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
+
+#### `pptx mapping`
+
+- 工程5のみを実行し、`rendering_ready.json` と `mapping_log.json` を生成します。`pptx gen` でも内部的に利用されます。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
+| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
+| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
+| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
+| `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
+| `--template <path>` | ブランド抽出に使用するテンプレート（メタ情報に記録） | 指定なし |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+
+#### `pptx render`
+
+- `rendering_ready.json` を入力に工程6を実行し、PPTX・分析結果・必要に応じて PDF を生成します。`pptx gen` は `mapping` の成果物を引き渡してこのコマンド相当の処理を行います。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
+| `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
+| `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
+| `--rules <path>` | Analyzer 設定を含むルールファイル | `config/rules.json` |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+| `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
+| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
+| `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
+| `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
+| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
+| `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
+| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
+| `--verbose` | 追加ログを表示する | 無効 |
+
+> `pptx gen` は内部で `pptx mapping` → `pptx render` を順番に実行します。工程ごとに再実行したい場合は新設コマンドを利用してください。
 
 #### `pptx tpl-extract`
 
@@ -240,12 +272,10 @@
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
 - CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
-- Polisher (.NET) 単体テスト: `dotnet run --project dotnet/Polisher.Tests`
 - テスト実行後は `.pptx/gen/` や `.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
 
 ## 設定とテンプレート
-- `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワード、`polisher` セクションでの .NET Polisher 設定を定義。
-- `config/polisher-rules.json`: Polisher が適用するフォント・色・段落調整ルール。`--polisher-rules` で差し替え可能。
+- `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義。
 - `config/branding.json`: `version: "layout-style-v1"` のスキーマでフォント・カラー・要素別スタイル・レイアウト個別設定を定義。
 - テンプレ運用ルールやブランド設定の更新手順は `config/AGENTS.md` と `docs/policies/config-and-templates.md` を参照します。
 
