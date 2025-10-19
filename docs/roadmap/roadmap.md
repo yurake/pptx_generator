@@ -427,10 +427,10 @@ flowchart TB
 - 対象工程: 6（PPTX 生成）
 - 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md)
 - 参照 ToDo: [docs/todo/20251012-rendering-audit-integration.md](../todo/20251012-rendering-audit-integration.md)
-- 状況: 未着手（2025-10-12 追加）
+- 状況: 進行中（2025-10-19 更新）
 - 期待成果: 軽量整合チェックルールセット、生成ログと承認ログの突合、PDF 変換と Open XML Polisher の統合フロー。
 - 依存: RM-025（マッピング補完エンジン）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）、LibreOffice / Open XML SDK の実行環境、CI でのバイナリ検証手法。
-- 次のアクション: チェックルール一覧の策定、監査メタ拡張項目の設計、PDF/Polisher 統合 PoC の準備。
+- 次のアクション: 監査ログと承認ログの突合仕様整理、CI での差分検証導線整備、残タスク（表サイズ検出・通知連携）の洗い出し。
 
 <a id="rm-027"></a>
 ### RM-027 Analyzer テンプレ監査メトリクス整備

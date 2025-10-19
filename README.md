@@ -19,7 +19,7 @@
 | 3. コンテンツ正規化 | HITL | プレゼン仕様 JSON (`slides`) | `content_approved.json` | 入力データをスライド候補へ整形し、承認（HITL） |
 | 4. ドラフト構成設計 | HITL | `content_approved.json` | `draft_approved.json` | 章立て・ページ順・`layout_hint` を確定し、承認（HITL） |
 | 5. マッピング | 自動 | `draft_approved.json` | `rendering_ready.json` | レイアウト選定とプレースホルダ割付を行い、中間 JSON を生成 |
-| 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json`、`review_engine_analyzer.json` | テンプレ適用と最終出力を生成 |
+| 6. PPTX レンダリング | 自動 | `rendering_ready.json`、テンプレート、ブランド設定 | PPTX、PDF（任意）、`analysis.json`、`rendering_log.json`、`audit_log.json`、`review_engine_analyzer.json` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
 
 工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/requirements.md` にまとめています。
 
@@ -131,7 +131,7 @@
      --polisher \
      --polisher-path dist/polisher/Polisher.dll
    ```
-- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
+- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`rendering_log.json` にはスライド単位の整合チェック結果（検出状況と警告コード）、`outputs/audit_log.json` には成果物ハッシュや `pdf_export` / `polisher` の実行メタが追記されます。`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報です。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
 
 ### 生成物の確認
 - PPTX: `proposal.pptx`（`--pptx-name` で変更可能）
@@ -140,9 +140,10 @@
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
+- `rendering_log.json`: レンダリング監査結果（検出済み要素・警告コード・空プレースホルダー件数）
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
-- `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴。Polisher 実行時は `polisher` メタにステータスとサマリが記録される。
+- `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、レンダリング警告サマリ、`pdf_export` / `polisher` メタ（リトライ回数・処理時間・サマリ JSON）。
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
 - `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存

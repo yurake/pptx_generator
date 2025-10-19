@@ -64,10 +64,12 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     pptx_path = output_dir / "proposal.pptx"
     analysis_path = output_dir / "analysis.json"
     audit_path = output_dir / "audit_log.json"
+    rendering_log_path = output_dir / "rendering_log.json"
 
     assert pptx_path.exists()
     assert analysis_path.exists()
     assert audit_path.exists()
+    assert rendering_log_path.exists()
 
     payload = json.loads(analysis_path.read_text(encoding="utf-8"))
     assert payload.get("slides") == len(spec.slides)
@@ -75,9 +77,21 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert isinstance(payload.get("fixes"), list)
     assert payload.get("meta", {}).get("title") == spec.meta.title
 
+    rendering_log = json.loads(rendering_log_path.read_text(encoding="utf-8"))
+    assert rendering_log["meta"]["warnings_total"] >= 0
+
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("slides") == len(spec.slides)
     assert audit_payload.get("pdf_export") is None
+    hashes = audit_payload.get("hashes")
+    assert isinstance(hashes, dict)
+    assert hashes.get("pptx", "").startswith("sha256:")
+    assert hashes.get("analysis", "").startswith("sha256:")
+    assert hashes.get("rendering_ready", "").startswith("sha256:")
+    assert hashes.get("rendering_log", "").startswith("sha256:")
+    rendering_summary = audit_payload.get("rendering")
+    assert rendering_summary is not None
+    assert rendering_summary.get("warnings_total") == rendering_log["meta"]["warnings_total"]
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
@@ -86,6 +100,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "disabled"
+    assert polisher_meta.get("enabled") is False
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(spec.slides)
@@ -142,6 +157,14 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert audit_path.exists()
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    rendering_summary = audit_payload.get("rendering")
+    assert rendering_summary is not None
+    assert rendering_summary.get("warnings_total") >= 0
+    hashes = audit_payload.get("hashes")
+    assert isinstance(hashes, dict)
+    assert hashes.get("pptx", "").startswith("sha256:")
+    assert hashes.get("rendering_ready", "").startswith("sha256:")
+    assert hashes.get("rendering_log", "").startswith("sha256:")
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
     content_meta = audit_payload.get("content_approval")
     assert content_meta is not None
@@ -162,6 +185,7 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "disabled"
+    assert polisher_meta.get("enabled") is False
 
     presentation = Presentation(output_dir / "proposal.pptx")
 
@@ -377,6 +401,8 @@ def test_cli_gen_with_polisher_stub(tmp_path) -> None:
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "success"
+    assert polisher_meta.get("enabled") is True
+    assert polisher_meta.get("elapsed_ms") >= 0
     assert polisher_meta.get("rules_path") == str(rules_path)
     summary = polisher_meta.get("summary")
     assert isinstance(summary, dict)
@@ -536,6 +562,10 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload["artifacts"]["rendering_ready"] == str(rendering_ready_path)
+    assert audit_payload["artifacts"]["rendering_log"].endswith("rendering_log.json")
+    rendering_summary = audit_payload.get("rendering")
+    assert rendering_summary is not None
+    assert rendering_summary.get("warnings_total") >= 0
     spec = JobSpec.parse_file(spec_path)
     assert audit_payload["slides"] == len(spec.slides)
 
@@ -650,6 +680,8 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     assert pdf_meta is not None
     assert pdf_meta.get("attempts") == 1
     assert pdf_meta.get("converter") == "libreoffice"
+    assert pdf_meta.get("status") == "success"
+    assert pdf_meta.get("elapsed_ms") >= 0
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
 
 
@@ -703,6 +735,10 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("artifacts", {}).get("pptx") is None
     assert audit_payload.get("artifacts", {}).get("pdf") == str(pdf_path)
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "success"
+    assert pdf_meta.get("converter") == "libreoffice"
 
 
 def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
@@ -739,7 +775,10 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
     assert audit_path.exists()
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
-    assert audit_payload.get("pdf_export", {}).get("converter") == "skipped"
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("converter") == "skipped"
+    assert pdf_meta.get("status") == "skipped"
 
 
 def test_cli_gen_default_output_directory(tmp_path) -> None:
