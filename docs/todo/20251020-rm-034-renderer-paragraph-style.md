@@ -12,12 +12,12 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認取得済メッセージや後続判断予定を記入する
   - メモ: 2025-10-20 ユーザー承認済（本スレッド Plan への OK 応答）。
-- [ ] 設計・実装方針の確定
+- [x] 設計・実装方針の確定
   - メモ: レビューや追加調整が必要な場合は記載する
-- [ ] ドキュメント更新（要件・設計）
+- [x] ドキュメント更新（要件・設計）
   - メモ: 要件・設計の合意内容を整理し、迷う点はユーザーへ相談した結果を残す
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: branding 段落インデント拡張と Renderer 適用処理を実装。未対応: Polisher 側の整理は今後対応。
 - [x] テスト・検証
@@ -27,7 +27,7 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
   - メモ: 2025-10-20 `docs/policies/config-and-templates.md` と `docs/notes/20251019-polisher-scope-review.md` を更新。roadmap 反映は別途検討。
   - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新

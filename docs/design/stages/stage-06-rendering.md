@@ -38,7 +38,7 @@
 - `rendering.max_table_width_pt`, `rendering.bullet_line_spacing`, `rendering.default_note_template`
 - `pdf.retry_limit`, `pdf.timeout_sec`
 - `polisher.enabled`, `polisher.executable`, `polisher.rules_path`, `polisher.timeout_sec`, `polisher.arguments`
-- `config/polisher-rules.json`: Polisher 用のルールファイル（フォントサイズ、色、段落間隔）を JSON で定義
+- `config/polisher-rules.json`: Polisher 用のルールファイル（フォントサイズ・色などフォールバック向け設定）を JSON で定義。段落インデントやブランド既定の行間は Renderer が適用し、Polisher は最小限の仕上げと監査ログ出力に専念する。
 
 ## モニタリング
 - メトリクス: レンダリング時間、PDF 生成時間、警告件数、Polisher 実行率。
