@@ -5,10 +5,10 @@
 roadmap_item: RM-034 Renderer 段落スタイル再設計
 ---
 
-- [ ] ブランチ作成と初期コミット
+- [x] ブランチ作成と初期コミット
   - メモ: ブランチ名や初期コミット内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
-  - メモ: 2025-10-20 ブランチ `feat/rm034-paragraph-style` を切り替え済み。初期コミットは着手後に作成。
+  - メモ: 2025-10-20 ブランチ `feat/rm034-paragraph-style` 作成済み。初期コミット `docs(todo): add RM-034 renderer paragraph style task` を登録済み。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認取得済メッセージや後続判断予定を記入する
   - メモ: 2025-10-20 ユーザー承認済（本スレッド Plan への OK 応答）。
@@ -25,7 +25,7 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 2025-10-20 `docs/policies/config-and-templates.md` と `docs/notes/20251019-polisher-scope-review.md` を更新。roadmap 反映は別途検討。
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
