@@ -11,6 +11,8 @@ __pycache__/
 # Tooling artifacts
 .serena/
 src/pptx_generator.egg-info/
+**/bin/
+**/obj/
 
 # macOS
 .DS_Store

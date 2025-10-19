@@ -124,6 +124,12 @@
    uv run pptx render .pptx/gen/rendering_ready.json \
      --template samples/templates/templates.pptx \
      --output .pptx/gen
+
+   # Polisher を併用して仕上げ工程を有効化する例
+   uv run pptx render .pptx/gen/rendering_ready.json \
+     --template samples/templates/templates.pptx \
+     --polisher \
+     --polisher-path dist/polisher/Polisher.dll
    ```
 - `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
 
@@ -136,7 +142,7 @@
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
-- `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
+- `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴。Polisher 実行時は `polisher` メタにステータスとサマリが記録される。
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
 - `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
@@ -159,6 +165,12 @@
 | `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
 | `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
 | `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
 | `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
@@ -198,6 +210,12 @@
 | `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 
