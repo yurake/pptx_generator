@@ -88,6 +88,7 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(未着手)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
+        RM033["RM-033<br/>Renderer 段落スタイル<br/>再設計<br/>(未着手)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -161,6 +162,9 @@ flowchart TB
     RM026 --> RM032
     RM014 --> RM032
     RM020 --> RM032
+    RM018 --> RM033
+    RM019 --> RM033
+    RM014 --> RM033
 ```
 
 ## 個別状況
@@ -303,6 +307,17 @@ flowchart TB
 - 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`config/rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
 - 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 - 次のアクション: 自動補正ポリシーを確定しつつ、Polisher ルールセットと差分ログの整備、docs/runbooks への適用フロー追記、.NET 実装側の単体テストと CI 統合を完了させる。
+
+<a id="rm-033"></a>
+### RM-033 Renderer 段落スタイル再設計
+- ゴール: Renderer／Refiner 側でブランド定義に基づく段落スタイル（揃え・行間・余白・インデント）を確実に適用し、Polisher での補正を最小限に抑える。
+- 対象工程: 6（PPTX レンダリング）
+- 参照ドキュメント: [docs/notes/20251019-polisher-scope-review.md](../notes/20251019-polisher-scope-review.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-19 追加）
+- 期待成果: Renderer が段落揃え・行間・段落前後余白・箇条書きインデントをテンプレート／ブランド設定と一致させる。Refiner でのフォント・カラー補正と重複しないよう整理し、Polisher はテンプレ差分と監査ログ出力にフォーカスする。
+- 依存: RM-018（レンダラー リッチコンテンツ対応）、RM-019（CLI ツールチェーン整備）、RM-014（自動補正・仕上げ統合）。
+- 次のアクション: Renderer の段落スタイル適用実装、対応テストの追加、Polisher Scope ドキュメントの更新。
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計
