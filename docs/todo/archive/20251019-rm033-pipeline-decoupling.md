@@ -28,8 +28,8 @@ roadmap_item: RM-033 パイプライン工程3/4独立化準備
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue #218 を関連付け済み。進捗は ToDo で管理し、Issue へは書き込まない。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。`todo-auto-complete` の結果を確認し、未実行なら理由を記載。手動チェックは行わない。
+- [x] PR 作成
+  - メモ: PR #221 https://github.com/yurake/pptx_generator/pull/221（2025-10-19 完了）
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
