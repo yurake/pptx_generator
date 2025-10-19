@@ -17,18 +17,20 @@ from .branding_extractor import (
 )
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
-from .models import (JobSpec, RenderingReadyDocument, SpecValidationError,
+from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
+                     RenderingReadyDocument, SpecValidationError,
                      TemplateReleaseDiagnostics, TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
                        DraftStructuringOptions, DraftStructuringStep,
                        MappingOptions, MappingStep, PdfExportError,
                        PdfExportOptions, PdfExportStep, PipelineContext,
-                       PipelineRunner, PolisherError, PolisherOptions,
+                       PipelineRunner, PipelineStep, PolisherError, PolisherOptions,
                        PolisherStep, RefinerOptions, RenderingAuditOptions,
                        RenderingAuditStep, RenderingOptions, SimpleAnalyzerStep,
                        SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
                        TemplateExtractor, TemplateExtractorOptions)
+from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
@@ -212,6 +214,179 @@ def _build_polisher_options(
         arguments=arguments,
         working_dir=polisher_cwd,
     )
+
+
+def _dump_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, ensure_ascii=False, indent=2)
+    path.write_text(text, encoding="utf-8")
+
+
+def _run_content_approval_pipeline(
+    *,
+    spec: JobSpec,
+    output_dir: Path,
+    content_approved: Path | None,
+    content_review_log: Path | None,
+    require_document: bool,
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    context = PipelineContext(spec=spec, workdir=output_dir)
+
+    step = ContentApprovalStep(
+        ContentApprovalOptions(
+            approved_path=content_approved,
+            review_log_path=content_review_log,
+            require_document=require_document,
+            require_all_approved=True,
+        )
+    )
+    PipelineRunner([step]).execute(context)
+    return context
+
+
+def _write_content_outputs(
+    *,
+    context: PipelineContext,
+    output_dir: Path,
+    spec_filename: str,
+    content_filename: str,
+    review_filename: str,
+    meta_filename: str,
+) -> tuple[Path, Path | None, Path | None, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    spec_path = output_dir / spec_filename
+    _dump_json(spec_path, context.spec.model_dump(mode="json"))
+
+    content_document = context.artifacts.get("content_approved")
+    content_path: Path | None = None
+    if isinstance(content_document, ContentApprovalDocument):
+        content_path = output_dir / content_filename
+        _dump_json(content_path, content_document.model_dump(mode="json"))
+
+    review_logs = context.artifacts.get("content_review_log")
+    review_path: Path | None = None
+    if review_logs:
+        review_payload: list[dict[str, object]] = []
+        for entry in review_logs:
+            if hasattr(entry, "model_dump"):
+                review_payload.append(entry.model_dump(mode="json"))  # type: ignore[call-arg]
+            else:
+                review_payload.append(entry)
+        review_path = output_dir / review_filename
+        _dump_json(review_path, review_payload)
+
+    content_meta = context.artifacts.get("content_approved_meta")
+    review_meta = context.artifacts.get("content_review_log_meta")
+    meta_payload: dict[str, object] = {
+        "spec": {
+            "slides": len(context.spec.slides),
+            "output_path": str(spec_path),
+        }
+    }
+    if isinstance(content_meta, dict):
+        meta_payload["content_approved"] = {
+            **content_meta,
+            "output_path": str(content_path) if content_path else None,
+        }
+    if isinstance(review_meta, dict):
+        meta_payload["content_review_log"] = {
+            **review_meta,
+            "output_path": str(review_path) if review_path else None,
+        }
+
+    meta_path = output_dir / meta_filename
+    _dump_json(meta_path, meta_payload)
+
+    return spec_path, content_path, review_path, meta_path
+
+
+def _run_draft_pipeline(
+    *,
+    spec: JobSpec,
+    output_dir: Path,
+    content_approved: Path | None,
+    content_review_log: Path | None,
+    draft_options: DraftStructuringOptions,
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    steps: list[PipelineStep] = []
+    steps.append(
+        ContentApprovalStep(
+            ContentApprovalOptions(
+                approved_path=content_approved,
+                review_log_path=content_review_log,
+                require_document=content_approved is not None,
+                require_all_approved=True,
+            )
+        )
+    )
+    steps.append(DraftStructuringStep(draft_options))
+
+    context = PipelineContext(spec=spec, workdir=output_dir)
+    PipelineRunner(steps).execute(context)
+    return context
+
+
+def _write_draft_meta(
+    *,
+    context: PipelineContext,
+    output_dir: Path,
+    meta_filename: str,
+    draft_filename: str,
+    approved_filename: str,
+    log_filename: str,
+) -> Path:
+    draft_document = context.artifacts.get("draft_document")
+    sections = 0
+    slides = 0
+    approved_sections: list[str] = []
+    section_status: dict[str, str] = {}
+    appendix_limit: int | None = None
+    structure_pattern: str | None = None
+    target_length: int | None = None
+
+    if isinstance(draft_document, DraftDocument):
+        sections = len(draft_document.sections)
+        for section in draft_document.sections:
+            section_status[section.name] = section.status
+            if section.status == "approved":
+                approved_sections.append(section.name)
+            slides += len(section.slides)
+        appendix_limit = draft_document.meta.appendix_limit
+        structure_pattern = draft_document.meta.structure_pattern
+        target_length = draft_document.meta.target_length
+
+    paths = {
+        "draft_draft": str((output_dir / draft_filename).resolve()),
+        "draft_approved": str((output_dir / approved_filename).resolve()),
+        "draft_review_log": str((output_dir / log_filename).resolve()),
+    }
+
+    approved_path = context.artifacts.get("draft_document_path")
+    if isinstance(approved_path, str):
+        paths["draft_approved"] = str(Path(approved_path).resolve())
+    log_path = context.artifacts.get("draft_review_log_path")
+    if isinstance(log_path, str):
+        paths["draft_review_log"] = str(Path(log_path).resolve())
+
+    meta_payload = {
+        "spec_id": context.artifacts.get("draft_spec_id"),
+        "sections": sections,
+        "slides": slides,
+        "approved_sections": approved_sections,
+        "section_status": section_status,
+        "appendix_limit": appendix_limit,
+        "structure_pattern": structure_pattern,
+        "target_length": target_length,
+        "paths": paths,
+    }
+
+    meta_path = output_dir / meta_filename
+    _dump_json(meta_path, meta_payload)
+    return meta_path
 
 
 def _run_mapping_pipeline(
@@ -673,6 +848,269 @@ def gen(
     _emit_review_engine_analysis(render_context, analysis_path)
     audit_path = _write_audit_log(render_context)
     _echo_render_outputs(render_context, audit_path)
+
+
+@app.command("content")
+@click.argument(
+    "spec_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--content-approved",
+    "content_approved_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    required=True,
+    help="工程3で承認済みのコンテンツ JSON",
+)
+@click.option(
+    "--content-review-log",
+    "content_review_log_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認イベントログ JSON",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/content"),
+    show_default=True,
+    help="承認成果物を保存するディレクトリ",
+)
+@click.option(
+    "--spec-output",
+    type=str,
+    default="spec_content_applied.json",
+    show_default=True,
+    help="承認内容を適用した Spec の出力ファイル名",
+)
+@click.option(
+    "--normalized-content",
+    type=str,
+    default="content_approved.json",
+    show_default=True,
+    help="正規化した承認済みコンテンツの出力ファイル名",
+)
+@click.option(
+    "--review-output",
+    type=str,
+    default="content_review_log.json",
+    show_default=True,
+    help="承認イベントログの正規化ファイル名",
+)
+@click.option(
+    "--meta-filename",
+    type=str,
+    default="content_meta.json",
+    show_default=True,
+    help="承認メタ情報の出力ファイル名",
+)
+def content(
+    spec_path: Path,
+    content_approved_path: Path,
+    content_review_log_path: Path | None,
+    output_dir: Path,
+    spec_output: str,
+    normalized_content: str,
+    review_output: str,
+    meta_filename: str,
+) -> None:
+    """工程3 コンテンツ正規化: 承認済みコンテンツを検証し Spec へ適用する。"""
+
+    try:
+        spec = JobSpec.parse_file(spec_path)
+    except SpecValidationError as exc:
+        _echo_errors("スキーマ検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=2) from exc
+
+    try:
+        context = _run_content_approval_pipeline(
+            spec=spec,
+            output_dir=output_dir,
+            content_approved=content_approved_path,
+            content_review_log=content_review_log_path,
+            require_document=True,
+        )
+    except ContentApprovalError as exc:
+        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("content 実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    spec_output_path, content_output_path, review_output_path, meta_path = _write_content_outputs(
+        context=context,
+        output_dir=output_dir,
+        spec_filename=spec_output,
+        content_filename=normalized_content,
+        review_filename=review_output,
+        meta_filename=meta_filename,
+    )
+
+    click.echo(f"Spec (content applied): {spec_output_path}")
+    if content_output_path is not None:
+        click.echo(f"Content Approved (normalized): {content_output_path}")
+    if review_output_path is not None:
+        click.echo(f"Content Review Log (normalized): {review_output_path}")
+    click.echo(f"Content Meta: {meta_path}")
+
+
+@app.command("outline")
+@click.argument(
+    "spec_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--content-approved",
+    "content_approved_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認済みコンテンツ JSON",
+)
+@click.option(
+    "--content-review-log",
+    "content_review_log_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認イベントログ JSON",
+)
+@click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程2で生成した layouts.jsonl のパス",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/draft"),
+    show_default=True,
+    help="ドラフト成果物を保存するディレクトリ",
+)
+@click.option(
+    "--draft-filename",
+    type=str,
+    default="draft_draft.json",
+    show_default=True,
+    help="ドラフト案ファイル名",
+)
+@click.option(
+    "--approved-filename",
+    type=str,
+    default="draft_approved.json",
+    show_default=True,
+    help="承認済みドラフトファイル名",
+)
+@click.option(
+    "--log-filename",
+    type=str,
+    default="draft_review_log.json",
+    show_default=True,
+    help="ドラフトレビュー ログのファイル名",
+)
+@click.option(
+    "--meta-filename",
+    type=str,
+    default="draft_meta.json",
+    show_default=True,
+    help="ドラフトメタ情報のファイル名",
+)
+@click.option(
+    "--target-length",
+    type=int,
+    default=None,
+    help="目標スライド枚数",
+)
+@click.option(
+    "--structure-pattern",
+    type=str,
+    default=None,
+    help="章構成パターン名",
+)
+@click.option(
+    "--appendix-limit",
+    type=int,
+    default=5,
+    show_default=True,
+    help="付録枚数の上限",
+)
+def outline(
+    spec_path: Path,
+    content_approved_path: Path | None,
+    content_review_log_path: Path | None,
+    layouts: Path | None,
+    output_dir: Path,
+    draft_filename: str,
+    approved_filename: str,
+    log_filename: str,
+    meta_filename: str,
+    target_length: int | None,
+    structure_pattern: str | None,
+    appendix_limit: int,
+) -> None:
+    """工程4 ドラフト構成（アウトライン）を生成する。"""
+
+    try:
+        spec = JobSpec.parse_file(spec_path)
+    except SpecValidationError as exc:
+        _echo_errors("スキーマ検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=2) from exc
+
+    draft_options = DraftStructuringOptions(
+        layouts_path=layouts,
+        output_dir=output_dir,
+        draft_filename=draft_filename,
+        approved_filename=approved_filename,
+        log_filename=log_filename,
+        target_length=target_length,
+        structure_pattern=structure_pattern,
+        appendix_limit=appendix_limit,
+    )
+
+    try:
+        context = _run_draft_pipeline(
+            spec=spec,
+            output_dir=output_dir,
+            content_approved=content_approved_path,
+            content_review_log=content_review_log_path,
+            draft_options=draft_options,
+        )
+    except ContentApprovalError as exc:
+        click.echo(f"承認済みコンテンツの取り込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except DraftStructuringError as exc:
+        click.echo(f"ドラフト構成の生成に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("outline 実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    meta_path = _write_draft_meta(
+        context=context,
+        output_dir=output_dir,
+        meta_filename=meta_filename,
+        draft_filename=draft_filename,
+        approved_filename=approved_filename,
+        log_filename=log_filename,
+    )
+
+    draft_path = output_dir / draft_filename
+    approved_path = output_dir / approved_filename
+    log_path = output_dir / log_filename
+
+    click.echo(f"Outline Draft: {draft_path}")
+    click.echo(f"Outline Approved: {approved_path}")
+    click.echo(f"Outline Review Log: {log_path}")
+    click.echo(f"Outline Meta: {meta_path}")
 
 
 @app.command("mapping")
