@@ -440,11 +440,18 @@ class RenderingReadyMeta(BaseModel):
     template_version: str | None = None
     content_hash: str | None = None
     generated_at: str
+    job_meta: JobMeta | None = None
+    job_auth: JobAuth | None = None
 
 
 class RenderingReadyDocument(BaseModel):
     slides: list[RenderingReadySlide] = Field(default_factory=list)
     meta: RenderingReadyMeta
+
+    @classmethod
+    def parse_file(cls, path: str | Path) -> "RenderingReadyDocument":
+        source = Path(path).read_text(encoding="utf-8")
+        return cls.model_validate_json(source)
 
 
 class MappingCandidate(BaseModel):
