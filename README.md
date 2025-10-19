@@ -106,27 +106,26 @@
 
 ### 工程 5: マッピング
 - `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
-- 実行手順: 工程 6 と同様に `uv run pptx gen ...` を実行すると工程 5 が自動的に走り、出力ディレクトリ（既定 `.pptx/gen/`）へ成果物を保存します。
+- 実行手順:
   ```bash
-  uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
+  uv run pptx mapping samples/json/sample_spec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --content-review-log samples/json/sample_content_review_log.json \
+    --template samples/templates/templates.pptx
   # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
   ```
-- 現在は `pptx gen` 実行時に内部で処理され、個別 CLI 公開は検討中です。
+- `pptx gen` を実行した場合も内部で `mapping` → `render` が順に呼び出され、従来どおりの成果物を `.pptx/gen/` に保存します。
 
 ### 工程 6: PPTX レンダリング
-- `pptx gen` サブコマンドで PPTX と analysis.json、Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
+- `pptx render` サブコマンドで `rendering_ready.json` を入力し、PPTX・analysis.json・Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
    ```bash
-   # 最小構成（テンプレートなし）
-   uv run pptx gen samples/json/sample_spec_minimal.json
-
-   # テンプレートとブランド設定を指定する例
-   uv run pptx gen \
-     samples/json/sample_spec.json \
+   # 工程5の成果物からレンダリングのみを再実行する例
+   uv run pptx mapping samples/json/sample_spec.json --output .pptx/gen
+   uv run pptx render .pptx/gen/rendering_ready.json \
      --template samples/templates/templates.pptx \
-     --branding .pptx/extract/branding.json \
-     --export-pdf
+     --output .pptx/gen
    ```
-- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。
+- `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
 
 ### 生成物の確認
 - PPTX: `proposal.pptx`（`--pptx-name` で変更可能）
@@ -134,7 +133,7 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
-- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付
+- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
 - `outputs/audit_log.json`: 生成時刻や PDF 変換結果の履歴
@@ -166,6 +165,43 @@
 | `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
+
+#### `pptx mapping`
+
+- 工程5のみを実行し、`rendering_ready.json` と `mapping_log.json` を生成します。`pptx gen` でも内部的に利用されます。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
+| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
+| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
+| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
+| `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
+| `--template <path>` | ブランド抽出に使用するテンプレート（メタ情報に記録） | 指定なし |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+
+#### `pptx render`
+
+- `rendering_ready.json` を入力に工程6を実行し、PPTX・分析結果・必要に応じて PDF を生成します。`pptx gen` は `mapping` の成果物を引き渡してこのコマンド相当の処理を行います。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
+| `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
+| `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
+| `--rules <path>` | Analyzer 設定を含むルールファイル | `config/rules.json` |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+| `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
+| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
+| `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
+| `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
+| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
+| `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
+| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
+| `--verbose` | 追加ログを表示する | 無効 |
+
+> `pptx gen` は内部で `pptx mapping` → `pptx render` を順番に実行します。工程ごとに再実行したい場合は新設コマンドを利用してください。
 
 #### `pptx tpl-extract`
 

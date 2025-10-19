@@ -180,6 +180,8 @@ class MappingStep:
             template_version=self._resolve_template_version(context),
             content_hash=self._resolve_content_hash(context),
             generated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            job_meta=context.spec.meta,
+            job_auth=context.spec.auth,
         )
         rendering_document = RenderingReadyDocument(
             slides=rendering_slides,

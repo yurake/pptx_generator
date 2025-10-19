@@ -60,6 +60,9 @@ def test_mapping_step_generates_rendering_outputs(tmp_path: Path) -> None:
     assert slide["elements"]["body"] == ["最初のポイント", "次のステップ"]
     assert slide["meta"]["page_no"] == 1
     assert slide["meta"]["fallback"] == "none"
+    meta_payload = rendering_payload["meta"]
+    assert meta_payload["job_meta"]["title"] == "テスト資料"
+    assert meta_payload["job_auth"]["created_by"] == "tester"
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_payload["meta"]["fallback_count"] == 0

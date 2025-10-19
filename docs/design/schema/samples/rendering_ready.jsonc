@@ -28,6 +28,19 @@
   "meta": {
     "template_version": "acme_v1",
     "content_hash": "sha256:ac1e...f3",
-    "generated_at": "2025-10-11T12:05:00+09:00"
+    "generated_at": "2025-10-11T12:05:00+09:00",
+    "job_meta": {
+      "schema_version": "1.1",
+      "title": "次期プロジェクト提案",
+      "client": "ABC 株式会社",
+      "author": "営業部",
+      "created_at": "2025-10-04",
+      "theme": "corporate",
+      "locale": "ja-JP"
+    },
+    "job_auth": {
+      "created_by": "codex",
+      "department": "solution"
+    }
   }
 }
