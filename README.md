@@ -99,10 +99,25 @@
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
 - ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` にまとめています。
+- CLI で承認済み JSON を検証し Spec へ適用する場合は `pptx content` を利用します。
+  ```bash
+  uv run pptx content samples/json/sample_spec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --content-review-log samples/json/sample_content_review_log.json \
+    --output .pptx/content
+  # `.pptx/content/` に spec_content_applied.json / content_meta.json を出力
+  ```
 
 ### 工程 4: ドラフト構成設計
 - 章立てやページ順を確定し、HITL で `draft_approved.json` を承認します。
 - レイアウト選定の指針は `docs/requirements/stages/stage-04-draft-structuring.md` を参照してください。
+- 承認済みコンテンツからドラフト成果物を生成する場合は `pptx outline`（新名称）を利用します。
+  ```bash
+  uv run pptx outline samples/json/sample_spec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --output .pptx/draft
+  # `draft_draft.json` / `draft_approved.json` / `draft_meta.json` を確認
+  ```
 
 ### 工程 5: マッピング
 - `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
@@ -140,6 +155,8 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
+- `spec_content_applied.json`: `pptx content` が出力する承認内容適用済み Spec のスナップショット
+- `content_meta.json`: 承認済みコンテンツ／レビュー ログのハッシュや件数をまとめたメタ情報
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `rendering_log.json`: レンダリング監査結果（検出済み要素・警告コード・空プレースホルダー件数）
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
@@ -147,6 +164,7 @@
 - `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、レンダリング警告サマリ、`pdf_export` / `polisher` メタ（リトライ回数・処理時間・サマリ JSON）。
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）
 - `draft_review_log.json`: Draft 操作ログ（`--draft-output` ディレクトリに保存）
+- `draft_meta.json`: `pptx outline` が出力する章数・スライド数・承認状況のメタ情報
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存
 - 解析結果の詳細な読み方と運用手順は `docs/runbooks/pptx-analyzer.md` を参照。
 
@@ -179,6 +197,39 @@
 | `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
+
+#### `pptx content`
+
+- 工程3で整備した `content_approved.json` / `content_review_log.json` を検証し、Spec へ適用したスナップショットとメタ情報を出力します（`spec_path` を位置引数で指定）。
+- `--content-approved` は必須です。`--content-review-log` は任意で、指定した場合はメタ情報に件数やハッシュが記録されます。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/content` |
+| `--spec-output <filename>` | 承認内容を適用した Spec のファイル名 | `spec_content_applied.json` |
+| `--normalized-content <filename>` | 正規化した `content_approved.json` の保存名 | `content_approved.json` |
+| `--review-output <filename>` | 承認イベントログの正規化ファイル名 | `content_review_log.json` |
+| `--meta-filename <filename>` | 承認メタ情報のファイル名 | `content_meta.json` |
+| `--content-approved <path>` | 承認済みコンテンツ JSON（必須） | - |
+| `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+
+#### `pptx outline`
+
+- 承認済みコンテンツを読み込み、ドラフト案 (`draft_draft.json`) と承認済みドラフト (`draft_approved.json`) を生成します。`content_approved` を指定しない場合は Spec に含まれる内容をそのまま利用します。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/draft` |
+| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
+| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
+| `--log-filename <filename>` | ドラフトレビュー ログのファイル名 | `draft_review_log.json` |
+| `--meta-filename <filename>` | ドラフトメタ情報のファイル名 | `draft_meta.json` |
+| `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
+| `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+| `--layouts <path>` | 工程2の `layouts.jsonl` | 指定なし |
+| `--target-length <int>` | 目標スライド枚数 | Spec から推定 |
+| `--structure-pattern <text>` | 章構成パターン名 | `custom` |
+| `--appendix-limit <int>` | 付録枚数の上限 | 5 |
 
 #### `pptx mapping`
 

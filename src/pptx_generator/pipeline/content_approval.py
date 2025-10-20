@@ -8,12 +8,14 @@ from collections import Counter
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+from typing import Callable, Iterable
 
 from pydantic import ValidationError
 
-from ..models import (ContentApprovalDocument, ContentElements,
-                      ContentReviewLogEntry, JobSpec, Slide, SlideBullet,
-                      SlideBulletGroup)
+from ..models import (ContentApprovalDocument, ContentDocumentMeta,
+                      ContentElements, ContentReviewLogEntry, ContentSlide,
+                      ContentTableData, JobSpec, Slide, SlideBullet,
+                      SlideBulletGroup, SlideTable)
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,7 @@ class ContentApprovalOptions:
     review_log_path: Path | None = None
     require_document: bool = False
     require_all_approved: bool = True
+    fallback_builder: Callable[[JobSpec], ContentApprovalDocument] | None = None
 
 
 class ContentApprovalStep:
@@ -42,8 +45,20 @@ class ContentApprovalStep:
         self.options = options or ContentApprovalOptions()
 
     def run(self, context: PipelineContext) -> None:
+        document: ContentApprovalDocument | None = None
+        meta: dict[str, object] | None = None
+        loaded_from_file = False
+        generated_from_spec = False
+
         if self.options.approved_path is not None:
             document, meta = self._load_document_with_meta(self.options.approved_path)
+            loaded_from_file = True
+        elif self.options.fallback_builder is not None:
+            document = self.options.fallback_builder(context.spec)
+            meta = self._build_generated_meta(document)
+            generated_from_spec = True
+
+        if document is not None and meta is not None:
             if self.options.require_all_approved:
                 self._ensure_all_approved(document)
 
@@ -53,10 +68,17 @@ class ContentApprovalStep:
 
             context.add_artifact("content_approved", document)
             context.add_artifact("content_approved_meta", meta)
-            logger.info(
-                "承認済みコンテンツを読み込みました: slides=%d",
-                len(document.slides),
-            )
+
+            if loaded_from_file:
+                logger.info(
+                    "承認済みコンテンツを読み込みました: slides=%d",
+                    len(document.slides),
+                )
+            elif generated_from_spec:
+                logger.info(
+                    "承認済みコンテンツを Spec から生成しました: slides=%d",
+                    len(document.slides),
+                )
         elif self.options.require_document:
             msg = "承認済みコンテンツファイルが指定されていません"
             raise ContentApprovalError(msg)
@@ -137,6 +159,17 @@ class ContentApprovalStep:
             "actions": dict(action_counter),
         }
         return entries, meta
+
+    @staticmethod
+    def build_document_from_spec(spec: JobSpec) -> ContentApprovalDocument:
+        slides = [_build_content_slide(slide) for slide in spec.slides]
+        summary_text = f"{spec.meta.title} の Spec から生成された承認済みコンテンツ"
+        meta = ContentDocumentMeta(
+            tone=getattr(spec.meta, "theme", None),
+            audience=spec.meta.client,
+            summary=summary_text[:120],
+        )
+        return ContentApprovalDocument(slides=slides, meta=meta)
 
     @staticmethod
     def _ensure_all_approved(document: ContentApprovalDocument) -> None:
@@ -240,6 +273,71 @@ class ContentApprovalStep:
                 existing.add(candidate)
                 return candidate
             index += 1
+
+    @staticmethod
+    def _build_generated_meta(document: ContentApprovalDocument) -> dict[str, object]:
+        return {
+            "source": "spec",
+            "slides": len(document.slides),
+            "slide_ids": [slide.id for slide in document.slides],
+        }
+
+
+def _build_content_slide(slide: Slide) -> ContentSlide:
+    elements = _build_content_elements(slide)
+    intent = slide.layout or slide.id
+    return ContentSlide(
+        id=slide.id,
+        intent=intent,
+        elements=elements,
+        status="approved",
+    )
+
+
+def _build_content_elements(slide: Slide) -> ContentElements:
+    title = slide.title or slide.subtitle or slide.layout or slide.id
+    body = list(_iter_body_lines(slide, limit=6))
+    if not body and slide.subtitle:
+        body = [_trim(slide.subtitle)]
+    table_data = _build_table_data(slide.tables[0]) if slide.tables else None
+    note = slide.notes
+    return ContentElements(
+        title=title,
+        body=body,
+        table_data=table_data,
+        note=note,
+    )
+
+
+def _build_table_data(table: SlideTable) -> ContentTableData | None:
+    headers = getattr(table, "columns", [])
+    rows = getattr(table, "rows", [])
+    if not headers and not rows:
+        return None
+    return ContentTableData(headers=list(headers), rows=[list(row) for row in rows])
+
+
+def _iter_body_lines(slide: Slide, *, limit: int) -> Iterable[str]:
+    count = 0
+    for group in slide.bullets:
+        for bullet in group.items:
+            raw_text = bullet.text.strip() if bullet.text else ""
+            if not raw_text:
+                continue
+            prefix = "" if bullet.level <= 0 else "  " * bullet.level
+            yield _trim(f"{prefix}{raw_text}")
+            count += 1
+            if count >= limit:
+                return
+
+
+def _trim(text: str, width: int = 40) -> str:
+    normalized = " ".join(text.split())
+    if len(normalized) <= width:
+        return normalized
+    if width <= 3:
+        return normalized[:width]
+    return normalized[: width - 3] + "..."
 
 
 def _strip_json_comments(source: str) -> str:
