@@ -14,6 +14,9 @@ src/pptx_generator.egg-info/
 **/bin/
 **/obj/
 
+# IDE generated
+*.sln
+
 # macOS
 .DS_Store
 

@@ -55,6 +55,7 @@ class PdfExportStep:
             context.add_artifact(
                 "pdf_export_metadata",
                 {
+                    "status": "skipped",
                     "attempts": 0,
                     "elapsed_sec": 0.0,
                     "converter": "skipped",
@@ -84,6 +85,7 @@ class PdfExportStep:
         context.add_artifact(
             "pdf_export_metadata",
             {
+                "status": "success",
                 "attempts": result.attempts,
                 "elapsed_sec": result.elapsed_sec,
                 "converter": "libreoffice",
