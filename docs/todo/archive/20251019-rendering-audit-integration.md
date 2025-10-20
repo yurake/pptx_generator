@@ -28,8 +28,8 @@ roadmap_item: RM-026 レンダリング監査統合
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue #177 を紐付け済み。進捗は ToDo で管理し、Issue へは書き込まない。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録し、todo-auto-complete の結果を確認する。
+- [x] PR 作成
+  - メモ: PR #222 https://github.com/yurake/pptx_generator/pull/222（2025-10-20 完了）
 
 ## メモ
 - 計画フェーズでは LibreOffice / Polisher 実行環境確認手順も整理する。
