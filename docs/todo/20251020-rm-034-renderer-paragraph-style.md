@@ -22,16 +22,16 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
   - メモ: branding 段落インデント拡張と Renderer 適用処理を実装。未対応: Polisher 側の整理は今後対応。
 - [x] テスト・検証
   - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_renderer.py tests/test_settings.py` を実行し、23 件成功。
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 2025-10-20 `docs/policies/config-and-templates.md` と `docs/notes/20251019-polisher-scope-review.md` を更新。roadmap 反映は別途検討。
   - [x] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] 関連Issue 行の更新
+  - メモ: `関連Issue: #220` を反映済み。追加ログは ToDo と PR で追跡する。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
