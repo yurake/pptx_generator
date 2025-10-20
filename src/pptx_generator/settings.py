@@ -197,6 +197,12 @@ class ParagraphStyle:
     space_before_pt: float | None = None
     space_after_pt: float | None = None
     level: int | None = None
+    left_indent_in: float | None = None
+    right_indent_in: float | None = None
+    first_line_indent_in: float | None = None
+    left_indent_in: float | None = None
+    right_indent_in: float | None = None
+    first_line_indent_in: float | None = None
 
 
 @dataclass(slots=True)
@@ -456,7 +462,12 @@ class BrandingConfig:
         textbox = TextboxComponentStyle(
             fallback_box=BoxSpec(left_in=1.0, top_in=1.0, width_in=8.0, height_in=1.5),
             font=BrandingFont(name="Yu Gothic", size_pt=18.0, color_hex="#333333"),
-            paragraph=ParagraphStyle(align="left", line_spacing_pt=22.0),
+            paragraph=ParagraphStyle(
+                align="left",
+                line_spacing_pt=22.0,
+                left_indent_in=0.3,
+                first_line_indent_in=-0.2,
+            ),
         )
 
         return cls(
@@ -541,6 +552,9 @@ def _parse_paragraph(payload: object, default: ParagraphStyle) -> ParagraphStyle
         space_before_pt=_maybe_float(payload.get("space_before_pt", default.space_before_pt)),
         space_after_pt=_maybe_float(payload.get("space_after_pt", default.space_after_pt)),
         level=_maybe_int(payload.get("level", default.level)),
+        left_indent_in=_maybe_float(payload.get("left_indent_in", default.left_indent_in)),
+        right_indent_in=_maybe_float(payload.get("right_indent_in", default.right_indent_in)),
+        first_line_indent_in=_maybe_float(payload.get("first_line_indent_in", default.first_line_indent_in)),
     )
 
 

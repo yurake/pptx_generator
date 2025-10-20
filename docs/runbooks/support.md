@@ -35,6 +35,7 @@
 - **Polisher 実行が失敗する**
   - エラーコード `6` は Polisher ステップでの失敗を示す。`audit_log.json.polisher` の `status` と `stdout` / `stderr` を確認する。
   - チェックリスト:
+    - 段落スタイル（揃え・行間・インデント）は Renderer がブランド設定から適用するため、Polisher はフォントサイズや色などフォールバック補正のみを担うことを前提に、ルール内容を確認する。
     - `config/rules.json` の `polisher.enabled` と `polisher.executable` が正しいか、`POLISHER_EXECUTABLE` 環境変数で上書きしていないか確認。
     - ルールファイル（例: `config/polisher-rules.json`）が存在し、JSON が壊れていないか検証（`jq` など）。
     - `uv run pptx gen ... --polisher-path <path> --polisher-timeout 180` などで再実行し、タイムアウト値を引き上げる。

@@ -140,7 +140,11 @@ slides:
           space_before_pt: float
           space_after_pt: float
           align: string
+          left_indent_in: float
+          right_indent_in: float
+          first_line_indent_in: float
 - レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続工程が同名アンカーで参照できるようにする。
+- 段落スタイルは `config/branding.json` の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合はブランド既定を上書きする。
 assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
@@ -185,10 +189,10 @@ assets:
 
 ## 8. 仕上げ処理 (Open XML SDK)
 - `.NET` プロジェクト `dotnet/OpenXmlPolish` を配置。
-- `rules/polish.yaml` で段落間隔、行間（`SpacingPercent`）、インデント（EMU）、禁則設定 (`EastAsianLineBreak`) を定義。
+- `rules/polish.yaml` でフォント最小値や色の統一、段落間隔（必要時のみ）を定義。段落インデント／行間などブランド既定のスタイルは Renderer 側で適用し、Polisher はフォールバック修正と監査ログ出力に専念する。
 - 処理手順:
   1. `PresentationDocument.Open` で PPTX をロード。
-  2. 指定スライドを走査し、ParagraphProperties を更新。
+  2. 指定スライドを走査し、必要最小限の ParagraphProperties（フォントサイズ・色など）を更新。
   3. テーマ色にリンクされていない RGB を Accent カラーへマップ。
   4. 最低フォントサイズを再確認し、以下の Run を調整。
   5. 保存後に差分ログを出力。

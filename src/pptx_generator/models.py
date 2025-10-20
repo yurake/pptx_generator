@@ -127,6 +127,12 @@ class TextboxParagraph(BaseModel):
         "justify",
         "distributed",
     ] | None = None
+    left_indent_in: float | None = None
+    right_indent_in: float | None = None
+    first_line_indent_in: float | None = None
+    left_indent_in: float | None = None
+    right_indent_in: float | None = None
+    first_line_indent_in: float | None = None
 
 
 class SlideTextbox(BaseModel):

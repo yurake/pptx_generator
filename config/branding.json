@@ -108,7 +108,9 @@
       },
       "paragraph": {
         "align": "left",
-        "line_spacing_pt": 22.0
+        "line_spacing_pt": 22.0,
+        "left_indent_in": 0.3,
+        "first_line_indent_in": -0.2
       }
     }
   },
