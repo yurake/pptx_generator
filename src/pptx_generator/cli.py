@@ -320,6 +320,7 @@ def _run_draft_pipeline(
                 review_log_path=content_review_log,
                 require_document=content_approved is not None,
                 require_all_approved=True,
+                fallback_builder=ContentApprovalStep.build_document_from_spec,
             )
         )
     )

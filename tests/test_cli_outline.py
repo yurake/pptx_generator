@@ -51,3 +51,34 @@ def test_draft_generates_outputs(tmp_path) -> None:
     assert meta_payload["slides"] >= 1
     assert meta_payload["appendix_limit"] == 3
     assert Path(meta_payload["paths"]["draft_approved"]).name == "draft_approved.json"
+
+
+def test_draft_generates_outputs_without_content(tmp_path) -> None:
+    output_dir = tmp_path / "draft"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "outline",
+            str(SAMPLE_SPEC),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    draft_path = output_dir / "draft_draft.json"
+    approved_path = output_dir / "draft_approved.json"
+    meta_path = output_dir / "draft_meta.json"
+
+    for path in (draft_path, approved_path, meta_path):
+        assert path.exists()
+
+    draft_payload = json.loads(approved_path.read_text(encoding="utf-8"))
+    assert len(draft_payload.get("sections", [])) >= 1
+
+    meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert meta_payload["slides"] >= 1
