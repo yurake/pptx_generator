@@ -131,6 +131,7 @@
      --polisher \
      --polisher-path dist/polisher/Polisher.dll
    ```
+- レンダリング時に `config/branding.json` の `components.textbox.paragraph` およびレイアウト別設定を参照し、段落揃え・行間・段落前後余白・インデントをブランド既定どおり適用します。Polisher はフォントサイズや色などフォールバック補正と監査ログ出力に専念する運用を想定しています。
 - `--output` を指定しない場合、成果物は `.pptx/gen/` に保存されます。`analysis.json` は Analyzer の診断結果、`review_engine_analyzer.json` は HITL/Review Engine が参照するグレード・Auto-fix 情報、`outputs/audit_log.json` にはジョブ履歴が追記されます。`--emit-structure-snapshot` を有効化すると、テンプレ構造との突合に利用できる `analysis_snapshot.json` も併せて保存されます。`pptx gen` を利用すると工程5/6をまとめて実行できます。
 
 ### 生成物の確認

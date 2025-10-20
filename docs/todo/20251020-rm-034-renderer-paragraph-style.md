@@ -28,8 +28,8 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
   - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成
@@ -37,3 +37,4 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
 
 ## メモ
 - 設計時にブランド設定と python-pptx のインデント単位差の整理が必要。
+- 2025-10-20 サポート runbook と README を更新し、Polisher がフォールバック補正に限定される運用と Renderer による段落スタイル適用を明記。
