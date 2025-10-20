@@ -86,7 +86,7 @@ flowchart TB
         RM013["RM-013<br/>PPTX 解析<br/>アナライザー実装<br/>(完了)"]
         RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(完了)"]
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
-        RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(未着手)"]
+        RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(未着手)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
@@ -427,10 +427,9 @@ flowchart TB
 - 対象工程: 6（PPTX 生成）
 - 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md)
 - 参照 ToDo: [docs/todo/20251012-rendering-audit-integration.md](../todo/20251012-rendering-audit-integration.md)
-- 状況: 未着手（2025-10-12 追加）
+- 状況: 完了（2025-10-20 更新）
 - 期待成果: 軽量整合チェックルールセット、生成ログと承認ログの突合、PDF 変換と Open XML Polisher の統合フロー。
 - 依存: RM-025（マッピング補完エンジン）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）、LibreOffice / Open XML SDK の実行環境、CI でのバイナリ検証手法。
-- 次のアクション: チェックルール一覧の策定、監査メタ拡張項目の設計、PDF/Polisher 統合 PoC の準備。
 
 <a id="rm-027"></a>
 ### RM-027 Analyzer テンプレ監査メトリクス整備

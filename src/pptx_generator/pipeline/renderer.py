@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -85,6 +86,7 @@ class SimpleRendererStep:
 
     def run(self, context: PipelineContext) -> None:
         presentation = self._load_template()
+        start = time.perf_counter()
         try:
             self._render_slides(presentation, context.spec)
             output_path = self._save(presentation, context.workdir)
@@ -92,6 +94,9 @@ class SimpleRendererStep:
             logger.info("PPTX を出力しました: %s", output_path)
         finally:
             self._cleanup_temp_files()
+
+        elapsed_ms = int((time.perf_counter() - start) * 1000)
+        context.add_artifact("renderer_stats", {"rendering_time_ms": elapsed_ms})
 
     def _load_template(self) -> Presentation:
         if self.options.template_path and self.options.template_path.exists():
