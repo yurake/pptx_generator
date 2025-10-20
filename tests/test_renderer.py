@@ -219,6 +219,8 @@ def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
                             line_spacing_pt=16.0,
                             space_before_pt=4.0,
                             space_after_pt=2.0,
+                            left_indent_in=0.25,
+                            first_line_indent_in=-0.15,
                         ),
                     )
                 ],
@@ -262,6 +264,9 @@ def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
         assert paragraph.level == 1
     assert paragraphs[0].space_before == Pt(4)
     assert paragraphs[0].space_after == Pt(2)
+    paragraph_properties = paragraphs[0]._p.get_or_add_pPr()
+    assert int(paragraph_properties.get("marL")) == int(Inches(0.25))
+    assert int(paragraph_properties.get("indent")) == int(Inches(-0.15))
 
 
 def test_renderer_assigns_anchor_name_to_textbox(tmp_path: Path) -> None:
@@ -993,6 +998,74 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(
         shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
     }
     assert "Left Content Placeholder" not in remaining_placeholder_names
+
+
+def test_renderer_applies_brand_paragraph_style_to_bullets(tmp_path: Path) -> None:
+    (
+        template_path,
+        two_content_layout_name,
+        _picture_layout_name,
+        _left_box,
+        _right_box,
+        _picture_box,
+    ) = _build_template_with_named_placeholders(tmp_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Bullet Style"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="bullet-style",
+                layout=two_content_layout_name,
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Left Content Placeholder",
+                        items=[
+                            SlideBullet(id="b1", text="ブランドスタイルの段落", level=0),
+                        ],
+                    )
+                ],
+            )
+        ],
+    )
+
+    branding = BrandingConfig.default()
+    bullet_paragraph = branding.components.textbox.paragraph
+    bullet_paragraph.left_indent_in = 0.5
+    bullet_paragraph.right_indent_in = 0.1
+    bullet_paragraph.first_line_indent_in = -0.25
+    bullet_paragraph.line_spacing_pt = 24.0
+    bullet_paragraph.space_before_pt = 3.0
+    bullet_paragraph.space_after_pt = 2.5
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="bullet-style.pptx",
+            branding=branding,
+        )
+    )
+    renderer.run(context)
+
+    presentation = Presentation(context.require_artifact("pptx_path"))
+    slide = presentation.slides[0]
+
+    bullet_paragraphs = []
+    for shape in slide.shapes:
+        if getattr(shape, "has_text_frame", False):
+            for paragraph in shape.text_frame.paragraphs:
+                if paragraph.text == "ブランドスタイルの段落":
+                    bullet_paragraphs.append(paragraph)
+    assert bullet_paragraphs, "ブランドスタイルが適用された箇条書きを検出できること"
+    paragraph = bullet_paragraphs[0]
+    paragraph_properties = paragraph._p.get_or_add_pPr()
+    assert int(paragraph_properties.get("marL")) == int(Inches(0.5))
+    assert int(paragraph_properties.get("marR")) == int(Inches(0.1))
+    assert int(paragraph_properties.get("indent")) == int(Inches(-0.25))
+    assert paragraph.space_before == Pt(3.0)
+    assert paragraph.space_after == Pt(2.5)
+    assert paragraph.line_spacing == Pt(24.0)
 
 
 def test_renderer_bullet_fallback_when_no_anchor(tmp_path: Path) -> None:
