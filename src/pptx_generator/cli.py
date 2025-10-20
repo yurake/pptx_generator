@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timezone
@@ -24,10 +25,10 @@ from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        MappingOptions, MappingStep, PdfExportError,
                        PdfExportOptions, PdfExportStep, PipelineContext,
                        PipelineRunner, PolisherError, PolisherOptions,
-                       PolisherStep, RefinerOptions, RenderingOptions,
-                       SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
-                       SpecValidatorStep, TemplateExtractor,
-                       TemplateExtractorOptions)
+                       PolisherStep, RefinerOptions, RenderingAuditOptions,
+                       RenderingAuditStep, RenderingOptions, SimpleAnalyzerStep,
+                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
+                       TemplateExtractor, TemplateExtractorOptions)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
@@ -311,8 +312,9 @@ def _run_render_pipeline(
     analyzer = SimpleAnalyzerStep(analyzer_options)
 
     polisher_step = PolisherStep(polisher_options or PolisherOptions())
+    audit_step = RenderingAuditStep(RenderingAuditOptions())
 
-    steps = [renderer, polisher_step, analyzer]
+    steps = [renderer, polisher_step, audit_step, analyzer]
     if pdf_options.enabled:
         steps.append(PdfExportStep(pdf_options))
 
@@ -346,6 +348,14 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
         click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
     analysis_path = context.artifacts.get("analysis_path")
     click.echo(f"Analysis: {analysis_path}")
+    rendering_log_path = context.artifacts.get("rendering_log_path")
+    if rendering_log_path is not None:
+        click.echo(f"Rendering Log: {rendering_log_path}")
+    rendering_summary = context.artifacts.get("rendering_summary")
+    if isinstance(rendering_summary, dict):
+        click.echo(
+            "Rendering Warnings: %s" % rendering_summary.get("warnings_total", 0)
+        )
     review_engine_path = context.artifacts.get("review_engine_analysis_path")
     if review_engine_path is not None:
         click.echo(f"ReviewEngine Analysis: {review_engine_path}")
@@ -1532,32 +1542,76 @@ def _emit_review_engine_analysis(
 def _write_audit_log(context: PipelineContext) -> Path:
     outputs_dir = context.workdir
     outputs_dir.mkdir(parents=True, exist_ok=True)
+    artifacts_payload = {
+        "pptx": _artifact_str(context.artifacts.get("pptx_path")),
+        "analysis": _artifact_str(context.artifacts.get("analysis_path")),
+        "review_engine_analysis": _artifact_str(
+            context.artifacts.get("review_engine_analysis_path")
+        ),
+        "pdf": _artifact_str(context.artifacts.get("pdf_path")),
+        "rendering_ready": _artifact_str(
+            context.artifacts.get("rendering_ready_path")
+        ),
+        "rendering_log": _artifact_str(
+            context.artifacts.get("rendering_log_path")
+        ),
+        "mapping_log": _artifact_str(context.artifacts.get("mapping_log_path")),
+        "mapping_fallback_report": _artifact_str(
+            context.artifacts.get("mapping_fallback_report_path")
+        ),
+    }
+
+    pdf_meta = context.artifacts.get("pdf_export_metadata")
+    if isinstance(pdf_meta, dict):
+        pdf_payload = {
+            "enabled": True,
+            "status": pdf_meta.get("status", "success"),
+            "attempts": pdf_meta.get("attempts", 0),
+            "elapsed_ms": int(pdf_meta.get("elapsed_sec", 0.0) * 1000),
+            "converter": pdf_meta.get("converter"),
+        }
+    else:
+        pdf_payload = None
+
+    polisher_meta = context.artifacts.get("polisher_metadata")
+    if isinstance(polisher_meta, dict):
+        polisher_payload = {
+            "enabled": bool(polisher_meta.get("enabled")),
+            "status": polisher_meta.get("status"),
+            "elapsed_ms": int(polisher_meta.get("elapsed_sec", 0.0) * 1000)
+            if polisher_meta.get("elapsed_sec") is not None
+            else None,
+            "rules_path": polisher_meta.get("rules_path"),
+            "summary": polisher_meta.get("summary"),
+        }
+    else:
+        polisher_payload = None
+
+    hashes: dict[str, str] = {}
+    for label, key in (
+        ("rendering_ready", "rendering_ready_path"),
+        ("pptx", "pptx_path"),
+        ("analysis", "analysis_path"),
+        ("pdf", "pdf_path"),
+        ("rendering_log", "rendering_log_path"),
+    ):
+        digest = _sha256_of(context.artifacts.get(key))
+        if digest:
+            hashes[label] = digest
+
     audit_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "spec_meta": context.spec.meta.model_dump(),
         "slides": len(context.spec.slides),
-        "artifacts": {
-            "pptx": _artifact_str(context.artifacts.get("pptx_path")),
-            "analysis": _artifact_str(context.artifacts.get("analysis_path")),
-            "review_engine_analysis": _artifact_str(
-                context.artifacts.get("review_engine_analysis_path")
-            ),
-            "pdf": _artifact_str(context.artifacts.get("pdf_path")),
-            "rendering_ready": _artifact_str(
-                context.artifacts.get("rendering_ready_path")
-            ),
-            "mapping_log": _artifact_str(
-                context.artifacts.get("mapping_log_path")
-            ),
-            "mapping_fallback_report": _artifact_str(
-                context.artifacts.get("mapping_fallback_report_path")
-            ),
-        },
-        "pdf_export": context.artifacts.get("pdf_export_metadata"),
+        "artifacts": artifacts_payload,
+        "rendering": context.artifacts.get("rendering_summary"),
+        "pdf_export": pdf_payload,
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
         "branding": context.artifacts.get("branding"),
-        "polisher": context.artifacts.get("polisher_metadata"),
+        "polisher": polisher_payload,
     }
+    if hashes:
+        audit_payload["hashes"] = hashes
     content_meta = context.artifacts.get("content_approved_meta")
     if content_meta is not None:
         audit_payload["content_approval"] = content_meta
@@ -1578,6 +1632,21 @@ def _artifact_str(value: object | None) -> str | None:
     if value is None:
         return None
     return str(value)
+
+
+def _sha256_of(value: object | None) -> str | None:
+    if value is None:
+        return None
+    path = Path(str(value))
+    if not path.exists():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            if not chunk:
+                break
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
 
 
 if __name__ == "__main__":

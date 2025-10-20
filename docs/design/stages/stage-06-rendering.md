@@ -9,7 +9,7 @@
 | コンポーネント | 役割 | 技術 |
 | --- | --- | --- |
 | Rendering Orchestrator | スライド生成・PH 挿入・ノート/フッター設定 | Python (`python-pptx`) |
-| Consistency Checker | 空要素、レイアウト不一致、表サイズ超過の検証 | Python |
+| Rendering Consistency | 空プレースホルダー検知、主要要素の有無確認、警告サマリ生成 | Python |
 | Audit Logger | `rendering_log.json`, `audit_log.json` の生成 | Python |
 | PDF Converter | LibreOffice headless で PDF 出力 | CLI (`soffice`) |
 | Polisher Bridge | Open XML SDK プロジェクト呼び出し | .NET 8 CLI |
@@ -17,17 +17,18 @@
 ## フロー
 1. Rendering Orchestrator がテンプレートを開き、`rendering_ready.json` から再構築した `JobSpec` を基にスライドを生成。  
 2. 各 PH にテキスト・表・画像を挿入し、フォーマット調整。  
-3. Consistency Checker が空 PH、表の溢れ、layout mismatch をチェック。  
-4. 問題があれば自動修正 or 警告として `rendering_log.json` に記録。  
+3. Rendering Consistency が空プレースホルダーやスライド数不一致をチェックし、検知結果を `rendering_log.json` に追記。  
+4. 警告件数と代表メッセージを CLI INFO ログへ出力。  
 5. 監査メタ (`audit_log.json`) と生成ログを保存。  
 6. Polisher Bridge を起動して Open XML Polisher を実行（`polisher.enabled` または `--polisher` 指定時）。  
-7. Analyzer が Polisher 適用済みの PPTX を解析し、`analysis.json` とスナップショットを出力。  
-8. `--export-pdf` 指定時は LibreOffice を呼び出し PDF を生成。  
+7. Polisher 実行後、必要に応じて整合チェックを再評価し、監査ログに結果を反映。  
+8. Analyzer が Polisher 適用済みの PPTX を解析し、`analysis.json` とスナップショットを出力。  
+9. `--export-pdf` 指定時は LibreOffice を呼び出し PDF を生成。  
 
 ## ログ / 成果物
-- `rendering_log.json`: スライド毎の `layout_id`, 挿入要素数, 警告一覧, 所要時間。
-- `audit_log.json`: テンプレ版、入力ハッシュ、生成ハッシュ、処理パイプライン履歴に加え `polisher` / `pdf_export` メタを保持。
-- `stdout`: 主要な処理ステップと警告を INFO レベルで出力。Polisher 有効時は `Polisher: success` と JSON サマリを表示し、無効時は `Polisher: disabled` を表示。
+- `rendering_log.json`: スライド毎の `layout_id`、主要要素の検出フラグ、警告一覧（`missing_title` / `empty_placeholder` など）、警告件数、`generated_at`、`rendering_time_ms`。
+- `audit_log.json`: テンプレ版、生成物ハッシュ、`rendering_log.json` パス、整合チェックサマリ、`polisher` / `pdf_export` メタ（実行可否、ステータス、実行時間、リトライ回数）を保持。
+- `stdout`: 主要な処理ステップと警告を INFO レベルで出力。Polisher 有効時は `Polisher: success` と JSON サマリを表示し、無効時は `Polisher: disabled` を表示。レンダリング監査の警告件数と `rendering_log.json` のパスを出力。
 
 ## エラーハンドリング
 - 要素挿入失敗 → スライド番号と PH を特定してログ化、exit code 1。
@@ -54,6 +55,7 @@
 - Polisher 適用後の差分ログ形式。
 - LibreOffice のバージョン互換性（CI / ローカル混在環境）。
 - 表の画像化フォールバックの詳細設計。
+- 軽量整合チェックルールの拡張（表幅検知、レイアウトヒントとの突合など）。
 
 ## 関連スキーマ
 - [docs/design/schema/stage-06-rendering.md](../schema/stage-06-rendering.md)

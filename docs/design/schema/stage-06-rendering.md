@@ -9,59 +9,84 @@
 ## rendering_log.json
 ```jsonc
 {
-  "slides": [
-    {
-      "page_no": 2,
-      "layout_id": "overview__one_col_v1",
-      "inserted_elements": {
-        "title": true,
-        "body": true,
-        "table_data": true,
-        "note": true
-      },
-      "warnings": [
-        {"code": "table_overflow", "message": "列幅を自動調整しました"}
-      ],
-      "processing_ms": 120
-    }
-  ],
   "meta": {
+    "generated_at": "2025-10-19T03:15:00Z",
     "template_version": "acme_v1",
     "rendering_time_ms": 1850,
-    "warnings_total": 1
-  }
+    "warnings_total": 2,
+    "empty_placeholders": 1
+  },
+  "slides": [
+    {
+      "page_no": 1,
+      "layout_id": "title__main_v1",
+      "detected": {
+        "title": true,
+        "subtitle": false,
+        "body": false,
+        "notes": false
+      },
+      "warnings": [
+        {"code": "missing_subtitle", "message": "subtitle プレースホルダーが空です"},
+        {"code": "empty_placeholder", "message": "プレースホルダー 'Content Placeholder 2' が空です"}
+      ]
+    }
+  ]
 }
 ```
 
 ## audit_log.json
 ```jsonc
 {
-  "job_id": "job-20251011-001",
-  "template_version": "acme_v1",
-  "rendering_ready_hash": "sha256:...",
-  "output_pptx_hash": "sha256:...",
-  "content_review_log_hash": "sha256:...",
-  "draft_review_log_hash": "sha256:...",
+  "generated_at": "2025-10-19T03:15:02Z",
+  "spec_meta": {
+    "title": "Acme Quarterly Deck",
+    "schema_version": "proposal-v3",
+    "locale": "ja-JP"
+  },
+  "slides": 18,
+  "artifacts": {
+    "pptx": ".pptx/gen/proposal.pptx",
+    "analysis": ".pptx/gen/analysis.json",
+    "rendering_log": ".pptx/gen/rendering_log.json",
+    "pdf": ".pptx/gen/proposal.pdf"
+  },
+  "hashes": {
+    "rendering_ready": "sha256:41b4...f0",
+    "pptx": "sha256:92ff...0a",
+    "analysis": "sha256:ab12...9f",
+    "pdf": "sha256:ff10...cc"
+  },
+  "rendering": {
+    "warnings_total": 2,
+    "empty_placeholders": 1
+  },
   "pdf_export": {
     "enabled": true,
     "status": "success",
-    "duration_ms": 2450
+    "attempts": 1,
+    "elapsed_ms": 2450,
+    "converter": "libreoffice"
   },
   "polisher": {
     "enabled": true,
     "status": "success",
-    "ruleset": "polish-default-v1"
-  },
-  "generated_at": "2025-10-11T12:30:00+09:00"
+    "elapsed_ms": 420,
+    "rules_path": "config/polisher-rules.json",
+    "summary": {
+      "font_adjustments": 5,
+      "color_adjustments": 2
+    }
+  }
 }
 ```
 
 ### フィールド補足
-- `inserted_elements`: 各 PH で要素挿入が成功したかをブールで記録。
-- `warnings.code`: `layout_mismatch`, `empty_placeholder`, `table_overflow`, `pdf_failed` など。
-- `content_review_log_hash` / `draft_review_log_hash`: 承認ログとの連携に利用。
-- `pdf_export.status`: `success` / `retry` / `failed` を想定。
-- `polisher.status`: `.NET` Polisher の実行結果。`ruleset` は適用した設定名。
+- `detected`: title/subtitle/body/notes の検出状況をブールで記録。
+- `warnings.code`: `missing_title` / `missing_subtitle` / `missing_body` / `empty_placeholder` などの定義済みコード。
+- `hashes`: 主要成果物の `sha256:<hex>` を格納する。
+- `pdf_export.status`: `success` / `retry` / `failed` を想定し、`attempts`, `elapsed_ms`, `converter` を併記する。
+- `polisher.status`: `.NET` Polisher の実行結果。`rules_path` と `summary` (JSON) を任意で格納。
 
 ## サンプル
 - `samples/rendering_log.jsonc`

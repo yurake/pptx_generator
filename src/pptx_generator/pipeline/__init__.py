@@ -9,6 +9,7 @@ from .mapping import MappingOptions, MappingStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
 from .polisher import PolisherError, PolisherOptions, PolisherStep
 from .renderer import RenderingOptions, SimpleRendererStep
+from .render_audit import RenderingAuditOptions, RenderingAuditStep
 from .refiner import RefinerOptions, SimpleRefinerStep
 from .template_extractor import TemplateExtractor, TemplateExtractorOptions, TemplateExtractorStep
 from .validator import SpecValidatorStep
@@ -34,6 +35,8 @@ __all__ = [
     "PolisherError",
     "PolisherOptions",
     "PolisherStep",
+    "RenderingAuditOptions",
+    "RenderingAuditStep",
     "SimpleAnalyzerStep",
     "SimpleRefinerStep",
     "SimpleRendererStep",

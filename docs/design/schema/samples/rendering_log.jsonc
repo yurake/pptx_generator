@@ -1,23 +1,25 @@
 {
-  "slides": [
-    {
-      "page_no": 2,
-      "layout_id": "overview__one_col_v1",
-      "inserted_elements": {
-        "PH__Title__1": true,
-        "PH__Body__Main": true,
-        "PH__Table__KPI": true,
-        "PH__Note__1": true
-      },
-      "warnings": [
-        {"code": "table_overflow", "message": "列幅を自動調整しました"}
-      ],
-      "processing_ms": 120
-    }
-  ],
   "meta": {
+    "generated_at": "2025-10-19T03:15:00Z",
     "template_version": "acme_v1",
     "rendering_time_ms": 1850,
-    "warnings_total": 1
-  }
+    "warnings_total": 2,
+    "empty_placeholders": 1
+  },
+  "slides": [
+    {
+      "page_no": 1,
+      "layout_id": "title__main_v1",
+      "detected": {
+        "title": true,
+        "subtitle": false,
+        "body": false,
+        "notes": false
+      },
+      "warnings": [
+        {"code": "missing_subtitle", "message": "subtitle プレースホルダーが空です"},
+        {"code": "empty_placeholder", "message": "プレースホルダー 'Content Placeholder 2' が空です"}
+      ]
+    }
+  ]
 }

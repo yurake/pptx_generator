@@ -13,21 +13,22 @@
 
 ## 出力
 - `output.pptx`（最終成果物）。
-- `rendering_log.json`: テンプレ版、使用 `layout_id`、挿入要素数、警告一覧、処理時間。
-- 監査ログ (`audit_log.json`): テンプレ版、ハッシュ、`pdf_export` / `polisher` メタ。
+- `rendering_log.json`: スライドごとの整合チェック結果（検出要素フラグ、警告コード、空プレースホルダー件数）とメタ情報（テンプレ版、生成時間、警告件数総計）。
+- 監査ログ (`audit_log.json`): 生成物ハッシュ、`rendering_log.json` への参照、整合チェックサマリ、`pdf_export` / `polisher` 実行メタ（有効可否、ステータス、実行時間、リトライ回数）。
 - 必要に応じて PDF。
-- 実行ログ: CLI 標準出力に `Polisher: <status>` とサマリ JSON を出力し、運用フローから確認可能にする。
+- 実行ログ: CLI 標準出力に `Polisher: <status>` とサマリ JSON を出力し、整合チェックの警告件数とログ出力先を INFO レベルで通知する。
 
 ## ワークフロー
 1. テンプレ PPTX を読み込み、`rendering_ready.json` から再構築した章構造とスライドを初期化する。
 2. 章順にスライドを追加し、各 PH にテキスト・表・注記・ロゴを挿入する。
 3. ノート欄やフッター等のテンプレ設定を反映する。
-4. 軽量整合チェック（空要素、表のはみ出し、layout mismatch、過剰改行）を実施する。
-5. 必要に応じて表の列幅調整や画像化を行い、警告を記録する。
+4. 軽量整合チェック（空プレースホルダー、スライド数不一致、主要要素の欠落）を実施し、結果を `rendering_log.json` にまとめる。
+5. チェック結果の警告件数と代表メッセージを CLI ログへ出力する。
 6. ファイルを保存し、生成ログと監査メタを出力する。
 7. `polisher.enabled` または `--polisher` 指定時に Open XML Polisher を呼び出す。
-8. Analyzer が生成済み PPTX を再解析し、`analysis.json` とスナップショットを作成する。
-9. `--export-pdf` 指定時は LibreOffice で PDF を生成する。
+8. Polisher 実行後の PPTX を対象に整合チェックを再評価し（必要に応じて差分を追記）、`polisher` メタを監査ログへ反映する。
+9. Analyzer が生成済み PPTX を再解析し、`analysis.json` とスナップショットを作成する。
+10. `--export-pdf` 指定時は LibreOffice で PDF を生成し、リトライ回数と所要時間を監査ログへ記録する。
 
 ## 品質ゲート
 - `output.pptx` が正常に開けること。
@@ -40,7 +41,8 @@
 - 生成ログに差分検知（layout mismatch、Auto-fix 適用）を記録する。
 - 監査ログと承認ログを `slide_uid` で突合可能にする。
 - フォールバック適用時（表の画像化等）は事後対応ガイドを同梱する。
-- Polisher 実行結果（コマンド・所要時間・ルールセット）は `audit_log.json.polisher` に記録し、runbook の手順で確認する。
+- Polisher 実行結果（実行可否、所要時間、ルールパス、サマリ JSON）と PDF 変換結果（リトライ回数、所要時間、使用コンバータ）を `audit_log.json` に記録する。
+- `rendering_ready.json`・`proposal.pptx`・`analysis.json`・PDF（生成時）のハッシュを `audit_log.json.hashes` に格納し、監査ログから検証できる状態を保つ。
 
 ## 未実装項目（機能単位）
 - 軽量整合チェックルールの実装と警告ハンドリング。

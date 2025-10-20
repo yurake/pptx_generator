@@ -1,19 +1,42 @@
 {
-  "job_id": "job-20251011-001",
-  "template_version": "acme_v1",
-  "rendering_ready_hash": "sha256:41b4...f0",
-  "output_pptx_hash": "sha256:92ff...0a",
-  "content_review_log_hash": "sha256:33d1...70",
-  "draft_review_log_hash": "sha256:8a1c...6e",
+  "generated_at": "2025-10-19T03:15:02Z",
+  "spec_meta": {
+    "title": "Acme Quarterly Deck",
+    "schema_version": "proposal-v3",
+    "locale": "ja-JP"
+  },
+  "slides": 18,
+  "artifacts": {
+    "pptx": ".pptx/gen/proposal.pptx",
+    "analysis": ".pptx/gen/analysis.json",
+    "rendering_log": ".pptx/gen/rendering_log.json",
+    "pdf": ".pptx/gen/proposal.pdf"
+  },
+  "hashes": {
+    "rendering_ready": "sha256:41b4...f0",
+    "pptx": "sha256:92ff...0a",
+    "analysis": "sha256:ab12...9f",
+    "pdf": "sha256:ff10...cc"
+  },
+  "rendering": {
+    "warnings_total": 2,
+    "empty_placeholders": 1
+  },
   "pdf_export": {
     "enabled": true,
     "status": "success",
-    "duration_ms": 2450
+    "attempts": 1,
+    "elapsed_ms": 2450,
+    "converter": "libreoffice"
   },
   "polisher": {
     "enabled": true,
     "status": "success",
-    "ruleset": "polish-default-v1"
-  },
-  "generated_at": "2025-10-11T12:30:00+09:00"
+    "elapsed_ms": 420,
+    "rules_path": "config/polisher-rules.json",
+    "summary": {
+      "font_adjustments": 5,
+      "color_adjustments": 2
+    }
+  }
 }
