@@ -32,8 +32,8 @@ roadmap_item: RM-034 Renderer 段落スタイル再設計
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: `関連Issue: #220` を反映済み。追加ログは ToDo と PR で追跡する。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #223 https://github.com/yurake/pptx_generator/pull/223（2025-10-20 完了）
 
 ## メモ
 - 設計時にブランド設定と python-pptx のインデント単位差の整理が必要。
