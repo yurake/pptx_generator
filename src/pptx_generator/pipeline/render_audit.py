@@ -254,12 +254,7 @@ class RenderingAuditStep:
     def _expects_body(spec_slide) -> bool:
         if spec_slide is None:
             return False
-        for group in spec_slide.bullets:
-            if not group.items:
-                continue
-            if group.anchor is None:
-                return True
-        return False
+        return any(group.items for group in spec_slide.bullets)
 
     @staticmethod
     def _has_notes(slide) -> bool:
