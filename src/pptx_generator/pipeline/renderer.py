@@ -27,6 +27,7 @@ from ..models import (
     SlideBullet,
     SlideBulletGroup,
     SlideTextbox,
+    TextboxParagraph,
 )
 from ..settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
 from .base import PipelineContext
@@ -151,6 +152,7 @@ class SimpleRendererStep:
 
         fallback_items: list[SlideBullet] = []
         used_anchors: set[str] = set()
+        default_paragraph_style = self._branding.components.textbox.paragraph
 
         for group in groups:
             anchor_name = group.anchor
@@ -161,16 +163,35 @@ class SimpleRendererStep:
                         "図形名はグループごとに一意にしてください。"
                     )
                 used_anchors.add(anchor_name)
-                self._render_bullet_group_to_anchor(slide, anchor_name, group.items)
+                paragraph_style = self._branding.resolve_layout_paragraph(
+                    layout=slide_spec.layout,
+                    placement_key=anchor_name,
+                    default=default_paragraph_style,
+                )
+                self._render_bullet_group_to_anchor(
+                    slide,
+                    anchor_name,
+                    group.items,
+                    paragraph_style=paragraph_style,
+                )
             else:
                 fallback_items.extend(group.items)
 
         if fallback_items:
             target_shape = self._find_body_placeholder(slide)
-            self._write_bullets_to_text_frame(target_shape.text_frame, fallback_items)
+            self._write_bullets_to_text_frame(
+                target_shape.text_frame,
+                fallback_items,
+                paragraph_style=default_paragraph_style,
+            )
 
     def _render_bullet_group_to_anchor(
-        self, slide, anchor_name: str, bullets: list[SlideBullet]
+        self,
+        slide,
+        anchor_name: str,
+        bullets: list[SlideBullet],
+        *,
+        paragraph_style: ParagraphStyle,
     ) -> None:
         fallback_box = self._box_spec_to_layout_box(
             self._branding.components.textbox.fallback_box
@@ -187,7 +208,11 @@ class SimpleRendererStep:
                 f"Shape with name '{anchor_name}' not found in slide. "
                 "テンプレートの図形名を確認してください。"
             )
-        self._write_bullets_to_text_frame(text_frame, bullets)
+        self._write_bullets_to_text_frame(
+            text_frame,
+            bullets,
+            paragraph_style=paragraph_style,
+        )
 
     def _apply_subtitle(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.subtitle:
@@ -261,9 +286,14 @@ class SimpleRendererStep:
             self._write_textbox_content(slide_spec, textbox_spec, text_frame)
 
     def _write_bullets_to_text_frame(
-        self, text_frame, bullets: list[SlideBullet]
+        self,
+        text_frame,
+        bullets: list[SlideBullet],
+        *,
+        paragraph_style: ParagraphStyle,
     ) -> None:
         text_frame.clear()
+        text_frame.word_wrap = True
         for index, bullet in enumerate(bullets):
             paragraph = (
                 text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
@@ -274,6 +304,12 @@ class SimpleRendererStep:
                 paragraph,
                 bullet.font,
                 fallback=self._branding.body_font,
+            )
+            self._apply_paragraph_style(
+                paragraph,
+                None,
+                fallback=paragraph_style,
+                preserve_level=True,
             )
 
     def _write_textbox_content(
@@ -303,10 +339,11 @@ class SimpleRendererStep:
                 textbox_spec.font,
                 fallback=default_font,
             )
-            self._apply_textbox_paragraph(
+            self._apply_paragraph_style(
                 paragraph,
                 textbox_spec.paragraph,
                 fallback=default_paragraph,
+                preserve_level=False,
             )
 
     def _resolve_textbox_fallback(
@@ -490,19 +527,21 @@ class SimpleRendererStep:
             return
         self._apply_brand_font(paragraph, fallback)
 
-    def _apply_textbox_paragraph(
+    def _apply_paragraph_style(
         self,
         paragraph,
         paragraph_spec: TextboxParagraph | None,
         *,
         fallback: ParagraphStyle,
+        preserve_level: bool,
     ) -> None:
         level = (
             paragraph_spec.level
             if paragraph_spec and paragraph_spec.level is not None
             else fallback.level
         )
-        paragraph.level = level if level is not None else 0
+        if not preserve_level or paragraph.level is None:
+            paragraph.level = level if level is not None else (paragraph.level or 0)
 
         align = (
             paragraph_spec.align
@@ -535,6 +574,31 @@ class SimpleRendererStep:
         )
         if space_after is not None:
             paragraph.space_after = Pt(space_after)
+
+        paragraph_properties = paragraph._p.get_or_add_pPr()
+        left_indent = (
+            paragraph_spec.left_indent_in
+            if paragraph_spec and paragraph_spec.left_indent_in is not None
+            else fallback.left_indent_in
+        )
+        if left_indent is not None:
+            paragraph_properties.set("marL", str(int(Inches(left_indent))))
+
+        right_indent = (
+            paragraph_spec.right_indent_in
+            if paragraph_spec and paragraph_spec.right_indent_in is not None
+            else fallback.right_indent_in
+        )
+        if right_indent is not None:
+            paragraph_properties.set("marR", str(int(Inches(right_indent))))
+
+        first_line_indent = (
+            paragraph_spec.first_line_indent_in
+            if paragraph_spec and paragraph_spec.first_line_indent_in is not None
+            else fallback.first_line_indent_in
+        )
+        if first_line_indent is not None:
+            paragraph_properties.set("indent", str(int(Inches(first_line_indent))))
 
     def _resolve_alignment(self, align: str) -> PP_ALIGN:
         mapping = {

@@ -17,7 +17,8 @@
   - `table`: フォールバック配置 (`fallback_box`)、ヘッダー／本文のフォントと塗りつぶし色、ゼブラ配色を定義。
   - `chart`: カラーパレット、データラベル既定値、軸フォント、フォールバック配置を定義。
   - `image`: フォールバック配置と既定の `sizing` モードを定義。
-  - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・レベル）を定義。
+  - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・段落前後余白・インデント）を定義。
+    - インデントはインチ単位で `left_indent_in` / `right_indent_in` / `first_line_indent_in` を指定し、Renderer が段落レベルに応じた余白を正しく適用できるようにする。
 - `layouts` にレイアウト名ごとの `placements` を登録すると、アンカー未指定時に要素 ID 単位で配置やフォントを上書きできる。
 - 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
 

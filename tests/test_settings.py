@@ -188,6 +188,11 @@ class TestBrandingConfig:
                             "align": "center",
                             "line_spacing_pt": 20,
                             "level": 1,
+                            "space_before_pt": 2.5,
+                            "space_after_pt": 1.0,
+                            "left_indent_in": 0.4,
+                            "right_indent_in": 0.1,
+                            "first_line_indent_in": -0.2,
                         },
                     },
                 },
@@ -217,6 +222,11 @@ class TestBrandingConfig:
         assert config.components.chart.data_labels.format == "0.0"
         assert config.components.image.sizing == "fill"
         assert config.components.textbox.paragraph.align == "center"
+        assert config.components.textbox.paragraph.space_before_pt == pytest.approx(2.5)
+        assert config.components.textbox.paragraph.space_after_pt == pytest.approx(1.0)
+        assert config.components.textbox.paragraph.left_indent_in == pytest.approx(0.4)
+        assert config.components.textbox.paragraph.right_indent_in == pytest.approx(0.1)
+        assert config.components.textbox.paragraph.first_line_indent_in == pytest.approx(-0.2)
 
     def test_load_fallback_for_missing_body_font(self, tmp_path: Path) -> None:
         config_path = write_json(
@@ -236,6 +246,8 @@ class TestBrandingConfig:
         assert config.body_font.size_pt == pytest.approx(18.0)
         assert config.body_font.color_hex == "#333333"
         assert config.components.table.header.fill_color == "#005BAC"
+        assert config.components.textbox.paragraph.left_indent_in == pytest.approx(0.3)
+        assert config.components.textbox.paragraph.first_line_indent_in == pytest.approx(-0.2)
 
     def test_load_invalid_json_raises(self, tmp_path: Path) -> None:
         config_path = tmp_path / "branding.json"

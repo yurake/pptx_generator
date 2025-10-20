@@ -227,6 +227,9 @@ def _paragraph_payload(style: ParagraphStyle) -> dict[str, Any]:
         "space_before_pt": style.space_before_pt,
         "space_after_pt": style.space_after_pt,
         "level": style.level,
+        "left_indent_in": style.left_indent_in,
+        "right_indent_in": style.right_indent_in,
+        "first_line_indent_in": style.first_line_indent_in,
     }
 
 
