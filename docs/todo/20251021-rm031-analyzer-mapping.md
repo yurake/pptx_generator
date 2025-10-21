@@ -1,7 +1,7 @@
 ---
 目的: Analyzer 警告をマッピング工程へ連動させ、AI 補完とフォールバック制御の精度を高める
 関連ブランチ: feat/rm031-analyzer-mapping
-関連Issue: 未作成
+関連Issue: #224
 roadmap_item: RM-031 Analyzer マッピング補完連動
 ---
 
