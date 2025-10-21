@@ -63,13 +63,17 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
 
     pptx_path = output_dir / "proposal.pptx"
     analysis_path = output_dir / "analysis.json"
+    baseline_analysis_path = output_dir / "analysis_pre_polisher.json"
     audit_path = output_dir / "audit_log.json"
     rendering_log_path = output_dir / "rendering_log.json"
+    monitoring_report_path = output_dir / "monitoring_report.json"
 
     assert pptx_path.exists()
     assert analysis_path.exists()
+    assert baseline_analysis_path.exists()
     assert audit_path.exists()
     assert rendering_log_path.exists()
+    assert monitoring_report_path.exists()
 
     payload = json.loads(analysis_path.read_text(encoding="utf-8"))
     assert payload.get("slides") == len(spec.slides)
@@ -80,6 +84,11 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     rendering_log = json.loads(rendering_log_path.read_text(encoding="utf-8"))
     assert rendering_log["meta"]["warnings_total"] >= 0
 
+    monitoring_report = json.loads(monitoring_report_path.read_text(encoding="utf-8"))
+    assert monitoring_report.get("rendering", {}).get("warnings_total") == rendering_log["meta"]["warnings_total"]
+    analyzer_meta = monitoring_report.get("analyzer", {})
+    assert "after_pipeline" in analyzer_meta
+
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     assert audit_payload.get("slides") == len(spec.slides)
     assert audit_payload.get("pdf_export") is None
@@ -87,11 +96,16 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert isinstance(hashes, dict)
     assert hashes.get("pptx", "").startswith("sha256:")
     assert hashes.get("analysis", "").startswith("sha256:")
+    assert hashes.get("analysis_pre_polisher", "").startswith("sha256:")
     assert hashes.get("rendering_ready", "").startswith("sha256:")
     assert hashes.get("rendering_log", "").startswith("sha256:")
+    assert hashes.get("monitoring_report", "").startswith("sha256:")
     rendering_summary = audit_payload.get("rendering")
     assert rendering_summary is not None
     assert rendering_summary.get("warnings_total") == rendering_log["meta"]["warnings_total"]
+    monitoring_summary = audit_payload.get("monitoring")
+    assert monitoring_summary is not None
+    assert monitoring_summary.get("alert_level") in {"ok", "warning", "critical"}
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
@@ -155,6 +169,10 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
 
     audit_path = output_dir / "audit_log.json"
     assert audit_path.exists()
+    baseline_analysis_path = output_dir / "analysis_pre_polisher.json"
+    assert baseline_analysis_path.exists()
+    monitoring_report_path = output_dir / "monitoring_report.json"
+    assert monitoring_report_path.exists()
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     rendering_summary = audit_payload.get("rendering")
@@ -164,8 +182,13 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert isinstance(hashes, dict)
     assert hashes.get("pptx", "").startswith("sha256:")
     assert hashes.get("rendering_ready", "").startswith("sha256:")
+    assert hashes.get("analysis_pre_polisher", "").startswith("sha256:")
     assert hashes.get("rendering_log", "").startswith("sha256:")
+    assert hashes.get("monitoring_report", "").startswith("sha256:")
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
+    monitoring_summary = audit_payload.get("monitoring")
+    assert monitoring_summary is not None
+    assert "alert_level" in monitoring_summary
     content_meta = audit_payload.get("content_approval")
     assert content_meta is not None
     assert content_meta["slides"] == len(approved_payload["slides"])

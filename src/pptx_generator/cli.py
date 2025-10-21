@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -23,7 +24,8 @@ from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
                        DraftStructuringOptions, DraftStructuringStep,
-                       MappingOptions, MappingStep, PdfExportError,
+                       MappingOptions, MappingStep, MonitoringIntegrationOptions,
+                       MonitoringIntegrationStep, PdfExportError,
                        PdfExportOptions, PdfExportStep, PipelineContext,
                        PipelineRunner, PipelineStep, PolisherError, PolisherOptions,
                        PolisherStep, RefinerOptions, RenderingAuditOptions,
@@ -485,14 +487,33 @@ def _run_render_pipeline(
             branding=branding_config,
         )
     )
+    baseline_analyzer_options = replace(
+        analyzer_options,
+        output_filename="analysis_pre_polisher.json",
+        snapshot_output_filename=None,
+    )
+    baseline_analyzer = SimpleAnalyzerStep(
+        baseline_analyzer_options,
+        artifact_key="analysis_pre_polisher_path",
+        register_default_artifact=False,
+        allow_missing_artifact=True,
+    )
     analyzer = SimpleAnalyzerStep(analyzer_options)
 
     polisher_step = PolisherStep(polisher_options or PolisherOptions())
     audit_step = RenderingAuditStep(RenderingAuditOptions())
 
-    steps = [renderer, polisher_step, audit_step, analyzer]
+    monitoring_step = MonitoringIntegrationStep(MonitoringIntegrationOptions())
+
+    steps: list[PipelineStep] = [
+        renderer,
+        baseline_analyzer,
+        polisher_step,
+        audit_step,
+    ]
     if pdf_options.enabled:
         steps.append(PdfExportStep(pdf_options))
+    steps.extend([analyzer, monitoring_step])
 
     PipelineRunner(steps).execute(context)
     return context
@@ -524,6 +545,9 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
         click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
     analysis_path = context.artifacts.get("analysis_path")
     click.echo(f"Analysis: {analysis_path}")
+    baseline_analysis_path = context.artifacts.get("analysis_pre_polisher_path")
+    if baseline_analysis_path is not None:
+        click.echo(f"Analysis (Pre-Polisher): {baseline_analysis_path}")
     rendering_log_path = context.artifacts.get("rendering_log_path")
     if rendering_log_path is not None:
         click.echo(f"Rendering Log: {rendering_log_path}")
@@ -566,6 +590,9 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
     if fallback_report_path is not None:
         click.echo(f"Fallback Report: {fallback_report_path}")
+    monitoring_report_path = context.artifacts.get("monitoring_report_path")
+    if monitoring_report_path is not None:
+        click.echo(f"Monitoring Report: {monitoring_report_path}")
     if audit_path is not None:
         click.echo(f"Audit: {audit_path}")
 
@@ -1984,6 +2011,9 @@ def _write_audit_log(context: PipelineContext) -> Path:
     artifacts_payload = {
         "pptx": _artifact_str(context.artifacts.get("pptx_path")),
         "analysis": _artifact_str(context.artifacts.get("analysis_path")),
+        "analysis_pre_polisher": _artifact_str(
+            context.artifacts.get("analysis_pre_polisher_path")
+        ),
         "review_engine_analysis": _artifact_str(
             context.artifacts.get("review_engine_analysis_path")
         ),
@@ -1997,6 +2027,9 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "mapping_log": _artifact_str(context.artifacts.get("mapping_log_path")),
         "mapping_fallback_report": _artifact_str(
             context.artifacts.get("mapping_fallback_report_path")
+        ),
+        "monitoring_report": _artifact_str(
+            context.artifacts.get("monitoring_report_path")
         ),
     }
 
@@ -2031,8 +2064,10 @@ def _write_audit_log(context: PipelineContext) -> Path:
         ("rendering_ready", "rendering_ready_path"),
         ("pptx", "pptx_path"),
         ("analysis", "analysis_path"),
+        ("analysis_pre_polisher", "analysis_pre_polisher_path"),
         ("pdf", "pdf_path"),
         ("rendering_log", "rendering_log_path"),
+        ("monitoring_report", "monitoring_report_path"),
     ):
         digest = _sha256_of(context.artifacts.get(key))
         if digest:
@@ -2049,6 +2084,9 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "branding": context.artifacts.get("branding"),
         "polisher": polisher_payload,
     }
+    monitoring_summary = context.artifacts.get("monitoring_summary")
+    if monitoring_summary is not None:
+        audit_payload["monitoring"] = monitoring_summary
     if hashes:
         audit_payload["hashes"] = hashes
     content_meta = context.artifacts.get("content_approved_meta")
