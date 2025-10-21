@@ -473,10 +473,11 @@ flowchart TB
 - ゴール: マッピング結果に Analyzer 警告を併記し、AI 補完やフォールバック制御のトリガーに活用する。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
+- 状況: 進行中（2025-10-21 更新）
 - 期待成果: `mapping_log.json` への Analyzer 情報追加、`font_min` や `contrast_low` に基づく補完トリガー、自動フォローアップ候補の生成。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、RM-025（マッピング補完エンジン）。
-- 次のアクション: 補完ルールと Analyzer 指摘のマッピング整理、マッピングログ拡張設計、AI 補完シミュレーションの検証計画立案。
+- 進捗: mapping_log.json に Analyzer 件数サマリおよびスライド別指摘リストを追加し、SimpleAnalyzerStep から自動連携する実装を追加。ユニット／インテグレーションテストを更新済み。
+- 次のアクション: Analyzer 指摘を利用した補完トリガー設計、AI シミュレーションの検証計画立案。
 
 <a id="rm-032"></a>
 ### RM-032 Analyzer レンダリング監視統合

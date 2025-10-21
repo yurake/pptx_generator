@@ -67,6 +67,13 @@ def test_mapping_step_generates_rendering_outputs(tmp_path: Path) -> None:
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_payload["meta"]["fallback_count"] == 0
     assert mapping_payload["meta"]["ai_patch_count"] == 0
+    assert mapping_payload["meta"]["analyzer_issue_count"] == 0
+    assert mapping_payload["meta"]["analyzer_issue_counts_by_type"] == {}
+    assert mapping_payload["meta"]["analyzer_issue_counts_by_severity"] == {}
+
+    analyzer_summary = mapping_payload["slides"][0]["analyzer"]
+    assert analyzer_summary["issue_count"] == 0
+    assert analyzer_summary["issues"] == []
 
 
 def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> None:
@@ -109,8 +116,10 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     slide_log = mapping_payload["slides"][0]
     assert slide_log["fallback"]["applied"] is True
     assert slide_log["fallback"]["history"] == ["shrink_text"]
+    assert slide_log["analyzer"]["issue_count"] == 0
     assert mapping_payload["meta"]["fallback_count"] == 1
     assert mapping_payload["meta"]["ai_patch_count"] == 1
+    assert mapping_payload["meta"]["analyzer_issue_count"] == 0
 
     assert fallback_report_path.exists()
     report_payload = json.loads(fallback_report_path.read_text(encoding="utf-8"))
