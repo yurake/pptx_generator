@@ -87,7 +87,7 @@ flowchart TB
         RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(完了)"]
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
-        RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(未着手)"]
+        RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(完了)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
     end
@@ -484,10 +484,9 @@ flowchart TB
 - 対象工程: 6（PPTX レンダリング）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
 - 参照ノート: [docs/notes/20251021-rm032-monitoring-integration.md](../notes/20251021-rm032-monitoring-integration.md)
-- 状況: 進行中（2025-10-21 更新）
+- 状況: 完了（2025-10-21 更新）
 - 期待成果: Analyzer と監査ログの突合による通知連携、LibreOffice / Polisher 実行後の Analyzer 再走、改善度メトリクスの自動算出、`monitoring_report.json` / `monitoring_summary` を CI から参照可能にする。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-026（レンダリング監査統合）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）。
-- 次のアクション: 通知チャネル PoC の設計（Slack / Teams 連携）、CI で `monitoring_report.json` を検証するワークフロー整備、改善度メトリクスの可視化ダッシュボード検討。
 
 <a id="rm-033"></a>
 ### RM-033 パイプライン工程3/4独立化準備

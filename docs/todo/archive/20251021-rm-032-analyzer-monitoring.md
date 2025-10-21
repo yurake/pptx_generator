@@ -28,8 +28,8 @@ roadmap_item: RM-032 Analyzer レンダリング監視統合
   - [x] README.md / AGENTS.md（更新不要を確認）
 - [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後に更新する。
-- [ ] PR 作成
-  - メモ: PR 作成時に todo-auto-complete の動作を確認する。
+- [x] PR 作成
+  - メモ: PR #226 https://github.com/yurake/pptx_generator/pull/226（2025-10-21 完了）
 
 ## メモ
 - docs/notes/20251021-rm032-monitoring-integration.md に検討内容を整理済み。通知 PoC の要否は次フェーズで判断する。
