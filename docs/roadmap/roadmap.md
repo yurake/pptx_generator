@@ -50,15 +50,15 @@ flowchart TB
         RM010["RM-010<br/>テンプレート仕様<br/>エクスポート<br/>(完了)"]
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
-        RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(未着手)"]
+        RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
         direction TB
         ST3_ANCHOR(( ))
         RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
-        RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(未着手)"]
-        RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(未着手)"]
+        RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(完了)"]
+        RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(完了)"]
     end
 
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
