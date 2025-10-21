@@ -32,4 +32,3 @@ roadmap_item: RM-031 Analyzer マッピング補完連動
   - メモ: PR 作成時に URL と todo-auto-complete の結果を記録する
 
 ## メモ
-- 当面は Analyzer 出力との差分突合範囲を決定するため、既存ログ構造の調査が必要。
