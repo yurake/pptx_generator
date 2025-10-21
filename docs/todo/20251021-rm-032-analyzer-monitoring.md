@@ -1,7 +1,7 @@
 ---
 目的: Analyzer と監査ログを突合し、品質アラート自動化の仕組みを整備する
 関連ブランチ: feat/rm-032-monitoring
-関連Issue: 未作成
+関連Issue: #225
 roadmap_item: RM-032 Analyzer レンダリング監視統合
 ---
 
