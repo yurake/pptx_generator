@@ -275,7 +275,6 @@ class SimpleAnalyzerStep:
             "fixes": fixes,
         }
         output_path = self._save(analysis, context.workdir)
-<<<<<<< HEAD
         context.add_artifact(self._artifact_key, output_path)
         if self._register_default_artifact and self._artifact_key != "analysis_path":
             context.add_artifact("analysis_path", output_path)
@@ -284,11 +283,6 @@ class SimpleAnalyzerStep:
             pass
         self._sync_mapping_log(context, analysis)
         logger.info("%s を出力しました: %s", self.options.output_filename, output_path)
-=======
-        context.add_artifact("analysis_path", output_path)
-        self._sync_mapping_log(context, analysis)
-        logger.info("analysis.json を出力しました: %s", output_path)
->>>>>>> origin/main
         if self.options.snapshot_output_filename:
             snapshot_path = self._save_snapshot(
                 snapshot_slides, context.workdir
