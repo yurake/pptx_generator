@@ -1,0 +1,26 @@
+{
+  "slides": 18,
+  "meta": {
+    "title": "Acme Quarterly Deck",
+    "schema_version": "proposal-v3",
+    "locale": "ja-JP"
+  },
+  "issues": [
+    {
+      "id": "issue-font_size-problem-body",
+      "type": "font_size",
+      "severity": "warning",
+      "message": "本文のフォントサイズが 18pt 未満です",
+      "target": {
+        "slide_id": "problem",
+        "element_id": "problem_body_1",
+        "element_type": "bullet"
+      },
+      "metrics": {
+        "actual_size_pt": 16,
+        "threshold_pt": 18
+      }
+    }
+  ],
+  "fixes": []
+}

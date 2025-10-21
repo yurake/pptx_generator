@@ -59,11 +59,11 @@ class PdfExportStep:
                     "attempts": 0,
                     "elapsed_sec": 0.0,
                     "converter": "skipped",
+                    "mode": self.options.mode,
                 },
             )
             if self.options.mode == "only":
-                pptx_path.unlink(missing_ok=True)
-                context.artifacts.pop("pptx_path", None)
+                context.add_artifact("pdf_cleanup_pptx_path", str(pptx_path))
             return
 
         converter = LibreOfficeConverter(
@@ -89,12 +89,12 @@ class PdfExportStep:
                 "attempts": result.attempts,
                 "elapsed_sec": result.elapsed_sec,
                 "converter": "libreoffice",
+                "mode": self.options.mode,
             },
         )
 
         if self.options.mode == "only":
-            pptx_path.unlink(missing_ok=True)
-            context.artifacts.pop("pptx_path", None)
+            context.add_artifact("pdf_cleanup_pptx_path", str(pptx_path))
 
 
 @dataclass(slots=True)

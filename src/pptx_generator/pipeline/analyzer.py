@@ -197,16 +197,31 @@ class SimpleAnalyzerStep:
 
     name = "analyzer"
 
-    def __init__(self, options: AnalyzerOptions | None = None) -> None:
+    def __init__(
+        self,
+        options: AnalyzerOptions | None = None,
+        *,
+        artifact_key: str = "analysis_path",
+        register_default_artifact: bool = True,
+        allow_missing_artifact: bool = False,
+    ) -> None:
         self.options = options or AnalyzerOptions()
         self._sequence = count(1)
+        self._artifact_key = artifact_key
+        self._register_default_artifact = register_default_artifact
+        self._allow_missing_artifact = allow_missing_artifact
 
     def run(self, context: PipelineContext) -> None:
-        try:
-            pptx_reference = context.require_artifact("pptx_path")
-        except KeyError as exc:  # pragma: no cover - 異常系
+        pptx_reference = context.artifacts.get("pptx_path")
+        if pptx_reference is None:
+            if self._allow_missing_artifact:
+                logger.info(
+                    "Analyzer (%s) をスキップします: pptx_path artifact が見つかりません",
+                    self.options.output_filename,
+                )
+                return
             msg = "解析対象の PPTX が存在しません。renderer の実行順序を確認してください。"
-            raise RuntimeError(msg) from exc
+            raise RuntimeError(msg)
 
         pptx_path = Path(str(pptx_reference))
         if not pptx_path.exists():  # pragma: no cover - 異常系
@@ -260,9 +275,14 @@ class SimpleAnalyzerStep:
             "fixes": fixes,
         }
         output_path = self._save(analysis, context.workdir)
-        context.add_artifact("analysis_path", output_path)
+        context.add_artifact(self._artifact_key, output_path)
+        if self._register_default_artifact and self._artifact_key != "analysis_path":
+            context.add_artifact("analysis_path", output_path)
+        elif self._register_default_artifact and self._artifact_key == "analysis_path":
+            # 既定キーと同じ場合は追加登録不要
+            pass
         self._sync_mapping_log(context, analysis)
-        logger.info("analysis.json を出力しました: %s", output_path)
+        logger.info("%s を出力しました: %s", self.options.output_filename, output_path)
         if self.options.snapshot_output_filename:
             snapshot_path = self._save_snapshot(
                 snapshot_slides, context.workdir

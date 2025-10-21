@@ -1,0 +1,92 @@
+{
+  "generated_at": "2025-10-21T04:05:00Z",
+  "spec_meta": {
+    "title": "Acme Quarterly Deck",
+    "schema_version": "proposal-v3",
+    "locale": "ja-JP"
+  },
+  "slides": 18,
+  "artifacts": {
+    "analysis_before": ".pptx/gen/analysis_pre_polisher.json",
+    "analysis_after": ".pptx/gen/analysis.json",
+    "rendering_log": ".pptx/gen/rendering_log.json"
+  },
+  "rendering": {
+    "warnings_total": 2,
+    "empty_placeholders": 1
+  },
+  "analyzer": {
+    "before_polisher": {
+      "total": 12,
+      "by_severity": {
+        "warning": 10,
+        "info": 2
+      },
+      "by_type": {
+        "font_size": 6,
+        "contrast": 4,
+        "layout_consistency": 2
+      }
+    },
+    "after_pipeline": {
+      "total": 4,
+      "by_severity": {
+        "warning": 3,
+        "info": 1
+      },
+      "by_type": {
+        "contrast": 3,
+        "layout_consistency": 1
+      }
+    },
+    "improvement": {
+      "resolved": 8,
+      "delta": -8,
+      "resolved_issue_ids": [
+        "issue-font_size-1",
+        "issue-contrast-2"
+      ]
+    }
+  },
+  "alerts": [
+    {
+      "slide_id": "problem",
+      "page_no": 3,
+      "layout_id": "title_body_v1",
+      "rendering_warning_count": 1,
+      "rendering_warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 3' が空です"
+        }
+      ],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "issue-contrast-problem-body",
+          "type": "contrast",
+          "severity": "warning",
+          "message": "本文のコントラストが 4.5 未満です"
+        }
+      ],
+      "resolved_issues": [
+        "issue-font_size-problem-body"
+      ]
+    }
+  ],
+  "pipeline": {
+    "polisher": {
+      "enabled": true,
+      "status": "success",
+      "elapsed_ms": 420,
+      "rules_path": "config/polisher-rules.json"
+    },
+    "pdf_export": {
+      "enabled": true,
+      "status": "success",
+      "attempts": 1,
+      "elapsed_ms": 2450,
+      "converter": "libreoffice"
+    }
+  }
+}

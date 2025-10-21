@@ -3,8 +3,10 @@
 工程6（PPTX レンダリング）および後続の PDF / 監査処理で利用する JSON 仕様を定義する。
 
 ## ファイル
+- `analysis_pre_polisher.json`: Renderer 出力直後の Analyzer 結果（比較用ベースライン）。
 - `rendering_log.json`: レンダリング実行時の警告と統計情報。
 - `audit_log.json`: 監査用メタデータ。承認ログや生成物ハッシュを含む。
+- `monitoring_report.json`: レンダリング監査・Analyzer before/after の突合レポート。
 
 ## rendering_log.json
 ```jsonc
@@ -48,13 +50,17 @@
   "artifacts": {
     "pptx": ".pptx/gen/proposal.pptx",
     "analysis": ".pptx/gen/analysis.json",
+    "analysis_pre_polisher": ".pptx/gen/analysis_pre_polisher.json",
     "rendering_log": ".pptx/gen/rendering_log.json",
+    "monitoring_report": ".pptx/gen/monitoring_report.json",
     "pdf": ".pptx/gen/proposal.pdf"
   },
   "hashes": {
     "rendering_ready": "sha256:41b4...f0",
     "pptx": "sha256:92ff...0a",
     "analysis": "sha256:ab12...9f",
+    "analysis_pre_polisher": "sha256:f41c...aa",
+    "monitoring_report": "sha256:0a1b...ef",
     "pdf": "sha256:ff10...cc"
   },
   "rendering": {
@@ -77,6 +83,12 @@
       "font_adjustments": 5,
       "color_adjustments": 2
     }
+  },
+  "monitoring": {
+    "alert_level": "warning",
+    "headline": "2 slides require attention",
+    "rendering_warnings": 2,
+    "analyzer_issues": 4
   }
 }
 ```
@@ -87,10 +99,16 @@
 - `hashes`: 主要成果物の `sha256:<hex>` を格納する。
 - `pdf_export.status`: `success` / `retry` / `failed` を想定し、`attempts`, `elapsed_ms`, `converter` を併記する。
 - `polisher.status`: `.NET` Polisher の実行結果。`rules_path` と `summary` (JSON) を任意で格納。
+- `monitoring`: CI 連携向けのアラートサマリ（`monitoring_report.json` を凝縮）。
+
+## monitoring_report.json
+`rendering_log.json` と Analyzer before/after の突合結果を保持する。構造の詳細は `samples/monitoring_report.jsonc` を参照。
 
 ## サンプル
+- `samples/analysis_pre_polisher.jsonc`（※必要に応じて生成）
 - `samples/rendering_log.jsonc`
 - `samples/audit_log.jsonc`
+- `samples/monitoring_report.jsonc`
 
 ## バリデーション
 - ハッシュ値は `sha256:<hex>` 形式で統一。
@@ -100,4 +118,5 @@
 ## 変更履歴メモ
 - 2025-10-11: 承認ログハッシュを追加し、HITL 追跡を強化。
 - 2025-10-11: Polisher メタデータを拡張（ルールセット／ステータス）。
+- 2025-10-21: Monitoring レポートと Analyzer before/after を追加。
 （最新の詳細は git ログを参照）
