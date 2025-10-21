@@ -34,46 +34,42 @@ class MonitoringIntegrationStep:
         self.options = options or MonitoringIntegrationOptions()
 
     def run(self, context: PipelineContext) -> None:
-        if not self.options.enabled:
-            logger.debug("Monitoring integration is disabled")
-            return
+        try:
+            if not self.options.enabled:
+                logger.debug("Monitoring integration is disabled")
+                return
 
-        rendering_log = self._load_rendering_log(context)
-        if rendering_log is None:
-            logger.warning("Monitoring integration skipped: rendering_log is missing")
-            return
+            rendering_log = self._load_rendering_log(context)
+            if rendering_log is None:
+                logger.warning("Monitoring integration skipped: rendering_log is missing")
+                return
 
-        analysis_after = self._load_analysis(context, "analysis_path")
-        if analysis_after is None:
-            logger.warning("Monitoring integration skipped: analysis_path is missing")
-            return
+            analysis_after = self._load_analysis(context, "analysis_path")
+            if analysis_after is None:
+                logger.warning("Monitoring integration skipped: analysis_path is missing")
+                return
 
-        analysis_before = self._load_analysis(context, "analysis_pre_polisher_path")
+            analysis_before = self._load_analysis(context, "analysis_pre_polisher_path")
 
-        report = self._build_report(context, rendering_log, analysis_after, analysis_before)
-        output_path = self._write_report(report, context.workdir)
+            report = self._build_report(context, rendering_log, analysis_after, analysis_before)
+            output_path = self._write_report(report, context.workdir)
 
-        context.add_artifact("monitoring_report", report)
-        context.add_artifact("monitoring_report_path", output_path)
-        summary = self._build_summary(report)
-        context.add_artifact("monitoring_summary", summary)
+            context.add_artifact("monitoring_report", report)
+            context.add_artifact("monitoring_report_path", output_path)
+            summary = self._build_summary(report)
+            context.add_artifact("monitoring_summary", summary)
 
-        alert_level = summary.get("alert_level")
-        if alert_level in {"critical", "error"}:
-            logger.error("Monitoring alerts detected: %s", summary.get("headline"))
-        elif alert_level == "warning":
-            logger.warning("Monitoring alerts detected: %s", summary.get("headline"))
-        else:
-            logger.info("Monitoring report generated without alerts")
+            alert_level = summary.get("alert_level")
+            if alert_level in {"critical", "error"}:
+                logger.error("Monitoring alerts detected: %s", summary.get("headline"))
+            elif alert_level == "warning":
+                logger.warning("Monitoring alerts detected: %s", summary.get("headline"))
+            else:
+                logger.info("Monitoring report generated without alerts")
 
-        logger.info("Monitoring report generated: %s", output_path)
-
-        cleanup_target = context.artifacts.pop("pdf_cleanup_pptx_path", None)
-        if cleanup_target:
-            pptx_path = Path(str(cleanup_target))
-            pptx_path.unlink(missing_ok=True)
-            context.artifacts.pop("pptx_path", None)
-            logger.info("Removed PPTX after PDF-only export: %s", pptx_path)
+            logger.info("Monitoring report generated: %s", output_path)
+        finally:
+            self._cleanup_pdf_only(context)
 
     def _load_rendering_log(self, context: PipelineContext) -> dict[str, Any] | None:
         raw = context.artifacts.get("rendering_log")
@@ -190,6 +186,20 @@ class MonitoringIntegrationStep:
         output_path = workdir / self.options.output_filename
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return output_path
+
+    def _cleanup_pdf_only(self, context: PipelineContext) -> None:
+        cleanup_target = context.artifacts.pop("pdf_cleanup_pptx_path", None)
+        if not cleanup_target:
+            return
+        try:
+            pptx_path = Path(str(cleanup_target))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to resolve PDF cleanup path: %s (%s)", cleanup_target, exc)
+            context.artifacts.pop("pptx_path", None)
+            return
+        pptx_path.unlink(missing_ok=True)
+        context.artifacts.pop("pptx_path", None)
+        logger.info("Removed PPTX after PDF-only export: %s", pptx_path)
 
     def _build_summary(self, report: dict[str, Any]) -> dict[str, Any]:
         analyzer_after = report.get("analyzer", {}).get("after_pipeline") or {}
