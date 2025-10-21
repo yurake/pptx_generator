@@ -28,7 +28,7 @@ roadmap_item: RM-031 Analyzer マッピング補完連動
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号へ更新する
-- [ ] PR 作成
-  - メモ: PR 作成時に URL と todo-auto-complete の結果を記録する
+- [x] PR 作成
+  - メモ: PR #227 https://github.com/yurake/pptx_generator/pull/227（2025-10-21 完了）
 
 ## メモ
