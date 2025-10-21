@@ -26,7 +26,7 @@ roadmap_item: RM-031 Analyzer マッピング補完連動
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号へ更新する
 - [ ] PR 作成
   - メモ: PR 作成時に URL と todo-auto-complete の結果を記録する
