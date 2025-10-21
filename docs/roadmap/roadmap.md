@@ -483,10 +483,11 @@ flowchart TB
 - ゴール: レンダリング監査ログと Analyzer 出力を突合し、CI・通知チャネルで品質アラートを自動配信する。
 - 対象工程: 6（PPTX レンダリング）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
-- 期待成果: Analyzer と監査ログの突合による通知連携、LibreOffice / Polisher 実行後の Analyzer 再走、改善度メトリクスの自動算出。
+- 参照ノート: [docs/notes/20251021-rm032-monitoring-integration.md](../notes/20251021-rm032-monitoring-integration.md)
+- 状況: 進行中（2025-10-21 更新）
+- 期待成果: Analyzer と監査ログの突合による通知連携、LibreOffice / Polisher 実行後の Analyzer 再走、改善度メトリクスの自動算出、`monitoring_report.json` / `monitoring_summary` を CI から参照可能にする。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-026（レンダリング監査統合）、RM-014（自動補正・仕上げ統合）、RM-020（PDF 自動生成対応）。
-- 次のアクション: 通知チャネル PoC の設計、再解析ジョブのスケジュール定義、CI ブリッジロジックのプロトタイプ作成。
+- 次のアクション: 通知チャネル PoC の設計（Slack / Teams 連携）、CI で `monitoring_report.json` を検証するワークフロー整備、改善度メトリクスの可視化ダッシュボード検討。
 
 <a id="rm-033"></a>
 ### RM-033 パイプライン工程3/4独立化準備

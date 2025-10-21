@@ -6,6 +6,7 @@ from .content_approval import (ContentApprovalError, ContentApprovalOptions,
                                ContentApprovalStep)
 from .draft_structuring import DraftStructuringOptions, DraftStructuringStep
 from .mapping import MappingOptions, MappingStep
+from .monitoring import MonitoringIntegrationOptions, MonitoringIntegrationStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
 from .polisher import PolisherError, PolisherOptions, PolisherStep
 from .renderer import RenderingOptions, SimpleRendererStep
@@ -35,6 +36,8 @@ __all__ = [
     "PolisherError",
     "PolisherOptions",
     "PolisherStep",
+    "MonitoringIntegrationOptions",
+    "MonitoringIntegrationStep",
     "RenderingAuditOptions",
     "RenderingAuditStep",
     "SimpleAnalyzerStep",
