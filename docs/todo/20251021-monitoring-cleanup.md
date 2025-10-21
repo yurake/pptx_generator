@@ -1,7 +1,7 @@
 ---
 目的: 監視ステップで PDF-only クリーンアップが早期 return 時も実行されるよう修正し、テストで再発防止を図る
 関連ブランチ: feat/rm-032-monitoring
-関連Issue: 未作成
+関連Issue: #228
 roadmap_item: RM-032 Analyzer レンダリング監視統合
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-032 Analyzer レンダリング監視統合
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 確定後に番号を反映
 - [ ] PR 作成
   - メモ: PR #226 の更新予定、ワークフロー結果を確認
