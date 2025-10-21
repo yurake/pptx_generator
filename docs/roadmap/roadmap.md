@@ -50,15 +50,15 @@ flowchart TB
         RM010["RM-010<br/>テンプレート仕様<br/>エクスポート<br/>(完了)"]
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
-        RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(未着手)"]
+        RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
         direction TB
         ST3_ANCHOR(( ))
         RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
-        RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(未着手)"]
-        RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(未着手)"]
+        RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(完了)"]
+        RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(完了)"]
     end
 
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
@@ -76,7 +76,7 @@ flowchart TB
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
         RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
         RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(完了)"]
-        RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(未着手)"]
+        RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(完了)"]
     end
 
     subgraph ST6["Stage 6: レンダリング・仕上げ"]
@@ -473,10 +473,10 @@ flowchart TB
 - ゴール: マッピング結果に Analyzer 警告を併記し、AI 補完やフォールバック制御のトリガーに活用する。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 状況: 未着手（2025-10-16 追加）
+- 状況: 完了（2025-10-21 更新）
 - 期待成果: `mapping_log.json` への Analyzer 情報追加、`font_min` や `contrast_low` に基づく補完トリガー、自動フォローアップ候補の生成。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、RM-025（マッピング補完エンジン）。
-- 次のアクション: 補完ルールと Analyzer 指摘のマッピング整理、マッピングログ拡張設計、AI 補完シミュレーションの検証計画立案。
+- 進捗: mapping_log.json に Analyzer 件数サマリおよびスライド別指摘リストを追加し、SimpleAnalyzerStep から自動連携する実装を追加。ユニット／インテグレーションテストを更新済み。
 
 <a id="rm-032"></a>
 ### RM-032 Analyzer レンダリング監視統合

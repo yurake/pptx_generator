@@ -33,7 +33,7 @@
 
 ## 出力
 - `rendering_ready.json`: スライド配列、`layout_id`, `elements[]`, `meta`（元 `JobSpec` の `job_meta` / `job_auth` を含む）。
-- `mapping_log.json`: 候補スコア一覧、補完箇所、フォールバック履歴、警告。
+- `mapping_log.json`: 候補スコア一覧、補完箇所、フォールバック履歴、警告、Analyzer 指摘サマリ（件数とスライド別詳細）。
 - `fallback_report.json`（任意）: 失敗スライドの対応指針を列挙。
 
 ## エラーハンドリング
@@ -42,8 +42,8 @@
 - Fallback 全失敗 → 該当スライドを付録へ移し、後工程に警告付きで引き渡す。
 
 ## モニタリング
-- メトリクス: フォールバック発生率、AI 補完適用率、mapping 所要時間。
-- ログ: スコアの生データ、PH 割付結果、AI Patch 詳細。
+- メトリクス: フォールバック発生率、AI 補完適用率、mapping 所要時間、Analyzer 指摘件数（種別・重大度）。
+- ログ: スコアの生データ、PH 割付結果、AI Patch 詳細、Analyzer サマリの差分。
 
 ## テスト方針
 - ユニット: スコアリング、割付、フォールバック各モジュールのロジックテスト。
@@ -60,6 +60,7 @@
 - サンプル: [docs/design/schema/samples/rendering_ready.jsonc](../schema/samples/rendering_ready.jsonc), [docs/design/schema/samples/mapping_log.jsonc](../schema/samples/mapping_log.jsonc)
 
 ## 現行実装の補足
-- 2025-10-17 実装では、レイアウトスコアリングをヒューリスティック（用途タグ、容量、表許容、直前レイアウトとの重複抑制）で計算し、ドラフト未生成時はジョブ仕様から簡易ドラフトを構築して欠落を補う。
+- 2025-10-21 時点のスコアリングはヒューリスティック（用途タグ、容量、表許容、直前レイアウトとの重複抑制）で計算し、ドラフト未生成時はジョブ仕様から簡易ドラフトを構築して欠落を補う。
 - 容量超過時は `shrink_text` フォールバックを適用し、本文を `max_lines` に合わせて短縮する。変更内容は JSON Patch として `mapping_log.json` に記録され、`fallback_report.json` にサマリを出力する。
 - AI 補完インターフェースは JSON Patch ログを前提としたスタブ実装（ルールベース補正）であり、将来的な LLM 置換を想定した API 形状にしている。
+- 工程6の Analyzer 実行後に `mapping_log.json` を再度読み込み、指摘件数サマリとスライド別エントリを追記することで、HITL や補完ルールからのフィードバックループを確保している。
