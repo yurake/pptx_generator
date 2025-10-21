@@ -26,7 +26,7 @@ roadmap_item: RM-032 Analyzer レンダリング監視統合
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下（更新不要を確認）
   - [x] README.md / AGENTS.md（更新不要を確認）
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後に更新する。
 - [ ] PR 作成
   - メモ: PR 作成時に todo-auto-complete の動作を確認する。
