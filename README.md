@@ -120,7 +120,7 @@
   ```
 
 ### 工程 5: マッピング
-- `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
+- `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。`mapping_log.json` には Analyzer 指摘サマリ（件数集計・スライド別詳細）が追加されており、補完やフォールバック制御の判断材料として活用します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
 - 実行手順:
   ```bash
   uv run pptx mapping samples/json/sample_spec.json \
@@ -159,7 +159,7 @@
 - `content_meta.json`: 承認済みコンテンツ／レビュー ログのハッシュや件数をまとめたメタ情報
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `rendering_log.json`: レンダリング監査結果（検出済み要素・警告コード・空プレースホルダー件数）
-- `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ
+- `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完ログ、Analyzer 指摘サマリ（件数・スライド別内訳）
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）
 - `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、レンダリング警告サマリ、`pdf_export` / `polisher` メタ（リトライ回数・処理時間・サマリ JSON）。
 - `draft_draft.json` / `draft_approved.json`: Draft API / CLI が利用する章構成データ（`--draft-output` ディレクトリに保存）

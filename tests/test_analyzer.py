@@ -22,11 +22,14 @@ from pptx_generator.models import (
 )
 from pptx_generator.pipeline import (
     AnalyzerOptions,
+    MappingOptions,
+    MappingStep,
     PipelineContext,
     RenderingOptions,
     SimpleAnalyzerStep,
     SimpleRendererStep,
 )
+from pptx_generator.rendering_ready import rendering_ready_to_jobspec
 
 
 def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
@@ -137,6 +140,78 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
     contrast_issue = next(issue for issue in payload["issues"] if issue["type"] == "contrast_low")
     assert contrast_issue["metrics"]["required_ratio"] == pytest.approx(4.5)
     assert contrast_issue["metrics"]["font_size_pt"] == pytest.approx(12.0)
+
+
+def test_analyzer_updates_mapping_log(tmp_path) -> None:
+    spec = JobSpec(
+        meta=JobMeta(
+            schema_version="1.1",
+            title="Analyzer 連携テスト",
+            client="Zeta",
+            author="営業部",
+            created_at="2025-10-21",
+            theme="corporate",
+        ),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-1",
+                layout="Title and Content",
+                title="概要",
+                bullets=[
+                    _group(
+                        SlideBullet(
+                            id="bullet-1",
+                            text="最初のポイント",
+                            level=0,
+                        )
+                    )
+                ],
+            )
+        ],
+    )
+
+    mapping_context = PipelineContext(spec=spec, workdir=tmp_path)
+    mapping_step = MappingStep(MappingOptions(output_dir=tmp_path))
+    mapping_step.run(mapping_context)
+
+    rendering_ready = mapping_context.artifacts["rendering_ready"]
+    render_spec = rendering_ready_to_jobspec(rendering_ready)
+    render_context = PipelineContext(
+        spec=render_spec,
+        workdir=tmp_path,
+        artifacts=dict(mapping_context.artifacts),
+    )
+
+    renderer = SimpleRendererStep(RenderingOptions(output_filename="rm031.pptx"))
+    renderer.run(render_context)
+
+    analyzer = SimpleAnalyzerStep(
+        AnalyzerOptions(
+            min_font_size=40.0,
+            default_font_size=18.0,
+            max_bullet_level=3,
+            default_font_color="#777777",
+            preferred_text_color="#005BAC",
+            background_color="#FFFFFF",
+        )
+    )
+    analyzer.run(render_context)
+
+    mapping_log_path = tmp_path / "mapping_log.json"
+    payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+
+    slide_summary = payload["slides"][0]["analyzer"]
+    assert slide_summary["issue_count"] >= 1
+    assert "font_min" in slide_summary["issue_counts_by_type"]
+    issue_types = {issue["issue_type"] for issue in slide_summary["issues"]}
+    assert "font_min" in issue_types
+    target_slide_ids = {issue["target"].get("slide_id") for issue in slide_summary["issues"]}
+    assert spec.slides[0].id in target_slide_ids
+
+    meta = payload["meta"]
+    assert meta["analyzer_issue_count"] == slide_summary["issue_count"]
+    assert meta["analyzer_issue_counts_by_type"]["font_min"] == slide_summary["issue_counts_by_type"]["font_min"]
 
 
 def test_margin_check_respects_actual_slide_size(tmp_path) -> None:

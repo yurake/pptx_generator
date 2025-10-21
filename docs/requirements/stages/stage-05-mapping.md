@@ -11,7 +11,7 @@
 
 ## 出力
 - `rendering_ready.json`: スライドごとの `layout_id`、PH → 要素マッピング、メタ情報（`job_meta` / `job_auth` を含む）。
-- `mapping_log.json`: スコアリング結果、AI 補完箇所、フォールバック履歴。
+- `mapping_log.json`: スコアリング結果、AI 補完箇所、フォールバック履歴、Analyzer 指摘サマリ（件数集計とスライド別一覧）。
 - 失敗レポート: 未割付要素や収容不能スライドの一覧。
 
 ## ワークフロー
@@ -25,6 +25,7 @@
 - 全スライドが `layout_id` を持ち、必須 PH が埋まっている。
 - `rendering_ready.json` がスキーマ検証を通過し、空要素は意図的であるとログに記載される。
 - フォールバック適用時に理由が `mapping_log.json` に記録されている。
+- Analyzer 指摘が `mapping_log.json` のメタ（件数サマリ）およびスライド単位サマリに反映され、後続工程で参照できる。
 - AI 補完結果が監査ログに明示され、後追い確認が可能である。
 - フォールバックが発生した場合は `fallback_report.json` を併産し、該当スライドと理由を一覧化する。
 
@@ -39,7 +40,8 @@
 - `rendering_ready.json` スキーマ検証ツールと失敗時ガイド生成。
 
 ## 実装メモ
-- 2025-10-17 時点では、`shrink_text` フォールバック（本文行数の縮約）をルールベースで提供し、その結果を JSON Patch 形式で `mapping_log.json` に記録する。AI モデル連携は将来拡張予定。
+- 2025-10-21 時点では、`shrink_text` フォールバック（本文行数の縮約）をルールベースで提供し、その結果を JSON Patch 形式で `mapping_log.json` に記録する。AI モデル連携は将来拡張予定。
+- Analyzer は工程6で走査した結果を再度 `mapping_log.json` に書き戻し、フォールバック履歴と合わせて可観測性を確保する。
 - `layouts.jsonl` が未指定の場合はドラフト情報を自動補完し、スコアリングはヒューリスティックに実行する。
 - 生成物は `rendering_ready.json`、`mapping_log.json`、必要に応じて `fallback_report.json` を CLI 出力ディレクトリ直下へ保存する。
 - CLI では `uv run pptx mapping <spec.json>` が工程5の実行パスであり、`pptx gen` 実行時もこのコマンドを内部的に呼び出す。

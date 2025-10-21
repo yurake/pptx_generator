@@ -93,9 +93,10 @@
 
 ## 運用フロー
 1. `analysis.json` を参照し、`issues` の `target.slide_id` / `element_id` を起点に差戻し対象を抽出する。
-2. 自動修正可能な `fixes` は Refiner または HITL で適用可否を判断する。適用時は `audit_log.json` に記録する。
-3. テンプレ構造の問題が疑われる場合は `docs/notes/20251015-pptx-analyzer.md` の既知課題を確認し、必要に応じて `docs/todo/` にフォローアップタスクを追加する。
-4. 重大な診断結果は Issue (#162 など) へ転記し、再発防止の設計変更を検討する。
+2. `mapping_log.json` の `meta.analyzer_issue_count` と各スライドの `analyzer` セクションを確認し、`font_min` や `contrast_low` など補完トリガー候補の優先度を整理する。
+3. 自動修正可能な `fixes` は Refiner または HITL で適用可否を判断する。適用時は `audit_log.json` に記録する。
+4. テンプレ構造の問題が疑われる場合は `docs/notes/20251015-pptx-analyzer.md` の既知課題を確認し、必要に応じて `docs/todo/` にフォローアップタスクを追加する。
+5. 重大な診断結果は Issue (#162 など) へ転記し、再発防止の設計変更を検討する。
 
 ## トラブルシューティング
 - **`analysis.json` が生成されない**: レンダリングに失敗している可能性がある。`Audit` のログや CLI エラーを確認し、テンプレや spec の整合を見直す。

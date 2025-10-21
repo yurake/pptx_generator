@@ -477,6 +477,24 @@ class MappingAIPatch(BaseModel):
     patch: list[JsonPatchOperation] = Field(default_factory=list)
 
 
+class MappingLogAnalyzerIssue(BaseModel):
+    issue_id: str
+    issue_type: str
+    severity: str
+    message: str
+    target: dict[str, Any] = Field(default_factory=dict)
+    metrics: dict[str, Any] = Field(default_factory=dict)
+    fix_type: str | None = None
+    fix_payload: dict[str, Any] | None = None
+
+
+class MappingLogAnalyzerSummary(BaseModel):
+    issue_count: int = 0
+    issue_counts_by_type: dict[str, int] = Field(default_factory=dict)
+    issue_counts_by_severity: dict[str, int] = Field(default_factory=dict)
+    issues: list[MappingLogAnalyzerIssue] = Field(default_factory=list)
+
+
 class MappingLogSlide(BaseModel):
     ref_id: str
     selected_layout: str
@@ -484,12 +502,18 @@ class MappingLogSlide(BaseModel):
     fallback: MappingFallbackState = Field(default_factory=MappingFallbackState)
     ai_patch: list[MappingAIPatch] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    analyzer: MappingLogAnalyzerSummary = Field(
+        default_factory=MappingLogAnalyzerSummary
+    )
 
 
 class MappingLogMeta(BaseModel):
     mapping_time_ms: int | None = None
     fallback_count: int = 0
     ai_patch_count: int = 0
+    analyzer_issue_count: int = 0
+    analyzer_issue_counts_by_type: dict[str, int] = Field(default_factory=dict)
+    analyzer_issue_counts_by_severity: dict[str, int] = Field(default_factory=dict)
 
 
 class MappingLog(BaseModel):

@@ -12,6 +12,9 @@ TASK_RE = re.compile(r"^- \[( |x|X)\] (.*?)(?:\s*\(#?(\d+)\)|\s+#(\d+))?\s*$")
 RELATED_ISSUE_LINE_RE = re.compile(r"^(\s*関連Issue:\s*)(.*)\s*$")
 FRONT_MATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
+RELATED_ISSUE_TASK_RE = re.compile(
+    r"^(\s*-\s*\[)( |x|X)(\]\s*関連Issue 行の更新\b.*)$"
+)
 
 
 def read_text(path: str) -> str:
@@ -228,6 +231,26 @@ def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bo
     return updated, changed
 
 
+def ensure_related_issue_task_checked(content: str) -> Tuple[str, bool]:
+    lines = content.splitlines()
+    changed = False
+    for idx, line in enumerate(lines):
+        m = RELATED_ISSUE_TASK_RE.match(line)
+        if not m:
+            continue
+        if m.group(2).lower() == "x":
+            break
+        lines[idx] = f"{m.group(1)}x{m.group(3)}"
+        changed = True
+        break
+    if not changed:
+        return content, False
+    updated = "\n".join(lines)
+    if content.endswith("\n"):
+        updated += "\n"
+    return updated, True
+
+
 def normalize_repo_path(path: str) -> str:
     rel = os.path.relpath(path, start=".")
     return rel.replace(os.sep, "/")
@@ -434,8 +457,9 @@ def main():
             args.parent_label,
         )
 
-        new_content, changed = upsert_related_issue_number_line(content, issue["number"])
-        if changed:
+        new_content, related_changed = upsert_related_issue_number_line(content, issue["number"])
+        new_content, task_checked = ensure_related_issue_task_checked(new_content)
+        if related_changed or task_checked:
             write_text(path, new_content)
 
         action = "created" if created else ("updated" if updates else "unchanged")

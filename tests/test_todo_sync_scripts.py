@@ -96,6 +96,27 @@ def test_upsert_related_issue_number_line_inserts_when_missing(todo_to_issues):
     assert lines[3] == "関連Issue: #55"
 
 
+def test_ensure_related_issue_task_checked_marks_checkbox(todo_to_issues):
+    content = textwrap.dedent(
+        """
+        - [ ] ブランチ作成と初期コミット
+        - [ ] 関連Issue 行の更新
+        """
+    ).lstrip()
+
+    updated, changed = todo_to_issues.ensure_related_issue_task_checked(content)
+
+    assert changed is True
+    assert "- [x] 関連Issue 行の更新" in updated
+
+
+def test_ensure_related_issue_task_checked_no_change_when_already_checked(todo_to_issues):
+    content = "- [x] 関連Issue 行の更新"
+    updated, changed = todo_to_issues.ensure_related_issue_task_checked(content)
+    assert changed is False
+    assert updated == content
+
+
 def test_collect_todo_paths_excludes_template(tmp_path, todo_to_issues):
     todo_dir = tmp_path / "docs" / "todo"
     (todo_dir / "archive").mkdir(parents=True)
