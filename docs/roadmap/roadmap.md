@@ -40,6 +40,7 @@ flowchart TB
         RM016["RM-016<br/>テンプレート命名整合性<br/>チェッカー<br/>(完了)"]
         RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
+        RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -66,6 +67,7 @@ flowchart TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
+        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(未着手)"]
     end
 
     subgraph ST5["Stage 5: マッピング"]
@@ -88,6 +90,7 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(完了)"]
+        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(未着手)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
     end
@@ -512,6 +515,45 @@ flowchart TB
 - 依存: RM-018（レンダラー リッチコンテンツ対応）、RM-019（CLI ツールチェーン整備）、RM-014（自動補正・仕上げ統合）。
 - 完了済み: Renderer への段落スタイル適用（2025-10-20）、対応テストの追加。
 
+<a id="rm-035"></a>
+### RM-035 テンプレートリリース監査強化
+- ゴール: テンプレートリリース時の差分検出・品質指標・実行環境を一体管理し、テンプレ受け渡しの信頼性と再現性を高める。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - テンプレ差分アルゴリズムと `template_release.json` / `release_report.json` への Analyzer 指標集約、品質推移の可視化。
+  - ゴールデンサンプル自動生成・再実行フローと廃棄ポリシーを runbook 化し、CI / リリース前レビューへ組み込む。
+  - LibreOffice / Open XML Polisher など実行環境のバージョン固定戦略を策定し、監査ログに実行メタを残す。
+- 依存: RM-021（テンプレ資産監査パイプライン）、RM-027（Analyzer テンプレ監査メトリクス整備）、RM-014（自動補正・仕上げ統合）、運用ポリシー文書（`docs/policies/config-and-templates.md`）。
+
+<a id="rm-036"></a>
+### RM-036 ドラフト構成インテリジェンス拡張
+- ゴール: layout_hint 候補提示・章テンプレ・差戻し理由テンプレートを体系化し、HITL 構成作業の判断と手戻りを最小化する。
+- 対象工程: 4（ドラフト構成設計）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 章テンプレプリセットと layout_hint AI 補助の設計／PoC により、候補提示を自動化し承認時間を短縮。
+  - Analyzer 指摘件数や `layout_consistency` を Draft ダッシュボードへ連携し、構成見直しの優先度を可視化。
+  - 差戻し理由テンプレートと付録判断ルールを整理し、HITL 作業の再作業コストを標準化。
+- 依存: RM-024（ドラフト構成承認フロー整備）、RM-031（Analyzer マッピング補完連動）、RM-005（プレゼンストーリーモデラー）、HITL 運用ポリシー。
+
+<a id="rm-037"></a>
+### RM-037 パイプライン疎結合 CLI 再設計
+- ゴール: `pptx mapping` / `pptx render` を分離し、`rendering_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
+- 対象工程: 5（マッピング）・6（レンダリング）
+- 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
+  - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
+  - CI / ローカル双方で工程 5→6 の個別再実行ワークフローとトラブルシュート手順を整備。
+- 依存: RM-025（マッピング補完エンジン）、RM-026（レンダリング監査統合）、RM-033（パイプライン工程3/4独立化準備）、CLI 運用ポリシー（`docs/AGENTS.md`）。
+
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
@@ -526,3 +568,4 @@ flowchart TB
 - 2025-10-09: RM-002 を再開し、サンプル拡充タスクと参照ドキュメントを追記。
 - 2025-10-09: RM-012〜RM-014 を追加し、通知チャネル整備のバックログ情報を更新。
 - 2025-10-20: RM-034 を進行中へ更新し、Renderer で段落スタイル適用完了を記録。
+- 2025-10-23: RM-035 / RM-036 / RM-037 を追加し、新テーマを未着手として登録。

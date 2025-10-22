@@ -21,7 +21,7 @@ roadmap_item: RM-000 新テーマ検討
   - メモ: 適用外。
 - [ ] ドキュメント更新
   - メモ: 新テーマ決定後にロードマップや関連ドキュメントを更新する。
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
