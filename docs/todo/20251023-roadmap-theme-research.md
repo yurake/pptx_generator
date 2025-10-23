@@ -27,12 +27,16 @@ roadmap_item: RM-000 新テーマ検討
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
+<<<<<<< Updated upstream
 - [ ] 関連Issue 行の更新
 =======
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+>>>>>>> Stashed changes
+=======
 - [x] 関連Issue 行の更新
 >>>>>>> Stashed changes
   - メモ: Issue 作成後に番号を記載する。
