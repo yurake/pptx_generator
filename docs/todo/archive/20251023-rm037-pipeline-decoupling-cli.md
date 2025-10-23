@@ -30,8 +30,8 @@ roadmap_item: RM-037 パイプライン疎結合 CLI 再設計
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: #234 を参照（`gh issue list` は TLS エラー継続のためブラウザで確認）。
-- [ ] PR 作成
-  - メモ: PR 作成時に todo-auto-complete の挙動を確認する
+- [x] PR 作成
+  - メモ: PR #236 https://github.com/yurake/pptx_generator/pull/236（2025-10-23 完了）
 
 ## メモ
 - 依存テーマはすべて完了済み。CLI 分割は現行フロー維持が前提。
