@@ -27,8 +27,7 @@ roadmap_item: RM-000 新テーマ検討
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-- [ ] PR 作成
-  - メモ: PR 作成時に番号と URL を記録する。
+- [x] PR 作成
 
 ## メモ
 - 2025-10-23: RM-035〜RM-042 をロードマップへ追加し、テンプレ拡充・入力多様化・生成AI活用テーマを未着手で登録。
