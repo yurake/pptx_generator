@@ -1,7 +1,7 @@
 ---
 目的: コンテンツ多形式インポート基盤の実装準備と段階的構築
 関連ブランチ: feat/rm-039-multi-format-import
-関連Issue: 未作成
+関連Issue: #232
 roadmap_item: RM-039 コンテンツ多形式インポート
 ---
 
@@ -40,7 +40,7 @@ roadmap_item: RM-039 コンテンツ多形式インポート
     - 担当: Codex / 完了条件: 運用手順を更新
   - [ ] README.md / AGENTS.md
     - 担当: Codex / 完了条件: 対応が必要な場合のみ更新
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - 担当: Codex / 完了条件: 対応する Issue 番号を確認し front matter を更新
   - メモ: `gh issue list` は TLS エラーで未取得。再試行または代替手段を検討
 - [ ] PR 作成
