@@ -40,6 +40,8 @@ flowchart TB
         RM016["RM-016<br/>テンプレート命名整合性<br/>チェッカー<br/>(完了)"]
         RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
+        RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(未着手)"]
+        RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -59,6 +61,9 @@ flowchart TB
         RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
         RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(完了)"]
         RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(完了)"]
+        RM039["RM-039<br/>コンテンツ多形式<br/>インポート<br/>(未着手)"]
+        RM040["RM-040<br/>コンテンツ生成AI<br/>オーケストレーション<br/>(未着手)"]
+        RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
@@ -66,6 +71,8 @@ flowchart TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
+        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(未着手)"]
+        RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
     end
 
     subgraph ST5["Stage 5: マッピング"]
@@ -88,6 +95,7 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(完了)"]
+        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(未着手)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
     end
@@ -512,6 +520,110 @@ flowchart TB
 - 依存: RM-018（レンダラー リッチコンテンツ対応）、RM-019（CLI ツールチェーン整備）、RM-014（自動補正・仕上げ統合）。
 - 完了済み: Renderer への段落スタイル適用（2025-10-20）、対応テストの追加。
 
+<a id="rm-035"></a>
+### RM-035 テンプレートリリース監査強化
+- ゴール: テンプレートリリース時の差分検出・品質指標・実行環境を一体管理し、テンプレ受け渡しの信頼性と再現性を高める。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - テンプレ差分アルゴリズムと `template_release.json` / `release_report.json` への Analyzer 指標集約、品質推移の可視化。
+  - ゴールデンサンプル自動生成・再実行フローと廃棄ポリシーを runbook 化し、CI / リリース前レビューへ組み込む。
+  - LibreOffice / Open XML Polisher など実行環境のバージョン固定戦略を策定し、監査ログに実行メタを残す。
+- 依存: RM-021（テンプレ資産監査パイプライン）、RM-027（Analyzer テンプレ監査メトリクス整備）、RM-014（自動補正・仕上げ統合）、運用ポリシー文書（`docs/policies/config-and-templates.md`）。
+
+<a id="rm-036"></a>
+### RM-036 ドラフト構成インテリジェンス拡張
+- ゴール: layout_hint 候補提示・章テンプレ・差戻し理由テンプレートを体系化し、HITL 構成作業の判断と手戻りを最小化する。
+- 対象工程: 4（ドラフト構成設計）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 章テンプレプリセットと layout_hint AI 補助の設計／PoC により、候補提示を自動化し承認時間を短縮。
+  - Analyzer 指摘件数や `layout_consistency` を Draft ダッシュボードへ連携し、構成見直しの優先度を可視化。
+  - 差戻し理由テンプレートと付録判断ルールを整理し、HITL 作業の再作業コストを標準化。
+- 依存: RM-024（ドラフト構成承認フロー整備）、RM-031（Analyzer マッピング補完連動）、RM-005（プレゼンストーリーモデラー）、HITL 運用ポリシー。
+
+<a id="rm-037"></a>
+### RM-037 パイプライン疎結合 CLI 再設計
+- ゴール: `pptx mapping` / `pptx render` を分離し、`rendering_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
+- 対象工程: 5（マッピング）・6（レンダリング）
+- 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
+  - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
+  - CI / ローカル双方で工程 5→6 の個別再実行ワークフローとトラブルシュート手順を整備。
+- 依存: RM-025（マッピング補完エンジン）、RM-026（レンダリング監査統合）、RM-033（パイプライン工程3/4独立化準備）、CLI 運用ポリシー（`docs/AGENTS.md`）。
+
+<a id="rm-038"></a>
+### RM-038 テンプレートパターン拡充
+- ゴール: `templates/templates.pptx` にブランド準拠のページパターンを追加し、工程2・5・6 のレイアウト選択肢を広げる。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 新規レイアウト（タイムライン、2軸比較、ファクトシート等）の設計とテンプレ反映、命名規約ガイド更新。
+  - `layout-validate` ゴールデン更新、`layouts.jsonl` / `diagnostics.json` におけるヒント拡張、Analyzer スナップショット整備。
+  - サンプル spec・マッピングスコアリング調整・レンダリング検証の拡充。
+- 依存: RM-021（テンプレ資産監査パイプライン）、RM-022（レイアウト解析検証強化）、RM-025（マッピング補完エンジン）。
+
+<a id="rm-039"></a>
+### RM-039 コンテンツ多形式インポート
+- ゴール: 工程3の入力を JSON に加えテキスト・PDF・URL へ対応させ、安全に取得・正規化できるパイプラインを整備する。
+- 対象工程: 3（コンテンツ正規化）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - テキスト・PDF 変換と URL フェッチャーの実装、フォーマット別バリデーション、取得履歴を含む監査ログ。
+  - 共通中間フォーマットへの正規化およびメタ情報（出所・取得時刻・利用範囲）の付与。
+  - セキュリティ・認証ポリシーと失敗時のリトライ／通知手順の整備。
+- 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-017（パイプライン機能拡張）、運用ポリシー（データ取扱い）。
+
+<a id="rm-040"></a>
+### RM-040 コンテンツ生成AIオーケストレーション
+- ゴール: 生成AIを用いたスライド候補整形を目的別ポリシーで制御し、工程3での自動化とレビュー連携を強化する。
+- 対象工程: 3（コンテンツ正規化）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-content-normalization.md](../design/stages/stage-03-content-normalization.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 提案／報告などユースケース別ポリシー定義とプロンプトテンプレート管理、適用状況の監査ログ化。
+  - LLM 生成結果と Review Engine / HITL 承認の差分管理、再生成ワークフローの自動化。
+  - ポリシー更新フローと品質指標（レビューリードタイム・差戻し率）計測の仕組み。
+- 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-029（Analyzer Review Engine 連携）、LLM ガバナンス。
+
+<a id="rm-041"></a>
+### RM-041 レイアウト生成AI＋HITL ハイブリッド
+- ゴール: 工程4で生成AIが章立て・レイアウト配置を提案し、テキストサマリ出力と自然言語指示による修正ループを提供する。
+- 対象工程: 4（ドラフト構成設計）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 生成AIによる章立て・ページ順・layout_hint 提案と、ページ内配置を文章化したサマリ出力。
+  - ユーザーが自然言語で修正指示を出し、AI がレイアウト差分を適用する対話 API／UI。
+  - HITL 承認ログとの整合（Before/After 差分記録）と再レビューの優先度付け。
+- 依存: RM-024（ドラフト構成承認フロー整備）、RM-036（ドラフト構成インテリジェンス拡張）、LLM 実行基盤、Analyzer 連携。
+
+<a id="rm-042"></a>
+### RM-042 情報ギャップインテリジェンス
+- ゴール: スライド候補生成前に不足情報を検知し、ユーザーへのヒアリングや追記支援を自動化する。
+- 対象工程: 3（コンテンツ正規化）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-10-23 追加）
+- 期待成果:
+  - 必須情報チェックリストと生成AIによる質問テンプレートの実装、回答を `content_draft.json` へ反映するフロー。
+  - ヒアリング履歴・再問い合わせ管理と承認ログとの連携、ユーザー通知チャネルの整備。
+  - オフライン承認（CLI）との統合および監査証跡の保持。
+- 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）、LLM 基盤。
+
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
@@ -526,3 +638,4 @@ flowchart TB
 - 2025-10-09: RM-002 を再開し、サンプル拡充タスクと参照ドキュメントを追記。
 - 2025-10-09: RM-012〜RM-014 を追加し、通知チャネル整備のバックログ情報を更新。
 - 2025-10-20: RM-034 を進行中へ更新し、Renderer で段落スタイル適用完了を記録。
+- 2025-10-23: RM-035〜RM-042 を追加し、テンプレ監査強化・テンプレ拡充・入力多様化・生成AI活用テーマを未着手として登録。
