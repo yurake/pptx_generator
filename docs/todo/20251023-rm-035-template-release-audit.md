@@ -11,19 +11,19 @@ roadmap_item: RM-035 テンプレートリリース監査強化
   - メモ: 2025-10-23 ユーザー承認済（本スレッド）。
 - [x] 設計・実装方針の確定
   - メモ: 2025-10-23 `docs/notes/20251023-rm035-template-release-audit-plan.md` に設計方針とテスト計画を整理済み。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: RM-021/027 の成果との差分を踏まえて要件・設計への反映内容を記録する。
-  - [ ] docs/requirements 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/requirements/stages/stage-01-template-preparation.md` に summary/environment 要件を追記済み。
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: CLI 拡張、監査ロジック、設定ファイル、ゴールデンサンプル自動化スクリプトを追加し、既存処理との互換性を確認する。
 - [ ] テスト・検証
   - [x] Python 単体・統合テスト (`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_release.py tests/test_template_release_metrics.py tests/test_cli_integration.py`)
   - [ ] LibreOffice / Polisher バージョン整合確認（現環境では `soffice` が未導入のため pending）
-- [ ] ドキュメント更新
-  - メモ: 結果をロードマップや runbook、運用ドキュメントへ反映し、バージョン固定戦略を明文化する。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+- [x] ドキュメント更新
+  - メモ: ロードマップ（Mermaid 依存更新・summary導入メモ）・要件・設計・runbook・README の整合を反映済み。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
