@@ -1,7 +1,7 @@
 ---
 目的: `pptx mapping` / `pptx render` の分離と監査性向上を実現する
 関連ブランチ: feat/rm037-pipeline-decouple
-関連Issue: 未作成
+関連Issue: #234
 roadmap_item: RM-037 パイプライン疎結合 CLI 再設計
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-037 パイプライン疎結合 CLI 再設計
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: TLS 証明書エラーで `gh issue list` の取得ができず未調査、後で再試行する
 - [ ] PR 作成
   - メモ: PR 作成時に todo-auto-complete の挙動を確認する
