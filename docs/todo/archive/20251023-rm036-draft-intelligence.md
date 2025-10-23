@@ -28,7 +28,7 @@ roadmap_item: RM-036 ドラフト構成インテリジェンス拡張
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue `#231` と連携済み（2025-10-23）。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録し、ワークフロー動作状況も残す。
+- [x] PR 作成
+  - メモ: PR #235 https://github.com/yurake/pptx_generator/pull/235（2025-10-23 完了）
 
 ## メモ
