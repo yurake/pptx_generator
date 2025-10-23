@@ -302,9 +302,12 @@
 
 生成物:
 - `template_release.json`: テンプレ受け渡しメタ情報と診断結果
+  - `summary` にレイアウト数・アンカー数・警告/エラー件数・Analyzer 指標を集計
+  - `environment` に Python / CLI / LibreOffice / .NET SDK のバージョンメタを記録
 - `release_report.json`: 過去バージョンとの差分レポート（`--baseline-release` 時）
 - `golden_runs.json`／`golden_runs/<spec名>/`: ゴールデンサンプル検証結果 (`--golden-spec` 指定時)
 - ゴールデンサンプルで失敗がある場合は exit code 6 で終了します
+- `--baseline-release` を指定し `--golden-spec` を省略した場合、ベースラインの `golden_runs` に含まれる spec を自動で再実行します（見つからない spec は警告扱い）。
 
 #### `pptx layout-validate`
 

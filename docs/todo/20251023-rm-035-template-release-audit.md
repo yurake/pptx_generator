@@ -9,23 +9,23 @@ roadmap_item: RM-035 テンプレートリリース監査強化
   - メモ: 2025-10-23 `main` から `feat/rm035-template-release-audit` を作成。初期コミットは後続で作成予定（現状差分は計画のみ）。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 2025-10-23 ユーザー承認済（本スレッド）。
-- [ ] 設計・実装方針の確定
-  - メモ: 差分アルゴリズム・Analyzer 指標集約・実行環境メタ付与の設計を整理する。
+- [x] 設計・実装方針の確定
+  - メモ: 2025-10-23 `docs/notes/20251023-rm035-template-release-audit-plan.md` に設計方針とテスト計画を整理済み。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: RM-021/027 の成果との差分を踏まえて要件・設計への反映内容を記録する。
   - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
-- [ ] 実装
+  - [x] docs/design 配下
+- [x] 実装
   - メモ: CLI 拡張、監査ロジック、設定ファイル、ゴールデンサンプル自動化スクリプトを追加し、既存処理との互換性を確認する。
-- [ ] テスト・検証
-  - メモ: `uv run pptx tpl-release` のリグレッションとゴールデンサンプル自動再実行フローの動作確認、単体テスト追加を実施する。
+- [x] テスト・検証
+  - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_release.py tests/test_template_release_metrics.py tests/test_cli_integration.py` を実行し 32 件パス。
 - [ ] ドキュメント更新
   - メモ: 結果をロードマップや runbook、運用ドキュメントへ反映し、バージョン固定戦略を明文化する。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新
   - メモ: Issue 作成後にフロントマターの `関連Issue` を `#xxx` 形式へ更新する。
 - [ ] PR 作成

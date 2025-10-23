@@ -75,5 +75,21 @@
       "warnings": [],
       "errors": []
     }
-  ]
+  ],
+  "summary": {
+    "layouts": 32,
+    "anchors": 168,
+    "placeholders": 104,
+    "warning_count": 2,
+    "error_count": 0,
+    "analyzer_issue_total": 5,
+    "analyzer_fix_total": 3
+  },
+  "environment": {
+    "python_version": "3.12.1",
+    "platform": "macOS-14.0-arm64",
+    "pptx_generator_version": "0.1.0",
+    "libreoffice_version": "LibreOffice 7.6.0.3",
+    "dotnet_sdk_version": "8.0.100"
+  }
 }
