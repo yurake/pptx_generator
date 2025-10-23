@@ -1,7 +1,7 @@
 ---
 目的: テンプレートリリース時の差分検出・品質指標・実行環境メタを統合し監査プロセスを強化する
 関連ブランチ: feat/rm035-template-release-audit
-関連Issue: 未作成
+関連Issue: #233
 roadmap_item: RM-035 テンプレートリリース監査強化
 ---
 
@@ -27,7 +27,7 @@ roadmap_item: RM-035 テンプレートリリース監査強化
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後にフロントマターの `関連Issue` を `#xxx` 形式へ更新する。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフロー未動作時は理由をメモする（手動チェック禁止）。
