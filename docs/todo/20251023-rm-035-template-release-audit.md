@@ -17,8 +17,9 @@ roadmap_item: RM-035 テンプレートリリース監査強化
   - [x] docs/design 配下
 - [x] 実装
   - メモ: CLI 拡張、監査ロジック、設定ファイル、ゴールデンサンプル自動化スクリプトを追加し、既存処理との互換性を確認する。
-- [x] テスト・検証
-  - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_release.py tests/test_template_release_metrics.py tests/test_cli_integration.py` を実行し 32 件パス。
+- [ ] テスト・検証
+  - [x] Python 単体・統合テスト (`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_release.py tests/test_template_release_metrics.py tests/test_cli_integration.py`)
+  - [ ] LibreOffice / Polisher バージョン整合確認（現環境では `soffice` が未導入のため pending）
 - [ ] ドキュメント更新
   - メモ: 結果をロードマップや runbook、運用ドキュメントへ反映し、バージョン固定戦略を明文化する。
   - [ ] docs/roadmap 配下
