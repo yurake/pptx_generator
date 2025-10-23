@@ -24,6 +24,7 @@
 - `docs/notes/`: 調査メモや議事録。短期的な共有事項はここに保存し、アーカイブ化が必要なら `docs/todo/` のメモにも記録する。
 - `docs/roadmap/`: 大項目 ToDo。テーマステータスを更新した場合は、関連する ToDo ファイルから相互リンクを張る。
 - `docs/todo/`: ToDo 管理。テンプレートに沿った更新ルールは `docs/todo/README.md` を参照。
+- `config/`: 章テンプレ辞書（`config/chapter_templates/`）や差戻し理由テンプレ（`config/return_reasons.json`）など、CLI で参照する設定を配置。更新時は対応する requirements/design/runbook へ根拠を記録する。
 
 ## 更新手順
 1. 追加・改訂する資料のカテゴリを決め、該当ディレクトリに Markdown ファイルを作成・編集する。
