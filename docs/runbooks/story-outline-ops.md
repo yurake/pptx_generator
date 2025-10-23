@@ -15,6 +15,7 @@
 3. HITL 承認 API を利用するツール（CLI など）で章・フェーズ表示を確認し、必要に応じて再割当を行う。差分はレビューコメントとして記録する。
 4. 承認後の `content_approved.json` を確認し、全カードにストーリー情報が保存されていること、章ごとのスライド数が骨子の想定範囲内であることをチェックする。
 5. 工程4 へ引き渡す前に `uv run pptx content ... --output .pptx/content` で承認済みコンテンツを検証し、続けて `uv run pptx outline ... --output .pptx/draft` を実行して章構成・付録設定を確認する。必要に応じて `draft_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば差戻し理由を明示する。最終的に `pptx mapping` → `pptx render` で工程5/6へ進む。
+6. 工程5/6 完了後は `.pptx/gen/audit_log.json` の `mapping` セクションと `hashes.mapping_log` を確認し、`rendering_ready.json`／`mapping_log.json` のパスと SHA-256 が記録されているかをチェックする。フォールバックが発生した場合は `mapping_meta.fallback_slide_ids` を参照し、差戻しや再分配の対象スライドを追跡する。
 
 ## レビュー観点
 - フェーズ必須項目（導入／課題／解決）は欠落していないか。
