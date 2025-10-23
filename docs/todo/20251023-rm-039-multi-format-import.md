@@ -29,7 +29,7 @@ roadmap_item: RM-039 コンテンツ多形式インポート
   - メモ: テキスト/URL 入力経路は `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_content_import.py tests/test_cli_content.py` で確認済み。LibreOffice 未導入のため PDF 変換を含む検証は導入後に再実施
 - [x] ドキュメント更新
   - 完了条件: 実装結果と運用手順を docs/ 配下の該当カテゴリへ反映
-  - メモ: 要件・設計・ロードマップを更新済み。LibreOffice 導入後に追加ドキュメントが必要か継続確認
+  - メモ: 要件・設計・ロードマップを更新済み。LibreOffice 導入後の追記要否を継続確認
   - [x] docs/roadmap 配下
     - 完了条件: RM-039 の進捗更新（進行中へ変更し保留事項を明記）
   - [x] docs/requirements 配下（実装結果との整合再確認）

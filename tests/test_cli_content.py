@@ -84,3 +84,32 @@ def test_content_approve_rejects_unapproved_cards(tmp_path) -> None:
     assert result.exit_code == 4
     assert "検証に失敗" in result.output
     assert not (output_dir / "spec_content_applied.json").exists()
+
+
+def test_content_import_generates_draft(tmp_path) -> None:
+    source = tmp_path / "input.txt"
+    source.write_text("# インポート\n内容を記述", encoding="utf-8")
+
+    output_dir = tmp_path / "draft"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "content",
+            str(SAMPLE_SPEC),
+            "--content-source",
+            str(source),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    draft_path = output_dir / "content_draft.json"
+    meta_path = output_dir / "content_import_meta.json"
+    assert draft_path.exists()
+    assert meta_path.exists()
+    assert not (output_dir / "spec_content_applied.json").exists()

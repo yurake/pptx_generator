@@ -16,6 +16,7 @@ from .branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
+from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
@@ -887,7 +888,7 @@ def gen(
     "--content-approved",
     "content_approved_path",
     type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    required=True,
+    required=False,
     help="工程3で承認済みのコンテンツ JSON",
 )
 @click.option(
@@ -934,15 +935,47 @@ def gen(
     show_default=True,
     help="承認メタ情報の出力ファイル名",
 )
+@click.option(
+    "--content-source",
+    "content_sources",
+    multiple=True,
+    type=str,
+    help="プレーンテキスト / PDF / URL からドラフトを生成する入力ソース",
+)
+@click.option(
+    "--draft-output",
+    type=str,
+    default="content_draft.json",
+    show_default=True,
+    help="--content-source 利用時に生成するドラフトファイル名",
+)
+@click.option(
+    "--import-meta",
+    "import_meta_filename",
+    type=str,
+    default="content_import_meta.json",
+    show_default=True,
+    help="--content-source 利用時に生成するメタ情報ファイル名",
+)
+@click.option(
+    "--libreoffice-path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="PDF 取り込み時に利用する LibreOffice 実行ファイルのパス",
+)
 def content(
     spec_path: Path,
-    content_approved_path: Path,
+    content_approved_path: Path | None,
     content_review_log_path: Path | None,
     output_dir: Path,
     spec_output: str,
     normalized_content: str,
     review_output: str,
     meta_filename: str,
+    content_sources: tuple[str, ...],
+    draft_output: str,
+    import_meta_filename: str,
+    libreoffice_path: Path | None,
 ) -> None:
     """工程3 コンテンツ正規化: 承認済みコンテンツを検証し Spec へ適用する。"""
 
@@ -951,6 +984,39 @@ def content(
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
+
+    if content_sources:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        importer = ContentImportService(libreoffice_path=libreoffice_path)
+        try:
+            result = importer.import_sources(content_sources)
+        except ContentImportError as exc:
+            click.echo(f"コンテンツ取り込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=4) from exc
+
+        draft_path = output_dir / draft_output
+        _dump_json(draft_path, result.document.model_dump(mode="json"))
+
+        meta_payload = {
+            **result.meta,
+            "spec": {
+                "slides": len(spec.slides),
+                "source": str(spec_path.resolve()),
+            },
+        }
+        meta_path = output_dir / import_meta_filename
+        _dump_json(meta_path, meta_payload)
+
+        for warning in result.warnings:
+            click.echo(f"Warning: {warning}", err=True)
+
+        click.echo(f"Content Draft: {draft_path}")
+        click.echo(f"Content Import Meta: {meta_path}")
+        return
+
+    if content_approved_path is None:
+        click.echo("--content-approved または --content-source を指定してください", err=True)
+        raise click.exceptions.Exit(code=2)
 
     try:
         context = _run_content_approval_pipeline(
