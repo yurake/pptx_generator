@@ -1,7 +1,7 @@
 ---
 目的: RM-036 に基づきドラフト構成インテリジェンス拡張の計画と実装方針を整理し、PoC 対象を特定する
 関連ブランチ: feat/rm036-draft-intelligence
-関連Issue: 未作成
+関連Issue: #231
 roadmap_item: RM-036 ドラフト構成インテリジェンス拡張
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-036 ドラフト構成インテリジェンス拡張
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号確認後に `関連Issue` を更新する。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録し、ワークフロー動作状況も残す。
