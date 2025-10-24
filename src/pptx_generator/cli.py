@@ -38,9 +38,12 @@ from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 from .settings import BrandingConfig, RulesConfig
 from .rendering_ready import rendering_ready_to_jobspec
+from .draft_intel import load_return_reasons
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
+DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
+DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 
 logger = logging.getLogger(__name__)
 
@@ -350,6 +353,11 @@ def _write_draft_meta(
     appendix_limit: int | None = None
     structure_pattern: str | None = None
     target_length: int | None = None
+    template_id: str | None = None
+    template_match_score: float | None = None
+    template_mismatch: list[dict[str, object]] = []
+    analyzer_summary: dict[str, int] = {}
+    return_reason_stats: dict[str, int] = {}
 
     if isinstance(draft_document, DraftDocument):
         sections = len(draft_document.sections)
@@ -361,6 +369,11 @@ def _write_draft_meta(
         appendix_limit = draft_document.meta.appendix_limit
         structure_pattern = draft_document.meta.structure_pattern
         target_length = draft_document.meta.target_length
+        template_id = draft_document.meta.template_id
+        template_match_score = draft_document.meta.template_match_score
+        template_mismatch = [item.model_dump(mode="json") for item in draft_document.meta.template_mismatch]
+        analyzer_summary = draft_document.meta.analyzer_summary
+        return_reason_stats = draft_document.meta.return_reason_stats
 
     paths = {
         "draft_draft": str((output_dir / draft_filename).resolve()),
@@ -385,6 +398,13 @@ def _write_draft_meta(
         "structure_pattern": structure_pattern,
         "target_length": target_length,
         "paths": paths,
+        "template": {
+            "template_id": template_id,
+            "match_score": template_match_score,
+            "mismatch": template_mismatch,
+        },
+        "analyzer_summary": analyzer_summary,
+        "return_reason_stats": return_reason_stats,
     }
 
     meta_path = output_dir / meta_filename
@@ -1068,6 +1088,45 @@ def content(
     show_default=True,
     help="付録枚数の上限",
 )
+@click.option(
+    "--chapter-templates-dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=DEFAULT_CHAPTER_TEMPLATES_DIR,
+    show_default=True,
+    help="章テンプレート辞書ディレクトリ",
+)
+@click.option(
+    "--chapter-template",
+    type=str,
+    default=None,
+    help="適用する章テンプレート ID",
+)
+@click.option(
+    "--import-analysis",
+    "analysis_summary_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="analysis_summary.json のパス",
+)
+@click.option(
+    "--return-reasons-path",
+    type=click.Path(dir_okay=False, writable=False, path_type=Path),
+    default=DEFAULT_RETURN_REASONS_PATH,
+    show_default=True,
+    help="差戻し理由テンプレート辞書のパス",
+)
+@click.option(
+    "--return-reasons",
+    is_flag=True,
+    default=False,
+    help="差戻し理由テンプレート一覧を表示して終了する",
+)
+@click.option(
+    "--show-layout-reasons",
+    is_flag=True,
+    default=False,
+    help="layout_hint 候補のスコア内訳を表示する",
+)
 def outline(
     spec_path: Path,
     content_approved_path: Path | None,
@@ -1081,8 +1140,27 @@ def outline(
     target_length: int | None,
     structure_pattern: str | None,
     appendix_limit: int,
+    chapter_templates_dir: Path,
+    chapter_template: str | None,
+    analysis_summary_path: Path | None,
+    return_reasons_path: Path,
+    return_reasons: bool,
+    show_layout_reasons: bool,
 ) -> None:
     """工程4 ドラフト構成（アウトライン）を生成する。"""
+
+    if return_reasons:
+        reasons = load_return_reasons(return_reasons_path)
+        if not reasons:
+            click.echo(f"差戻し理由テンプレートが見つかりません: {return_reasons_path}")
+        else:
+            click.echo("差戻し理由テンプレート一覧:")
+            for reason in reasons:
+                label = f"{reason.code} ({reason.severity})"
+                if reason.label and reason.label != reason.code:
+                    label += f" - {reason.label}"
+                click.echo(f"- {label}")
+        return
 
     try:
         spec = JobSpec.parse_file(spec_path)
@@ -1090,6 +1168,7 @@ def outline(
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
 
+    templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
     draft_options = DraftStructuringOptions(
         layouts_path=layouts,
         output_dir=output_dir,
@@ -1099,6 +1178,9 @@ def outline(
         target_length=target_length,
         structure_pattern=structure_pattern,
         appendix_limit=appendix_limit,
+        chapter_templates_dir=templates_dir,
+        chapter_template_id=chapter_template,
+        analysis_summary_path=analysis_summary_path,
     )
 
     try:
@@ -1139,6 +1221,23 @@ def outline(
     click.echo(f"Outline Approved: {approved_path}")
     click.echo(f"Outline Review Log: {log_path}")
     click.echo(f"Outline Meta: {meta_path}")
+
+    if show_layout_reasons:
+        draft_document = context.artifacts.get("draft_document")
+        if isinstance(draft_document, DraftDocument):
+            click.echo("layout_hint 候補スコア内訳:")
+            for section in draft_document.sections:
+                for slide in section.slides:
+                    detail = slide.layout_score_detail
+                    if not detail:
+                        continue
+                    click.echo(
+                        f"- {slide.ref_id} -> {slide.layout_hint} "
+                        f"(uses_tag={detail.uses_tag:.2f}, "
+                        f"capacity={detail.content_capacity:.2f}, "
+                        f"diversity={detail.diversity:.2f}, "
+                        f"analyzer={detail.analyzer_support:.2f})"
+                    )
 
 
 @app.command("mapping")
