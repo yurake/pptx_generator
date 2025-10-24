@@ -1,0 +1,2 @@
+{"layout_id": "overview__one_col", "usage_tags": ["overview"], "text_hint": {"max_lines": 6}, "media_hint": {"allow_table": true}}
+{"layout_id": "detail__two_col", "usage_tags": ["detail", "solution"], "text_hint": {"max_lines": 12}, "media_hint": {"allow_table": false}}

@@ -9,9 +9,21 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from ..models import (ContentApprovalDocument, ContentSlide, DraftDocument,
-                      DraftLayoutCandidate, DraftMeta, DraftSection,
-                      DraftSlideCard, JobSpec)
+                      DraftLayoutCandidate, DraftLayoutScoreDetail, DraftMeta,
+                      DraftSection, DraftSlideCard, DraftAnalyzerSummary,
+                      JobSpec)
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
+from ..draft_intel import (
+    ChapterTemplate,
+    ChapterTemplateEvaluation,
+    clamp_score_detail,
+    compute_analyzer_support,
+    evaluate_chapter_template,
+    find_template_by_structure,
+    load_analysis_summary,
+    load_chapter_template,
+    summarize_analyzer_counts,
+)
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -29,6 +41,9 @@ class DraftStructuringOptions:
     target_length: int | None = None
     structure_pattern: str | None = None
     appendix_limit: int = 5
+    chapter_templates_dir: Path | None = None
+    chapter_template_id: str | None = None
+    analysis_summary_path: Path | None = None
 
 
 class DraftStructuringError(RuntimeError):
@@ -67,7 +82,20 @@ class DraftStructuringStep:
         document = artifact
 
         layouts = self._load_layouts(self.options.layouts_path)
-        draft = self._build_document(context.spec, document, layouts)
+        analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
+        template: ChapterTemplate | None = None
+        if self.options.chapter_templates_dir:
+            if self.options.chapter_template_id:
+                template = load_chapter_template(self.options.chapter_templates_dir, self.options.chapter_template_id)
+            elif self.options.structure_pattern:
+                template = find_template_by_structure(self.options.chapter_templates_dir, self.options.structure_pattern)
+        draft = self._build_document(
+            spec=context.spec,
+            document=document,
+            layouts=layouts,
+            analyzer_map=analyzer_map,
+            chapter_template=template,
+        )
 
         output_dir = self.options.output_dir or context.workdir
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -139,9 +167,12 @@ class DraftStructuringStep:
 
     def _build_document(
         self,
+        *,
         spec: JobSpec,
         document: ContentApprovalDocument,
         layouts: Sequence[LayoutRecord],
+        analyzer_map: dict[str, DraftAnalyzerSummary],
+        chapter_template: ChapterTemplate | None,
     ) -> DraftDocument:
         slides_by_id = {slide.id: slide for slide in document.slides}
 
@@ -166,7 +197,14 @@ class DraftStructuringStep:
                 sections.append(section)
 
             card_order = len(section.slides) + 1
-            card = self._build_card(content_slide, spec_slide.layout, layouts, order=card_order)
+            analyzer_summary = analyzer_map.get(content_slide.id)
+            card = self._build_card(
+                content_slide,
+                spec_slide.layout,
+                layouts,
+                order=card_order,
+                analyzer_summary=analyzer_summary,
+            )
             section.slides.append(card)
 
         meta = DraftMeta(
@@ -174,6 +212,26 @@ class DraftStructuringStep:
             structure_pattern=self.options.structure_pattern or "custom",
             appendix_limit=self.options.appendix_limit,
         )
+
+        if analyzer_map:
+            meta.analyzer_summary = summarize_analyzer_counts(analyzer_map.values())
+
+        if chapter_template:
+            section_counts = {section.name: len(section.slides) for section in sections}
+            evaluation = self._evaluate_chapter_template(
+                template=chapter_template,
+                section_counts=section_counts,
+                total_main_pages=sum(section_counts.values()),
+            )
+            meta.template_id = chapter_template.template_id
+            meta.template_match_score = evaluation.match_score
+            meta.template_mismatch = evaluation.mismatches
+            for section in sections:
+                key = section.name.lower()
+                score = evaluation.section_scores.get(key)
+                section.chapter_template_id = chapter_template.template_id
+                if score is not None:
+                    section.template_match_score = score
 
         return DraftDocument(sections=sections, meta=meta)
 
@@ -198,9 +256,11 @@ class DraftStructuringStep:
         layouts: Sequence[LayoutRecord],
         *,
         order: int,
+        analyzer_summary: DraftAnalyzerSummary | None,
     ) -> DraftSlideCard:
-        candidates = self._score_candidates(content_slide, layouts)
-        layout_hint = candidates[0].layout_id if candidates else default_layout
+        candidates = self._score_candidates(content_slide, layouts, analyzer_summary)
+        layout_hint = candidates[0][0].layout_id if candidates else default_layout
+        layout_detail = candidates[0][1] if candidates else None
 
         return DraftSlideCard(
             ref_id=content_slide.id,
@@ -208,55 +268,77 @@ class DraftStructuringStep:
             layout_hint=layout_hint,
             locked=False,
             status="draft",
-            layout_candidates=candidates[:5],
+            layout_candidates=[candidate for candidate, _ in candidates[:5]],
             appendix=False,
+            layout_score_detail=layout_detail,
+            analyzer_summary=analyzer_summary,
         )
 
     def _score_candidates(
         self,
         content_slide: ContentSlide,
         layouts: Sequence[LayoutRecord],
-    ) -> list[DraftLayoutCandidate]:
+        analyzer_summary: DraftAnalyzerSummary | None,
+    ) -> list[tuple[DraftLayoutCandidate, DraftLayoutScoreDetail]]:
         if not layouts:
             return []
 
-        scores: list[DraftLayoutCandidate] = []
+        scores: list[tuple[DraftLayoutCandidate, DraftLayoutScoreDetail]] = []
         for record in layouts:
-            score = self._score_layout(record, content_slide)
+            score, detail = self._score_layout(record, content_slide, analyzer_summary)
             if score <= 0.0:
                 continue
-            scores.append(DraftLayoutCandidate(layout_id=record.layout_id, score=round(score, 3)))
+            candidate = DraftLayoutCandidate(layout_id=record.layout_id, score=round(score, 3))
+            scores.append((candidate, detail))
 
-        scores.sort(key=lambda candidate: candidate.score, reverse=True)
+        scores.sort(key=lambda item: item[0].score, reverse=True)
         return scores
 
-    def _score_layout(self, record: LayoutRecord, slide: ContentSlide) -> float:
+    def _score_layout(
+        self,
+        record: LayoutRecord,
+        slide: ContentSlide,
+        analyzer_summary: DraftAnalyzerSummary | None,
+    ) -> tuple[float, DraftLayoutScoreDetail]:
         score = 0.1
+        detail = DraftLayoutScoreDetail(content_capacity=0.1)
         usage_tags = set(tag.lower() for tag in record.usage_tags)
 
         if slide.intent and slide.intent.lower() in usage_tags:
             score += 0.4
+            detail.uses_tag += 0.4
 
         if slide.type_hint and slide.type_hint.lower() in usage_tags:
             score += 0.3
+            detail.uses_tag += 0.3
 
         body_length = len(slide.elements.body)
         max_lines = self._safe_int(record.text_hint.get("max_lines"))
         if max_lines is not None:
             if body_length <= max_lines:
                 score += 0.1
+                detail.content_capacity += 0.1
             else:
-                score -= min(0.2, (body_length - max_lines) * 0.05)
+                penalty = min(0.2, (body_length - max_lines) * 0.05)
+                score -= penalty
+                detail.content_capacity -= penalty
 
         has_table = slide.elements.table_data is not None
         allow_table = bool(record.media_hint.get("allow_table"))
         if has_table and allow_table:
             score += 0.1
+            detail.content_capacity += 0.1
         elif has_table and not allow_table:
             score -= 0.3
+            detail.content_capacity -= 0.3
 
+        analyzer_support = compute_analyzer_support(analyzer_summary)
+        score += analyzer_support
+        detail.analyzer_support = analyzer_support
+
+        detail = clamp_score_detail(detail)
         score = max(0.0, min(1.0, score))
-        return score
+        return score, detail
 
     @staticmethod
     def _safe_int(value: object) -> int | None:
@@ -282,3 +364,22 @@ class DraftStructuringStep:
         normalized = "".join(ch.lower() if ch.isalnum() else "-" for ch in title)
         normalized = normalized.strip("-") or "default"
         return normalized[:64]
+
+    def _evaluate_chapter_template(
+        self,
+        template: ChapterTemplate,
+        section_counts: dict[str, int],
+        total_main_pages: int,
+    ) -> ChapterTemplateEvaluation:
+        evaluation = evaluate_chapter_template(
+            template=template,
+            section_counts=section_counts,
+            total_main_pages=total_main_pages,
+        )
+
+        normalized_scores: dict[str, float] = {}
+        for section_id, score in evaluation.section_scores.items():
+            normalized_scores[section_id.lower()] = score
+
+        evaluation.section_scores = normalized_scores
+        return evaluation

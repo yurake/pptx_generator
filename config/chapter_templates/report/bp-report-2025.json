@@ -1,0 +1,38 @@
+{
+  "template_id": "bp-report-2025",
+  "name": "BP 一般提案レポート",
+  "structure_pattern": "report",
+  "required_sections": [
+    {
+      "id": "market_overview",
+      "title": "市場概況",
+      "min_slides": 1,
+      "max_slides": 2
+    },
+    {
+      "id": "solution",
+      "title": "提案ソリューション",
+      "min_slides": 2,
+      "max_slides": 4
+    }
+  ],
+  "optional_sections": [
+    {
+      "id": "implementation",
+      "title": "導入計画",
+      "min_slides": 0,
+      "max_slides": 3
+    },
+    {
+      "id": "investment",
+      "title": "投資・効果",
+      "min_slides": 0,
+      "max_slides": 2
+    }
+  ],
+  "constraints": {
+    "max_main_pages": 18,
+    "appendix_policy": "overflow",
+    "tags": ["enterprise", "bp"]
+  }
+}
