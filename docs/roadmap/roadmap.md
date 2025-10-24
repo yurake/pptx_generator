@@ -95,7 +95,7 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(完了)"]
-        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(未着手)"]
+        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(完了)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
     end
@@ -177,6 +177,26 @@ flowchart TB
     RM018 --> RM034
     RM019 --> RM034
     RM014 --> RM034
+    RM021 --> RM035
+    RM027 --> RM035
+    RM014 --> RM035
+    RM024 --> RM036
+    RM031 --> RM036
+    RM005 --> RM036
+    RM025 --> RM037
+    RM026 --> RM037
+    RM033 --> RM037
+    RM021 --> RM038
+    RM022 --> RM038
+    RM025 --> RM038
+    RM023 --> RM039
+    RM017 --> RM039
+    RM023 --> RM040
+    RM029 --> RM040
+    RM024 --> RM041
+    RM036 --> RM041
+    RM023 --> RM042
+    RM005 --> RM042
 ```
 
 ## 個別状況
@@ -552,7 +572,7 @@ flowchart TB
 - 対象工程: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 状況: 完了（2025-10-23 更新）
 - 期待成果:
   - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
   - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。

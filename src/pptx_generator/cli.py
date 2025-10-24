@@ -2068,6 +2068,8 @@ def _write_audit_log(context: PipelineContext) -> Path:
         ("pdf", "pdf_path"),
         ("rendering_log", "rendering_log_path"),
         ("monitoring_report", "monitoring_report_path"),
+        ("mapping_log", "mapping_log_path"),
+        ("mapping_fallback_report", "mapping_fallback_report_path"),
     ):
         digest = _sha256_of(context.artifacts.get(key))
         if digest:

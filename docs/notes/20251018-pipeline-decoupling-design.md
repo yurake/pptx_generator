@@ -43,3 +43,6 @@
 - `docs/notes/` に冒頭会話の整理ノートを作成（ToDo で管理）。
 - Analyzer が参照するアンカーやフォント情報は簡易的に生成されるため、中長期的には `RenderingReady` へ詳細メタを拡充する検討が必要。
 - CLI オプションの整理（特に `--content-approved` など工程3/4向けフラグ）は段階的に deprecate 予定。今回の対応では互換性維持のみ。
+
+## 更新記録
+- 2025-10-23: `MappingStep` の `mapping_meta` に生成日時・テンプレートバージョン・フォールバック対象スライドを追加し、監査ログで `mapping_log` / `rendering_ready` のハッシュ追跡を拡充。`pptx mapping` → `pptx render` 単体チェーンと `rendering_ready_to_jobspec` のフォールバック経路をテスト化。

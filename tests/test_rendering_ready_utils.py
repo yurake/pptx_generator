@@ -90,3 +90,38 @@ def test_rendering_ready_to_jobspec_conversion() -> None:
     textbox = slide.textboxes[0]
     assert textbox.anchor == "textbox_anchor"
     assert textbox.text == "テキストボックス"
+
+
+def test_rendering_ready_to_jobspec_defaults() -> None:
+    document = RenderingReadyDocument(
+        slides=[
+            RenderingReadySlide(
+                layout_id="layout_basic",
+                elements={},
+                meta=MappingSlideMeta(
+                    section=None,
+                    page_no=1,
+                    sources=[],
+                    fallback="none",
+                ),
+            )
+        ],
+        meta=RenderingReadyMeta(
+            template_version=None,
+            content_hash=None,
+            generated_at="2025-10-18T00:00:00Z",
+            job_meta=None,
+            job_auth=None,
+        ),
+    )
+
+    spec = rendering_ready_to_jobspec(document)
+
+    assert spec.meta.title == "Untitled Deck"
+    assert spec.meta.schema_version == "unknown"
+    assert spec.meta.created_at == "2025-10-18T00:00:00Z"
+    assert spec.auth.created_by == "unknown"
+    assert len(spec.slides) == 1
+    slide = spec.slides[0]
+    assert slide.id == "slide-1"
+    assert slide.layout == "layout_basic"

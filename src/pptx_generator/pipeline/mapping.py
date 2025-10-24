@@ -96,8 +96,9 @@ class MappingStep:
         rendering_slides: list[RenderingReadySlide] = []
         log_slides: list[MappingLogSlide] = []
         fallback_records: list[dict[str, Any]] = []
-        fallback_count = 0
+        fallback_slide_ids: set[str] = set()
         ai_patch_count = 0
+        ai_patch_slide_ids: set[str] = set()
         previous_layout: str | None = None
 
         for index, slide in enumerate(context.spec.slides, start=1):
@@ -137,7 +138,7 @@ class MappingStep:
             )
 
             if fallback_state.applied:
-                fallback_count += 1
+                fallback_slide_ids.add(slide.id)
                 fallback_records.append(
                     {
                         "slide_id": slide.id,
@@ -147,6 +148,7 @@ class MappingStep:
                 )
             if ai_patches:
                 ai_patch_count += len(ai_patches)
+                ai_patch_slide_ids.add(slide.id)
 
             rendering_slides.append(
                 RenderingReadySlide(
@@ -191,7 +193,7 @@ class MappingStep:
             slides=log_slides,
             meta=MappingLogMeta(
                 mapping_time_ms=elapsed_ms,
-                fallback_count=fallback_count,
+                fallback_count=len(fallback_slide_ids),
                 ai_patch_count=ai_patch_count,
             ),
         )
@@ -238,19 +240,24 @@ class MappingStep:
         context.add_artifact("rendering_ready_path", str(rendering_path))
         context.add_artifact("mapping_log", mapping_log)
         context.add_artifact("mapping_log_path", str(mapping_log_path))
-        context.add_artifact(
-            "mapping_meta",
-            {
-                "elapsed_ms": elapsed_ms,
-                "fallback_count": fallback_count,
-                "ai_patch_count": ai_patch_count,
-            },
-        )
+        mapping_meta = {
+            "elapsed_ms": elapsed_ms,
+            "slides": len(rendering_slides),
+            "fallback_count": len(fallback_slide_ids),
+            "fallback_slide_ids": sorted(fallback_slide_ids),
+            "ai_patch_count": ai_patch_count,
+            "ai_patch_slide_ids": sorted(ai_patch_slide_ids),
+            "rendering_ready_generated_at": rendering_meta.generated_at,
+            "template_version": rendering_meta.template_version,
+            "content_hash": rendering_meta.content_hash,
+            "rendering_ready_path": str(rendering_path),
+        }
+        context.add_artifact("mapping_meta", mapping_meta)
 
         logger.info(
             "rendering_ready.json を生成しました: slides=%d fallback=%d ai_patch=%d",
             len(rendering_slides),
-            fallback_count,
+            len(fallback_slide_ids),
             ai_patch_count,
         )
 
