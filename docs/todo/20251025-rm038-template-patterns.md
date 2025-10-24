@@ -5,8 +5,8 @@
 roadmap_item: RM-038 テンプレートパターン拡充
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: feat/rm038-template-patterns を main から作成。初期コミットは ToDo 整備後に実施予定。
+- [x] ブランチ作成と初期コミット
+  - メモ: feat/rm038-template-patterns を main から作成。初期コミット `docs(todo): add rm038 template pattern todo` を作成済み。
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: ユーザー承認待ち。Plan 提示時に参照メッセージ ID を記録する。
 - [ ] 設計・実装方針の確定
