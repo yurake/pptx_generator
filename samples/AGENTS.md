@@ -7,7 +7,7 @@
 - `json/sample_content_review_log.json`: 承認イベントログの例。アクション／AI 評価の記録形式を示す。
 - `json/sample_layouts.jsonl`: 工程2のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。
 - `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
-- `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトも含まれる。
+- `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトに加え、RM-043 で拡充予定のバリエーションもここへ集約する。
 - `skeleton.pptx`: 提案書の初期テンプレート。変更時は `docs/policies/config-and-templates.md` の手順に従い検証する。
 
 ## 運用ルール
