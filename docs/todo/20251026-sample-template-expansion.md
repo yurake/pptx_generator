@@ -1,7 +1,7 @@
 ---
 目的: samples/templates/templates.pptx のページパターン拡充と samples/ 配下のバリエーション追加
 関連ブランチ: 未作成（作成次第更新）
-関連Issue: 未作成（作成次第更新）
+関連Issue: #241
 roadmap_item: RM-043 サンプルテンプレ拡充
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-043 サンプルテンプレ拡充
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する
 - [ ] PR 作成
   - メモ: PR 番号と URL、todo-auto-complete の実行結果を記録する
