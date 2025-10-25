@@ -25,6 +25,20 @@
 4. `Approve` で `content_approved.json` へ反映しロック。  
 5. 差戻しは `status=rework` として再生成対象に戻す。
 
+### 多形式インポート基盤
+- 目的: JSON 以外のプレーンテキスト、PDF、URL から内容を安全に取り込み、カード生成前に共通中間フォーマットへ統合する。
+- 入力判定: CLI で `--content-source <path|url>` を指定し、拡張子／スキームでアダプタを選択。複数指定時は順番通りにマージし、重複スライド ID は後勝ちのルールで解決する。
+- アーキテクチャ
+  - `TextImportAdapter`: UTF-8 文字列または `.txt` を読み込み、章見出し記法と空行をキーにカード化する。
+  - `PdfImportAdapter`: `soffice --headless --convert-to txt` でテンポラリに変換し、テキストと画像埋め込みのプレースホルダメタを抽出する。LibreOffice 失敗時はフォールバックせずにエラー終了。
+  - `UrlImportAdapter`: `requests` ベースで HTML/JSON を取得し、Content-Type に応じて本文ブロックを抽出。HTML は本文テキストのみをプレーン化し、リンク URL をメタ情報として保持。
+  - すべてのアダプタは `NormalizedItem`（`id`, `title`, `body`, `attachments`, `source_meta`）を返し、Input Processor が Slide に変換する。
+- 監査とリトライ
+  - 正常時は `audit_log.json` に `content_import` セクションを追加し、ファイルハッシュ／URL／取得時刻／使用許諾フラグを記録。
+  - 失敗時はリトライポリシー（デフォルト 3 回、指数バックオフ）を適用し、限界超過で `content_import_error` イベントを発行して処理全体を中断する。
+  - PDF 変換や URL 取得で検知した警告は `content_review_log` に `source_warning` として残し、HITL が再入力を判断できるようにする。
+  - LibreOffice (soffice) が利用できない環境では PDF 取込テストが実施できないため、導入後に再検証する運用ルールを `docs/todo/` に明記する。
+
 ### Analyzer 連携
 - CLI の工程 6 実行後、Analyzer が出力する `analysis.json` を Review Engine 向け形式 (`review_engine_analyzer.json`) に変換するアダプタを追加した。  
 - スライドごとの `issues` を `AIReviewIssue` へマッピングし、`severity` に応じて `grade`（`A/B/C`）を算出する。  
