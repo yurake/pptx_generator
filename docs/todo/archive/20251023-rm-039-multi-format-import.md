@@ -43,7 +43,8 @@ roadmap_item: RM-039 コンテンツ多形式インポート
 - [x] 関連Issue 行の更新
   - 完了条件: 対応する Issue 番号を確認し front matter を更新
   - メモ: `gh issue list` は TLS エラーで未取得。再試行または代替手段を検討
-- [ ] PR 作成
+- [x] PR 作成
+  - メモ: PR #240 https://github.com/yurake/pptx_generator/pull/240（2025-10-25 完了）
   - 完了条件: テンプレートに沿って PR を作成し ToDo を連携
   - メモ: todo-auto-complete の結果を確認
 
