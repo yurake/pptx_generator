@@ -33,5 +33,32 @@
       "layout overview__kpi_v2: duplicate anchor PH__Body__Main"
     ],
     "errors": []
+  },
+  "summary": {
+    "layouts": 32,
+    "anchors": 168,
+    "placeholders": 104,
+    "warning_count": 2,
+    "error_count": 0,
+    "analyzer_issue_total": 5,
+    "analyzer_fix_total": 3
+  },
+  "summary_baseline": {
+    "layouts": 31,
+    "anchors": 162,
+    "placeholders": 99,
+    "warning_count": 1,
+    "error_count": 0,
+    "analyzer_issue_total": 4,
+    "analyzer_fix_total": 2
+  },
+  "summary_delta": {
+    "layouts": 1,
+    "anchors": 6,
+    "placeholders": 5,
+    "warning_count": 1,
+    "error_count": 0,
+    "analyzer_issue_total": 1,
+    "analyzer_fix_total": 1
   }
 }

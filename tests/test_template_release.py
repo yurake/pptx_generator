@@ -6,9 +6,26 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.models import (LayoutInfo, ShapeInfo, TemplateReleaseGoldenRun,
-                                   TemplateSpec)
+from pptx_generator.models import (LayoutInfo, ShapeInfo, TemplateReleaseEnvironment,
+                                   TemplateReleaseGoldenRun, TemplateSpec)
 from pptx_generator.template_audit import build_release_report, build_template_release
+from pptx_generator.template_audit import release as release_module
+
+
+@pytest.fixture(autouse=True)
+def fixed_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    environment = TemplateReleaseEnvironment(
+        python_version="3.12.1",
+        platform="TestOS",
+        pptx_generator_version="0.1.0",
+        libreoffice_version="LibreOffice 7.6.0",
+        dotnet_sdk_version="8.0.0",
+    )
+    monkeypatch.setattr(
+        release_module,
+        "collect_environment_info",
+        lambda: (environment, []),
+    )
 
 
 def _create_template_file(tmp_path: Path, name: str, content: bytes) -> Path:
@@ -87,6 +104,10 @@ def test_build_template_release_collects_warnings(tmp_path: Path) -> None:
     )
     assert any("extractor: shape count mismatch" == message for message in warnings)
     assert release.golden_runs == []
+    assert release.summary.layouts == 1
+    assert release.summary.warning_count == len(release.diagnostics.warnings)
+    assert release.summary.error_count == len(release.diagnostics.errors)
+    assert release.environment.python_version == "3.12.1"
 
 
 def test_build_release_report_detects_anchor_changes(tmp_path: Path) -> None:
@@ -177,6 +198,11 @@ def test_build_release_report_detects_anchor_changes(tmp_path: Path) -> None:
     assert diff.name == "title_layout"
     assert diff.anchors_added == ["PH__Subtitle"]
     assert diff.placeholders_added == ["PH__Subtitle"]
+    assert report.summary.layouts == 1
+    assert report.summary_baseline is not None
+    assert report.summary_baseline.layouts == 1
+    assert report.summary_delta is not None
+    assert report.summary_delta.anchors == 1
 
 
 def test_build_template_release_with_golden_runs(tmp_path: Path) -> None:
@@ -217,3 +243,5 @@ def test_build_template_release_with_golden_runs(tmp_path: Path) -> None:
     assert stored.status == "failed"
     assert "golden warning" in release.diagnostics.warnings
     assert "golden error" in release.diagnostics.errors
+    assert release.summary.analyzer_issue_total == 0
+    assert release.summary.analyzer_fix_total == 0

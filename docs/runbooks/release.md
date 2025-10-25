@@ -12,8 +12,16 @@
 2. ステージング環境で代表的な案件データ（最低 3 件）を用いて JSON→PPTX→PDF の生成テストを実施する。
 3. 監査ログ、通知動作、PDF 変換など重要機能を確認し、承認者のレビューを取得する。
 4. テンプレ受け渡しメタの `analyzer_metrics` と差分レポートの `analyzer` ブロックを確認し、重大度別の指摘推移を記録する。
+   - `summary` / `summary_delta` セクションでレイアウト数・アンカー数・警告件数・Analyzer issue/fix 件数を確認する。
+   - `environment` セクションで Python / LibreOffice / .NET SDK のバージョンを控え、CI と一致しているか照合する。
 5. タグ `vX.Y.Z` を付与し、GitHub Release を作成する。
 6. デプロイを実施し、完了後にステータスを共有する。
+
+## 環境バージョン固定とゴールデンサンプル運用
+- LibreOffice / dotnet SDK は CLI 実行環境と揃うようにインストール版を固定し、`template_release.json` の `environment` に記録されるバージョンと突合する。
+- Polisher (.NET) のアップデートを行う場合は、`dotnet --version` で SDK を確認し `docs/notes/` に差分メモを残す。
+- `tpl-release --baseline-release` 実行時はベースラインの `golden_runs` を自動再実行する。不要なゴールデンサンプルがあればベースラインの `golden_runs.json` から削除し、差分の理由を ToDo に記載する。
+- ゴールデンサンプル成果物は `templates/releases/<brand>/<version>/golden_runs/` に 3 リリース分保持し、それ以前はハッシュとログのみ残して削除する（廃棄時は `docs/notes/` に記録）。
 
 ## ロールバック
 - 重大障害発生時は直前のタグへロールバックし、影響範囲と復旧時間を `docs/notes/` に記録する。

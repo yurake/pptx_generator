@@ -6,10 +6,13 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 from pptx_generator.models import (
     LayoutInfo,
     ShapeInfo,
     TemplateRelease,
+    TemplateReleaseEnvironment,
     TemplateReleaseGoldenRun,
     TemplateSpec,
 )
@@ -17,6 +20,23 @@ from pptx_generator.template_audit.release import (
     build_release_report,
     build_template_release,
 )
+from pptx_generator.template_audit import release as release_module
+
+
+@pytest.fixture(autouse=True)
+def fixed_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    environment = TemplateReleaseEnvironment(
+        python_version="3.12.1",
+        platform="TestOS",
+        pptx_generator_version="0.1.0",
+        libreoffice_version="LibreOffice 7.6.0",
+        dotnet_sdk_version="8.0.0",
+    )
+    monkeypatch.setattr(
+        release_module,
+        "collect_environment_info",
+        lambda: (environment, []),
+    )
 
 
 def _write_template(path: Path) -> None:
@@ -107,6 +127,9 @@ def test_build_template_release_collects_analyzer_metrics(tmp_path) -> None:
     assert metrics.summary.fixes.by_type["font_raise"] == 1
     assert metrics.summary.fixes.by_type["color_adjust"] == 1
     assert metrics.runs[0].status == "included"
+    assert release.summary.analyzer_issue_total == 2
+    assert release.summary.analyzer_fix_total == 2
+    assert release.environment.pptx_generator_version == "0.1.0"
 
 
 def test_build_release_report_includes_analyzer_delta(tmp_path) -> None:
@@ -162,3 +185,8 @@ def test_build_release_report_includes_analyzer_delta(tmp_path) -> None:
     assert report.analyzer.delta.issues["font_min"] == 0
     assert report.analyzer.delta.severity["error"] == 1
     assert report.analyzer.delta.severity["warning"] == 0
+    assert report.summary.analyzer_issue_total == 2
+    assert report.summary_baseline is not None
+    assert report.summary_baseline.analyzer_issue_total == 1
+    assert report.summary_delta is not None
+    assert report.summary_delta.analyzer_issue_total == 1

@@ -20,6 +20,8 @@
    - ゴールデンサンプル指定時は `golden_runs.json` と `golden_runs/<spec_stem>/` 以下に検証ログを出力。  
    - 重複 PH / 不正レイアウト、ゴールデンサンプル失敗があれば診断エラーとして FAIL。
    - Analyzer 出力から issue/fix の件数をテンプレ受け渡しメタへ収集し、`analyzer_metrics` として集計する。差分レポートには baseline との差分が `analyzer.delta` として記録される。
+   - `summary` セクションにレイアウト数・アンカー数・警告/エラー件数・Analyzer issue/fix 件数を集計し、`summary_delta` で品質推移を数値化する。
+   - `environment` に Python / OS / CLI / LibreOffice / .NET SDK のバージョンを記録し、取得できなかった項目は診断警告に出力する。
 3. **互換性チェック**  
    - Golden Sample Runner が既知 spec を用いてレンダリング → Analyzer → LibreOffice まで通し、互換性指標を算出。  
    - エラー時は差分レポートにハッシュとログパスを記録。
