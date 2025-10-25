@@ -69,6 +69,9 @@
 | `Two Column Detail` | 2 カラム構成の詳細説明。左に箇条書き、右に画像 | `detail-visual` |
 | `One Column Detail` | 1 カラム構成でメッセージ重視。必要に応じて下部に画像 | `detail-visual` |
 | `Closing` | クロージング＋CTA。箇条書きとロゴ／ボタン | `closing-cta` |
+| `Timeline Detail` | 週次ロードマップ。タイムライン表と補足メモを組み合わせる | `Timeline Track`, `Timeline Notes`, `Timeline Subtitle` |
+| `Comparison Two Axis` | 導入前後や 2 軸での比較を整理する | `Axis Left`, `Axis Right`, `Axis Subtitle` |
+| `Fact Sheet` | KPI や前提条件のサマリーを表示する | `Fact Summary`, `Fact Subtitle` |
 
 > ※最小構成サンプルでは PowerPoint 既定の `Title Slide` / `Title and Content` レイアウトを利用。
 

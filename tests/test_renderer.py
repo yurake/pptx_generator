@@ -920,6 +920,38 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     assert "Logo" not in remaining_placeholder_names
 
 
+def test_template_has_timeline_detail_placeholders() -> None:
+    template_path = Path("samples/templates/templates.pptx")
+    placeholders = _load_placeholder_boxes(template_path, "Timeline Detail")
+
+    assert {"Timeline Track", "Timeline Notes", "Timeline Subtitle"} <= set(
+        placeholders
+    )
+    # idx を固定し、アンカー解決の互換性を担保する
+    assert placeholders["Timeline Track"][4] == 1
+    assert placeholders["Timeline Notes"][4] == 14
+    assert placeholders["Timeline Subtitle"][4] == 15
+
+
+def test_template_has_comparison_two_axis_placeholders() -> None:
+    template_path = Path("samples/templates/templates.pptx")
+    placeholders = _load_placeholder_boxes(template_path, "Comparison Two Axis")
+
+    assert {"Axis Left", "Axis Right", "Axis Subtitle"} <= set(placeholders)
+    assert placeholders["Axis Left"][4] == 1
+    assert placeholders["Axis Right"][4] == 14
+    assert placeholders["Axis Subtitle"][4] == 15
+
+
+def test_template_has_fact_sheet_placeholders() -> None:
+    template_path = Path("samples/templates/templates.pptx")
+    placeholders = _load_placeholder_boxes(template_path, "Fact Sheet")
+
+    assert {"Fact Summary", "Fact Subtitle"} <= set(placeholders)
+    assert placeholders["Fact Summary"][4] == 1
+    assert placeholders["Fact Subtitle"][4] == 15
+
+
 def test_renderer_removes_bullet_placeholder_when_anchor_specified(
     tmp_path: Path,
 ) -> None:
