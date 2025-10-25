@@ -20,13 +20,17 @@ from ..models import (
     TemplateReleaseAnalyzerSummaryDelta,
     TemplateReleaseChanges,
     TemplateReleaseDiagnostics,
+    TemplateReleaseEnvironment,
     TemplateReleaseGoldenRun,
     TemplateReleaseLayoutDetail,
     TemplateReleaseLayoutDiff,
     TemplateReleaseLayouts,
     TemplateReleaseReport,
+    TemplateReleaseSummary,
+    TemplateReleaseSummaryDelta,
     TemplateSpec,
 )
+from .environment import collect_environment_info
 
 
 def build_template_release(
@@ -121,12 +125,18 @@ def build_template_release(
     for message in analyzer_warnings:
         _append_unique(warnings, message)
 
+    environment, environment_warnings = collect_environment_info()
+    for message in environment_warnings:
+        _append_unique(warnings, message)
+
     total_layouts = len(details)
+    anchor_total = sum(len(detail.anchor_names) for detail in details)
     if total_layouts:
         placeholder_total = sum(detail.placeholder_count for detail in details)
         placeholders_avg = round(placeholder_total / total_layouts, 2)
     else:
         placeholders_avg = 0.0
+        placeholder_total = 0
 
     layouts = TemplateReleaseLayouts(
         total=total_layouts,
@@ -135,6 +145,24 @@ def build_template_release(
     )
 
     diagnostics = TemplateReleaseDiagnostics(warnings=warnings, errors=errors)
+
+    summary = TemplateReleaseSummary(
+        layouts=total_layouts,
+        anchors=anchor_total,
+        placeholders=placeholder_total,
+        warning_count=len(warnings),
+        error_count=len(errors),
+        analyzer_issue_total=(
+            analyzer_metrics.summary.issues.total
+            if analyzer_metrics is not None
+            else None
+        ),
+        analyzer_fix_total=(
+            analyzer_metrics.summary.fixes.total
+            if analyzer_metrics is not None
+            else None
+        ),
+    )
 
     release = TemplateRelease(
         template_id=template_id,
@@ -153,6 +181,8 @@ def build_template_release(
         diagnostics=diagnostics,
         analyzer_metrics=analyzer_metrics,
         golden_runs=golden_runs or [],
+        summary=summary,
+        environment=environment,
     )
     return release
 
@@ -247,6 +277,13 @@ def build_release_report(
             delta=delta,
         )
 
+    summary_delta = None
+    if baseline is not None:
+        summary_delta = _compute_summary_delta(
+            current.summary,
+            baseline.summary if baseline is not None else None,
+        )
+
     report = TemplateReleaseReport(
         template_id=current.template_id,
         baseline_id=baseline.template_id if baseline is not None else None,
@@ -258,6 +295,9 @@ def build_release_report(
         changes=changes,
         diagnostics=current.diagnostics,
         analyzer=analyzer_report,
+        summary=current.summary,
+        summary_baseline=baseline.summary if baseline is not None else None,
+        summary_delta=summary_delta,
     )
     return report
 
@@ -471,3 +511,30 @@ def _diff(current: Iterable[str], baseline: Iterable[str]) -> list[str]:
     current_set = set(current)
     baseline_set = set(baseline)
     return list(current_set - baseline_set)
+
+
+def _compute_summary_delta(
+    current: TemplateReleaseSummary,
+    baseline: TemplateReleaseSummary | None,
+) -> TemplateReleaseSummaryDelta | None:
+    if baseline is None:
+        return None
+
+    def _diff_optional(curr: int | None, base: int | None) -> int | None:
+        if curr is None and base is None:
+            return None
+        return (curr or 0) - (base or 0)
+
+    return TemplateReleaseSummaryDelta(
+        layouts=current.layouts - baseline.layouts,
+        anchors=current.anchors - baseline.anchors,
+        placeholders=current.placeholders - baseline.placeholders,
+        warning_count=current.warning_count - baseline.warning_count,
+        error_count=current.error_count - baseline.error_count,
+        analyzer_issue_total=_diff_optional(
+            current.analyzer_issue_total, baseline.analyzer_issue_total
+        ),
+        analyzer_fix_total=_diff_optional(
+            current.analyzer_fix_total, baseline.analyzer_fix_total
+        ),
+    )

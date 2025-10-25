@@ -20,7 +20,7 @@ from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
-                     RenderingReadyDocument, SpecValidationError,
+                     RenderingReadyDocument, SpecValidationError, TemplateRelease,
                      TemplateReleaseDiagnostics, TemplateReleaseGoldenRun)
 from .pipeline import (AnalyzerOptions, ContentApprovalError,
                        ContentApprovalOptions, ContentApprovalStep,
@@ -1884,15 +1884,27 @@ def tpl_release(
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        baseline = None
+        if baseline_release is not None:
+            baseline = load_template_release(baseline_release)
+
+        resolved_golden_specs, auto_golden_warnings = _resolve_golden_specs(
+            user_specs=list(golden_specs),
+            baseline=baseline,
+            baseline_release=baseline_release,
+        )
+
         golden_runs: list[TemplateReleaseGoldenRun] = []
         golden_warnings: list[str] = []
         golden_errors: list[str] = []
-        if golden_specs:
+        if resolved_golden_specs:
             golden_runs, golden_warnings, golden_errors = _run_golden_specs(
                 template_path=template_path,
-                golden_specs=list(golden_specs),
+                golden_specs=resolved_golden_specs,
                 output_dir=output_dir,
             )
+
+        combined_warnings = golden_warnings + auto_golden_warnings
 
         release = build_template_release(
             template_path=template_path,
@@ -1903,7 +1915,7 @@ def tpl_release(
             generated_by=generated_by,
             reviewed_by=reviewed_by,
             golden_runs=golden_runs,
-            extra_warnings=golden_warnings,
+            extra_warnings=combined_warnings,
             extra_errors=golden_errors,
         )
         release_path = output_dir / "template_release.json"
@@ -1922,10 +1934,6 @@ def tpl_release(
                 ),
                 encoding="utf-8",
             )
-
-        baseline = None
-        if baseline_release is not None:
-            baseline = load_template_release(baseline_release)
 
         report = build_release_report(current=release, baseline=baseline)
         report_path = output_dir / "release_report.json"
@@ -2079,6 +2087,64 @@ def _run_golden_specs(
         results.append(result)
 
     return results, warnings, errors
+
+
+def _resolve_golden_specs(
+    *,
+    user_specs: list[Path],
+    baseline: TemplateRelease | None,
+    baseline_release: Path | None,
+) -> tuple[list[Path], list[str]]:
+    resolved: list[Path] = []
+    warnings: list[str] = []
+    seen: set[Path] = set()
+
+    def _add_spec(path: Path) -> None:
+        try:
+            normalized = path.resolve()
+        except OSError:
+            normalized = path
+        if normalized in seen:
+            return
+        resolved.append(path)
+        seen.add(normalized)
+
+    for spec in user_specs:
+        _add_spec(spec)
+
+    if baseline is None:
+        return resolved, warnings
+
+    if user_specs:
+        return resolved, warnings
+
+    base_dir = baseline_release.parent if baseline_release is not None else Path.cwd()
+    for run in baseline.golden_runs:
+        candidate = _resolve_golden_spec_path(run.spec_path, base_dir)
+        if candidate is None:
+            warnings.append(
+                f"baseline のゴールデンスペックを解決できませんでした: {run.spec_path}"
+            )
+            continue
+        _add_spec(candidate)
+
+    return resolved, warnings
+
+
+def _resolve_golden_spec_path(spec_path: str, base_dir: Path) -> Path | None:
+    candidate = Path(spec_path)
+    if candidate.is_absolute() and candidate.exists():
+        return candidate
+
+    cwd_candidate = Path.cwd() / candidate
+    if cwd_candidate.exists():
+        return cwd_candidate
+
+    fallback = base_dir / candidate
+    if fallback.exists():
+        return fallback
+
+    return None
 
 
 def _load_branding_for_template(

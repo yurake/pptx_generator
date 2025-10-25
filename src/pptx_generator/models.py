@@ -747,6 +747,54 @@ class TemplateReleaseAnalyzerReport(BaseModel):
     )
 
 
+class TemplateReleaseEnvironment(BaseModel):
+    """リリース生成時の実行環境メタ情報。"""
+
+    python_version: str = Field(..., description="Python のバージョン")
+    platform: str = Field(..., description="OS / プラットフォーム情報")
+    pptx_generator_version: str = Field(
+        ..., description="pptx-generator CLI のバージョン"
+    )
+    libreoffice_version: str | None = Field(
+        None, description="LibreOffice (soffice) のバージョン"
+    )
+    dotnet_sdk_version: str | None = Field(
+        None, description=".NET SDK のバージョン"
+    )
+
+
+class TemplateReleaseSummary(BaseModel):
+    """テンプレートリリースの品質サマリ。"""
+
+    layouts: int = Field(..., description="レイアウト総数")
+    anchors: int = Field(..., description="アンカー総数")
+    placeholders: int = Field(..., description="プレースホルダー総数")
+    warning_count: int = Field(..., description="警告件数")
+    error_count: int = Field(..., description="エラー件数")
+    analyzer_issue_total: int | None = Field(
+        None, description="Analyzer の指摘件数合計"
+    )
+    analyzer_fix_total: int | None = Field(
+        None, description="Analyzer の修正提案件数合計"
+    )
+
+
+class TemplateReleaseSummaryDelta(BaseModel):
+    """テンプレートリリースサマリの差分。"""
+
+    layouts: int = Field(..., description="レイアウト数の差分")
+    anchors: int = Field(..., description="アンカー数の差分")
+    placeholders: int = Field(..., description="プレースホルダー数の差分")
+    warning_count: int = Field(..., description="警告件数の差分")
+    error_count: int = Field(..., description="エラー件数の差分")
+    analyzer_issue_total: int | None = Field(
+        None, description="Analyzer 指摘件数の差分"
+    )
+    analyzer_fix_total: int | None = Field(
+        None, description="Analyzer 修正提案件数の差分"
+    )
+
+
 class TemplateRelease(BaseModel):
     """テンプレートリリースメタ情報。"""
 
@@ -768,6 +816,12 @@ class TemplateRelease(BaseModel):
     )
     golden_runs: list[TemplateReleaseGoldenRun] = Field(
         default_factory=list, description="ゴールデンサンプル検証の結果一覧"
+    )
+    summary: TemplateReleaseSummary = Field(
+        ..., description="品質メトリクスのサマリ"
+    )
+    environment: TemplateReleaseEnvironment = Field(
+        ..., description="実行環境メタ情報"
     )
 
 
@@ -807,4 +861,13 @@ class TemplateReleaseReport(BaseModel):
     diagnostics: TemplateReleaseDiagnostics = Field(..., description="現在テンプレートの診断結果")
     analyzer: TemplateReleaseAnalyzerReport | None = Field(
         default=None, description="Analyzer メトリクスの比較結果"
+    )
+    summary: TemplateReleaseSummary | None = Field(
+        default=None, description="現在テンプレートの品質サマリ"
+    )
+    summary_baseline: TemplateReleaseSummary | None = Field(
+        default=None, description="ベースラインテンプレートの品質サマリ"
+    )
+    summary_delta: TemplateReleaseSummaryDelta | None = Field(
+        default=None, description="品質サマリの差分"
     )

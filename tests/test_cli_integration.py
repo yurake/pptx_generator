@@ -1248,6 +1248,70 @@ def test_cli_tpl_release_with_baseline(tmp_path) -> None:
         assert report.analyzer is None
 
 
+def test_cli_tpl_release_reuses_baseline_golden_specs(tmp_path) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+        shutil.copytree(repo_root / "config", fs_root / "config")
+
+        first_output = Path(".pptx/release")
+        result_first = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+                "--output",
+                str(first_output),
+                "--golden-spec",
+                "samples/json/sample_spec.json",
+            ],
+            catch_exceptions=False,
+        )
+        assert result_first.exit_code == 0
+        baseline_path = first_output / "template_release.json"
+        assert baseline_path.exists()
+
+        second_output = Path(".pptx/release-v2")
+        result_second = runner.invoke(
+            app,
+            [
+                "tpl-release",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.1.0",
+                "--output",
+                str(second_output),
+                "--baseline-release",
+                str(baseline_path),
+            ],
+            catch_exceptions=False,
+        )
+        assert result_second.exit_code == 0
+
+        release_path = second_output / "template_release.json"
+        assert release_path.exists()
+        release = TemplateRelease.model_validate_json(
+            release_path.read_text(encoding="utf-8")
+        )
+        assert release.golden_runs
+        assert any(
+            run.spec_path.endswith("sample_spec.json") for run in release.golden_runs
+        )
+        metrics = release.analyzer_metrics
+        assert metrics is not None
+        assert metrics.summary.run_count >= 1
+
 def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
     runner = CliRunner()
     repo_root = Path(__file__).resolve().parents[1]
