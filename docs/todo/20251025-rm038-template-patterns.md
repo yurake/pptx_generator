@@ -26,7 +26,7 @@ roadmap_item: RM-038 テンプレートパターン拡充
   - [x] docs/design 配下（今回変更なし）
   - [x] docs/runbook 配下（今回変更なし）
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] PR 作成
   - メモ: todo-auto-complete の動作を確認し、PR 番号を記録する。
