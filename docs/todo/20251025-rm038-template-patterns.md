@@ -7,26 +7,26 @@ roadmap_item: RM-038 テンプレートパターン拡充
 
 - [x] ブランチ作成と初期コミット
   - メモ: feat/rm038-template-patterns を main から作成。初期コミット `docs(todo): add rm038 template pattern todo` を作成済み。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: ユーザー承認待ち。Plan 提示時に参照メッセージ ID を記録する。
-- [ ] 設計・実装方針の確定
-  - メモ: 新規レイアウト種別と命名規約の調整ポイントを整理する。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 2025-10-25 ユーザー承認（チャット返信「ok」）済み。Plan 内容を PR 用メモにも転記予定。
+- [x] 設計・実装方針の確定
+  - メモ: Timeline Detail / Comparison Two Axis / Fact Sheet を追加し、アンカー名を `Timeline Track` などへ統一する方針を決定。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: RM-038 に紐づく要件整理が必要になった場合は docs/notes を含め検討する。
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: templates/templates.pptx へのレイアウト追加と layout ヒント更新を想定。詳細は Plan 承認後に確定。
-- [ ] テスト・検証
-  - メモ: uv run --extra dev pytest と CLI レンダリング確認を予定。
-- [ ] ドキュメント更新
-  - メモ: 変更内容に応じて docs/policies/config-and-templates.md 等を更新する。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
-- [x] 関連Issue 行の更新
+- [x] 実装
+  - メモ: templates/templates.pptx に 3 レイアウト追加、sample_spec.json / renderer テスト・ポリシードキュメントを更新済み。
+- [x] テスト・検証
+  - メモ: `uv run pptx layout-validate --template samples/templates/templates.pptx` と `uv run --extra dev pytest` を完了。CLI 手動確認は必要に応じて実施予定。
+- [x] ドキュメント更新
+  - メモ: docs/policies/config-and-templates.md / samples/AGENTS.md を更新。その他カテゴリは今回変更不要であることを確認。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（今回変更なし）
+  - [x] docs/design 配下（今回変更なし）
+  - [x] docs/runbook 配下（今回変更なし）
+  - [x] README.md / AGENTS.md
+- [ ] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] PR 作成
   - メモ: todo-auto-complete の動作を確認し、PR 番号を記録する。
