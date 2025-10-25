@@ -30,8 +30,8 @@ roadmap_item: RM-035 テンプレートリリース監査強化
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後にフロントマターの `関連Issue` を `#xxx` 形式へ更新する。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフロー未動作時は理由をメモする（手動チェック禁止）。
+- [x] PR 作成
+  - メモ: PR #239 https://github.com/yurake/pptx_generator/pull/239（2025-10-25 完了）
 
 ## メモ
 - 2025-10-23: 計画承認済。Analyzer メトリクスとゴールデンサンプルフローを中心に差分を整備する。

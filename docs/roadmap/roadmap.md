@@ -40,7 +40,7 @@ flowchart TB
         RM016["RM-016<br/>テンプレート命名整合性<br/>チェッカー<br/>(完了)"]
         RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
-        RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(未着手)"]
+        RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
     end
 
@@ -546,7 +546,7 @@ flowchart TB
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
 - 参照 ToDo: [docs/todo/20251025-rm038-template-patterns.md](../todo/20251025-rm038-template-patterns.md)
-- 状況: 進行中（2025-10-25 更新）
+- 状況: 完了（2025-10-25 更新）
 - 期待成果:
   - テンプレ差分アルゴリズムと `template_release.json` / `release_report.json` への Analyzer 指標集約、品質推移の可視化。
   - ゴールデンサンプル自動生成・再実行フローと廃棄ポリシーを runbook 化し、CI / リリース前レビューへ組み込む。
