@@ -346,6 +346,170 @@
       "notes": "写真の差し替え例として team-photo アンカーを設定。"
     },
     {
+      "id": "timeline",
+      "layout": "Timeline Detail",
+      "title": "導入ロードマップ",
+      "subtitle": "4 週間で段階的に展開するスケジュール例",
+      "tables": [
+        {
+          "id": "timeline-track",
+          "anchor": "Timeline Track",
+          "columns": [
+            "週",
+            "主要アクション",
+            "成果指標"
+          ],
+          "rows": [
+            [
+              "第1週",
+              "現状ヒアリングと要件整理、テンプレート差分の棚卸し",
+              "承認済みの運用要件リスト"
+            ],
+            [
+              "第2週",
+              "テンプレート拡充と layout-validate 実行、レビュー反映",
+              "新レイアウトの承認 / 議事メモ"
+            ],
+            [
+              "第3週",
+              "PoC 実行と Analyzer 指摘の解消、CLI ワークフロー検証",
+              "レンダリングログの警告 0 件"
+            ],
+            [
+              "第4週",
+              "運用ガイド整備とトレーニング、PDF 変換の最終検証",
+              "docs/runbooks への反映完了"
+            ]
+          ],
+          "style": {
+            "header_fill": "#E6EEF8",
+            "zebra": true
+          }
+        }
+      ],
+      "bullets": [
+        {
+          "anchor": "Timeline Notes",
+          "items": [
+            {
+              "id": "timeline-note-1",
+              "text": "承認フローと環境セットアップを週次で追跡し、差戻しを防止",
+              "level": 0
+            },
+            {
+              "id": "timeline-note-2",
+              "text": "Analyzer スナップショットを更新し、警告をロードマップに連携",
+              "level": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comparison",
+      "layout": "Comparison Two Axis",
+      "title": "導入前後の 2 軸比較",
+      "subtitle": "品質 × スピードの両立を実現",
+      "tables": [
+        {
+          "id": "axis-matrix",
+          "anchor": "Axis Left",
+          "columns": [
+            "観点",
+            "導入前",
+            "導入後"
+          ],
+          "rows": [
+            [
+              "品質",
+              "校正ルールが属人化し、差戻し理由が曖昧",
+              "レイアウト命名と補助資料が統一されレビューが簡易化"
+            ],
+            [
+              "スピード",
+              "レイアウト調整に 3 日以上を要する",
+              "テンプレート候補の自動提示で初稿作成が当日内に短縮"
+            ],
+            [
+              "透明性",
+              "アサイン履歴や検証ログが分散",
+              "audit_log.json で工程別の検証結果を一元管理"
+            ]
+          ],
+          "style": {
+            "header_fill": "#F5F0FF",
+            "zebra": true
+          }
+        }
+      ],
+      "bullets": [
+        {
+          "anchor": "Axis Right",
+          "items": [
+            {
+              "id": "axis-note-1",
+              "text": "マッピング補完エンジンと Analyzer の併用でレイアウト整合性を担保",
+              "level": 0
+            },
+            {
+              "id": "axis-note-2",
+              "text": "Approval-First Policy を適用し、判断経緯を ToDo / ロードマップに記録",
+              "level": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fact_sheet",
+      "layout": "Fact Sheet",
+      "title": "提案のファクトシート",
+      "subtitle": "主要 KPI と運用条件のサマリー",
+      "tables": [
+        {
+          "id": "fact-summary",
+          "anchor": "Fact Summary",
+          "columns": [
+            "カテゴリ",
+            "指標",
+            "現状",
+            "目標"
+          ],
+          "rows": [
+            [
+              "品質",
+              "差戻し率",
+              "18%",
+              "5% 以下"
+            ],
+            [
+              "スピード",
+              "初稿リードタイム",
+              "3.5 日",
+              "1.0 日"
+            ],
+            [
+              "運用",
+              "テンプレート更新頻度",
+              "四半期に 1 回",
+              "月次でレビュー"
+            ]
+          ],
+          "style": {
+            "header_fill": "#E8F5E9",
+            "zebra": true
+          }
+        }
+      ],
+      "textboxes": [
+        {
+          "id": "fact-memo",
+          "text": "数値はサンプルであり、導入計画に応じて差し替え可能です。",
+          "anchor": "Fact Subtitle"
+        }
+      ]
+    },
+    {
       "id": "closing",
       "layout": "Closing",
       "title": "次のアクション",

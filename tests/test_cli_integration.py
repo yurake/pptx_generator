@@ -100,6 +100,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert hashes.get("rendering_ready", "").startswith("sha256:")
     assert hashes.get("rendering_log", "").startswith("sha256:")
     assert hashes.get("monitoring_report", "").startswith("sha256:")
+    assert hashes.get("mapping_log", "").startswith("sha256:")
     rendering_summary = audit_payload.get("rendering")
     assert rendering_summary is not None
     assert rendering_summary.get("warnings_total") == rendering_log["meta"]["warnings_total"]
@@ -111,6 +112,12 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "template"
     assert branding_info.get("source", {}).get("template") == str(SAMPLE_TEMPLATE)
+    mapping_info = audit_payload.get("mapping")
+    assert mapping_info is not None
+    assert mapping_info.get("slides") == len(spec.slides)
+    assert mapping_info.get("rendering_ready_path") == str((output_dir / "rendering_ready.json"))
+    assert mapping_info.get("fallback_count") == 0
+    assert mapping_info.get("ai_patch_count") == 0
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "disabled"
@@ -185,10 +192,15 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert hashes.get("analysis_pre_polisher", "").startswith("sha256:")
     assert hashes.get("rendering_log", "").startswith("sha256:")
     assert hashes.get("monitoring_report", "").startswith("sha256:")
+    assert hashes.get("mapping_log", "").startswith("sha256:")
     assert isinstance(audit_payload.get("refiner_adjustments"), list)
     monitoring_summary = audit_payload.get("monitoring")
     assert monitoring_summary is not None
     assert "alert_level" in monitoring_summary
+    mapping_info = audit_payload.get("mapping")
+    assert mapping_info is not None
+    assert mapping_info.get("rendering_ready_path") == str((output_dir / "rendering_ready.json"))
+    assert mapping_info.get("fallback_count") >= 0
     content_meta = audit_payload.get("content_approval")
     assert content_meta is not None
     assert content_meta["slides"] == len(approved_payload["slides"])
@@ -221,6 +233,63 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     problem_slide = presentation.slides[2]
     notes_text = problem_slide.notes_slide.notes_text_frame.text
     assert "監査ログ要件を強調（承認済み）。" in notes_text
+
+
+def test_cli_mapping_then_render(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_spec.json")
+    mapping_dir = tmp_path / "mapping"
+    render_dir = tmp_path / "render"
+    draft_dir = tmp_path / "draft"
+
+    runner = CliRunner()
+
+    mapping_result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--output",
+            str(mapping_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--draft-output",
+            str(draft_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert mapping_result.exit_code == 0
+
+    rendering_ready_path = mapping_dir / "rendering_ready.json"
+    mapping_log_path = mapping_dir / "mapping_log.json"
+    assert rendering_ready_path.exists()
+    assert mapping_log_path.exists()
+
+    render_result = runner.invoke(
+        app,
+        [
+            "render",
+            str(rendering_ready_path),
+            "--output",
+            str(render_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert render_result.exit_code == 0
+
+    audit_path = render_dir / "audit_log.json"
+    assert audit_path.exists()
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    hashes = audit_payload.get("hashes")
+    assert hashes is not None
+    assert hashes.get("rendering_ready", "").startswith("sha256:")
+    # mapping_log は別ディレクトリのため単体 render 実行ではハッシュ対象外
+    assert hashes.get("mapping_log") is None
+    artifacts = audit_payload.get("artifacts", {})
+    assert artifacts.get("rendering_ready") == str(rendering_ready_path)
 
 
 def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:

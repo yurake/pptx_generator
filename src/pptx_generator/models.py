@@ -373,6 +373,25 @@ class DraftLayoutCandidate(BaseModel):
     score: float = Field(ge=0.0, le=1.0)
 
 
+class DraftLayoutScoreDetail(BaseModel):
+    uses_tag: float = 0.0
+    content_capacity: float = 0.0
+    diversity: float = 0.0
+    analyzer_support: float = 0.0
+
+    @property
+    def total(self) -> float:
+        return round(self.uses_tag + self.content_capacity + self.diversity + self.analyzer_support, 3)
+
+
+class DraftAnalyzerSummary(BaseModel):
+    severity_high: int = 0
+    severity_medium: int = 0
+    severity_low: int = 0
+    layout_consistency: Literal["ok", "warn", "error"] | None = None
+    blocking_tags: tuple[str, ...] = ()
+
+
 class DraftSlideCard(BaseModel):
     ref_id: str
     order: int
@@ -381,6 +400,8 @@ class DraftSlideCard(BaseModel):
     status: DraftStatus = "draft"
     layout_candidates: list[DraftLayoutCandidate] = Field(default_factory=list)
     appendix: bool = False
+    layout_score_detail: DraftLayoutScoreDetail | None = None
+    analyzer_summary: DraftAnalyzerSummary | None = None
 
 
 class DraftSection(BaseModel):
@@ -388,6 +409,8 @@ class DraftSection(BaseModel):
     order: int
     status: DraftStatus = "draft"
     slides: list[DraftSlideCard] = Field(default_factory=list)
+    chapter_template_id: str | None = None
+    template_match_score: float | None = Field(default=None, ge=0.0, le=1.0)
 
     @field_validator("slides")
     @classmethod
@@ -399,10 +422,22 @@ class DraftSection(BaseModel):
         return value
 
 
+class DraftTemplateMismatch(BaseModel):
+    section_id: str
+    issue: Literal["missing", "excess", "insufficient", "capacity"]
+    severity: Literal["warn", "blocker"] = "warn"
+    detail: str | None = None
+
+
 class DraftMeta(BaseModel):
     target_length: int | None = None
     structure_pattern: str | None = None
     appendix_limit: int | None = None
+    template_id: str | None = None
+    template_match_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    template_mismatch: list[DraftTemplateMismatch] = Field(default_factory=list)
+    return_reason_stats: dict[str, int] = Field(default_factory=dict)
+    analyzer_summary: dict[str, int] = Field(default_factory=dict)
 
 
 class DraftDocument(BaseModel):
