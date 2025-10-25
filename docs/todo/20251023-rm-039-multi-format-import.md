@@ -24,9 +24,9 @@ roadmap_item: RM-039 コンテンツ多形式インポート
 - [x] 実装
   - 完了条件: テキスト/PDF/URL 入力の取得・正規化・監査ログ機能を期待成果に沿って実装
   - メモ: ContentImportService と `pptx content --content-source` を追加済み
-- [ ] テスト・検証
+- [x] テスト・検証
   - 完了条件: 単体・統合テストを実施し `uv run --extra dev pytest` 等で確認、結果を記録
-  - メモ: テキスト/URL 入力経路は `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_content_import.py tests/test_cli_content.py` で確認済み。LibreOffice 未導入のため PDF 変換を含む検証は導入後に再実施
+  - メモ: 2025-10-25 LibreOffice 導入後に `uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --export-pdf` と `uv run --extra dev pytest tests/test_cli_integration.py` を実施し、PDF 生成と 26 件の CLI テスト成功を確認。詳細は docs/notes/20251025-libreoffice-verification.md を参照。
 - [x] ドキュメント更新
   - 完了条件: 実装結果と運用手順を docs/ 配下の該当カテゴリへ反映
   - メモ: 要件・設計・ロードマップを更新済み。LibreOffice 導入後の追記要否を継続確認
