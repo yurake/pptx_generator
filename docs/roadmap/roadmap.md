@@ -41,7 +41,7 @@ flowchart TB
         RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(未着手)"]
-        RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(未着手)"]
+        RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -71,7 +71,7 @@ flowchart TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
-        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(未着手)"]
+        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
     end
 
@@ -95,7 +95,7 @@ flowchart TB
         RM020["RM-020<br/>PDF 自動生成<br/>対応<br/>(完了)"]
         RM026["RM-026<br/>レンダリング監査<br/>統合<br/>(完了)"]
         RM032["RM-032<br/>Analyzer レンダリング<br/>監視統合<br/>(完了)"]
-        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(未着手)"]
+        RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(完了)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
     end
@@ -177,6 +177,26 @@ flowchart TB
     RM018 --> RM034
     RM019 --> RM034
     RM014 --> RM034
+    RM021 --> RM035
+    RM027 --> RM035
+    RM014 --> RM035
+    RM024 --> RM036
+    RM031 --> RM036
+    RM005 --> RM036
+    RM025 --> RM037
+    RM026 --> RM037
+    RM033 --> RM037
+    RM021 --> RM038
+    RM022 --> RM038
+    RM025 --> RM038
+    RM023 --> RM039
+    RM017 --> RM039
+    RM023 --> RM040
+    RM029 --> RM040
+    RM024 --> RM041
+    RM036 --> RM041
+    RM023 --> RM042
+    RM005 --> RM042
 ```
 
 ## 個別状況
@@ -525,8 +545,8 @@ flowchart TB
 - ゴール: テンプレートリリース時の差分検出・品質指標・実行環境を一体管理し、テンプレ受け渡しの信頼性と再現性を高める。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 参照 ToDo: [docs/todo/20251025-rm038-template-patterns.md](../todo/20251025-rm038-template-patterns.md)
+- 状況: 進行中（2025-10-25 更新）
 - 期待成果:
   - テンプレ差分アルゴリズムと `template_release.json` / `release_report.json` への Analyzer 指標集約、品質推移の可視化。
   - ゴールデンサンプル自動生成・再実行フローと廃棄ポリシーを runbook 化し、CI / リリース前レビューへ組み込む。
@@ -537,9 +557,10 @@ flowchart TB
 ### RM-036 ドラフト構成インテリジェンス拡張
 - ゴール: layout_hint 候補提示・章テンプレ・差戻し理由テンプレートを体系化し、HITL 構成作業の判断と手戻りを最小化する。
 - 対象工程: 4（ドラフト構成設計）
-- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md), [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
+- 参照 ToDo: [docs/todo/archive/20251023-rm036-draft-intelligence.md](../todo/archive/20251023-rm036-draft-intelligence.md)
+- 状況: 完了（2025-10-23 更新）
+- 進捗メモ: [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
 - 期待成果:
   - 章テンプレプリセットと layout_hint AI 補助の設計／PoC により、候補提示を自動化し承認時間を短縮。
   - Analyzer 指摘件数や `layout_consistency` を Draft ダッシュボードへ連携し、構成見直しの優先度を可視化。
@@ -552,7 +573,7 @@ flowchart TB
 - 対象工程: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 状況: 完了（2025-10-23 更新）
 - 期待成果:
   - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
   - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
@@ -564,12 +585,13 @@ flowchart TB
 - ゴール: `templates/templates.pptx` にブランド準拠のページパターンを追加し、工程2・5・6 のレイアウト選択肢を広げる。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 参照 ToDo: [docs/todo/archive/20251025-rm038-template-patterns.md](../todo/archive/20251025-rm038-template-patterns.md)
+- 状況: 完了（2025-10-25 更新）
 - 期待成果:
   - 新規レイアウト（タイムライン、2軸比較、ファクトシート等）の設計とテンプレ反映、命名規約ガイド更新。
   - `layout-validate` ゴールデン更新、`layouts.jsonl` / `diagnostics.json` におけるヒント拡張、Analyzer スナップショット整備。
   - サンプル spec・マッピングスコアリング調整・レンダリング検証の拡充。
+  - 進捗メモ: 2025-10-25 `Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` を追加し、サンプル仕様・テスト・ポリシードキュメントを更新。
 - 依存: RM-021（テンプレ資産監査パイプライン）、RM-022（レイアウト解析検証強化）、RM-025（マッピング補完エンジン）。
 
 <a id="rm-039"></a>
