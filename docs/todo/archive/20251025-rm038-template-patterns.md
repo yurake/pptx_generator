@@ -28,8 +28,8 @@ roadmap_item: RM-038 テンプレートパターン拡充
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
-- [ ] PR 作成
-  - メモ: todo-auto-complete の動作を確認し、PR 番号を記録する。
+- [x] PR 作成
+  - メモ: PR #238 https://github.com/yurake/pptx_generator/pull/238（2025-10-25 完了）
 
 ## メモ
 - 計画承認取得後に作業開始。

@@ -41,7 +41,7 @@ flowchart TB
         RM021["RM-021<br/>テンプレ資産監査<br/>パイプライン<br/>(完了)"]
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(未着手)"]
-        RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(未着手)"]
+        RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -585,8 +585,8 @@ flowchart TB
 - ゴール: `templates/templates.pptx` にブランド準拠のページパターンを追加し、工程2・5・6 のレイアウト選択肢を広げる。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
-- 参照 ToDo: [docs/todo/20251025-rm038-template-patterns.md](../todo/20251025-rm038-template-patterns.md)
-- 状況: 進行中（2025-10-25 更新）
+- 参照 ToDo: [docs/todo/archive/20251025-rm038-template-patterns.md](../todo/archive/20251025-rm038-template-patterns.md)
+- 状況: 完了（2025-10-25 更新）
 - 期待成果:
   - 新規レイアウト（タイムライン、2軸比較、ファクトシート等）の設計とテンプレ反映、命名規約ガイド更新。
   - `layout-validate` ゴールデン更新、`layouts.jsonl` / `diagnostics.json` におけるヒント拡張、Analyzer スナップショット整備。
