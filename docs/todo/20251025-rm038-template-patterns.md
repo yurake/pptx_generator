@@ -11,10 +11,10 @@ roadmap_item: RM-038 テンプレートパターン拡充
   - メモ: 2025-10-25 ユーザー承認（チャット返信「ok」）済み。Plan 内容を PR 用メモにも転記予定。
 - [x] 設計・実装方針の確定
   - メモ: Timeline Detail / Comparison Two Axis / Fact Sheet を追加し、アンカー名を `Timeline Track` などへ統一する方針を決定。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: RM-038 に紐づく要件整理が必要になった場合は docs/notes を含め検討する。
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 今回は要件・設計ドキュメントに追加変更が不要であることを確認済み。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: templates/templates.pptx に 3 レイアウト追加、sample_spec.json / renderer テスト・ポリシードキュメントを更新済み。
 - [x] テスト・検証
