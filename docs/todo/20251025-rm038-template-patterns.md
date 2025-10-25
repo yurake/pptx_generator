@@ -1,7 +1,7 @@
 ---
 目的: templates/templates.pptx にブランド準拠の新規レイアウトを追加し、RM-038 の期待成果に沿ったパターン拡充を行う
 関連ブランチ: feat/rm038-template-patterns
-関連Issue: 未作成
+関連Issue: #237
 roadmap_item: RM-038 テンプレートパターン拡充
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-038 テンプレートパターン拡充
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] PR 作成
   - メモ: todo-auto-complete の動作を確認し、PR 番号を記録する。
