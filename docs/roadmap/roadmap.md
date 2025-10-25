@@ -71,7 +71,7 @@ flowchart TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
-        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(未着手)"]
+        RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
     end
 
@@ -557,9 +557,10 @@ flowchart TB
 ### RM-036 ドラフト構成インテリジェンス拡張
 - ゴール: layout_hint 候補提示・章テンプレ・差戻し理由テンプレートを体系化し、HITL 構成作業の判断と手戻りを最小化する。
 - 対象工程: 4（ドラフト構成設計）
-- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
-- 参照 ToDo: [docs/todo/20251025-rm038-template-patterns.md](../todo/20251025-rm038-template-patterns.md)
-- 状況: 進行中（2025-10-25 更新）
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md), [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
+- 参照 ToDo: [docs/todo/archive/20251023-rm036-draft-intelligence.md](../todo/archive/20251023-rm036-draft-intelligence.md)
+- 状況: 完了（2025-10-23 更新）
+- 進捗メモ: [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
 - 期待成果:
   - 章テンプレプリセットと layout_hint AI 補助の設計／PoC により、候補提示を自動化し承認時間を短縮。
   - Analyzer 指摘件数や `layout_consistency` を Draft ダッシュボードへ連携し、構成見直しの優先度を可視化。
