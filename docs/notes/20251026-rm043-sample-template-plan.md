@@ -65,3 +65,59 @@
 1. 上記カテゴリの詳細要件（アンカー名・必要要素）を PPTX 編集用に整理し、テンプレ作成をユーザーへ依頼。  
 2. テンプレ受領後、抽出→JSON 生成→テストを順次実施。  
 3. 最終的な成果物と検証結果を ToDo／ロードマップに反映し、レビューへ準備する。
+
+## 6. テンプレ編集指示書（ユーザー向け）
+
+### 6.1 共通ルール
+- レイアウト追加先: `samples/templates/templates.pptx`。既存レイアウトを削除せず、新規レイアウトを追加。  
+- レイアウト名は英語ベース＋キャメルケース風に統一（例: `SectionCoverSimple`）。  
+- アンカー（図形名）は JSON 仕様と同名になるよう設定し、スペースを含めない。  
+- テキストプレースホルダーは初期文字列を空に設定。画像・図形は透過塗りまたはダミー画像で配置。  
+- 追加レイアウトで利用するアンカー名が既存と重複しても構わないが、同一レイアウト内では一意にする。  
+- 画像用アンカーは長方形図形で枠取りし、`Image` 系、`Illustration`、`Icon` など用途に応じた名前を付与。  
+- テーブル・チャートは PowerPoint の該当プレースホルダーを配置して命名。  
+- 追加レイアウトは 12 種類を基本テンプレとして用意し、同レイアウトの色替えや配置替えで 50 ページ分をカバー予定。
+
+### 6.2 レイアウト定義
+| Layout 名 | 想定カテゴリ / 用途 | 必須アンカー | 任意アンカー / 備考 |
+| --- | --- | --- | --- |
+| `SectionCoverSimple` | セクション区切り（標準） | `SectionTitle`, `SectionSubtitle`, `BrandLogo` | 背景画像を使用する場合は `BackgroundImage` |
+| `SectionCoverPhoto` | セクション区切り（写真強調） | `SectionTitle`, `SectionSubtitle`, `HeroImage`, `BrandLogo` | `HeroImage` は全面写真差し替え用 |
+| `SummaryThreeColumn` | ビジネスサマリー（3 カラム） | `SummaryLead`, `SummaryColLeft`, `SummaryColCenter`, `SummaryColRight` | アイコン領域が必要なら `SummaryIcons` |
+| `SummaryKPIBoard` | KPI 集約 | `KPIHeadline`, `KPIPrimary`, `KPISecondary`, `KPIChart` | `KPIFootnote` |
+| `BenefitCards` | ベネフィットカード | `BenefitTitle`, `BenefitCard1`, `BenefitCard2`, `BenefitCard3`, `BenefitIllustration` | カードが 4 枚の場合は `BenefitCard4` を追加 |
+| `ProblemBeforeAfter` | 課題 / 解決比較 | `ProblemBefore`, `ProblemAfter`, `ProblemNotes` | 中央アイコン用に `ProblemIcon` |
+| `PainGainMatrix` | Pain / Gain テーブル | `PainGainTable`, `PainGainNotes` | |
+| `SolutionModules` | ソリューション構成図 | `SolutionTitle`, `SolutionOverview`, `SolutionModules`, `SolutionIllustration` | |
+| `PhasedImpact` | フェーズ別効果 | `PhasedTitle`, `PhasedTimeline`, `PhasedBenefits` | |
+| `RoadmapQuarterly` | 四半期ロードマップ | `RoadmapTable`, `RoadmapMilestones`, `RoadmapNotes` | |
+| `RoadmapVertical` | 縦型ロードマップ | `RoadmapTimeline`, `RoadmapDetails`, `RoadmapNotes` | |
+| `KPIHighlight` | KPI ハイライト | `HighlightTitle`, `HighlightPrimary`, `HighlightSecondary`, `HighlightChart` | |
+| `FinancialBreakdown` | 財務内訳 | `FinanceTable`, `FinanceNotes`, `FinanceChart` | |
+| `ResourceHeatmap` | リソース配分 | `ResourceMatrix`, `ResourceLegend`, `ResourceNotes` | |
+| `OrgStructure` | 体制図 | `OrgChart`, `OrgNotes`, `OrgContact` | `OrgPhoto` |
+| `RACIOverview` | RACI ボード | `RACIChart`, `RACINotes` | |
+| `ProcessSteps` | ステップ図（横並び） | `ProcessHeader`, `ProcessSteps`, `ProcessNotes` | |
+| `ProcessLoop` | 循環プロセス | `ProcessLoop`, `ProcessCaption`, `ProcessNotes` | |
+| `ChecklistBoard` | チェックリスト | `ChecklistHeader`, `ChecklistItems`, `ChecklistNotes` | |
+| `RiskMitigation` | リスクと対策 | `RiskTable`, `RiskNotes` | `RiskIcon` |
+| `FAQCards` | FAQ 形式 | `FAQTitle`, `FAQList`, `FAQNotes`, `FAQIllustration` | |
+| `DataComboChart` | 複合チャート | `ChartPrimary`, `ChartSecondary`, `ChartNotes` | |
+| `DataHeatmap` | データヒートマップ | `Heatmap`, `HeatmapNotes`, `HeatmapLegend` | |
+| `ClosingCTA` | クロージング／CTA | `ClosingTitle`, `ClosingBullets`, `ClosingCTA`, `ClosingContact`, `BrandLogo` | |
+| `ContactThankYou` | 感謝ページ | `ThankTitle`, `ThankSubtitle`, `ContactInfo`, `ContactQR`, `BrandLogo` | `BackgroundImage` |
+
+> 上表の 24 レイアウトをテンプレートに追加し、構成や色替えで合計 50 ページ分の利用を想定。必要に応じて派生レイアウトをコピーし、アンカー名と配置を調整してもらって構いません。
+
+### 6.3 既存レイアウトとの共存
+- 既存の `Title`, `Two Column Detail`, `Timeline Detail` などはそのまま残す。  
+- 新レイアウト群はマスター内でグループ化し、分かりやすい順番で並べ替えて構わない。  
+- 共通で利用するアンカー（例: `BrandLogo`, `SectionTitle`）は他レイアウトとの整合性を優先。
+
+### 6.4 納品時に必要なもの
+- 更新済み `samples/templates/templates.pptx`。  
+- 追加レイアウトとアンカー名の一覧（上表との差分があれば注記）。  
+- 追加が必要なダミー画像／アイコン（PNG/SVG）をまとめたフォルダ（任意）。  
+- 変更メモ（レイアウト追加数、既存レイアウト調整の有無）。
+
+以上の内容で PPTX 編集を実施いただければ、こちらで抽出・サンプル更新・テストを続行できます。
