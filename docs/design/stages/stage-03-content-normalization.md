@@ -39,6 +39,19 @@
   - PDF 変換や URL 取得で検知した警告は `content_review_log` に `source_warning` として残し、HITL が再入力を判断できるようにする。
   - LibreOffice (soffice) が利用できない環境では PDF 取込テストが実施できないため、導入後に再検証する運用ルールを `docs/todo/` に明記する。
 
+### 生成AIオーケストレーション
+- 目的: 生成AIポリシーを外部設定で切り替えながら、Spec を入力にスライド草案を自動生成する。
+- 設計要素
+  - ポリシー設定: `config/content_ai_policies.json` に複数ポリシーを定義し、`default_policy_id` を起点に CLI から選択する。`prompt_id` と `intent` を紐付け、実際のテンプレート文字列は `src/pptx_generator/content_ai/prompts.py` で管理する。
+  - オーケストレーター: `ContentAIOrchestrator` が Spec・ポリシー・LLM クライアント（当面はモック）を組み合わせて `ContentApprovalDocument` を構築し、生成ログ／メタ情報を返す。
+  - LLM クライアント: `MockLLMClient` は Spec のスライド情報を利用して本文候補を組み立て、長さ制限（40 文字×6 行）を満たすよう調整する。将来は実サービスのクライアントと差し替える。
+- CLI 挙動: `pptx content` 実行時は生成AIモードをデフォルトとし、`--content-source` や `--content-approved` を指定した場合のみ外部入力／承認ファイルモードへ切り替える。`--ai-policy`（定義ファイル上書き）、`--ai-policy-id`（ポリシー ID）、`--ai-output`（生成ログ）、`--ai-meta`（メタ情報）を任意で指定できる。
+- 出力成果物
+  - `content_draft.json`: 生成された `ContentApprovalDocument`。`status=draft` のスライド群として後工程のレビュー対象になる。
+  - `ai_generation_meta.json`: ポリシー ID、モデル名、Spec ハッシュ、スライドごとの `content_hash`・意図タグ・行数。
+  - `content_ai_log.json`: スライド単位のプロンプト、警告、利用モデルなど監査目的のログ。
+- トーンと禁則を `safeguards` にまとめ、`ContentDocumentMeta.tone` へ反映させる。禁則語やポリシー更新手順は今後 `docs/policies/config-and-templates.md` に追記する。
+
 ### Analyzer 連携
 - CLI の工程 6 実行後、Analyzer が出力する `analysis.json` を Review Engine 向け形式 (`review_engine_analyzer.json`) に変換するアダプタを追加した。  
 - スライドごとの `issues` を `AIReviewIssue` へマッピングし、`severity` に応じて `grade`（`A/B/C`）を算出する。  

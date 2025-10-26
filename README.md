@@ -99,14 +99,20 @@
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
 - ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` にまとめています。
-- CLI で承認済み JSON を検証し Spec へ適用する場合は `pptx content` を利用します。
+- CLI で生成AIによるドラフトを作成する場合は `pptx content` を利用します（生成AIモードが既定です）。
   ```bash
+  # 生成AIドラフトを作成（content_draft.json などを出力）
+  uv run pptx content samples/json/sample_jobspec.json --output .pptx/content
+
+  # 承認済み JSON を適用する場合
   uv run pptx content samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
     --content-review-log samples/json/sample_content_review_log.json \
     --output .pptx/content
   # `.pptx/content/` に spec_content_applied.json / content_meta.json を出力
   ```
+  - 承認済み JSON を適用したい場合は `--content-approved` / `--content-review-log` を指定します。
+  - プレーンテキスト・PDF・URL など外部ソースから取り込む場合は `--content-source` を利用します。
 
 ### 工程 4: ドラフト構成設計
 - 章立てやページ順を確定し、HITL で `draft_approved.json` を承認します。
@@ -155,7 +161,8 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
-- `spec_content_applied.json`: `pptx content` が出力する承認内容適用済み Spec のスナップショット
+- `content_draft.json` / `content_ai_log.json` / `ai_generation_meta.json`: 生成AIモードで出力されるドラフト本文・プロンプトログ・メタ情報
+- `spec_content_applied.json`: `--content-approved` 指定時に生成される承認内容適用済み Spec のスナップショット
 - `content_meta.json`: 承認済みコンテンツ／レビュー ログのハッシュや件数をまとめたメタ情報
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `rendering_log.json`: レンダリング監査結果（検出済み要素・警告コード・空プレースホルダー件数）
@@ -200,8 +207,9 @@
 
 #### `pptx content`
 
-- 工程3で整備した `content_approved.json` / `content_review_log.json` を検証し、Spec へ適用したスナップショットとメタ情報を出力します（`spec_path` を位置引数で指定）。
-- `--content-approved` は必須です。`--content-review-log` は任意で、指定した場合はメタ情報に件数やハッシュが記録されます。
+- 生成AIを利用したドラフト生成が既定です。`config/content_ai_policies.json` をロードし、`src/pptx_generator/content_ai/prompts.py` に定義された `prompt_id` をもとにスライド案を出力します。
+- `--content-source` でプレーンテキスト／PDF／URL からのインポート、`--content-approved` で承認済み JSON の適用が可能です。これらを指定した場合は非生成AIモードへ切り替わります。
+- `--ai-policy` でポリシー定義ファイルを差し替え、`--ai-policy-id` で適用するポリシーを明示できます（未指定時は `default_policy_id` を利用）。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -210,7 +218,7 @@
 | `--normalized-content <filename>` | 正規化した `content_approved.json` の保存名 | `content_approved.json` |
 | `--review-output <filename>` | 承認イベントログの正規化ファイル名 | `content_review_log.json` |
 | `--meta-filename <filename>` | 承認メタ情報のファイル名 | `content_meta.json` |
-| `--content-approved <path>` | 承認済みコンテンツ JSON（必須） | - |
+| `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
 | `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
 
 #### `pptx outline`

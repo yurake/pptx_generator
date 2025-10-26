@@ -16,6 +16,8 @@ from .branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
+from .content_ai import (ContentAIOrchestrationError, ContentAIOrchestrator,
+                         ContentAIPolicyError, load_policy_set)
 from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
@@ -45,6 +47,7 @@ DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
+DEFAULT_AI_POLICY_PATH = Path("config/content_ai_policies.json")
 
 logger = logging.getLogger(__name__)
 
@@ -963,6 +966,32 @@ def gen(
     help="プレーンテキスト / PDF / URL からドラフトを生成する入力ソース",
 )
 @click.option(
+    "--ai-policy",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="生成AI用のポリシー定義 JSON。未指定時は config/content_ai_policies.json を利用する。",
+)
+@click.option(
+    "--ai-policy-id",
+    type=str,
+    default=None,
+    help="使用するポリシー ID。未指定時は定義ファイルの default_policy_id を利用する。",
+)
+@click.option(
+    "--ai-output",
+    type=str,
+    default="content_ai_log.json",
+    show_default=True,
+    help="AI 生成ログの出力ファイル名。",
+)
+@click.option(
+    "--ai-meta",
+    type=str,
+    default="ai_generation_meta.json",
+    show_default=True,
+    help="AI 生成メタ情報の出力ファイル名。",
+)
+@click.option(
     "--draft-output",
     type=str,
     default="content_draft.json",
@@ -993,6 +1022,10 @@ def content(
     review_output: str,
     meta_filename: str,
     content_sources: tuple[str, ...],
+    ai_policy: Path | None,
+    ai_policy_id: str | None,
+    ai_output: str,
+    ai_meta: str,
     draft_output: str,
     import_meta_filename: str,
     libreoffice_path: Path | None,
@@ -1004,6 +1037,10 @@ def content(
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
+
+    if content_sources and content_approved_path is not None:
+        click.echo("--content-source と --content-approved を同時には指定できません", err=True)
+        raise click.exceptions.Exit(code=2)
 
     if content_sources:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -1034,43 +1071,71 @@ def content(
         click.echo(f"Content Import Meta: {meta_path}")
         return
 
-    if content_approved_path is None:
-        click.echo("--content-approved または --content-source を指定してください", err=True)
-        raise click.exceptions.Exit(code=2)
+    if content_approved_path is not None:
+        try:
+            context = _run_content_approval_pipeline(
+                spec=spec,
+                output_dir=output_dir,
+                content_approved=content_approved_path,
+                content_review_log=content_review_log_path,
+                require_document=True,
+            )
+        except ContentApprovalError as exc:
+            click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=4) from exc
+        except FileNotFoundError as exc:
+            click.echo(f"ファイルが見つかりません: {exc}", err=True)
+            raise click.exceptions.Exit(code=4) from exc
+        except Exception as exc:  # noqa: BLE001
+            logging.exception("content 実行中にエラーが発生しました")
+            raise click.exceptions.Exit(code=1) from exc
 
-    try:
-        context = _run_content_approval_pipeline(
-            spec=spec,
+        spec_output_path, content_output_path, review_output_path, meta_path = _write_content_outputs(
+            context=context,
             output_dir=output_dir,
-            content_approved=content_approved_path,
-            content_review_log=content_review_log_path,
-            require_document=True,
+            spec_filename=spec_output,
+            content_filename=normalized_content,
+            review_filename=review_output,
+            meta_filename=meta_filename,
         )
-    except ContentApprovalError as exc:
-        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("content 実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
 
-    spec_output_path, content_output_path, review_output_path, meta_path = _write_content_outputs(
-        context=context,
-        output_dir=output_dir,
-        spec_filename=spec_output,
-        content_filename=normalized_content,
-        review_filename=review_output,
-        meta_filename=meta_filename,
-    )
+        click.echo(f"Spec (content applied): {spec_output_path}")
+        if content_output_path is not None:
+            click.echo(f"Content Approved (normalized): {content_output_path}")
+        if review_output_path is not None:
+            click.echo(f"Content Review Log (normalized): {review_output_path}")
+        click.echo(f"Content Meta: {meta_path}")
+        return
 
-    click.echo(f"Spec (content applied): {spec_output_path}")
-    if content_output_path is not None:
-        click.echo(f"Content Approved (normalized): {content_output_path}")
-    if review_output_path is not None:
-        click.echo(f"Content Review Log (normalized): {review_output_path}")
-    click.echo(f"Content Meta: {meta_path}")
+    policy_path = ai_policy or DEFAULT_AI_POLICY_PATH
+    output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        policy_set = load_policy_set(policy_path)
+    except ContentAIPolicyError as exc:
+        click.echo(f"AI ポリシー定義の読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    orchestrator = ContentAIOrchestrator(policy_set)
+    try:
+        document, meta_payload, log_entries = orchestrator.generate_document(
+            spec, policy_id=ai_policy_id
+        )
+    except ContentAIOrchestrationError as exc:
+        click.echo(f"AI 生成に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    draft_path = output_dir / draft_output
+    meta_path = output_dir / ai_meta
+    log_path = output_dir / ai_output
+
+    _dump_json(draft_path, document.model_dump(mode="json"))
+    _dump_json(meta_path, meta_payload)
+    _dump_json(log_path, log_entries)
+
+    click.echo(f"Content Draft (AI): {draft_path}")
+    click.echo(f"AI Generation Meta: {meta_path}")
+    click.echo(f"AI Generation Log: {log_path}")
+    return
 
 
 @app.command("outline")
