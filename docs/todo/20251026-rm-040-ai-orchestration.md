@@ -1,7 +1,7 @@
 ---
 目的: 工程3における生成AI活用フローを整備し、ユースケース別ポリシー制御と監査ログ連携を実現する
 関連ブランチ: feat/rm-040-ai-orchestration
-関連Issue: 未作成
+関連Issue: #242
 roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
   - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: `gh issue list --limit 50` 実行時に証明書エラー（OSStatus -26276）が発生したため未確認。解消後に更新する。
 - [ ] PR 作成
   - メモ: 承認後に対応。
