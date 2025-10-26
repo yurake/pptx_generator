@@ -56,6 +56,8 @@
 - Analyzer 連携ログ: `review_engine_analyzer.json` を生成し、`audit_log.json` の `artifacts.review_engine_analysis` へ保存パスを記録する。サポート対象の Auto-fix タイプ（箇条書きレベル調整・フォントサイズ・文字色）のみ JSON Patch として出力し、それ以外は `notes.unsupported_fix_types` に列挙する。
 - 生成AIログ: `content_ai_log.json` の各エントリは `slide_id`・`prompt`・`model`・`warnings` を含み、監査時にプロンプト差異を追跡できる。
 - 生成AIメタ: `ai_generation_meta.json` に `content_hash` を保持し、将来的に `audit_log.json` の `artifacts.content_ai` セクションへ連携する前提とする。
+- CLI ログ: `pptx content` 実行時に `-v/--verbose` または `--debug` を指定すると、生成AIへのリクエストとレスポンス概要がログ出力される。
+- プロバイダー選択: `PPTX_LLM_PROVIDER`（`mock` / `openai` / `azure-openai` / `claude` / `aws-claude`）で LLM を切り替え、各 API キーやエンドポイントは環境変数で指定する（詳細は README を参照）。
 
 ## 未実装項目（機能単位）
 - Review Engine UI での新グレード表示と未対応 Fix タイプのハンドリング。

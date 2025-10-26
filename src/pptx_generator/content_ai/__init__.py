@@ -1,6 +1,8 @@
 """生成AI オーケストレーション関連の公開 API。"""
 
-from .client import AIGenerationRequest, AIGenerationResponse, LLMClient, MockLLMClient
+from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
+                     LLMClientConfigurationError, MockLLMClient,
+                     create_llm_client)
 from .orchestrator import ContentAIOrchestrator, ContentAIOrchestrationError
 from .policy import (
     ContentAIPolicy,
@@ -15,6 +17,8 @@ __all__ = [
     "AIGenerationResponse",
     "LLMClient",
     "MockLLMClient",
+    "LLMClientConfigurationError",
+    "create_llm_client",
     "ContentAIOrchestrator",
     "ContentAIOrchestrationError",
     "ContentAIPolicy",

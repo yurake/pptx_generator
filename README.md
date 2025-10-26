@@ -48,6 +48,8 @@
 ## 使い方
 6 工程の流れに沿って作業します。詳細な業務フローは各ステージの要件ドキュメント（`docs/requirements/stages/`）を参照してください。
 
+> `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
+
 ### 工程 1: テンプレ準備
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
 - 自動検査ツール（命名整合性チェックなど）は設計中です。運用中は手動レビュー（HITL）を併用します。
@@ -218,8 +220,21 @@
 | `--normalized-content <filename>` | 正規化した `content_approved.json` の保存名 | `content_approved.json` |
 | `--review-output <filename>` | 承認イベントログの正規化ファイル名 | `content_review_log.json` |
 | `--meta-filename <filename>` | 承認メタ情報のファイル名 | `content_meta.json` |
+| `--content-source <value>` | プレーンテキスト / PDF / URL からドラフトを生成 | 指定なし |
+| `--ai-policy <path>` | 生成AIポリシー定義 JSON を差し替える | `config/content_ai_policies.json` |
+| `--ai-policy-id <value>` | 利用するポリシー ID | `default_policy_id` |
+| `--ai-output <filename>` | 生成ログ（プロンプト、警告）の出力名 | `content_ai_log.json` |
+| `--ai-meta <filename>` | 生成メタ情報の出力名 | `ai_generation_meta.json` |
 | `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
 | `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+
+**プロバイダー切り替え（環境変数）**
+- `PPTX_LLM_PROVIDER`: `mock`（既定） / `openai` / `azure-openai` / `claude` / `aws-claude`
+- **OpenAI**: `OPENAI_API_KEY`, 任意で `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`
+- **Azure OpenAI**: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, 任意で `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_TEMPERATURE`, `AZURE_OPENAI_MAX_TOKENS`
+- **Claude API**: `ANTHROPIC_API_KEY`, 任意で `ANTHROPIC_MODEL`, `ANTHROPIC_TEMPERATURE`, `ANTHROPIC_MAX_TOKENS`
+- **AWS Claude (Bedrock)**: `AWS_CLAUDE_MODEL_ID`, 任意で `AWS_REGION`, `AWS_CLAUDE_TEMPERATURE`, `AWS_CLAUDE_MAX_TOKENS`
+- 各プロバイダーを利用する際は対応する SDK（`openai`, `anthropic`, `boto3` など）を追加インストールしてください。
 
 #### `pptx outline`
 

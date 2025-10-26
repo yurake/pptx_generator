@@ -17,7 +17,8 @@ from .branding_extractor import (
     extract_branding_config,
 )
 from .content_ai import (ContentAIOrchestrationError, ContentAIOrchestrator,
-                         ContentAIPolicyError, load_policy_set)
+                         ContentAIPolicyError, LLMClientConfigurationError,
+                         load_policy_set)
 from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
@@ -72,10 +73,11 @@ def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
 
 
 @click.group(help="JSON 仕様から PPTX を生成する CLI")
-@click.option("-v", "--verbose", is_flag=True, help="冗長ログを出力する")
-def app(verbose: bool) -> None:
+@click.option("-v", "--verbose", is_flag=True, help="INFO レベルの冗長ログを出力する")
+@click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
+def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
-    level = logging.INFO if verbose else logging.WARNING
+    level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
@@ -1115,7 +1117,11 @@ def content(
         click.echo(f"AI ポリシー定義の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
 
-    orchestrator = ContentAIOrchestrator(policy_set)
+    try:
+        orchestrator = ContentAIOrchestrator(policy_set)
+    except LLMClientConfigurationError as exc:
+        click.echo(f"AI クライアントの初期化に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
     try:
         document, meta_payload, log_entries = orchestrator.generate_document(
             spec, policy_id=ai_policy_id

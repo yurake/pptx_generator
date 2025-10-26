@@ -35,3 +35,5 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
 - 計画策定に合わせて docs/notes/20251023-roadmap-theme-research.md の追加調査要否を判断する。
 - config/content_ai_policies.json を初版作成。将来のモデル差し替え時は `model` と `safeguards` を更新予定。
 - CLI は生成AIモードをデフォルト化し、プロンプトは `src/pptx_generator/content_ai/prompts.py` で ID 管理とした。非生成AIは `--content-source` / `--content-approved` 指定時のみ使用。
+- `-v/--verbose` または `--debug` 指定時に AI プロンプト／レスポンスの概要ログを出力。
+- 環境変数 `PPTX_LLM_PROVIDER` で OpenAI / Azure / Claude / AWS Claude を切り替え、各プロバイダー向けキー／エンドポイントにも対応。

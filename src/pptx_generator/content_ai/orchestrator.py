@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any
@@ -10,8 +11,11 @@ from typing import Any
 from ..models import (ContentApprovalDocument, ContentDocumentMeta,
                       ContentElements, ContentSlide, JobSpec)
 from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
-                     MockLLMClient)
+                     create_llm_client)
 from .policy import ContentAIPolicy, ContentAIPolicyError, ContentAIPolicySet
+
+
+logger = logging.getLogger(__name__)
 
 
 class ContentAIOrchestrationError(RuntimeError):
@@ -27,7 +31,7 @@ class ContentAIOrchestrator:
         llm_client: LLMClient | None = None,
     ) -> None:
         self._policy_set = policy_set
-        self._llm_client = llm_client or MockLLMClient()
+        self._llm_client = llm_client or create_llm_client()
 
     def generate_document(
         self,
@@ -60,9 +64,28 @@ class ContentAIOrchestrator:
                 intent=intent,
             )
 
+            if logger.isEnabledFor(logging.INFO):
+                logger.info(
+                    "AI Request: slide_id=%s policy_id=%s intent=%s prompt=%s",
+                    spec_slide.id,
+                    policy.id,
+                    intent,
+                    prompt,
+                )
+
             response = self._llm_client.generate(request)
             content_slide = _build_content_slide(spec_slide.id, response, intent)
             slides.append(content_slide)
+            if logger.isEnabledFor(logging.INFO):
+                logger.info(
+                    "AI Response: slide_id=%s model=%s intent=%s title=%s body=%s warnings=%s",
+                    spec_slide.id,
+                    response.model,
+                    content_slide.intent,
+                    response.title,
+                    response.body,
+                    response.warnings,
+                )
             logs.append(
                 {
                     "slide_id": spec_slide.id,
