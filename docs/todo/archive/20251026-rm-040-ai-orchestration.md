@@ -28,8 +28,8 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: `gh issue list --limit 50` 実行時に証明書エラー（OSStatus -26276）が発生したため未確認。解消後に更新する。
-- [ ] PR 作成
-  - メモ: 承認後に対応。
+- [x] PR 作成
+  - メモ: PR #243 https://github.com/yurake/pptx_generator/pull/243（2025-10-26 完了）
 
 ## メモ
 - 計画策定に合わせて docs/notes/20251023-roadmap-theme-research.md の追加調査要否を判断する。
