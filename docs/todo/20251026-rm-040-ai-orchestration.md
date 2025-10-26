@@ -21,10 +21,10 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
   - メモ: `uv run --extra dev pytest tests/content_ai -q` と `uv run --extra dev pytest tests/test_cli_integration.py -k content_ai_generation -q` を完了。
 - [x] ドキュメント更新
   - メモ: README を生成AIデフォルト仕様へ更新。ロードマップ／runbook 連携は別途検討。
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: `gh issue list --limit 50` 実行時に証明書エラー（OSStatus -26276）が発生したため未確認。解消後に更新する。
