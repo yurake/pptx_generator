@@ -63,6 +63,7 @@ def create_llm_client() -> LLMClient:
     """環境変数に基づき LLM クライアントを生成する。"""
 
     provider = os.getenv("PPTX_LLM_PROVIDER", "mock").strip().lower()
+    _LLM_LOGGER.info("LLM provider resolved: %s", provider)
     if provider in {"", "mock", "mock-local"}:
         return MockLLMClient()
     if provider in {"openai", "openai-api"}:
@@ -315,6 +316,14 @@ class OpenAIChatClient:
                 )
                 break
             except Exception as exc:  # noqa: BLE001
+                _LLM_LOGGER.warning(
+                    "OpenAI chat completion error: %s",
+                    exc,
+                    extra={
+                        "model": model_name,
+                        "slide_id": request.slide.id,
+                    },
+                )
                 message = str(exc).lower()
                 if (
                     "max_completion_tokens" in message
