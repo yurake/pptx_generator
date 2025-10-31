@@ -219,7 +219,7 @@ def test_build_template_release_with_golden_runs(tmp_path: Path) -> None:
     golden = TemplateReleaseGoldenRun(
         spec_path="samples/json/sample_jobspec.json",
         status="failed",
-        output_dir=".pptx/release/golden_runs/sample_spec",
+        output_dir=".pptx/release/golden_runs/sample_jobspec",
         pptx_path=None,
         analysis_path=None,
         pdf_path=None,

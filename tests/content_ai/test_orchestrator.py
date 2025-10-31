@@ -14,7 +14,7 @@ from pptx_generator.models import JobSpec
 
 def test_orchestrator_generates_document(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    spec = JobSpec.parse_file(Path("samples/json/sample_spec.json"))
+    spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
     policy_set = load_policy_set(Path("config/content_ai_policies.json"))
     orchestrator = ContentAIOrchestrator(policy_set)
 

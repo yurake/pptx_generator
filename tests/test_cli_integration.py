@@ -153,7 +153,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
 
 
 def test_cli_content_ai_generation(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "content-ai"
     runner = CliRunner()
 

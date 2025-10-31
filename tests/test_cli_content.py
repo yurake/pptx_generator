@@ -124,7 +124,7 @@ def test_content_import_generates_draft(tmp_path) -> None:
     payload = json.loads(draft_path.read_text(encoding="utf-8"))
     slide_ids = [slide["id"] for slide in payload["slides"]]
     assert len(slide_ids) == 5
-    assert "cover" in slide_ids
+    assert "title-01" in slide_ids
 
     log_payload = json.loads(ai_log_path.read_text(encoding="utf-8"))
     assert log_payload, "AI ログが空ではないこと"
