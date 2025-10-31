@@ -225,10 +225,12 @@
 | `--ai-policy-id <value>` | 利用するポリシー ID | `default_policy_id` |
 | `--ai-output <filename>` | 生成ログ（プロンプト、警告）の出力名 | `content_ai_log.json` |
 | `--ai-meta <filename>` | 生成メタ情報の出力名 | `ai_generation_meta.json` |
+| `--slide-count <int>` | 生成するスライド枚数（未指定は LLM の判断、mock 時は 5 枚） | 指定なし |
 | `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
 | `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
 
 **プロバイダー切り替え（環境変数）**
+- CLI 起動時に `.env` が自動で読み込まれるため、環境変数は `.env` へ記述して管理できます。
 - `PPTX_LLM_PROVIDER`: `mock`（既定） / `openai` / `azure-openai` / `claude` / `aws-claude`
 - **OpenAI**: `OPENAI_API_KEY`, 任意で `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`
 - **Azure OpenAI**: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, 任意で `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_TEMPERATURE`, `AZURE_OPENAI_MAX_TOKENS`

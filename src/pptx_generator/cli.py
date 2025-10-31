@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dotenv import load_dotenv
 
 from .branding_extractor import (
     BrandingExtractionError,
@@ -18,7 +19,7 @@ from .branding_extractor import (
 )
 from .content_ai import (ContentAIOrchestrationError, ContentAIOrchestrator,
                          ContentAIPolicyError, LLMClientConfigurationError,
-                         load_policy_set)
+                         MockLLMClient, create_llm_client, load_policy_set)
 from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
@@ -51,6 +52,9 @@ DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_AI_POLICY_PATH = Path("config/content_ai_policies.json")
 
 logger = logging.getLogger(__name__)
+
+
+load_dotenv()
 
 
 def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
@@ -1030,6 +1034,12 @@ def gen(
     default=None,
     help="PDF 取り込み時に利用する LibreOffice 実行ファイルのパス",
 )
+@click.option(
+    "--slide-count",
+    type=click.IntRange(1, None),
+    default=None,
+    help="生成するスライド枚数。未指定時は LLM の判断（mock の場合は 5 枚固定）",
+)
 def content(
     spec_path: Path,
     content_approved_path: Path | None,
@@ -1047,6 +1057,7 @@ def content(
     draft_output: str,
     import_meta_filename: str,
     libreoffice_path: Path | None,
+    slide_count: int | None,
 ) -> None:
     """工程3 コンテンツ正規化: 承認済みコンテンツを検証し Spec へ適用する。"""
 
@@ -1073,7 +1084,7 @@ def content(
             click.echo(f"コンテンツ取り込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=4) from exc
 
-        import_reference_text, truncated = _build_reference_text(result.document)
+        import_reference_text, _ = _build_reference_text(result.document)
         import_warnings.extend(result.warnings)
 
         meta_payload = {
@@ -1131,7 +1142,23 @@ def content(
         raise click.exceptions.Exit(code=4) from exc
 
     try:
-        orchestrator = ContentAIOrchestrator(policy_set)
+        llm_client = create_llm_client()
+    except LLMClientConfigurationError as exc:
+        click.echo(f"AI クライアントの初期化に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    target_slide_count = slide_count
+    if target_slide_count is None and isinstance(llm_client, MockLLMClient):
+        target_slide_count = 5
+
+    available_slides = len(spec.slides)
+    if target_slide_count is not None and target_slide_count > available_slides:
+        import_warnings.append(
+            f"テンプレートには {available_slides} 枚しか含まれないため、生成枚数を {available_slides} 枚に調整します"
+        )
+
+    try:
+        orchestrator = ContentAIOrchestrator(policy_set, llm_client=llm_client)
     except LLMClientConfigurationError as exc:
         click.echo(f"AI クライアントの初期化に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -1140,6 +1167,7 @@ def content(
             spec,
             policy_id=ai_policy_id,
             reference_text=import_reference_text,
+            slide_limit=target_slide_count,
         )
     except ContentAIOrchestrationError as exc:
         msg = str(exc)

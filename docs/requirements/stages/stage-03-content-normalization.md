@@ -72,4 +72,5 @@
 - 失敗時は `ContentApprovalError` を返し、未承認カードの有無や JSON バリデーションエラーを検知する。
 - 生成AIモードがデフォルトであり、`--content-source` や `--content-approved` を指定した場合のみ外部入力／承認ファイルを利用するモードへ切り替える。
 - 生成AIモードでは `content_draft.json`・`content_ai_log.json`・`ai_generation_meta.json` を出力する。ポリシー定義の上書きには `--ai-policy`、ポリシー選択には `--ai-policy-id` を利用し、`--content-source` との同時指定は不可。
+- スライド枚数は `--slide-count` オプションで明示指定できる。未指定時は LLM が判断し、モック実行時は 5 枚固定で生成する。
 - 生成AIモードでは `ContentAIOrchestrator` を用いて `status=draft` の `ContentSlide` を生成し、本文 40 文字×最大 6 行の制約を満たすよう抑制する。

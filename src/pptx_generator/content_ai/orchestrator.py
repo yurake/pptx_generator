@@ -39,6 +39,7 @@ class ContentAIOrchestrator:
         *,
         policy_id: str | None = None,
         reference_text: str | None = None,
+        slide_limit: int | None = None,
     ) -> tuple[ContentApprovalDocument, dict[str, Any], list[dict[str, Any]]]:
         """指定ポリシーでコンテンツ案を生成する。"""
 
@@ -50,7 +51,11 @@ class ContentAIOrchestrator:
         slides: list[ContentSlide] = []
         logs: list[dict[str, Any]] = []
 
-        for spec_slide in spec.slides:
+        target_slides = spec.slides
+        if slide_limit is not None:
+            target_slides = spec.slides[:slide_limit]
+
+        for spec_slide in target_slides:
             prompt = _render_prompt(
                 template=policy.resolve_prompt(spec_slide.layout),
                 spec=spec,
