@@ -57,6 +57,20 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
+def _configure_llm_logger() -> None:
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    llm_logger = logging.getLogger("pptx_generator.content_ai.llm")
+    if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(log_dir / "out.log") for h in llm_logger.handlers):
+        handler = logging.FileHandler(log_dir / "out.log", encoding="utf-8")
+        formatter = logging.Formatter(
+            fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+        handler.setFormatter(formatter)
+        llm_logger.addHandler(handler)
+    llm_logger.setLevel(logging.INFO)
+
+
 def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
     """設定ファイルで指定されたパスを解決する。"""
     candidate = Path(value)
@@ -84,6 +98,7 @@ def app(verbose: bool, debug: bool) -> None:
     level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    _configure_llm_logger()
 
 
 def _prepare_branding(

@@ -15,6 +15,8 @@ from .policy import ContentAIPolicy
 
 logger = logging.getLogger(__name__)
 
+_LLM_LOGGER = logging.getLogger("pptx_generator.content_ai.llm")
+
 MAX_BODY_LINES = 6
 MAX_BODY_LENGTH = 40
 MAX_TITLE_LENGTH = 120
@@ -47,6 +49,7 @@ class AIGenerationResponse:
     intent: str | None = None
     model: str = "mock-local"
     warnings: list[str] = field(default_factory=list)
+    raw_text: str | None = None
 
 
 class LLMClient(Protocol):
@@ -147,6 +150,16 @@ def _build_response_from_text(
     *,
     model: str,
 ) -> AIGenerationResponse:
+    _LLM_LOGGER.info(
+        "LLM response received",
+        extra={
+            "slide_id": request.slide.id,
+            "model": model,
+            "policy_id": request.policy.id,
+            "intent": request.intent,
+            "raw_response": text,
+        },
+    )
     warnings: list[str] = []
     data: dict[str, object]
     try:
@@ -165,6 +178,7 @@ def _build_response_from_text(
             intent=request.intent,
             model=model,
             warnings=warnings,
+            raw_text=text,
         )
 
     title_source = data.get("title") or request.slide.title or request.spec.meta.title
@@ -193,6 +207,7 @@ def _build_response_from_text(
         intent=intent,
         model=model,
         warnings=warnings,
+        raw_text=text,
     )
 
 
@@ -223,6 +238,12 @@ class MockLLMClient:
             else None
         )
 
+        raw_payload = {
+            "title": title,
+            "body": body,
+            "note": note,
+            "intent": request.intent,
+        }
         return AIGenerationResponse(
             title=title,
             body=body,
@@ -230,6 +251,7 @@ class MockLLMClient:
             intent=request.intent,
             model=request.policy.model,
             warnings=warnings,
+            raw_text=json.dumps(raw_payload, ensure_ascii=False),
         )
 
 

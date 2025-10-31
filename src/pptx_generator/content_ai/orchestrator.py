@@ -93,16 +93,32 @@ class ContentAIOrchestrator:
                     response.body,
                     response.warnings,
                 )
-            logs.append(
-                {
-                    "slide_id": spec_slide.id,
-                    "layout": spec_slide.layout,
-                    "prompt": prompt,
-                    "policy_id": policy.id,
-                    "model": response.model,
-                    "intent": content_slide.intent,
-                    "warnings": response.warnings,
-                }
+            raw_text = response.raw_text or ""
+            truncated = False
+            if raw_text and len(raw_text) > 2000:
+                raw_text = raw_text[:2000]
+                truncated = True
+
+            log_entry = {
+                "slide_id": spec_slide.id,
+                "layout": spec_slide.layout,
+                "prompt": prompt,
+                "policy_id": policy.id,
+                "model": response.model,
+                "intent": content_slide.intent,
+                "warnings": response.warnings,
+                "response_text": raw_text,
+                "response_text_truncated": truncated,
+            }
+            logs.append(log_entry)
+            logging.getLogger("pptx_generator.content_ai.llm").info(
+                "slide_id=%s model=%s intent=%s warnings=%s prompt=%s response=%s",
+                spec_slide.id,
+                response.model,
+                content_slide.intent,
+                ",".join(response.warnings) if response.warnings else "",
+                prompt,
+                raw_text,
             )
 
         document = ContentApprovalDocument(
