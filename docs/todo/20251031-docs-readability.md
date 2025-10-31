@@ -1,7 +1,7 @@
 ---
 目的: README と docs/requirements・docs/design 系ドキュメントの可読性を向上させる
 関連ブランチ: docs/readability-refactor
-関連Issue: 未作成
+関連Issue: #244
 roadmap_item: RM-043 ドキュメント可読性向上
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-043 ドキュメント可読性向上
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 未作成
 - [ ] PR 作成
   - メモ: 未着手
