@@ -10,7 +10,7 @@
 ## 手順
 1. `CHANGELOG.md` を更新し、主要変更点と既知の注意点を記載する。
 2. ステージング環境で代表的な案件データ（最低 3 件）を用いて JSON→PPTX→PDF の生成テストを実施する。
-3. テンプレート更新が含まれる場合は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/release` を実行し、`diagnostics.json` にエラーが無いことと `layouts.jsonl` の差分を確認する。必要に応じて `samples/json/sample_layouts.jsonl` / `sample_spec_extended.json` を同期する。
+3. テンプレート更新が含まれる場合は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/release` を実行し、`diagnostics.json` にエラーが無いことと `layouts.jsonl` の差分を確認する。必要に応じて `samples/json/sample_layouts.jsonl` / `sample_spec.json` を同期する。
 4. 監査ログ、通知動作、PDF 変換など重要機能を確認し、承認者のレビューを取得する。
 5. テンプレ受け渡しメタの `analyzer_metrics` と差分レポートの `analyzer` ブロックを確認し、重大度別の指摘推移を記録する。
    - `summary` / `summary_delta` セクションでレイアウト数・アンカー数・警告件数・Analyzer issue/fix 件数を確認する。

@@ -16,9 +16,9 @@ roadmap_item: RM-043 サンプルテンプレ拡充
 - [x] docs/requirements 配下
 - [x] docs/design 配下
 - [x] 実装
-  - メモ: 2025-10-31 テンプレ矢印PH化・背景命名整理、`samples/json` 各種更新、テストコード反映まで完了。
+  - メモ: 2025-10-31 テンプレ矢印PH化・背景命名整理、`samples/json` 各種更新、テストコード反映まで完了（`sample_spec.json` が 50 ページ構成を保持）。
 - [x] テスト・検証
-  - メモ: `UV_CACHE_DIR=.uv-cache uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` / `UV_CACHE_DIR=.uv-cache uv run pptx gen samples/json/sample_spec_extended.json --template samples/templates/templates.pptx --output .pptx/gen/rm043 --emit-structure-snapshot` / `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_renderer.py tests/test_cli_integration.py` を実施、warnings=0 を確認。
+  - メモ: `UV_CACHE_DIR=.uv-cache uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` / `UV_CACHE_DIR=.uv-cache uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --output .pptx/gen/rm043 --emit-structure-snapshot` / `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_renderer.py tests/test_cli_integration.py` を実施、warnings=0 を確認。
 - [x] ドキュメント更新
   - メモ: 影響ドキュメントと更新内容を列挙する
   - [x] docs/roadmap 配下
