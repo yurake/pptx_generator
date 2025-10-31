@@ -67,6 +67,39 @@
 | 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング、フォールバック制御、AI 補完 |
 | 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
 
+### 3.3 工程別入出力一覧
+| ファイル名 | 必須区分 | 概要 | 使用する工程 |
+|-------------|-----------|------|---------------|
+| template.pptx | 必須（ユーザー準備） | ユーザー準備のPPTXテンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S2 入 / S5 入 / S6 入 |
+| template_release.json | 任意 | テンプレのリリースメタ。差分・版管理用。 | S1 入（過去版） / S1 出 |
+| release_report.json | 任意 | テンプレ差分レポート。 | S1 出 |
+| golden_runs/* | 任意 | ゴールデンテスト実行結果。テンプレ検証用。 | S1 出 |
+| branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S2 出 / S5 入 / S6 入 |
+| layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S2 出 / S4 入 / S5 入 |
+| diagnostics.json | 任意 | 抽出/検証時の診断。 | S2 出 |
+| diff_report.json | 任意 | 抽出結果の差分レポート。 | S2 出 |
+| content_spec_initial.json | 必須（ユーザー準備） | 初期コンテンツ仕様。原稿の構造化雛形。 | S3 入 |
+| content_approved.json | 必須 | 人手承認済みのコンテンツ。以後の中核データ。 | S3 出 / S4 入 / S5 入 |
+| spec_content_applied.json | 任意 | コンテンツ適用後のスナップショット。 | S3 出 |
+| content_meta.json | 任意 | コンテンツ承認のメタ情報。 | S3 出 |
+| content_review_log.json | 任意 | コンテンツレビューのログ。トレーサビリティ。 | S3 出 / S4 入 / S5 入 |
+| draft_approved.json | 必須 | 人手承認済みドラフト。ページ順/章立て確定。 | S4 出 / S5 入 |
+| draft_meta.json | 任意 | ドラフト工程のメタ情報。 | S4 出 |
+| draft_review_log.json | 任意 | ドラフトレビューのログ。 | S4 出 / S5 入 |
+| rules.json | 任意 | 文字量や禁止語などの規則。マッピング/解析に使用。 | S5 入 / S6 入 |
+| rendering_ready.json | 必須 | マッピング結果。レイアウト割付済みの描画直前仕様。 | S5 出 / S6 入 |
+| mapping_log.json | 任意 | マッピング過程のログ。レイアウトスコア等。 | S5 出 |
+| fallback_report.json | 任意 | フォールバック発生の記録。 | S5 出 |
+| proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S6 出 |
+| proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S6 出 |
+| analysis.json | 任意 | 生成物の詳細解析結果。 | S6 出 |
+| rendering_log.json | 任意 | レンダリングの要約ログ。 | S6 出 |
+| audit_log.json | 任意 | 実行監査ログ。 | S6 出 |
+| review_engine_analyzer.json | 任意 | レビュー用に整形した解析出力。 | S6 出 |
+| analysis_snapshot.json | 任意 | 構造スナップショット。PH対応の記録。 | S6 出 |
+| polisher + rules | 任意 | 仕上げ調整用。Polisher利用時に使用。 | S6 入 |
+| PDF出力設定 | 任意 | LibreOffice等のPDF変換設定。 | S6 入 |
+
 ### 3.3 レイアウトカバレッジ指針 (RM-043)
 - テンプレ標準 `samples/templates/templates.pptx` は 50 ページ規模のカバレッジを確保し、セクション区切り・ビジネスサマリー・タイムライン・KPI・財務・組織・プロセス・リスク・データビジュアル・クロージングの各カテゴリへ最低 3 パターンずつ割り当てる。
 - アンカー名はカード／チャート／CTA など用途が判別できる語を用い、`BrandLogo`・`Section Title` のように共通要素は既存レイアウトと整合させる。動的要素（フロー矢印など）がプレースホルダーでない場合は JSON で参照しない。
