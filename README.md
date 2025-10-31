@@ -104,7 +104,7 @@
 - CLI で生成AIによるドラフトを作成する場合は `pptx content` を利用します（生成AIモードが既定です）。
   ```bash
   # 生成AIドラフトを作成（content_draft.json などを出力）
-  uv run pptx content samples/json/sample_jobspec.json --output .pptx/content
+  uv run pptx content samples/json/sample_jobspec.json --content-source samples/contents/sample_import_content.txt --output .pptx/content
 
   # 承認済み JSON を適用する場合
   uv run pptx content samples/json/sample_jobspec.json \
