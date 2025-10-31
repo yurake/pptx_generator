@@ -247,7 +247,7 @@ class OpenAIChatClient:
             raise LLMClientConfigurationError("OPENAI_API_KEY が設定されていません")
 
         base_url = os.getenv("OPENAI_BASE_URL")
-        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
         temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
         max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
