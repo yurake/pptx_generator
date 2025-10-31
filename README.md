@@ -72,14 +72,14 @@
 
 | 目的 | コマンド例 | 出力 | 補足 |
 | --- | --- | --- | --- |
-| テンプレ抽出 | `uv run pptx tpl-extract --template samples/templates/templates.pptx` | `.pptx/extract/` にテンプレ構造とブランド設定 | 必要最小の指定のみで実行可能 |
-| テンプレリリースメタ生成 | `uv run pptx tpl-release --template samples/templates/templates.pptx --brand demo --version v1` | `.pptx/release/` にリリースメタ | `--brand` / `--version` は必須の識別子 |
-| 工程3 承認適用 | `uv run pptx content samples/json/sample_jobspec.json --content-approved samples/json/sample_content_approved.json` | `.pptx/content/` に `spec_content_applied.json` | サンプル承認データで動作確認 |
+| テンプレ抽出 | `uv run pptx tpl-extract --template samples/templates/templates.pptx` | `.pptx/extract/` にテンプレ構造とブランド設定 | 指定ファイルのみで実行可能 |
+| テンプレリリースメタ生成 | `uv run pptx tpl-release --template samples/templates/templates.pptx --brand demo --version v1` | `.pptx/release/` にリリースメタ | `--brand` / `--version` は任意の識別子を指定 |
+| 工程3 承認適用 | `uv run pptx content samples/json/sample_jobspec.json --content-approved samples/json/sample_content_approved.json` | `.pptx/content/` に `spec_content_applied.json` | サンプル承認データを適用 |
 | 工程4 ドラフト生成 | `uv run pptx outline .pptx/content/spec_content_applied.json` | `.pptx/draft/` にドラフト成果物 | 工程3の出力をそのまま入力 |
-| 工程5 マッピング | `uv run pptx mapping .pptx/content/spec_content_applied.json --template samples/templates/templates.pptx` | `.pptx/gen/rendering_ready.json` | テンプレ指定のみ追加 |
-| 全工程一括 | `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx` | `.pptx/gen/` に PPTX とログ類 | 既定設定のまま一括実行 |
+| 工程5 マッピング | `uv run pptx mapping .pptx/content/spec_content_applied.json --template samples/templates/templates.pptx` | `.pptx/gen/rendering_ready.json` | テンプレ指定でブランド整合を確認 |
+| 全工程一括 | `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx` | `.pptx/gen/` に PPTX/PDF/ログ | 既定設定のまま一括実行 |
 
-CLI の詳細なオプションは各サブコマンドで `uv run pptx <cmd> --help` を参照してください。
+CLI の詳細なオプションは各サブコマンドに対して `uv run pptx <cmd> --help` を参照してください。
 
 ## 工程別ガイド概要
 ここでは各工程の目的と主要な参照ドキュメントをまとめます。詳細な手順やチェックリストはリンク先を参照してください。
@@ -89,29 +89,26 @@ CLI の詳細なオプションは各サブコマンドで `uv run pptx <cmd> --
 ### 工程 1: テンプレ準備
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
 - 自動検査ツール（命名整合性チェックなど）は設計中です。運用中は手動レビュー（HITL）を併用します。
-- テンプレ受け渡しメタを生成する場合は次のコマンドを利用します。
-  ```bash
-  uv run pptx tpl-release \
-    --template samples/templates/templates.pptx \
-    --brand demo \
-    --version v1 \
-    --golden-spec samples/json/sample_jobspec.json
-  ```
-  - 出力は既定で `.pptx/release/` に保存され、`template_release.json` や `release_report.json` を確認できます。
-  - 過去バージョンとの比較が必要な場合は `--baseline-release` を追加してください。
+- テンプレ受け渡しメタを生成する場合はテンプレリリース CLI を利用します。
+   ```bash
+   uv run pptx tpl-release \
+     --template templates/libraries/<brand>/<version>/template.pptx \
+     --brand <brand> \
+     --version <version> \
+     --baseline-release templates/releases/<brand>/<prev_version>/template_release.json \
+     --golden-spec samples/json/sample_jobspec.json
+   ```
+   - 既定の出力先は `.pptx/release/` です。`template_release.json`（受け渡しメタ）や `release_report.json`（差分レポート）、`golden_runs/`（ゴールデンサンプル検証ログ）が保存されます。
+   - `--baseline-release` で過去バージョンとの差分比較が可能です。`--golden-spec` を複数指定すると代表 spec でのレンダリング検証をまとめて実行します。
 
 ### 工程 2: テンプレ構造抽出
-- テンプレート PPTX からレイアウトとブランド設定を抽出します。
-  ```bash
-  uv run pptx tpl-extract --template samples/templates/templates.pptx
-  uv run pptx layout-validate --template samples/templates/templates.pptx
-  ```
-- 生成物は `.pptx/extract/`（`layouts.jsonl` / `branding.json`）と `.pptx/validation/` に保存されます。
+- テンプレート PPTX からレイアウトとアンカー情報を抽出し、`layouts.jsonl` と `branding.json` を生成します。
+- 差分チェックや品質検証には `pptx layout-validate` を併用します。
 - 詳細ガイド: `docs/requirements/stages/stage-02-template-structure-extraction.md`
 
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を確定します。生成AIドラフトの作成やレビュー支援は `pptx content` コマンドで行い、生成AIモードが既定です。
-- ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md`、設計補足は `docs/design/stages/stage-03-content-normalization.md` を参照してください。
+- ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` を参照してください。
 - `.pptx/content/` 配下に `content_draft.json`（生成AIモード時）、`content_ai_log.json`、`ai_generation_meta.json`、`spec_content_applied.json`、`content_meta.json` を出力します。
   ```bash
   # 生成AIドラフトを作成（content_draft.json などを出力）
@@ -122,25 +119,34 @@ CLI の詳細なオプションは各サブコマンドで `uv run pptx <cmd> --
   # 承認済み JSON を適用する場合
   uv run pptx content samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
+    --content-review-log samples/json/sample_content_review_log.json \
     --output .pptx/content
   ```
   - 承認済み JSON を適用したい場合は `--content-approved` / `--content-review-log` を指定します。
   - プレーンテキスト・PDF・URL など外部ソースから取り込む場合は `--content-source` を利用します。
 
 ### 工程 4: ドラフト構成設計
-- 章構成やスライド順を決定し、`draft_approved.json` と関連ログを整備します。
+- 章立てやページ順を確定し、HITL で `draft_approved.json` を承認します。
+- レイアウト選定の指針は `docs/requirements/stages/stage-04-draft-structuring.md` を参照してください。
+- 承認済みコンテンツからドラフト成果物を生成する場合は `pptx outline`（新名称）を利用します。
   ```bash
-  uv run pptx outline .pptx/content/spec_content_applied.json
+  uv run pptx outline samples/json/sample_jobspec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --output .pptx/draft
+  # `draft_draft.json` / `draft_approved.json` / `draft_meta.json` を確認
   ```
-- 詳細ガイド: `docs/requirements/stages/stage-04-draft-structuring.md`
 
 ### 工程 5: マッピング
-- レイアウト割付とプレースホルダ決定を行い、`rendering_ready.json` やログを生成します。
+- `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。`mapping_log.json` には Analyzer 指摘サマリ（件数集計・スライド別詳細）が追加されており、補完やフォールバック制御の判断材料として活用します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
+- 実行手順:
   ```bash
-  uv run pptx mapping .pptx/content/spec_content_applied.json \
+  uv run pptx mapping samples/json/sample_jobspec.json \
+    --content-approved samples/json/sample_content_approved.json \
+    --content-review-log samples/json/sample_content_review_log.json \
     --template samples/templates/templates.pptx
+  # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
   ```
-- 詳細ガイド: `docs/requirements/stages/stage-05-mapping.md`、`docs/design/stages/stage-05-mapping.md`
+- `pptx gen` を実行した場合も内部で `mapping` → `render` が順に呼び出され、従来どおりの成果物を `.pptx/gen/` に保存します。
 
 ### 工程 6: PPTX レンダリング
 - `pptx render` サブコマンドで `rendering_ready.json` を入力し、PPTX・`analysis.json`・Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
@@ -151,7 +157,7 @@ CLI の詳細なオプションは各サブコマンドで `uv run pptx <cmd> --
     --template samples/templates/templates.pptx \
     --output .pptx/gen
   ```
-- `pptx gen` を利用すると工程3〜6をまとめて再実行できます。
+- `pptx gen` を利用すると工程3〜6を一括実行できます。
 - 詳細ガイド: `docs/requirements/stages/stage-06-rendering.md`
 
 ## 主な成果物
