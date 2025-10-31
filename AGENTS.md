@@ -18,10 +18,10 @@
 - PDF 変換確認 (任意): `soffice --headless --version`
 
 # 4 CLI 実行の基本
-- 入力 JSON を `samples/json/sample_spec.json` から派生させ、必要に応じてブランド設定 JSON (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
+- 入力 JSON を `samples/json/sample_jobspec.json` から派生させ、必要に応じてブランド設定 JSON (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
 - PPTX と解析結果を生成する基本コマンド:
   ```bash
-  uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
+  uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx
   ```
   - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
   - ブランド設定を差し替える場合は `--branding <path>` を指定する。

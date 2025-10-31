@@ -2,7 +2,7 @@
 
 ## 1. 現行サンプルの棚卸し
 
-- `samples/json/sample_spec.json`
+- `samples/json/sample_jobspec.json`
   - 12 ページ構成 / 7 レイアウト種別。
   - `Two Column Detail` が 5 枚と偏りが大きく、タイムライン・比較・ファクトシート以外の特殊レイアウトが不足。
   - 表／画像／テキストボックスの組み合わせも限定的（グラフ未使用）。
@@ -40,7 +40,7 @@
 
 ## 3. サンプル JSON / アセット拡張方針
 
-- `sample_spec.json` は 50 ページ構成まで拡張し、カテゴリ別レイアウトを網羅する（旧 `sample_spec_extended.json` 案を統合）。
+- `sample_jobspec.json` は 50 ページ構成まで拡張し、カテゴリ別レイアウトを網羅する（旧 `sample_spec_extended.json` 案を統合）。
 - `sample_content_approved.json` / `sample_content_review_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
 - `sample_layouts.jsonl` を全レイアウト追加後の `layout-validate` 出力を基準に更新し、用途タグ・ヒントを網羅。
 - 追加レイアウトに必要なダミー画像・アイコンは `samples/assets/` に SVG/PNG 形式で配置。
@@ -51,7 +51,7 @@
   - `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043`  
   - 生成物: `layouts.jsonl`, `diagnostics.json`, `diff_report.json`。重複アンカー／抽出エラーの有無を確認。
 - サンプル生成  
-- `uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --output .pptx/gen/rm043 --emit-structure-snapshot`  
+- `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --output .pptx/gen/rm043 --emit-structure-snapshot`  
   - 生成物: PPTX, `analysis.json`, `analysis_snapshot.json`, `audit_log.json`。全ページの配置とメタ情報を確認。
 - CLI テスト  
   - `uv run --extra dev pytest tests/test_cli_integration.py`（必要に応じ `tests/test_renderer.py` など関連テスト）。  

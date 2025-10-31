@@ -39,7 +39,7 @@ def _collect_paragraph_texts(slide) -> list[str]:
 
 
 def test_cli_gen_generates_outputs(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work"
     runner = CliRunner()
 
@@ -153,7 +153,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
 
 
 def test_cli_gen_with_content_approved(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = CONTENT_APPROVED_SAMPLE
     review_log_path = CONTENT_REVIEW_LOG_SAMPLE
 
@@ -245,7 +245,7 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
 
 
 def test_cli_mapping_then_render(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     render_dir = tmp_path / "render"
     draft_dir = tmp_path / "draft"
@@ -302,7 +302,7 @@ def test_cli_mapping_then_render(tmp_path) -> None:
 
 
 def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = tmp_path / "content_approved_violation.json"
     payload = {
         "slides": [
@@ -344,7 +344,7 @@ def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
 
 
 def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = tmp_path / "content_approved.json"
     payload = {
         "slides": [
@@ -383,7 +383,7 @@ def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
 
 
 def test_cli_gen_supports_template(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-template"
     template_path = tmp_path / "template.pptx"
 
@@ -443,7 +443,7 @@ def test_cli_gen_supports_template(tmp_path) -> None:
 
 
 def test_cli_gen_with_polisher_stub(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-polisher"
     rules_path = tmp_path / "polisher-rules.json"
     rules_path.write_text(json.dumps({"min_font_size_pt": 18.0}), encoding="utf-8")
@@ -514,7 +514,7 @@ def test_cli_gen_with_polisher_stub(tmp_path) -> None:
 
 
 def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-template-branding"
     template_path = tmp_path / "template.pptx"
     branding_path = tmp_path / "custom-branding.json"
@@ -561,7 +561,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
 
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     template_path = Path("samples/templates/templates.pptx")
     output_dir = tmp_path / "gen-work-template-fallback"
 
@@ -594,7 +594,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "mapping-work"
     runner = CliRunner()
 
@@ -622,7 +622,7 @@ def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
 
 
 def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping-work"
     render_dir = tmp_path / "render-work"
     runner = CliRunner()
@@ -675,7 +675,7 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
 
 
 def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     template_path = SAMPLE_TEMPLATE
     gen_output = tmp_path / "gen-with-snapshot"
     validation_output = tmp_path / "validation-with-snapshot"
@@ -733,7 +733,7 @@ def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
 
 
 def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf"
 
     def fake_which(cmd: str) -> str | None:
@@ -790,7 +790,7 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf-only"
 
     def fake_which(cmd: str) -> str | None:
@@ -846,7 +846,7 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf-skip"
 
     def fail_run(*args, **kwargs):  # noqa: ANN401
@@ -898,7 +898,7 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
             app,
             [
                 "gen",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
                 "--template",
                 "samples/templates/templates.pptx",
             ],
@@ -1283,7 +1283,7 @@ def test_cli_tpl_release_reuses_baseline_golden_specs(tmp_path) -> None:
                 "--output",
                 str(first_output),
                 "--golden-spec",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
             ],
             catch_exceptions=False,
         )
@@ -1318,7 +1318,7 @@ def test_cli_tpl_release_reuses_baseline_golden_specs(tmp_path) -> None:
         )
         assert release.golden_runs
         assert any(
-            run.spec_path.endswith("sample_spec.json") for run in release.golden_runs
+            run.spec_path.endswith("sample_jobspec.json") for run in release.golden_runs
         )
         metrics = release.analyzer_metrics
         assert metrics is not None
@@ -1344,7 +1344,7 @@ def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
                 "--version",
                 "1.0.0",
                 "--golden-spec",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
             ],
             catch_exceptions=False,
         )

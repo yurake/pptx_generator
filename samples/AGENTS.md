@@ -2,7 +2,7 @@
 
 ## 構成
 - `json/sample_spec_minimal.json`: 最小構成サンプル。テンプレート指定なしで 2 枚構成の生成を確認するための雛形。
-- `json/sample_spec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
+- `json/sample_jobspec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
 - `json/sample_content_approved.json`: 工程3で承認済みとなったカードのスナップショット。Audit ログや後工程連携のテストに利用する。
 - `json/sample_content_review_log.json`: 承認イベントログの例。アクション／AI 評価の記録形式を示す。
 - `json/sample_layouts.jsonl`: 工程2のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。

@@ -13,14 +13,14 @@
 3. 抽出ロジック修正:
    - `src/pptx_generator/pipeline/template_extractor.py` で `shape.placeholder_format` 取得時の `ValueError` / `AttributeError` を握り潰すよう改修。
 4. サンプル JSON 整備:
-   - `samples/json/sample_spec.json` を 50 ページ構成へ拡張（Two Column Detail アジェンダ、KPI チャート追加など）。
+   - `samples/json/sample_jobspec.json` を 50 ページ構成へ拡張（Two Column Detail アジェンダ、KPI チャート追加など）。
    - `samples/json/sample_content_approved.json` / `sample_content_review_log.json` の `current-challenges` 参照を同期。
    - `samples/json/sample_layouts.jsonl` を最新の抽出結果で更新。
 5. ドキュメント更新:
    - `docs/requirements/requirements.md`, `docs/design/design.md`, `docs/runbooks/release.md` に RM-043 の運用手順を追記。
 6. CLI 実行と検証:
    ```bash
-   UV_CACHE_DIR=.uv-cache uv run pptx gen samples/json/sample_spec.json \\
+   UV_CACHE_DIR=.uv-cache uv run pptx gen samples/json/sample_jobspec.json \\
      --template samples/templates/templates.pptx \\
      --output .pptx/gen/rm043 \\
      --emit-structure-snapshot

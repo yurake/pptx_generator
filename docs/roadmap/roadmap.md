@@ -294,7 +294,7 @@ flowchart TB
 
 <a id="rm-010"></a>
 ### RM-010 テンプレート仕様エクスポート
-- ゴール: PPTX テンプレートから `samples/json/sample_spec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
+- ゴール: PPTX テンプレートから `samples/json/sample_jobspec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
 - 参照ドキュメント: [README.md](../README.md)（extract-template セクション）
 - 参照 ToDo: [docs/todo/archive/20251009-template-spec-export.md](../todo/archive/20251009-template-spec-export.md)
 - 状況: 完了（2025-10-11 更新）

@@ -10,7 +10,7 @@
 - テンプレート: 既定テンプレートを利用。追加アセットなし
 
 ### フル構成サンプル（Full Reference）
-- ファイル: `samples/json/sample_spec.json`（現行を拡張）
+- ファイル: `samples/json/sample_jobspec.json`（現行を拡張）
 - レイアウト: Title（カバー）、アジェンダ、課題、解決策、ロードマップ、効果、チーム、クロージングなど 6〜8 枚構成
 - コンテンツ: 画像（アンカー指定あり）、表（列ヘッダー＋ゼブラ）、チャート（系列カラー指定）、ノート欄の記述
 - テンプレート: `samples/templates/templates.pptx`（サンプル用に整備）

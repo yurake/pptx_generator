@@ -10,7 +10,7 @@ roadmap_item: RM-019 CLI ツールチェーン整備
 - [x] 計画策定（スコープ・前提・担当の整理）
   - メモ: 2025-10-16 ユーザー承認（チャット返信 "ok"）を取得。対象ドキュメントと検証方針を整理済み。
 - [x] 設計・実装方針の確定
-  - メモ: `sample_spec.json` を参照する手順のみテンプレート指定を追加し、アーカイブ記録には触れない方針で進める。
+  - メモ: `sample_jobspec.json` を参照する手順のみテンプレート指定を追加し、アーカイブ記録には触れない方針で進める。
 - [x] ドキュメント更新（要件・設計）
   - メモ: 今回は要件・設計ドキュメントに変更不要と判断し、影響なしを確認。
   - [x] docs/requirements 配下
@@ -18,7 +18,7 @@ roadmap_item: RM-019 CLI ツールチェーン整備
 - [x] 実装
   - メモ: AGENTS 系ガイドと `docs/qa` / `docs/notes` のコマンド例をテンプレート指定付きへ更新済み。
 - [x] テスト・検証
-  - メモ: `uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --output .pptx/gen/review-20251016` を実行し、PPTX と analysis の生成を確認。
+  - メモ: `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --output .pptx/gen/review-20251016` を実行し、PPTX と analysis の生成を確認。
 - [x] ドキュメント更新
   - メモ: AGENTS.md / src/AGENTS.md / config/AGENTS.md / docs/qa / docs/notes を更新済み。ロードマップや要件設計への影響はなし。
   - [x] docs/roadmap 配下

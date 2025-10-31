@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 
-SAMPLE_SPEC = Path("samples/json/sample_spec.json")
+SAMPLE_SPEC = Path("samples/json/sample_jobspec.json")
 SAMPLE_CONTENT = Path("samples/json/sample_content_approved.json")
 SAMPLE_REVIEW = Path("samples/json/sample_content_review_log.json")
 
