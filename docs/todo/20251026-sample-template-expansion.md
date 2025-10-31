@@ -11,21 +11,22 @@ roadmap_item: RM-043 サンプルテンプレ拡充
   - メモ: ユーザー承認 ID: チャット返信「ok」（2025-10-26）。計画内容は 50 ページ拡充とサンプル／テスト整合方針。
 - [x] 設計・実装方針の確定
   - メモ: docs/notes/20251026-rm043-sample-template-plan.md にカテゴリ別レイアウト案、アンカー仕様、テスト工程、テンプレ編集指示書を整理済み（2025-10-26）。
-- [ ] ドキュメント更新（要件・設計）
+- [x] ドキュメント更新（要件・設計）
   - メモ: 追加検討が必要な場合は要件/設計ドキュメントへの反映可否を記録する
 - [x] docs/requirements 配下
 - [x] docs/design 配下
-- [ ] 実装
-  - メモ: テンプレート追加と samples/ データ更新の範囲をまとめる
-- [ ] テスト・検証
-  - メモ: layout-validate や CLI テストの実施内容を記載する
-- [ ] ドキュメント更新
+- [x] 実装
+  - メモ: 2025-10-31 テンプレ矢印PH化・背景命名整理、`samples/json` 各種更新、テストコード反映まで完了。
+- [x] テスト・検証
+  - メモ: `UV_CACHE_DIR=.uv-cache uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` / `UV_CACHE_DIR=.uv-cache uv run pptx gen samples/json/sample_spec_extended.json --template samples/templates/templates.pptx --output .pptx/gen/rm043 --emit-structure-snapshot` / `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_renderer.py tests/test_cli_integration.py` を実施、warnings=0 を確認。
+- [x] ドキュメント更新
   - メモ: 影響ドキュメントと更新内容を列挙する
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] README.md / AGENTS.md
+    - メモ: 2025-10-31 現行記載を確認し、追加変更は不要と判断。
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する
 - [ ] PR 作成

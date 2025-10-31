@@ -1,54 +1,54 @@
 {
   "slides": [
     {
-      "id": "cover",
+      "id": "title-01",
       "intent": "表紙",
       "type_hint": "title",
       "elements": {
-        "title": "次期プロジェクト提案",
+        "title": "RM-043 拡張テンプレート検証(承認済み)",
         "body": [
-          "2025 年度 上期 提案書（承認済み版）"
+          "承認済み版のサマリをカバーページに反映済み"
         ],
-        "note": "カバースライドのサブタイトルと補足を保持しています。"
+        "note": "承認日時 2025-10-31"
       },
       "status": "approved"
     },
     {
-      "id": "agenda",
+      "id": "agenda-01",
       "intent": "アジェンダ",
       "type_hint": "outline",
       "elements": {
-        "title": "アジェンダ",
+        "title": "検証アジェンダ",
         "body": [
-          "背景整理（承認済み）",
-          "提案サマリー（承認済み）",
-          "ロードマップと体制（承認済み）"
+          "テンプレ適用状況（承認済み）",
+          "layout-validate 結果レビュー（承認済み）",
+          "サンプル JSON 更新内容（承認済み）"
         ]
       },
       "status": "approved",
       "applied_autofix": [
-        "p-agenda-bullet"
+        "agenda-bullet-normalize"
       ]
     },
     {
-      "id": "current-challenges",
+      "id": "three_rows_detail-01",
       "intent": "課題整理",
       "type_hint": "content",
       "elements": {
-        "title": "現状課題",
+        "title": "品質チェックポイント",
         "body": [
-          "提案作成に 10 時間以上を要している（再確認済み）",
-          "承認待ちでリードタイムが延伸している（承認コメント反映）",
-          "監査ログ作成が手作業で属人化している（改善要）"
+          "テンプレ抽出で ValueError が出ないよう例外処理を追加（承認済み）",
+          "レイアウト警告を 0 件まで削減（承認済み）",
+          "CLI テストで 50 スライド構成を検証済み（承認済み）"
         ],
-        "note": "課題は 3 点に集約。監査ログ要件を強調（承認済み）。"
+        "note": "監査ログ記載済み（承認済み）。"
       },
       "status": "approved"
     }
   ],
   "meta": {
     "tone": "formal",
-    "audience": "経営層",
-    "summary": "提案書ドラフトの確定版。表紙・アジェンダ・課題整理を承認済み。"
+    "audience": "QA チーム",
+    "summary": "拡張テンプレート検証の承認済みスライドセット"
   }
 }

@@ -1,9 +1,9 @@
 {
   "meta": {
     "schema_version": "1.1",
-    "title": "次期プロジェクト提案",
-    "client": "ABC 株式会社",
-    "author": "営業部",
+    "title": "RM-043 拡張テンプレート検証",
+    "client": "Internal QA",
+    "author": "テンプレート検証チーム",
     "created_at": "2025-10-31",
     "theme": "corporate",
     "locale": "ja-JP"
@@ -14,82 +14,221 @@
   },
   "slides": [
     {
-      "id": "cover",
+      "id": "title-01",
       "layout": "Title",
-      "title": "次期プロジェクト提案",
-      "subtitle": "2025 年度 上期",
+      "title": "提案表紙A",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "title-01-text1",
+          "anchor": "Text1",
+          "text": "Text1 セクション 1\n- ポイント A\n- ポイント B"
+        }
+      ],
       "images": [
         {
-          "id": "cover-logo",
+          "id": "title-01-logo",
           "source": "samples/assets/logo.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
-      ],
-      "textboxes": [
-        {
-          "id": "cover-summary",
-          "anchor": "Text1",
-          "text": "自動生成フローで 4 週間内に提案書を整備し、営業活動を加速します。",
-          "paragraph": {
-            "align": "left",
-            "level": 0
-          }
-        }
-      ],
-      "notes": "Text1 アンカーにサマリーを配置する例。"
+      ]
     },
     {
-      "id": "agenda",
-      "layout": "Two Column Detail",
-      "title": "アジェンダ",
+      "id": "title-02",
+      "layout": "Title",
+      "title": "提案表紙B",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "title-02-text1",
+          "anchor": "Text1",
+          "text": "Text1 セクション 2\n- ポイント A\n- ポイント B"
+        }
+      ],
+      "images": [
+        {
+          "id": "title-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_left-01",
+      "layout": "Section Covor Left",
+      "title": "章扉 左配置A",
+      "subtitle": "サブタイトル 1",
+      "images": [
+        {
+          "id": "section_covor_left-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_left-02",
+      "layout": "Section Covor Left",
+      "title": "章扉 左配置B",
+      "subtitle": "サブタイトル 2",
+      "images": [
+        {
+          "id": "section_covor_left-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_center-01",
+      "layout": "Section Covor Center",
+      "title": "章扉 中央A",
+      "subtitle": "サブタイトル 1",
+      "images": [
+        {
+          "id": "section_covor_center-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_center-02",
+      "layout": "Section Covor Center",
+      "title": "章扉 中央B",
+      "subtitle": "サブタイトル 2",
+      "images": [
+        {
+          "id": "section_covor_center-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "agenda-01",
+      "layout": "Agenda",
+      "subtitle": "サブタイトル 1",
       "bullets": [
         {
-          "anchor": "Body Left",
+          "anchor": "Agenda",
           "items": [
             {
-              "id": "agenda-1",
-              "text": "背景整理",
+              "id": "agenda-01-item-1",
+              "text": "Agenda トピック 1-1",
               "level": 0
             },
             {
-              "id": "agenda-2",
-              "text": "提案方針",
-              "level": 0
-            },
-            {
-              "id": "agenda-3",
-              "text": "体制とロードマップ",
-              "level": 0
-            },
-            {
-              "id": "agenda-4",
-              "text": "リスクと次のアクション",
+              "id": "agenda-01-item-2",
+              "text": "Agenda トピック 1-2",
               "level": 0
             }
           ]
         }
       ],
+      "images": [
+        {
+          "id": "agenda-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "agenda-02",
+      "layout": "Agenda",
+      "subtitle": "サブタイトル 2",
+      "bullets": [
+        {
+          "anchor": "Agenda",
+          "items": [
+            {
+              "id": "agenda-02-item-1",
+              "text": "Agenda トピック 2-1",
+              "level": 0
+            },
+            {
+              "id": "agenda-02-item-2",
+              "text": "Agenda トピック 2-2",
+              "level": 0
+            }
+          ]
+        }
+      ],
+      "images": [
+        {
+          "id": "agenda-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "one_column_detail-01",
+      "layout": "One Column Detail",
+      "title": "1カラム要点A",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "one_column_detail-01-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "one_column_detail-02",
+      "layout": "One Column Detail",
+      "title": "1カラム要点B",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "one_column_detail-02-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "two_rows_detail-01",
+      "layout": "Two Rows Detail",
+      "title": "2行サマリーA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "two_rows_detail-01-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 1"
+        }
+      ],
       "tables": [
         {
-          "id": "agenda-milestones",
-          "anchor": "Body Right",
+          "id": "two-rows-detail-01-table",
+          "anchor": "Body Lower",
           "columns": [
-            "マイルストーン",
-            "時期"
+            "項目",
+            "値"
           ],
           "rows": [
             [
-              "キックオフ",
-              "2025 Q1"
+              "テンプレ数",
+              "38"
             ],
             [
-              "PoC 実施",
-              "2025 Q2"
+              "サンプルJSON",
+              "50"
             ],
             [
-              "本番展開",
-              "2025 Q3"
+              "検証完了",
+              "Yes"
             ]
           ],
           "style": {
@@ -97,126 +236,330 @@
             "zebra": true
           }
         }
-      ],
-      "images": [
-        {
-          "id": "agenda-logo",
-          "source": "samples/assets/logo.png",
-          "sizing": "fit",
-          "left_in": 8.6,
-          "top_in": 0.6,
-          "width_in": 1.2,
-          "height_in": 1.2
-        }
       ]
     },
     {
-      "id": "current-challenges",
-      "layout": "Three Rows Detail",
-      "title": "現状課題",
-      "subtitle": "品質・スピード・統制の 3 領域",
+      "id": "two_rows_detail-02",
+      "layout": "Two Rows Detail",
+      "title": "2行サマリーB",
+      "subtitle": "サブタイトル 2",
       "textboxes": [
         {
-          "id": "challenge-1",
+          "id": "two_rows_detail-02-body-upper",
           "anchor": "Body Upper",
-          "text": "品質: ブランド不整合やレイアウト崩れが散見。"
+          "text": "Body Upper のサンプル 2"
         },
         {
-          "id": "challenge-2",
-          "anchor": "Body Center",
-          "text": "スピード: テンプレ整備に 10 時間以上。"
-        },
-        {
-          "id": "challenge-3",
+          "id": "two_rows_detail-02-body-lower",
           "anchor": "Body Lower",
-          "text": "統制: ToDo とロードマップの連携が不足。"
+          "text": "Body Lower のサンプル 2"
         }
       ]
     },
     {
-      "id": "section-overview",
-      "layout": "Section Covor Left",
-      "title": "プロジェクト概要",
-      "subtitle": "現状整理とゴールの共有",
-      "images": [
-        {
-          "id": "section-logo",
-          "source": "samples/assets/logo.png",
-          "anchor": "Logo",
-          "sizing": "fit"
-        }
-      ]
-    },
-    {
-      "id": "executive-summary",
-      "layout": "Executive Summary",
-      "title": "提案サマリー",
+      "id": "two_column_detail-01",
+      "layout": "Two Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "2カラム比較A",
       "textboxes": [
         {
-          "id": "summary-left",
+          "id": "two_column_detail-01-body-left",
           "anchor": "Body Left",
-          "text": "課題: 提案資料の作成に平均 3.5 日。\n解決策: 自動生成テンプレートと Approval-First Policy を組み合わせ、作業スピードを 1 日以内へ短縮。"
+          "text": "Body Left のサンプル 1"
         },
         {
-          "id": "summary-right",
+          "id": "two_column_detail-01-body-right",
           "anchor": "Body Right",
-          "text": "期待効果:\n- 品質: チェックリストで差戻し率 5% 未満\n- スピード: 初稿作成を当日内に完了\n- 透明性: audit_log.json でレビュー履歴を追跡"
-        },
-        {
-          "id": "summary-notes",
-          "anchor": "Notes",
-          "text": "主要 KPI と背景メモを左右で分ける構成。"
+          "text": "Body Right のサンプル 1"
         }
       ]
     },
     {
-      "id": "solution-design",
-      "layout": "Four Column Detail",
-      "title": "ソリューション構成",
-      "subtitle": "4 つの柱で段階的に展開",
+      "id": "two_column_detail-02",
+      "layout": "Two Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "2カラム比較B",
       "textboxes": [
         {
-          "id": "solution-1",
-          "anchor": "Body Upper Left",
-          "text": "テンプレート整備\n- レイアウト定義\n- アンカー命名"
-        },
-        {
-          "id": "solution-2",
-          "anchor": "Body Upper Right",
-          "text": "自動生成フロー\n- uv run pptx gen\n- layout-validate"
-        },
-        {
-          "id": "solution-3",
-          "anchor": "Body Lower Left",
-          "text": "品質管理\n- Analyzer 警告管理\n- audit_log.json"
-        },
-        {
-          "id": "solution-4",
-          "anchor": "Body Lower Right",
-          "text": "教育・展開\n- runbook 整備\n- ワークショップ"
-        }
-      ]
-    },
-    {
-      "id": "metrics",
-      "layout": "Three Column Detail",
-      "title": "主要 KPI",
-      "subtitle": "導入後 3 ヶ月の目標",
-      "textboxes": [
-        {
-          "id": "metric-left",
+          "id": "two_column_detail-02-body-left",
           "anchor": "Body Left",
-          "text": "品質指標\n- 差戻し率 5% 以下\n- ブランド違反 0 件"
+          "text": "Body Left のサンプル 2"
         },
         {
-          "id": "metric-center",
+          "id": "two_column_detail-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "left_highlight_detail-01",
+      "layout": "Left Highlight Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "左強調カードA",
+      "textboxes": [
+        {
+          "id": "left_highlight_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "left_highlight_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "left_highlight_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "left_highlight_detail-02",
+      "layout": "Left Highlight Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "左強調カードB",
+      "textboxes": [
+        {
+          "id": "left_highlight_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "left_highlight_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "left_highlight_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "right_highlight_detail-01",
+      "layout": "Right Highlight Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "右強調カードA",
+      "textboxes": [
+        {
+          "id": "right_highlight_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "right_highlight_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "right_highlight_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "right_highlight_detail-02",
+      "layout": "Right Highlight Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "右強調カードB",
+      "textboxes": [
+        {
+          "id": "right_highlight_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "right_highlight_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "right_highlight_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_rows_detail-01",
+      "layout": "Three Rows Detail",
+      "title": "3行カードA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "three_rows_detail-01-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 1"
+        },
+        {
+          "id": "three_rows_detail-01-body-center",
           "anchor": "Body Center",
-          "text": "スピード指標\n- 初稿リードタイム 1 日以内\n- テンプレ更新リードタイム 2 日"
+          "text": "Body Center のサンプル 1"
+        },
+        {
+          "id": "three_rows_detail-01-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "three_rows_detail-02",
+      "layout": "Three Rows Detail",
+      "title": "3行カードB",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "three_rows_detail-02-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 2"
+        },
+        {
+          "id": "three_rows_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
+        },
+        {
+          "id": "three_rows_detail-02-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "four_rows_detail-01",
+      "layout": "Four Rows Detail",
+      "title": "4行カードA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "four_rows_detail-01-body-1",
+          "anchor": "Body 1",
+          "text": "Body 1 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-2",
+          "anchor": "Body 2",
+          "text": "Body 2 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-3",
+          "anchor": "Body 3",
+          "text": "Body 3 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-4",
+          "anchor": "Body 4",
+          "text": "Body 4 のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "four_rows_detail-02",
+      "layout": "Four Rows Detail",
+      "title": "4行カードB",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "four_rows_detail-02-body-1",
+          "anchor": "Body 1",
+          "text": "Body 1 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-2",
+          "anchor": "Body 2",
+          "text": "Body 2 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-3",
+          "anchor": "Body 3",
+          "text": "Body 3 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-4",
+          "anchor": "Body 4",
+          "text": "Body 4 のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "executive_summary-01",
+      "layout": "Executive Summary",
+      "title": "要約スライドA",
+      "textboxes": [
+        {
+          "id": "executive_summary-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "executive_summary-01-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 1"
+        },
+        {
+          "id": "executive_summary-01-notes",
+          "anchor": "Notes",
+          "text": "Notes のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "executive_summary-02",
+      "layout": "Executive Summary",
+      "title": "要約スライドB",
+      "textboxes": [
+        {
+          "id": "executive_summary-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "executive_summary-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
+        },
+        {
+          "id": "executive_summary-02-notes",
+          "anchor": "Notes",
+          "text": "Notes のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_column_detail-01",
+      "layout": "Three Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "3カラム概要A",
+      "textboxes": [
+        {
+          "id": "three_column_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "three_column_detail-01-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 1"
+        },
+        {
+          "id": "three-column-detail-01-left",
+          "anchor": "Body Left",
+          "text": "左カラム指標\n- レイアウト数 38\n- 追加予定 12"
+        },
+        {
+          "id": "three-column-detail-01-center",
+          "anchor": "Body Center",
+          "text": "中央カラム指標\n- CLI テスト 48 件\n- layout-validate warnings 0"
         }
       ],
       "charts": [
         {
-          "id": "metric-chart",
+          "id": "three-column-detail-01-chart",
           "anchor": "Body Right",
           "type": "column",
           "categories": [
@@ -225,176 +568,770 @@
           ],
           "series": [
             {
-              "name": "差戻し率",
-              "values": [18, 5]
+              "name": "Warnings",
+              "values": [
+                9,
+                0
+              ]
             },
             {
-              "name": "初稿リードタイム",
-              "values": [3.5, 1.0]
+              "name": "Layouts",
+              "values": [
+                25,
+                25
+              ]
             }
           ],
           "options": {
-            "data_labels": true,
-            "y_axis_format": "0%"
+            "data_labels": true
           }
         }
       ]
     },
     {
-      "id": "roadmap",
-      "layout": "Three Flow",
-      "title": "導入ロードマップ",
-      "subtitle": "3 ステップで浸透",
+      "id": "three_column_detail-02",
+      "layout": "Three Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "3カラム概要B",
       "textboxes": [
         {
-          "id": "flow-1",
-          "anchor": "Flow 1",
-          "text": "ステップ 1\nテンプレート受領\nlayout-validate 実施"
+          "id": "three_column_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
         },
         {
-          "id": "flow-2",
-          "anchor": "Flow 2",
-          "text": "ステップ 2\nサンプル生成とレビュー\nAnalyzer 指摘の解消"
+          "id": "three_column_detail-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
         },
         {
-          "id": "flow-3",
-          "anchor": "Flow 3",
-          "text": "ステップ 3\n運用移管と教育\nPDF 変換テスト"
+          "id": "three_column_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
         }
       ]
     },
     {
-      "id": "team",
-      "layout": "Four List",
-      "title": "体制",
-      "subtitle": "役割と責任分担",
+      "id": "four_column_detail-01",
+      "layout": "Four Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "4カラム概要A",
       "textboxes": [
         {
-          "id": "team-key-1",
-          "anchor": "Key 1",
-          "text": "プロジェクトマネージャー"
+          "id": "four_column_detail-01-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 1"
         },
         {
-          "id": "team-val-1",
-          "anchor": "Value 1",
-          "text": "全体統括 / 承認"
+          "id": "four_column_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
         },
         {
-          "id": "team-key-2",
-          "anchor": "Key 2",
-          "text": "テンプレート担当"
+          "id": "four_column_detail-01-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 1"
         },
         {
-          "id": "team-val-2",
-          "anchor": "Value 2",
-          "text": "PPTX 編集 / layout-validate"
-        },
-        {
-          "id": "team-key-3",
-          "anchor": "Key 3",
-          "text": "自動化担当"
-        },
-        {
-          "id": "team-val-3",
-          "anchor": "Value 3",
-          "text": "CLI 運用 / テスト"
-        },
-        {
-          "id": "team-key-4",
-          "anchor": "Key 4",
-          "text": "品質保証"
-        },
-        {
-          "id": "team-val-4",
-          "anchor": "Value 4",
-          "text": "Analyzer レビュー / 監査"
+          "id": "four_column_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
         }
       ]
     },
     {
-      "id": "risks",
+      "id": "four_column_detail-02",
+      "layout": "Four Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "4カラム概要B",
+      "textboxes": [
+        {
+          "id": "four_column_detail-02-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "six_column_detail-01",
+      "layout": "Six Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "6カラム一覧A",
+      "textboxes": [
+        {
+          "id": "six_column_detail-01-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-upper-center",
+          "anchor": "Body Upper Center",
+          "text": "Body Upper Center のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-center",
+          "anchor": "Body Lower Center",
+          "text": "Body Lower Center のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "six_column_detail-02",
+      "layout": "Six Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "6カラム一覧B",
+      "textboxes": [
+        {
+          "id": "six_column_detail-02-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-upper-center",
+          "anchor": "Body Upper Center",
+          "text": "Body Upper Center のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-center",
+          "anchor": "Body Lower Center",
+          "text": "Body Lower Center のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "nine_column_detail-01",
+      "layout": "Nine Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "9カラム一覧A",
+      "textboxes": [
+        {
+          "id": "nine_column_detail-01-body-top-left",
+          "anchor": "Body Top Left",
+          "text": "Body Top Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-top-right",
+          "anchor": "Body Top Right",
+          "text": "Body Top Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-top-center",
+          "anchor": "Body Top Center",
+          "text": "Body Top Center のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-middle-left",
+          "anchor": "Body Middle Left",
+          "text": "Body Middle Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-middle-right",
+          "anchor": "Body Middle Right",
+          "text": "Body Middle Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-left",
+          "anchor": "Body Bottom Left",
+          "text": "Body Bottom Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-right",
+          "anchor": "Body Bottom Right",
+          "text": "Body Bottom Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-center",
+          "anchor": "Body Bottom Center",
+          "text": "Body Bottom Center のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "nine_column_detail-02",
+      "layout": "Nine Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "9カラム一覧B",
+      "textboxes": [
+        {
+          "id": "nine_column_detail-02-body-top-left",
+          "anchor": "Body Top Left",
+          "text": "Body Top Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-top-right",
+          "anchor": "Body Top Right",
+          "text": "Body Top Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-top-center",
+          "anchor": "Body Top Center",
+          "text": "Body Top Center のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-middle-left",
+          "anchor": "Body Middle Left",
+          "text": "Body Middle Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-middle-right",
+          "anchor": "Body Middle Right",
+          "text": "Body Middle Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-left",
+          "anchor": "Body Bottom Left",
+          "text": "Body Bottom Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-right",
+          "anchor": "Body Bottom Right",
+          "text": "Body Bottom Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-center",
+          "anchor": "Body Bottom Center",
+          "text": "Body Bottom Center のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_list-01",
       "layout": "Three List",
-      "title": "主要リスク",
-      "subtitle": "想定課題と対策",
+      "subtitle": "サブタイトル 1",
+      "title": "3リスト整理A",
       "textboxes": [
         {
-          "id": "risk-key-1",
+          "id": "three_list-01-key-1",
           "anchor": "Key 1",
-          "text": "テンプレ更新遅延"
+          "text": "要素 1"
         },
         {
-          "id": "risk-val-1",
+          "id": "three_list-01-value-1",
           "anchor": "Value 1",
-          "text": "ToDo とロードマップで進捗管理"
+          "text": "内容 1 (1)"
         },
         {
-          "id": "risk-key-2",
+          "id": "three_list-01-key-2",
           "anchor": "Key 2",
-          "text": "ブランド逸脱"
+          "text": "要素 2"
         },
         {
-          "id": "risk-val-2",
+          "id": "three_list-01-value-2",
           "anchor": "Value 2",
-          "text": "layout-style 設定とレビュー"
+          "text": "内容 2 (1)"
         },
         {
-          "id": "risk-key-3",
+          "id": "three_list-01-key-3",
           "anchor": "Key 3",
-          "text": "PDF 変換差異"
+          "text": "要素 3"
         },
         {
-          "id": "risk-val-3",
+          "id": "three_list-01-value-3",
           "anchor": "Value 3",
-          "text": "LibreOffice 検証とフォールバック"
+          "text": "内容 3 (1)"
         }
       ]
     },
     {
-      "id": "next-steps",
-      "layout": "Two Rows Detail",
-      "title": "次のアクション",
-      "subtitle": "導入準備と展開",
+      "id": "three_list-02",
+      "layout": "Three List",
+      "subtitle": "サブタイトル 2",
+      "title": "3リスト整理B",
       "textboxes": [
         {
-          "id": "next-upper",
-          "anchor": "Body Upper",
-          "text": "1. テンプレート差分レビュー\n2. docs/requirements の更新"
+          "id": "three_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
         },
         {
-          "id": "next-lower",
-          "anchor": "Body Lower",
-          "text": "3. layout-validate と CLI テスト\n4. 運用チームへのトレーニング"
+          "id": "three_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "three_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "three_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "three_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "three_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
         }
       ]
     },
     {
-      "id": "closing",
-      "layout": "Closing",
-      "title": "まとめと連絡先",
-      "subtitle": "導入スケジュールの確定へ",
-      "bullets": [
+      "id": "four_list-01",
+      "layout": "Four List",
+      "subtitle": "サブタイトル 1",
+      "title": "4リスト整理A",
+      "textboxes": [
         {
+          "id": "four_list-01-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "four_list-01-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (1)"
+        },
+        {
+          "id": "four_list-01-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "four_list-01-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (1)"
+        },
+        {
+          "id": "four_list-01-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "four_list-01-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (1)"
+        },
+        {
+          "id": "four_list-01-key-4",
+          "anchor": "Key 4",
+          "text": "要素 4"
+        },
+        {
+          "id": "four_list-01-value-4",
+          "anchor": "Value 4",
+          "text": "内容 4 (1)"
+        }
+      ]
+    },
+    {
+      "id": "four_list-02",
+      "layout": "Four List",
+      "subtitle": "サブタイトル 2",
+      "title": "4リスト整理B",
+      "textboxes": [
+        {
+          "id": "four_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "four_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "four_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "four_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "four_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "four_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
+        },
+        {
+          "id": "four_list-02-key-4",
+          "anchor": "Key 4",
+          "text": "要素 4"
+        },
+        {
+          "id": "four_list-02-value-4",
+          "anchor": "Value 4",
+          "text": "内容 4 (2)"
+        }
+      ]
+    },
+    {
+      "id": "five_list-01",
+      "layout": "Five List",
+      "subtitle": "サブタイトル 1",
+      "title": "5リスト整理A",
+      "textboxes": [
+        {
+          "id": "five_list-01-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "five_list-01-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (1)"
+        },
+        {
+          "id": "five_list-01-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "five_list-01-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (1)"
+        },
+        {
+          "id": "five_list-01-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "five_list-01-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (1)"
+        },
+        {
+          "id": "five_list-01-key-5",
+          "anchor": "Key 5",
+          "text": "要素 5"
+        },
+        {
+          "id": "five_list-01-value-5",
+          "anchor": "Value 5",
+          "text": "内容 5 (1)"
+        }
+      ]
+    },
+    {
+      "id": "five_list-02",
+      "layout": "Five List",
+      "subtitle": "サブタイトル 2",
+      "title": "5リスト整理B",
+      "textboxes": [
+        {
+          "id": "five_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "five_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "five_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "five_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "five_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "five_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
+        },
+        {
+          "id": "five_list-02-key-5",
+          "anchor": "Key 5",
+          "text": "要素 5"
+        },
+        {
+          "id": "five_list-02-value-5",
+          "anchor": "Value 5",
+          "text": "内容 5 (2)"
+        }
+      ]
+    },
+    {
+      "id": "two_flow-01",
+      "layout": "Two Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "2段階フローA",
+      "textboxes": [
+        {
+          "id": "two_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "two_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "two_flow-02",
+      "layout": "Two Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "2段階フローB",
+      "textboxes": [
+        {
+          "id": "two_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "two_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "three_flow-01",
+      "layout": "Three Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "3段階フローA",
+      "textboxes": [
+        {
+          "id": "three_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-01-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "three_flow-02",
+      "layout": "Three Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "3段階フローB",
+      "textboxes": [
+        {
+          "id": "three_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-02-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "1_two_flow-01",
+      "layout": "1_Two Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "番号付きフローA",
+      "textboxes": [
+        {
+          "id": "1_two_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-4",
+          "anchor": "Flow 4",
+          "text": "Flow 4 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "1_two_flow-02",
+      "layout": "1_Two Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "番号付きフローB",
+      "textboxes": [
+        {
+          "id": "1_two_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-4",
+          "anchor": "Flow 4",
+          "text": "Flow 4 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "closing-01",
+      "layout": "Closing",
+      "subtitle": "サブタイトル 1",
+      "title": "クロージングA",
+      "textboxes": [
+        {
+          "id": "closing-01-body",
           "anchor": "Body",
-          "items": [
-            {
-              "id": "closing-1",
-              "text": "テンプレート承認: 11/05 まで",
-              "level": 0
-            },
-            {
-              "id": "closing-2",
-              "text": "PoC 実行: 11/12 開始",
-              "level": 0
-            },
-            {
-              "id": "closing-3",
-              "text": "本番展開: 12/02 開始予定",
-              "level": 0
-            }
-          ]
+          "text": "Body のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "closing-02",
+      "layout": "Closing",
+      "subtitle": "サブタイトル 2",
+      "title": "クロージングB",
+      "textboxes": [
+        {
+          "id": "closing-02-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "closin_covor-01",
+      "layout": "Closin Covor",
+      "images": [
+        {
+          "id": "closin_covor-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
         }
       ],
-      "notes": "Body アンカーを利用したチェックリスト形式。"
+      "title": "クロージング扉A"
+    },
+    {
+      "id": "closin_covor-02",
+      "layout": "Closin Covor",
+      "images": [
+        {
+          "id": "closin_covor-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ],
+      "title": "クロージング扉B"
+    },
+    {
+      "id": "_bk-01",
+      "layout": "_bk",
+      "subtitle": "サブタイトル 1",
+      "title": "背景スライドA",
+      "textboxes": [
+        {
+          "id": "_bk-01-content",
+          "anchor": "コンテンツ プレースホルダー 2",
+          "text": "_bk のコンテンツ 1"
+        }
+      ]
+    },
+    {
+      "id": "_bk-02",
+      "layout": "_bk",
+      "subtitle": "サブタイトル 2",
+      "title": "背景スライドB",
+      "textboxes": [
+        {
+          "id": "_bk-02-content",
+          "anchor": "コンテンツ プレースホルダー 2",
+          "text": "_bk のコンテンツ 2"
+        }
+      ]
     }
   ]
 }

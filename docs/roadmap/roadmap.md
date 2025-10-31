@@ -602,15 +602,15 @@ flowchart TB
 ### RM-043 サンプルテンプレ拡充
 - ゴール: `samples/templates/templates.pptx` のレイアウトと `samples/` 配下データを拡充し、工程2・5・6の検証用サンプルパターンを増やす。
 - 対象工程: 1（テンプレ準備）
-- 参照ドキュメント: （未設定 — 着手時に `docs/notes/` 等へ登録）
+- 参照ドキュメント: [docs/notes/20251026-rm043-sample-template-plan.md](../notes/20251026-rm043-sample-template-plan.md), [docs/notes/20251031-rm043-template-restart.md](../notes/20251031-rm043-template-restart.md)
 - 参照 ToDo: [docs/todo/20251026-sample-template-expansion.md](../todo/20251026-sample-template-expansion.md)
-- 状況: 未着手（2025-10-26 追加）
+- 状況: 進行中（2025-10-31 更新）
 - 期待成果:
   - サンプルテンプレートに追加レイアウトや変種（セクション区切り、比較系など）を実装し、命名規約を `samples/AGENTS.md` へ反映。
   - `samples/json/` や `samples/assets/` のバリエーションを増やし、新レイアウトとブランド設定を組み合わせたゴールデンケースを整備。
   - `layout-validate` ゴールデンや CLI 統合テストで参照するサンプルセットを更新し、アサーションをメタ情報（ハッシュ・統計）で補強。
   - サンプル拡充に伴う運用ガイド・テスト方針の変更点を ToDo と関連ドキュメントへ記録。
-- 進捗メモ: 2025-10-26 ToDo を登録（計画策定前段階）。
+- 進捗メモ: 2025-10-31 layout-validate 警告解消／サンプル JSON 拡張を実施、テンプレ分岐 `_bk.pptx` を追加。
 - 依存: RM-038（テンプレートパターン拡充）、RM-022（レイアウト解析検証強化）、RM-025（マッピング補完エンジン）。
 
 <a id="rm-039"></a>
