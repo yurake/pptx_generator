@@ -77,7 +77,7 @@
   },
   "golden_runs": [
     {
-      "spec_path": "samples/json/sample_spec.json",
+      "spec_path": "samples/json/sample_jobspec.json",
       "status": "passed",
       "output_dir": ".pptx/release/golden_runs/sample_spec",
       "pptx_path": ".pptx/release/golden_runs/sample_spec/sample_spec.pptx",

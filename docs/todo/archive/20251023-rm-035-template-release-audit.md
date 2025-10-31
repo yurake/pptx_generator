@@ -20,7 +20,7 @@ roadmap_item: RM-035 テンプレートリリース監査強化
 - [x] テスト・検証
   - [x] Python 単体・統合テスト (`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_release.py tests/test_template_release_metrics.py tests/test_cli_integration.py`)
   - [x] LibreOffice / Polisher バージョン整合確認
-    - メモ: 2025-10-25 LibreOffice 25.8.2.2 (`soffice --headless --version`) / dotnet SDK 9.0.306。`uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --export-pdf` で `proposal.pdf` を生成し、`.pptx/gen/audit_log.json` の `pdf_export.status` が `success` であること、Polisher の TargetFramework `net9.0` と SDK が一致することを確認。
+    - メモ: 2025-10-25 LibreOffice 25.8.2.2 (`soffice --headless --version`) / dotnet SDK 9.0.306。`uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --export-pdf` で `proposal.pdf` を生成し、`.pptx/gen/audit_log.json` の `pdf_export.status` が `success` であること、Polisher の TargetFramework `net9.0` と SDK が一致することを確認。
 - [x] ドキュメント更新
   - メモ: ロードマップ（Mermaid 依存更新・summary導入メモ）・要件・設計・runbook・README の整合を反映済み。
   - [x] docs/roadmap 配下

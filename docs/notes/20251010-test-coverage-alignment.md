@@ -31,7 +31,7 @@
 ## 出力イメージ
 | 要件 | 該当テスト | 目的 / 失敗シナリオ | サンプルデータ | 備考 |
 | ---- | ---------- | ------------------ | -------------- | ---- |
-| 要件1 | `tests/test_cli_integration.py::test_export_pdf` | PDF 出力が成功しページ数が期待通りであることを検証。LibreOffice 未インストール時のフォールバックを想定。 | `samples/json/sample_spec.json` | フォールバック分岐は未テスト、追加検討。 |
+| 要件1 | `tests/test_cli_integration.py::test_export_pdf` | PDF 出力が成功しページ数が期待通りであることを検証。LibreOffice 未インストール時のフォールバックを想定。 | `samples/json/sample_jobspec.json` | フォールバック分岐は未テスト、追加検討。 |
 | 要件2 | `tests/test_renderer.py::test_anchor_resolution` | アンカー付き図形の描画が崩れないことを確認。 | `samples/templates/layout_anchor.pptx` | - |
 
 ## 依頼時の注意ポイント

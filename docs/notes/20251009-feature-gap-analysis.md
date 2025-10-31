@@ -12,7 +12,7 @@
 
 ## 必須機能の抜け漏れ（優先提案）
 - **サブタイトル／ノートの描画対応**
-  - 要件ではスライドごとの文章要素を扱う前提だが、レンダラーは `Slide.title` のみ描画し `subtitle` や `notes` を利用していない（`src/pptx_generator/pipeline/renderer.py:105` 付近、`samples/json/sample_spec.json:17`）。
+  - 要件ではスライドごとの文章要素を扱う前提だが、レンダラーは `Slide.title` のみ描画し `subtitle` や `notes` を利用していない（`src/pptx_generator/pipeline/renderer.py:105` 付近、`samples/json/sample_jobspec.json:17`）。
   - サブタイトルが未反映のままになるため、基本レイアウト要件を満たすよう描画処理を追加する。
 - **TextBox 要素のスキーマ・実装不足**
   - 設計書では `slides[].textboxes[]` を必須想定（`docs/design/design.md:96`）だが、Pydantic モデルやレンダラーに対応がない（`src/pptx_generator/models.py:89`）。

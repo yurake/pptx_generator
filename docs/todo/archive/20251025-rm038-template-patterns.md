@@ -16,7 +16,7 @@ roadmap_item: RM-038 テンプレートパターン拡充
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: templates/templates.pptx に 3 レイアウト追加、sample_spec.json / renderer テスト・ポリシードキュメントを更新済み。
+  - メモ: templates/templates.pptx に 3 レイアウト追加、sample_jobspec.json / renderer テスト・ポリシードキュメントを更新済み。
 - [x] テスト・検証
   - メモ: `uv run pptx layout-validate --template samples/templates/templates.pptx` と `uv run --extra dev pytest` を完了。CLI 手動確認は必要に応じて実施予定。
 - [x] ドキュメント更新

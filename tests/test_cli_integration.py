@@ -39,7 +39,7 @@ def _collect_paragraph_texts(slide) -> list[str]:
 
 
 def test_cli_gen_generates_outputs(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work"
     runner = CliRunner()
 
@@ -127,26 +127,33 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert len(presentation.slides) == len(spec.slides)
 
     for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
-        if slide_spec.title is None:
+        if not slide_spec.title:
             continue
-        actual = slide.shapes.title.text if slide.shapes.title else None
+        title_shape = slide.shapes.title
+        if title_shape is None:
+            continue
+        actual = title_shape.text
         assert actual == slide_spec.title
 
-    agenda_index = next(index for index, slide_spec in enumerate(spec.slides) if slide_spec.id == "agenda")
+    agenda_spec = next(slide for slide in spec.slides if slide.id == "agenda-01")
+    agenda_index = spec.slides.index(agenda_spec)
     agenda_slide = presentation.slides[agenda_index]
-    tables = [shape for shape in agenda_slide.shapes if getattr(shape, "has_table", False)]
-    assert tables, "テーブルが描画されていること"
     images = [shape for shape in agenda_slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
     assert images, "画像が描画されていること"
 
-    metrics_index = next(index for index, slide_spec in enumerate(spec.slides) if slide_spec.id == "metrics")
-    metrics_slide = presentation.slides[metrics_index]
-    charts = [shape for shape in metrics_slide.shapes if getattr(shape, "has_chart", False)]
+    table_spec = next(slide for slide in spec.slides if getattr(slide, "tables", None))
+    table_slide = presentation.slides[spec.slides.index(table_spec)]
+    tables = [shape for shape in table_slide.shapes if getattr(shape, "has_table", False)]
+    assert tables, "テーブルが描画されていること"
+
+    chart_spec = next(slide for slide in spec.slides if getattr(slide, "charts", None))
+    chart_slide = presentation.slides[spec.slides.index(chart_spec)]
+    charts = [shape for shape in chart_slide.shapes if getattr(shape, "has_chart", False)]
     assert charts, "チャートが描画されていること"
 
 
 def test_cli_gen_with_content_approved(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = CONTENT_APPROVED_SAMPLE
     review_log_path = CONTENT_REVIEW_LOG_SAMPLE
 
@@ -154,6 +161,7 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     review_log_payload = json.loads(review_log_path.read_text(encoding="utf-8"))
     output_dir = tmp_path / "gen-content"
     runner = CliRunner()
+    spec = JobSpec.parse_file(spec_path)
 
     result = runner.invoke(
         app,
@@ -224,19 +232,20 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
 
     presentation = Presentation(output_dir / "proposal.pptx")
 
-    agenda_slide = presentation.slides[1]
+    agenda_spec = next(slide for slide in spec.slides if slide.id == "agenda-01")
+    agenda_slide = presentation.slides[spec.slides.index(agenda_spec)]
     agenda_texts = _collect_paragraph_texts(agenda_slide)
-    assert "背景整理（承認済み）" in agenda_texts
-    assert "提案サマリー（承認済み）" in agenda_texts
-    assert "ロードマップと体制（承認済み）" in agenda_texts
+    assert "テンプレ適用状況（承認済み）" in agenda_texts
+    assert "layout-validate 結果レビュー（承認済み）" in agenda_texts
 
-    problem_slide = presentation.slides[2]
-    notes_text = problem_slide.notes_slide.notes_text_frame.text
-    assert "監査ログ要件を強調（承認済み）。" in notes_text
+    detail_spec = next(slide for slide in spec.slides if slide.id == "three_rows_detail-01")
+    detail_slide = presentation.slides[spec.slides.index(detail_spec)]
+    notes_text = detail_slide.notes_slide.notes_text_frame.text
+    assert "監査ログ記載済み（承認済み）。" in notes_text
 
 
 def test_cli_mapping_then_render(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     render_dir = tmp_path / "render"
     draft_dir = tmp_path / "draft"
@@ -293,12 +302,12 @@ def test_cli_mapping_then_render(tmp_path) -> None:
 
 
 def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = tmp_path / "content_approved_violation.json"
     payload = {
         "slides": [
             {
-                "id": "agenda",
+                "id": "agenda-01",
                 "intent": "アジェンダ",
                 "elements": {
                     "title": "アジェンダ",
@@ -335,7 +344,7 @@ def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
 
 
 def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     content_path = tmp_path / "content_approved.json"
     payload = {
         "slides": [
@@ -374,7 +383,7 @@ def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
 
 
 def test_cli_gen_supports_template(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-template"
     template_path = tmp_path / "template.pptx"
 
@@ -424,14 +433,17 @@ def test_cli_gen_supports_template(tmp_path) -> None:
     assert review_payload["slides"][0]["issues"]
 
     for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
-        if slide_spec.title is None:
+        if not slide_spec.title:
             continue
-        actual = slide.shapes.title.text if slide.shapes.title else None
+        title_shape = slide.shapes.title
+        if title_shape is None:
+            continue
+        actual = title_shape.text
         assert actual == slide_spec.title
 
 
 def test_cli_gen_with_polisher_stub(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-polisher"
     rules_path = tmp_path / "polisher-rules.json"
     rules_path.write_text(json.dumps({"min_font_size_pt": 18.0}), encoding="utf-8")
@@ -502,7 +514,7 @@ def test_cli_gen_with_polisher_stub(tmp_path) -> None:
 
 
 def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-template-branding"
     template_path = tmp_path / "template.pptx"
     branding_path = tmp_path / "custom-branding.json"
@@ -549,7 +561,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
 
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     template_path = Path("samples/templates/templates.pptx")
     output_dir = tmp_path / "gen-work-template-fallback"
 
@@ -582,7 +594,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "mapping-work"
     runner = CliRunner()
 
@@ -605,12 +617,12 @@ def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
     assert mapping_log_path.exists()
 
     payload = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
-    assert payload["meta"]["job_meta"]["title"] == "次期プロジェクト提案"
+    assert payload["meta"]["job_meta"]["title"] == "RM-043 拡張テンプレート検証"
     assert payload["meta"]["job_auth"]["created_by"] == "codex"
 
 
 def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping-work"
     render_dir = tmp_path / "render-work"
     runner = CliRunner()
@@ -663,7 +675,7 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
 
 
 def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     template_path = SAMPLE_TEMPLATE
     gen_output = tmp_path / "gen-with-snapshot"
     validation_output = tmp_path / "validation-with-snapshot"
@@ -721,7 +733,7 @@ def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
 
 
 def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf"
 
     def fake_which(cmd: str) -> str | None:
@@ -778,7 +790,7 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf-only"
 
     def fake_which(cmd: str) -> str | None:
@@ -834,7 +846,7 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work-pdf-skip"
 
     def fail_run(*args, **kwargs):  # noqa: ANN401
@@ -886,7 +898,7 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
             app,
             [
                 "gen",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
                 "--template",
                 "samples/templates/templates.pptx",
             ],
@@ -1271,7 +1283,7 @@ def test_cli_tpl_release_reuses_baseline_golden_specs(tmp_path) -> None:
                 "--output",
                 str(first_output),
                 "--golden-spec",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
             ],
             catch_exceptions=False,
         )
@@ -1306,7 +1318,7 @@ def test_cli_tpl_release_reuses_baseline_golden_specs(tmp_path) -> None:
         )
         assert release.golden_runs
         assert any(
-            run.spec_path.endswith("sample_spec.json") for run in release.golden_runs
+            run.spec_path.endswith("sample_jobspec.json") for run in release.golden_runs
         )
         metrics = release.analyzer_metrics
         assert metrics is not None
@@ -1332,7 +1344,7 @@ def test_cli_tpl_release_with_golden_spec(tmp_path) -> None:
                 "--version",
                 "1.0.0",
                 "--golden-spec",
-                "samples/json/sample_spec.json",
+                "samples/json/sample_jobspec.json",
             ],
             catch_exceptions=False,
         )

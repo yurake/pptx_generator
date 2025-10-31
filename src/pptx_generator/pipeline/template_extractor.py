@@ -168,7 +168,12 @@ class TemplateExtractorStep:
                 text = raw_text
         
         # プレースホルダー情報の抽出
-        placeholder_format = getattr(shape, "placeholder_format", None)
+        placeholder_format = None
+        try:
+            placeholder_format = shape.placeholder_format  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            # python-pptx は非プレースホルダー図形にアクセスすると ValueError を送出する
+            placeholder_format = None
         is_placeholder = bool(
             isinstance(shape, (SlidePlaceholder, PlaceholderPicture))
             or getattr(shape, "is_placeholder", False)

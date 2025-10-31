@@ -472,10 +472,10 @@ def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
     renderer.run(context)
 
     presentation = Presentation(context.require_artifact("pptx_path"))
-    slide = presentation.slides[0]
+    slide_detail = presentation.slides[0]
 
     table_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+        shape for shape in slide_detail.shapes if getattr(shape, "has_table", False)
     )
     assert (
         table_shape.left,
@@ -485,7 +485,9 @@ def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
     ) == right_box
 
     picture_shape = next(
-        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        shape
+        for shape in slide_detail.shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     )
     placeholder_center_x = left_box[0] + left_box[2] // 2
     placeholder_center_y = left_box[1] + left_box[3] // 2
@@ -825,11 +827,9 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     template_path = Path("samples/templates/templates.pptx")
     placeholders = _load_placeholder_boxes(template_path, "Two Column Detail")
-    assert (
-        "Body Left" in placeholders
-        and "Body Right" in placeholders
-        and "Logo" in placeholders
-    )
+    agenda_placeholders = _load_placeholder_boxes(template_path, "Agenda")
+    assert {"Body Left", "Body Right"} <= set(placeholders)
+    assert "Logo" in agenda_placeholders
 
     image_path = Path("samples/assets/logo.png")
     spec = JobSpec(
@@ -857,15 +857,28 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
                         series=[ChartSeries(name="s", values=[1])],
                     )
                 ],
+            ),
+            Slide(
+                id="object-logo",
+                layout="Agenda",
+                title="目次",
+                bullets=[
+                    SlideBulletGroup(
+                        anchor="Agenda",
+                        items=[
+                            SlideBullet(id="a-1", text="項目 A", level=0, font=None),
+                        ],
+                    )
+                ],
                 images=[
                     SlideImage(
-                        id="image",
+                        id="agenda-logo",
                         anchor="Logo",
                         source=str(image_path),
                         sizing="stretch",
                     )
                 ],
-            )
+            ),
         ],
     )
 
@@ -880,10 +893,10 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     renderer.run(context)
 
     presentation = Presentation(context.require_artifact("pptx_path"))
-    slide = presentation.slides[0]
+    slide_detail = presentation.slides[0]
 
     table_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_table", False)
+        shape for shape in slide_detail.shapes if getattr(shape, "has_table", False)
     )
     assert (
         int(table_shape.left),
@@ -893,7 +906,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     ) == placeholders["Body Left"][:4]
 
     chart_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_chart", False)
+        shape for shape in slide_detail.shapes if getattr(shape, "has_chart", False)
     )
     assert (
         int(chart_shape.left),
@@ -902,54 +915,69 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
         int(chart_shape.height),
     ) == placeholders["Body Right"][:4]
 
+    slide_agenda = presentation.slides[1]
     picture_shape = next(
-        shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        shape
+        for shape in slide_agenda.shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     )
     assert (
         int(picture_shape.left),
         int(picture_shape.top),
         int(picture_shape.width),
         int(picture_shape.height),
-    ) == placeholders["Logo"][:4]
+    ) == agenda_placeholders["Logo"][:4]
 
-    remaining_placeholder_names = {
-        shape.name for shape in slide.shapes if getattr(shape, "is_placeholder", False)
+    remaining_detail_placeholders = {
+        shape.name
+        for shape in slide_detail.shapes
+        if getattr(shape, "is_placeholder", False)
     }
-    assert "Body Left" not in remaining_placeholder_names
-    assert "Body Right" not in remaining_placeholder_names
-    assert "Logo" not in remaining_placeholder_names
+    assert "Body Left" not in remaining_detail_placeholders
+    assert "Body Right" not in remaining_detail_placeholders
+
+    remaining_agenda_placeholders = {
+        shape.name
+        for shape in slide_agenda.shapes
+        if getattr(shape, "is_placeholder", False)
+    }
+    assert "Logo" not in remaining_agenda_placeholders
 
 
-def test_template_has_timeline_detail_placeholders() -> None:
+def test_template_has_three_flow_placeholders() -> None:
     template_path = Path("samples/templates/templates.pptx")
-    placeholders = _load_placeholder_boxes(template_path, "Timeline Detail")
+    placeholders = _load_placeholder_boxes(template_path, "Three Flow")
 
-    assert {"Timeline Track", "Timeline Notes", "Timeline Subtitle"} <= set(
-        placeholders
-    )
-    # idx を固定し、アンカー解決の互換性を担保する
-    assert placeholders["Timeline Track"][4] == 1
-    assert placeholders["Timeline Notes"][4] == 14
-    assert placeholders["Timeline Subtitle"][4] == 15
+    assert {"Flow 1", "Flow 2", "Flow 3"} <= set(placeholders)
+    assert placeholders["Flow 1"][4] == 1
+    assert placeholders["Flow 2"][4] == 18
+    assert placeholders["Flow 3"][4] == 17
 
 
-def test_template_has_comparison_two_axis_placeholders() -> None:
+def test_template_has_executive_summary_placeholders() -> None:
     template_path = Path("samples/templates/templates.pptx")
-    placeholders = _load_placeholder_boxes(template_path, "Comparison Two Axis")
+    placeholders = _load_placeholder_boxes(template_path, "Executive Summary")
 
-    assert {"Axis Left", "Axis Right", "Axis Subtitle"} <= set(placeholders)
-    assert placeholders["Axis Left"][4] == 1
-    assert placeholders["Axis Right"][4] == 14
-    assert placeholders["Axis Subtitle"][4] == 15
+    assert {"Body Left", "Body Right", "Notes"} <= set(placeholders)
+    assert placeholders["Body Left"][4] == 1
+    assert placeholders["Body Right"][4] == 15
+    assert placeholders["Notes"][4] == 16
 
 
-def test_template_has_fact_sheet_placeholders() -> None:
+def test_template_has_four_column_detail_placeholders() -> None:
     template_path = Path("samples/templates/templates.pptx")
-    placeholders = _load_placeholder_boxes(template_path, "Fact Sheet")
+    placeholders = _load_placeholder_boxes(template_path, "Four Column Detail")
 
-    assert {"Fact Summary", "Fact Subtitle"} <= set(placeholders)
-    assert placeholders["Fact Summary"][4] == 1
-    assert placeholders["Fact Subtitle"][4] == 15
+    assert {
+        "Body Upper Left",
+        "Body Upper Right",
+        "Body Lower Left",
+        "Body Lower Right",
+    } <= set(placeholders)
+    assert placeholders["Body Upper Left"][4] == 1
+    assert placeholders["Body Upper Right"][4] == 14
+    assert placeholders["Body Lower Left"][4] == 16
+    assert placeholders["Body Lower Right"][4] == 17
 
 
 def test_renderer_removes_bullet_placeholder_when_anchor_specified(

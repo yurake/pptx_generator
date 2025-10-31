@@ -22,7 +22,7 @@
   - メモ: 2025-10-05 タイトルは heading フォント、本文要素は body フォントで描画
 - [x] `SimpleRendererStep` をリファクタリングし、新要素の描画ヘルパを分離する
   - メモ: 2025-10-05 `_apply_tables` `_apply_images` `_apply_charts` を新設
-- [x] サンプル仕様 (`samples/json/sample_spec.json`) を更新し、画像・表・グラフの組み合わせを追加する
+- [x] サンプル仕様 (`samples/json/sample_jobspec.json`) を更新し、画像・表・グラフの組み合わせを追加する
   - メモ: 2025-10-05 `samples/assets/logo.png` を追加し、サンプルに画像要素を含めた
 - [x] レンダラー単体テストを追加し、新機能の描画ロジックを検証する
   - メモ: 2025-10-05 `tests/test_renderer.py` でフォント・カラー・データラベルを検証

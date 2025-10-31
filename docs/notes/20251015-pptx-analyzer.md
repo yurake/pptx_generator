@@ -9,7 +9,7 @@
 - テスト:
   - `pytest tests/test_analyzer.py` で箇条書き・画像の検知内容が `analysis.json` に反映されることを確認。
   - `SimpleRendererStep` と組み合わせた統合フィクスチャで、`font_min`・`contrast_low`・`layout_consistency`・`grid_misaligned` の同時検知をカバー。
-  - `uv run --extra dev pytest` を実行し、86 件のテストがすべて成功（実行時間 2.42s）。CLI 統合テストでは `samples/json/sample_spec.json` 起点の PPTX 生成フローとアナライザー処理が通過することを確認。
+  - `uv run --extra dev pytest` を実行し、86 件のテストがすべて成功（実行時間 2.42s）。CLI 統合テストでは `samples/json/sample_jobspec.json` 起点の PPTX 生成フローとアナライザー処理が通過することを確認。
 - 影響範囲:
   - レンダラーが画像／テキストボックスへ ID 名を再設定し、解析側で図形特定が可能になった。
   - `docs/requirements/requirements.md` と `docs/design/design.md` に PPTX 実体解析前提と新しい診断メトリクスを追記。

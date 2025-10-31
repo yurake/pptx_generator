@@ -13,11 +13,11 @@
 
 ## 実行手順
 1. 解析対象 JSON を用意する  
-   - `samples/json/sample_spec.json` をベースに案件仕様を整備し、必要に応じてブランド設定 (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
+   - `samples/json/sample_jobspec.json` をベースに案件仕様を整備し、必要に応じてブランド設定 (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
 2. CLI でレンダリングと解析を実行する  
    - 工程5/6をまとめて実行する場合:
      ```bash
-     uv run pptx gen samples/json/sample_spec.json \
+     uv run pptx gen samples/json/sample_jobspec.json \
        --output .pptx/gen \
        --template templates/<brand>/<version>/template.pptx \
        --export-pdf

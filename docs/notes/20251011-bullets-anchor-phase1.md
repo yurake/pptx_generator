@@ -74,7 +74,7 @@ class Slide(BaseModel):
 
 **新規サンプル:**
 - Phase 1 当時は `samples/json/sample_spec_with_bullets_anchor.json` を作成
-- Phase 3 で `samples/json/sample_spec.json` に統合済み
+- Phase 3 で `samples/json/sample_jobspec.json` に統合済み
 
 ## Phase 1 の成果
 
