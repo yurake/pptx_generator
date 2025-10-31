@@ -149,6 +149,8 @@ def _build_response_from_text(
     request: AIGenerationRequest,
     *,
     model: str,
+    finish_reason: str | None = None,
+    refusal: str | None = None,
 ) -> AIGenerationResponse:
     _LLM_LOGGER.info(
         "LLM response received",
@@ -158,9 +160,16 @@ def _build_response_from_text(
             "policy_id": request.policy.id,
             "intent": request.intent,
             "raw_response": text,
+            "finish_reason": finish_reason or "",
+            "refusal": refusal or "",
         },
     )
     warnings: list[str] = []
+    if not text and refusal:
+        warnings.append("response_refused")
+        text = refusal
+    elif not text and finish_reason and finish_reason != "stop":
+        warnings.append(f"finish_{finish_reason}")
     data: dict[str, object]
     try:
         data = _extract_json_from_text(text)
@@ -295,8 +304,10 @@ class OpenAIChatClient:
             "model": model_name,
             "messages": messages,
             "temperature": self._temperature,
-            "max_tokens": self._max_tokens,
+            "response_format": {"type": "json_object"},
         }
+        if self._max_tokens > 0:
+            kwargs["max_completion_tokens"] = self._max_tokens
         for _ in range(3):
             try:
                 response = self._client.chat.completions.create(  # type: ignore[attr-defined]
@@ -305,19 +316,49 @@ class OpenAIChatClient:
                 break
             except Exception as exc:  # noqa: BLE001
                 message = str(exc).lower()
-                if "max_tokens" in message and "max_completion_tokens" in message and "max_tokens" in kwargs:
+                if (
+                    "max_completion_tokens" in message
+                    and "max_tokens" in message
+                    and "max_completion_tokens" in kwargs
+                ):
+                    kwargs.pop("max_completion_tokens", None)
+                    if self._max_tokens > 0:
+                        kwargs["max_tokens"] = self._max_tokens
+                    continue
+                if (
+                    "max_tokens" in message
+                    and "max_completion_tokens" in message
+                    and "max_tokens" in kwargs
+                ):
                     kwargs.pop("max_tokens", None)
-                    kwargs["max_completion_tokens"] = self._max_tokens
+                    if self._max_tokens > 0:
+                        kwargs["max_completion_tokens"] = self._max_tokens
                     continue
                 if "temperature" in message and "unsupported" in message:
                     kwargs["temperature"] = 1.0
                     continue
+                if "response_format" in message and "not" in message and "support" in message:
+                    kwargs.pop("response_format", None)
+                    continue
                 raise
         else:  # pragma: no cover - safeguard
             raise RuntimeError("OpenAI API call failed after applying compatibility fallbacks")
-        content = response.choices[0].message.content  # type: ignore[index]
-        text = content if isinstance(content, str) else "".join(content)
-        return _build_response_from_text(text, request, model=model_name)
+        choice = response.choices[0]  # type: ignore[index]
+        message = choice.message
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            text = content
+        elif content is None:
+            text = ""
+        else:
+            text = "".join(str(part) for part in content)
+        return _build_response_from_text(
+            text,
+            request,
+            model=model_name,
+            finish_reason=getattr(choice, "finish_reason", None),
+            refusal=getattr(message, "refusal", None),
+        )
 
 
 class AzureOpenAIChatClient:
