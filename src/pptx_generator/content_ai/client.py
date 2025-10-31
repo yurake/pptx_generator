@@ -267,12 +267,32 @@ class OpenAIChatClient:
             {"role": "user", "content": _build_user_prompt(request)},
         ]
         model_name = request.policy.model or self._model
-        response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-            model=model_name,
-            messages=messages,
-            temperature=self._temperature,
-            max_tokens=self._max_tokens,
-        )
+        if model_name == "mock-local":
+            model_name = self._model
+        kwargs: dict[str, object] = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": self._temperature,
+            "max_tokens": self._max_tokens,
+        }
+        for _ in range(3):
+            try:
+                response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+                    **kwargs,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001
+                message = str(exc).lower()
+                if "max_tokens" in message and "max_completion_tokens" in message and "max_tokens" in kwargs:
+                    kwargs.pop("max_tokens", None)
+                    kwargs["max_completion_tokens"] = self._max_tokens
+                    continue
+                if "temperature" in message and "unsupported" in message:
+                    kwargs["temperature"] = 1.0
+                    continue
+                raise
+        else:  # pragma: no cover - safeguard
+            raise RuntimeError("OpenAI API call failed after applying compatibility fallbacks")
         content = response.choices[0].message.content  # type: ignore[index]
         text = content if isinstance(content, str) else "".join(content)
         return _build_response_from_text(text, request, model=model_name)
@@ -323,6 +343,8 @@ class AzureOpenAIChatClient:
             {"role": "user", "content": _build_user_prompt(request)},
         ]
         deployment = request.policy.model or self._deployment
+        if deployment == "mock-local":
+            deployment = self._deployment
         response = self._client.chat.completions.create(  # type: ignore[attr-defined]
             model=deployment,
             messages=messages,
@@ -370,8 +392,11 @@ class AnthropicClaudeClient:
                 ],
             }
         ]
+        model_name = request.policy.model or self._model
+        if model_name == "mock-local":
+            model_name = self._model
         response = self._client.messages.create(  # type: ignore[attr-defined]
-            model=request.policy.model or self._model,
+            model=model_name,
             system=_build_system_prompt(request),
             max_tokens=self._max_tokens,
             temperature=float(os.getenv("ANTHROPIC_TEMPERATURE", "0.3")),
@@ -379,7 +404,6 @@ class AnthropicClaudeClient:
         )
         text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
         text = "\n".join(text_parts)
-        model_name = request.policy.model or self._model
         return _build_response_from_text(text, request, model=model_name)
 
 
@@ -424,6 +448,8 @@ class AwsClaudeClient:
             ],
         }
         model_id = request.policy.model or self._model_id
+        if model_id == "mock-local":
+            model_id = self._model_id
         response = self._client.invoke_model(
             modelId=model_id,
             body=json.dumps(payload),
