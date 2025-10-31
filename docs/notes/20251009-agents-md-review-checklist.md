@@ -17,7 +17,7 @@
   - 環境変数・オプションの説明に不足がないか。
   - GitHub API の利用制限やエラー処理方針が受け入れ可能か。
 - **samples/AGENTS.md**
-  - `sample_spec.json` の更新手順がスキーマ変更フローと一致しているか。
+  - `sample_jobspec.json` の更新手順がスキーマ変更フローと一致しているか。
   - テンプレート更新時の検証事項が十分か。
 - **config/AGENTS.md**
   - `branding.json` / `rules.json` の変更検証が現行 CI でカバーされているか。

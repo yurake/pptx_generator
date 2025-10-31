@@ -12,7 +12,7 @@ status: done
 
 ## 実行コマンド
 ```bash
-uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --export-pdf
+uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --export-pdf
 uv run --extra dev pytest tests/test_cli_integration.py
 soffice --headless --version
 ```

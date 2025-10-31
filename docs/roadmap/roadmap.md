@@ -42,6 +42,7 @@ flowchart TB
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
+        RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(完了)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -189,6 +190,9 @@ flowchart TB
     RM021 --> RM038
     RM022 --> RM038
     RM025 --> RM038
+    RM038 --> RM043
+    RM022 --> RM043
+    RM025 --> RM043
     RM023 --> RM039
     RM017 --> RM039
     RM023 --> RM040
@@ -290,7 +294,7 @@ flowchart TB
 
 <a id="rm-010"></a>
 ### RM-010 テンプレート仕様エクスポート
-- ゴール: PPTX テンプレートから `samples/json/sample_spec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
+- ゴール: PPTX テンプレートから `samples/json/sample_jobspec.json` に必要なレイアウト・アンカー情報を抽出し、JSON 雛形を自動生成する。
 - 参照ドキュメント: [README.md](../README.md)（extract-template セクション）
 - 参照 ToDo: [docs/todo/archive/20251009-template-spec-export.md](../todo/archive/20251009-template-spec-export.md)
 - 状況: 完了（2025-10-11 更新）
@@ -593,6 +597,21 @@ flowchart TB
   - サンプル spec・マッピングスコアリング調整・レンダリング検証の拡充。
   - 進捗メモ: 2025-10-25 `Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` を追加し、サンプル仕様・テスト・ポリシードキュメントを更新。
 - 依存: RM-021（テンプレ資産監査パイプライン）、RM-022（レイアウト解析検証強化）、RM-025（マッピング補完エンジン）。
+
+<a id="rm-043"></a>
+### RM-043 サンプルテンプレ拡充
+- ゴール: `samples/templates/templates.pptx` のレイアウトと `samples/` 配下データを拡充し、工程2・5・6の検証用サンプルパターンを増やす。
+- 対象工程: 1（テンプレ準備）
+- 参照ドキュメント: [docs/notes/20251026-rm043-sample-template-plan.md](../notes/20251026-rm043-sample-template-plan.md), [docs/notes/20251031-rm043-template-restart.md](../notes/20251031-rm043-template-restart.md)
+- 参照 ToDo: [docs/todo/archive/20251026-sample-template-expansion.md](../todo/archive/20251026-sample-template-expansion.md)
+- 状況: 完了（2025-10-31 更新）
+- 期待成果:
+  - サンプルテンプレートに追加レイアウトや変種（セクション区切り、比較系など）を実装し、命名規約を `samples/AGENTS.md` へ反映。
+  - `samples/json/` や `samples/assets/` のバリエーションを増やし、新レイアウトとブランド設定を組み合わせたゴールデンケースを整備。
+  - `layout-validate` ゴールデンや CLI 統合テストで参照するサンプルセットを更新し、アサーションをメタ情報（ハッシュ・統計）で補強。
+  - サンプル拡充に伴う運用ガイド・テスト方針の変更点を ToDo と関連ドキュメントへ記録。
+- 進捗メモ: 2025-10-31 layout-validate 警告解消／サンプル JSON 拡張を実施、テンプレ分岐 `_bk.pptx` を追加。
+- 依存: RM-038（テンプレートパターン拡充）、RM-022（レイアウト解析検証強化）、RM-025（マッピング補完エンジン）。
 
 <a id="rm-039"></a>
 ### RM-039 コンテンツ多形式インポート

@@ -14,7 +14,7 @@
 ## テスト
 - `uv run --extra dev pytest tests/test_renderer.py`
 - `uv run --extra dev pytest`
-- `uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --workdir .pptxgen/outputs/anchor-check`
+- `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --workdir .pptxgen/outputs/anchor-check`
 - `uv run python - <<'PY'`（Two Column Detail の `Body Right` / `Logo` アンカーへ textboxes を配置し、出力 PPTX の座標がテンプレートと一致することを確認）
 
 ## 未了事項・次ステップ

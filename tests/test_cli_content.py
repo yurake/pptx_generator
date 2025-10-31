@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 
-SAMPLE_SPEC = Path("samples/json/sample_spec.json")
+SAMPLE_SPEC = Path("samples/json/sample_jobspec.json")
 SAMPLE_CONTENT = Path("samples/json/sample_content_approved.json")
 SAMPLE_REVIEW = Path("samples/json/sample_content_review_log.json")
 
@@ -37,9 +37,9 @@ def test_content_approve_outputs(tmp_path) -> None:
     spec_output = output_dir / "spec_content_applied.json"
     assert spec_output.exists()
     spec_payload = json.loads(spec_output.read_text(encoding="utf-8"))
-    agenda_slide = next(slide for slide in spec_payload["slides"] if slide["id"] == "agenda")
+    agenda_slide = next(slide for slide in spec_payload["slides"] if slide["id"] == "agenda-01")
     body_texts = [item["text"] for group in agenda_slide.get("bullets", []) for item in group.get("items", [])]
-    assert "背景整理（承認済み）" in body_texts
+    assert "テンプレ適用状況（承認済み）" in body_texts
 
     content_output = output_dir / "content_approved.json"
     assert content_output.exists()
@@ -57,7 +57,7 @@ def test_content_approve_rejects_unapproved_cards(tmp_path) -> None:
     payload = {
         "slides": [
             {
-                "id": "agenda",
+                "id": "agenda-01",
                 "status": "draft",
                 "elements": {"title": "Draft"},
             }

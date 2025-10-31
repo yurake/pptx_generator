@@ -25,7 +25,7 @@ Phase 2 では箇条書きの配置指定をグループ単位に再設計し、
 ### 3. テスト・サンプル整備
 
 - `tests/test_renderer.py` にグループ形式で左右のプレースホルダーへ配置する統合テストを追加。
-- グループ形式サンプルは Phase 3 で `samples/json/sample_spec.json` に統合。
+- グループ形式サンプルは Phase 3 で `samples/json/sample_jobspec.json` に統合。
 
 ## 残課題
 

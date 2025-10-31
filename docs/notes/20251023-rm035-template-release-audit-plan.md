@@ -36,5 +36,5 @@
 - ゴールデンサンプル自動追加が大量 spec で時間を要するケースがあり得るため、将来的に明示的な制御フラグ（例: `--no-auto-golden`）を検討する。
 
 ## LibreOffice / Polisher バージョン整合確認
-- 2025-10-25 `soffice --headless --version` を実行し、LibreOffice `25.8.2.2` (build `d401f2107ccab8f924a8e2df40f573aab7605b6f`) を確認。CLI の PDF 変換 (`uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx --export-pdf`) でも `proposal.pdf` が生成され、`.pptx/gen/audit_log.json` の `pdf_export.converter` は `libreoffice` で `status: success` を記録した。
+- 2025-10-25 `soffice --headless --version` を実行し、LibreOffice `25.8.2.2` (build `d401f2107ccab8f924a8e2df40f573aab7605b6f`) を確認。CLI の PDF 変換 (`uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --export-pdf`) でも `proposal.pdf` が生成され、`.pptx/gen/audit_log.json` の `pdf_export.converter` は `libreoffice` で `status: success` を記録した。
 - 同日 `dotnet --list-sdks` の結果から SDK `9.0.306` を利用していることを確認。Polisher プロジェクトの `TargetFramework` は `net9.0` のため、実装と実行環境に差異はなし。`.pptx/gen/audit_log.json` の `polisher.status` は `disabled`（今回の実行では未使用）であり、Polisher を有効化する際も同 SDK でビルドした成果物を参照すれば整合が取れる。

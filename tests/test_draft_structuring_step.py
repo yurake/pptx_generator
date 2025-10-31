@@ -15,7 +15,7 @@ from pptx_generator.models import JobSpec
 
 @pytest.fixture()
 def sample_spec() -> JobSpec:
-    spec_path = Path("samples/json/sample_spec.json")
+    spec_path = Path("samples/json/sample_jobspec.json")
     return JobSpec.parse_file(spec_path)
 
 

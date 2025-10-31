@@ -3,7 +3,7 @@
 構造化されたプレゼン仕様を読み取り、ブランド統一された PowerPoint と PDF を短時間で作成する自動化ツールです。
 
 ## 主な機能
-- プレゼン仕様 JSON（例: `samples/json/sample_spec.json`、`slides` 配列や `meta` 情報を含む構造化データ）から PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
+- プレゼン仕様 JSON（例: `samples/json/sample_jobspec.json`、`slides` 配列や `meta` 情報を含む構造化データ）から PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
 - PPTX テンプレートからレイアウト構造とブランド設定を抽出し、再利用可能な JSON 雛形を自動生成する。
 - Analyzer／Refiner による簡易診断でスライド品質をチェックし、修正ポイントを抽出する。
 
@@ -58,7 +58,7 @@
      --brand <brand> \
      --version <version> \
      --baseline-release templates/releases/<brand>/<prev_version>/template_release.json \
-     --golden-spec samples/json/sample_spec.json
+     --golden-spec samples/json/sample_jobspec.json
    ```
    - 既定の出力先は `.pptx/release/` です。`template_release.json`（受け渡しメタ）や `release_report.json`（差分レポート）、`golden_runs/`（ゴールデンサンプル検証ログ）が保存されます。
    - `--baseline-release` で過去バージョンとの差分比較が可能です。`--golden-spec` を複数指定すると代表 spec でのレンダリング検証をまとめて実行します。
@@ -101,7 +101,7 @@
 - ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` にまとめています。
 - CLI で承認済み JSON を検証し Spec へ適用する場合は `pptx content` を利用します。
   ```bash
-  uv run pptx content samples/json/sample_spec.json \
+  uv run pptx content samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
     --content-review-log samples/json/sample_content_review_log.json \
     --output .pptx/content
@@ -113,7 +113,7 @@
 - レイアウト選定の指針は `docs/requirements/stages/stage-04-draft-structuring.md` を参照してください。
 - 承認済みコンテンツからドラフト成果物を生成する場合は `pptx outline`（新名称）を利用します。
   ```bash
-  uv run pptx outline samples/json/sample_spec.json \
+  uv run pptx outline samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
     --output .pptx/draft
   # `draft_draft.json` / `draft_approved.json` / `draft_meta.json` を確認
@@ -123,7 +123,7 @@
 - `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。`mapping_log.json` には Analyzer 指摘サマリ（件数集計・スライド別詳細）が追加されており、補完やフォールバック制御の判断材料として活用します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
 - 実行手順:
   ```bash
-  uv run pptx mapping samples/json/sample_spec.json \
+  uv run pptx mapping samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
     --content-review-log samples/json/sample_content_review_log.json \
     --template samples/templates/templates.pptx
@@ -135,7 +135,7 @@
 - `pptx render` サブコマンドで `rendering_ready.json` を入力し、PPTX・analysis.json・Review Engine 連携ファイル（`review_engine_analyzer.json`）、必要に応じて PDF を生成します。
    ```bash
    # 工程5の成果物からレンダリングのみを再実行する例
-   uv run pptx mapping samples/json/sample_spec.json --output .pptx/gen
+   uv run pptx mapping samples/json/sample_jobspec.json --output .pptx/gen
    uv run pptx render .pptx/gen/rendering_ready.json \
      --template samples/templates/templates.pptx \
      --output .pptx/gen

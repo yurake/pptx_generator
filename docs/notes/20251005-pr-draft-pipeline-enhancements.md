@@ -10,14 +10,14 @@
 - `src/pptx_generator/pipeline/renderer.py`
 - `src/pptx_generator/settings.py`
 - `src/pptx_generator/cli.py`
-- `samples/json/sample_spec.json`
+- `samples/json/sample_jobspec.json`
 - `tests/test_cli_integration.py`, `tests/test_renderer.py`
 - `README.md`, `docs/todo/20251005-renderer-rich-content.md`
 
 ## テスト
 ```bash
 uv run --extra dev pytest
-uv run pptx gen samples/json/sample_spec.json --template samples/templates/templates.pptx
+uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx
 ```
 
 ## 残課題
