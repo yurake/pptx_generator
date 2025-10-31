@@ -1,0 +1,16 @@
+# Sample content import
+
+テンプレート検証の承認コメント
+
+* 2025-10-31: RM-043 拡張テンプレート検証
+* layout-validate warnings: 0
+* CLI integration tests: 48 passed
+* 次の観点を確認
+  * アジェンダ 2枚構成
+  * KPI チャート描画
+  * 承認ログ連携
+
+-- Draft annotations --
+- 現状課題: テンプレ抽出エラーが ValueError になるケースがあった
+- 対応方針: placeholder_format 取得時の例外処理を追加済み
+- 残課題: Analyzer 警告閾値の見直し
