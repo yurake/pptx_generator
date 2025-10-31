@@ -32,6 +32,7 @@ flowchart TB
         RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
+        RM043["RM-043<br/>ドキュメント可読性向上<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ準備"]
@@ -117,6 +118,7 @@ flowchart TB
     RM025 --> RM006
     RM026 --> RM006
     RM002 --> RM017
+    RM002 --> RM043
     RM007 --> RM012
     RM012 --> RM013
     RM013 --> RM014
@@ -262,7 +264,6 @@ flowchart TB
 - 状況: 保留（2025-10-17 更新）
 - 期待成果: WebSocket ベースの共同編集プロトコル設計、リアルタイム要約と修正提案、セッション監査ログ。
 - 依存: RM-003（ビジュアルフィードバックコパイロット）のフィードバック API、RM-025（マッピング補完エンジン）のリアルタイム適用、RM-026（レンダリング監査統合）の監査メタ連携、低遅延インフラ、アクセス制御、UI コンポーネント設計。
-- 再開条件: ユーザーが明示的に再開指示を出すこと。
 
 <a id="rm-007"></a>
 ### RM-007 SlideBullet アンカー拡張
@@ -664,6 +665,16 @@ flowchart TB
   - ヒアリング履歴・再問い合わせ管理と承認ログとの連携、ユーザー通知チャネルの整備。
   - オフライン承認（CLI）との統合および監査証跡の保持。
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）、LLM 基盤。
+
+<a id="rm-043"></a>
+### RM-043 ドキュメント可読性向上
+- ゴール: README と `docs/requirements`・`docs/design` の要点を整理し、工程別に参照しやすいナビゲーションと概要サマリを整備する。
+- 対象工程: 全工程（共通ドキュメント整備）
+- 参照ドキュメント: [README.md](../README.md), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: [docs/todo/20251031-docs-readability.md](../todo/20251031-docs-readability.md)
+- 状況: 未着手（2025-10-31 登録）
+- 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備。
+- 再開条件: ユーザーが明示的に再開指示を出すこと。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
