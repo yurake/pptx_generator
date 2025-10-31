@@ -16,7 +16,7 @@
     "ai_grade": "B"
   },
   {
-    "slide_id": "problem",
+    "slide_id": "current-challenges",
     "action": "comment",
     "actor": "reviewer@example.com",
     "timestamp": "2025-10-16T10:18:00+09:00",
@@ -24,7 +24,7 @@
     "ai_grade": "B"
   },
   {
-    "slide_id": "problem",
+    "slide_id": "current-challenges",
     "action": "approve",
     "actor": "editor@example.com",
     "timestamp": "2025-10-16T10:22:00+09:00",

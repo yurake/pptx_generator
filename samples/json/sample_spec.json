@@ -4,7 +4,7 @@
     "title": "次期プロジェクト提案",
     "client": "ABC 株式会社",
     "author": "営業部",
-    "created_at": "2025-10-04",
+    "created_at": "2025-10-31",
     "theme": "corporate",
     "locale": "ja-JP"
   },
@@ -26,19 +26,18 @@
           "sizing": "fit"
         }
       ],
-      "notes": "Title レイアウトには cover-visual / brand-logo のアンカー図形を配置する想定。",
       "textboxes": [
         {
           "id": "cover-summary",
-          "text": "提案の狙いを 1 行で説明します。",
-          "position": {
-            "left_in": 1.0,
-            "top_in": 4.6,
-            "width_in": 8.0,
-            "height_in": 1.2
+          "anchor": "Text1",
+          "text": "自動生成フローで 4 週間内に提案書を整備し、営業活動を加速します。",
+          "paragraph": {
+            "align": "left",
+            "level": 0
           }
         }
-      ]
+      ],
+      "notes": "Text1 アンカーにサマリーを配置する例。"
     },
     {
       "id": "agenda",
@@ -55,12 +54,17 @@
             },
             {
               "id": "agenda-2",
-              "text": "提案サマリー",
+              "text": "提案方針",
               "level": 0
             },
             {
               "id": "agenda-3",
-              "text": "ロードマップと体制",
+              "text": "体制とロードマップ",
+              "level": 0
+            },
+            {
+              "id": "agenda-4",
+              "text": "リスクと次のアクション",
               "level": 0
             }
           ]
@@ -96,453 +100,301 @@
       ],
       "images": [
         {
-          "id": "agenda-visual",
+          "id": "agenda-logo",
+          "source": "samples/assets/logo.png",
+          "sizing": "fit",
+          "left_in": 8.6,
+          "top_in": 0.6,
+          "width_in": 1.2,
+          "height_in": 1.2
+        }
+      ]
+    },
+    {
+      "id": "current-challenges",
+      "layout": "Three Rows Detail",
+      "title": "現状課題",
+      "subtitle": "品質・スピード・統制の 3 領域",
+      "textboxes": [
+        {
+          "id": "challenge-1",
+          "anchor": "Body Upper",
+          "text": "品質: ブランド不整合やレイアウト崩れが散見。"
+        },
+        {
+          "id": "challenge-2",
+          "anchor": "Body Center",
+          "text": "スピード: テンプレ整備に 10 時間以上。"
+        },
+        {
+          "id": "challenge-3",
+          "anchor": "Body Lower",
+          "text": "統制: ToDo とロードマップの連携が不足。"
+        }
+      ]
+    },
+    {
+      "id": "section-overview",
+      "layout": "Section Covor Left",
+      "title": "プロジェクト概要",
+      "subtitle": "現状整理とゴールの共有",
+      "images": [
+        {
+          "id": "section-logo",
           "source": "samples/assets/logo.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
-      ],
+      ]
+    },
+    {
+      "id": "executive-summary",
+      "layout": "Executive Summary",
+      "title": "提案サマリー",
       "textboxes": [
         {
-          "id": "agenda-note",
-          "text": "このスライドの要点を本文とは別の枠で補足します。",
-          "position": {
-            "left_in": 1.0,
-            "top_in": 5.2,
-            "width_in": 3.5,
-            "height_in": 1.2
-          },
-          "paragraph": {
-            "align": "left",
-            "level": 0
+          "id": "summary-left",
+          "anchor": "Body Left",
+          "text": "課題: 提案資料の作成に平均 3.5 日。\n解決策: 自動生成テンプレートと Approval-First Policy を組み合わせ、作業スピードを 1 日以内へ短縮。"
+        },
+        {
+          "id": "summary-right",
+          "anchor": "Body Right",
+          "text": "期待効果:\n- 品質: チェックリストで差戻し率 5% 未満\n- スピード: 初稿作成を当日内に完了\n- 透明性: audit_log.json でレビュー履歴を追跡"
+        },
+        {
+          "id": "summary-notes",
+          "anchor": "Notes",
+          "text": "主要 KPI と背景メモを左右で分ける構成。"
+        }
+      ]
+    },
+    {
+      "id": "solution-design",
+      "layout": "Four Column Detail",
+      "title": "ソリューション構成",
+      "subtitle": "4 つの柱で段階的に展開",
+      "textboxes": [
+        {
+          "id": "solution-1",
+          "anchor": "Body Upper Left",
+          "text": "テンプレート整備\n- レイアウト定義\n- アンカー命名"
+        },
+        {
+          "id": "solution-2",
+          "anchor": "Body Upper Right",
+          "text": "自動生成フロー\n- uv run pptx gen\n- layout-validate"
+        },
+        {
+          "id": "solution-3",
+          "anchor": "Body Lower Left",
+          "text": "品質管理\n- Analyzer 警告管理\n- audit_log.json"
+        },
+        {
+          "id": "solution-4",
+          "anchor": "Body Lower Right",
+          "text": "教育・展開\n- runbook 整備\n- ワークショップ"
+        }
+      ]
+    },
+    {
+      "id": "metrics",
+      "layout": "Three Column Detail",
+      "title": "主要 KPI",
+      "subtitle": "導入後 3 ヶ月の目標",
+      "textboxes": [
+        {
+          "id": "metric-left",
+          "anchor": "Body Left",
+          "text": "品質指標\n- 差戻し率 5% 以下\n- ブランド違反 0 件"
+        },
+        {
+          "id": "metric-center",
+          "anchor": "Body Center",
+          "text": "スピード指標\n- 初稿リードタイム 1 日以内\n- テンプレ更新リードタイム 2 日"
+        }
+      ],
+      "charts": [
+        {
+          "id": "metric-chart",
+          "anchor": "Body Right",
+          "type": "column",
+          "categories": [
+            "Before",
+            "After"
+          ],
+          "series": [
+            {
+              "name": "差戻し率",
+              "values": [18, 5]
+            },
+            {
+              "name": "初稿リードタイム",
+              "values": [3.5, 1.0]
+            }
+          ],
+          "options": {
+            "data_labels": true,
+            "y_axis_format": "0%"
           }
         }
       ]
     },
     {
-      "id": "problem",
-      "layout": "Two Column Detail",
-      "title": "現状課題",
-      "bullets": [
+      "id": "roadmap",
+      "layout": "Three Flow",
+      "title": "導入ロードマップ",
+      "subtitle": "3 ステップで浸透",
+      "textboxes": [
         {
-          "anchor": "Body Left",
-          "items": [
-            {
-              "id": "problem-1",
-              "text": "提案書フォーマットのばらつきにより確認に時間がかかる",
-              "level": 0
-            },
-            {
-              "id": "problem-2",
-              "text": "ブランド統一ルールが共有されておらず修正が頻発",
-              "level": 0
-            },
-            {
-              "id": "problem-3",
-              "text": "PDF 変換や監査ログ作成が手動で運用コストが高い",
-              "level": 0
-            }
-          ]
-        }
-      ],
-      "images": []
-    },
-    {
-      "id": "solution",
-      "layout": "Two Column Detail",
-      "title": "提案概要",
-      "bullets": [
+          "id": "flow-1",
+          "anchor": "Flow 1",
+          "text": "ステップ 1\nテンプレート受領\nlayout-validate 実施"
+        },
         {
-          "anchor": "Body Left",
-          "items": [
-            {
-              "id": "solution-1",
-              "text": "テンプレートとブランド設定を組み合わせた自動レイアウト生成",
-              "level": 0
-            },
-            {
-              "id": "solution-2",
-              "text": "Analyzer によるレイアウト・カラー検証と修正提案の自動化",
-              "level": 0
-            },
-            {
-              "id": "solution-3",
-              "text": "LibreOffice 経由の PDF 出力と監査ログ保存をワンステップで実現",
-              "level": 0
-            }
-          ]
-        }
-      ],
-      "notes": "同一レイアウトを複数スライドで使うケース。テンプレート側のアンカー名が共通である点に注意。"
-    },
-    {
-      "id": "overview",
-      "layout": "One Column Detail",
-      "title": "導入効果サマリ",
-      "bullets":
-       [
+          "id": "flow-2",
+          "anchor": "Flow 2",
+          "text": "ステップ 2\nサンプル生成とレビュー\nAnalyzer 指摘の解消"
+        },
         {
-          "anchor": "Body",
-          "items": [
-            {
-              "id": "overview-1",
-              "text": "目的: 1カラム構成でメッセージを強調しつつ、補足ビジュアルを配置する",
-              "level": 0
-            },
-            {
-              "id": "overview-2",
-              "text": "ベース本文は単一カラムで読みやすく整理し、必要な場合にアンカーで図版を差し込む",
-              "level": 0
-            }
-          ]
-        }
-      ],
-      "images": [
-        {
-          "id": "overview-visual",
-          "source": "samples/assets/logo.png",
-          "anchor": "Logo",
-          "sizing": "fit"
-        }
-      ],
-      "notes": "One Column Detail レイアウトでは本文領域を広く確保し、detail-visual アンカーを活用して補足資料を配置。"
-    },
-    {
-      "id": "timeline",
-      "layout": "One Column Detail",
-      "title": "ロードマップ",
-      "tables": [
-        {
-          "id": "timeline-table",
-          "anchor": "Body",
-          "columns": [
-            "フェーズ",
-            "主要タスク",
-            "成果物"
-          ],
-          "rows": [
-            [
-              "準備",
-              "テンプレート整備 / ブランド確認",
-              "運用ガイドライン"
-            ],
-            [
-              "PoC",
-              "サンプル仕様で自動生成検証",
-              "提案書・分析ログ"
-            ],
-            [
-              "展開",
-              "案件テンプレート展開 / 教育",
-              "運用開始マニュアル"
-            ]
-          ],
-          "style": {
-            "header_fill": "#E0F2FF",
-            "zebra": true
-          }
-        }
-      ],
-      "notes": "比較レイアウトをベースにテーブルを中央配置する想定。"
-    },
-    {
-      "id": "metrics",
-      "layout": "Two Column Detail",
-      "title": "期待効果",
-      "charts": [
-        {
-          "id": "metric-chart",
-          "anchor": "Body Left",
-          "type": "column",
-          "categories": [
-            "導入前",
-            "導入後"
-          ],
-          "series": [
-            {
-              "name": "作業時間 (時間/提案)",
-              "values": [
-                10,
-                4
-              ],
-              "color_hex": "#FF7043"
-            },
-            {
-              "name": "手戻り件数 (件/月)",
-              "values": [
-                8,
-                2
-              ],
-              "color_hex": "#4CAF50"
-            }
-          ],
-          "options": {
-            "data_labels": true,
-            "y_axis_format": "0"
-          }
-        }
-      ],
-      "bullets": [
-        {
-          "items": [
-            {
-              "id": "metric-1",
-              "text": "作業時間を 60% 削減し、承認リードタイムを短縮",
-              "level": 0
-            },
-            {
-              "id": "metric-2",
-              "text": "監査ログ自動化により、内部統制の証跡作成を効率化",
-              "level": 0
-            }
-          ]
+          "id": "flow-3",
+          "anchor": "Flow 3",
+          "text": "ステップ 3\n運用移管と教育\nPDF 変換テスト"
         }
       ]
     },
     {
       "id": "team",
-      "layout": "Two Column Detail",
-      "title": "推進体制",
-      "tables": [
-        {
-          "id": "team-table",
-          "anchor": "Body Right",
-          "columns": [
-            "役割",
-            "担当",
-            "主なタスク"
-          ],
-          "rows": [
-            [
-              "プロジェクトマネージャー",
-              "田中 太郎",
-              "全体統括 / KPI 管理"
-            ],
-            [
-              "テンプレート担当",
-              "山田 花子",
-              "テンプレート整備 / デザイン確認"
-            ],
-            [
-              "自動化エンジニア",
-              "佐藤 健",
-              "CLI 拡張 / 環境構築"
-            ]
-          ],
-          "style": {
-            "header_fill": "#F0EAF8",
-            "zebra": true
-          }
-        }
-      ],
-      "images": [
-        {
-          "id": "team-photo",
-          "source": "samples/assets/team.png",
-          "anchor": "Body Left",
-          "sizing": "fit"
-        }
-      ],
-      "notes": "写真の差し替え例として team-photo アンカーを設定。"
-    },
-    {
-      "id": "timeline",
-      "layout": "Timeline Detail",
-      "title": "導入ロードマップ",
-      "subtitle": "4 週間で段階的に展開するスケジュール例",
-      "tables": [
-        {
-          "id": "timeline-track",
-          "anchor": "Timeline Track",
-          "columns": [
-            "週",
-            "主要アクション",
-            "成果指標"
-          ],
-          "rows": [
-            [
-              "第1週",
-              "現状ヒアリングと要件整理、テンプレート差分の棚卸し",
-              "承認済みの運用要件リスト"
-            ],
-            [
-              "第2週",
-              "テンプレート拡充と layout-validate 実行、レビュー反映",
-              "新レイアウトの承認 / 議事メモ"
-            ],
-            [
-              "第3週",
-              "PoC 実行と Analyzer 指摘の解消、CLI ワークフロー検証",
-              "レンダリングログの警告 0 件"
-            ],
-            [
-              "第4週",
-              "運用ガイド整備とトレーニング、PDF 変換の最終検証",
-              "docs/runbooks への反映完了"
-            ]
-          ],
-          "style": {
-            "header_fill": "#E6EEF8",
-            "zebra": true
-          }
-        }
-      ],
-      "bullets": [
-        {
-          "anchor": "Timeline Notes",
-          "items": [
-            {
-              "id": "timeline-note-1",
-              "text": "承認フローと環境セットアップを週次で追跡し、差戻しを防止",
-              "level": 0
-            },
-            {
-              "id": "timeline-note-2",
-              "text": "Analyzer スナップショットを更新し、警告をロードマップに連携",
-              "level": 0
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "comparison",
-      "layout": "Comparison Two Axis",
-      "title": "導入前後の 2 軸比較",
-      "subtitle": "品質 × スピードの両立を実現",
-      "tables": [
-        {
-          "id": "axis-matrix",
-          "anchor": "Axis Left",
-          "columns": [
-            "観点",
-            "導入前",
-            "導入後"
-          ],
-          "rows": [
-            [
-              "品質",
-              "校正ルールが属人化し、差戻し理由が曖昧",
-              "レイアウト命名と補助資料が統一されレビューが簡易化"
-            ],
-            [
-              "スピード",
-              "レイアウト調整に 3 日以上を要する",
-              "テンプレート候補の自動提示で初稿作成が当日内に短縮"
-            ],
-            [
-              "透明性",
-              "アサイン履歴や検証ログが分散",
-              "audit_log.json で工程別の検証結果を一元管理"
-            ]
-          ],
-          "style": {
-            "header_fill": "#F5F0FF",
-            "zebra": true
-          }
-        }
-      ],
-      "bullets": [
-        {
-          "anchor": "Axis Right",
-          "items": [
-            {
-              "id": "axis-note-1",
-              "text": "マッピング補完エンジンと Analyzer の併用でレイアウト整合性を担保",
-              "level": 0
-            },
-            {
-              "id": "axis-note-2",
-              "text": "Approval-First Policy を適用し、判断経緯を ToDo / ロードマップに記録",
-              "level": 0
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "fact_sheet",
-      "layout": "Fact Sheet",
-      "title": "提案のファクトシート",
-      "subtitle": "主要 KPI と運用条件のサマリー",
-      "tables": [
-        {
-          "id": "fact-summary",
-          "anchor": "Fact Summary",
-          "columns": [
-            "カテゴリ",
-            "指標",
-            "現状",
-            "目標"
-          ],
-          "rows": [
-            [
-              "品質",
-              "差戻し率",
-              "18%",
-              "5% 以下"
-            ],
-            [
-              "スピード",
-              "初稿リードタイム",
-              "3.5 日",
-              "1.0 日"
-            ],
-            [
-              "運用",
-              "テンプレート更新頻度",
-              "四半期に 1 回",
-              "月次でレビュー"
-            ]
-          ],
-          "style": {
-            "header_fill": "#E8F5E9",
-            "zebra": true
-          }
-        }
-      ],
+      "layout": "Four List",
+      "title": "体制",
+      "subtitle": "役割と責任分担",
       "textboxes": [
         {
-          "id": "fact-memo",
-          "text": "数値はサンプルであり、導入計画に応じて差し替え可能です。",
-          "anchor": "Fact Subtitle"
+          "id": "team-key-1",
+          "anchor": "Key 1",
+          "text": "プロジェクトマネージャー"
+        },
+        {
+          "id": "team-val-1",
+          "anchor": "Value 1",
+          "text": "全体統括 / 承認"
+        },
+        {
+          "id": "team-key-2",
+          "anchor": "Key 2",
+          "text": "テンプレート担当"
+        },
+        {
+          "id": "team-val-2",
+          "anchor": "Value 2",
+          "text": "PPTX 編集 / layout-validate"
+        },
+        {
+          "id": "team-key-3",
+          "anchor": "Key 3",
+          "text": "自動化担当"
+        },
+        {
+          "id": "team-val-3",
+          "anchor": "Value 3",
+          "text": "CLI 運用 / テスト"
+        },
+        {
+          "id": "team-key-4",
+          "anchor": "Key 4",
+          "text": "品質保証"
+        },
+        {
+          "id": "team-val-4",
+          "anchor": "Value 4",
+          "text": "Analyzer レビュー / 監査"
+        }
+      ]
+    },
+    {
+      "id": "risks",
+      "layout": "Three List",
+      "title": "主要リスク",
+      "subtitle": "想定課題と対策",
+      "textboxes": [
+        {
+          "id": "risk-key-1",
+          "anchor": "Key 1",
+          "text": "テンプレ更新遅延"
+        },
+        {
+          "id": "risk-val-1",
+          "anchor": "Value 1",
+          "text": "ToDo とロードマップで進捗管理"
+        },
+        {
+          "id": "risk-key-2",
+          "anchor": "Key 2",
+          "text": "ブランド逸脱"
+        },
+        {
+          "id": "risk-val-2",
+          "anchor": "Value 2",
+          "text": "layout-style 設定とレビュー"
+        },
+        {
+          "id": "risk-key-3",
+          "anchor": "Key 3",
+          "text": "PDF 変換差異"
+        },
+        {
+          "id": "risk-val-3",
+          "anchor": "Value 3",
+          "text": "LibreOffice 検証とフォールバック"
+        }
+      ]
+    },
+    {
+      "id": "next-steps",
+      "layout": "Two Rows Detail",
+      "title": "次のアクション",
+      "subtitle": "導入準備と展開",
+      "textboxes": [
+        {
+          "id": "next-upper",
+          "anchor": "Body Upper",
+          "text": "1. テンプレート差分レビュー\n2. docs/requirements の更新"
+        },
+        {
+          "id": "next-lower",
+          "anchor": "Body Lower",
+          "text": "3. layout-validate と CLI テスト\n4. 運用チームへのトレーニング"
         }
       ]
     },
     {
       "id": "closing",
       "layout": "Closing",
-      "title": "次のアクション",
+      "title": "まとめと連絡先",
+      "subtitle": "導入スケジュールの確定へ",
       "bullets": [
         {
+          "anchor": "Body",
           "items": [
             {
               "id": "closing-1",
-              "text": "サンプル仕様をベースに案件用テンプレートを準備",
+              "text": "テンプレート承認: 11/05 まで",
               "level": 0
             },
             {
               "id": "closing-2",
-              "text": "LibreOffice / .NET 環境の整備手順を社内に共有",
+              "text": "PoC 実行: 11/12 開始",
               "level": 0
             },
             {
               "id": "closing-3",
-              "text": "統合テストと PDF 変換チェックリストを実施",
+              "text": "本番展開: 12/02 開始予定",
               "level": 0
             }
           ]
         }
       ],
-      "images": [
-        {
-          "id": "closing-cta",
-          "source": "samples/assets/logo.png",
-          "anchor": "Logo",
-          "sizing": "fit"
-        }
-      ],
-      "notes": "closing-cta アンカーは任意のロゴ差し替え例。"
+      "notes": "Body アンカーを利用したチェックリスト形式。"
     }
   ]
 }

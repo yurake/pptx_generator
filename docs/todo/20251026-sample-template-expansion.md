@@ -1,6 +1,6 @@
 ---
 目的: samples/templates/templates.pptx のページパターン拡充と samples/ 配下のバリエーション追加
-関連ブランチ: 未作成（作成次第更新）
+関連ブランチ: feat/rm043-sample-template-expansion
 関連Issue: #241
 roadmap_item: RM-043 サンプルテンプレ拡充
 ---
@@ -13,8 +13,8 @@ roadmap_item: RM-043 サンプルテンプレ拡充
   - メモ: docs/notes/20251026-rm043-sample-template-plan.md にカテゴリ別レイアウト案、アンカー仕様、テスト工程、テンプレ編集指示書を整理済み（2025-10-26）。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: 追加検討が必要な場合は要件/設計ドキュメントへの反映可否を記録する
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] docs/requirements 配下
+- [x] docs/design 配下
 - [ ] 実装
   - メモ: テンプレート追加と samples/ データ更新の範囲をまとめる
 - [ ] テスト・検証
@@ -22,9 +22,9 @@ roadmap_item: RM-043 サンプルテンプレ拡充
 - [ ] ドキュメント更新
   - メモ: 影響ドキュメントと更新内容を列挙する
   - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する
@@ -32,4 +32,5 @@ roadmap_item: RM-043 サンプルテンプレ拡充
   - メモ: PR 番号と URL、todo-auto-complete の実行結果を記録する
 
 ## メモ
+- 2025-10-31: 作業再開。テンプレート検証・サンプル拡張を順次実施予定。
 - 計画段階でのみ完了とする場合は判断者・判断日・次のアクション条件を追記する

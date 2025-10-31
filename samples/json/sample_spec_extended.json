@@ -1,0 +1,1279 @@
+{
+  "meta": {
+    "schema_version": "1.1",
+    "title": "RM-043 拡張テンプレート検証",
+    "client": "Internal QA",
+    "author": "テンプレート検証チーム",
+    "created_at": "2025-10-31",
+    "theme": "corporate",
+    "locale": "ja-JP"
+  },
+  "auth": {
+    "created_by": "codex",
+    "department": "solution"
+  },
+  "slides": [
+    {
+      "id": "title-01",
+      "layout": "Title",
+      "title": "提案表紙A",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "title-01-text1",
+          "anchor": "Text1",
+          "text": "Text1 セクション 1\n- ポイント A\n- ポイント B"
+        }
+      ],
+      "images": [
+        {
+          "id": "title-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "title-02",
+      "layout": "Title",
+      "title": "提案表紙B",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "title-02-text1",
+          "anchor": "Text1",
+          "text": "Text1 セクション 2\n- ポイント A\n- ポイント B"
+        }
+      ],
+      "images": [
+        {
+          "id": "title-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_left-01",
+      "layout": "Section Covor Left",
+      "title": "章扉 左配置A",
+      "subtitle": "サブタイトル 1",
+      "images": [
+        {
+          "id": "section_covor_left-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_left-02",
+      "layout": "Section Covor Left",
+      "title": "章扉 左配置B",
+      "subtitle": "サブタイトル 2",
+      "images": [
+        {
+          "id": "section_covor_left-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_center-01",
+      "layout": "Section Covor Center",
+      "title": "章扉 中央A",
+      "subtitle": "サブタイトル 1",
+      "images": [
+        {
+          "id": "section_covor_center-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "section_covor_center-02",
+      "layout": "Section Covor Center",
+      "title": "章扉 中央B",
+      "subtitle": "サブタイトル 2",
+      "images": [
+        {
+          "id": "section_covor_center-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "agenda-01",
+      "layout": "Agenda",
+      "subtitle": "サブタイトル 1",
+      "bullets": [
+        {
+          "anchor": "Agenda",
+          "items": [
+            {
+              "id": "agenda-01-item-1",
+              "text": "Agenda トピック 1-1",
+              "level": 0
+            },
+            {
+              "id": "agenda-01-item-2",
+              "text": "Agenda トピック 1-2",
+              "level": 0
+            }
+          ]
+        }
+      ],
+      "images": [
+        {
+          "id": "agenda-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "agenda-02",
+      "layout": "Agenda",
+      "subtitle": "サブタイトル 2",
+      "bullets": [
+        {
+          "anchor": "Agenda",
+          "items": [
+            {
+              "id": "agenda-02-item-1",
+              "text": "Agenda トピック 2-1",
+              "level": 0
+            },
+            {
+              "id": "agenda-02-item-2",
+              "text": "Agenda トピック 2-2",
+              "level": 0
+            }
+          ]
+        }
+      ],
+      "images": [
+        {
+          "id": "agenda-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ]
+    },
+    {
+      "id": "one_column_detail-01",
+      "layout": "One Column Detail",
+      "title": "1カラム要点A",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "one_column_detail-01-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "one_column_detail-02",
+      "layout": "One Column Detail",
+      "title": "1カラム要点B",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "one_column_detail-02-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "two_rows_detail-01",
+      "layout": "Two Rows Detail",
+      "title": "2行サマリーA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "two_rows_detail-01-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 1"
+        },
+        {
+          "id": "two_rows_detail-01-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "two_rows_detail-02",
+      "layout": "Two Rows Detail",
+      "title": "2行サマリーB",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "two_rows_detail-02-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 2"
+        },
+        {
+          "id": "two_rows_detail-02-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "two_column_detail-01",
+      "layout": "Two Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "2カラム比較A",
+      "textboxes": [
+        {
+          "id": "two_column_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "two_column_detail-01-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "two_column_detail-02",
+      "layout": "Two Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "2カラム比較B",
+      "textboxes": [
+        {
+          "id": "two_column_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "two_column_detail-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "left_highlight_detail-01",
+      "layout": "Left Highlight Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "左強調カードA",
+      "textboxes": [
+        {
+          "id": "left_highlight_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "left_highlight_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "left_highlight_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "left_highlight_detail-02",
+      "layout": "Left Highlight Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "左強調カードB",
+      "textboxes": [
+        {
+          "id": "left_highlight_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "left_highlight_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "left_highlight_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "right_highlight_detail-01",
+      "layout": "Right Highlight Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "右強調カードA",
+      "textboxes": [
+        {
+          "id": "right_highlight_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "right_highlight_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "right_highlight_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "right_highlight_detail-02",
+      "layout": "Right Highlight Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "右強調カードB",
+      "textboxes": [
+        {
+          "id": "right_highlight_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "right_highlight_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "right_highlight_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_rows_detail-01",
+      "layout": "Three Rows Detail",
+      "title": "3行カードA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "three_rows_detail-01-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 1"
+        },
+        {
+          "id": "three_rows_detail-01-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 1"
+        },
+        {
+          "id": "three_rows_detail-01-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "three_rows_detail-02",
+      "layout": "Three Rows Detail",
+      "title": "3行カードB",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "three_rows_detail-02-body-upper",
+          "anchor": "Body Upper",
+          "text": "Body Upper のサンプル 2"
+        },
+        {
+          "id": "three_rows_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
+        },
+        {
+          "id": "three_rows_detail-02-body-lower",
+          "anchor": "Body Lower",
+          "text": "Body Lower のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "four_rows_detail-01",
+      "layout": "Four Rows Detail",
+      "title": "4行カードA",
+      "subtitle": "サブタイトル 1",
+      "textboxes": [
+        {
+          "id": "four_rows_detail-01-body-1",
+          "anchor": "Body 1",
+          "text": "Body 1 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-2",
+          "anchor": "Body 2",
+          "text": "Body 2 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-3",
+          "anchor": "Body 3",
+          "text": "Body 3 のサンプル 1"
+        },
+        {
+          "id": "four_rows_detail-01-body-4",
+          "anchor": "Body 4",
+          "text": "Body 4 のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "four_rows_detail-02",
+      "layout": "Four Rows Detail",
+      "title": "4行カードB",
+      "subtitle": "サブタイトル 2",
+      "textboxes": [
+        {
+          "id": "four_rows_detail-02-body-1",
+          "anchor": "Body 1",
+          "text": "Body 1 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-2",
+          "anchor": "Body 2",
+          "text": "Body 2 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-3",
+          "anchor": "Body 3",
+          "text": "Body 3 のサンプル 2"
+        },
+        {
+          "id": "four_rows_detail-02-body-4",
+          "anchor": "Body 4",
+          "text": "Body 4 のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "executive_summary-01",
+      "layout": "Executive Summary",
+      "title": "要約スライドA",
+      "textboxes": [
+        {
+          "id": "executive_summary-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "executive_summary-01-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 1"
+        },
+        {
+          "id": "executive_summary-01-notes",
+          "anchor": "Notes",
+          "text": "Notes のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "executive_summary-02",
+      "layout": "Executive Summary",
+      "title": "要約スライドB",
+      "textboxes": [
+        {
+          "id": "executive_summary-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "executive_summary-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
+        },
+        {
+          "id": "executive_summary-02-notes",
+          "anchor": "Notes",
+          "text": "Notes のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_column_detail-01",
+      "layout": "Three Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "3カラム概要A",
+      "textboxes": [
+        {
+          "id": "three_column_detail-01-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 1"
+        },
+        {
+          "id": "three_column_detail-01-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 1"
+        },
+        {
+          "id": "three_column_detail-01-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "three_column_detail-02",
+      "layout": "Three Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "3カラム概要B",
+      "textboxes": [
+        {
+          "id": "three_column_detail-02-body-left",
+          "anchor": "Body Left",
+          "text": "Body Left のサンプル 2"
+        },
+        {
+          "id": "three_column_detail-02-body-right",
+          "anchor": "Body Right",
+          "text": "Body Right のサンプル 2"
+        },
+        {
+          "id": "three_column_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "four_column_detail-01",
+      "layout": "Four Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "4カラム概要A",
+      "textboxes": [
+        {
+          "id": "four_column_detail-01-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 1"
+        },
+        {
+          "id": "four_column_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "four_column_detail-01-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 1"
+        },
+        {
+          "id": "four_column_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "four_column_detail-02",
+      "layout": "Four Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "4カラム概要B",
+      "textboxes": [
+        {
+          "id": "four_column_detail-02-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 2"
+        },
+        {
+          "id": "four_column_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "six_column_detail-01",
+      "layout": "Six Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "6カラム一覧A",
+      "textboxes": [
+        {
+          "id": "six_column_detail-01-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-upper-center",
+          "anchor": "Body Upper Center",
+          "text": "Body Upper Center のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 1"
+        },
+        {
+          "id": "six_column_detail-01-body-lower-center",
+          "anchor": "Body Lower Center",
+          "text": "Body Lower Center のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "six_column_detail-02",
+      "layout": "Six Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "6カラム一覧B",
+      "textboxes": [
+        {
+          "id": "six_column_detail-02-body-upper-left",
+          "anchor": "Body Upper Left",
+          "text": "Body Upper Left のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-upper-right",
+          "anchor": "Body Upper Right",
+          "text": "Body Upper Right のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-upper-center",
+          "anchor": "Body Upper Center",
+          "text": "Body Upper Center のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-left",
+          "anchor": "Body Lower Left",
+          "text": "Body Lower Left のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-right",
+          "anchor": "Body Lower Right",
+          "text": "Body Lower Right のサンプル 2"
+        },
+        {
+          "id": "six_column_detail-02-body-lower-center",
+          "anchor": "Body Lower Center",
+          "text": "Body Lower Center のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "nine_column_detail-01",
+      "layout": "Nine Column Detail",
+      "subtitle": "サブタイトル 1",
+      "title": "9カラム一覧A",
+      "textboxes": [
+        {
+          "id": "nine_column_detail-01-body-top-left",
+          "anchor": "Body Top Left",
+          "text": "Body Top Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-top-right",
+          "anchor": "Body Top Right",
+          "text": "Body Top Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-top-center",
+          "anchor": "Body Top Center",
+          "text": "Body Top Center のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-middle-left",
+          "anchor": "Body Middle Left",
+          "text": "Body Middle Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-middle-right",
+          "anchor": "Body Middle Right",
+          "text": "Body Middle Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-left",
+          "anchor": "Body Bottom Left",
+          "text": "Body Bottom Left のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-right",
+          "anchor": "Body Bottom Right",
+          "text": "Body Bottom Right のサンプル 1"
+        },
+        {
+          "id": "nine_column_detail-01-body-bottom-center",
+          "anchor": "Body Bottom Center",
+          "text": "Body Bottom Center のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "nine_column_detail-02",
+      "layout": "Nine Column Detail",
+      "subtitle": "サブタイトル 2",
+      "title": "9カラム一覧B",
+      "textboxes": [
+        {
+          "id": "nine_column_detail-02-body-top-left",
+          "anchor": "Body Top Left",
+          "text": "Body Top Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-top-right",
+          "anchor": "Body Top Right",
+          "text": "Body Top Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-top-center",
+          "anchor": "Body Top Center",
+          "text": "Body Top Center のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-middle-left",
+          "anchor": "Body Middle Left",
+          "text": "Body Middle Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-middle-right",
+          "anchor": "Body Middle Right",
+          "text": "Body Middle Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-center",
+          "anchor": "Body Center",
+          "text": "Body Center のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-left",
+          "anchor": "Body Bottom Left",
+          "text": "Body Bottom Left のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-right",
+          "anchor": "Body Bottom Right",
+          "text": "Body Bottom Right のサンプル 2"
+        },
+        {
+          "id": "nine_column_detail-02-body-bottom-center",
+          "anchor": "Body Bottom Center",
+          "text": "Body Bottom Center のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "three_list-01",
+      "layout": "Three List",
+      "subtitle": "サブタイトル 1",
+      "title": "3リスト整理A",
+      "textboxes": [
+        {
+          "id": "three_list-01-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "three_list-01-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (1)"
+        },
+        {
+          "id": "three_list-01-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "three_list-01-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (1)"
+        },
+        {
+          "id": "three_list-01-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "three_list-01-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (1)"
+        }
+      ]
+    },
+    {
+      "id": "three_list-02",
+      "layout": "Three List",
+      "subtitle": "サブタイトル 2",
+      "title": "3リスト整理B",
+      "textboxes": [
+        {
+          "id": "three_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "three_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "three_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "three_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "three_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "three_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
+        }
+      ]
+    },
+    {
+      "id": "four_list-01",
+      "layout": "Four List",
+      "subtitle": "サブタイトル 1",
+      "title": "4リスト整理A",
+      "textboxes": [
+        {
+          "id": "four_list-01-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "four_list-01-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (1)"
+        },
+        {
+          "id": "four_list-01-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "four_list-01-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (1)"
+        },
+        {
+          "id": "four_list-01-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "four_list-01-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (1)"
+        },
+        {
+          "id": "four_list-01-key-4",
+          "anchor": "Key 4",
+          "text": "要素 4"
+        },
+        {
+          "id": "four_list-01-value-4",
+          "anchor": "Value 4",
+          "text": "内容 4 (1)"
+        }
+      ]
+    },
+    {
+      "id": "four_list-02",
+      "layout": "Four List",
+      "subtitle": "サブタイトル 2",
+      "title": "4リスト整理B",
+      "textboxes": [
+        {
+          "id": "four_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "four_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "four_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "four_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "four_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "four_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
+        },
+        {
+          "id": "four_list-02-key-4",
+          "anchor": "Key 4",
+          "text": "要素 4"
+        },
+        {
+          "id": "four_list-02-value-4",
+          "anchor": "Value 4",
+          "text": "内容 4 (2)"
+        }
+      ]
+    },
+    {
+      "id": "five_list-01",
+      "layout": "Five List",
+      "subtitle": "サブタイトル 1",
+      "title": "5リスト整理A",
+      "textboxes": [
+        {
+          "id": "five_list-01-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "five_list-01-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (1)"
+        },
+        {
+          "id": "five_list-01-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "five_list-01-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (1)"
+        },
+        {
+          "id": "five_list-01-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "five_list-01-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (1)"
+        },
+        {
+          "id": "five_list-01-key-5",
+          "anchor": "Key 5",
+          "text": "要素 5"
+        },
+        {
+          "id": "five_list-01-value-5",
+          "anchor": "Value 5",
+          "text": "内容 5 (1)"
+        }
+      ]
+    },
+    {
+      "id": "five_list-02",
+      "layout": "Five List",
+      "subtitle": "サブタイトル 2",
+      "title": "5リスト整理B",
+      "textboxes": [
+        {
+          "id": "five_list-02-key-1",
+          "anchor": "Key 1",
+          "text": "要素 1"
+        },
+        {
+          "id": "five_list-02-value-1",
+          "anchor": "Value 1",
+          "text": "内容 1 (2)"
+        },
+        {
+          "id": "five_list-02-key-2",
+          "anchor": "Key 2",
+          "text": "要素 2"
+        },
+        {
+          "id": "five_list-02-value-2",
+          "anchor": "Value 2",
+          "text": "内容 2 (2)"
+        },
+        {
+          "id": "five_list-02-key-3",
+          "anchor": "Key 3",
+          "text": "要素 3"
+        },
+        {
+          "id": "five_list-02-value-3",
+          "anchor": "Value 3",
+          "text": "内容 3 (2)"
+        },
+        {
+          "id": "five_list-02-key-5",
+          "anchor": "Key 5",
+          "text": "要素 5"
+        },
+        {
+          "id": "five_list-02-value-5",
+          "anchor": "Value 5",
+          "text": "内容 5 (2)"
+        }
+      ]
+    },
+    {
+      "id": "two_flow-01",
+      "layout": "Two Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "2段階フローA",
+      "textboxes": [
+        {
+          "id": "two_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "two_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "two_flow-02",
+      "layout": "Two Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "2段階フローB",
+      "textboxes": [
+        {
+          "id": "two_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "two_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "three_flow-01",
+      "layout": "Three Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "3段階フローA",
+      "textboxes": [
+        {
+          "id": "three_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-01-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "three_flow-02",
+      "layout": "Three Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "3段階フローB",
+      "textboxes": [
+        {
+          "id": "three_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-02-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "three_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "1_two_flow-01",
+      "layout": "1_Two Flow",
+      "subtitle": "サブタイトル 1",
+      "title": "番号付きフローA",
+      "textboxes": [
+        {
+          "id": "1_two_flow-01-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 1\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-01-flow-4",
+          "anchor": "Flow 4",
+          "text": "Flow 4 の説明 1\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "1_two_flow-02",
+      "layout": "1_Two Flow",
+      "subtitle": "サブタイトル 2",
+      "title": "番号付きフローB",
+      "textboxes": [
+        {
+          "id": "1_two_flow-02-flow-1",
+          "anchor": "Flow 1",
+          "text": "Flow 1 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-2",
+          "anchor": "Flow 2",
+          "text": "Flow 2 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-3",
+          "anchor": "Flow 3",
+          "text": "Flow 3 の説明 2\n- 手順 1\n- 手順 2"
+        },
+        {
+          "id": "1_two_flow-02-flow-4",
+          "anchor": "Flow 4",
+          "text": "Flow 4 の説明 2\n- 手順 1\n- 手順 2"
+        }
+      ]
+    },
+    {
+      "id": "closing-01",
+      "layout": "Closing",
+      "subtitle": "サブタイトル 1",
+      "title": "クロージングA",
+      "textboxes": [
+        {
+          "id": "closing-01-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 1"
+        }
+      ]
+    },
+    {
+      "id": "closing-02",
+      "layout": "Closing",
+      "subtitle": "サブタイトル 2",
+      "title": "クロージングB",
+      "textboxes": [
+        {
+          "id": "closing-02-body",
+          "anchor": "Body",
+          "text": "Body のサンプル 2"
+        }
+      ]
+    },
+    {
+      "id": "closin_covor-01",
+      "layout": "Closin Covor",
+      "images": [
+        {
+          "id": "closin_covor-01-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ],
+      "title": "クロージング扉A"
+    },
+    {
+      "id": "closin_covor-02",
+      "layout": "Closin Covor",
+      "images": [
+        {
+          "id": "closin_covor-02-logo",
+          "source": "samples/assets/logo.png",
+          "anchor": "Logo",
+          "sizing": "fit"
+        }
+      ],
+      "title": "クロージング扉B"
+    },
+    {
+      "id": "_bk-01",
+      "layout": "_bk",
+      "subtitle": "サブタイトル 1",
+      "title": "背景スライドA",
+      "textboxes": [
+        {
+          "id": "_bk-01-content",
+          "anchor": "コンテンツ プレースホルダー 2",
+          "text": "_bk のコンテンツ 1"
+        }
+      ]
+    },
+    {
+      "id": "_bk-02",
+      "layout": "_bk",
+      "subtitle": "サブタイトル 2",
+      "title": "背景スライドB",
+      "textboxes": [
+        {
+          "id": "_bk-02-content",
+          "anchor": "コンテンツ プレースホルダー 2",
+          "text": "_bk のコンテンツ 2"
+        }
+      ]
+    }
+  ]
+}

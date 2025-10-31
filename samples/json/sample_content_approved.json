@@ -31,7 +31,7 @@
       ]
     },
     {
-      "id": "problem",
+      "id": "current-challenges",
       "intent": "課題整理",
       "type_hint": "content",
       "elements": {
