@@ -38,6 +38,7 @@ class ContentAIOrchestrator:
         spec: JobSpec,
         *,
         policy_id: str | None = None,
+        reference_text: str | None = None,
     ) -> tuple[ContentApprovalDocument, dict[str, Any], list[dict[str, Any]]]:
         """指定ポリシーでコンテンツ案を生成する。"""
 
@@ -62,6 +63,7 @@ class ContentAIOrchestrator:
                 spec=spec,
                 slide=spec_slide,
                 intent=intent,
+                reference_text=reference_text,
             )
 
             if logger.isEnabledFor(logging.INFO):

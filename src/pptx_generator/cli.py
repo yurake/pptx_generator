@@ -120,6 +120,22 @@ def _prepare_branding(
     return branding_config, artifact
 
 
+def _build_reference_text(document: ContentApprovalDocument) -> tuple[str | None, bool]:
+    lines: list[str] = []
+    for slide in document.slides:
+        if slide.elements.title:
+            lines.append(str(slide.elements.title))
+        lines.extend(str(item) for item in slide.elements.body)
+        if slide.elements.note:
+            lines.append(str(slide.elements.note))
+
+    reference_text = "\n".join(line.strip() for line in lines if line.strip())
+    if not reference_text:
+        return None, False
+
+    return reference_text, False
+
+
 def _build_analyzer_options(
     rules_config: RulesConfig,
     branding_config: BrandingConfig,
@@ -1044,6 +1060,10 @@ def content(
         click.echo("--content-source と --content-approved を同時には指定できません", err=True)
         raise click.exceptions.Exit(code=2)
 
+    import_reference_text: str | None = None
+    import_meta_path: Path | None = None
+    import_warnings: list[str] = []
+
     if content_sources:
         output_dir.mkdir(parents=True, exist_ok=True)
         importer = ContentImportService(libreoffice_path=libreoffice_path)
@@ -1053,8 +1073,8 @@ def content(
             click.echo(f"コンテンツ取り込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=4) from exc
 
-        draft_path = output_dir / draft_output
-        _dump_json(draft_path, result.document.model_dump(mode="json"))
+        import_reference_text, truncated = _build_reference_text(result.document)
+        import_warnings.extend(result.warnings)
 
         meta_payload = {
             **result.meta,
@@ -1063,15 +1083,8 @@ def content(
                 "source": str(spec_path.resolve()),
             },
         }
-        meta_path = output_dir / import_meta_filename
-        _dump_json(meta_path, meta_payload)
-
-        for warning in result.warnings:
-            click.echo(f"Warning: {warning}", err=True)
-
-        click.echo(f"Content Draft: {draft_path}")
-        click.echo(f"Content Import Meta: {meta_path}")
-        return
+        import_meta_path = output_dir / import_meta_filename
+        _dump_json(import_meta_path, meta_payload)
 
     if content_approved_path is not None:
         try:
@@ -1124,22 +1137,37 @@ def content(
         raise click.exceptions.Exit(code=4) from exc
     try:
         document, meta_payload, log_entries = orchestrator.generate_document(
-            spec, policy_id=ai_policy_id
+            spec,
+            policy_id=ai_policy_id,
+            reference_text=import_reference_text,
         )
     except ContentAIOrchestrationError as exc:
-        click.echo(f"AI 生成に失敗しました: {exc}", err=True)
+        msg = str(exc)
+        if "token" in msg.lower():
+            click.echo(
+                "AI 生成に失敗しました: トークン上限に達した可能性があります。"
+                " --content-source やポリシー設定で入力文量を調整してください。",
+                err=True,
+            )
+        else:
+            click.echo(f"AI 生成に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
 
     draft_path = output_dir / draft_output
-    meta_path = output_dir / ai_meta
+    ai_meta_path = output_dir / ai_meta
     log_path = output_dir / ai_output
 
     _dump_json(draft_path, document.model_dump(mode="json"))
-    _dump_json(meta_path, meta_payload)
+    _dump_json(ai_meta_path, meta_payload)
     _dump_json(log_path, log_entries)
 
+    if import_meta_path is not None:
+        click.echo(f"Content Import Meta: {import_meta_path}")
+    for warning in import_warnings:
+        click.echo(f"Warning: {warning}", err=True)
+
     click.echo(f"Content Draft (AI): {draft_path}")
-    click.echo(f"AI Generation Meta: {meta_path}")
+    click.echo(f"AI Generation Meta: {ai_meta_path}")
     click.echo(f"AI Generation Log: {log_path}")
     return
 

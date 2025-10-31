@@ -34,6 +34,7 @@ class AIGenerationRequest:
     spec: JobSpec
     slide: Slide
     intent: str
+    reference_text: str | None = None
 
 
 @dataclass(slots=True)
@@ -118,7 +119,10 @@ def _build_user_prompt(request: AIGenerationRequest) -> str:
         - 日本語で回答する。
         """
     ).strip()
-    return f"{guidance}\n\n# スライド情報\n{request.prompt}"
+    reference_section = ""
+    if request.reference_text:
+        reference_section = f"\n\n# 参考テキスト\n{request.reference_text}"
+    return f"{guidance}\n\n# スライド情報\n{request.prompt}{reference_section}"
 
 
 def _build_system_prompt(request: AIGenerationRequest) -> str:
@@ -207,6 +211,10 @@ class MockLLMClient:
 
         if not bullet_texts:
             bullet_texts.append(request.prompt)
+
+        if request.reference_text:
+            reference_lines = [line.strip() for line in request.reference_text.splitlines() if line.strip()]
+            bullet_texts.extend(reference_lines)
 
         body, warnings = _normalize_body(bullet_texts)
         note = (

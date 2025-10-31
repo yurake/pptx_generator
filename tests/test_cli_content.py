@@ -102,7 +102,10 @@ def test_content_import_generates_draft(tmp_path) -> None:
             str(source),
             "--output",
             str(output_dir),
+            "--ai-meta",
+            "ai_generation_meta.json",
         ],
+        env={"PPTX_LLM_PROVIDER": "mock"},
         catch_exceptions=False,
     )
 
@@ -110,6 +113,21 @@ def test_content_import_generates_draft(tmp_path) -> None:
 
     draft_path = output_dir / "content_draft.json"
     meta_path = output_dir / "content_import_meta.json"
+    ai_meta_path = output_dir / "ai_generation_meta.json"
+    ai_log_path = output_dir / "content_ai_log.json"
     assert draft_path.exists()
     assert meta_path.exists()
+    assert ai_meta_path.exists()
+    assert ai_log_path.exists()
     assert not (output_dir / "spec_content_applied.json").exists()
+
+    payload = json.loads(draft_path.read_text(encoding="utf-8"))
+    slide_ids = [slide["id"] for slide in payload["slides"]]
+    assert "cover" in slide_ids
+
+    log_payload = json.loads(ai_log_path.read_text(encoding="utf-8"))
+    assert log_payload, "AI ログが空ではないこと"
+
+    meta_payload = json.loads(ai_meta_path.read_text(encoding="utf-8"))
+    assert meta_payload["policy_id"]
+    assert meta_payload["slides"], "AI メタにスライド情報が含まれること"
