@@ -42,7 +42,7 @@ flowchart TB
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
-        RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(未着手)"]
+        RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(完了)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -603,8 +603,8 @@ flowchart TB
 - ゴール: `samples/templates/templates.pptx` のレイアウトと `samples/` 配下データを拡充し、工程2・5・6の検証用サンプルパターンを増やす。
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251026-rm043-sample-template-plan.md](../notes/20251026-rm043-sample-template-plan.md), [docs/notes/20251031-rm043-template-restart.md](../notes/20251031-rm043-template-restart.md)
-- 参照 ToDo: [docs/todo/20251026-sample-template-expansion.md](../todo/20251026-sample-template-expansion.md)
-- 状況: 進行中（2025-10-31 更新）
+- 参照 ToDo: [docs/todo/archive/20251026-sample-template-expansion.md](../todo/archive/20251026-sample-template-expansion.md)
+- 状況: 完了（2025-10-31 更新）
 - 期待成果:
   - サンプルテンプレートに追加レイアウトや変種（セクション区切り、比較系など）を実装し、命名規約を `samples/AGENTS.md` へ反映。
   - `samples/json/` や `samples/assets/` のバリエーションを増やし、新レイアウトとブランド設定を組み合わせたゴールデンケースを整備。

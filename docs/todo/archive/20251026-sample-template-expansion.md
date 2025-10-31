@@ -29,8 +29,8 @@ roadmap_item: RM-043 サンプルテンプレ拡充
     - メモ: 2025-10-31 現行記載を確認し、追加変更は不要と判断。
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する
-- [ ] PR 作成
-  - メモ: PR 番号と URL、todo-auto-complete の実行結果を記録する
+- [x] PR 作成
+  - メモ: PR #245 https://github.com/yurake/pptx_generator/pull/245（2025-10-31 完了）
 
 ## メモ
 - 2025-10-31: 作業再開。テンプレート検証・サンプル拡張を順次実施予定。
