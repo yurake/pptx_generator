@@ -10,7 +10,7 @@
   - `Title`＋`One Column Detail` の 2 枚のみ。
 - `samples/json/sample_content_approved.json`
   - 3 カード（cover / agenda / problem）のみで intent/type が限定的。
-- `samples/json/sample_layouts.jsonl`
+- `samples/json/sample_template_layouts.jsonl`
   - 2 レコード（overview/detail）しかなく、用途タグやヒントの検証に十分でない。
 
 ## 2. 追加レイアウト案（50 ページ目標）
@@ -42,7 +42,7 @@
 
 - `sample_jobspec.json` は 50 ページ構成まで拡張し、カテゴリ別レイアウトを網羅する（旧 `sample_spec_extended.json` 案を統合）。
 - `sample_content_approved.json` / `sample_content_review_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
-- `sample_layouts.jsonl` を全レイアウト追加後の `layout-validate` 出力を基準に更新し、用途タグ・ヒントを網羅。
+- `sample_template_layouts.jsonl` を全レイアウト追加後の `layout-validate` 出力を基準に更新し、用途タグ・ヒントを網羅。
 - 追加レイアウトに必要なダミー画像・アイコンは `samples/assets/` に SVG/PNG 形式で配置。
 
 ## 4. テスト計画（設計段階での確認事項）

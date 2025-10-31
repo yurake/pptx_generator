@@ -65,7 +65,7 @@
 ### 3.3 レイアウトカバレッジ指針 (RM-043)
 - テンプレ標準 `samples/templates/templates.pptx` は 50 ページ規模のカバレッジを確保し、セクション区切り・ビジネスサマリー・タイムライン・KPI・財務・組織・プロセス・リスク・データビジュアル・クロージングの各カテゴリへ最低 3 パターンずつ割り当てる。
 - アンカー名はカード／チャート／CTA など用途が判別できる語を用い、`BrandLogo`・`Section Title` のように共通要素は既存レイアウトと整合させる。動的要素（フロー矢印など）がプレースホルダーでない場合は JSON で参照しない。
-- 抽出結果は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` で取得し、`samples/json/sample_layouts.jsonl` と `samples/json/sample_jobspec.json` に反映してマッピングテストの基準データとする。
+- 抽出結果は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` で取得し、`samples/json/sample_template_layouts.jsonl` と `samples/json/sample_jobspec.json` に反映してマッピングテストの基準データとする。
 - 追加テンプレを受領した際は `analysis_snapshot.json` を比較し、レイアウト名・アンカー名の不一致を ToDo へ記録して修正フローを回す。
 
 ## 4. JSON スキーマ詳細

@@ -54,7 +54,7 @@
    - テンプレ受け渡しメタ情報（作成者、ブランド、バージョン、レビュー日）を JSON で保存できること。
    - ゴールデンサンプル PPTX を保守し、互換性テストに再利用できること。
    - Analyzer の指摘・修正件数を `template_release.json` / `release_report.json` に集計し、品質メトリクスとして追跡できること。
-   - `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `sample_layouts.jsonl` に反映すること。
+   - `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `sample_template_layouts.jsonl` に反映すること。
    - テンプレ更新時は `uv run pptx layout-validate` の結果を確認し、重大エラーが解消された状態をリリース判定条件とすること。
 11. 多形式インポート
    - 工程 3 で JSON に加えてプレーンテキスト、PDF、URL を入力として受け取れること。
