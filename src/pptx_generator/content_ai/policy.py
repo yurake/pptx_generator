@@ -5,10 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+import logging
 
 from pydantic import BaseModel, Field, ValidationError
 
 from . import prompts
+
+
+logger = logging.getLogger(__name__)
 
 class ContentAIPolicyError(RuntimeError):
     """AI ポリシー定義に関する例外。"""
@@ -120,6 +124,7 @@ class ContentAIPolicySet(BaseModel):
 def load_policy_set(path: Path) -> ContentAIPolicySet:
     """JSON ファイルからポリシー定義を読み込む。"""
 
+    logger.info("Loading AI policy definition from %s", path.resolve())
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
@@ -130,7 +135,13 @@ def load_policy_set(path: Path) -> ContentAIPolicySet:
         raise ContentAIPolicyError(msg) from exc
 
     try:
-        return ContentAIPolicySet.model_validate(payload)
+        policy_set = ContentAIPolicySet.model_validate(payload)
     except ValidationError as exc:
         msg = f"AI ポリシー定義の検証に失敗しました: {path}"
         raise ContentAIPolicyError(msg) from exc
+    logger.info(
+        "Loaded AI policy definition from %s (policies=%d)",
+        path.resolve(),
+        len(policy_set.policies),
+    )
+    return policy_set

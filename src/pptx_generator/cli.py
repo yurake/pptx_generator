@@ -69,6 +69,23 @@ def _configure_llm_logger() -> None:
         handler.setFormatter(formatter)
         llm_logger.addHandler(handler)
     llm_logger.setLevel(logging.INFO)
+    llm_logger.propagate = False
+
+
+def _configure_file_logging() -> None:
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    file_path = log_dir / "out.log"
+    root_logger = logging.getLogger()
+    if not any(
+        isinstance(handler, logging.FileHandler)
+        and getattr(handler, "baseFilename", None) == str(file_path)
+        for handler in root_logger.handlers
+    ):
+        handler = logging.FileHandler(file_path, encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
 
 
 def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
@@ -99,6 +116,7 @@ def app(verbose: bool, debug: bool) -> None:
     logging.basicConfig(
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
     _configure_llm_logger()
+    _configure_file_logging()
 
 
 def _prepare_branding(
@@ -266,6 +284,12 @@ def _dump_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     path.write_text(text, encoding="utf-8")
+    logger.info("Saved JSON to %s", path.resolve())
+
+
+def _load_jobspec(path: Path) -> JobSpec:
+    logger.info("Loading JobSpec from %s", path.resolve())
+    return JobSpec.parse_file(path)
 
 
 def _run_content_approval_pipeline(
@@ -842,7 +866,7 @@ def gen(
         raise click.exceptions.Exit(code=2)
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1077,7 +1101,7 @@ def content(
     """工程3 コンテンツ正規化: 承認済みコンテンツを検証し Spec へ適用する。"""
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1205,12 +1229,17 @@ def content(
     _dump_json(log_path, log_entries)
 
     if import_meta_path is not None:
+        logger.info("Content Import Meta: %s", import_meta_path)
         click.echo(f"Content Import Meta: {import_meta_path}")
     for warning in import_warnings:
+        logger.warning("%s", warning)
         click.echo(f"Warning: {warning}", err=True)
 
+    logger.info("Content Draft (AI): %s", draft_path)
     click.echo(f"Content Draft (AI): {draft_path}")
+    logger.info("AI Generation Meta: %s", ai_meta_path)
     click.echo(f"AI Generation Meta: {ai_meta_path}")
+    logger.info("AI Generation Log: %s", log_path)
     click.echo(f"AI Generation Log: {log_path}")
     return
 
@@ -1371,7 +1400,7 @@ def outline(
         return
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1521,7 +1550,7 @@ def mapping(  # noqa: PLR0913
 ) -> None:
     """工程5 マッピングを実行し rendering_ready.json を生成する。"""
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1853,10 +1882,12 @@ def tpl_extract(
             )
         
         spec_path.write_text(content, encoding="utf-8")
+        logger.info("Saved template spec to %s", spec_path.resolve())
 
         branding_payload = branding_result.to_branding_payload()
         branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
         branding_output_path.write_text(branding_text, encoding="utf-8")
+        logger.info("Saved branding payload to %s", branding_output_path.resolve())
 
         # 結果表示
         click.echo(f"テンプレート抽出が完了しました: {spec_path}")
@@ -2065,6 +2096,7 @@ def tpl_release(
             json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        logger.info("Saved template release to %s", release_path.resolve())
 
         if golden_runs:
             golden_runs_path = output_dir / "golden_runs.json"
@@ -2076,6 +2108,7 @@ def tpl_release(
                 ),
                 encoding="utf-8",
             )
+            logger.info("Saved golden run log to %s", golden_runs_path.resolve())
 
         report = build_release_report(current=release, baseline=baseline)
         report_path = output_dir / "release_report.json"
@@ -2083,6 +2116,7 @@ def tpl_release(
             json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        logger.info("Saved release report to %s", report_path.resolve())
 
         click.echo(f"テンプレートリリースメタを出力しました: {release_path}")
         click.echo(f"差分レポートを出力しました: {report_path}")
@@ -2131,7 +2165,7 @@ def _run_golden_specs(
         )
 
         try:
-            spec = JobSpec.parse_file(spec_path)
+            spec = _load_jobspec(spec_path)
         except SpecValidationError as exc:
             detail = json.dumps(exc.errors, ensure_ascii=False)
             message = (
@@ -2352,6 +2386,7 @@ def _emit_review_engine_analysis(
 
     adapter = AnalyzerReviewEngineAdapter()
     try:
+        logger.info("Loading analysis payload from %s", path.resolve())
         analysis_payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         logger.warning(
@@ -2374,6 +2409,7 @@ def _emit_review_engine_analysis(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    logger.info("Saved review engine payload to %s", output_path.resolve())
     context.add_artifact("review_engine_analysis_path", output_path)
     return output_path
 
@@ -2476,6 +2512,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(
         audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info("Saved audit log to %s", audit_path.resolve())
     context.add_artifact("audit_path", audit_path)
     return audit_path
 
