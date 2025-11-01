@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/pptx_generator_logo_embed.png" alt="PPTX GENERATOR">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/pptx_generator_logo_white.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/pptx_generator_logo_black.png">
+    <img src="assets/pptx_generator_logo_white.png" alt="PPTX GENERATOR">
+  </picture>
 </p>
 
 
