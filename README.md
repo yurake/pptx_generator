@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/pptx_generator_logo_white.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/pptx_generator_logo_black.png">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/pptx_generator_logo_black.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/pptx_generator_logo_white.png">
     <img src="assets/pptx_generator_logo_white.png" alt="PPTX GENERATOR">
   </picture>
 </p>
