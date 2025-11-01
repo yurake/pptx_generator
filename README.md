@@ -1,4 +1,7 @@
-# pptx_generator
+<p align="center">
+  <img src="assets/pptx_generator_logo_embed.png" alt="PPTX GENERATOR">
+</p>
+
 
 構造化されたプレゼン仕様を読み取り、ブランド統一された PowerPoint と PDF を短時間で作成する自動化ツールです。
 
