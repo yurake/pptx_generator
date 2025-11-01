@@ -757,8 +757,8 @@ flowchart TB
 - 対象工程: 横断（ドキュメント運用）
 - ゴール: ロードマップ項目にジョブスペック再設計ノートなどの参照リンクを追加し、関連ドキュメントの所在を明確化する。
 - 参照ドキュメント: [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md), [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md)
-- 参照 ToDo: [docs/todo/20251102-rm050-roadmap-link.md](../todo/20251102-rm050-roadmap-link.md)
-- 状況: 進行中（2025-11-02 着手）
+- 参照 ToDo: [docs/todo/archive/20251102-rm050-roadmap-link.md](../todo/archive/20251102-rm050-roadmap-link.md)
+- 状況: 完了（2025-11-01 更新）
 - 期待成果: RM-044〜RM-049 など関連項目の参照ドキュメント欄が統一され、Plan 承認内容の転記運用が徹底されている状態。
 - 次アクション: 参照追加後の運用フローを確認し、追加の参照整備が必要なロードマップ項目を棚卸しする。
 
