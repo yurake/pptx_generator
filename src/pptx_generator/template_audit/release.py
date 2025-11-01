@@ -8,6 +8,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+import logging
 
 from ..models import (
     TemplateRelease,
@@ -31,6 +32,9 @@ from ..models import (
     TemplateSpec,
 )
 from .environment import collect_environment_info
+
+
+logger = logging.getLogger(__name__)
 
 
 def build_template_release(
@@ -190,8 +194,11 @@ def build_template_release(
 def load_template_release(path: Path) -> TemplateRelease:
     """保存済みのテンプレートリリースメタを読み込む。"""
 
+    logger.info("Loading template release from %s", path.resolve())
     content = path.read_text(encoding="utf-8")
-    return TemplateRelease.model_validate_json(content)
+    release = TemplateRelease.model_validate_json(content)
+    logger.info("Loaded template release from %s", path.resolve())
+    return release
 
 
 def build_release_report(

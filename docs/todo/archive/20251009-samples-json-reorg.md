@@ -7,7 +7,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 
 - [x] ブランチ作成
 - [x] `sample_spec*.json` を `samples/json/` 配下へ移動
-  - メモ: 旧パス参照箇所をリストアップしておく
+  - メモ: 2025-10-31 時点で `sample_spec*.json` シリーズは `sample_jobspec.json` へ統合・廃止済み
 - [x] README と各種ガイドの参照パス更新
   - メモ: `samples/AGENTS.md`, `config/AGENTS.md`, `AGENTS.md` など
 - [x] テスト・CLI コマンドを新パスに追随させる

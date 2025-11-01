@@ -63,7 +63,7 @@ flowchart TB
         RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(完了)"]
         RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(完了)"]
         RM039["RM-039<br/>コンテンツ多形式<br/>インポート<br/>(完了)"]
-        RM040["RM-040<br/>コンテンツ生成AI<br/>オーケストレーション<br/>(未着手)"]
+        RM040["RM-040<br/>コンテンツ生成AI<br/>オーケストレーション<br/>(完了)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
     end
 
@@ -632,7 +632,7 @@ flowchart TB
 - 対象工程: 3（コンテンツ正規化）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-content-normalization.md](../design/stages/stage-03-content-normalization.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 状況: 完了（2025-10-26 更新）
 - 期待成果:
   - 提案／報告などユースケース別ポリシー定義とプロンプトテンプレート管理、適用状況の監査ログ化。
   - LLM 生成結果と Review Engine / HITL 承認の差分管理、再生成ワークフローの自動化。

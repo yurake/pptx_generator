@@ -1,4 +1,11 @@
-# pptx_generator
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/pptx_generator_logo_black.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/pptx_generator_logo_white.png">
+    <img src="assets/pptx_generator_logo_white.png" alt="PPTX GENERATOR">
+  </picture>
+</p>
+
 
 構造化されたプレゼン仕様を読み取り、ブランド統一された PowerPoint と PDF を短時間で作成する自動化ツールです。
 
@@ -47,6 +54,8 @@
 
 ## 使い方
 6 工程の流れに沿って作業します。詳細な業務フローは各ステージの要件ドキュメント（`docs/requirements/stages/`）を参照してください。
+
+> `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
 
 ### 工程 1: テンプレ準備
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
@@ -99,14 +108,20 @@
 ### 工程 3: コンテンツ正規化
 - 入力 JSON をスライド候補へ整形し、HITL で `content_approved.json` を作成します。
 - ガイドラインは `docs/requirements/stages/stage-03-content-normalization.md` にまとめています。
-- CLI で承認済み JSON を検証し Spec へ適用する場合は `pptx content` を利用します。
+- CLI で生成AIによるドラフトを作成する場合は `pptx content` を利用します（生成AIモードが既定です）。
   ```bash
+  # 生成AIドラフトを作成（content_draft.json などを出力）
+  uv run pptx content samples/json/sample_jobspec.json --content-source samples/contents/sample_import_content.txt --output .pptx/content
+
+  # 承認済み JSON を適用する場合
   uv run pptx content samples/json/sample_jobspec.json \
     --content-approved samples/json/sample_content_approved.json \
     --content-review-log samples/json/sample_content_review_log.json \
     --output .pptx/content
   # `.pptx/content/` に spec_content_applied.json / content_meta.json を出力
   ```
+  - 承認済み JSON を適用したい場合は `--content-approved` / `--content-review-log` を指定します。
+  - プレーンテキスト・PDF・URL など外部ソースから取り込む場合は `--content-source` を利用します。
 
 ### 工程 4: ドラフト構成設計
 - 章立てやページ順を確定し、HITL で `draft_approved.json` を承認します。
@@ -155,7 +170,8 @@
 - `analysis.json`: Analyzer/Refiner の診断結果
 - `review_engine_analyzer.json`: Analyzer の issues/fixes を Review Engine 用 `grade`・Auto-fix JSON Patch に変換したファイル
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 指定時に出力されるアンカー構造スナップショット
-- `spec_content_applied.json`: `pptx content` が出力する承認内容適用済み Spec のスナップショット
+- `content_draft.json` / `content_ai_log.json` / `ai_generation_meta.json`: 生成AIモードで出力されるドラフト本文・プロンプトログ・メタ情報
+- `spec_content_applied.json`: `--content-approved` 指定時に生成される承認内容適用済み Spec のスナップショット
 - `content_meta.json`: 承認済みコンテンツ／レビュー ログのハッシュや件数をまとめたメタ情報
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダ割付（`pptx mapping` または `pptx gen` 実行時に生成）
 - `rendering_log.json`: レンダリング監査結果（検出済み要素・警告コード・空プレースホルダー件数）
@@ -200,8 +216,9 @@
 
 #### `pptx content`
 
-- 工程3で整備した `content_approved.json` / `content_review_log.json` を検証し、Spec へ適用したスナップショットとメタ情報を出力します（`spec_path` を位置引数で指定）。
-- `--content-approved` は必須です。`--content-review-log` は任意で、指定した場合はメタ情報に件数やハッシュが記録されます。
+- 生成AIを利用したドラフト生成が既定です。`config/content_ai_policies.json` をロードし、`src/pptx_generator/content_ai/prompts.py` に定義された `prompt_id` をもとにスライド案を出力します。
+- `--content-source` でプレーンテキスト／PDF／URL からのインポート、`--content-approved` で承認済み JSON の適用が可能です。これらを指定した場合は非生成AIモードへ切り替わります。
+- `--ai-policy` でポリシー定義ファイルを差し替え、`--ai-policy-id` で適用するポリシーを明示できます（未指定時は `default_policy_id` を利用）。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -210,8 +227,23 @@
 | `--normalized-content <filename>` | 正規化した `content_approved.json` の保存名 | `content_approved.json` |
 | `--review-output <filename>` | 承認イベントログの正規化ファイル名 | `content_review_log.json` |
 | `--meta-filename <filename>` | 承認メタ情報のファイル名 | `content_meta.json` |
-| `--content-approved <path>` | 承認済みコンテンツ JSON（必須） | - |
+| `--content-source <value>` | プレーンテキスト / PDF / URL からドラフトを生成 | 指定なし |
+| `--ai-policy <path>` | 生成AIポリシー定義 JSON を差し替える | `config/content_ai_policies.json` |
+| `--ai-policy-id <value>` | 利用するポリシー ID | `default_policy_id` |
+| `--ai-output <filename>` | 生成ログ（プロンプト、警告）の出力名 | `content_ai_log.json` |
+| `--ai-meta <filename>` | 生成メタ情報の出力名 | `ai_generation_meta.json` |
+| `--slide-count <int>` | 生成するスライド枚数（未指定は LLM の判断、mock 時は 5 枚） | 指定なし |
+| `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
 | `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+
+**プロバイダー切り替え（環境変数）**
+- CLI 起動時に `.env` が自動で読み込まれるため、環境変数は `.env` へ記述して管理できます。
+- `PPTX_LLM_PROVIDER`: `mock`（既定） / `openai` / `azure-openai` / `claude` / `aws-claude`
+- **OpenAI**: `OPENAI_API_KEY`, 任意で `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`
+- **Azure OpenAI**: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, 任意で `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_TEMPERATURE`, `AZURE_OPENAI_MAX_TOKENS`
+- **Claude API**: `ANTHROPIC_API_KEY`, 任意で `ANTHROPIC_MODEL`, `ANTHROPIC_TEMPERATURE`, `ANTHROPIC_MAX_TOKENS`
+- **AWS Claude (Bedrock)**: `AWS_CLAUDE_MODEL_ID`, 任意で `AWS_REGION`, `AWS_CLAUDE_TEMPERATURE`, `AWS_CLAUDE_MAX_TOKENS`
+- 各プロバイダーを利用する際は対応する SDK（`openai`, `anthropic`, `boto3` など）を追加インストールしてください。
 
 #### `pptx outline`
 

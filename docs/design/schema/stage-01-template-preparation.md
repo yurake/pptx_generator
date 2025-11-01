@@ -79,9 +79,9 @@
     {
       "spec_path": "samples/json/sample_jobspec.json",
       "status": "passed",
-      "output_dir": ".pptx/release/golden_runs/sample_spec",
-      "pptx_path": ".pptx/release/golden_runs/sample_spec/sample_spec.pptx",
-      "analysis_path": ".pptx/release/golden_runs/sample_spec/analysis.json",
+      "output_dir": ".pptx/release/golden_runs/sample_jobspec",
+      "pptx_path": ".pptx/release/golden_runs/sample_jobspec/sample_jobspec.pptx",
+      "analysis_path": ".pptx/release/golden_runs/sample_jobspec/analysis.json",
       "pdf_path": null,
       "warnings": [],
       "errors": []

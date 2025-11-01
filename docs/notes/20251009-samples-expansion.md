@@ -3,7 +3,7 @@
 - 目的: テンプレート作成時の参照用として、最小構成サンプルとフル構成サンプルを用意し、利用者が要件を把握しやすい状態にする。
 
 ### 最小構成サンプル（Minimal）
-- ファイル: `samples/json/sample_spec_minimal.json`（新規）
+- ファイル: `samples/json/sample_jobspec.json`（旧 `sample_spec_extended.json` を統合）
 - レイアウト: 既定テンプレートの `Title Slide` / `Title and Content`
 - コンテンツ: タイトル、サブタイトル、単一スライドの箇条書き（フォント指定なし）
 - 目的: CLI 動作確認や JSON 仕様の雛形として活用してもらう
