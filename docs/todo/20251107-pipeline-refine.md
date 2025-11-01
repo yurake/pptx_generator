@@ -1,7 +1,7 @@
 ---
 目的: 工程2〜6の再設計準備（ジョブスペック雛形生成とコマンド整理）の要件・ロードマップ整理
 関連ブランチ: docs/pipeline-refine-plan
-関連Issue: 未作成
+関連Issue: #247
 roadmap_item: RM-TBD パイプライン再設計準備
 ---
 
@@ -30,7 +30,7 @@ roadmap_item: RM-TBD パイプライン再設計準備
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後にフロントマターを更新する
 - [ ] PR 作成
   - メモ: PR 番号・URL を記録。todo-auto-complete が未動作の場合のみ理由を記載する
