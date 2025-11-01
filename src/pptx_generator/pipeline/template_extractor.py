@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import re
+import unicodedata
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,13 +16,18 @@ from pptx import Presentation
 from pptx.shapes.base import BaseShape
 from pptx.shapes.placeholder import PlaceholderPicture, SlidePlaceholder
 
-from ..models import LayoutInfo, ShapeInfo, TemplateSpec
+from ..models import (JobSpecScaffold, JobSpecScaffoldBounds,
+                      JobSpecScaffoldMeta, JobSpecScaffoldPlaceholder,
+                      JobSpecScaffoldSlide, LayoutInfo, ShapeInfo,
+                      TemplateSpec)
 from .base import PipelineContext, PipelineStep
 
 logger = logging.getLogger(__name__)
 
 # SlideBullet拡張仕様で使用される可能性のあるアンカー名パターン
 SLIDE_BULLET_ANCHORS = {"bullets", "bullet_list", "content", "body"}
+JOBSPEC_SCHEMA_VERSION = "0.1"
+MAX_SAMPLE_TEXT_LENGTH = 200
 
 
 @dataclass
@@ -48,11 +57,16 @@ class TemplateExtractorStep:
             template_spec = self.extract_template_spec()
             output_path = self._determine_output_path(context)
             self._save_template_spec(template_spec, output_path)
-            
+            jobspec_scaffold = self.build_jobspec_scaffold(template_spec)
+            jobspec_path = self._determine_jobspec_path(output_path)
+            self._save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
+
             context.add_artifact("template_spec", template_spec)
             context.add_artifact("template_spec_path", output_path)
-            
-            logger.info("テンプレート抽出完了: %s", output_path)
+            context.add_artifact("jobspec_scaffold", jobspec_scaffold)
+            context.add_artifact("jobspec_path", jobspec_path)
+
+            logger.info("テンプレート抽出完了: %s (jobspec=%s)", output_path, jobspec_path)
             
         except Exception as exc:
             logger.error("テンプレート抽出に失敗: %s", exc)
@@ -226,12 +240,17 @@ class TemplateExtractorStep:
         """出力パスを決定する。"""
         if self.options.output_path:
             return self.options.output_path
-        
+
         context.workdir.mkdir(parents=True, exist_ok=True)
         if self.options.format == "yaml":
             return context.workdir / "template_spec.yaml"
         return context.workdir / "template_spec.json"
-    
+
+    @staticmethod
+    def _determine_jobspec_path(spec_output_path: Path) -> Path:
+        """jobspec.json の出力先パスを決定する。"""
+        return spec_output_path.with_name("jobspec.json")
+
     def _save_template_spec(self, template_spec: TemplateSpec, output_path: Path) -> None:
         """テンプレート仕様をファイルに保存する。"""
         if self.options.format == "yaml":
@@ -239,11 +258,143 @@ class TemplateExtractorStep:
             data = template_spec.model_dump()
             content = yaml.dump(data, allow_unicode=True, default_flow_style=False, indent=2)
         else:
-            import json
             content = json.dumps(template_spec.model_dump(), indent=2, ensure_ascii=False)
-        
+
         output_path.write_text(content, encoding="utf-8")
         logger.info("テンプレート仕様を保存: %s", output_path)
+
+    def build_jobspec_scaffold(self, template_spec: TemplateSpec) -> JobSpecScaffold:
+        """テンプレート情報からジョブスペック雛形を生成する。"""
+        template_path = self.options.template_path
+        template_id = self._derive_template_id(template_path)
+        meta = JobSpecScaffoldMeta(
+            schema_version=JOBSPEC_SCHEMA_VERSION,
+            template_path=str(template_path),
+            template_id=template_id,
+            generated_at=datetime.now(timezone.utc).isoformat(),
+            layout_count=len(template_spec.layouts),
+        )
+
+        counters: defaultdict[str, int] = defaultdict(int)
+        slides: list[JobSpecScaffoldSlide] = []
+
+        for layout in template_spec.layouts:
+            counters[layout.name] += 1
+            sequence = counters[layout.name]
+            slide_id = self._resolve_slide_id(layout, sequence)
+
+            placeholders: list[JobSpecScaffoldPlaceholder] = []
+            for index, anchor in enumerate(layout.anchors, start=1):
+                anchor_name = anchor.name or f"shape_{index:02d}"
+                bounds = JobSpecScaffoldBounds(
+                    left_in=anchor.left_in,
+                    top_in=anchor.top_in,
+                    width_in=anchor.width_in,
+                    height_in=anchor.height_in,
+                )
+                placeholder = JobSpecScaffoldPlaceholder(
+                    anchor=anchor_name,
+                    kind=self._infer_placeholder_kind(anchor),
+                    placeholder_type=anchor.placeholder_type,
+                    shape_type=anchor.shape_type,
+                    is_placeholder=anchor.is_placeholder,
+                    bounds=bounds,
+                    sample_text=self._sanitize_sample_text(anchor.text),
+                    notes=self._collect_placeholder_notes(anchor),
+                )
+                placeholders.append(placeholder)
+
+            slides.append(
+                JobSpecScaffoldSlide(
+                    id=slide_id,
+                    layout=layout.name,
+                    sequence=sequence,
+                    placeholders=placeholders,
+                )
+            )
+
+        return JobSpecScaffold(meta=meta, slides=slides)
+
+    def _save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
+        """ジョブスペック雛形をファイルに保存する。"""
+        output_path.write_text(
+            json.dumps(jobspec.model_dump(), indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        logger.info("ジョブスペック雛形を保存: %s", output_path)
+
+    def _resolve_slide_id(self, layout: LayoutInfo, sequence: int) -> str:
+        base = None
+        if layout.identifier:
+            base = f"id_{layout.identifier}"
+        if not base:
+            base = self._slugify_layout_name(layout.name)
+        if not base:
+            base = "slide"
+        suffix = f"{sequence:02d}"
+        return f"{base}-{suffix}"
+
+    def _infer_placeholder_kind(self, shape: ShapeInfo) -> str:
+        placeholder_type = (shape.placeholder_type or "").upper()
+        if placeholder_type in {"TITLE", "CENTER_TITLE", "SUBTITLE", "BODY", "CONTENT", "TEXT"}:
+            return "text"
+        if placeholder_type in {"PICTURE", "CLIP_ART", "BITMAP", "OBJECT"}:
+            return "image"
+        if placeholder_type in {"TABLE"}:
+            return "table"
+        if placeholder_type in {"CHART"}:
+            return "chart"
+
+        shape_type = (shape.shape_type or "").lower()
+        if "chart" in shape_type or "graph" in shape_type:
+            return "chart"
+        if "table" in shape_type:
+            return "table"
+        if "picture" in shape_type or "image" in shape_type or "bitmap" in shape_type:
+            return "image"
+        if shape.text:
+            return "text"
+        return "other"
+
+    def _sanitize_sample_text(self, text: str | None) -> str | None:
+        if text is None:
+            return None
+        cleaned_lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if not cleaned_lines:
+            cleaned = text.strip()
+            if not cleaned:
+                return None
+        else:
+            cleaned = "\n".join(cleaned_lines)
+        if len(cleaned) > MAX_SAMPLE_TEXT_LENGTH:
+            return cleaned[:MAX_SAMPLE_TEXT_LENGTH].rstrip() + "..."
+        return cleaned
+
+    def _collect_placeholder_notes(self, shape: ShapeInfo) -> list[str]:
+        notes: list[str] = []
+        if shape.conflict:
+            notes.append(shape.conflict)
+        if shape.missing_fields:
+            notes.append("missing_fields: " + ", ".join(shape.missing_fields))
+        if shape.error:
+            notes.append(shape.error)
+        if shape.width_in <= 0 or shape.height_in <= 0:
+            notes.append("size_not_positive")
+        return notes
+
+    @staticmethod
+    def _slugify_layout_name(name: str | None) -> str:
+        normalized = unicodedata.normalize("NFKC", (name or "").strip())
+        normalized = normalized.replace(" ", "_")
+        normalized = re.sub(r"[\s/\\]+", "_", normalized)
+        normalized = re.sub(r"[^0-9A-Za-z_\-一-龯ぁ-んァ-ンー]+", "", normalized)
+        return normalized.lower()
+
+    @staticmethod
+    def _derive_template_id(path: Path) -> str:
+        stem = unicodedata.normalize("NFKC", path.stem)
+        stem = re.sub(r"[^0-9A-Za-z_\-一-龯ぁ-んァ-ンー]+", "", stem)
+        return stem or "template"
 
 
 class TemplateExtractor:
@@ -256,16 +407,27 @@ class TemplateExtractor:
     def extract(self) -> TemplateSpec:
         """テンプレート抽出を実行してTemplateSpecを返す。"""
         return self.step.extract_template_spec()
-    
+
+    def build_jobspec_scaffold(self, template_spec: TemplateSpec) -> JobSpecScaffold:
+        """テンプレート仕様からジョブスペック雛形を構築する。"""
+        return self.step.build_jobspec_scaffold(template_spec)
+
+    def save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
+        """ジョブスペック雛形を保存する。"""
+        self.step._save_jobspec_scaffold(jobspec, output_path)
+
     def extract_and_save(self, output_path: Optional[Path] = None) -> Path:
         """テンプレート抽出を実行してファイルに保存する。"""
         template_spec = self.extract()
+        jobspec_scaffold = self.build_jobspec_scaffold(template_spec)
         
         if output_path is None:
             if self.options.format == "yaml":
                 output_path = Path("template_spec.yaml")
             else:
                 output_path = Path("template_spec.json")
-        
+
         self.step._save_template_spec(template_spec, output_path)
+        jobspec_path = self.step._determine_jobspec_path(output_path)
+        self.step._save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
         return output_path
