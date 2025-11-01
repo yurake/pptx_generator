@@ -5,6 +5,7 @@
 - `json/sample_content_approved.json`: 工程3で承認済みとなったカードのスナップショット。Audit ログや後工程連携のテストに利用する。
 - `json/sample_content_review_log.json`: 承認イベントログの例。アクション／AI 評価の記録形式を示す。
 - `json/sample_template_layouts.jsonl`: 工程2のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。
+- `extract/jobspec.json`: 工程2の `tpl-extract` が出力するジョブスペック雛形のサンプル。テンプレ由来のプレースホルダー情報を確認できる。
 - `text/sample_import_content.txt`: 外部ソース取り込み向けのプレーンテキスト例。`pptx content --content-source` で工程3インポートを検証する際に利用する。
 - `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
 - `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトに加え、RM-043 で拡充予定のバリエーションもここへ集約する。
