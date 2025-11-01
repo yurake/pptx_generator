@@ -1,7 +1,7 @@
 ---
 目的: ロードマップ項目 RM-044〜RM-049 の参照ドキュメントにジョブスペック再設計ノートを追加し、情報の所在を明確化する
 関連ブランチ: docs/rm050-roadmap-link
-関連Issue: 未作成
+関連Issue: #250
 roadmap_item: RM-050 ロードマップ参照整備
 ---
 
@@ -37,7 +37,7 @@ roadmap_item: RM-050 ロードマップ参照整備
   - [x] docs/design 配下（影響なしを確認）
   - [x] docs/runbook 配下（影響なしを確認）
   - [x] README.md / AGENTS.md（影響なしを確認）
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 対応する Issue は未作成のため継続
 - [ ] PR 作成
   - メモ: 承認後に PR 作成予定、PR 番号は作成後に記録
