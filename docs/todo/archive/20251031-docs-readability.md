@@ -28,8 +28,8 @@ roadmap_item: RM-043 ドキュメント可読性向上
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: #244 を設定
-- [ ] PR 作成
-  - メモ: 未着手
+- [x] PR 作成
+  - メモ: PR #246 https://github.com/yurake/pptx_generator/pull/246（2025-11-01 完了）
 
 ## メモ
 - README / 要件 / 設計の構成整理まで完了。後続で README の詳細コマンド節と関連 runbook の整合を確認する。

@@ -32,7 +32,7 @@ flowchart TB
         RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM043["RM-043<br/>ドキュメント可読性向上<br/>(進行中)"]
+        RM043["RM-043<br/>ドキュメント可読性向上<br/>(完了)"]
     end
 
     subgraph ST1["Stage 1: テンプレ準備"]
@@ -605,7 +605,7 @@ flowchart TB
 - 対象工程: 1（テンプレ準備）
 - 参照ドキュメント: [docs/notes/20251026-rm043-sample-template-plan.md](../notes/20251026-rm043-sample-template-plan.md), [docs/notes/20251031-rm043-template-restart.md](../notes/20251031-rm043-template-restart.md)
 - 参照 ToDo: [docs/todo/archive/20251026-sample-template-expansion.md](../todo/archive/20251026-sample-template-expansion.md)
-- 状況: 完了（2025-10-31 更新）
+- 状況: 完了（2025-11-01 更新）
 - 期待成果:
   - サンプルテンプレートに追加レイアウトや変種（セクション区切り、比較系など）を実装し、命名規約を `samples/AGENTS.md` へ反映。
   - `samples/json/` や `samples/assets/` のバリエーションを増やし、新レイアウトとブランド設定を組み合わせたゴールデンケースを整備。
