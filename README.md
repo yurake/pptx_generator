@@ -30,6 +30,56 @@
 
 工程 3・4 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/requirements.md` にまとめています。
 
+```mermaid
+flowchart TD
+  %% ======= Styles =======
+  classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
+  classDef file fill:#f3f4f6,stroke:#4b5563,stroke-width:1px,color:#111827,font-weight:bold;
+  classDef userfile fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b,font-weight:bold;
+  classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
+
+  %% ======= Stage 1 =======
+  Tmpl["**template.pptx（ユーザー準備）**"]:::userfile --> S1["**工程 1 テンプレ準備**"]:::stage
+  S1 --> Tmpl_out["**template.pptx**"]:::file
+
+  %% ======= Stage 2 =======
+  Tmpl_out --> S2["**工程 2 テンプレ構造抽出**"]:::stage
+  S2 --> Brand["**branding.json**"]:::file
+  S2 --> Layouts["**layouts.jsonl**"]:::file
+
+  %% ======= Stage 3 =======
+  Spec["**content_spec_initial.json（ユーザー準備）**"]:::userfile --> S3["**工程 3 コンテンツ正規化 (HITL)**"]:::stage
+  S3 --> Content["**content_approved.json**"]:::file
+
+  %% ======= Stage 4 =======
+  Content --> S4["**工程 4 ドラフト構成設計 (HITL)**"]:::stage
+  Layouts --> S4
+  S4 --> Draft["**draft_approved.json**"]:::file
+
+  %% ======= Stage 5 =======
+  Draft --> S5["**工程 5 マッピング**"]:::stage
+  Content --> S5
+  Brand --> S5
+  Layouts --> S5
+  S5 --> Ready["**rendering_ready.json**"]:::file
+
+  %% ======= Stage 6 =======
+  Ready --> S6["**工程 6 レンダリング**"]:::stage
+  Tmpl_out --> S6
+  Brand --> S6
+  S6 --> PPTX["**proposal.pptx（最終成果物）**"]:::final
+  S6 --> PDF["**proposal.pdf（最終成果物）**"]:::final
+
+  %% ======= Legend =======
+  subgraph Legend[凡例]
+    direction LR
+    A1["青: **工程（自動/HITL）**"]:::stage
+    A2["灰: **システム生成ファイル**"]:::file
+    A3["緑: **ユーザー準備ファイル**"]:::userfile
+    A4["金: **最終成果物**"]:::final
+  end
+```
+
 ## このドキュメントの読み方
 - まずは「クイックスタート」で環境構築と基本フローを確認します。
 - 詳細な CLI 手順を探す場合は「CLI チートシート」へ。各工程のガイドラインや要件は `docs/requirements/stages/`、設計の詳細は `docs/design/` を参照してください。
