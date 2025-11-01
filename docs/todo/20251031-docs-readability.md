@@ -34,3 +34,4 @@ roadmap_item: RM-043 ドキュメント可読性向上
 ## メモ
 - README / 要件 / 設計の構成整理まで完了。後続で README の詳細コマンド節と関連 runbook の整合を確認する。
 - README の工程図を参照する導線を requirements/design/runbook/roadmap に追記済み。
+
