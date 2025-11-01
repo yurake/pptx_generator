@@ -203,10 +203,13 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
 - CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
 - テスト実行後は `.pptx/gen/` や `.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
 
-## 設定とテンプレート
-- `config/rules.json`: タイトル・箇条書きの文字数、段落レベル、禁止ワードを定義。
-- `config/branding.json`: `version: "layout-style-v1"` のスキーマでフォント・カラー・要素別スタイル・レイアウト個別設定を定義。
-- テンプレ運用ルールやブランド設定の更新手順は `config/AGENTS.md` と `docs/policies/config-and-templates.md` を参照します。
+## 設定リファレンス
+| ファイル | 役割 | 変更時に参照するドキュメント |
+| --- | --- | --- |
+| `config/rules.json` | 文字数上限・段落レベル・禁止ワードなど検証ルールを定義 | `docs/policies/config-and-templates.md` |
+| `config/branding.json` | フォント・配色・レイアウト個別設定を管理する `layout-style-v1` スキーマ | `config/AGENTS.md` |
+
+テンプレ抽出やリリースの詳細な運用フローは `docs/design/cli-command-reference.md` および `docs/design/design.md` のテンプレ関連節を参照してください。
 
 ## 開発ガイドライン
 - コントリビューション規約は `CONTRIBUTING.md` にまとめています。
