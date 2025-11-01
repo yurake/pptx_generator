@@ -1,7 +1,7 @@
 ---
 目的: RM-044 ジョブスペック雛形自動生成の仕様設計と実装を完了する
 関連ブランチ: feat/rm044-spec-scaffold
-関連Issue: 未作成
+関連Issue: #249
 roadmap_item: RM-044 ジョブスペック雛形自動生成
 ---
 
@@ -31,7 +31,7 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 関連 Issue が作成されたら番号を記載する。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録し、todo-auto-complete の結果を確認する。
