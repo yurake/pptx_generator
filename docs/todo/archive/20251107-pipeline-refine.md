@@ -31,7 +31,7 @@ roadmap_item: RM-TBD パイプライン再設計準備
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後にフロントマターを更新する
-- [ ] PR 作成
+- [x] PR 作成
   - メモ: PR 番号・URL を記録。todo-auto-complete が未動作の場合のみ理由を記載する
 
 ## メモ
