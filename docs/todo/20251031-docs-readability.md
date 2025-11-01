@@ -15,17 +15,17 @@ roadmap_item: RM-043 ドキュメント可読性向上
   - メモ: README 導線整理、requirements/design にクイックガイドと章再編を反映。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
-- [ ] 実装
-  - メモ: 未着手
-- [ ] テスト・検証
-  - メモ: 未着手
-- [ ] ドキュメント更新
-  - メモ: 未着手
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 実装
+  - メモ: README のワークフロー節に工程図を追加し、図内の表記ゆれを解消。
+- [x] テスト・検証
+  - メモ: ドキュメント更新後の CLI 影響を確認するため `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_gen_generates_outputs` を実行し成功。
+- [x] ドキュメント更新
+  - メモ: README の工程図に合わせて roadmap / requirements / design / runbook を同期済み。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: #244 を設定
 - [ ] PR 作成
@@ -33,3 +33,4 @@ roadmap_item: RM-043 ドキュメント可読性向上
 
 ## メモ
 - README / 要件 / 設計の構成整理まで完了。後続で README の詳細コマンド節と関連 runbook の整合を確認する。
+- README の工程図を参照する導線を requirements/design/runbook/roadmap に追記済み。

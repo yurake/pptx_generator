@@ -32,7 +32,7 @@ flowchart TB
         RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM043["RM-043<br/>ドキュメント可読性向上<br/>(未着手)"]
+        RM043["RM-043<br/>ドキュメント可読性向上<br/>(進行中)"]
     end
 
     subgraph ST1["Stage 1: テンプレ準備"]
@@ -672,9 +672,9 @@ flowchart TB
 - 対象工程: 全工程（共通ドキュメント整備）
 - 参照ドキュメント: [README.md](../README.md), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
 - 参照 ToDo: [docs/todo/20251031-docs-readability.md](../todo/20251031-docs-readability.md)
-- 状況: 未着手（2025-10-31 登録）
+- 状況: 進行中（2025-11-01 更新）
 - 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備。
-- 再開条件: ユーザーが明示的に再開指示を出すこと。
+- 次アクション: README の工程図追加に合わせた関連ドキュメント整合を完了させ、PR 作成まで進める。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
