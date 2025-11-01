@@ -406,6 +406,12 @@ class AzureOpenAIChatClient:
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
         temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.3"))
         max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
+        endpoint = endpoint.rstrip("/")
+        lowered = endpoint.lower()
+        for suffix in ("/openai/responses", "/openai"):
+            if lowered.endswith(suffix):
+                endpoint = endpoint[: -len(suffix)]
+                lowered = endpoint.lower()
         client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=endpoint)
         return cls(client, deployment=deployment, api_version=api_version, temperature=temperature, max_tokens=max_tokens)
 
@@ -417,15 +423,40 @@ class AzureOpenAIChatClient:
         deployment = request.policy.model or self._deployment
         if deployment == "mock-local":
             deployment = self._deployment
-        response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-            model=deployment,
-            messages=messages,
-            temperature=self._temperature,
-            max_tokens=self._max_tokens,
+        from openai.types.responses import ResponseOutputMessage
+        from openai.types.responses.response_output_text import ResponseOutputText
+        from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+
+        kwargs: dict[str, object] = {
+            "model": deployment,
+            "input": messages,
+            "temperature": self._temperature,
+        }
+        if self._max_tokens > 0:
+            kwargs["max_output_tokens"] = self._max_tokens
+        response = self._client.responses.create(  # type: ignore[attr-defined]
+            **kwargs,
         )
-        content = response.choices[0].message.content  # type: ignore[index]
-        text = content if isinstance(content, str) else "".join(content)
-        return _build_response_from_text(text, request, model=deployment)
+
+        text_segments: list[str] = []
+        refusal_segments: list[str] = []
+        for item in getattr(response, "output", []) or []:
+            if isinstance(item, ResponseOutputMessage):
+                for content in item.content:
+                    if isinstance(content, ResponseOutputText):
+                        text_segments.append(content.text)
+                    elif isinstance(content, ResponseOutputRefusal):
+                        refusal_segments.append(content.refusal)
+
+        raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
+        refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
+        return _build_response_from_text(
+            raw_text,
+            request,
+            model=deployment,
+            finish_reason=(response.incomplete_details.reason if getattr(response, "incomplete_details", None) else None),
+            refusal=refusal_text,
+        )
 
 
 class AnthropicClaudeClient:
@@ -482,24 +513,61 @@ class AnthropicClaudeClient:
 class AwsClaudeClient:
     """AWS Bedrock Claude クライアント。"""
 
-    def __init__(self, runtime_client, *, model_id: str, max_tokens: int) -> None:
+    def __init__(
+        self,
+        runtime_client,
+        *,
+        model_id: str,
+        max_tokens: int,
+        inference_profile_arn: str | None,
+    ) -> None:
         self._client = runtime_client
         self._model_id = model_id
         self._max_tokens = max_tokens
+        self._inference_profile_arn = inference_profile_arn
 
     @classmethod
     def from_env(cls) -> "AwsClaudeClient":
         try:
             import boto3
+            from botocore.exceptions import NoCredentialsError
         except ImportError as exc:  # pragma: no cover - missing optional dependency
             msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
             raise LLMClientConfigurationError(msg) from exc
 
         model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+        inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
         region = os.getenv("AWS_REGION")
-        runtime_client = boto3.client("bedrock-runtime", region_name=region) if region else boto3.client("bedrock-runtime")
+        profile = os.getenv("AWS_PROFILE")
+
+        session_kwargs: dict[str, object] = {}
+        if profile:
+            session_kwargs["profile_name"] = profile
+        if region:
+            session_kwargs["region_name"] = region
+        session = boto3.Session(**session_kwargs)
+        credentials = session.get_credentials()
+        if credentials is None:
+            raise LLMClientConfigurationError(
+                "AWS 認証情報が見つかりません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定するか、`aws configure` で設定してください。"
+            )
+
+        client_kwargs: dict[str, object] = {}
+        if region:
+            client_kwargs["region_name"] = region
+        try:
+            runtime_client = session.client("bedrock-runtime", **client_kwargs)
+        except NoCredentialsError as exc:
+            raise LLMClientConfigurationError(
+                "AWS 認証情報を利用できません。環境変数または共有クレデンシャルで設定してください。"
+            ) from exc
         max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        return cls(runtime_client, model_id=model_id, max_tokens=max_tokens)
+        return cls(
+            runtime_client,
+            model_id=model_id,
+            max_tokens=max_tokens,
+            inference_profile_arn=inference_profile_arn,
+        )
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         payload = {
@@ -522,12 +590,25 @@ class AwsClaudeClient:
         model_id = request.policy.model or self._model_id
         if model_id == "mock-local":
             model_id = self._model_id
-        response = self._client.invoke_model(
-            modelId=model_id,
-            body=json.dumps(payload),
-            contentType="application/json",
-            accept="application/json",
-        )
+        invoke_kwargs = {
+            "modelId": model_id,
+            "body": json.dumps(payload),
+            "contentType": "application/json",
+            "accept": "application/json",
+        }
+        if self._inference_profile_arn:
+            invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
+
+        try:
+            response = self._client.invoke_model(**invoke_kwargs)
+        except Exception as exc:  # pragma: no cover - AWS runtime errors
+            from botocore.exceptions import NoCredentialsError
+
+            if isinstance(exc, NoCredentialsError):
+                raise LLMClientConfigurationError(
+                    "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
+                ) from exc
+            raise
         body = response.get("body")
         if hasattr(body, "read"):
             body_text = body.read()
