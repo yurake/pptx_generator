@@ -55,6 +55,8 @@ flowchart TB
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
         RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
+        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(未着手)"]
+        RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(未着手)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
@@ -66,6 +68,7 @@ flowchart TB
         RM039["RM-039<br/>コンテンツ多形式<br/>インポート<br/>(完了)"]
         RM040["RM-040<br/>コンテンツ生成AI<br/>オーケストレーション<br/>(完了)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
+        RM046["RM-046<br/>生成AIブリーフ<br/>構成自動化<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
@@ -75,6 +78,7 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
+        RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(未着手)"]
     end
 
     subgraph ST5["Stage 5: マッピング"]
@@ -86,6 +90,7 @@ flowchart TB
         RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
         RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(完了)"]
         RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(完了)"]
+        RM048["RM-048<br/>工程4+5<br/>統合CLI整備<br/>(未着手)"]
     end
 
     subgraph ST6["Stage 6: レンダリング・仕上げ"]
@@ -100,6 +105,7 @@ flowchart TB
         RM037["RM-037<br/>パイプライン疎結合<br/>CLI 再設計<br/>(完了)"]
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
+        RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(未着手)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -203,6 +209,16 @@ flowchart TB
     RM036 --> RM041
     RM023 --> RM042
     RM005 --> RM042
+    RM022 --> RM044
+    RM028 --> RM044
+    RM044 --> RM045
+    RM040 --> RM046
+    RM046 --> RM047
+    RM036 --> RM047
+    RM047 --> RM048
+    RM025 --> RM048
+    RM031 --> RM048
+    RM048 --> RM049
 ```
 
 ## 個別状況
@@ -675,6 +691,66 @@ flowchart TB
 - 状況: 進行中（2025-11-01 更新）
 - 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備。
 - 次アクション: README の工程図追加に合わせた関連ドキュメント整合を完了させ、PR 作成まで進める。
+
+<a id="rm-044"></a>
+### RM-044 ジョブスペック雛形自動生成
+- 対象工程: 2（テンプレ構造抽出）
+- ゴール: テンプレ抽出時にページ単位の spec 雛形を自動生成し、工程3以降で共通利用できる `spec_scaffold.json` を整備する。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: 作成予定（本ブランチでロードマップ項目分割後に発行）
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: CLI/API 仕様、スキーマ定義、サンプルデータ。工程3 の `pptx content` が scaffold を入力に受け取れること。
+- 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
+
+<a id="rm-045"></a>
+### RM-045 テンプレ抽出検証ラッパー整備
+- 対象工程: 2（テンプレ構造抽出）
+- ゴール: `tpl-extract` と `layout-validate` の連続実行を自動化し、抽出直後の検証をワンコマンドで行えるようにする。
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: `tpl-extract --validate`（仮）仕様、CI での再実行サンプル、ユーザー向け手順書。
+- 次アクション: CLI オプション案とログ出力フォーマットを整理し、UX 観点の要件レビューを行う。
+
+<a id="rm-046"></a>
+### RM-046 生成AIブリーフ構成自動化
+- 対象工程: 3（コンテンツ正規化）
+- ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
+- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: 生成AIモードの `pptx content` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
+- 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
+
+<a id="rm-047"></a>
+### RM-047 テンプレ統合構成生成AI連携
+- 対象工程: 4（ドラフト構成設計）
+- ゴール: 工程3で生成されたブリーフと工程2の spec 雛形をマージし、`layout_hint` 付きの `draft_approved.json` 下書きを生成する。
+- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: 生成AIと HITL の連携仕様、`pptx outline` 拡張案、差戻しログの整合。
+- 次アクション: 工程3出力とテンプレ JSON の突合ロジックを設計し、品質ゲートの変化を洗い出す。
+
+<a id="rm-048"></a>
+### RM-048 工程4+5 統合CLI整備
+- 対象工程: 4 / 5（ドラフト構成設計・マッピング）
+- ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
+- 次アクション: ラッパーの入出力とエラーハンドリング要件をまとめ、CI フローへの組み込み案を作成する。
+
+<a id="rm-049"></a>
+### RM-049 pptx gen スコープ最適化
+- 対象工程: 6（レンダリング）
+- ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4+5 ラッパーと責務を分離する。
+- 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md), [docs/runbooks/support.md](../runbooks/support.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-07 追加）
+- 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。
+- 次アクション: 既存 `pptx gen` の呼び出し箇所を棚卸しし、後方互換サポート方針を決める。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
