@@ -12,6 +12,7 @@
 ## design
 - システム構成やアーキテクチャを説明する資料群。
 - `docs/design/design.md`: PPTX 生成基盤の設計概要。
+- `docs/design/cli-command-reference.md`: CLI パイプライン設計と主要オプションの一覧。
 
 ## notes
 - 議事メモや調査結果などのラフな情報を置く場所。
