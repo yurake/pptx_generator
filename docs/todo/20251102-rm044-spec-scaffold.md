@@ -14,8 +14,8 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
     - リスク/前提: 既存 `template_spec.json`・`branding.json` の出力互換を維持し、テンプレから取得できない情報は空欄とする。工程5の品質ゲートや監査ログの役割は変えない。ドキュメントで工程3以降とのインターフェースを明記して誤用を防ぐ。
     - テスト: TemplateExtractor ユニットテストで雛形生成を検証し、`uv run pptx tpl-extract samples/templates/templates.pptx` を用いた CLI 統合テストで `jobspec.json` 出力とスキーマ整合、既存成果物への影響がないことを確認する。
     - ロールバック: 追加したモデル・生成処理・ CLI ログ出力・サンプル・ドキュメントを削除し、`pptx tpl-extract` の出力を従来のファイル構成へ戻す。
-- [ ] 設計・実装方針の確定
-  - メモ: spec_scaffold.json のスキーマ案と CLI/API 連携設計をまとめる。
+- [x] 設計・実装方針の確定
+  - メモ: 設計内容を `docs/design/rm044-jobspec-scaffold.md` に整理し、jobspec.json のスキーマ・生成手順・テスト戦略・ロールバックを定義した。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: 必要に応じて docs/requirements および docs/design を更新する。
   - [ ] docs/requirements 配下
