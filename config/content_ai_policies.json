@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "default_policy_id": "proposal-default",
+  "policies": [
+    {
+      "id": "proposal-default",
+      "name": "提案書ドラフト標準",
+      "description": "提案書および報告書向けに共通利用するポリシー。",
+      "default_intent": "proposal",
+      "prompt_id": "content.baseline",
+      "model": "mock-local",
+      "safeguards": {
+        "tone": "corporate",
+        "prohibited_keywords": [
+          "機密",
+          "非公開"
+        ]
+      },
+      "slide_policies": [
+        {
+          "layout": "Title",
+          "intent": "cover",
+          "prompt_id": "content.cover"
+        },
+        {
+          "layout": "Two Column Detail",
+          "intent": "detail"
+        },
+        {
+          "layout": "One Column Detail",
+          "intent": "summary",
+          "prompt_id": "content.summary"
+        }
+      ]
+    }
+  ]
+}

@@ -152,6 +152,43 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert charts, "チャートが描画されていること"
 
 
+def test_cli_content_ai_generation(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_jobspec.json")
+    output_dir = tmp_path / "content-ai"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "content",
+            str(spec_path),
+            "--ai-policy-id",
+            "proposal-default",
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    draft_path = output_dir / "content_draft.json"
+    meta_path = output_dir / "ai_generation_meta.json"
+    log_path = output_dir / "content_ai_log.json"
+
+    assert draft_path.exists()
+    assert meta_path.exists()
+    assert log_path.exists()
+
+    draft_payload = json.loads(draft_path.read_text(encoding="utf-8"))
+    meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    log_payload = json.loads(log_path.read_text(encoding="utf-8"))
+
+    assert "slides" in draft_payload
+    assert meta_payload["policy_id"] == "proposal-default"
+    assert len(log_payload) == len(draft_payload["slides"])
+
+
 def test_cli_gen_with_content_approved(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     content_path = CONTENT_APPROVED_SAMPLE

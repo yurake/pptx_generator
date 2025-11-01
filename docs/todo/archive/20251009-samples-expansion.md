@@ -7,7 +7,7 @@ roadmap_item: RM-002 エージェント運用ガイド整備
 
 - [x] まずはブランチ作成
 - [x] 最小構成サンプルの仕様とテンプレートを整理し、既存ファイルを必要に応じて更新する
-  - メモ: `samples/json/sample_spec_minimal.json` を新設し、`uv run pptx gen samples/json/sample_spec_minimal.json --workdir .pptxgen/minimal` で生成を確認
+  - メモ: 旧 `sample_spec_minimal.json` は 2025-10-31 の再編で廃止し、最小構成の検証はテストフィクスチャで生成する運用へ移行済み
 - [x] フル構成サンプル（多レイアウト・画像・表・グラフ想定）の仕様とテンプレートを作成し、差分を反映する
   - メモ: `samples/json/sample_jobspec.json` を更新し、`samples/templates/templates.pptx` を追加
 - [x] ドキュメントと README 類にサンプル利用ガイドを追記し、参照先を整理する

@@ -6,8 +6,7 @@
   - 12 ページ構成 / 7 レイアウト種別。
   - `Two Column Detail` が 5 枚と偏りが大きく、タイムライン・比較・ファクトシート以外の特殊レイアウトが不足。
   - 表／画像／テキストボックスの組み合わせも限定的（グラフ未使用）。
-- `samples/json/sample_spec_minimal.json`
-  - `Title`＋`One Column Detail` の 2 枚のみ。
+- 旧 `sample_spec_minimal.json` は撤廃し、最小構成のテストは `tests/test_cli_outline.py` で動的生成する。
 - `samples/json/sample_content_approved.json`
   - 3 カード（cover / agenda / problem）のみで intent/type が限定的。
 - `samples/json/sample_template_layouts.jsonl`

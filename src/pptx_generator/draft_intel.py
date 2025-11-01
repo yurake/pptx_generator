@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping
 
 from .models import (DraftAnalyzerSummary, DraftLayoutScoreDetail,
                      DraftTemplateMismatch)
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -49,6 +53,7 @@ class ReturnReasonTemplate:
 
 
 def _load_json(path: Path) -> object:
+    logger.info("Loading JSON from %s", path.resolve())
     return json.loads(path.read_text(encoding="utf-8"))
 
 

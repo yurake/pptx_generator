@@ -11,11 +11,15 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dotenv import load_dotenv
 
 from .branding_extractor import (
     BrandingExtractionError,
     extract_branding_config,
 )
+from .content_ai import (ContentAIOrchestrationError, ContentAIOrchestrator,
+                         ContentAIPolicyError, LLMClientConfigurationError,
+                         MockLLMClient, create_llm_client, load_policy_set)
 from .content_import import ContentImportError, ContentImportService
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationSuite)
@@ -45,8 +49,43 @@ DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
+DEFAULT_AI_POLICY_PATH = Path("config/content_ai_policies.json")
 
 logger = logging.getLogger(__name__)
+
+
+load_dotenv()
+
+
+def _configure_llm_logger() -> None:
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    llm_logger = logging.getLogger("pptx_generator.content_ai.llm")
+    if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(log_dir / "out.log") for h in llm_logger.handlers):
+        handler = logging.FileHandler(log_dir / "out.log", encoding="utf-8")
+        formatter = logging.Formatter(
+            fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+        handler.setFormatter(formatter)
+        llm_logger.addHandler(handler)
+    llm_logger.setLevel(logging.INFO)
+    llm_logger.propagate = False
+
+
+def _configure_file_logging() -> None:
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    file_path = log_dir / "out.log"
+    root_logger = logging.getLogger()
+    if not any(
+        isinstance(handler, logging.FileHandler)
+        and getattr(handler, "baseFilename", None) == str(file_path)
+        for handler in root_logger.handlers
+    ):
+        handler = logging.FileHandler(file_path, encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
 
 
 def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
@@ -69,12 +108,15 @@ def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
 
 
 @click.group(help="JSON 仕様から PPTX を生成する CLI")
-@click.option("-v", "--verbose", is_flag=True, help="冗長ログを出力する")
-def app(verbose: bool) -> None:
+@click.option("-v", "--verbose", is_flag=True, help="INFO レベルの冗長ログを出力する")
+@click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
+def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
-    level = logging.INFO if verbose else logging.WARNING
+    level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
         level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    _configure_llm_logger()
+    _configure_file_logging()
 
 
 def _prepare_branding(
@@ -113,6 +155,22 @@ def _prepare_branding(
     if branding_payload is not None:
         artifact["config"] = branding_payload
     return branding_config, artifact
+
+
+def _build_reference_text(document: ContentApprovalDocument) -> tuple[str | None, bool]:
+    lines: list[str] = []
+    for slide in document.slides:
+        if slide.elements.title:
+            lines.append(str(slide.elements.title))
+        lines.extend(str(item) for item in slide.elements.body)
+        if slide.elements.note:
+            lines.append(str(slide.elements.note))
+
+    reference_text = "\n".join(line.strip() for line in lines if line.strip())
+    if not reference_text:
+        return None, False
+
+    return reference_text, False
 
 
 def _build_analyzer_options(
@@ -226,6 +284,12 @@ def _dump_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     path.write_text(text, encoding="utf-8")
+    logger.info("Saved JSON to %s", path.resolve())
+
+
+def _load_jobspec(path: Path) -> JobSpec:
+    logger.info("Loading JobSpec from %s", path.resolve())
+    return JobSpec.parse_file(path)
 
 
 def _run_content_approval_pipeline(
@@ -802,7 +866,7 @@ def gen(
         raise click.exceptions.Exit(code=2)
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -963,6 +1027,32 @@ def gen(
     help="プレーンテキスト / PDF / URL からドラフトを生成する入力ソース",
 )
 @click.option(
+    "--ai-policy",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="生成AI用のポリシー定義 JSON。未指定時は config/content_ai_policies.json を利用する。",
+)
+@click.option(
+    "--ai-policy-id",
+    type=str,
+    default=None,
+    help="使用するポリシー ID。未指定時は定義ファイルの default_policy_id を利用する。",
+)
+@click.option(
+    "--ai-output",
+    type=str,
+    default="content_ai_log.json",
+    show_default=True,
+    help="AI 生成ログの出力ファイル名。",
+)
+@click.option(
+    "--ai-meta",
+    type=str,
+    default="ai_generation_meta.json",
+    show_default=True,
+    help="AI 生成メタ情報の出力ファイル名。",
+)
+@click.option(
     "--draft-output",
     type=str,
     default="content_draft.json",
@@ -983,6 +1073,12 @@ def gen(
     default=None,
     help="PDF 取り込み時に利用する LibreOffice 実行ファイルのパス",
 )
+@click.option(
+    "--slide-count",
+    type=click.IntRange(1, None),
+    default=None,
+    help="生成するスライド枚数。未指定時は LLM の判断（mock の場合は 5 枚固定）",
+)
 def content(
     spec_path: Path,
     content_approved_path: Path | None,
@@ -993,17 +1089,30 @@ def content(
     review_output: str,
     meta_filename: str,
     content_sources: tuple[str, ...],
+    ai_policy: Path | None,
+    ai_policy_id: str | None,
+    ai_output: str,
+    ai_meta: str,
     draft_output: str,
     import_meta_filename: str,
     libreoffice_path: Path | None,
+    slide_count: int | None,
 ) -> None:
     """工程3 コンテンツ正規化: 承認済みコンテンツを検証し Spec へ適用する。"""
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
+
+    if content_sources and content_approved_path is not None:
+        click.echo("--content-source と --content-approved を同時には指定できません", err=True)
+        raise click.exceptions.Exit(code=2)
+
+    import_reference_text: str | None = None
+    import_meta_path: Path | None = None
+    import_warnings: list[str] = []
 
     if content_sources:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -1014,8 +1123,8 @@ def content(
             click.echo(f"コンテンツ取り込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=4) from exc
 
-        draft_path = output_dir / draft_output
-        _dump_json(draft_path, result.document.model_dump(mode="json"))
+        import_reference_text, _ = _build_reference_text(result.document)
+        import_warnings.extend(result.warnings)
 
         meta_payload = {
             **result.meta,
@@ -1024,53 +1133,115 @@ def content(
                 "source": str(spec_path.resolve()),
             },
         }
-        meta_path = output_dir / import_meta_filename
-        _dump_json(meta_path, meta_payload)
+        import_meta_path = output_dir / import_meta_filename
+        _dump_json(import_meta_path, meta_payload)
 
-        for warning in result.warnings:
-            click.echo(f"Warning: {warning}", err=True)
+    if content_approved_path is not None:
+        try:
+            context = _run_content_approval_pipeline(
+                spec=spec,
+                output_dir=output_dir,
+                content_approved=content_approved_path,
+                content_review_log=content_review_log_path,
+                require_document=True,
+            )
+        except ContentApprovalError as exc:
+            click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=4) from exc
+        except FileNotFoundError as exc:
+            click.echo(f"ファイルが見つかりません: {exc}", err=True)
+            raise click.exceptions.Exit(code=4) from exc
+        except Exception as exc:  # noqa: BLE001
+            logging.exception("content 実行中にエラーが発生しました")
+            raise click.exceptions.Exit(code=1) from exc
 
-        click.echo(f"Content Draft: {draft_path}")
-        click.echo(f"Content Import Meta: {meta_path}")
+        spec_output_path, content_output_path, review_output_path, meta_path = _write_content_outputs(
+            context=context,
+            output_dir=output_dir,
+            spec_filename=spec_output,
+            content_filename=normalized_content,
+            review_filename=review_output,
+            meta_filename=meta_filename,
+        )
+
+        click.echo(f"Spec (content applied): {spec_output_path}")
+        if content_output_path is not None:
+            click.echo(f"Content Approved (normalized): {content_output_path}")
+        if review_output_path is not None:
+            click.echo(f"Content Review Log (normalized): {review_output_path}")
+        click.echo(f"Content Meta: {meta_path}")
         return
 
-    if content_approved_path is None:
-        click.echo("--content-approved または --content-source を指定してください", err=True)
-        raise click.exceptions.Exit(code=2)
+    policy_path = ai_policy or DEFAULT_AI_POLICY_PATH
+    output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        policy_set = load_policy_set(policy_path)
+    except ContentAIPolicyError as exc:
+        click.echo(f"AI ポリシー定義の読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
 
     try:
-        context = _run_content_approval_pipeline(
-            spec=spec,
-            output_dir=output_dir,
-            content_approved=content_approved_path,
-            content_review_log=content_review_log_path,
-            require_document=True,
+        llm_client = create_llm_client()
+    except LLMClientConfigurationError as exc:
+        click.echo(f"AI クライアントの初期化に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    target_slide_count = slide_count
+    if target_slide_count is None and isinstance(llm_client, MockLLMClient):
+        target_slide_count = 5
+
+    available_slides = len(spec.slides)
+    if target_slide_count is not None and target_slide_count > available_slides:
+        import_warnings.append(
+            f"テンプレートには {available_slides} 枚しか含まれないため、生成枚数を {available_slides} 枚に調整します"
         )
-    except ContentApprovalError as exc:
-        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("content 実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
 
-    spec_output_path, content_output_path, review_output_path, meta_path = _write_content_outputs(
-        context=context,
-        output_dir=output_dir,
-        spec_filename=spec_output,
-        content_filename=normalized_content,
-        review_filename=review_output,
-        meta_filename=meta_filename,
-    )
+    try:
+        orchestrator = ContentAIOrchestrator(policy_set, llm_client=llm_client)
+    except LLMClientConfigurationError as exc:
+        click.echo(f"AI クライアントの初期化に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    try:
+        document, meta_payload, log_entries = orchestrator.generate_document(
+            spec,
+            policy_id=ai_policy_id,
+            reference_text=import_reference_text,
+            slide_limit=target_slide_count,
+        )
+    except ContentAIOrchestrationError as exc:
+        msg = str(exc)
+        if "token" in msg.lower():
+            click.echo(
+                "AI 生成に失敗しました: トークン上限に達した可能性があります。"
+                " --content-source やポリシー設定で入力文量を調整してください。",
+                err=True,
+            )
+        else:
+            click.echo(f"AI 生成に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
 
-    click.echo(f"Spec (content applied): {spec_output_path}")
-    if content_output_path is not None:
-        click.echo(f"Content Approved (normalized): {content_output_path}")
-    if review_output_path is not None:
-        click.echo(f"Content Review Log (normalized): {review_output_path}")
-    click.echo(f"Content Meta: {meta_path}")
+    draft_path = output_dir / draft_output
+    ai_meta_path = output_dir / ai_meta
+    log_path = output_dir / ai_output
+
+    _dump_json(draft_path, document.model_dump(mode="json"))
+    _dump_json(ai_meta_path, meta_payload)
+    _dump_json(log_path, log_entries)
+
+    if import_meta_path is not None:
+        logger.info("Content Import Meta: %s", import_meta_path)
+        click.echo(f"Content Import Meta: {import_meta_path}")
+    for warning in import_warnings:
+        logger.warning("%s", warning)
+        click.echo(f"Warning: {warning}", err=True)
+
+    logger.info("Content Draft (AI): %s", draft_path)
+    click.echo(f"Content Draft (AI): {draft_path}")
+    logger.info("AI Generation Meta: %s", ai_meta_path)
+    click.echo(f"AI Generation Meta: {ai_meta_path}")
+    logger.info("AI Generation Log: %s", log_path)
+    click.echo(f"AI Generation Log: {log_path}")
+    return
 
 
 @app.command("outline")
@@ -1229,7 +1400,7 @@ def outline(
         return
 
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1379,7 +1550,7 @@ def mapping(  # noqa: PLR0913
 ) -> None:
     """工程5 マッピングを実行し rendering_ready.json を生成する。"""
     try:
-        spec = JobSpec.parse_file(spec_path)
+        spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
@@ -1711,10 +1882,12 @@ def tpl_extract(
             )
         
         spec_path.write_text(content, encoding="utf-8")
+        logger.info("Saved template spec to %s", spec_path.resolve())
 
         branding_payload = branding_result.to_branding_payload()
         branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
         branding_output_path.write_text(branding_text, encoding="utf-8")
+        logger.info("Saved branding payload to %s", branding_output_path.resolve())
 
         # 結果表示
         click.echo(f"テンプレート抽出が完了しました: {spec_path}")
@@ -1923,6 +2096,7 @@ def tpl_release(
             json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        logger.info("Saved template release to %s", release_path.resolve())
 
         if golden_runs:
             golden_runs_path = output_dir / "golden_runs.json"
@@ -1934,6 +2108,7 @@ def tpl_release(
                 ),
                 encoding="utf-8",
             )
+            logger.info("Saved golden run log to %s", golden_runs_path.resolve())
 
         report = build_release_report(current=release, baseline=baseline)
         report_path = output_dir / "release_report.json"
@@ -1941,6 +2116,7 @@ def tpl_release(
             json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        logger.info("Saved release report to %s", report_path.resolve())
 
         click.echo(f"テンプレートリリースメタを出力しました: {release_path}")
         click.echo(f"差分レポートを出力しました: {report_path}")
@@ -1989,7 +2165,7 @@ def _run_golden_specs(
         )
 
         try:
-            spec = JobSpec.parse_file(spec_path)
+            spec = _load_jobspec(spec_path)
         except SpecValidationError as exc:
             detail = json.dumps(exc.errors, ensure_ascii=False)
             message = (
@@ -2210,6 +2386,7 @@ def _emit_review_engine_analysis(
 
     adapter = AnalyzerReviewEngineAdapter()
     try:
+        logger.info("Loading analysis payload from %s", path.resolve())
         analysis_payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         logger.warning(
@@ -2232,6 +2409,7 @@ def _emit_review_engine_analysis(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    logger.info("Saved review engine payload to %s", output_path.resolve())
     context.add_artifact("review_engine_analysis_path", output_path)
     return output_path
 
@@ -2334,6 +2512,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
     audit_path = outputs_dir / "audit_log.json"
     audit_path.write_text(json.dumps(
         audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info("Saved audit log to %s", audit_path.resolve())
     context.add_artifact("audit_path", audit_path)
     return audit_path
 

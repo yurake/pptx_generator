@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_hex_prefix(value: str) -> str:
@@ -163,6 +167,7 @@ class RulesConfig:
 
     @classmethod
     def load(cls, path: Path) -> "RulesConfig":
+        logger.info("Loading rules config from %s", path.resolve())
         data = json.loads(path.read_text(encoding="utf-8"))
         title = data.get("title", {})
         bullet = data.get("bullet", {})
@@ -170,7 +175,7 @@ class RulesConfig:
         analyzer = AnalyzerRuleConfig.from_dict(data.get("analyzer", {}))
         refiner = RefinerRuleConfig.from_dict(data.get("refiner", {}))
         polisher = PolisherRuleConfig.from_dict(data.get("polisher", {}))
-        return cls(
+        config = cls(
             max_title_length=title.get("max_length", defaults.max_title_length),
             max_bullet_length=bullet.get("max_length", defaults.max_bullet_length),
             max_bullet_level=bullet.get("max_level", defaults.max_bullet_level),
@@ -179,6 +184,8 @@ class RulesConfig:
             refiner=refiner,
             polisher=polisher,
         )
+        logger.info("Loaded rules config from %s", path.resolve())
+        return config
 
 
 @dataclass(slots=True)
@@ -333,8 +340,11 @@ class BrandingConfig:
 
     @classmethod
     def load(cls, path: Path) -> "BrandingConfig":
+        logger.info("Loading branding config from %s", path.resolve())
         data = json.loads(path.read_text(encoding="utf-8"))
-        return cls.from_dict(data)
+        config = cls.from_dict(data)
+        logger.info("Loaded branding config from %s", path.resolve())
+        return config
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> "BrandingConfig":
