@@ -752,6 +752,16 @@ flowchart TB
 - 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。
 - 次アクション: 既存 `pptx gen` の呼び出し箇所を棚卸しし、後方互換サポート方針を決める。
 
+<a id="rm-050"></a>
+### RM-050 ロードマップ参照整備
+- 対象工程: 横断（ドキュメント運用）
+- ゴール: ロードマップ項目にジョブスペック再設計ノートなどの参照リンクを追加し、関連ドキュメントの所在を明確化する。
+- 参照ドキュメント: [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md), [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md)
+- 参照 ToDo: [docs/todo/20251102-rm050-roadmap-link.md](../todo/20251102-rm050-roadmap-link.md)
+- 状況: 進行中（2025-11-02 着手）
+- 期待成果: RM-044〜RM-049 など関連項目の参照ドキュメント欄が統一され、Plan 承認内容の転記運用が徹底されている状態。
+- 次アクション: 参照追加後の運用フローを確認し、追加の参照整備が必要なロードマップ項目を棚卸しする。
+
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
