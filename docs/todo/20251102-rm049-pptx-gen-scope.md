@@ -1,7 +1,7 @@
 ---
 目的: `pptx gen` の工程5専用コマンド化と責務整理に向けた現状調査と施策検討
 関連ブランチ: feat/rm049-pptx-gen-scope
-関連Issue: 未作成
+関連Issue: #258
 roadmap_item: RM-049 pptx gen スコープ最適化
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ:
 - [ ] PR 作成
   - メモ:
