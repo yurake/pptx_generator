@@ -54,7 +54,7 @@ flowchart TB
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
         RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
-        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(未着手)"]
+        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(完了)"]
         RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(完了)"]
     end
 
@@ -690,9 +690,9 @@ flowchart TB
 - 対象工程: 2（テンプレ構造抽出）
 - ゴール: テンプレ抽出時にページ単位の spec 雛形を自動生成し、工程3以降で共通利用できる `spec_scaffold.json` を整備する。
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定（本ブランチでロードマップ項目分割後に発行）
-- 状況: 未着手（2025-11-07 追加）
-- 期待成果: CLI/API 仕様、スキーマ定義、サンプルデータ。工程3 の `pptx content` が scaffold を入力に受け取れること。
+- 参照 ToDo: [docs/todo/archive/20251102-rm044-spec-scaffold.md](../todo/archive/20251102-rm044-spec-scaffold.md)
+- 状況: 完了（2025-11-02 更新）
+- 達成成果: `tpl-extract` パイプラインで `jobspec.json`（spec scaffold）を自動生成し、`samples/extract/` への成果物提供と CLI ドキュメント更新を完了。工程3 以降で雛形を参照できるようにした。
 - 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
 
 <a id="rm-045"></a>
