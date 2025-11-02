@@ -711,6 +711,51 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
     assert audit_payload["slides"] == len(spec.slides)
 
 
+def test_cli_compose_generates_stage45_outputs(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_jobspec.json")
+    draft_dir = tmp_path / "compose-draft"
+    compose_dir = tmp_path / "compose-gen"
+    spec = JobSpec.parse_file(spec_path)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--draft-output",
+            str(draft_dir),
+            "--output",
+            str(compose_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    draft_path = draft_dir / "draft_draft.json"
+    approved_path = draft_dir / "draft_approved.json"
+    log_path = draft_dir / "draft_review_log.json"
+    meta_path = draft_dir / "draft_meta.json"
+    assert draft_path.exists()
+    assert approved_path.exists()
+    assert log_path.exists()
+    assert meta_path.exists()
+
+    rendering_ready_path = compose_dir / "rendering_ready.json"
+    mapping_log_path = compose_dir / "mapping_log.json"
+    assert rendering_ready_path.exists()
+    assert mapping_log_path.exists()
+
+    draft_meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert draft_meta.get("slides") == len(spec.slides)
+
+    mapping_payload = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
+    assert mapping_payload["meta"]["job_meta"]["title"] == "RM-043 拡張テンプレート検証"
+
+
 def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     template_path = SAMPLE_TEMPLATE
