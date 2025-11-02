@@ -24,6 +24,7 @@ src/pptx_generator.egg-info/
 *.log
 .cache/
 .pptx/
+temp/
 
 # Private configuration files
 AGENTS_PRIVATE.md

@@ -201,6 +201,57 @@ class JobSpec(BaseModel):
             raise SpecValidationError.from_validation_error(exc) from exc
 
 
+JobSpecScaffoldPlaceholderKind = Literal["text", "image", "table", "chart", "other"]
+
+
+class JobSpecScaffoldBounds(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    left_in: float
+    top_in: float
+    width_in: float
+    height_in: float
+
+
+class JobSpecScaffoldPlaceholder(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    anchor: str
+    kind: JobSpecScaffoldPlaceholderKind
+    placeholder_type: str | None = None
+    shape_type: str | None = None
+    is_placeholder: bool = False
+    bounds: JobSpecScaffoldBounds
+    sample_text: str | None = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class JobSpecScaffoldSlide(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    layout: str
+    sequence: int
+    placeholders: list[JobSpecScaffoldPlaceholder] = Field(default_factory=list)
+
+
+class JobSpecScaffoldMeta(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: str
+    template_path: str
+    template_id: str
+    generated_at: str
+    layout_count: int
+
+
+class JobSpecScaffold(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    meta: JobSpecScaffoldMeta
+    slides: list[JobSpecScaffoldSlide] = Field(default_factory=list)
+
+
 ContentSlideStatus = Literal["draft", "approved", "returned"]
 
 
