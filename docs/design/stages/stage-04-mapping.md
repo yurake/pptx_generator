@@ -31,7 +31,7 @@
 - `chapter_template`: `template_id`, `name`, `structure_pattern`, `required_sections[]`, `optional_sections[]`, `constraints`。
 
 ### フロー
-1. `content_approved.json` を読み込みカードを生成。Chapter Template Registry が候補テンプレを提示。  
+1. `content_approved.json` と `jobspec.json` を読み込みカードを生成。Chapter Template Registry が候補テンプレを提示。  
 2. Layout Hint Engine が用途タグ・容量・多様性・Analyzer 支援度をスコア化し候補提示。  
 3. HITL が CLI / UI で章順・付録・差戻しを更新。`return_reason_code` はテンプレ辞書から選択。  
 4. layout_hint 決定後に章単位で承認。Analyzer 指摘件数が閾値を超えた場合は警告を表示。  
@@ -79,7 +79,7 @@
 - 監査・可観測性のため `mapping_log.json`, `fallback_report.json` を同時に出力。
 
 ### 主要処理
-1. 候補レイアウト生成: `layout_hint` と用途タグで候補を絞り、スコアリングする。  
+1. 候補レイアウト生成: `layout_hint` と `jobspec.json` に記載された用途タグで候補を絞り、スコアリングする。  
 2. ルールベース割付: 必須プレースホルダの充足、オーバーフロー検知、推奨図表の配置。  
 3. AI 補完: 未割付要素や過剰要素を再配分し、必要時はスライド分割・縮約。  
 4. フォールバック: 縮約 → 分割 → 付録送り の順で適用し、履歴をログ化。  

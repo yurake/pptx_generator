@@ -60,7 +60,7 @@
 - 致命的エラー時は exit code 6
 
 ### 工程3: コンテンツ正規化 (HITL)
-承認済みコンテンツを整形し、後続工程へ渡すためのメタを生成する。
+承認済みコンテンツを整形し、後続工程へ渡すためのメタを生成する。抽出済みの `jobspec.json` を第一引数に指定する。
 
 #### `pptx content`
 - 既定では生成 AI モードでドラフトを生成し、`config/content_ai_policies.json` と `src/pptx_generator/content_ai/prompts.py` の `prompt_id` を利用する。
@@ -81,6 +81,13 @@
 | `--slide-count <int>` | 生成スライド枚数（未指定は LLM の判断、mock 時は 5 枚） | 指定なし |
 | `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
 | `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+
+実行例:
+```bash
+uv run pptx content .pptx/extract/jobspec.json \
+  --content-source samples/contents/sample_import_content.txt \
+  --output .pptx/content
+```
 
 **AI プロバイダー切り替え（環境変数）**
 - `.env` を読み込んで `PPTX_LLM_PROVIDER` を指定する（`mock`/`openai`/`azure-openai`/`claude`/`aws-claude`）。
@@ -109,6 +116,15 @@
 | `--template <path>` | ブランド抽出に利用するテンプレート | 指定なし |
 | `--branding <path>` | ブランド設定を明示的に指定する | `config/branding.json` |
 | `--show-layout-reasons` | layout_hint スコア詳細を標準出力に表示する | 無効 |
+
+実行例:
+```bash
+uv run pptx compose .pptx/extract/jobspec.json \
+  --content-approved .pptx/content/content_approved.json \
+  --draft-output .pptx/draft \
+  --output .pptx/gen \
+  --layouts .pptx/validation/layouts.jsonl
+```
 
 #### 補助: `pptx outline`
 - HITL 作業を個別に実行したい場合に利用。`draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json` を生成する。

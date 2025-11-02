@@ -37,9 +37,9 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 1. **テンプレ準備**（自動）  
    テンプレ資産（`.pptx`）を整備し、バージョン管理を行う。差分検証は工程 2 で実施。
 2. **テンプレ構造抽出**（自動）  
-   テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
+   テンプレからレイアウト情報とブランド設定を抽出し、`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を生成する。`jobspec.json` は工程 3 以降が参照するテンプレ依存カタログとして扱う。
 3. **コンテンツ正規化**（HITL）  
-   入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/requirements.md` を参照。
+   `jobspec.json` と入力コンテンツを基にスライド候補を整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/requirements.md` を参照。
 4. **マッピング（HITL + 自動）**  
    章構成承認とレイアウト割付を同一工程で扱い、`draft_approved.json` と `rendering_ready.json` を生成する。HITL 操作は Draft API / CLI、プレースホルダ割付は Mapping Engine が担当する。
 5. **PPTX レンダリング**（自動）  
@@ -50,10 +50,9 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
-| コンテンツ正規化 | `spec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
-| ドラフト構成 | `content_approved.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン構成データ（CLI / API 提供）、付録への退避、承認ログ（`draft_review_log.json`） |
-| マッピング | `draft_approved.json`, `content_approved.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
-| レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
+| コンテンツ正規化 | `jobspec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
+| マッピング (HITL + 自動) | `content_approved.json`, `jobspec.json`, `layouts.jsonl`, `branding.json` | `draft_draft.json` → `draft_approved.json`, `rendering_ready.json`, `mapping_log.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録） |
+| レンダリング | `rendering_ready.json`, `template.pptx`, `branding.json` | `output.pptx`, `rendering_log.json`, `audit_log.json`, `analysis.json`, `review_engine_analyzer.json` | 軽量整合チェック（空 PH / layout ミスマッチ）、Analyzer 連携、PDF/Polisher 統合 |
 
 各 JSON のスキーマは `docs/design/schema/README.md` 配下に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
 
@@ -69,15 +68,18 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 ### 3.3 工程別入出力一覧
 | ファイル名 | 必須区分 | 概要 | 使用する工程 |
 |-------------|-----------|------|---------------|
-| template.pptx | 必須（ユーザー準備） | ユーザー準備のPPTXテンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S2 入 / S5 入 |
+| template.pptx | 必須（ユーザー準備） | ユーザー準備のPPTXテンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S2 入 / S4 入 / S5 入 |
 | template_release.json | 任意 | テンプレのリリースメタ。差分・版管理用。 | S1 入（過去版） / S1 出 |
 | release_report.json | 任意 | テンプレ差分レポート。 | S1 出 |
 | golden_runs/* | 任意 | ゴールデンテスト実行結果。テンプレ検証用。 | S1 出 |
+| template_spec.json | 任意 | テンプレートの構造仕様。 | S2 出 |
+| jobspec.json | 必須 | テンプレ依存のスライド仕様カタログ。 | S2 出 / S3 入 / S4 入 |
 | branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S2 出 / S4 入 / S5 入 |
 | layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S2 出 / S4 入 / S5 入 |
 | diagnostics.json | 任意 | 抽出/検証時の診断。 | S2 出 |
 | diff_report.json | 任意 | 抽出結果の差分レポート。 | S2 出 |
-| content_spec_initial.json | 必須（ユーザー準備） | 初期コンテンツ仕様。原稿の構造化雛形。 | S3 入 |
+| content_source.* | 任意（ユーザー準備） | 生テキスト・Markdown・PDF などの入力資料。 | S3 入 |
+| content_spec_initial.json | 任意（ユーザー準備） | 事前に用意したプレゼン仕様の雛形。 | S3 入 |
 | content_approved.json | 必須 | 人手承認済みのコンテンツ。以後の中核データ。 | S3 出 / S4 入 / S5 入 |
 | spec_content_applied.json | 任意 | コンテンツ適用後のスナップショット。 | S3 出 |
 | content_meta.json | 任意 | コンテンツ承認のメタ情報。 | S3 出 |
@@ -87,8 +89,8 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 | draft_review_log.json | 任意 | ドラフトレビューのログ。 | S4 出 / S5 入 |
 | rules.json | 任意 | 文字量や禁止語などの規則。マッピング/解析に使用。 | S4 入 / S5 入 |
 | rendering_ready.json | 必須 | マッピング結果。レイアウト割付済みの描画直前仕様。 | S4 出 / S5 入 |
-| mapping_log.json | 任意 | マッピング過程のログ。レイアウトスコア等。 | S5 出 |
-| fallback_report.json | 任意 | フォールバック発生の記録。 | S5 出 |
+| mapping_log.json | 任意 | マッピング過程のログ。レイアウトスコア等。 | S4 出 |
+| fallback_report.json | 任意 | フォールバック発生の記録。 | S4 出 |
 | proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S5 出 |
 | proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S5 出 |
 | analysis.json | 任意 | 生成物の詳細解析結果。 | S5 出 |

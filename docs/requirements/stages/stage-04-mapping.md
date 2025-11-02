@@ -17,6 +17,7 @@
 
 ### 入力
 - 工程3の `content_approved.json`（`story.phase` / `story.chapter_id` / `story.angle` を含む）。
+- 工程2の `jobspec.json`（レイアウト用途タグ・アンカー情報のカタログ）。
 - 工程2の `layouts.jsonl`（利用可能なレイアウトカテゴリのヒント）。
 - 制約情報（本編枚数上限、章テンプレ、付録方針）。
 - 章テンプレ定義 (`config/chapter_templates/*.json`) と構成テンプレ適用ポリシー。
@@ -73,10 +74,10 @@
 - `layout_score_detail` と `analyzer_summary` を含む候補提示の整備。
 - 差戻し理由コード辞書と Draft ログのテンプレ紐付け。
 
-### CLI 支援
 - `pptx outline` コマンドは承認済みコンテンツとレイアウト候補を入力に `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` を生成し、章・スライド統計を `draft_meta.json` に出力する。
 - `--content-approved` を指定した場合は工程3の成果物を再検証して Spec へ適用したうえで構成計算を実行する。未指定時は Spec を直接利用する。
 - `--show-layout-reasons`, `--return-reasons`, `--import-analysis`, `--chapter-template` などのオプションで候補理由やテンプレ差戻し辞書を参照できる。
+- `pptx compose` コマンドは `.pptx/extract/jobspec.json` を起点にドラフト承認とマッピングを連続実行し、`draft_*` と `rendering_ready.json` / `mapping_log.json` を同時に更新する。
 
 ---
 
@@ -85,7 +86,9 @@
 ### 入力
 - `draft_approved.json`: 章構成、スライド順、`layout_hint`。
 - `content_approved.json`: テキスト・表・意図タグ。
+- `jobspec.json`: レイアウト用途タグや推奨配置の基準情報。
 - `layouts.jsonl`, `diagnostics.json`: レイアウト構造と警告情報。
+- `branding.json`: ブランド設定とスタイル定義。
 - 章テンプレ適用メタ（`draft_meta.json`）および差戻し履歴。
 
 ### 出力
