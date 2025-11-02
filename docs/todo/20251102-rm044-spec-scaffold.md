@@ -24,8 +24,9 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
   - メモ: `tpl-extract` 拡張やスキーマ定義、サンプルデータ生成を実施する。
 - [x] テスト・検証
   - メモ: `uv run pptx tpl-extract` で `.tmp/extract-sample` を生成し、`uv run pytest tests/test_template_extractor.py tests/test_cli_integration.py::test_cli_tpl_extract_basic` を実行して新規ジョブスペック出力と CLI 統合テストを確認。
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
   - メモ: `docs/requirements/stages/stage-02-template-structure-extraction.md`・`docs/design/design.md`・`docs/requirements/requirements.md`・`docs/runbooks/release.md`・`README.md`・`AGENTS.md`・`samples/AGENTS.md` を更新し、新サンプル `samples/extract/jobspec.json` を追加。`docs/roadmap` は工程定義の整合が取れており更新不要と判断。
+  - メモ: RM-044 の責務範囲では工程2で `jobspec.json` を生成できることを確認済み。工程3以降での活用はロードマップ後続（例: RM-046 以降）で対応予定のため、今回の検証では範囲外とする。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
