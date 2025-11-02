@@ -43,9 +43,13 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
     - メモ: 自動検証導入に伴う変更は不要であることを確認。
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
+- [ ] 工程4・5統合マージ対応
+  - スコープ: mainで追加された工程4・5統合機能を取り込み、CLI・パイプライン・ドキュメントの整合を取る。
+  - 影響ファイル候補: src/pptx_generator/cli.py、src/pptx_generator/pipeline/*、src/pptx_generator/models.py、新機能モジュール、README.md、docs/design/cli-command-reference.md、docs/runbooks/*、samples/json/*.json、tests/test_cli_integration.py。
+  - 手順: (1) mainを最新化してマージし差分確認。(2) コンフリクト解消と工程統合仕様の反映。(3) ドキュメント・サンプル更新。(4) 差分確認。(5) uv run --extra dev pytest 等で回帰テスト。
+  - リスク: CLIや出力仕様変更によるテスト失敗、データ形式齟齬、マージコンフリクトの増大。
+  - テスト方針: uv run --extra dev pytest を実施し、必要に応じて CLI 統合テストも確認。
+  - ロールバック: マージおよび追従コミットを revert し、工程3主体の構成へ戻す。
   - メモ: Issue 発行後に番号へ更新する。
 - [ ] PR 作成
   - メモ: PR 作成時に番号と URL を記載する。
-
-## メモ
-- Plan 承認後に詳細を追記する。
