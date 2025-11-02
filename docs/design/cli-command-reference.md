@@ -44,6 +44,15 @@
 | `--format <json\|yaml>` | 出力形式を選択 | `json` |
 | `--verbose` | 詳細ログを表示 | 無効 |
 
+実行すると以下の成果物が同一ディレクトリに出力される。
+
+- `template_spec.json` / `template_spec.yaml`（テンプレート仕様）
+- `branding.json`（抽出したブランド設定）
+- `jobspec.json`（ジョブスペック雛形）
+- `layouts.jsonl` / `diagnostics.json`（レイアウト検証結果、`diff_report.json` は比較時のみ）
+
+`tpl-extract` 完了時にレイアウト検証を自動実行するため、抽出直後の品質チェックがワンコマンドで完了する。個別検証のみを実施したい場合や出力ディレクトリを分けたい場合は、従来どおり `pptx layout-validate` を直接呼び出す。
+
 #### `pptx layout-validate`
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -58,6 +67,8 @@
 - `diagnostics.json`: 未知プレースホルダーや抽出エラーの警告/エラー集計
 - `diff_report.json`: `--baseline` 指定時の差分レポート（Analyzer 突合を含む）
 - 致命的エラー時は exit code 6
+
+`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく調整したい場合はこちらを直接利用する。
 
 ### 工程3: コンテンツ正規化 (HITL)
 承認済みコンテンツを整形し、後続工程へ渡すためのメタを生成する。抽出済みの `jobspec.json` を第一引数に指定する。

@@ -2233,7 +2233,29 @@ def tpl_extract(
         click.echo(f"抽出された図形・アンカー数: {total_anchors}")
 
         click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
-        
+
+        logger.info("Starting layout validation for %s", template_path)
+        validation_options = LayoutValidationOptions(
+            template_path=template_path,
+            output_dir=output_dir,
+        )
+        validation_suite = LayoutValidationSuite(validation_options)
+        validation_result = validation_suite.run()
+        logger.info(
+            "Layout validation finished: warnings=%d errors=%d",
+            validation_result.warnings_count,
+            validation_result.errors_count,
+        )
+
+        click.echo(f"Layouts: {validation_result.layouts_path}")
+        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
+        if validation_result.diff_report_path is not None:
+            click.echo(f"Diff: {validation_result.diff_report_path}")
+        click.echo(
+            "検出結果: warnings=%d, errors=%d"
+            % (validation_result.warnings_count, validation_result.errors_count)
+        )
+
         if template_spec.warnings:
             click.echo(f"警告: {len(template_spec.warnings)} 件")
             for warning in template_spec.warnings:
@@ -2247,6 +2269,9 @@ def tpl_extract(
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
+    except LayoutValidationError as exc:
+        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
     except Exception as exc:  # noqa: BLE001
         logging.exception("テンプレート抽出中にエラーが発生しました")
         click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)

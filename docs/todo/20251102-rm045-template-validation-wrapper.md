@@ -7,25 +7,37 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
 
 - [x] ブランチ作成と初期コミット
   - メモ: feat/rm045-template-validation-wrapper を main から作成し、ToDo 追加の初期コミットを実施（docs(todo): add RM-045 task tracker）。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan を転記する。
-- [ ] 設計・実装方針の確定
-  - メモ: CLI オプション仕様とログフォーマットの検討結果を記載する。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 対応が必要な場合は対象ドキュメントと内容を記載する。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 
+    - スコープ: tpl-extract 実行後に layout-validate を自動実行し、抽出成果物と同じ出力ディレクトリへ検証結果（layouts.jsonl / diagnostics.json 等）を保存。既存 layout-validate コマンドは従来どおり利用可能。CLI 出力に検証サマリを追記し、README・docs/design/cli-command-reference.md（必要に応じ docs/runbooks/）を更新。
+    - 想定変更ファイル: src/pptx_generator/cli.py、tests/test_cli_integration.py、README.md、docs/design/cli-command-reference.md（必要に応じ docs/runbooks/）。
+    - 前提・制約: LayoutValidationSuite の API と終了コードを現状維持。検証成果物は抽出出力ディレクトリへ上書き保存。新オプションは追加しない。
+    - 進め方: (1) tpl_extract の終端に LayoutValidationSuite 呼び出しを組み込み、例外・ログ・メッセージを整備。(2) 検証成果物パスと警告件数の出力を追加。(3) 自動検証を確認する統合テストを追加・更新。(4) README/CLI ドキュメント（必要なら runbook）を更新。(5) ToDo へ進捗を反映。
+    - テスト: 既存 CLI 統合テストの回帰確認、新規ケースで検証成果物生成とメッセージを確認、可能なら検証エラー時の終了コード確認。
+    - リスク: 実行時間増加に伴うログ明示、既存成果物上書きの扱い、validation 失敗時の終了コード整合。
+    - ロールバック: tpl_extract への検証呼び出し・メッセージ・テスト・ドキュメント変更を revert し抽出のみの挙動へ戻す。
+- [x] 設計・実装方針の確定
+  - メモ:
+    - CLI 実装: src/pptx_generator/cli.py の tpl_extract 内でレイアウト検証を自動実行。TemplateExtractor による抽出完了後、LayoutValidationSuite を出力ディレクトリ（既定 .pptx/extract/ または --output 指定先）に対して呼び出し、layouts.jsonl / diagnostics.json / diff_report.json を同階層へ保存。検証開始・終了の logger メッセージを追加し、CLI 出力には検証成果物パスと警告件数を表示。
+    - 例外処理: LayoutValidationError を個別に捕捉し、layout-validate コマンドと同じエラーメッセージ・終了コード 6 を返す。それ以外は従来の一般例外処理に委ねる。
+    - ファイル構成: `.pptx/validation/` は廃止し、抽出出力ディレクトリへ成果物を集約する。既存ファイルがある場合は上書きを許容。
+    - テスト: tests/test_cli_integration.py の tpl-extract 系ケースを拡張し、layouts.jsonl / diagnostics.json 生成と CLI 出力に検証サマリが含まれることを確認。必要に応じて検証エラー時の終了コードを確認するケースを検討。
+    - ドキュメント: README の工程2チートシートと docs/design/cli-command-reference.md の該当セクション（必要なら docs/runbooks/）を更新し、tpl-extract が抽出＋検証を一括で行い、成果物が抽出ディレクトリへ保存される旨を明記。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/design/cli-command-reference.md` に自動検証の実行フローと成果物一覧を追記。要件ドキュメントは変更不要。
   - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: 実装範囲と保留事項をまとめる。
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記録する。
-- [ ] ドキュメント更新
-  - メモ: 実装結果に伴う更新内容を整理する。
+  - [x] docs/design 配下
+- [x] 実装
+  - メモ: `src/pptx_generator/cli.py` にレイアウト検証の自動実行を組み込み、検証成果物を抽出ディレクトリへ出力するよう変更。警告件数の CLI 表示と LayoutValidationError の終了コード連携を整備。未対応事項なし。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest` で `tests/test_cli_integration.py::test_cli_tpl_extract_basic` ほか tpl-extract 系 6 ケースを実行し、全件成功。
+- [x] ドキュメント更新
+  - メモ: README の工程2/5 説明とコマンド例を `.pptx/extract` ベースへ更新。その他カテゴリは変更不要。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 発行後に番号へ更新する。
 - [ ] PR 作成
