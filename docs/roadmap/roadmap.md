@@ -84,7 +84,7 @@ flowchart TB
         RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
         RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(完了)"]
         RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(完了)"]
-        RM048["RM-048<br/>工程4マッピング<br/>統合CLI整備<br/>(未着手)"]
+        RM048["RM-048<br/>工程4マッピング<br/>統合CLI整備<br/>(完了)"]
     end
 
     subgraph ST5["Stage 5: レンダリング・仕上げ"]
@@ -730,8 +730,8 @@ flowchart TB
 - 対象工程: 4（マッピング）
 - ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: [docs/todo/20251102-rm048-cli-wrapper.md](../todo/20251102-rm048-cli-wrapper.md)
-- 状況: 進行中（2025-11-02 更新）
+- 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
+- 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
 

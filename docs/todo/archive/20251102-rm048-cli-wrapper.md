@@ -88,8 +88,8 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
       - その他 `docs/AGENTS.md`、ロードマップ、ToDo 等に散在する「工程3/4」「工程5/6」表現。
 - [x] 関連Issue 行の更新
   - メモ: #253 を参照先 Issue として設定済み。
-- [ ] PR 作成
-  - メモ: 未着手
+- [x] PR 作成
+  - メモ: PR #257 https://github.com/yurake/pptx_generator/pull/257（2025-11-02 完了）
 
 ## メモ
 - 
