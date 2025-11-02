@@ -700,10 +700,10 @@ flowchart TB
 - 対象工程: 2（テンプレ構造抽出）
 - ゴール: `tpl-extract` と `layout-validate` の連続実行を自動化し、抽出直後の検証をワンコマンドで行えるようにする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 参照 ToDo: [docs/todo/20251102-rm045-template-validation-wrapper.md](../todo/20251102-rm045-template-validation-wrapper.md)
+- 状況: 完了（2025-11-02 更新）
 - 期待成果: `tpl-extract --validate`（仮）仕様、CI での再実行サンプル、ユーザー向け手順書。
-- 次アクション: CLI オプション案とログ出力フォーマットを整理し、UX 観点の要件レビューを行う。
+- 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
 
 <a id="rm-046"></a>
 ### RM-046 生成AIブリーフ構成自動化

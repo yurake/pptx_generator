@@ -25,7 +25,8 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
     - ドキュメント: README の工程2チートシートと docs/design/cli-command-reference.md の該当セクション（必要なら docs/runbooks/）を更新し、tpl-extract が抽出＋検証を一括で行い、成果物が抽出ディレクトリへ保存される旨を明記。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/design/cli-command-reference.md` に自動検証の実行フローと成果物一覧を追記。要件ドキュメントは変更不要。
-  - [ ] docs/requirements 配下
+  - [x] docs/requirements 配下
+    - メモ: 変更不要のため確認のみ実施。
   - [x] docs/design 配下
 - [x] 実装
   - メモ: `src/pptx_generator/cli.py` にレイアウト検証の自動実行を組み込み、検証成果物を抽出ディレクトリへ出力するよう変更。警告件数の CLI 表示と LayoutValidationError の終了コード連携を整備。未対応事項なし。
@@ -33,10 +34,13 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
   - メモ: `uv run --extra dev pytest` で `tests/test_cli_integration.py::test_cli_tpl_extract_basic` ほか tpl-extract 系 6 ケースを実行し、全件成功。
 - [x] ドキュメント更新
   - メモ: README の工程2/5 説明とコマンド例を `.pptx/extract` ベースへ更新。その他カテゴリは変更不要。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/roadmap 配下
+    - メモ: RM-045 のステータスと参照リンクを更新。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: 仕様差異が無いため更新不要を確認。
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
+    - メモ: 自動検証導入に伴う変更は不要であることを確認。
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 発行後に番号へ更新する。
