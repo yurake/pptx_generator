@@ -737,10 +737,10 @@ flowchart TB
 - 対象工程: 4 / 5（ドラフト構成設計・マッピング）
 - ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 参照 ToDo: [docs/todo/20251102-rm048-cli-wrapper.md](../todo/20251102-rm048-cli-wrapper.md)
+- 状況: 進行中（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
-- 次アクション: ラッパーの入出力とエラーハンドリング要件をまとめ、CI フローへの組み込み案を作成する。
+- 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程5/6 テレメトリの確認。
 
 <a id="rm-049"></a>
 ### RM-049 pptx gen スコープ最適化

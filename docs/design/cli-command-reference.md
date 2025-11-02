@@ -108,6 +108,22 @@
 | `--structure-pattern <text>` | 章構成パターン名 | `custom` |
 | `--appendix-limit <int>` | 付録枚数の上限 | 5 |
 
+#### `pptx compose`
+- 工程4のアウトライン生成と工程5のマッピングを連続実行し、`draft_*` と `rendering_ready.json` を一括で更新する。
+- `pptx outline` / `pptx mapping` の主要オプションを引き継ぎ、`--draft-output` と `--output` で各工程の出力先を分離できる。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--draft-output <dir>` | 工程4成果物 (`draft_*`) の保存先 | `.pptx/draft` |
+| `--output <dir>` | 工程5成果物 (`rendering_ready.json` 等) の保存先 | `.pptx/gen` |
+| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
+| `--layouts <path>` | 工程2の `layouts.jsonl` をアウトラインとマッピングへ共有する | 指定なし |
+| `--draft-filename` / `--approved-filename` / `--draft-log-filename` | 工程4のファイル名を上書きする | 既定値を継承 |
+| `--draft-meta-filename` | 工程4メタ (`draft_meta.json`) のファイル名 | `draft_meta.json` |
+| `--rules <path>` | マッピングで参照するルール設定 | `config/rules.json` |
+| `--template <path>` | ブランド抽出に利用するテンプレート。未指定時はブランド設定 JSON を利用 | 指定なし |
+| `--show-layout-reasons` | 工程4の layout_hint スコア詳細を標準出力に表示 | 無効 |
+
 ### 工程5: マッピング
 レイアウト割付とプレースホルダー設定を確定し、レンダリング準備を整える。
 
@@ -201,4 +217,3 @@
 - Polisher を有効化する場合は .NET 8 SDK を導入し、`config/rules.json` の `polisher` 設定と整合させる。
 - PDF 変換機能を利用する場合は LibreOffice (headless 実行可能) を導入し、`soffice --headless --version` で動作確認する。
 - CLI オプションの変更に伴う運用手順は `docs/runbooks/` を更新し、ToDo へメモを残す。
-

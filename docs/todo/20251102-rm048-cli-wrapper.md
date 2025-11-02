@@ -7,7 +7,7 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
 
 - [x] ブランチ作成と初期コミット
   - メモ: feat/rm048-cli-wrapper を main から作成し、本 ToDo を初期コミットとして追加。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - スコープ
       - CLI に工程4+5を連続実行する新サブコマンド（名称: compose）を追加し、`outline` → `mapping` の再実行を一括化する。
@@ -37,25 +37,25 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
       - 新サブコマンドと関連ドキュメント／テストを削除し、`docs/roadmap` と ToDo の該当記述を元に戻す。
       - 既存 `outline` / `mapping` には変更を加えない設計とし、個別コマンド単体利用への影響を最小化。
     - 承認メッセージ ID／リンク: user-ok-20251102
-- [ ] 設計・実装方針の確定
-  - メモ: 未着手
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 未着手
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: 未着手
-- [ ] テスト・検証
-  - メモ: 未着手
-- [ ] ドキュメント更新
-  - メモ: 未着手
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 設計・実装方針の確定
+  - メモ: `compose` サブコマンドで工程4のドラフト生成と工程5のマッピングを連続実行する。`cli.py` にアウトライン／マッピング共通の内部ヘルパー（`_execute_outline` / `_execute_mapping`）を追加し、既存コマンドからも再利用することで挙動の一貫性を担保する。ドラフト成果物のメタ出力と layout スコア表示は共通化し、エラーコードは既存 CLI と同一になるよう整理する。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/design/20251019-stage3-4-cli.md` に compose CLI 追加方針を追記。要件定義への影響はなく `docs/requirements` は現状維持。
+  - [x] docs/requirements 配下（変更なしを確認）
+  - [x] docs/design 配下
+- [x] 実装
+  - メモ: `src/pptx_generator/cli.py` に `_execute_outline` / `_execute_mapping` を追加し、`compose` サブコマンドを実装。`outline` / `mapping` コマンドも新ヘルパーを利用するよう改修。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、`test_cli_compose_generates_stage45_outputs` を含む30ケースが成功。
+- [x] ドキュメント更新
+  - メモ: `docs/design/cli-command-reference.md` に compose を追記し、`docs/runbooks/story-outline-ops.md` の工程手順を更新。`docs/roadmap/roadmap.md` で RM-048 を進行中へ更新し、`docs/requirements` は影響なし。README には追記準備中のため別途検討。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認：影響なし）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md（README に compose を追記、AGENTS は変更不要）
 - [x] 関連Issue 行の更新
-  - メモ: 未着手
+  - メモ: #253 を参照先 Issue として設定済み。
 - [ ] PR 作成
   - メモ: 未着手
 
