@@ -55,7 +55,7 @@ flowchart TB
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
         RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
         RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(未着手)"]
-        RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(未着手)"]
+        RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(完了)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
@@ -700,7 +700,7 @@ flowchart TB
 - 対象工程: 2（テンプレ構造抽出）
 - ゴール: `tpl-extract` と `layout-validate` の連続実行を自動化し、抽出直後の検証をワンコマンドで行えるようにする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: [docs/todo/20251102-rm045-template-validation-wrapper.md](../todo/20251102-rm045-template-validation-wrapper.md)
+- 参照 ToDo: [docs/todo/archive/20251102-rm045-template-validation-wrapper.md](../todo/archive/20251102-rm045-template-validation-wrapper.md)
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: `tpl-extract --validate`（仮）仕様、CI での再実行サンプル、ユーザー向け手順書。
 - 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
