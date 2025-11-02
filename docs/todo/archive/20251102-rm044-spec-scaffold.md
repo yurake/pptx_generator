@@ -34,8 +34,8 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 関連 Issue が作成されたら番号を記載する。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録し、todo-auto-complete の結果を確認する。
+- [x] PR 作成
+  - メモ: PR #254 https://github.com/yurake/pptx_generator/pull/254（2025-11-02 完了）
 
 ## メモ
 - 計画のみで完了する場合は判断者・判断日・次のアクション条件を記載する。
