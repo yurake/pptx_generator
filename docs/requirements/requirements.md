@@ -63,14 +63,14 @@
 ### 4.9 テンプレ構造解析
 - `.pptx` テンプレートからレイアウト構造を抽出する CLI (`extract-template`) を提供し、工程 2 を支援すること。
 - 抽出結果には `layout_id`, `placeholders`, `text_hint`, `usage_tags`, `media_hint` を含め、工程 3〜5 が参照できること。
-- 抽出処理はテンプレ依存カタログ (`jobspec.json`) を同時生成し、レイアウトごとのアンカー名と座標を工程 3〜5 が共有できるようにすること。
+- 抽出処理はテンプレ依存カタログ (`jobspec.json`) を同時生成し、レイアウトごとのアンカーや推奨用途を後工程が共有できるようにすること。
 
 ### 4.10 テンプレ運用サポート
 - テンプレ版ごとの差分を自動検出し、互換レポートを生成して通知できること。
 - テンプレ受け渡しメタ情報（作成者、ブランド、バージョン、レビュー日）を JSON で保存できること。
 - ゴールデンサンプル PPTX を保守し、互換性テストに再利用できること。
 - Analyzer の指摘・修正件数を `template_release.json` / `release_report.json` に集計し、品質メトリクスとして追跡できること。
-- `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `sample_template_layouts.jsonl` / `samples/extract/jobspec.json` に反映すること。
+- `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `samples/extract/jobspec.json` / `sample_template_layouts.jsonl` に反映すること。
 - テンプレ更新時は `uv run pptx layout-validate` の結果を確認し、重大エラーが解消された状態をリリース判定条件とすること。
 
 ### 4.11 多形式インポート
@@ -133,6 +133,5 @@
 | 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | テンプレ差分レポート、受け渡しメタ生成、ゴールデンサンプル自動検証 |
 | 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | JSON スキーマ検証、差分可視化、ヒント係数推定 |
 | 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
-| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | layout_hint 管理 API、スコアリング、多様性ログ・付録操作履歴 |
-| 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング/フォールバック制御、AI 補完監査、スキーマ検証 |
-| 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |
+| 4 マッピング (HITL + 自動) | [stage-04-mapping.md](./stages/stage-04-mapping.md) | layout_hint 管理、テンプレ適合率、スコアリング/フォールバック制御、AI 補完監査 |
+| 5 PPTX 生成 | [stage-05-rendering.md](./stages/stage-05-rendering.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |

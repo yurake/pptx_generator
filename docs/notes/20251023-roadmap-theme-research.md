@@ -52,14 +52,14 @@
 
 ### 7. マッピング AI 戦略とフィードバック
 - 概要: AI 補完モデル選定・コスト試算、多様性指標拡張、フォールバック結果を HITL に返すワークフローを構築。
-- 根拠: 工程5 未解決事項（`docs/design/stages/stage-05-mapping.md`）と Analyzer 連携案。
+- 根拠: 工程4 未解決事項（`docs/design/stages/stage-04-mapping.md`）と Analyzer 連携案。
 - 提案成果物: モデル比較レポート、スコアリング改善仕様、フォールバック通知 UI/CLI 設計。
 - 依存/前提: AI 補完インターフェース、HITL ワークフロー、Monitoring ログ。
 - 優先度メモ: 中（生成品質向上の余地が大きいが実装コストも高い）。
 
 ### 8. レンダリング観測性と互換性ガード
 - 概要: Polisher 差分ログの標準化、LibreOffice バージョン互換検証、表画像化フォールバック・軽量整合チェック拡張を推進。
-- 根拠: 工程6 未解決事項（`docs/design/stages/stage-06-rendering.md`）と Monitoring 統合メモ。
+- 根拠: 工程5 未解決事項（`docs/design/stages/stage-05-rendering.md`）と Monitoring 統合メモ。
 - 提案成果物: 差分ログスキーマ、バージョン互換テスト手順、表トラブル時のフォールバック設計。
 - 依存/前提: Polisher 実行環境、Monitoring Step、Analyzer before/after 指標。
 - 優先度メモ: 中〜高（本番事故防止に重要）。

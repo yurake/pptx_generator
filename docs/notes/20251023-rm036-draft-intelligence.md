@@ -41,14 +41,14 @@
 
 ## リスクと前提
 - 章テンプレは案件ごとに差異が大きく、テンプレ粒度を誤ると適合率が低下する。
-- Analyzer 連携は工程6の出力形式に依存するため、メトリクスの時点同期が課題。
+- Analyzer 連携は工程5の出力形式に依存するため、メトリクスの時点同期が課題。
 - 差戻しテンプレートの導入には HITL 運用チームとの合意形成が必要で、運用変更の影響が大きい。
 
 ## 次アクション
 - Stage 4 要件・設計ドキュメントへ上記データ項目と PoC スコープを追記する。
 - Draft スキーマに `chapter_template_id` と `layout_score_detail` を追加し、差戻しログのテンプレコード化を定義する。
 - ロードマップ RM-036 のステータスを調査中へ更新し、以降の実装タスク分解案を ToDo に反映する。
-- Analyzer 指標の集計フローを工程6担当と擦り合わせるタスクを別途起案する。
+- Analyzer 指標の集計フローを工程5担当と擦り合わせるタスクを別途起案する。
 
 ## 詳細仕様補足（2025-10-23）
 - 章テンプレ辞書 (`config/chapter_templates/*.json`)
@@ -60,7 +60,7 @@
   - 配列形式で管理し、`code`, `label`, `description`, `severity`, `default_actions[]`, `related_analyzer_tags[]` を保持。
   - CLI は `uv run pptx outline ... --return-reasons` で一覧表示、差戻し操作では `--return-reason <code>` を必須化。
 - Analyzer サマリ (`analysis_summary.json`)
-  - 工程6がスライド単位で出力。`severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at` を含む。
+  - 工程5がスライド単位で出力。`severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at` を含む。
   - Draft 工程取り込み時にスライド ID が未一致であれば詳細エラーを返す。
 - CLI / API 追加仕様
   - 新オプション: `--show-layout-reasons`, `--chapter-template`, `--import-analysis`, `--return-reasons`.

@@ -1,5 +1,5 @@
 ---
-目的: 工程6の監査メタ拡張と Polisher/PDF 連携を統合し、生成物の信頼性を確保する
+目的: 工程5の監査メタ拡張と Polisher/PDF 連携を統合し、生成物の信頼性を確保する
 関連ブランチ: feat/rendering-audit-integration
 関連Issue: #177
 roadmap_item: RM-026 レンダリング監査統合
