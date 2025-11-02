@@ -1,0 +1,56 @@
+---
+目的: PR #257 の pytest 失敗要因を特定し、テストが通過するよう修正する
+関連ブランチ: feat/rm048-cli-wrapper
+関連Issue: #253
+roadmap_item: RM-048 工程4+5 統合CLI整備
+---
+
+- [x] ブランチ作成と初期コミット
+  - メモ: feat/rm048-cli-wrapper ブランチを main から作成済み（初期 ToDo 作成コミットは 20251102-rm048-cli-wrapper.md に記録済み）。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 
+    - スコープ / 前提
+      - PR #257 で失敗している pytest をローカルで再現し、原因を特定して修正する。
+      - 既存の Python 3.12 + `uv` 環境を利用し、追加セットアップは不要と想定。
+      - 必要に応じて `docs/` 配下へ結果を記録するが、影響がなければコード修正に集中する。
+    - 影響ファイル（想定）
+      - `src/pptx_generator/cli.py`
+      - 該当テスト（例: `tests/test_cli_integration.py`）
+      - ドキュメント類は必要時のみ。
+    - 手順
+      1. `uv run --extra dev pytest` で失敗テストを確認し、ログを精査する。
+      2. 原因となる実装／テストを調査し、最小限の修正を加える。
+      3. 必要ならテストやドキュメントを更新し、影響を最小化する。
+      4. 修正後に個別テスト → 全体 pytest を順に実行し、グリーンを確認する。
+      5. 作業内容を本 ToDo と PR に反映し、CI 再実行に備える。
+    - リスク
+      - CLI 既存挙動への副作用、テストのカバレッジ低下。
+    - テスト方針
+      - 失敗テストの再現 → 修正後再テスト → `uv run --extra dev pytest` で全体確認。
+    - ロールバック
+      - 変更ファイルを revert し、pytest 実行結果が元の状態に戻ることを確認する。
+    - 承認メッセージ ID／リンク: user-ok-20251102-ci
+- [x] 設計・実装方針の確定
+  - メモ: `tpl-extract` で TemplateExtractor の jobspec 雛形生成を利用し、CLI 出力にも反映する方針で確定。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 今回の修正ではドキュメント更新は不要と判断。
+  - [ ] docs/requirements 配下
+  - [ ] docs/design 配下
+- [x] 実装
+  - メモ: `tpl-extract` サブコマンドでジョブスペック雛形を生成・保存する処理を追加し、出力メッセージにジョブスペック情報を表示するよう更新。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_cli_integration.py -k tpl_extract` と `uv run --extra dev pytest` を実行し、いずれも成功を確認。
+- [x] ドキュメント更新
+  - メモ: コード修正のみで影響ドキュメントはなし。
+  - [ ] docs/roadmap 配下
+  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [ ] docs/runbook 配下
+  - [ ] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+  - メモ: #253 を継続参照することで整合確認済み。
+- [x] PR 作成
+  - メモ: PR #257 での対応を継続し、今回の修正反映後に再プッシュ予定。
+
+## メモ
+- gh issue list は TLS エラーで取得できず、関連 Issue は #253（工程4+5 統合 CLI 対応）を継続利用する。
