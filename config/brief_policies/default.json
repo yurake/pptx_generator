@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "default_policy_id": "brief-default",
+  "policies": [
+    {
+      "id": "brief-default",
+      "name": "標準ブリーフ構成",
+      "story_framework": [
+        "introduction",
+        "problem",
+        "solution",
+        "impact"
+      ],
+      "prompt_template_id": "brief.default",
+      "chapters": [
+        {"id": "intro", "title": "イントロダクション", "story_phase": "introduction"},
+        {"id": "problem", "title": "課題整理", "story_phase": "problem"},
+        {"id": "solution", "title": "解決策", "story_phase": "solution"},
+        {"id": "impact", "title": "期待効果", "story_phase": "impact"}
+      ]
+    }
+  ]
+}

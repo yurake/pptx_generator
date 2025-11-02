@@ -2,10 +2,9 @@
 
 ## 構成
 - `json/sample_jobspec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
-- `json/sample_content_approved.json`: 工程3で承認済みとなったカードのスナップショット。Audit ログや後工程連携のテストに利用する。
-- `json/sample_content_review_log.json`: 承認イベントログの例。アクション／AI 評価の記録形式を示す。
+- `brief/`: 工程3で生成した BriefCard サンプル一式（`brief_cards.json`, `brief_log.json`, `ai_generation_meta.json` 等）。CLI やテストでの参照用に常に最新スキーマへ合わせる。
+- `json/archive/`: 旧 `content_approved.json` 系サンプルを保管する領域。互換テストが不要になった場合は削除を検討する。
 - `json/sample_template_layouts.jsonl`: 工程2のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。
-- `extract/jobspec.json`: 工程2の `tpl-extract` が出力するジョブスペック雛形のサンプル。テンプレ由来のプレースホルダー情報を確認できる。
 - `text/sample_import_content.txt`: 外部ソース取り込み向けのプレーンテキスト例。`pptx content --content-source` で工程3インポートを検証する際に利用する。
 - `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
 - `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトに加え、RM-043 で拡充予定のバリエーションもここへ集約する。
@@ -14,7 +13,7 @@
 ## 運用ルール
 - サンプル JSON は公開前提のダミーデータのみを使用し、実案件情報を含めない。
 - `json/` 配下の `sample_jobspec*.json` を更新した際は `tests/test_cli_integration.py` の期待値や `docs/` の使い方ガイドを確認する。
-- `sample_content_*.json` を更新する場合は、承認ステータスが `approved` で統一されているか、レビューイベントの整合性（`approve` 前に `return` が存在しない等）を確認する。
+- `brief/` 配下のサンプルを更新する場合は、カード数・ストーリーフェーズ・intent タグの整合を確認し、必要に応じて CLI の生成手順を README へ反映する。
 - `sample_template_layouts.jsonl` は 1 行 1 レコードの JSON Lines 形式を維持し、`layout_id`・`usage_tags`・`text_hint`・`media_hint` の最小セットを含める。用途が増えた場合はコメントをメモ欄へ追記する。
 - テンプレートを差し替える場合は `uv run pptx gen` で出力差分を確認し、`docs/runbooks/release.md` に影響がないか検討する。
 - 参照テンプレートにアンカーを追加する際は、レイアウト名と図形名が JSON 仕様と一致しているか確認する。

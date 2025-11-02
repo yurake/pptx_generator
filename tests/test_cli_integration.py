@@ -10,20 +10,19 @@ import tempfile
 from pathlib import Path
 
 from click.testing import CliRunner
-from collections import Counter
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
+from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 from pptx_generator.models import (JobSpec, JobSpecScaffold, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-CONTENT_APPROVED_SAMPLE = Path("samples/json/sample_content_approved.json")
-CONTENT_REVIEW_LOG_SAMPLE = Path("samples/json/sample_content_review_log.json")
+BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
 
 
 def _collect_paragraph_texts(slide) -> list[str]:
@@ -38,10 +37,43 @@ def _collect_paragraph_texts(slide) -> list[str]:
     return texts
 
 
+def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
+    brief_dir = temp_dir / "brief-input"
+    result = runner.invoke(
+        app,
+        [
+            "content",
+            str(BRIEF_SOURCE),
+            "--output",
+            str(brief_dir),
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+    return {
+        "dir": brief_dir,
+        "cards": brief_dir / "brief_cards.json",
+        "log": brief_dir / "brief_log.json",
+        "meta": brief_dir / "ai_generation_meta.json",
+    }
+
+
+def _brief_args(paths: dict[str, Path]) -> list[str]:
+    return [
+        "--brief-cards",
+        str(paths["cards"]),
+        "--brief-log",
+        str(paths["log"]),
+        "--brief-meta",
+        str(paths["meta"]),
+    ]
+
+
 def test_cli_gen_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "gen-work"
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     result = runner.invoke(
         app,
@@ -52,6 +84,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -152,53 +185,46 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     assert charts, "チャートが描画されていること"
 
 
-def test_cli_content_ai_generation(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
-    output_dir = tmp_path / "content-ai"
+def test_cli_content_generates_brief_outputs(tmp_path) -> None:
+    output_dir = tmp_path / "brief"
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
             "content",
-            str(spec_path),
-            "--ai-policy-id",
-            "proposal-default",
+            str(BRIEF_SOURCE),
             "--output",
             str(output_dir),
         ],
         catch_exceptions=False,
     )
 
-    assert result.exit_code == 0
-
-    draft_path = output_dir / "content_draft.json"
+    assert result.exit_code == 0, result.output
+    cards_path = output_dir / "brief_cards.json"
     meta_path = output_dir / "ai_generation_meta.json"
-    log_path = output_dir / "content_ai_log.json"
+    log_path = output_dir / "brief_ai_log.json"
+    audit_path = output_dir / "audit_log.json"
 
-    assert draft_path.exists()
+    assert cards_path.exists()
     assert meta_path.exists()
     assert log_path.exists()
+    assert audit_path.exists()
 
-    draft_payload = json.loads(draft_path.read_text(encoding="utf-8"))
+    cards_payload = json.loads(cards_path.read_text(encoding="utf-8"))
+    assert len(cards_payload["cards"]) >= 1
     meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
-    log_payload = json.loads(log_path.read_text(encoding="utf-8"))
-
-    assert "slides" in draft_payload
-    assert meta_payload["policy_id"] == "proposal-default"
-    assert len(log_payload) == len(draft_payload["slides"])
+    assert meta_payload["policy_id"]
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    assert audit_payload["brief_normalization"]["statistics"]["cards_total"] == len(cards_payload["cards"])
 
 
-def test_cli_gen_with_content_approved(tmp_path) -> None:
+def test_cli_gen_with_brief_inputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
-    content_path = CONTENT_APPROVED_SAMPLE
-    review_log_path = CONTENT_REVIEW_LOG_SAMPLE
-
-    approved_payload = json.loads(content_path.read_text(encoding="utf-8"))
-    review_log_payload = json.loads(review_log_path.read_text(encoding="utf-8"))
-    output_dir = tmp_path / "gen-content"
+    output_dir = tmp_path / "gen-brief"
     runner = CliRunner()
     spec = JobSpec.parse_file(spec_path)
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     result = runner.invoke(
         app,
@@ -209,15 +235,12 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
-            "--content-approved",
-            str(content_path),
-            "--content-review-log",
-            str(review_log_path),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
 
     audit_path = output_dir / "audit_log.json"
     assert audit_path.exists()
@@ -246,22 +269,6 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     assert mapping_info is not None
     assert mapping_info.get("rendering_ready_path") == str((output_dir / "rendering_ready.json"))
     assert mapping_info.get("fallback_count") >= 0
-    content_meta = audit_payload.get("content_approval")
-    assert content_meta is not None
-    assert content_meta["slides"] == len(approved_payload["slides"])
-    assert content_meta["path"] == str(content_path.resolve())
-    assert content_meta["hash"].startswith("sha256:")
-    assert content_meta["slide_ids"] == [slide["id"] for slide in approved_payload["slides"]]
-    assert content_meta["applied_to_spec"] is True
-    assert set(content_meta["updated_slide_ids"]) == {slide["id"] for slide in approved_payload["slides"]}
-
-    review_meta = audit_payload.get("content_review_log")
-    assert review_meta is not None
-    assert review_meta["events"] == len(review_log_payload)
-    assert review_meta["path"] == str(review_log_path.resolve())
-    assert review_meta["hash"].startswith("sha256:")
-    expected_actions = Counter(entry["action"] for entry in review_log_payload)
-    assert review_meta["actions"] == dict(expected_actions)
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "disabled"
@@ -272,13 +279,13 @@ def test_cli_gen_with_content_approved(tmp_path) -> None:
     agenda_spec = next(slide for slide in spec.slides if slide.id == "agenda-01")
     agenda_slide = presentation.slides[spec.slides.index(agenda_spec)]
     agenda_texts = _collect_paragraph_texts(agenda_slide)
-    assert "テンプレ適用状況（承認済み）" in agenda_texts
-    assert "layout-validate 結果レビュー（承認済み）" in agenda_texts
+    assert agenda_spec.subtitle in agenda_texts
+    assert "Agenda トピック 1-1" in agenda_texts
+    assert "Agenda トピック 1-2" in agenda_texts
 
     detail_spec = next(slide for slide in spec.slides if slide.id == "three_rows_detail-01")
     detail_slide = presentation.slides[spec.slides.index(detail_spec)]
-    notes_text = detail_slide.notes_slide.notes_text_frame.text
-    assert "監査ログ記載済み（承認済み）。" in notes_text
+    assert detail_slide.notes_slide is not None
 
 
 def test_cli_mapping_then_render(tmp_path) -> None:
@@ -288,6 +295,7 @@ def test_cli_mapping_then_render(tmp_path) -> None:
     draft_dir = tmp_path / "draft"
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     mapping_result = runner.invoke(
         app,
@@ -300,6 +308,7 @@ def test_cli_mapping_then_render(tmp_path) -> None:
             str(SAMPLE_TEMPLATE),
             "--draft-output",
             str(draft_dir),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -338,64 +347,51 @@ def test_cli_mapping_then_render(tmp_path) -> None:
     assert artifacts.get("rendering_ready") == str(rendering_ready_path)
 
 
-def test_cli_gen_with_content_approved_violating_rules(tmp_path) -> None:
+def test_cli_gen_with_invalid_brief_fails(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
-    content_path = tmp_path / "content_approved_violation.json"
-    payload = {
-        "slides": [
+    invalid_brief = tmp_path / "invalid_brief.json"
+    invalid_brief.write_text(
+        json.dumps(
             {
-                "id": "agenda-01",
-                "intent": "アジェンダ",
-                "elements": {
-                    "title": "アジェンダ",
-                    "body": ["御社向け改善プラン"]
-                },
-                "status": "approved"
-            }
-        ]
-    }
-    content_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-
-    output_dir = tmp_path / "gen-content-forbidden"
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "gen",
-            str(spec_path),
-            "--output",
-            str(output_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
-            "--content-approved",
-            str(content_path),
-        ],
-        catch_exceptions=False,
+                "brief_id": "invalid",
+                "cards": [
+                    {
+                        "card_id": "s01",
+                        "chapter": "Overview",
+                        "message": "Missing story",
+                        "narrative": [],
+                        "supporting_points": [],
+                        "intent_tags": [],
+                        "status": "draft",
+                        "autofix_applied": [],
+                    }
+                ],
+                "story_context": {"chapters": []},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
     )
 
-    assert result.exit_code == 3
-    assert "業務ルール検証に失敗しました" in result.output
-    audit_path = output_dir / "audit_log.json"
-    assert not audit_path.exists()
-
-
-def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
-    content_path = tmp_path / "content_approved.json"
-    payload = {
-        "slides": [
+    brief_log = tmp_path / "brief_log.json"
+    brief_log.write_text("[]", encoding="utf-8")
+    brief_meta = tmp_path / "ai_generation_meta.json"
+    brief_meta.write_text(
+        json.dumps(
             {
-                "id": "s01",
-                "intent": "市場動向",
-                "status": "draft",
-                "elements": {"title": "市場", "body": ["需要は増加"]},
-            }
-        ]
-    }
-    content_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+                "brief_id": "invalid",
+                "generated_at": "2025-11-02T00:00:00Z",
+                "policy_id": "brief-default",
+                "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
+                "cards": [],
+                "statistics": {"cards_total": 1, "approved": 0, "returned": 0},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
 
-    output_dir = tmp_path / "gen-content-fail"
+    output_dir = tmp_path / "gen-invalid-brief"
     runner = CliRunner()
 
     result = runner.invoke(
@@ -407,16 +403,44 @@ def test_cli_gen_with_unapproved_content_fails(tmp_path) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
-            "--content-approved",
-            str(content_path),
+            "--brief-cards",
+            str(invalid_brief),
+            "--brief-log",
+            str(brief_log),
+            "--brief-meta",
+            str(brief_meta),
         ],
         catch_exceptions=False,
     )
 
     assert result.exit_code == 4
-    assert "承認済みコンテンツの読み込みに失敗しました" in result.output
-    audit_path = output_dir / "audit_log.json"
-    assert not audit_path.exists()
+    assert "ブリーフ成果物の読み込みに失敗しました" in result.output
+    assert not (output_dir / "audit_log.json").exists()
+
+
+def test_cli_gen_missing_brief_files_fail(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_jobspec.json")
+    output_dir = tmp_path / "gen-missing-brief"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            "--brief-cards",
+            str(tmp_path / "missing_brief.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "ブリーフ成果物の読み込みに失敗しました" in result.output
+    assert not (output_dir / "audit_log.json").exists()
 
 
 def test_cli_gen_supports_template(tmp_path) -> None:
@@ -429,6 +453,7 @@ def test_cli_gen_supports_template(tmp_path) -> None:
     spec = JobSpec.parse_file(spec_path)
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -440,6 +465,7 @@ def test_cli_gen_supports_template(tmp_path) -> None:
             str(template_path),
             "--pptx-name",
             "with-template.pptx",
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -507,6 +533,7 @@ def test_cli_gen_with_polisher_stub(tmp_path) -> None:
     )
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -516,6 +543,7 @@ def test_cli_gen_with_polisher_stub(tmp_path) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
             "--polisher",
             "--polisher-path",
             sys.executable,
@@ -573,6 +601,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
     branding_path.write_text(json.dumps(branding_payload), encoding="utf-8")
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -584,6 +613,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path) -> None:
             str(template_path),
             "--branding",
             str(branding_path),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -608,6 +638,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr("pptx_generator.cli.extract_branding_config", raise_error)
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -617,6 +648,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
             str(output_dir),
             "--template",
             str(template_path),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -634,6 +666,7 @@ def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     output_dir = tmp_path / "mapping-work"
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     result = runner.invoke(
         app,
@@ -642,6 +675,7 @@ def test_cli_mapping_command_generates_outputs(tmp_path) -> None:
             str(spec_path),
             "--output",
             str(output_dir),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -663,6 +697,7 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
     mapping_dir = tmp_path / "mapping-work"
     render_dir = tmp_path / "render-work"
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     mapping_result = runner.invoke(
         app,
@@ -673,6 +708,7 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
             str(mapping_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -711,51 +747,6 @@ def test_cli_render_command_consumes_rendering_ready(tmp_path) -> None:
     assert audit_payload["slides"] == len(spec.slides)
 
 
-def test_cli_compose_generates_stage45_outputs(tmp_path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
-    draft_dir = tmp_path / "compose-draft"
-    compose_dir = tmp_path / "compose-gen"
-    spec = JobSpec.parse_file(spec_path)
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "compose",
-            str(spec_path),
-            "--draft-output",
-            str(draft_dir),
-            "--output",
-            str(compose_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-
-    draft_path = draft_dir / "draft_draft.json"
-    approved_path = draft_dir / "draft_approved.json"
-    log_path = draft_dir / "draft_review_log.json"
-    meta_path = draft_dir / "draft_meta.json"
-    assert draft_path.exists()
-    assert approved_path.exists()
-    assert log_path.exists()
-    assert meta_path.exists()
-
-    rendering_ready_path = compose_dir / "rendering_ready.json"
-    mapping_log_path = compose_dir / "mapping_log.json"
-    assert rendering_ready_path.exists()
-    assert mapping_log_path.exists()
-
-    draft_meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    assert draft_meta.get("slides") == len(spec.slides)
-
-    mapping_payload = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
-    assert mapping_payload["meta"]["job_meta"]["title"] == "RM-043 拡張テンプレート検証"
-
-
 def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     template_path = SAMPLE_TEMPLATE
@@ -763,6 +754,7 @@ def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
     validation_output = tmp_path / "validation-with-snapshot"
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     gen_result = runner.invoke(
         app,
         [
@@ -773,6 +765,7 @@ def test_cli_layout_validate_with_analyzer_snapshot(tmp_path) -> None:
             "--template",
             str(template_path),
             "--emit-structure-snapshot",
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
@@ -835,6 +828,7 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(pdf_exporter.subprocess, "run", fake_run)
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -844,6 +838,7 @@ def test_cli_gen_exports_pdf(tmp_path, monkeypatch) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
             "--export-pdf",
             "--pdf-output",
             "custom.pdf",
@@ -892,6 +887,7 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(pdf_exporter.subprocess, "run", fake_run)
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -901,6 +897,7 @@ def test_cli_gen_pdf_only(tmp_path, monkeypatch) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
             "--export-pdf",
             "--pdf-mode",
             "only",
@@ -938,6 +935,7 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(pdf_exporter.subprocess, "run", fail_run)
 
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
     result = runner.invoke(
         app,
         [
@@ -947,6 +945,7 @@ def test_cli_gen_pdf_skip_env(tmp_path, monkeypatch) -> None:
             str(output_dir),
             "--template",
             str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
             "--export-pdf",
         ],
         catch_exceptions=False,
@@ -976,6 +975,7 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
         shutil.copytree(repo_root / "samples", fs_root / "samples")
         shutil.copytree(repo_root / "config", fs_root / "config")
 
+        brief_paths = _prepare_brief_inputs(runner, fs_root)
         result = runner.invoke(
             app,
             [
@@ -983,6 +983,7 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
                 "samples/json/sample_jobspec.json",
                 "--template",
                 "samples/templates/templates.pptx",
+                *_brief_args(brief_paths),
             ],
             catch_exceptions=False,
         )
@@ -1026,8 +1027,6 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert output_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
-    jobspec_path = output_dir / "jobspec.json"
-    assert jobspec_path.exists()
 
     # JSON内容の検証
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
@@ -1060,7 +1059,6 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert "Diagnostics:" in result.output
     assert "検出結果: warnings=" in result.output
 
-
 def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     """tpl-extract コマンドのカスタム出力パステスト。"""
     template_path = Path("samples/templates/templates.pptx")
@@ -1084,8 +1082,6 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     assert spec_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
-    jobspec_path = output_dir / "jobspec.json"
-    assert jobspec_path.exists()
 
     template_spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -1094,10 +1090,6 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
     assert branding_data.get("version") == "layout-style-v1"
     assert "components" in branding_data
-
-    jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
-    jobspec = JobSpecScaffold.model_validate(jobspec_data)
-    assert jobspec.meta.template_path == str(template_path)
 
 
 def test_cli_tpl_extract_with_filters(tmp_path) -> None:
@@ -1128,18 +1120,12 @@ def test_cli_tpl_extract_with_filters(tmp_path) -> None:
     assert output_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
-    jobspec_path = output_dir / "jobspec.json"
-    assert jobspec_path.exists()
 
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
     
     # フィルタが適用されていることを確認（具体的な検証は実際のテンプレート内容に依存）
     assert template_spec.template_path == str(template_path)
-
-    jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
-    jobspec = JobSpecScaffold.model_validate(jobspec_data)
-    assert jobspec.meta.template_path == str(template_path)
 
 
 def test_cli_tpl_extract_nonexistent_file() -> None:
@@ -1220,8 +1206,6 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         assert output_path.exists()
         branding_path = output_dir / "branding.json"
         assert branding_path.exists()
-        jobspec_path = output_dir / "jobspec.json"
-        assert jobspec_path.exists()
 
         template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
         template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -1242,7 +1226,6 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         assert diagnostics_path.exists()
         assert "Layouts:" in result.output
         assert "Diagnostics:" in result.output
-
     finally:
         # 一時ファイルをクリーンアップ
         temp_template_path.unlink()
@@ -1279,6 +1262,46 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         assert jobspec_path.exists()
         assert layouts_path.exists()
         assert diagnostics_path.exists()
+
+
+def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        output_dir = Path("out-validation")
+        validation_result = LayoutValidationResult(
+            layouts_path=output_dir / "layouts.jsonl",
+            diagnostics_path=output_dir / "diagnostics.json",
+            diff_report_path=None,
+            record_count=0,
+            warnings_count=0,
+            errors_count=2,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        validation_result.layouts_path.write_text("[]", encoding="utf-8")
+        validation_result.diagnostics_path.write_text("{}", encoding="utf-8")
+
+        monkeypatch.setattr(LayoutValidationSuite, "run", lambda self: validation_result)
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-extract",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--output",
+                str(output_dir),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 6
+        assert "レイアウト検証でエラーが検出されました" in result.output
 
 
 def test_cli_tpl_release_generates_outputs(tmp_path) -> None:

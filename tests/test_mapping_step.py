@@ -9,6 +9,7 @@ from typing import Iterable
 from pptx_generator.models import JobSpec
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
+from pptx_generator.brief import BriefCard, BriefDocument, BriefStoryContext, BriefStoryInfo
 
 
 def _build_spec(body_lines: Iterable[str]) -> JobSpec:
@@ -42,6 +43,22 @@ def _build_spec(body_lines: Iterable[str]) -> JobSpec:
 def test_mapping_step_generates_rendering_outputs(tmp_path: Path) -> None:
     spec = _build_spec(["最初のポイント", "次のステップ"])
     context = PipelineContext(spec=spec, workdir=tmp_path)
+    brief_doc = BriefDocument(
+        brief_id="brief-test",
+        cards=[
+            BriefCard(
+                card_id="s01",
+                chapter="概要",
+                message="概要のポイント",
+                narrative=["最初のポイント", "次のステップ"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="introduction"),
+                intent_tags=["overview"],
+            )
+        ],
+        story_context=BriefStoryContext(chapters=[]),
+    )
+    context.add_artifact("brief_document", brief_doc)
 
     step = MappingStep(MappingOptions(output_dir=tmp_path))
     step.run(context)
@@ -79,6 +96,22 @@ def test_mapping_step_generates_rendering_outputs(tmp_path: Path) -> None:
 def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> None:
     spec = _build_spec(["1行目", "2行目", "3行目"])
     context = PipelineContext(spec=spec, workdir=tmp_path)
+    brief_doc = BriefDocument(
+        brief_id="brief-test",
+        cards=[
+            BriefCard(
+                card_id="s01",
+                chapter="概要",
+                message="概要のポイント",
+                narrative=["1行目", "2行目", "3行目"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="introduction"),
+                intent_tags=["overview"],
+            )
+        ],
+        story_context=BriefStoryContext(chapters=[]),
+    )
+    context.add_artifact("brief_document", brief_doc)
 
     layouts_path = tmp_path / "layouts.jsonl"
     layouts_path.write_text(
