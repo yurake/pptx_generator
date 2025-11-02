@@ -2044,7 +2044,7 @@ def render(  # noqa: PLR0913
     polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
 ) -> None:
-    """工程6 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
+    """工程5 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
     if not export_pdf and pdf_mode != "both":
         click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
         raise click.exceptions.Exit(code=2)
@@ -2172,17 +2172,15 @@ def tpl_extract(
         # 抽出実行
         extractor = TemplateExtractor(extractor_options)
         template_spec = extractor.extract()
-        jobspec_scaffold = extractor.build_jobspec_scaffold(template_spec)
         branding_result = extract_branding_config(template_path)
-
+        
         # 出力パス決定
         if format.lower() == "yaml":
             spec_path = output_dir / "template_spec.yaml"
         else:
             spec_path = output_dir / "template_spec.json"
         branding_output_path = output_dir / "branding.json"
-        jobspec_path = output_dir / "jobspec.json"
-
+        
         # ファイル保存
         if format.lower() == "yaml":
             import yaml
@@ -2208,18 +2206,13 @@ def tpl_extract(
         branding_output_path.write_text(branding_text, encoding="utf-8")
         logger.info("Saved branding payload to %s", branding_output_path.resolve())
 
-        extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
-        logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
-
         # 結果表示
         click.echo(f"テンプレート抽出が完了しました: {spec_path}")
         click.echo(f"ブランド設定を出力しました: {branding_output_path}")
-        click.echo(f"ジョブスペック雛形を出力しました: {jobspec_path}")
         click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
-
+        
         total_anchors = sum(len(layout.anchors) for layout in template_spec.layouts)
         click.echo(f"抽出された図形・アンカー数: {total_anchors}")
-        click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
         
         if template_spec.warnings:
             click.echo(f"警告: {len(template_spec.warnings)} 件")

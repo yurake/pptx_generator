@@ -1,6 +1,6 @@
 # レンダリング・監査スキーマ
 
-工程6（PPTX レンダリング）および後続の PDF / 監査処理で利用する JSON 仕様を定義する。
+工程5（PPTX レンダリング）および後続の PDF / 監査処理で利用する JSON 仕様を定義する。
 
 ## ファイル
 - `analysis_pre_polisher.json`: Renderer 出力直後の Analyzer 結果（比較用ベースライン）。

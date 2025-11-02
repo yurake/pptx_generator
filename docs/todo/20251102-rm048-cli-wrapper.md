@@ -54,6 +54,38 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md（README に compose を追記、AGENTS は変更不要）
+  - 追加対応計画:
+    - スコープ
+      - 工程体系を 6 → 5 工程へ変更し、従来の工程4/5（ドラフト構成・マッピング）を統合して新しい「工程4: マッピング」と定義し直す。
+      - README は新工程4を基準に簡潔化し、旧工程4/5の細部は既存の詳細ドキュメントへ退避／集約する。
+      - requirements/design など工程別ドキュメントを統合・改訂し、工程番号と呼称を全体で整合させる。
+    - 影響ドキュメント（想定）
+      - `README.md`（工程一覧・チートシート等の更新）
+      - `docs/requirements/stages/*.md`（stage-04/05 の統合 → 新 stage-04）
+      - `docs/design/*`（工程解説・CLI 記述の工程番号更新）
+      - `docs/runbooks/`, `docs/notes/` など工程数に言及する箇所全般
+      - ToDo / roadmap の記録更新（必要なら）
+    - 実施ステップ
+      1. 工程に関するドキュメントを洗い出し、6工程前提の記述箇所を一覧化。
+      2. requirements/design の工程4/5 ドキュメントを統合し、新工程4「マッピング」として構成・内容を再整理。
+      3. README から旧工程4/5 詳細を削除し、新工程4概要と該当ドキュメントへの導線を記載。
+      4. それ以外の資料（設計書・runbook・notes・CLI リファレンス等）の工程数・名称・参照リンクを 5 工程体制に合わせて更新。
+      5. 変更箇所を確認し、必要に応じて diff チェックと表記揺れの統一を実施。
+    - リスク・前提
+      - 工程番号変更に伴う参照リンク切れ（目次・アンカー等）が発生し得る。
+      - ドキュメント間で工程呼称が混在する可能性があるため、統一ルールの適用が必要。
+      - CLI やツール側の挙動は変更しない前提で、ドキュメントのみを更新する。
+    - テスト戦略
+      - 自動テストは不要。ドキュメント校正（リンク確認・lint/markdown チェックがあれば実行）を想定。
+    - ロールバック方法
+      - 統合前のドキュメント（旧 stage-04/05）を git revert で復元し、README 等の工程数表記を 6 工程に戻す。
+    - 調査メモ
+      - README.md: 工程数紹介、Mermaid 図、CLI チートシート、工程別ガイド概要、補足コメント。
+      - docs/design/design.md / cli-command-reference.md / 20251019-stage3-4-cli.md / rm005-story-modeler.md など、工程3/4/5 を明記している設計資料。
+      - docs/requirements/stages/stage-04-mapping.md および対応する design/stages ファイル。
+      - docs/runbooks/story-outline-ops.md、support.md、pptx-analyzer.md など工程を参照する運用手順。
+      - docs/notes/20251011-roadmap-refresh.md、20251012-readme-refactor.md、20251019-rm033-scope.md 等、6 工程を前提としたノート。
+      - その他 `docs/AGENTS.md`、ロードマップ、ToDo 等に散在する「工程3/4」「工程5/6」表現。
 - [x] 関連Issue 行の更新
   - メモ: #253 を参照先 Issue として設定済み。
 - [ ] PR 作成

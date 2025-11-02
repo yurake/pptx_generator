@@ -8,7 +8,7 @@
 - `stage-02-template-structure-extraction.md`: `layouts.jsonl`, `diagnostics.json`, 差分レポート。
 - `stage-03-content-normalization.md`: `content_draft.json`, `content_approved.json`, 承認ログ。
 - `stage-04-draft-structuring.md`: `draft_draft.json`, `draft_approved.json`, 承認ログ。
-- `stage-05-mapping.md`: `rendering_ready.json`, `mapping_log.json`, フォールバック履歴。
+- `stage-04-mapping.md`: `rendering_ready.json`, `mapping_log.json`, フォールバック履歴。
 - `stage-06-rendering.md`: `rendering_log.json`, `audit_log.json`。
 - `samples/`: 代表的な JSON サンプル（`.jsonc`）。
 
