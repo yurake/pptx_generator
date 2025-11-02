@@ -41,9 +41,9 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 3. **コンテンツ正規化**（HITL）  
    `jobspec.json` と入力コンテンツを基にスライド候補を整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/requirements.md` を参照。
 4. **マッピング（HITL + 自動）**  
-   章構成承認とレイアウト割付を同一工程で扱い、`draft_approved.json` と `rendering_ready.json` を生成する。HITL 操作は Draft API / CLI、プレースホルダ割付は Mapping Engine が担当する。
+   章構成承認とレイアウト割付を同一工程で扱い、`draft_approved.json` と `generate_ready.json` を生成する。HITL 操作は Draft API / CLI、プレースホルダ割付は Mapping Engine が担当する。
 5. **PPTX レンダリング**（自動）  
-   `rendering_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
+   `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
 工程 3・4 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-03-content-normalization.md` / `docs/design/stages/stage-04-mapping.md` にまとめている。
 
@@ -51,8 +51,8 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
 | コンテンツ正規化 | `jobspec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
-| マッピング (HITL + 自動) | `content_approved.json`, `jobspec.json`, `layouts.jsonl`, `branding.json` | `draft_draft.json` → `draft_approved.json`, `rendering_ready.json`, `mapping_log.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録） |
-| レンダリング | `rendering_ready.json`, `template.pptx`, `branding.json` | `output.pptx`, `rendering_log.json`, `audit_log.json`, `analysis.json`, `review_engine_analyzer.json` | 軽量整合チェック（空 PH / layout ミスマッチ）、Analyzer 連携、PDF/Polisher 統合 |
+| マッピング (HITL + 自動) | `content_approved.json`, `jobspec.json`, `layouts.jsonl`, `branding.json` | `draft_draft.json` → `draft_approved.json`, `generate_ready.json`, `mapping_log.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録） |
+| レンダリング | `generate_ready.json`, `template.pptx`, `branding.json` | `output.pptx`, `rendering_log.json`, `audit_log.json`, `analysis.json`, `review_engine_analyzer.json` | 軽量整合チェック（空 PH / layout ミスマッチ）、Analyzer 連携、PDF/Polisher 統合 |
 
 各 JSON のスキーマは `docs/design/schema/README.md` 配下に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
 
@@ -88,7 +88,7 @@ README の「アーキテクチャ概要」節にも同じ 5 工程を視覚化�
 | draft_meta.json | 任意 | ドラフト工程のメタ情報。 | S4 出 |
 | draft_review_log.json | 任意 | ドラフトレビューのログ。 | S4 出 / S5 入 |
 | rules.json | 任意 | 文字量や禁止語などの規則。マッピング/解析に使用。 | S4 入 / S5 入 |
-| rendering_ready.json | 必須 | マッピング結果。レイアウト割付済みの描画直前仕様。 | S4 出 / S5 入 |
+| generate_ready.json | 必須 | マッピング結果。レイアウト割付済みの描画直前仕様。 | S4 出 / S5 入 |
 | mapping_log.json | 任意 | マッピング過程のログ。レイアウトスコア等。 | S4 出 |
 | fallback_report.json | 任意 | フォールバック発生の記録。 | S4 出 |
 | proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S5 出 |

@@ -522,13 +522,13 @@ class MappingSlideMeta(BaseModel):
     fallback: str = "none"
 
 
-class RenderingReadySlide(BaseModel):
+class GenerateReadySlide(BaseModel):
     layout_id: str
     elements: dict[str, Any] = Field(default_factory=dict)
     meta: MappingSlideMeta
 
 
-class RenderingReadyMeta(BaseModel):
+class GenerateReadyMeta(BaseModel):
     template_version: str | None = None
     content_hash: str | None = None
     generated_at: str
@@ -536,12 +536,12 @@ class RenderingReadyMeta(BaseModel):
     job_auth: JobAuth | None = None
 
 
-class RenderingReadyDocument(BaseModel):
-    slides: list[RenderingReadySlide] = Field(default_factory=list)
-    meta: RenderingReadyMeta
+class GenerateReadyDocument(BaseModel):
+    slides: list[GenerateReadySlide] = Field(default_factory=list)
+    meta: GenerateReadyMeta
 
     @classmethod
-    def parse_file(cls, path: str | Path) -> "RenderingReadyDocument":
+    def parse_file(cls, path: str | Path) -> "GenerateReadyDocument":
         source = Path(path).read_text(encoding="utf-8")
         return cls.model_validate_json(source)
 

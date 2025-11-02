@@ -13,7 +13,7 @@
 - ジョブスペックが参照される工程
   - 工程3: `uv run pptx content ...` がジョブスペックを読み込み、承認済みコンテンツを `spec_content_applied.json` として再構築する際のベースになる (`README.md:96-109`)。
   - 工程4: `uv run pptx outline ...` が章構成とページ順を決める際にジョブスペックの `slides` 配列を参照し、`layout_hint` などの候補提示に利用する (`README.md:111-121`)。
-  - 工程5: `uv run pptx mapping ...` がジョブスペック＋承認済みコンテンツを結合して `rendering_ready.json` を生成する際、レイアウト名・アンカー・画像指定をジョブスペックから取得する (`README.md:123-140`)。
+  - 工程5: `uv run pptx mapping ...` がジョブスペック＋承認済みコンテンツを結合して `generate_ready.json` を生成する際、レイアウト名・アンカー・画像指定をジョブスペックから取得する (`README.md:123-140`)。
 - 工程1/2で得られる情報
   - 工程1（テンプレ準備）はテンプレート PPTX の管理・命名・バージョン整理に専念しており、ジョブスペックのようなスライド構造データは生成しない (`README.md:51-62`)。
   - 工程2（テンプレ構造抽出）は `uv run pptx tpl-extract ...` や `layout-validate` でレイアウト構造・アンカー・ブランド設定を JSON / YAML 化するが、生成されるのは `layouts.jsonl`・`branding.json` 等であり、ジョブスペック形式の `slides` 配列は出力されない (`README.md:63-95`)。
@@ -50,13 +50,13 @@
 
 ## 工程5（マッピング）の必要性調査
 - 要件ドキュメントの確認
-  - `docs/requirements/stages/stage-04-mapping.md` は、工程4の出力として `rendering_ready.json`・`mapping_log.json`・（必要に応じて）`fallback_report.json` を要求し、必須プレースホルダー充足やフォールバック履歴、Analyzer サマリを品質ゲートとする設計を明記。
+  - `docs/requirements/stages/stage-04-mapping.md` は、工程4の出力として `generate_ready.json`・`mapping_log.json`・（必要に応じて）`fallback_report.json` を要求し、必須プレースホルダー充足やフォールバック履歴、Analyzer サマリを品質ゲートとする設計を明記。
   - 同ドキュメントは「レイアウト候補スコアリング」「AI 補完」「フォールバック適用」「監査ログ収集」を工程5の責務としており、工程4には含まれない。
 - 工程4との責務境界
   - `docs/requirements/stages/stage-04-draft-structuring.md` は HITL 工程として章構成・`layout_hint` の確定、差戻し理由管理、章テンプレ適用率などを扱う。プレースホルダーの具体的割付や自動補完、監査ログ生成は扱っていない。
   - 工程4で出力される `draft_approved.json` には `layout_hint` は含まれるが、テンプレのアンカーごとにどの要素を入れるかは未決定であり、工程5でのルール／AI 処理が必要。
 - 工程5との連携
-  - `docs/requirements/stages/stage-05-rendering.md` は入力として `rendering_ready.json` を前提としており、そこに `job_meta` / `job_auth` や PH→要素マッピングが埋まっていることを要求。工程4を取り除くと、工程5が自前で割付・検証・監査ログ生成まで担う必要が生じ、責務が過大になる。
+  - `docs/requirements/stages/stage-05-rendering.md` は入力として `generate_ready.json` を前提としており、そこに `job_meta` / `job_auth` や PH→要素マッピングが埋まっていることを要求。工程4を取り除くと、工程5が自前で割付・検証・監査ログ生成まで担う必要が生じ、責務が過大になる。
   - 監査ログ (`audit_log.json`) は工程5が出力する `mapping_log.json` を参照してフォールバック履歴や警告を記録する設計になっているため、工程5を省くと監査フローが破綻する。
 - 2段階品質ゲートの意義
   - 実務では工程4完了後も工程5でエラーが出れば工程4へ戻って差戻しを行うが、これは「HITL 承認済み構成」がまず提出され、その後「自動割付が完了し品質ゲートを通過した」ことを確認する二段階の審査になっている。
@@ -67,7 +67,7 @@
 
 ## コマンド構成の方向性メモ
 - `uv run pptx gen` の役割を工程5（レンダリング＋Polisher＋PDF 変換）に限定し、スコープを明確化する。従来の「工程4→5 合体モード」から絞り込み、引数解釈や監査ログ出力をレンダリング専用にする。
-- 工程4+5をまとめて実行するラッパー CLI（仮称: `pptx prepare` など）を新設し、HITL 承認済みコンテンツから `rendering_ready.json` までを一括で生成できるユーザ体験を提供する。内部では既存 `pptx outline` → `pptx mapping` を順に呼び出し、ログやエラーを統合出力する想定。
+- 工程4+5をまとめて実行するラッパー CLI（仮称: `pptx prepare` など）を新設し、HITL 承認済みコンテンツから `generate_ready.json` までを一括で生成できるユーザ体験を提供する。内部では既存 `pptx outline` → `pptx mapping` を順に呼び出し、ログやエラーを統合出力する想定。
 - ラッパー導入後も個別コマンド（`pptx outline`, `pptx mapping`）は残し、CI/デバッグ用に工程単位で再実行できるようにする。特に工程5単体の再実行はフォールバック検証や性能計測で有用なため、引き続きサポートする。
 - コマンド再設計に伴い、ドキュメント更新（`README.md`, `docs/design/design.md`, `docs/runbooks/` 系）とテストケースの見直し（CLI 統合テスト、CI スクリプト）が必要。仕様反映のタイミングは並行ドキュメント整備完了後に Plan を作成し、承認のうえ実施する。
 

@@ -1,7 +1,7 @@
 # 工程4 マッピング (HITL + 自動) 設計
 
 ## 目的
-- 承認済みコンテンツを章構成へ落とし込み、テンプレ構造に合致した `rendering_ready.json` を生成するまでを一体として扱う。
+- 承認済みコンテンツを章構成へ落とし込み、テンプレ構造に合致した `generate_ready.json` を生成するまでを一体として扱う。
 - HITL によるドラフト調整と自動マッピングを一貫したアーキテクチャで提供し、監査可能なログとメタ情報を残す。
 
 ## コンポーネント構成
@@ -11,14 +11,14 @@
 | Layout Hint Engine | 工程2の `layouts.jsonl` を参照し候補提示・スコア計算 | Python | `layout_score_detail` を算出し CLI / UI に理由を提示。 |
 | Chapter Template Registry | `structure_pattern` ごとの章テンプレ適用 | Python (dataclass + JSON) | 適合率と過不足章を計算し `draft_meta.json` に出力。 |
 | Draft Log Store | `draft_review_log.json` や差戻し履歴管理 | PostgreSQL / SQLite | CLI は JSON 書き出しを提供。 |
-| Mapping Engine | `rendering_ready.json` の生成、フォールバック制御 | Python | ルールベース＋AI 補完でプレースホルダ割付を完了。 |
+| Mapping Engine | `generate_ready.json` の生成、フォールバック制御 | Python | ルールベース＋AI 補完でプレースホルダ割付を完了。 |
 | Fallback Handler | 縮約・分割・付録送りの制御とログ化 | Python | `mapping_log.json` / `fallback_report.json` に履歴を残す。 |
 | Analyzer Metrics Adapter | 工程5（レンダリング）からの `analysis_summary.json` をドラフトへ連携 | Python | `analyzer_summary` をスライド単位で同期。 |
 | CLI (`pptx outline` / `pptx mapping` / `pptx compose`) | HITL 作業・自動実行の統合インターフェース | Python / Click | compose で工程4全体を一括実行。 |
 
 ## サブ工程構成
 - **4.1 ドラフト構成（HITL）**: 章構成・`layout_hint` の確定、差戻し理由管理、テンプレ適合率計測。
-- **4.2 レイアウトマッピング（自動）**: レイアウト候補スコアリング、プレースホルダ割付、フォールバック・AI 補完、`rendering_ready.json` 生成。
+- **4.2 レイアウトマッピング（自動）**: レイアウト候補スコアリング、プレースホルダ割付、フォールバック・AI 補完、`generate_ready.json` 生成。
 
 ---
 
@@ -74,7 +74,7 @@
 ## 4.2 レイアウトマッピング（自動）
 
 ### アーキテクチャ
-- Mapping Engine は Draft 成果物とテンプレ構造を統合し、`rendering_ready.json` を生成する。  
+- Mapping Engine は Draft 成果物とテンプレ構造を統合し、`generate_ready.json` を生成する。  
 - ルールベース割付 → AI 補完 → フォールバック制御の 3 レイヤ構成。  
 - 監査・可観測性のため `mapping_log.json`, `fallback_report.json` を同時に出力。
 
@@ -83,17 +83,17 @@
 2. ルールベース割付: 必須プレースホルダの充足、オーバーフロー検知、推奨図表の配置。  
 3. AI 補完: 未割付要素や過剰要素を再配分し、必要時はスライド分割・縮約。  
 4. フォールバック: 縮約 → 分割 → 付録送り の順で適用し、履歴をログ化。  
-5. 検証・出力: JSON スキーマ検証を通過後、`rendering_ready.json` と監査ログを保存。
+5. 検証・出力: JSON スキーマ検証を通過後、`generate_ready.json` と監査ログを保存。
 
 ### ログ設計
 - `mapping_log.json`: 候補スコア、AI 補完差分、フォールバック履歴、Analyzer サマリを集約。  
 - `fallback_report.json`: フォールバック発生時の対象スライドと理由一覧。  
-- 監査ログ (`audit_log.json`) に `rendering_ready`・`mapping_log` の SHA-256 を記録し、時刻・スライド数・フォールバック件数を格納。  
+- 監査ログ (`audit_log.json`) に `generate_ready`・`mapping_log` の SHA-256 を記録し、時刻・スライド数・フォールバック件数を格納。  
 - `mapping_meta` にはスライド数、フォールバック対象 ID、AI 補完ステータスを含める。
 
 ### 品質ゲート
 - 全スライドに `layout_id` を付与し、必須プレースホルダが埋まっている。  
-- `rendering_ready.json` がスキーマ検証を通過し、空要素には理由が紐付く。  
+- `generate_ready.json` がスキーマ検証を通過し、空要素には理由が紐付く。  
 - フォールバック理由が `mapping_log.json` に記録され、工程5で追跡可能。  
 - Analyzer 指摘件数がメタに反映され、重大度に応じたハイライトが行われる。  
 - AI 補完箇所が追跡可能で、監査ログで確認できる。
@@ -101,7 +101,7 @@
 ### 未実装・課題
 - レイアウトスコアリングとフォールバック制御ロジックの最適化。  
 - AI 補完差分記録と監査ログ連携。  
-- `rendering_ready.json` スキーマ検証ツールと失敗時ガイド生成。  
+- `generate_ready.json` スキーマ検証ツールと失敗時ガイド生成。  
 - Analyzer とのループ連携強化（工程5での再解析結果を再取り込み）。
 
 ### CLI / API
@@ -112,7 +112,7 @@
 
 ## 参照スキーマ
 - [docs/design/schema/stage-04-mapping.md](../schema/stage-04-mapping.md)
-- サンプル: `rendering_ready.jsonc`, `mapping_log.jsonc`, `draft_approved.jsonc`
+- サンプル: `generate_ready.jsonc`, `mapping_log.jsonc`, `draft_approved.jsonc`
 
 ## 関連ドキュメント
 - `docs/runbooks/story-outline-ops.md`

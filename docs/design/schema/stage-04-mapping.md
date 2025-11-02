@@ -1,14 +1,14 @@
 # 工程4 マッピング スキーマ
 
-工程4（ドラフト構成 + レイアウトマッピング）で利用する JSON 仕様を定義する。ドラフト関連の詳細は [stage-04-draft-structuring.md](stage-04-draft-structuring.md) を参照し、本ドキュメントではマッピング成果物（`rendering_ready.json` など）を中心に記載する。
+工程4（ドラフト構成 + レイアウトマッピング）で利用する JSON 仕様を定義する。ドラフト関連の詳細は [stage-04-draft-structuring.md](stage-04-draft-structuring.md) を参照し、本ドキュメントではマッピング成果物（`generate_ready.json` など）を中心に記載する。
 
 ## ファイル
 - `draft_draft.json` / `draft_approved.json` / `draft_meta.json`: ドラフト構成の成果物。HITL で編集され、4.2 のマッピング処理が入力として利用する（詳細は draft schema を参照）。
-- `rendering_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
+- `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
 - `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
 - `fallback_report.json`: 収容不能など重大フォールバックの詳細（任意）。
 
-## rendering_ready.json
+## generate_ready.json
 ```jsonc
 {
   "slides": [
@@ -127,7 +127,7 @@
 - `meta.job_meta` / `meta.job_auth`: 元 `JobSpec` のメタ情報を保持し、工程5での `JobSpec` 再構築に利用する。
 
 ## サンプル
-- `samples/rendering_ready.jsonc`
+- `samples/generate_ready.jsonc`
 - `samples/mapping_log.jsonc`
 
 ## バリデーション

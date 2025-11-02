@@ -65,7 +65,7 @@
 - 優先度メモ: 中〜高（本番事故防止に重要）。
 
 ### 9. パイプライン疎結合 CLI 再設計
-- 概要: `pptx mapping` / `pptx render` の分離と `rendering_ready` → `JobSpec` 変換ヘルパを整備し、再実行性と監査性を向上させる。
+- 概要: `pptx mapping` / `pptx render` の分離と `generate_ready` → `JobSpec` 変換ヘルパを整備し、再実行性と監査性を向上させる。
 - 根拠: パイプライン疎結合化設計メモ（`docs/notes/20251018-pipeline-decoupling-design.md`）。
 - 提案成果物: 新 CLI 実装、監査ログ更新、再実行手順書、移行ガイド。
 - 依存/前提: 現行 CLI の互換要件、Mapping/Rendering Step のアーティファクト仕様。

@@ -23,9 +23,9 @@
        --template templates/<brand>/<version>/template.pptx \
        --export-pdf
      ```
-  - 工程5のみを再実行する場合（既存の `rendering_ready.json` を活用）:
+  - 工程5のみを再実行する場合（既存の `generate_ready.json` を活用）:
      ```bash
-     uv run pptx render .pptx/gen/rendering_ready.json \
+     uv run pptx render .pptx/gen/generate_ready.json \
        --output .pptx/gen \
        --template templates/<brand>/<version>/template.pptx \
        --export-pdf

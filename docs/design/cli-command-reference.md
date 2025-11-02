@@ -6,7 +6,7 @@
 
 ## パイプライン全体像
 - パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → マッピング（HITL + 自動）→ レンダリング」の 5 工程で構成される。
-- `pptx gen` は工程3〜5を一括実行するファサード。必要に応じて `pptx outline` / `pptx mapping` / `pptx render` を個別に呼び出し、再実行や検証を行う。
+- `pptx gen` は工程5（レンダリング）を実行するメインコマンド。工程4で生成した `generate_ready.json` を入力として利用する。
 
 ### 工程1: テンプレ準備
 テンプレートをブランド資産として登録し、リリースメタを生成する。
@@ -109,7 +109,7 @@ uv run pptx content .pptx/extract/jobspec.json \
 - 各プロバイダーに応じて `openai`, `anthropic`, `boto3` などの追加パッケージを導入する。
 
 ### 工程4: マッピング (HITL + 自動)
-章構成の承認とレイアウト割付をまとめて実行し、`draft_approved.json` と `rendering_ready.json` を整備する。
+章構成の承認とレイアウト割付をまとめて実行し、`draft_approved.json` と `generate_ready.json` を整備する。
 
 #### 推奨: `pptx compose`
 - 工程4全体を一括で実行し、HITL 差戻し後の再実行を簡素化する。
@@ -118,7 +118,7 @@ uv run pptx content .pptx/extract/jobspec.json \
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `--draft-output <dir>` | 工程4 (HITL) 成果物 (`draft_*`) の保存先 | `.pptx/draft` |
-| `--output <dir>` | 工程4 (自動) 成果物 (`rendering_ready.json` など) の保存先 | `.pptx/gen` |
+| `--output <dir>` | 工程4 (自動) 成果物 (`generate_ready.json` など) の保存先 | `.pptx/gen` |
 | `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
 | `--layouts <path>` | 工程2の `layouts.jsonl` を共有する | 指定なし |
 | `--draft-filename` / `--approved-filename` / `--draft-log-filename` | ドラフト成果物のファイル名を上書きする | 既定値を継承 |
@@ -142,14 +142,14 @@ uv run pptx compose .pptx/extract/jobspec.json \
 - `compose` と同一のドラフト関連オプション（`--target-length`, `--structure-pattern`, `--appendix-limit`, `--chapter-template` など）が利用可能。
 
 #### 補助: `pptx mapping`
-- 自動マッピングのみ再実行したい場合に利用し、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
+- 自動マッピングのみ再実行したい場合に利用し、`generate_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
 - `compose` と共通の `--rules`, `--template`, `--branding` などのオプションを保持する。
 
 ### 工程5: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
-#### `pptx render`
-- `rendering_ready.json` を入力に工程5を実行する。`pptx gen` で内部的に呼び出される処理に相当する。
+#### `pptx gen`
+- 工程4の成果物 `generate_ready.json` を入力し、レンダリング・Analyzer・監査ログ出力を実行する。工程5の標準コマンド。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -173,41 +173,15 @@ uv run pptx compose .pptx/extract/jobspec.json \
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 
-#### `pptx gen`
-- 工程4のマッピングと工程5のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx mapping` と `pptx render` を個別に利用する。
-
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
-| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） | `config/branding.json` |
-| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
-| `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
-| `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
-| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
-| `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
-| `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
-| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
-| `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
-| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
-| `--polisher-path <path>` | Polisher 実行ファイルを明示する | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
-| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
-| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
-| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
-| `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
-| `--verbose` | 追加ログを表示する | 無効 |
+#### 補助: `pptx render`
+- 互換目的の補助コマンド。`pptx gen` と同一のオプションを持ち、内部実装も共通だが、将来的には削除予定。
 
 ## 生成物とログの設計メモ
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
 - `content_draft.json` / `content_ai_log.json` / `ai_generation_meta.json`: 生成 AI モードで出力されるドラフト本文・プロンプトログ・メタ情報。
 - `spec_content_applied.json`: `--content-approved` 指定時に生成される承認内容適用済み Spec。
 - `content_meta.json`: 承認済みコンテンツとレビュー ログのハッシュや件数をまとめたメタ情報。
-- `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
+- `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
 - `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。

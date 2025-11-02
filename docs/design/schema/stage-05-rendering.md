@@ -56,7 +56,7 @@
     "pdf": ".pptx/gen/proposal.pdf"
   },
   "hashes": {
-    "rendering_ready": "sha256:41b4...f0",
+    "generate_ready": "sha256:41b4...f0",
     "pptx": "sha256:92ff...0a",
     "analysis": "sha256:ab12...9f",
     "analysis_pre_polisher": "sha256:f41c...aa",

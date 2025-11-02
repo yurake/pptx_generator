@@ -12,7 +12,7 @@
 - Stage2のテンプレ構造抽出では`extract-template` CLIでレイアウトID・プレースホルダ・ヒント情報をJSON化し、Analyzerの構造監査と互換レポート生成に直結するデータ基盤を提供している。
 - Stage3のコンテンツ正規化はAIレビューでA/B/C評価と改善提案を出し、承認者が差戻しや部分承認を選べるUIとログ仕様を揃え、`content_approved.json`として後続に引き渡す。
 - Stage4のドラフト構成設計では章レーンやページ遷移を人が調整し、レイアウトヒントと付録送りの判断を残した`draft_approved.json`を作成し、Analyzerのドラフト評価ダッシュボードやハイブリッドAI構想と連携させる。
-- Stage5のマッピングはテンプレ構造と承認済みデータを突合し、縮約→分割→付録送りというフォールバック階段を実装し、`rendering_ready.json`と`mapping_log.json`で決定理由を可視化する。
+- Stage5のマッピングはテンプレ構造と承認済みデータを突合し、縮約→分割→付録送りというフォールバック階段を実装し、`generate_ready.json`と`mapping_log.json`で決定理由を可視化する。
 - Stage6のレンダリングではpython-pptxを用いた自動生成と軽量整合チェックを組み合わせ、Open XMLベースのPolisherに引き継ぎやすい構造と`rendering_log.json`を整備している。
 - フォールバック戦略としてスライド分割や要約差替え、付録退避をテンプレレイアウトの収容力とブランド要件に応じて自動選択し、失敗時には再レンダリング指示と通知が飛ぶように計画されている。
 - Analyzerが検知する問題は重大度と修正案付きで`analysis.json`へ記録され、RefinerのAuto-fix候補と人による承認履歴を連動させて継続的改善の材料にする。
@@ -28,7 +28,7 @@
 - Service-E Polisherは.NET 8とOpen XML SDKで段落スタイルや禁則を仕上げ、python-pptxでは難しい細部調整を補完し、最終出力のブランド整合性を高める。
 - Service-F PDF ExporterはLibreOffice CLIをラップし、フォント埋め込みや透過画像の再現性を検証し、失敗時にはログと再試行キューを吐き出す安全装置を備える。
 - Service-G Distributorはストレージへの保存、メタ情報の登録、TeamsやSlack通知を扱い、保存URLとファイルハッシュ、生成時間を運用チームへ共有する。
-- データフローでは`layouts.jsonl`、`content_approved.json`、`draft_approved.json`、`rendering_ready.json`といった中間ファイルが互いに整合し、承認ログや解析ログとトレーサブルに紐付く。
+- データフローでは`layouts.jsonl`、`content_approved.json`、`draft_approved.json`、`generate_ready.json`といった中間ファイルが互いに整合し、承認ログや解析ログとトレーサブルに紐付く。
 - テンプレ構造解析CLIはレイアウトごとのプレースホルダ座標、テキストヒント、使用推奨シナリオを出力し、Stage3〜5の判断材料として使われる。
 - ブランド設定は`config/branding.json`で配色・フォント・フォールバック段落スタイルを宣言し、テンプレ側の色変更ではなく設定側で統制する設計思想が徹底されている。
 - テンプレートはpptx形式でのみ取り扱い、受け渡し時のメタ情報（作成者・ブランド・バージョン・レビュー日）をJSONに保存し、互換レポート生成で差分を追跡する。

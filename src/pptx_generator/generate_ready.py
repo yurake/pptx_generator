@@ -1,4 +1,4 @@
-"""Rendering Ready ドキュメントの補助ユーティリティ。"""
+"""Generate Ready ドキュメントの補助ユーティリティ。"""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ from itertools import count
 from typing import Any
 
 from .models import (ChartOptions, ChartSeries, JobAuth, JobMeta, JobSpec,
-                     RenderingReadyDocument, RenderingReadySlide, Slide,
+                     GenerateReadyDocument, GenerateReadySlide, Slide,
                      SlideBullet, SlideBulletGroup, SlideChart, SlideImage,
                      SlideTable, SlideTextbox)
 
 
-def rendering_ready_to_jobspec(document: RenderingReadyDocument) -> JobSpec:
-    """rendering_ready.json からレンダリング用の JobSpec を組み立てる。"""
+def generate_ready_to_jobspec(document: GenerateReadyDocument) -> JobSpec:
+    """generate_ready.json からレンダリング用の JobSpec を組み立てる。"""
 
     meta = document.meta.job_meta or JobMeta(
         schema_version="unknown",
@@ -28,7 +28,7 @@ def rendering_ready_to_jobspec(document: RenderingReadyDocument) -> JobSpec:
     return JobSpec(meta=meta, auth=auth, slides=slides)
 
 
-def _build_slide(index: int, slide: RenderingReadySlide) -> Slide:
+def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
     slide_id = _resolve_slide_id(index, slide)
     elements = slide.elements or {}
     title = _value_as_str(elements.get("title"))
@@ -121,7 +121,7 @@ def _build_slide(index: int, slide: RenderingReadySlide) -> Slide:
     )
 
 
-def _resolve_slide_id(index: int, slide: RenderingReadySlide) -> str:
+def _resolve_slide_id(index: int, slide: GenerateReadySlide) -> str:
     sources = slide.meta.sources
     if sources:
         candidate = sources[0]

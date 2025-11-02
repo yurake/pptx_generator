@@ -137,7 +137,7 @@
   - `layouts.jsonl` / `diagnostics.json`（工程2出力）。
   - `content_approved.json`（タイトル・本文・表 等）。
 - **出力**:
-  - `rendering_ready.json`（各スライドに `layout_id`, `elements`, `meta` を付与）。
+  - `generate_ready.json`（各スライドに `layout_id`, `elements`, `meta` を付与）。
   - `mapping_log.json`（レイアウト選定得点、AI 補完箇所、フォールバック履歴）。
 - **処理概要**:
   1. **一次マッピング（ルールベース）**: layout_hint と用途タグで候補レイアウト抽出 → PHと要素のマッピング表で自動割付 → スコアリングで最適レイアウト決定。
@@ -148,17 +148,17 @@
   - 必須要素を満たさないレイアウトは自動的に候補落ちとして次点を試行。
   - 収容不能の場合は順に「文章縮約 → スライド分割 → 付録送り」を適用し、結果をログ化。
   - AI 補完は安全な変更のみ採用し、複数候補がある場合は用途タグ一致率と直前スライド多様性で決定。
-- **主要 I/F**: `rendering_ready.json`（工程5の唯一の入力）、`mapping_log.json`（監査・検証用）。
+- **主要 I/F**: `generate_ready.json`（工程5の唯一の入力）、`mapping_log.json`（監査・検証用）。
 - **完了基準**:
   - 全スライドに `layout_id` と必要要素が割付済み。
-  - `rendering_ready.json` がスキーマ検証に合格し、空要素は意図的かつログ化されている。
+  - `generate_ready.json` がスキーマ検証に合格し、空要素は意図的かつログ化されている。
   - ログに重大エラーがなく、AI 補完が明示されている。
 
 ### 6. PPTX 生成（レンダリング＋軽量整合チェック）
 - **オペレーション**: 自動
-- **目的**: テンプレ PPTX と `rendering_ready.json` を用いて最終 `output.pptx` を生成し、軽量整合チェックと生成ログを出力する。
+- **目的**: テンプレ PPTX と `generate_ready.json` を用いて最終 `output.pptx` を生成し、軽量整合チェックと生成ログを出力する。
 - **入力**:
-  - `rendering_ready.json`。
+  - `generate_ready.json`。
   - テンプレ PPTX（工程1）。
   - ロゴアセット（任意）。
 - **出力**:

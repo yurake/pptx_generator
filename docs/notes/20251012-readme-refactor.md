@@ -25,7 +25,7 @@
    - 工程 2: `uv run pptx tpl-extract` でテンプレ構造抽出。出力物（レイアウト JSON、`branding.json`）と保存先を説明。
    - 工程 3: コンテンツ正規化（HITL）。`docs/requirements/stages/stage-03-...` など参照し、ワークシート例を記載。自動化は今後の検討と記載。
    - 工程 4: ドラフト構成設計（HITL）。`draft_approved.json` の作成例と進行状況を説明。
-   - 工程 5: `rendering_ready.json` を生成するマッピング工程（自動）。現状は CLI 実装中で、手順は設計ドキュメントを案内。
+   - 工程 5: `generate_ready.json` を生成するマッピング工程（自動）。現状は CLI 実装中で、手順は設計ドキュメントを案内。
    - 工程 6: `uv run pptx gen` 実行で PPTX/PDF を生成。出力ディレクトリとログを整理し、`--export-pdf` オプションや LibreOffice 依存を明記。
 3. **成果物の確認**: `.pptx/gen/` や `outputs/audit_log.json`、PDF 出力の確認方法をまとめる。
 

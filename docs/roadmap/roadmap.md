@@ -19,7 +19,7 @@
 | 1 | テンプレ準備 | テンプレ資産 (.pptx) の整備と版管理 |
 | 2 | テンプレ構造抽出 | レイアウト構造 JSON / ヒント値の生成 |
 | 3 | コンテンツ正規化 (HITL) | 入力データをスライド素材へ整形し承認 |
-| 4 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`rendering_ready.json`) |
+| 4 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`generate_ready.json`) |
 | 5 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
@@ -456,12 +456,12 @@ flowchart TB
 
 <a id="rm-025"></a>
 ### RM-025 マッピング補完エンジン
-- ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`rendering_ready.json` の確度を高める。
+- ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`generate_ready.json` の確度を高める。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/requirements/stages/stage-04-mapping.md](../requirements/stages/stage-04-mapping.md)
 - 参照 ToDo: [docs/todo/20251012-mapping-orchestrator.md](../todo/20251012-mapping-orchestrator.md)
 - 状況: 完了（2025-10-18 更新）
-- 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`rendering_ready.json` スキーマ検証ツール。
+- 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`generate_ready.json` スキーマ検証ツール。
 - 依存: RM-022（レイアウト解析検証強化）、RM-024（ドラフト構成承認フロー）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、LLM 推論基盤。
 
 <a id="rm-026"></a>
@@ -584,14 +584,14 @@ flowchart TB
 
 <a id="rm-037"></a>
 ### RM-037 パイプライン疎結合 CLI 再設計
-- ゴール: `pptx mapping` / `pptx render` を分離し、`rendering_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
+- ゴール: `pptx mapping` と工程5専用の `pptx gen` を明確に分離し、`generate_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
 - 対象工程: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-10-23 更新）
 - 期待成果:
-  - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
-  - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
+  - `pptx mapping` / `pptx gen` サブコマンドの実装と互換性維持した再設計、`generate_ready` → `JobSpec` 変換ヘルパの提供（legacy `pptx render` は互換目的で維持）。
+  - 監査ログ・アーティファクトに `generate_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
   - CI / ローカル双方で工程 5→6 の個別再実行ワークフローとトラブルシュート手順を整備。
 - 依存: RM-025（マッピング補完エンジン）、RM-026（レンダリング監査統合）、RM-033（パイプライン工程3/4独立化準備）、CLI 運用ポリシー（`docs/AGENTS.md`）。
 
@@ -733,7 +733,7 @@ flowchart TB
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
 - 状況: 完了（2025-11-02 更新）
-- 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
+- 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
 
 <a id="rm-049"></a>
