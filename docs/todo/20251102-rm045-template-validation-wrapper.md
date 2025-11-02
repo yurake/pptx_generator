@@ -1,7 +1,7 @@
 ---
 目的: tpl-extract と layout-validate の連続実行を自動化し、Stage2 抽出直後の品質検証をワンコマンド化する
 関連ブランチ: feat/rm045-template-validation-wrapper
-関連Issue: 未作成
+関連Issue: #256
 roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 発行後に番号へ更新する。
 - [ ] PR 作成
   - メモ: PR 作成時に番号と URL を記載する。
