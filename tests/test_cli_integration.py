@@ -16,7 +16,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.models import (JobSpec, TemplateRelease,
+from pptx_generator.models import (JobSpec, JobSpecScaffold, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
@@ -981,6 +981,8 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert output_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
+    jobspec_path = output_dir / "jobspec.json"
+    assert jobspec_path.exists()
 
     # JSON内容の検証
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
@@ -996,6 +998,13 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert "fonts" in theme_section
     assert "colors" in theme_section
     assert "components" in branding_data
+
+    jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
+    jobspec = JobSpecScaffold.model_validate(jobspec_data)
+    assert jobspec.meta.template_path == str(template_path)
+    assert jobspec.slides, "少なくとも1件のスライドが出力されること"
+    assert "ジョブスペック雛形を出力しました" in result.output
+    assert "ジョブスペックのスライド数:" in result.output
 
 
 def test_cli_tpl_extract_custom_output(tmp_path) -> None:
@@ -1021,6 +1030,8 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     assert spec_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
+    jobspec_path = output_dir / "jobspec.json"
+    assert jobspec_path.exists()
 
     template_spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -1029,6 +1040,10 @@ def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
     assert branding_data.get("version") == "layout-style-v1"
     assert "components" in branding_data
+
+    jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
+    jobspec = JobSpecScaffold.model_validate(jobspec_data)
+    assert jobspec.meta.template_path == str(template_path)
 
 
 def test_cli_tpl_extract_with_filters(tmp_path) -> None:
@@ -1059,12 +1074,18 @@ def test_cli_tpl_extract_with_filters(tmp_path) -> None:
     assert output_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
+    jobspec_path = output_dir / "jobspec.json"
+    assert jobspec_path.exists()
 
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
     template_spec = TemplateSpec.model_validate(template_spec_data)
     
     # フィルタが適用されていることを確認（具体的な検証は実際のテンプレート内容に依存）
     assert template_spec.template_path == str(template_path)
+
+    jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
+    jobspec = JobSpecScaffold.model_validate(jobspec_data)
+    assert jobspec.meta.template_path == str(template_path)
 
 
 def test_cli_tpl_extract_nonexistent_file() -> None:
@@ -1107,6 +1128,7 @@ def test_cli_tpl_extract_verbose_output(tmp_path) -> None:
     assert "テンプレート抽出が完了しました" in result.output
     assert "抽出されたレイアウト数:" in result.output
     assert "抽出された図形・アンカー数:" in result.output
+    assert "ジョブスペックのスライド数:" in result.output
 
 
 def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
@@ -1142,6 +1164,8 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         assert output_path.exists()
         branding_path = output_dir / "branding.json"
         assert branding_path.exists()
+        jobspec_path = output_dir / "jobspec.json"
+        assert jobspec_path.exists()
 
         template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
         template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -1151,6 +1175,10 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         branding_data = json.loads(branding_path.read_text(encoding="utf-8"))
         assert branding_data.get("version") == "layout-style-v1"
         assert "theme" in branding_data
+
+        jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
+        jobspec = JobSpecScaffold.model_validate(jobspec_data)
+        assert jobspec.meta.template_path == str(temp_template_path)
 
     finally:
         # 一時ファイルをクリーンアップ
@@ -1180,8 +1208,10 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         output_dir = Path(".pptx/extract")
         spec_path = output_dir / "template_spec.json"
         branding_path = output_dir / "branding.json"
+        jobspec_path = output_dir / "jobspec.json"
         assert spec_path.exists()
         assert branding_path.exists()
+        assert jobspec_path.exists()
 
 
 def test_cli_tpl_release_generates_outputs(tmp_path) -> None:

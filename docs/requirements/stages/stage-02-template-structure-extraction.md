@@ -13,16 +13,18 @@
 ## 出力
 - `layouts.jsonl`: テンプレ ID、レイアウト ID、プレースホルダ一覧、テキスト/メディアヒント、用途タグ。
 - `diagnostics.json`: 抽出警告・エラー、欠落レイアウト、フォールバック処理の記録。
+- `jobspec.json`: レイアウト名ごとのスライド雛形とプレースホルダー情報。工程3～5 がテンプレ依存の座標やアンカー名を参照するための catalog。
 - 差分レポート: 過去バージョンとの差異、命名変更、欠落 PH など。Analyzer 突合のみの場合でも、検出結果を `issues` に含めたレポートを出力する。
 
 ## ワークフロー
 1. 解析ジョブがテンプレ PPTX を取得し、スライドマスター配下のレイアウトを列挙する。
 2. 各レイアウトのプレースホルダを抽出し、種別・面積・座標を付与する。
-3. レイアウトカテゴリ・用途タグを決定し、ヒント係数を算出する。
-4. JSON スキーマ検証を行い、欠落 PH や抽出不能項目を診断する。
-5. 過去バージョンとの比較を行い、差分レポートを生成する。
-6. `analysis_snapshot.json` が提供されている場合はプレースホルダー命名を突合し、欠落・未知アンカーを `diagnostics.json` と差分レポートへ追加する。
-7. 結果をアーカイブし、工程 3 以降に引き渡す。
+3. 抽出結果からテンプレ依存情報のみを集約した `jobspec.json` を生成し、スライド ID・アンカー名・プレースホルダ種別・座標・サンプルテキストを catalog 化する。
+4. レイアウトカテゴリ・用途タグを決定し、ヒント係数を算出する。
+5. JSON スキーマ検証を行い、欠落 PH や抽出不能項目を診断する。
+6. 過去バージョンとの比較を行い、差分レポートを生成する。
+7. `analysis_snapshot.json` が提供されている場合はプレースホルダー命名を突合し、欠落・未知アンカーを `diagnostics.json` と差分レポートへ追加する。
+8. 結果をアーカイブし、工程 3 以降に引き渡す。
 
 ## 推奨コマンド
 ```bash
@@ -36,7 +38,7 @@ uv run pptx layout-validate \
   --baseline releases/acme/v0/layouts.jsonl \
   --analyzer-snapshot .pptx/gen/analysis_snapshot.json
 ```
-- `tpl-extract` でレイアウト JSON (`template_spec.json`) と `branding.json` を取得し、`.pptx/extract/<template_id>/` に格納する。
+- `tpl-extract` でレイアウト JSON (`template_spec.json`)・`jobspec.json`・`branding.json` を取得し、`.pptx/extract/<template_id>/` に格納する。
 - `layout-validate` で `layouts.jsonl` / `diagnostics.json` / `diff_report.json` を生成し、差分や抽出失敗を検知する。致命的エラーがある場合は exit code 6 を返す。
 - `pptx gen --emit-structure-snapshot` で出力された `analysis_snapshot.json` を `--analyzer-snapshot` に渡し、テンプレとレンダリング結果のアンカー整合性を検証する。
 

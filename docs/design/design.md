@@ -37,7 +37,7 @@ README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化�
 1. **テンプレ準備**（自動）  
    テンプレ資産（`.pptx`）を整備し、バージョン管理を行う。差分検証は工程 2 で実施。
 2. **テンプレ構造抽出**（自動）  
-   テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
+   テンプレからレイアウト情報を抽出し、`template_spec.json`・`jobspec.json`・`layouts.jsonl`・`diagnostics.json` を生成。`jobspec.json` は工程 3〜5 が参照するテンプレ依存カタログ、`layouts.jsonl` は構造検証と差分診断に利用する。
 3. **コンテンツ正規化**（HITL）  
    入力データをスライド候補に整形し、AI レビューを経て `content_approved.json` を確定する。承認 UI／ログ仕様は `docs/requirements/requirements.md` を参照。
 4. **ドラフト構成設計**（HITL）  
@@ -52,7 +52,7 @@ README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化�
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
-| コンテンツ正規化 | `spec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
+| コンテンツ正規化 | `spec.json`, `jobspec.json`, `layouts.jsonl` | `content_draft.json` → `content_approved.json` | AI レビュー（A/B/C 評価）、承認ログ（`content_review_log.json`） |
 | ドラフト構成 | `content_approved.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン構成データ（CLI / API 提供）、付録への退避、承認ログ（`draft_review_log.json`） |
 | マッピング | `draft_approved.json`, `content_approved.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
 | レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
@@ -105,7 +105,7 @@ README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化�
 ### 3.3 レイアウトカバレッジ指針 (RM-043)
 - テンプレ標準 `samples/templates/templates.pptx` は 50 ページ規模のカバレッジを確保し、セクション区切り・ビジネスサマリー・タイムライン・KPI・財務・組織・プロセス・リスク・データビジュアル・クロージングの各カテゴリへ最低 3 パターンずつ割り当てる。
 - アンカー名はカード／チャート／CTA など用途が判別できる語を用い、`BrandLogo`・`Section Title` のように共通要素は既存レイアウトと整合させる。動的要素（フロー矢印など）がプレースホルダーでない場合は JSON で参照しない。
-- 抽出結果は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` で取得し、`samples/json/sample_template_layouts.jsonl` と `samples/json/sample_jobspec.json` に反映してマッピングテストの基準データとする。
+- 抽出結果は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/rm043` で取得し、`samples/json/sample_template_layouts.jsonl` と `samples/extract/jobspec.json`（および既存の `samples/json/sample_jobspec.json`）に反映してマッピングテストの基準データとする。
 - 追加テンプレを受領した際は `analysis_snapshot.json` を比較し、レイアウト名・アンカー名の不一致を ToDo へ記録して修正フローを回す。
 
 ## 4. JSON スキーマ詳細

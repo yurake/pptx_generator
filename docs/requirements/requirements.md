@@ -63,13 +63,14 @@
 ### 4.9 テンプレ構造解析
 - `.pptx` テンプレートからレイアウト構造を抽出する CLI (`extract-template`) を提供し、工程 2 を支援すること。
 - 抽出結果には `layout_id`, `placeholders`, `text_hint`, `usage_tags`, `media_hint` を含め、工程 3〜5 が参照できること。
+- 抽出処理はテンプレ依存カタログ (`jobspec.json`) を同時生成し、レイアウトごとのアンカー名と座標を工程 3〜5 が共有できるようにすること。
 
 ### 4.10 テンプレ運用サポート
 - テンプレ版ごとの差分を自動検出し、互換レポートを生成して通知できること。
 - テンプレ受け渡しメタ情報（作成者、ブランド、バージョン、レビュー日）を JSON で保存できること。
 - ゴールデンサンプル PPTX を保守し、互換性テストに再利用できること。
 - Analyzer の指摘・修正件数を `template_release.json` / `release_report.json` に集計し、品質メトリクスとして追跡できること。
-- `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `sample_template_layouts.jsonl` に反映すること。
+- `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `sample_template_layouts.jsonl` / `samples/extract/jobspec.json` に反映すること。
 - テンプレ更新時は `uv run pptx layout-validate` の結果を確認し、重大エラーが解消された状態をリリース判定条件とすること。
 
 ### 4.11 多形式インポート

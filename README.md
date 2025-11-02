@@ -102,7 +102,7 @@ flowchart TD
 | 工程 | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
 | 1. テンプレ準備 | `uv run pptx tpl-release --template samples/templates/templates.pptx --brand demo --version v1` | `.pptx/release/template_release.json` | テンプレ資産の受け渡しメタを作成 |
-| 2. テンプレ構造抽出 | `uv run pptx tpl-extract --template samples/templates/templates.pptx`<br>`uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation` | `.pptx/extract/template_spec.json`, `.pptx/extract/branding.json`, `.pptx/validation/layouts.jsonl` | テンプレ仕様とブランド設定を抽出し、レイアウト候補を検証 |
+| 2. テンプレ構造抽出 | `uv run pptx tpl-extract --template samples/templates/templates.pptx`<br>`uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json`, `.pptx/validation/layouts.jsonl` | テンプレ仕様とブランド設定を抽出し、レイアウト候補を検証 |
 | 3. コンテンツ正規化 | `uv run pptx content samples/json/sample_jobspec.json --content-source samples/contents/sample_import_content.txt` | `.pptx/content/content_approved.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 4. ドラフト構成設計 | `uv run pptx outline samples/json/sample_jobspec.json --content-approved .pptx/content/content_approved.json` | `.pptx/draft/draft_approved.json` | 章立てとページ順を確定し、承認成果物を出力 |
 | 5. マッピング | `uv run pptx mapping samples/json/sample_jobspec.json --content-approved .pptx/content/content_approved.json --layouts .pptx/validation/layouts.jsonl --draft-output .pptx/draft --branding .pptx/extract/branding.json` | `.pptx/gen/rendering_ready.json` | `.pptx/draft/draft_approved.json` を再生成しつつレイアウト割り付け |

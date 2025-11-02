@@ -8,8 +8,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from pptx_generator.models import LayoutInfo, ShapeInfo, TemplateSpec
+from pptx_generator.models import (JobSpecScaffold, LayoutInfo, ShapeInfo,
+                                   TemplateSpec)
 from pptx_generator.pipeline.template_extractor import (
+    JOBSPEC_SCHEMA_VERSION,
     SLIDE_BULLET_ANCHORS,
     TemplateExtractor,
     TemplateExtractorOptions,
@@ -181,16 +183,72 @@ class TestTemplateExtractorStep:
             anchor_filter="タイトル"  # タイトル図形のみ抽出
         )
         step = TemplateExtractorStep(options)
-        
+
         with patch('pptx_generator.pipeline.template_extractor.Presentation') as mock_pres_class:
             mock_pres_class.return_value = mock_presentation
-            
+
             template_spec = step.extract_template_spec()
-            
+
             assert len(template_spec.layouts) == 1
             layout = template_spec.layouts[0]
             assert len(layout.anchors) == 1  # タイトルのみ
             assert layout.anchors[0].name == "タイトル"
+
+    def test_build_jobspec_scaffold(self):
+        """ジョブスペック雛形生成のテスト。"""
+        options = TemplateExtractorOptions(template_path=Path("samples/templates/templates.pptx"))
+        step = TemplateExtractorStep(options)
+
+        title_shape = ShapeInfo(
+            name="Title",
+            shape_type="SlidePlaceholder",
+            left_in=1.0,
+            top_in=2.0,
+            width_in=6.0,
+            height_in=1.5,
+            text="  表紙タイトル  ",
+            placeholder_type="TITLE",
+            is_placeholder=True,
+            error=None,
+            missing_fields=[],
+            conflict=None,
+        )
+        image_shape = ShapeInfo(
+            name="Hero",
+            shape_type="Picture",
+            left_in=0.5,
+            top_in=3.5,
+            width_in=4.0,
+            height_in=3.0,
+            text=None,
+            placeholder_type="PICTURE",
+            is_placeholder=True,
+            error=None,
+            missing_fields=[],
+            conflict=None,
+        )
+        layout = LayoutInfo(name="Title", identifier="0001", anchors=[title_shape, image_shape], error=None)
+        template_spec = TemplateSpec(
+            template_path=str(options.template_path),
+            extracted_at="2025-11-02T00:00:00Z",
+            layouts=[layout],
+        )
+
+        jobspec = step.build_jobspec_scaffold(template_spec)
+
+        assert isinstance(jobspec, JobSpecScaffold)
+        assert jobspec.meta.schema_version == JOBSPEC_SCHEMA_VERSION
+        assert jobspec.meta.layout_count == 1
+        assert len(jobspec.slides) == 1
+
+        slide = jobspec.slides[0]
+        assert slide.layout == "Title"
+        assert slide.sequence == 1
+        assert slide.placeholders[0].anchor == "Title"
+        assert slide.placeholders[0].kind == "text"
+        assert slide.placeholders[0].sample_text == "表紙タイトル"
+        assert slide.placeholders[1].kind == "image"
+        assert slide.placeholders[1].sample_text is None
 
     def test_slide_bullet_conflict_detection(self):
         """SlideBullet競合検出のテスト。"""
@@ -276,6 +334,12 @@ class TestTemplateExtractor:
                 assert '"template_path"' in content
                 assert str(temp_template_path) in content
 
+                jobspec_path = output_path.with_name("jobspec.json")
+                assert jobspec_path.exists()
+                jobspec = JobSpecScaffold.model_validate_json(jobspec_path.read_text(encoding="utf-8"))
+                assert jobspec.meta.template_path == str(temp_template_path)
+                assert jobspec.meta.schema_version == JOBSPEC_SCHEMA_VERSION
+
     def test_extract_and_save_yaml(self, temp_template_path):
         """YAML形式での保存テスト。"""
         options = TemplateExtractorOptions(
@@ -305,6 +369,11 @@ class TestTemplateExtractor:
                 content = output_path.read_text(encoding="utf-8")
                 assert "template_path:" in content
                 assert str(temp_template_path) in content
+
+                jobspec_path = output_path.with_name("jobspec.json")
+                assert jobspec_path.exists()
+                jobspec = JobSpecScaffold.model_validate_json(jobspec_path.read_text(encoding="utf-8"))
+                assert jobspec.meta.template_path == str(temp_template_path)
 
 
 class TestConstants:

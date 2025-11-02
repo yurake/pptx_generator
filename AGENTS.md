@@ -26,6 +26,7 @@
   - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
   - ブランド設定を差し替える場合は `--branding <path>` を指定する。
   - `--export-pdf` で LibreOffice 経由の PDF 生成を有効化できる。
+- テンプレ構造の抽出は `uv run pptx tpl-extract --template <path>` を利用し、`template_spec.json` / `jobspec.json` / `branding.json` が `.pptx/extract/` に出力される。サンプルは `samples/extract/jobspec.json` に収録している。
 
 # 5 テスト・検証
 - 単体・統合テストを含む全体テスト:
