@@ -8,7 +8,7 @@ related:
 ---
 
 ## 背景
-- RM-014 の実装過程で Open XML Polisher を工程6へ組み込んだ。
+- RM-014 の実装過程で Open XML Polisher を工程5へ組み込んだ。
 - Polisher が担うべき範囲と、Renderer／Refiner で完結させたい処理の切り分けが曖昧。
 - 将来的に「仕上げ工程は最小限のフォールバックのみ」という方針を徹底するため、役割を再確認した。
 

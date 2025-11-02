@@ -13,15 +13,14 @@
 - **効率指標**: 30 スライド構成を 60 秒以内で PPTX + PDF 出力まで完了させる。
 - **運用指標**: 監査ログの欠損率 0% を維持し、ジョブ失敗時の再実行時間を 5 分以内とする。
 
-## 6 工程一覧
+## 5 工程一覧
 | No. | 工程 | 概要 |
 | --- | --- | --- |
 | 1 | テンプレ準備 | テンプレ資産 (.pptx) の整備と版管理 |
 | 2 | テンプレ構造抽出 | レイアウト構造 JSON / ヒント値の生成 |
 | 3 | コンテンツ正規化 (HITL) | 入力データをスライド素材へ整形し承認 |
-| 4 | ドラフト構成設計 (HITL) | 章立て・ページ順・layout_hint を確定 |
-| 5 | マッピング | レイアウト割付と `rendering_ready.json` 作成 |
-| 6 | PPTX レンダリング | 最終出力と監査メタ付与 |
+| 4 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`rendering_ready.json`) |
+| 5 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
 flowchart TB
@@ -55,7 +54,7 @@ flowchart TB
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
         RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
-        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(完了)"]
+        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(未着手)"]
         RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(未着手)"]
     end
 
@@ -71,7 +70,7 @@ flowchart TB
         RM046["RM-046<br/>生成AIブリーフ<br/>構成自動化<br/>(未着手)"]
     end
 
-    subgraph ST4["Stage 4: ドラフト構成設計 (HITL)"]
+    subgraph ST4["Stage 4: マッピング (HITL + 自動)"]
         direction TB
         ST4_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
@@ -79,23 +78,18 @@ flowchart TB
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(未着手)"]
-    end
-
-    subgraph ST5["Stage 5: マッピング"]
-        direction TB
-        ST5_ANCHOR(( ))
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
         RM019["RM-019<br/>CLI ツールチェーン<br/>整備<br/>(完了)"]
         RM025["RM-025<br/>マッピング補完<br/>エンジン<br/>(完了)"]
         RM031["RM-031<br/>Analyzer マッピング補完<br/>連動<br/>(完了)"]
-        RM048["RM-048<br/>工程4+5<br/>統合CLI整備<br/>(未着手)"]
+        RM048["RM-048<br/>工程4マッピング<br/>統合CLI整備<br/>(完了)"]
     end
 
-    subgraph ST6["Stage 6: レンダリング・仕上げ"]
+    subgraph ST5["Stage 5: レンダリング・仕上げ"]
         direction TB
-        ST6_ANCHOR(( ))
+        ST5_ANCHOR(( ))
         RM012["RM-012<br/>レンダラー<br/>テキスト強化<br/>(完了)"]
         RM013["RM-013<br/>PPTX 解析<br/>アナライザー実装<br/>(完了)"]
         RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(完了)"]
@@ -114,9 +108,8 @@ flowchart TB
     style ST3_ANCHOR fill:transparent,stroke:transparent
     style ST4_ANCHOR fill:transparent,stroke:transparent
     style ST5_ANCHOR fill:transparent,stroke:transparent
-    style ST6_ANCHOR fill:transparent,stroke:transparent
 
-    GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR --> ST5_ANCHOR --> ST6_ANCHOR
+    GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR --> ST5_ANCHOR
 
     RM001 --> RM003
     RM013 --> RM003
@@ -362,7 +355,7 @@ flowchart TB
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計
-- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、6 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
+- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、5 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
 - 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
 - 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
 - 状況: 完了（2025-10-11 更新）
@@ -464,7 +457,7 @@ flowchart TB
 ### RM-025 マッピング補完エンジン
 - ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`rendering_ready.json` の確度を高める。
 - 対象工程: 5（マッピング）
-- 参照ドキュメント: [docs/requirements/stages/stage-05-mapping.md](../requirements/stages/stage-05-mapping.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-04-mapping.md](../requirements/stages/stage-04-mapping.md)
 - 参照 ToDo: [docs/todo/20251012-mapping-orchestrator.md](../todo/20251012-mapping-orchestrator.md)
 - 状況: 完了（2025-10-18 更新）
 - 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`rendering_ready.json` スキーマ検証ツール。
@@ -698,7 +691,7 @@ flowchart TB
 - ゴール: テンプレ抽出時にページ単位の spec 雛形を自動生成し、工程3以降で共通利用できる `spec_scaffold.json` を整備する。
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定（本ブランチでロードマップ項目分割後に発行）
-- 状況: 完了（2025-11-02 更新）
+- 状況: 未着手（2025-11-07 追加）
 - 期待成果: CLI/API 仕様、スキーマ定義、サンプルデータ。工程3 の `pptx content` が scaffold を入力に受け取れること。
 - 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
 
@@ -734,19 +727,19 @@ flowchart TB
 
 <a id="rm-048"></a>
 ### RM-048 工程4+5 統合CLI整備
-- 対象工程: 4 / 5（ドラフト構成設計・マッピング）
+- 対象工程: 4（マッピング）
 - ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
+- 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
-- 次アクション: ラッパーの入出力とエラーハンドリング要件をまとめ、CI フローへの組み込み案を作成する。
+- 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
 
 <a id="rm-049"></a>
 ### RM-049 pptx gen スコープ最適化
-- 対象工程: 6（レンダリング）
-- ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4+5 ラッパーと責務を分離する。
-- 参照ドキュメント: [docs/requirements/stages/stage-06-rendering.md](../requirements/stages/stage-06-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
+- 対象工程: 5（レンダリング）
+- ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4ラッパーと責務を分離する。
+- 参照ドキュメント: [docs/requirements/stages/stage-05-rendering.md](../requirements/stages/stage-05-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 未着手（2025-11-07 追加）
 - 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。

@@ -1,12 +1,12 @@
 # パイプライン疎結合化設計メモ（2025-10-18）
 
 ## 背景
-- `pptx gen` が工程3〜6（Content Approval → Draft Structuring → Mapping → Rendering/Analyzer/PDF）を一括実行しており、工程6のみの再実行や工程5成果物の再利用ができない。
-- 最終像では各工程を独立 CLI として扱い、工程5の成果物（`rendering_ready.json`）を工程6の唯一の入力にしたい。
-- ユーザーとの冒頭議論で、工程3/4の成果物は工程5に反映済みであり、工程6には `rendering_ready.json` だけを渡せる構成が望ましいと確認した。
+- `pptx gen` が工程3〜5（Content Approval → Mapping → Rendering/Analyzer/PDF）を一括実行しており、工程5のみの再実行や工程4成果物の再利用ができない。
+- 最終像では各工程を独立 CLI として扱い、工程4の成果物（`rendering_ready.json`）を工程5の唯一の入力にしたい。
+- ユーザーとの冒頭議論で、工程3/4の成果物は工程4に反映済みであり、工程5には `rendering_ready.json` だけを渡せる構成が望ましいと確認した。
 
 ## 目的
-1. 工程5（Mapping）と工程6（Rendering/Analyzer/PDF）を分離し、個別に実行・再実行可能にする。
+1. 工程4（Mapping）と工程5（Rendering/Analyzer/PDF）を分離し、個別に実行・再実行可能にする。
 2. `pptx render`（仮称）が `rendering_ready.json` を主入力として PPTX/分析結果/PDF を生成できるようにする。
 3. `pptx gen` は後方互換を維持しつつ、新コマンドを呼び出すオーケストレーション層として再設計する。
 
@@ -18,7 +18,7 @@
 - `pptx gen` は従来フラグを受け取りつつ、内部で `mapping` → `render` を順に呼び出す。互換性のため既存引数は維持し、未指定の `content_approved` や `draft_approved` の扱いは従来どおりフォールバックする。
 
 ### データモデル
-- `RenderingReadyMeta` に `job_meta` と `job_auth` を追加し、元の `JobSpec` メタ情報を保持。工程6での再構成に使用する。
+- `RenderingReadyMeta` に `job_meta` と `job_auth` を追加し、元の `JobSpec` メタ情報を保持。工程5での再構成に使用する。
 - 新規ヘルパー `rendering_ready_to_jobspec(RenderingReadyDocument)` を実装し、レンダリング／アナライザで必要な `JobSpec` を `rendering_ready` から再構築する。
   - スライド ID は `meta.sources` 先頭要素を優先し、欠損時は `slide-{index}` を生成。
   - `elements` からタイトル／サブタイトル／ノート／本文を抽出。

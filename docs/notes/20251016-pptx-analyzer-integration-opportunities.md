@@ -47,14 +47,14 @@
 
 ### 工程5 マッピング
 - 既存ドキュメント  
-  - `docs/design/stages/stage-05-mapping.md` ではスコアリングやフォールバック制御を定義。Analyzer 結果の活用は触れられていない。
+  - `docs/design/stages/stage-04-mapping.md` ではスコアリングやフォールバック制御を定義。Analyzer 結果の活用は触れられていない。
 - 追加アイデア  
   - `mapping_log.json` に Analyzer 警告を併記し、割付後も手当が必要な要素を可視化。
   - `font_min` や `contrast_low` を AI 補完トリガーとして利用し、補完対象の抽出を自動化。
 - 未反映領域  
   - 必要な追加仕様は全て未記載。RM-025（マッピング補完エンジン）との連携検討が望ましい。
 
-### 工程6 PPTX レンダリング
+### 工程5 PPTX レンダリング
 - 既存ドキュメント  
   - RM-013 でアナライザー実装が完了し、工程 6 後段で解析する方針はロードマップに記載済み（`docs/roadmap/roadmap.md:154-161`）。
   - `docs/design/stages/stage-06-rendering.md` は整合チェック・監査ログについて述べるが、Analyzer 結果との統合は未定。
