@@ -494,7 +494,7 @@ def _execute_outline(  # noqa: PLR0913
     chapter_templates_dir: Path,
     chapter_template: str | None,
     analysis_summary_path: Path | None,
-) -> tuple[PipelineContext, Path]:
+) -> tuple[PipelineContext, Path, DraftStructuringOptions]:
     templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
     draft_options = DraftStructuringOptions(
         layouts_path=layouts,
@@ -527,7 +527,7 @@ def _execute_outline(  # noqa: PLR0913
         log_filename=log_filename,
     )
 
-    return context, meta_path
+    return context, meta_path, draft_options
 
 
 def _echo_outline_outputs(
@@ -580,6 +580,7 @@ def _run_mapping_pipeline(
     layouts: Optional[Path],
     draft_output: Path,
     template: Optional[Path],
+    draft_options: DraftStructuringOptions | None = None,
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
     draft_output.mkdir(parents=True, exist_ok=True)
@@ -595,12 +596,20 @@ def _run_mapping_pipeline(
             require_all_approved=True,
         )
     )
-    draft_step = DraftStructuringStep(
-        DraftStructuringOptions(
+    effective_draft_options = draft_options
+    if effective_draft_options is not None:
+        effective_draft_options = replace(
+            effective_draft_options,
+            output_dir=draft_output,
+            layouts_path=effective_draft_options.layouts_path or layouts,
+        )
+    else:
+        effective_draft_options = DraftStructuringOptions(
             layouts_path=layouts,
             output_dir=draft_output,
         )
-    )
+
+    draft_step = DraftStructuringStep(effective_draft_options)
     spec_validator = SpecValidatorStep(
         max_title_length=rules_config.max_title_length,
         max_bullet_length=rules_config.max_bullet_length,
@@ -638,6 +647,7 @@ def _execute_mapping(
     draft_output: Path,
     template: Optional[Path],
     branding: Optional[Path],
+    draft_options: DraftStructuringOptions | None = None,
 ) -> PipelineContext:
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(template, branding)
@@ -654,6 +664,7 @@ def _execute_mapping(
         layouts=layouts,
         draft_output=draft_output,
         template=template,
+        draft_options=draft_options,
     )
 
 
@@ -1527,7 +1538,7 @@ def outline(
         raise click.exceptions.Exit(code=2) from exc
 
     try:
-        context, meta_path = _execute_outline(
+        context, meta_path, _ = _execute_outline(
             spec=spec,
             output_dir=output_dir,
             content_approved=content_approved_path,
@@ -1836,7 +1847,7 @@ def compose(  # noqa: PLR0913
         raise click.exceptions.Exit(code=2) from exc
 
     try:
-        outline_context, outline_meta_path = _execute_outline(
+        outline_context, outline_meta_path, draft_options = _execute_outline(
             spec=spec,
             output_dir=draft_output,
             content_approved=content_approved,
@@ -1888,6 +1899,7 @@ def compose(  # noqa: PLR0913
             draft_output=draft_output,
             template=compose_template,
             branding=compose_branding,
+            draft_options=draft_options,
         )
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
