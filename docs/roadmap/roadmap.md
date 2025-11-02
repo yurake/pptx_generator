@@ -43,6 +43,7 @@ flowchart TB
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
         RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(完了)"]
+        RM051["RM-051<br/>テンプレ工程統合集約<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -754,6 +755,16 @@ flowchart TB
 - 状況: 完了（2025-11-01 更新）
 - 期待成果: RM-044〜RM-049 など関連項目の参照ドキュメント欄が統一され、Plan 承認内容の転記運用が徹底されている状態。
 - 次アクション: 参照追加後の運用フローを確認し、追加の参照整備が必要なロードマップ項目を棚卸しする。
+
+<a id="rm-051"></a>
+### RM-051 テンプレ工程統合集約
+- 対象工程: 1（テンプレ準備）
+- ゴール: 現行の工程1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-03 追加）
+- 期待成果: `uv run pptx template` 仕様書、`tpl-extract` → `layout-validate` 連携と extra args 指摘時の `tpl-release` 実行要件、工程番号再編に伴うドキュメント更新一覧。
+- 次アクション: CLI 要件ドラフト作成、工程番号影響範囲の棚卸し、対応ToDoとブランチの準備。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
