@@ -82,7 +82,7 @@ flowchart TD
 
 | 工程 | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
-| 1. テンプレ工程 | `uv run pptx template samples/templates/templates.pptx --output .pptx/extract` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json`, `.pptx/extract/layouts.jsonl`, `.pptx/extract/diagnostics.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与すると `.pptx/release/template_release.json` などリリース成果物も生成 |
+| 1. テンプレ工程 | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json`, `.pptx/extract/layouts.jsonl`, `.pptx/extract/diagnostics.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ正規化 | `uv run pptx content .pptx/extract/jobspec.json --content-source samples/contents/sample_import_content.txt --output .pptx/content` | `.pptx/content/content_approved.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 3. マッピング (HITL + 自動) | `uv run pptx compose .pptx/extract/jobspec.json --content-approved .pptx/content/content_approved.json --draft-output .pptx/draft --output .pptx/gen --template samples/templates/templates.pptx` | `.pptx/draft/draft_approved.json`, `.pptx/gen/rendering_ready.json`, `.pptx/gen/mapping_log.json` | 章構成承認とレイアウト割付をまとめて実行 |
 | 4. レンダリング | `uv run pptx render .pptx/gen/rendering_ready.json --template samples/templates/templates.pptx --branding .pptx/extract/branding.json --output .pptx/gen --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf`（任意） | 監査ログ・Analyzer 結果も同時に出力 |
