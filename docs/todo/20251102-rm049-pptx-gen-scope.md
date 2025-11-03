@@ -128,8 +128,8 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - [x] テスト（統合・チートシートなど）を新入力仕様へ書き換えて成功することを確認する。
   - [x] README / ドキュメント / ノートを更新し、新しい CLI 要件と注意事項を明文化する。
     - メモ: `src/pptx_generator/pipeline/mapping.py` と `src/pptx_generator/cli.py` で `template_path`／`mapping_meta` を連携し、`tests/test_cli_integration.py` で generate_ready 専用フローを検証済み。README ほかドキュメントも generate_ready 前提へ更新完了。
-- [ ] PR 作成
-  - メモ:
+- [x] PR 作成
+  - メモ: PR #266 https://github.com/yurake/pptx_generator/pull/266（2025-11-03 完了）
 
 
 - [x] 工程2/3改修の取り込み
