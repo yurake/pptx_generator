@@ -22,7 +22,7 @@ roadmap_item: RM-TBD パイプライン再設計準備
 - [x] テスト・検証
   - メモ: ドキュメント整合性チェックやツール出力確認を記載する
 - [x] ドキュメント更新
-  - メモ: `docs/notes/20251107-stage2-jobspec-overview.md` のマージ後再確認と更新内容を記録する
+  - メモ: `docs/notes/20251102-stage2-jobspec-overview.md` のマージ後再確認と更新内容を記録する
   - [x] docs/roadmap 配下
     - メモ: 2025-11-07 RM-044〜RM-049 を追加し、工程見直し案を反映
   - [x] docs/requirements 配下（実装結果との整合再確認）

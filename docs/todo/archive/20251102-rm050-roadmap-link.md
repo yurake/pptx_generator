@@ -10,7 +10,7 @@ roadmap_item: RM-050 ロードマップ参照整備
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - スコープ
-      - `docs/roadmap/roadmap.md` の RM-044〜RM-049 参照ドキュメント行へ `docs/notes/20251107-stage2-jobspec-overview.md` のリンクを追記する。
+      - `docs/roadmap/roadmap.md` の RM-044〜RM-049 参照ドキュメント行へ `docs/notes/20251102-stage2-jobspec-overview.md` のリンクを追記する。
     - 手順
       - 対象セクションの既存リンク表記を確認し、ノートへの参照を追加後に書式を整える。
       - 差分レビューで Markdown 構造とリンクパスを確認し、ToDo に進捗メモを残す。

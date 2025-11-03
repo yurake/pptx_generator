@@ -1,0 +1,126 @@
+{
+  "version": "layout-style-v1",
+  "theme": {
+    "fonts": {
+      "heading": {
+        "name": "Meiryo UI",
+        "size_pt": 24.0,
+        "color_hex": "#000000",
+        "bold": false,
+        "italic": false
+      },
+      "body": {
+        "name": "Meiryo UI",
+        "size_pt": 20.0,
+        "color_hex": "#000000",
+        "bold": false,
+        "italic": false
+      }
+    },
+    "colors": {
+      "primary": "#156082",
+      "secondary": "#E97132",
+      "accent": "#196B24",
+      "background": "#FFFFFF"
+    }
+  },
+  "components": {
+    "table": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.5,
+        "width_in": 8.5,
+        "height_in": 3.0
+      },
+      "header": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 18.0,
+          "color_hex": "#FFFFFF",
+          "bold": true,
+          "italic": false
+        },
+        "fill_color": "#005BAC"
+      },
+      "body": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 16.0,
+          "color_hex": "#333333",
+          "bold": false,
+          "italic": false
+        },
+        "fill_color": "#FFFFFF",
+        "zebra_fill_color": "#F4F7FB"
+      }
+    },
+    "chart": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.5,
+        "width_in": 8.5,
+        "height_in": 4.0
+      },
+      "palette": [
+        "#005BAC",
+        "#0097A7",
+        "#FF7043",
+        "#4CAF50",
+        "#7E57C2",
+        "#8D6E63"
+      ],
+      "data_labels": {
+        "enabled": true,
+        "format": "0"
+      },
+      "axis": {
+        "font": {
+          "name": "Yu Gothic",
+          "size_pt": 14.0,
+          "color_hex": "#333333",
+          "bold": false,
+          "italic": false
+        }
+      }
+    },
+    "image": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.75,
+        "width_in": 8.0,
+        "height_in": 4.5
+      },
+      "sizing": "fit"
+    },
+    "textbox": {
+      "fallback_box": {
+        "left_in": 1.0,
+        "top_in": 1.0,
+        "width_in": 8.0,
+        "height_in": 1.5
+      },
+      "font": {
+        "name": "Yu Gothic",
+        "size_pt": 18.0,
+        "color_hex": "#333333",
+        "bold": false,
+        "italic": false
+      },
+      "paragraph": {
+        "align": "left",
+        "line_spacing_pt": 22.0,
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "level": null,
+        "left_indent_in": 0.3,
+        "right_indent_in": null,
+        "first_line_indent_in": -0.2
+      }
+    }
+  },
+  "layouts": {},
+  "footer": {
+    "text": "",
+    "show_page_number": true
+  }
+}
