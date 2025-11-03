@@ -347,6 +347,58 @@ def test_cli_mapping_then_render(tmp_path) -> None:
     assert artifacts.get("rendering_ready") == str(rendering_ready_path)
 
 
+def test_cli_compose_generates_stage45_outputs(tmp_path) -> None:
+    spec_path = Path("samples/json/sample_jobspec.json")
+    draft_dir = tmp_path / "compose-draft"
+    output_dir = tmp_path / "compose-gen"
+    runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--draft-output",
+            str(draft_dir),
+            "--output",
+            str(output_dir),
+            "--template",
+            str(SAMPLE_TEMPLATE),
+            *_brief_args(brief_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Outline Draft:" in result.output
+    assert "Rendering Ready:" in result.output
+
+    spec = JobSpec.parse_file(spec_path)
+
+    draft_meta_path = draft_dir / "draft_meta.json"
+    assert (draft_dir / "draft_draft.json").exists()
+    assert (draft_dir / "draft_approved.json").exists()
+    assert (draft_dir / "draft_review_log.json").exists()
+    assert draft_meta_path.exists()
+
+    draft_meta = json.loads(draft_meta_path.read_text(encoding="utf-8"))
+    paths = draft_meta.get("paths", {})
+    assert Path(paths.get("draft_approved", "")).exists()
+    assert Path(paths.get("draft_review_log", "")).exists()
+
+    rendering_ready_path = output_dir / "rendering_ready.json"
+    mapping_log_path = output_dir / "mapping_log.json"
+    assert rendering_ready_path.exists()
+    assert mapping_log_path.exists()
+
+    rendering_ready = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
+    assert len(rendering_ready.get("slides", [])) == len(spec.slides)
+
+    mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+    assert mapping_log.get("slides")
+
+
 def test_cli_gen_with_invalid_brief_fails(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
     invalid_brief = tmp_path / "invalid_brief.json"

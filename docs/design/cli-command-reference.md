@@ -6,7 +6,8 @@
 
 ## パイプライン全体像
 - パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → 構成設計 → マッピング → レンダリング」の 6 工程で構成される。
-- `pptx gen` は工程 5-6 を一括実行するファサード。必要に応じて `pptx mapping` と `pptx render` を個別に呼び出し、再実行や検証を行う。
+- `pptx compose` は工程4-5（ドラフト構成とマッピング）を連続実行するラッパー。HITL 後の再実行時にドラフト成果物と mapping 成果物を同時に更新できる。
+- `pptx gen` は工程5-6 を一括実行するファサード。必要に応じて `pptx mapping` と `pptx render` を個別に呼び出し、再実行や検証を行う。
 
 ### 工程1: テンプレ準備
 テンプレートをブランド資産として登録し、リリースメタを生成する。
@@ -111,12 +112,43 @@
 | `--target-length <int>` | 目標スライド枚数 | Spec から推定 |
 | `--structure-pattern <text>` | 章構成パターン名 | `custom` |
 | `--appendix-limit <int>` | 付録枚数の上限 | 5 |
+| `--chapter-templates-dir <dir>` | 章テンプレート辞書ディレクトリ | `config/chapter_templates` |
+| `--chapter-template <id>` | 適用する章テンプレート ID（未指定時は構造パターンから推定） | 推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
+| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
+
+#### `pptx compose`
+- 工程4と工程5を連続実行し、ドラフト成果物とマッピング成果物を一括で更新する。
+- HITL でドラフト再承認後に `outline` → `mapping` を個別実行する手間を削減し、CLI 出力で両工程の成果物パスを確認できる。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--draft-output <dir>` | ドラフト成果物を保存するディレクトリ | `.pptx/draft` |
+| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
+| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
+| `--log-filename <filename>` | ドラフトレビュー ログファイル名 | `draft_review_log.json` |
+| `--meta-filename <filename>` | ドラフトメタ情報ファイル名 | `draft_meta.json` |
+| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` / `--brief-meta <path>` | `brief_log.json` / `ai_generation_meta.json`（任意） | `.brief/brief_log.json` / `.brief/ai_generation_meta.json` |
+| `--layouts <path>` | `layouts.jsonl` を参照して layout_hint 候補を補強 | 指定なし |
+| `--target-length <int>` / `--structure-pattern <text>` / `--appendix-limit <int>` | ドラフト構成パラメータ | Spec 由来 / 5 |
+| `--chapter-templates-dir <dir>` / `--chapter-template <id>` | 章テンプレート辞書と適用テンプレート ID | `config/chapter_templates` / 推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
+| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
+| `--output <dir>` | `rendering_ready.json` など工程5成果物を保存するディレクトリ | `.pptx/gen` |
+| `--rules <path>` | 文字数や段落制限を定義したルール | `config/rules.json` |
+| `--template <path>` / `--branding <path>` | ブランド抽出テンプレート / ブランド設定 JSON | 指定なし / `config/branding.json` |
+
+生成物:
+- `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json`
+- `rendering_ready.json` / `mapping_log.json` / `fallback_report.json`（フォールバック発生時）
 
 ### 工程5: マッピング
 レイアウト割付とプレースホルダー設定を確定し、レンダリング準備を整える。
 
 #### `pptx mapping`
-- 工程5のみを単独実行し、`rendering_ready.json` と `mapping_log.json` を生成する。`
+- 工程5のみを単独実行し、`rendering_ready.json` と `mapping_log.json` を生成する。
+- 工程4と合わせて再実行したい場合は `pptx compose` を利用する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |

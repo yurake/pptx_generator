@@ -14,7 +14,7 @@
 2. 工程3 のカード生成設定に骨子ファイルのパスを渡し、`story.phase` / `story.chapter_id` / `story.angle` がカード単位で埋まることを確認する。
 3. HITL 承認 API を利用するツール（CLI など）で章・フェーズ表示を確認し、必要に応じて再割当を行う。差分はレビューコメントとして記録する。
 4. 承認後の `brief_cards.json` を確認し、全カードにストーリー情報が保存されていること、章ごとのカード数が骨子の想定範囲内であることをチェックする。
-5. 工程4 へ引き渡す前に `uv run pptx content <brief_source> --output .brief` でブリーフ成果物を検証し、続けて `uv run pptx outline ... --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --output .pptx/draft --chapter-template <template_id> --show-layout-reasons` を実行して章テンプレ適合率と layout_hint 候補スコアを確認する。必要に応じて `draft_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば `--return-reasons` で差戻しテンプレ一覧を確認しつつ理由を明示する。最終的に `pptx mapping` → `pptx render` で工程5/6へ進む。
+5. 工程4 へ引き渡す前に `uv run pptx content <brief_source> --output .brief` でブリーフ成果物を検証し、続けて `uv run pptx outline ... --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --output .pptx/draft --chapter-template <template_id> --show-layout-reasons` を実行して章テンプレ適合率と layout_hint 候補スコアを確認する。必要に応じて `draft_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば `--return-reasons` で差戻しテンプレ一覧を確認しつつ理由を明示する。ドラフト承認直後にマッピング成果物まで更新する場合は `uv run pptx compose ... --draft-output .pptx/draft --output .pptx/gen` を用いると、工程4/5 を一括で再実行できる。工程5のみをやり直す場合は従来どおり `pptx mapping` → `pptx render` の順で工程5/6へ進む。
 6. 工程5/6 完了後は `.pptx/gen/audit_log.json` の `mapping` セクションと `hashes.mapping_log` を確認し、`rendering_ready.json`／`mapping_log.json` のパスと SHA-256 が記録されているかをチェックする。フォールバックが発生した場合は `mapping_meta.fallback_slide_ids` を参照し、差戻しや再分配の対象スライドを追跡する。
 
 ## レビュー観点

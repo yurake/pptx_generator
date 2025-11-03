@@ -106,6 +106,7 @@ flowchart TD
 | 3. ブリーフ正規化 | `uv run pptx content samples/contents/sample_import_content_summary.txt --output .brief` | `.brief/brief_cards.json` ほか | ブリーフ入力を BriefCard に正規化し、ログとメタ情報を出力 |
 | 4. ドラフト構成設計 | `uv run pptx outline samples/json/sample_jobspec.json --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --brief-meta .brief/ai_generation_meta.json` | `.pptx/draft/draft_approved.json` | BriefCard をもとに章立てとページ順を確定し、ドラフト成果物を出力 |
 | 5. マッピング | `uv run pptx mapping samples/json/sample_jobspec.json --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --brief-meta .brief/ai_generation_meta.json --layouts .pptx/validation/layouts.jsonl --draft-output .pptx/draft --branding .pptx/extract/branding.json` | `.pptx/gen/rendering_ready.json` | ドラフト成果物を読み込みレイアウト割り付けとフォールバック制御を実施 |
+| 4-5. ドラフト＋マッピング一括 | `uv run pptx compose samples/json/sample_jobspec.json`<br>`  --draft-output .pptx/draft --output .pptx/gen`<br>`  --template samples/templates/templates.pptx`<br>`  --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --brief-meta .brief/ai_generation_meta.json` | `.pptx/draft/draft_approved.json`, `.pptx/gen/rendering_ready.json` | 工程4と5を連続実行し、ドラフト成果物とマッピング成果物を同時更新 |
 | 6. レンダリング | `uv run pptx render .pptx/gen/rendering_ready.json --template samples/templates/templates.pptx --branding .pptx/extract/branding.json` | `.pptx/gen/proposal.pptx`（`proposal.pdf` 任意） | `--export-pdf` で PDF も生成 |
 | 工程3〜6 一括 | `uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx --branding .pptx/extract/branding.json` | `.pptx/gen/proposal.pptx`（`proposal.pdf` 任意） | `.brief/` などブリーフ成果物を事前に用意した上でパイプライン後半を実行 |
 
@@ -163,6 +164,7 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
     --output .pptx/draft
   # `draft_draft.json` / `draft_approved.json` / `draft_meta.json` を確認
   ```
+  - 工程4の更新と同時にマッピング成果物も再生成したい場合は、後述の `pptx compose` を利用すると工程4/5を連続実行できます。
 
 ### 工程 5: マッピング
 - `draft_approved.json` を入力にレイアウトスコアリングとフォールバック制御を行い、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を生成します。`mapping_log.json` には Analyzer 指摘サマリ（件数集計・スライド別詳細）が追加されており、補完やフォールバック制御の判断材料として活用します。詳細は `docs/requirements/stages/stage-05-mapping.md` と `docs/design/stages/stage-05-mapping.md` を参照してください。
@@ -175,6 +177,7 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
     --template samples/templates/templates.pptx
   # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
   ```
+- 工程4からの連続実行には `pptx compose` を利用できます。既存ドラフトを再承認した後、同コマンドを再実行すると `draft_*` と `rendering_ready.json` が一括で更新されます。
 - `pptx gen` を実行した場合も内部で `mapping` → `render` が順に呼び出され、従来どおりの成果物を `.pptx/gen/` に保存します。
 
 ### 工程 6: PPTX レンダリング
