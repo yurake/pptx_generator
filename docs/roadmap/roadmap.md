@@ -71,7 +71,7 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(未着手)"]
+        RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(進行中)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -704,12 +704,12 @@ flowchart TB
 <a id="rm-047"></a>
 ### RM-047 テンプレ統合構成生成AI連携
 - 対象工程: 4（ドラフト構成設計）
-- ゴール: 工程3で生成されたブリーフと工程2の spec 雛形をマージし、`layout_hint` 付きの `draft_approved.json` 下書きを生成する。
-- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
-- 期待成果: 生成AIと HITL の連携仕様、`pptx outline` 拡張案、差戻しログの整合。
-- 次アクション: 工程3出力とテンプレ JSON の突合ロジックを設計し、品質ゲートの変化を洗い出す。
+- ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
+- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照 ToDo: [docs/todo/20251104-rm047-draft-structuring.md](../todo/20251104-rm047-draft-structuring.md)
+- 状況: 進行中（2025-11-04 更新）
+- 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
+- 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
 
 <a id="rm-048"></a>
 ### RM-048 工程4+5 統合CLI整備
