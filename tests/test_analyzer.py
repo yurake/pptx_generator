@@ -10,6 +10,7 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
+from pptx_generator.brief import BriefCard, BriefDocument, BriefStoryContext, BriefStoryInfo
 from pptx_generator.models import (
     FontSpec,
     JobAuth,
@@ -172,6 +173,22 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
     )
 
     mapping_context = PipelineContext(spec=spec, workdir=tmp_path)
+    brief_doc = BriefDocument(
+        brief_id="brief-test",
+        cards=[
+            BriefCard(
+                card_id="slide-1",
+                chapter="概要",
+                message="最初のポイント",
+                narrative=["最初のポイント"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="introduction"),
+                intent_tags=["intro"],
+            )
+        ],
+        story_context=BriefStoryContext(chapters=[]),
+    )
+    mapping_context.add_artifact("brief_document", brief_doc)
     mapping_step = MappingStep(MappingOptions(output_dir=tmp_path))
     mapping_step.run(mapping_context)
 

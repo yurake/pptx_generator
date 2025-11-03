@@ -9,11 +9,11 @@
 
 ### CLI 実装の挙動
 - `src/pptx_generator/cli.py:1540` 付近の `mapping` コマンド実装を確認。
-  - `mapping` は `spec_path`（工程0/3で使用する jobspec）、`--content-approved`、`--draft-output` などを受け取り、`_run_mapping_pipeline` を呼び出す。
-  - `_run_mapping_pipeline` 内で `ContentApprovalStep` → `DraftStructuringStep` → `MappingStep` を順に実行しており、工程4の処理（ドラフト構成）を再度実行する構造になっている。
+  - `mapping` は `spec_path`（工程0/3で使用する jobspec）、`--brief-cards`、`--draft-output` などを受け取り、`_run_mapping_pipeline` を呼び出す。
+  - `_run_mapping_pipeline` 内で `BriefNormalizationStep` → `DraftStructuringStep` → `MappingStep` を順に実行しており、工程4の処理（ドラフト構成）を再度実行する構造になっている。
   - `--draft-output` で指定したディレクトリに `draft_draft.json` / `draft_approved.json` を再生成して上書きする。
   - `--layouts` を指定しない場合はスコアを既定値で補う（ログメッセージで確認）。
-- `DraftStructuringStep`（`src/pptx_generator/pipeline/draft_structuring.py`）は `content_approved` と `layouts.jsonl` を前提にドラフトを再構築する。既存の `draft_approved.json` を直接読み直すロジックはない。
+- `DraftStructuringStep`（`src/pptx_generator/pipeline/draft_structuring.py`）は `BriefNormalizationStep` が `PipelineContext` に積む `brief_document` と `layouts.jsonl` を前提にドラフトを再構築する。既存の `draft_approved.json` を直接読み直すロジックはない。
 - `MappingStep` 側も `draft_approved.json` を入力として受け取る API は用意されておらず、`PipelineContext` 上の `draft_document` アーティファクトを参照する。
 
 ### README との不整合
@@ -35,7 +35,7 @@
      - 少なくとも README に「再生成される」旨を明示し、HITL で編集したファイルを避難する手順を提案する。
 - ドキュメント対応
   - README の工程説明に「工程5 実行時に `.pptx/draft/` は上書きされる」旨を記載済み。より詳しい運用フローは `docs/design/cli-command-reference.md` や工程別ガイドへの追記を検討する。
-  - `docs/requirements/stages/stage-04-mapping.md` にも仕様ギャップを明記し、将来の改善策を TODO として記録すると良い。
+  - `docs/requirements/stages/stage-05-mapping.md` にも仕様ギャップを明記し、将来の改善策を TODO として記録すると良い。
 
 ## 次のアクション（案）
 1. CLI 側で既存ドラフトを入力できるオプション追加のタスクを起票（要 ToDo / Issue）。

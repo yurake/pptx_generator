@@ -133,9 +133,10 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 
 
 - [x] 工程2/3改修の取り込み
-  - メモ: origin/main の commit 9a34ddb（工程2/3統合・brief導入）を取り込む。
+- メモ: origin/main の commit 9a34ddb（工程2/3統合・brief導入）を取り込む。
     - [x] 最新 main の差分を精査し、CLI/パイプライン/テスト/サンプル/ドキュメントの影響を整理する。
     - [x] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/brief/*`、`pipeline/brief_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
+      - メモ: PR #266 コンフリクトの主因だった `rendering_ready` への名称変更差分を再度 `generate_ready` に統合し、`compose` 追加部分と整合するよう調整。
     - [x] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
     - [x] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
     - [x] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
@@ -149,5 +150,6 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - `docs/notes/20251109-generate-ready-meta.md`: Brief 正規化後も generate_ready メタ方針を維持する旨を追記。
 - **テスト**
   - `uv run --extra dev pytest`（143 件成功、2025-11-10 実行）
+  - メモ: PR #266 コンフリクト解消後に `uv run --extra dev pytest tests/test_cli_integration.py` を再実行し、generate_ready 前提の CLI フローが緑化することを確認（2025-11-XX）。
 
 必要に応じて `uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json` を再実行し、ブランド切り替えや PDF オプションの挙動を確認してください。

@@ -1,7 +1,7 @@
 # ストーリー骨子要件 (RM-005)
 
 ## 目的
-- 工程3 `content_approved.json` で章立て・ストーリーフェーズ・メッセージアングルを一貫管理できるようにする。
+- 工程3 `brief_cards.json` で章立て・ストーリーフェーズ・メッセージアングルを一貫管理できるようにする。
 - 工程4 `draft_approved.json` での章構成と齟齬が生じないよう、アウトライン情報を共通メタとして定義する。
 - HITL 承認者がストーリー整合を判断しやすくし、再構成のループを減らす。
 
@@ -17,7 +17,7 @@
 
 ## 出力
 - `story_outline.json`: 章、サブ章、主要メッセージ、推奨スライド数、ストーリーフェーズ、必須キーアングル等。
-- `content_approved.json`: 各カードに `story.phase`, `story.chapter_id`, `story.angle` を付与。
+- `brief_cards.json`: 各カードに `story.phase`, `story.chapter_id`, `story.angle` を付与。
 - ドキュメント: このファイルおよび `docs/design/rm005-story-modeler.md`（設計メモ予定）。
 
 ## ストーリーフェーズ分類（案）

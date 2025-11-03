@@ -11,7 +11,8 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+SAMPLE_BRIEF_SOURCE = Path(
+    "samples/contents/sample_import_content_summary.txt")
 
 
 @pytest.mark.skipif(
@@ -44,7 +45,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     template_release_path = release_dir / "template_release.json"
     assert template_release_path.exists()
-    release_payload = json.loads(template_release_path.read_text(encoding="utf-8"))
+    release_payload = json.loads(
+        template_release_path.read_text(encoding="utf-8"))
     assert release_payload.get("brand") == "demo"
     assert release_payload.get("version") == "v1"
 

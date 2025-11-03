@@ -1,0 +1,49 @@
+{
+  "brief_id": "sample_import_content_summary",
+  "generated_at": "2025-11-02T15:04:21.325659Z",
+  "policy_id": "brief-default",
+  "input_hash": "28ab0872ef4bfe4d9370af3a354a430d4b3314b822b68b9193a0eac46835a9bf",
+  "cards": [
+    {
+      "card_id": "intro",
+      "intent_tags": [
+        "introduction"
+      ],
+      "story_phase": "introduction",
+      "content_hash": "c028dc3a020d6678a61492227b4fff4a4c4764f545552fc7269309926d2d6a5d",
+      "body_lines": 1
+    },
+    {
+      "card_id": "solution",
+      "intent_tags": [
+        "problem"
+      ],
+      "story_phase": "problem",
+      "content_hash": "c959cd7b44796104e78675e502f3d2766cfde82b2c3eb911699dfaca03fad01f",
+      "body_lines": 1
+    },
+    {
+      "card_id": "impact",
+      "intent_tags": [
+        "solution"
+      ],
+      "story_phase": "solution",
+      "content_hash": "ff46ef6d882acb45e38141f3a7a2336050ce7b9fc2dda9e1bb764b5c415fcf7f",
+      "body_lines": 1
+    },
+    {
+      "card_id": "next",
+      "intent_tags": [
+        "impact"
+      ],
+      "story_phase": "impact",
+      "content_hash": "ec428858216b6f8eb05c54a85c0aa0a9ca9acb10181d74f42827d69b08eafb8b",
+      "body_lines": 1
+    }
+  ],
+  "statistics": {
+    "cards_total": 4,
+    "approved": 0,
+    "returned": 0
+  }
+}

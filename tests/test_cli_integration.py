@@ -105,6 +105,7 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen"
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
     generate_ready_path = _prepare_generate_ready(
@@ -312,6 +313,7 @@ def test_cli_mapping_invalid_brief_fails(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
     invalid_cards = tmp_path / "brief_cards.json"
     invalid_cards.write_text("{}", encoding="utf-8")
@@ -582,6 +584,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
             str(output_dir),
             "--branding",
             str(branding_path),
+            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )
