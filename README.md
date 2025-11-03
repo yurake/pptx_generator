@@ -16,14 +16,12 @@ PowerPoint テンプレートと資料データ（プレーンテキストや PD
 ## アーキテクチャ概要
 本プロジェクトは 4 工程で資料を生成します。詳細は `docs/design/design.md` を参照してください。
 
-| 工程 | 実行主体 | 主な入力 | 主な成果物 | 概要 |
+| 工程 | 入力 | 出力 | 主な出力先 | 概要 |
 | --- | --- | --- | --- | --- |
-| 1. テンプレ工程 | 自動＋HITL | ブランドガイド、テンプレート PPTX | `.pptx/extract/` 配下のテンプレ仕様・ジョブスペック・ブランド設定、必要に応じて `.pptx/release/` のリリースメタ | テンプレ整備・抽出・検証・リリースをワンフローで実施し、後続工程の基盤データを用意 |
-| 2. コンテンツ正規化 | HITL | `.pptx/extract/jobspec.json`, 入力コンテンツ | `.pptx/content/content_approved.json` | 入力データをスライド候補へ整形し、生成 AI を併用しながら承認を行う |
-| 3. マッピング (HITL + 自動) | HITL + 自動 | `.pptx/content/content_approved.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/layouts.jsonl`, ブランド設定 | `.pptx/draft/draft_approved.json`, `.pptx/gen/rendering_ready.json` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
-| 4. PPTX レンダリング | 自動 | `.pptx/gen/rendering_ready.json`、テンプレート、ブランド設定 | `.pptx/gen/proposal.pptx`、`proposal.pdf`（任意）、`analysis.json`、`rendering_log.json`、`audit_log.json`、`review_engine_analyzer.json` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
-
-工程 2・3 では人による承認（HITL）が必須です。AI レビューや承認フローの仕様は `docs/design/schema/README.md` と `docs/requirements/requirements.md` にまとめています。
+| 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースをワンフローで実施し、後続工程の基盤データを用意 |
+| 2. コンテンツ正規化 | 資料データ(text,PDFなど)、<br>テンプレ仕様(`jobspec.json`)  | ドラフト(`draft_approved.json`) | `.pptx/content/` | 入力データをスライド候補へ整形し、生成 AI を併用しながら承認を行う |
+| 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`draft_approved.json`) | パワポ.json(`generate_ready.json`) | `.pptx/draft/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
+| 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
 
 ```mermaid
 flowchart TD
@@ -34,40 +32,31 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**template.pptx（ユーザー準備）**"]:::userfile --> S1["**工程 1 テンプレ工程**"]:::stage
-  S1 --> Tmpl_out["**template.pptx（承認済み）**"]:::file
-  S1 --> Brand["**branding.json**"]:::file
-  S1 --> Layouts["**layouts.jsonl**"]:::file
-  S1 --> Jobspec["**jobspec.json**"]:::file
-  S1 --> ReleaseMeta["**template_release.json（任意）**"]:::file
+  Tmpl["**テンプレートPPTX (templates.pptx)<br>（ユーザー準備）**"]:::userfile --> S1["**工程 1 テンプレ**"]:::stage
+  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  ContentSrc["**content_source.txt（ユーザー準備）**"]:::userfile --> S2["**工程 2 コンテンツ正規化 (HITL)**"]:::stage
-  Jobspec --> S2
-  S2 --> Content["**content_approved.json**"]:::file
+  ContentSrc["**資料データ (content_source.txt)<br>（ユーザー準備）**"]:::userfile --> S2["**工程 2 コンテンツ正規化**"]:::stage
+  S2 --> Draft["**ドラフト(draft_approved.json)**"]:::file
+  Draft --> S3
 
   %% ======= Stage 3 =======
-  Content --> S3["**工程 3 マッピング (HITL + 自動)**"]:::stage
-  Layouts --> S3
-  Brand --> S3
+  S3["**工程 3 マッピング**"]:::stage
   Jobspec --> S3
-  S3 --> Draft["**draft_approved.json**"]:::file
-  S3 --> Ready["**rendering_ready.json**"]:::file
+  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**工程 4 レンダリング**"]:::stage
-  Tmpl_out --> S4
-  Brand --> S4
-  S4 --> PPTX["**proposal.pptx（最終成果物）**"]:::final
-  S4 --> PDF["**proposal.pdf（最終成果物）**"]:::final
+  Ready --> S4["**工程 4 PPTX生成**"]:::stage
+  S4 --> PPTX["**proposal.pptx**"]:::final
+  S4 --> PDF["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
     direction LR
-    A1["青: **工程（自動/HITL）**"]:::stage
-    A2["灰: **システム生成ファイル**"]:::file
-    A3["緑: **ユーザー準備ファイル**"]:::userfile
-    A4["金: **最終成果物**"]:::final
+    A1["**工程（自動/HITL）**"]:::stage
+    A2["**システム生成ファイル**"]:::file
+    A3["**ユーザー準備ファイル**"]:::userfile
+    A4["**最終成果物**"]:::final
   end
 ```
 
