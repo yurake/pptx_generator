@@ -816,7 +816,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 
 @app.command("gen")
 @click.argument(
-    "spec_path",
+    "generate_ready_path",
     type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
@@ -827,13 +827,6 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     default=Path(".pptx/gen"),
     show_default=True,
     help="生成物を保存するディレクトリ",
-)
-@click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="PPTX テンプレートファイル",
 )
 @click.option(
     "--pptx-name",
@@ -847,18 +840,6 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
-)
-@click.option(
-    "--content-approved",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="工程3で承認済みのコンテンツ JSON",
-)
-@click.option(
-    "--content-review-log",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="工程3の承認イベントログ JSON",
 )
 @click.option(
     "--branding",
@@ -947,27 +928,11 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
 )
-@click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="工程2で生成した layouts.jsonl のパス",
-)
-@click.option(
-    "--draft-output",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/draft"),
-    show_default=True,
-    help="draft_draft.json / draft_approved.json の出力ディレクトリ",
-)
 def gen(  # noqa: PLR0913
-    spec_path: Path,
+    generate_ready_path: Path,
     output_dir: Path,
-    template: Optional[Path],
     pptx_name: str,
     rules: Path,
-    content_approved: Optional[Path],
-    content_review_log: Optional[Path],
     branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
@@ -982,27 +947,40 @@ def gen(  # noqa: PLR0913
     polisher_args: tuple[str, ...],
     polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
-    layouts: Optional[Path],
-    draft_output: Path,
 ) -> None:
-    """JSON 仕様から PPTX を生成する。"""
+    """generate_ready.json から PPTX / PDF / 監査ログを生成する。"""
 
     if not export_pdf and pdf_mode != "both":
         click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
         raise click.exceptions.Exit(code=2)
 
     try:
-        spec = _load_jobspec(spec_path)
-    except SpecValidationError as exc:
-        _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=2) from exc
+        generate_ready = GenerateReadyDocument.parse_file(generate_ready_path)
+    except Exception as exc:  # noqa: BLE001
+        click.echo(f"generate_ready.json の読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    template_path_str = generate_ready.meta.template_path
+    if not template_path_str:
+        click.echo(
+            "generate_ready.json に template_path が含まれていません。工程4を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=2)
+
+    template_path = Path(template_path_str)
+    if not template_path.is_absolute():
+        candidate = (generate_ready_path.parent / template_path).resolve()
+        template_path = candidate if candidate.exists() else template_path
+    if not template_path.exists():
+        click.echo(f"テンプレートファイルが見つかりません: {template_path}", err=True)
+        raise click.exceptions.Exit(code=4)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
+    branding_config, branding_artifact = _prepare_branding(template_path, branding)
     analyzer_options = _build_analyzer_options(
         rules_config, branding_config, emit_structure_snapshot
     )
-    refiner_options = _build_refiner_options(rules_config, branding_config)
     pdf_options = PdfExportOptions(
         enabled=export_pdf,
         mode=pdf_mode,
@@ -1022,53 +1000,30 @@ def gen(  # noqa: PLR0913
         rules_path=rules,
     )
 
-    try:
-        mapping_context = _run_mapping_pipeline(
-            spec=spec,
-            output_dir=output_dir,
-            rules_config=rules_config,
-            refiner_options=refiner_options,
-            branding_artifact=branding_artifact,
-            content_approved=content_approved,
-            content_review_log=content_review_log,
-            layouts=layouts,
-            draft_output=draft_output,
-            template=template,
-        )
-    except SpecValidationError as exc:
-        _echo_errors("業務ルール検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=3) from exc
-    except ContentApprovalError as exc:
-        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("パイプライン実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-
-    generate_ready_obj = mapping_context.artifacts.get("generate_ready")
-    if not isinstance(generate_ready_obj, GenerateReadyDocument):
-        click.echo("generate_ready.json が生成されませんでした", err=True)
-        raise click.exceptions.Exit(code=4)
-    generate_ready_path_value = mapping_context.artifacts.get("generate_ready_path")
-    generate_ready_path = (
-        Path(str(generate_ready_path_value))
-        if generate_ready_path_value is not None
-        else None
-    )
+    base_artifacts: dict[str, object] = {
+        "generate_ready": generate_ready,
+        "generate_ready_path": str(generate_ready_path),
+    }
+    mapping_log_path = generate_ready_path.with_name("mapping_log.json")
+    if mapping_log_path.exists():
+        base_artifacts["mapping_log_path"] = str(mapping_log_path)
+    fallback_path = generate_ready_path.with_name("fallback_report.json")
+    if fallback_path.exists():
+        base_artifacts["mapping_fallback_report_path"] = str(fallback_path)
 
     try:
         render_context = _run_render_pipeline(
-            generate_ready=generate_ready_obj,
+            generate_ready=generate_ready,
             generate_ready_path=generate_ready_path,
             output_dir=output_dir,
-            template=template,
+            template=template_path,
             pptx_name=pptx_name,
             branding_config=branding_config,
             branding_artifact=branding_artifact,
             analyzer_options=analyzer_options,
             pdf_options=pdf_options,
             polisher_options=polisher_options,
-            base_artifacts=dict(mapping_context.artifacts),
+            base_artifacts=base_artifacts,
         )
     except PdfExportError as exc:
         click.echo(f"PDF 出力に失敗しました: {exc}", err=True)

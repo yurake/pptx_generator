@@ -178,8 +178,15 @@ class MappingStep:
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
+        template_path_str = (
+            str(self.options.template_path)
+            if self.options.template_path is not None
+            else None
+        )
+
         generate_ready_meta = GenerateReadyMeta(
             template_version=self._resolve_template_version(context),
+            template_path=template_path_str,
             content_hash=self._resolve_content_hash(context),
             generated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             job_meta=context.spec.meta,
@@ -252,6 +259,8 @@ class MappingStep:
             "content_hash": generate_ready_meta.content_hash,
             "generate_ready_path": str(generate_ready_path),
         }
+        if template_path_str is not None:
+            mapping_meta["template_path"] = template_path_str
         context.add_artifact("mapping_meta", mapping_meta)
 
         logger.info(

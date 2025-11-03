@@ -38,20 +38,60 @@ def _collect_paragraph_texts(slide) -> list[str]:
     return texts
 
 
+def _prepare_generate_ready(
+    runner: CliRunner,
+    spec_path: Path,
+    mapping_dir: Path,
+    *,
+    draft_dir: Path,
+    extra_args: list[str] | None = None,
+) -> Path:
+    args = [
+        "mapping",
+        str(spec_path),
+        "--output",
+        str(mapping_dir),
+        "--template",
+        str(SAMPLE_TEMPLATE),
+        "--content-approved",
+        str(CONTENT_APPROVED_SAMPLE),
+        "--content-review-log",
+        str(CONTENT_REVIEW_LOG_SAMPLE),
+        "--draft-output",
+        str(draft_dir),
+    ]
+    if extra_args:
+        args.extend(extra_args)
+
+    result = runner.invoke(app, args, catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+
+    ready_path = mapping_dir / "generate_ready.json"
+    assert ready_path.exists()
+    return ready_path
+
+
 def test_cli_gen_generates_outputs(tmp_path) -> None:
     spec_path = Path("samples/json/sample_jobspec.json")
+    mapping_dir = tmp_path / "mapping"
+    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-work"
     runner = CliRunner()
+
+    generate_ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        draft_dir=draft_dir,
+    )
 
     result = runner.invoke(
         app,
         [
             "gen",
-            str(spec_path),
+            str(generate_ready_path),
             "--output",
             str(output_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
         ],
         catch_exceptions=False,
     )
@@ -115,7 +155,7 @@ def test_cli_gen_generates_outputs(tmp_path) -> None:
     mapping_info = audit_payload.get("mapping")
     assert mapping_info is not None
     assert mapping_info.get("slides") == len(spec.slides)
-    assert mapping_info.get("generate_ready_path") == str((output_dir / "generate_ready.json"))
+    assert mapping_info.get("generate_ready_path") == str(generate_ready_path)
     assert mapping_info.get("fallback_count") == 0
     assert mapping_info.get("ai_patch_count") == 0
     polisher_meta = audit_payload.get("polisher")

@@ -39,6 +39,26 @@ roadmap_item: RM-049 pptx gen スコープ最適化
       - **テスト戦略**: `uv run --extra dev pytest tests/test_cli_integration.py` を中心にパイプライン系単体テストを必要に応じて実行し、可能なら `uv run pptx compose ...` で手動確認する。
       - **ロールバック方法**: 取り込み後のコミットをリバートし、ブランチを `origin/main` の状態へ戻して再検討する。
       - **承認メッセージ ID**: user-msg-rm049-plan-approval
+    - 追加Plan（generate_ready 専用 CLI 化）
+      - **スコープ**: `pptx gen` を generate_ready + branding 入力へ統一し、工程4出力にテンプレ参照を含めた上で CLI・テスト・ドキュメントを刷新する。
+      - **主な作業**
+        1. MappingStep で `generate_ready` メタへテンプレートパスを埋め込み、工程5が追加引数なしでテンプレートを特定できるようにする。
+        2. CLI `pptx gen` を generate_ready 専用の引数体系へ変更し、`--template` / `--content-approved` を廃止する。
+        3. mapping で出力した成果物（`mapping_log` など）を工程5に引き継ぐアーティファクト整備を行う。
+        4. CLI 統合テストやチートシートテストを新しい入力仕様へ書き換え、成功ケース／エラーケースを再検証する。
+        5. README・CLI ガイド・ノート類を更新し、新しい CLI 仕様と注意点（テンプレートパス埋め込みへの依存）を明文化する。
+      - **テスト戦略**: `uv run --extra dev pytest tests/test_cli_integration.py` に加え、`tests/test_cli_cheatsheet_flow.py` を generate_ready ルートで成功させる。
+      - **ロールバック方法**: 変更コミットを差し戻し、従来の Spec 入力＋`--template`／`--content-approved` 前提の CLI に戻す。
+      - **承認メッセージ ID**: _pending approval_
+    - 追加Plan（generate_ready 詳細設計）
+      - **スコープ**: `generate_ready.json` のメタ情報（テンプレ参照・将来拡張用フィールド）を整理し、CLI 変更に先立って設計を固める。
+      - **主な作業**
+        1. `generate_ready` に含めるテンプレ参照（パス形式やバージョン識別子の要否）を決定し、仕様を文書化する。
+        2. 監査ログおよびマッピングメタへの反映方針を整理し、必要な更新箇所を列挙する。
+        3. 設計内容を docs/notes に記録し、本 ToDo から参照できるようリンクを追加する。
+      - **テスト戦略**: 設計タスクのため該当なし（実装フェーズで統合テストを実施）。
+      - **ロールバック方法**: 設計メモの破棄または更新停止で対応。
+      - **承認メッセージ ID**: _pending approval_
 - [x] 設計・実装方針の確定
   - メモ: `generate_ready.json` への統一と `pptx gen`（工程5専用）を中心とした CLI 体系で進める。
 - [x] ドキュメント更新（要件・設計）
@@ -83,10 +103,20 @@ roadmap_item: RM-049 pptx gen スコープ最適化
     - メモ: README と CLI ガイドを `render` / `compose` 前提へ更新し、 `generate_ready` 命名へ統一。
   - [x] 影響範囲と判断事項を整理したメモを `docs/` 配下へ追加し、対応状況を共有する。
     - メモ: `docs/notes/20251108-compose-integration.md` に決定事項と残課題を記録。
-  - [x] `pptx render` コマンド廃止と `pptx gen` への統合
-    - [x] CLI 実装から `render` サブコマンドを削除し、`gen` へ工程4/5統合フローを集約した。
-    - [x] テスト／ドキュメントを `render` 廃止前提へ更新し、一括実行手順を `gen` に統一した。
-    - [x] 差分メモを追記し、後方互換不要方針を明記した。
+- [x] `pptx render` コマンド廃止と `pptx gen` への統合
+  - [x] CLI 実装から `render` サブコマンドを削除し、`gen` へ工程4/5統合フローを集約した。
+  - [x] テスト／ドキュメントを `render` 廃止前提へ更新し、一括実行手順を `gen` に統一した。
+  - [x] 差分メモを追記し、後方互換不要方針を明記した。
+- [ ] generate_ready 詳細設計
+  - [ ] `generate_ready` に埋め込むテンプレ参照／メタ情報の候補（例: `template_path`, バージョン識別子）を整理する。
+  - [ ] 監査ログや `mapping_meta` への反映方針をまとめ、影響箇所を列挙する。
+  - [ ] 設計内容を docs/notes に記録し、本 ToDo から参照できるリンクを残す。
+- [ ] `pptx gen` generate_ready 専用化（ブランド指定のみを必須とする）
+  - [ ] 工程4出力 (`generate_ready.json`) にテンプレートパスを含めるよう MappingStep を更新する。
+  - [ ] CLI `pptx gen` を `generate_ready.json` ＋ `--branding` 入力へ一本化し、`--template` / `--content-approved` 等を廃止する。
+  - [ ] マッピング成果物引き継ぎ（`mapping_log` など）を工程5へ渡すアーティファクト整備を行う。
+  - [ ] テスト（統合・チートシートなど）を新入力仕様へ書き換えて成功することを確認する。
+  - [ ] README / ドキュメント / ノートを更新し、新しい CLI 要件と注意事項を明文化する。
 - [ ] PR 作成
   - メモ:
 
@@ -101,4 +131,4 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 **テスト**
 - `uv run --extra dev pytest tests/test_cli_integration.py`
 
-必要に応じて `uv run pptx gen <generate_ready.json>` で動作確認し、残タスク（PR 作成など）を進めてください。
+必要に応じて `uv run pptx gen <jobspec.json> --content-approved <content_approved.json>` など工程4/5統合コマンドでの動作確認を行い、残タスク（PR 作成など）を進めてください。

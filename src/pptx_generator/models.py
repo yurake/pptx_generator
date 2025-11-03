@@ -530,6 +530,7 @@ class GenerateReadySlide(BaseModel):
 
 class GenerateReadyMeta(BaseModel):
     template_version: str | None = None
+    template_path: str | None = None
     content_hash: str | None = None
     generated_at: str
     job_meta: JobMeta | None = None
