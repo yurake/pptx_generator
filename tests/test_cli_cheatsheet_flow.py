@@ -44,38 +44,33 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     template_release_path = release_dir / "template_release.json"
     assert template_release_path.exists()
-    release_payload = json.loads(template_release_path.read_text(encoding="utf-8"))
+    release_payload = json.loads(
+        template_release_path.read_text(encoding="utf-8"))
     assert release_payload.get("brand") == "demo"
     assert release_payload.get("version") == "v1"
 
+    extract_root = tmp_path / "template"
+    release_output = tmp_path / "template_release"
     template_result = runner.invoke(
         app,
         [
             "template",
             str(SAMPLE_TEMPLATE),
             "--output",
-            str(tmp_path / "template"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert template_result.exit_code != 0
-    assert "No such command 'template'" in template_result.output
-
-    extract_root = tmp_path / "extract"
-    tpl_extract = runner.invoke(
-        app,
-        [
-            "tpl-extract",
-            "--template",
-            str(SAMPLE_TEMPLATE),
-            "--output",
             str(extract_root),
+            "--with-release",
+            "--brand",
+            "demo",
+            "--version",
+            "v1",
+            "--release-output",
+            str(release_output),
         ],
         catch_exceptions=False,
     )
 
-    assert tpl_extract.exit_code == 0
+    assert template_result.exit_code == 0
+    assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in template_result.output
 
     template_spec_path = extract_root / "template_spec.json"
     jobspec_path = extract_root / "jobspec.json"
@@ -88,6 +83,10 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     assert branding_path.exists()
     assert layouts_path.exists()
     assert diagnostics_path.exists()
+    release_template_path = release_output / "template_release.json"
+    release_report_path = release_output / "release_report.json"
+    assert release_template_path.exists()
+    assert release_report_path.exists()
 
     jobspec_payload = json.loads(jobspec_path.read_text(encoding="utf-8"))
     assert "meta" in jobspec_payload

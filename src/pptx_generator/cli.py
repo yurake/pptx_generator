@@ -22,22 +22,24 @@ from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
                     BriefDocument, BriefPolicyError, BriefSourceDocument,
                     load_brief_policy_set)
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
-                                LayoutValidationSuite)
+                                LayoutValidationResult, LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
-                     RenderingReadyDocument, SpecValidationError, TemplateRelease,
-                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun)
+                     JobSpecScaffold, RenderingReadyDocument, SpecValidationError,
+                     TemplateRelease, TemplateReleaseDiagnostics,
+                     TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec)
 from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        BriefNormalizationOptions, BriefNormalizationStep,
-                       ContentApprovalOptions, ContentApprovalStep,
-                       DraftStructuringOptions, DraftStructuringStep,
-                       MappingOptions, MappingStep, MonitoringIntegrationOptions,
-                       MonitoringIntegrationStep, PdfExportError,
-                       PdfExportOptions, PdfExportStep, PipelineContext,
-                       PipelineRunner, PipelineStep, PolisherError, PolisherOptions,
-                       PolisherStep, RefinerOptions, RenderingAuditOptions,
-                       RenderingAuditStep, RenderingOptions, SimpleAnalyzerStep,
-                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
+                       ContentApprovalError, ContentApprovalOptions,
+                       ContentApprovalStep, DraftStructuringOptions,
+                       DraftStructuringStep, MappingOptions, MappingStep,
+                       MonitoringIntegrationOptions, MonitoringIntegrationStep,
+                       PdfExportError, PdfExportOptions, PdfExportStep,
+                       PipelineContext, PipelineRunner, PipelineStep,
+                       PolisherError, PolisherOptions, PolisherStep,
+                       RefinerOptions, RenderingAuditOptions, RenderingAuditStep,
+                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
+                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
+                       TemplateExtractorOptions)
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
@@ -96,7 +98,8 @@ def _configure_file_logging() -> None:
         for handler in root_logger.handlers
     ):
         handler = logging.FileHandler(file_path, encoding="utf-8")
-        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
 
@@ -168,6 +171,243 @@ def _prepare_branding(
     if branding_payload is not None:
         artifact["config"] = branding_payload
     return branding_config, artifact
+
+
+@dataclass(slots=True)
+class TemplateExtractionResult:
+    template_spec: TemplateSpec
+    jobspec_scaffold: JobSpecScaffold
+    template_spec_path: Path
+    branding_path: Path
+    jobspec_path: Path
+    validation_result: LayoutValidationResult
+    output_dir: Path
+
+
+@dataclass(slots=True)
+class TemplateReleaseExecutionResult:
+    release: TemplateRelease
+    report: TemplateReleaseReport
+    release_path: Path
+    report_path: Path
+    golden_runs_path: Path | None
+    baseline_release: Path | None
+
+
+def _run_template_extraction(
+    *,
+    template_path: Path,
+    output_dir: Path,
+    layout: str | None,
+    anchor: str | None,
+    output_format: str,
+) -> TemplateExtractionResult:
+    fmt = output_format.lower()
+    extractor_options = TemplateExtractorOptions(
+        template_path=template_path,
+        output_path=None,
+        layout_filter=layout,
+        anchor_filter=anchor,
+        format=fmt,
+    )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    extractor = TemplateExtractor(extractor_options)
+    template_spec = extractor.extract()
+    jobspec_scaffold = extractor.build_jobspec_scaffold(template_spec)
+    branding_result = extract_branding_config(template_path)
+
+    if fmt == "yaml":
+        import yaml
+
+        spec_path = output_dir / "template_spec.yaml"
+        spec_content = yaml.dump(
+            template_spec.model_dump(),
+            allow_unicode=True,
+            default_flow_style=False,
+            indent=2,
+        )
+    else:
+        spec_path = output_dir / "template_spec.json"
+        spec_content = json.dumps(
+            template_spec.model_dump(),
+            indent=2,
+            ensure_ascii=False,
+        )
+
+    spec_path.write_text(spec_content, encoding="utf-8")
+    logger.info("Saved template spec to %s", spec_path.resolve())
+
+    branding_path = output_dir / "branding.json"
+    branding_payload = branding_result.to_branding_payload()
+    branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
+    branding_path.write_text(branding_text, encoding="utf-8")
+    logger.info("Saved branding payload to %s", branding_path.resolve())
+
+    jobspec_path = output_dir / "jobspec.json"
+    extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
+    logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
+
+    logger.info("Starting layout validation for %s", template_path)
+    validation_options = LayoutValidationOptions(
+        template_path=template_path,
+        output_dir=output_dir,
+    )
+    validation_suite = LayoutValidationSuite(validation_options)
+    validation_result = validation_suite.run()
+    logger.info(
+        "Layout validation finished: warnings=%d errors=%d",
+        validation_result.warnings_count,
+        validation_result.errors_count,
+    )
+
+    return TemplateExtractionResult(
+        template_spec=template_spec,
+        jobspec_scaffold=jobspec_scaffold,
+        template_spec_path=spec_path,
+        branding_path=branding_path,
+        jobspec_path=jobspec_path,
+        validation_result=validation_result,
+        output_dir=output_dir,
+    )
+
+
+def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
+    template_spec = result.template_spec
+    jobspec_scaffold = result.jobspec_scaffold
+    validation_result = result.validation_result
+
+    click.echo(f"テンプレート抽出が完了しました: {result.template_spec_path}")
+    click.echo(f"ブランド設定を出力しました: {result.branding_path}")
+    click.echo(f"ジョブスペック雛形を出力しました: {result.jobspec_path}")
+    click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
+
+    total_anchors = sum(len(layout.anchors)
+                        for layout in template_spec.layouts)
+    click.echo(f"抽出された図形・アンカー数: {total_anchors}")
+    click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
+
+    click.echo(f"Layouts: {validation_result.layouts_path}")
+    click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
+    if validation_result.diff_report_path is not None:
+        click.echo(f"Diff: {validation_result.diff_report_path}")
+    click.echo(
+        "検出結果: warnings=%d, errors=%d"
+        % (validation_result.warnings_count, validation_result.errors_count)
+    )
+
+    if template_spec.warnings:
+        click.echo(f"警告: {len(template_spec.warnings)} 件")
+        for warning in template_spec.warnings:
+            click.echo(f"  - {warning}", err=True)
+
+    if template_spec.errors:
+        click.echo(f"エラー: {len(template_spec.errors)} 件")
+        for error in template_spec.errors:
+            click.echo(f"  - {error}", err=True)
+
+
+def _run_template_release(
+    *,
+    template_path: Path,
+    brand: str,
+    version: str,
+    template_id: str | None,
+    output_dir: Path,
+    generated_by: str | None,
+    reviewed_by: str | None,
+    baseline_release: Path | None,
+    golden_specs: tuple[Path, ...],
+) -> TemplateReleaseExecutionResult:
+    resolved_template_id = _resolve_template_id(template_id, brand, version)
+
+    extractor = TemplateExtractor(
+        TemplateExtractorOptions(template_path=template_path))
+    spec = extractor.extract()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    baseline = load_template_release(
+        baseline_release) if baseline_release else None
+
+    resolved_golden_specs, auto_golden_warnings = _resolve_golden_specs(
+        user_specs=list(golden_specs),
+        baseline=baseline,
+        baseline_release=baseline_release,
+    )
+
+    golden_runs: list[TemplateReleaseGoldenRun] = []
+    golden_warnings: list[str] = []
+    golden_errors: list[str] = []
+    if resolved_golden_specs:
+        golden_runs, golden_warnings, golden_errors = _run_golden_specs(
+            template_path=template_path,
+            golden_specs=resolved_golden_specs,
+            output_dir=output_dir,
+        )
+
+    combined_warnings = golden_warnings + auto_golden_warnings
+
+    release = build_template_release(
+        template_path=template_path,
+        spec=spec,
+        template_id=resolved_template_id,
+        brand=brand,
+        version=version,
+        generated_by=generated_by,
+        reviewed_by=reviewed_by,
+        golden_runs=golden_runs,
+        extra_warnings=combined_warnings,
+        extra_errors=golden_errors,
+    )
+    release_path = output_dir / "template_release.json"
+    release_path.write_text(
+        json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    logger.info("Saved template release to %s", release_path.resolve())
+
+    golden_runs_path: Path | None = None
+    if golden_runs:
+        golden_runs_path = output_dir / "golden_runs.json"
+        golden_runs_path.write_text(
+            json.dumps(
+                [run.model_dump() for run in golden_runs],
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        logger.info("Saved golden run log to %s", golden_runs_path.resolve())
+
+    baseline_model = baseline
+    report = build_release_report(current=release, baseline=baseline_model)
+    report_path = output_dir / "release_report.json"
+    report_path.write_text(
+        json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    logger.info("Saved release report to %s", report_path.resolve())
+
+    return TemplateReleaseExecutionResult(
+        release=release,
+        report=report,
+        release_path=release_path,
+        report_path=report_path,
+        golden_runs_path=golden_runs_path,
+        baseline_release=baseline_release,
+    )
+
+
+def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
+    click.echo(f"テンプレートリリースメタを出力しました: {result.release_path}")
+    click.echo(f"差分レポートを出力しました: {result.report_path}")
+    if result.golden_runs_path is not None:
+        click.echo(f"ゴールデンサンプル結果を出力しました: {result.golden_runs_path}")
+    if result.baseline_release is not None:
+        click.echo(f"比較対象: {result.baseline_release}")
+    _print_diagnostics(result.release.diagnostics)
 
 
 def _build_reference_text(document: ContentApprovalDocument) -> tuple[str | None, bool]:
@@ -274,11 +514,13 @@ def _build_polisher_options(
 
     executable: Path | None = polisher_path
     if executable is None and config.executable:
-        executable = _resolve_config_path(config.executable, base_dir=rules_path.parent)
+        executable = _resolve_config_path(
+            config.executable, base_dir=rules_path.parent)
 
     rules_file: Path | None = polisher_rules
     if rules_file is None and config.rules_path:
-        rules_file = _resolve_config_path(config.rules_path, base_dir=rules_path.parent)
+        rules_file = _resolve_config_path(
+            config.rules_path, base_dir=rules_path.parent)
 
     timeout_sec = polisher_timeout or config.timeout_sec
     arguments = tuple(config.arguments) + tuple(polisher_args)
@@ -383,7 +625,8 @@ def _write_content_outputs(
         review_payload: list[dict[str, object]] = []
         for entry in review_logs:
             if hasattr(entry, "model_dump"):
-                review_payload.append(entry.model_dump(mode="json"))  # type: ignore[call-arg]
+                review_payload.append(entry.model_dump(
+                    mode="json"))  # type: ignore[call-arg]
             else:
                 review_payload.append(entry)
         review_path = output_dir / review_filename
@@ -479,7 +722,8 @@ def _write_draft_meta(
         target_length = draft_document.meta.target_length
         template_id = draft_document.meta.template_id
         template_match_score = draft_document.meta.template_match_score
-        template_mismatch = [item.model_dump(mode="json") for item in draft_document.meta.template_mismatch]
+        template_mismatch = [item.model_dump(
+            mode="json") for item in draft_document.meta.template_mismatch]
         analyzer_summary = draft_document.meta.analyzer_summary
         return_reason_stats = draft_document.meta.return_reason_stats
 
@@ -755,7 +999,8 @@ def _echo_mapping_outputs(context: PipelineContext) -> None:
     mapping_log_path = context.artifacts.get("mapping_log_path")
     if mapping_log_path is not None:
         click.echo(f"Mapping Log: {mapping_log_path}")
-    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
+    fallback_report_path = context.artifacts.get(
+        "mapping_fallback_report_path")
     if fallback_report_path is not None:
         click.echo(f"Fallback Report: {fallback_report_path}")
 
@@ -768,7 +1013,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
         click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
     analysis_path = context.artifacts.get("analysis_path")
     click.echo(f"Analysis: {analysis_path}")
-    baseline_analysis_path = context.artifacts.get("analysis_pre_polisher_path")
+    baseline_analysis_path = context.artifacts.get(
+        "analysis_pre_polisher_path")
     if baseline_analysis_path is not None:
         click.echo(f"Analysis (Pre-Polisher): {baseline_analysis_path}")
     rendering_log_path = context.artifacts.get("rendering_log_path")
@@ -777,7 +1023,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     rendering_summary = context.artifacts.get("rendering_summary")
     if isinstance(rendering_summary, dict):
         click.echo(
-            "Rendering Warnings: %s" % rendering_summary.get("warnings_total", 0)
+            "Rendering Warnings: %s" % rendering_summary.get(
+                "warnings_total", 0)
         )
     review_engine_path = context.artifacts.get("review_engine_analysis_path")
     if review_engine_path is not None:
@@ -810,7 +1057,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     mapping_log_path = context.artifacts.get("mapping_log_path")
     if mapping_log_path is not None:
         click.echo(f"Mapping Log: {mapping_log_path}")
-    fallback_report_path = context.artifacts.get("mapping_fallback_report_path")
+    fallback_report_path = context.artifacts.get(
+        "mapping_fallback_report_path")
     if fallback_report_path is not None:
         click.echo(f"Fallback Report: {fallback_report_path}")
     monitoring_report_path = context.artifacts.get("monitoring_report_path")
@@ -934,13 +1182,15 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--polisher-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
 )
 @click.option(
     "--polisher-rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="Polisher へ渡すルール設定ファイル",
 )
@@ -958,7 +1208,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--polisher-cwd",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    type=click.Path(exists=True, file_okay=False,
+                    dir_okay=True, path_type=Path),
     default=None,
     help="Polisher 実行時のカレントディレクトリ",
 )
@@ -969,7 +1220,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--layouts",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="工程2で生成した layouts.jsonl のパス",
 )
@@ -1071,7 +1323,8 @@ def gen(
     if not isinstance(rendering_ready_obj, RenderingReadyDocument):
         click.echo("rendering_ready.json が生成されませんでした", err=True)
         raise click.exceptions.Exit(code=4)
-    rendering_ready_path_value = mapping_context.artifacts.get("rendering_ready_path")
+    rendering_ready_path_value = mapping_context.artifacts.get(
+        "rendering_ready_path")
     rendering_ready_path = (
         Path(str(rendering_ready_path_value))
         if rendering_ready_path_value is not None
@@ -1214,7 +1467,8 @@ def content(
 )
 @click.option(
     "--layouts",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="工程2で生成した layouts.jsonl のパス",
 )
@@ -1290,7 +1544,8 @@ def content(
 @click.option(
     "--import-analysis",
     "analysis_summary_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="analysis_summary.json のパス",
 )
@@ -1416,7 +1671,15 @@ def outline(
 @app.command("compose")
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+)
+@click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=None,
+    help="工程2で生成した layouts.jsonl のパス",
 )
 @click.option(
     "--layouts",
@@ -1494,7 +1757,8 @@ def outline(
 @click.option(
     "--import-analysis",
     "analysis_summary_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="analysis_summary.json のパス",
 )
@@ -1515,7 +1779,8 @@ def outline(
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
@@ -1786,7 +2051,8 @@ def mapping(  # noqa: PLR0913
 @app.command("render")
 @click.argument(
     "rendering_ready_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
 )
 @click.option(
     "--output",
@@ -1800,7 +2066,8 @@ def mapping(  # noqa: PLR0913
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="PPTX テンプレートファイル",
 )
@@ -1812,14 +2079,16 @@ def mapping(  # noqa: PLR0913
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="Analyzer 設定を含むルールファイル",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル",
@@ -1845,7 +2114,8 @@ def mapping(  # noqa: PLR0913
 )
 @click.option(
     "--libreoffice-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="LibreOffice (soffice) 実行ファイルのパス",
 )
@@ -1871,13 +2141,15 @@ def mapping(  # noqa: PLR0913
 )
 @click.option(
     "--polisher-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
 )
 @click.option(
     "--polisher-rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="Polisher へ渡すルール設定ファイル",
 )
@@ -1895,7 +2167,8 @@ def mapping(  # noqa: PLR0913
 )
 @click.option(
     "--polisher-cwd",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    type=click.Path(exists=True, file_okay=False,
+                    dir_okay=True, path_type=Path),
     default=None,
     help="Polisher 実行時のカレントディレクトリ",
 )
@@ -1955,7 +2228,8 @@ def render(  # noqa: PLR0913
     )
 
     try:
-        rendering_ready = RenderingReadyDocument.parse_file(rendering_ready_path)
+        rendering_ready = RenderingReadyDocument.parse_file(
+            rendering_ready_path)
     except Exception as exc:  # noqa: BLE001
         click.echo(f"rendering_ready.json の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -1990,6 +2264,170 @@ def render(  # noqa: PLR0913
     _emit_review_engine_analysis(context, analysis_path)
     audit_path = _write_audit_log(context)
     _echo_render_outputs(context, audit_path)
+
+
+@app.command("template")
+@click.argument(
+    "template_path",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/extract"),
+    show_default=True,
+    help="抽出・検証結果を保存するディレクトリ",
+)
+@click.option(
+    "--format",
+    type=click.Choice(["json", "yaml"], case_sensitive=False),
+    default="json",
+    show_default=True,
+    help="テンプレート仕様の出力形式",
+)
+@click.option(
+    "--layout",
+    type=str,
+    default=None,
+    help="抽出対象レイアウト名のフィルタ（前方一致）",
+)
+@click.option(
+    "--anchor",
+    type=str,
+    default=None,
+    help="抽出対象アンカー名のフィルタ（前方一致）",
+)
+@click.option(
+    "--with-release",
+    is_flag=True,
+    help="抽出・検証後にテンプレートリリースメタも生成する",
+)
+@click.option(
+    "--brand",
+    type=str,
+    default=None,
+    help="--with-release 時のブランド名",
+)
+@click.option(
+    "--version",
+    type=str,
+    default=None,
+    help="--with-release 時のテンプレートバージョン",
+)
+@click.option(
+    "--template-id",
+    type=str,
+    default=None,
+    help="--with-release 時のテンプレート識別子。未指定時は <brand>_<version> を使用",
+)
+@click.option(
+    "--release-output",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/release"),
+    show_default=True,
+    help="テンプレートリリース成果物の出力ディレクトリ",
+)
+@click.option(
+    "--generated-by",
+    type=str,
+    default=None,
+    help="テンプレートリリースメタの生成者",
+)
+@click.option(
+    "--reviewed-by",
+    type=str,
+    default=None,
+    help="テンプレートリリースメタのレビュー担当者",
+)
+@click.option(
+    "--baseline-release",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=None,
+    help="比較対象となる過去の template_release.json",
+)
+@click.option(
+    "--golden-spec",
+    "golden_specs",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    multiple=True,
+    help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
+)
+def template(  # noqa: PLR0913
+    template_path: Path,
+    output: Path,
+    format: str,
+    layout: str | None,
+    anchor: str | None,
+    with_release: bool,
+    brand: str | None,
+    version: str | None,
+    template_id: str | None,
+    release_output: Path,
+    generated_by: str | None,
+    reviewed_by: str | None,
+    baseline_release: Path | None,
+    golden_specs: tuple[Path, ...],
+) -> None:
+    """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
+    try:
+        extraction_result = _run_template_extraction(
+            template_path=template_path,
+            output_dir=output,
+            layout=layout,
+            anchor=anchor,
+            output_format=format,
+        )
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except LayoutValidationError as exc:
+        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("テンプレート抽出中にエラーが発生しました")
+        click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=1) from exc
+
+    _echo_template_extraction_result(extraction_result)
+
+    if not with_release:
+        click.echo("テンプレ工程（抽出＋検証）が完了しました。")
+        return
+
+    if brand is None or version is None:
+        raise click.UsageError(
+            "--with-release を使用する場合は --brand と --version を指定してください。")
+
+    try:
+        release_result = _run_template_release(
+            template_path=template_path,
+            brand=brand,
+            version=version,
+            template_id=template_id,
+            output_dir=release_output,
+            generated_by=generated_by,
+            reviewed_by=reviewed_by,
+            baseline_release=baseline_release,
+            golden_specs=golden_specs,
+        )
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except click.exceptions.Exit:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("テンプレートリリース生成中にエラーが発生しました")
+        click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=1) from exc
+
+    _echo_template_release_result(release_result)
+    if release_result.release.diagnostics.errors:
+        raise click.exceptions.Exit(code=6)
+
+    click.echo("テンプレ工程（抽出＋検証＋リリース）が完了しました。")
 
 
 @app.command("tpl-extract")
@@ -2038,115 +2476,29 @@ def tpl_extract(
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
-        # オプション設定
-        extractor_options = TemplateExtractorOptions(
-            template_path=template_path,
-            output_path=None,
-            layout_filter=layout,
-            anchor_filter=anchor,
-            format=format.lower(),
-        )
-        
-        # 出力ディレクトリ作成
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 抽出実行
-        extractor = TemplateExtractor(extractor_options)
-        template_spec = extractor.extract()
-        jobspec_scaffold = extractor.build_jobspec_scaffold(template_spec)
-        branding_result = extract_branding_config(template_path)
-        
-        # 出力パス決定
-        if format.lower() == "yaml":
-            spec_path = output_dir / "template_spec.yaml"
-        else:
-            spec_path = output_dir / "template_spec.json"
-        branding_output_path = output_dir / "branding.json"
-        jobspec_output_path = spec_path.with_name("jobspec.json")
-        
-        # ファイル保存
-        if format.lower() == "yaml":
-            import yaml
-            content = yaml.dump(
-                template_spec.model_dump(),
-                allow_unicode=True,
-                default_flow_style=False,
-                indent=2
-            )
-        else:
-            import json
-            content = json.dumps(
-                template_spec.model_dump(),
-                indent=2,
-                ensure_ascii=False
-            )
-        
-        spec_path.write_text(content, encoding="utf-8")
-        logger.info("Saved template spec to %s", spec_path.resolve())
-
-        branding_payload = branding_result.to_branding_payload()
-        branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
-        branding_output_path.write_text(branding_text, encoding="utf-8")
-        logger.info("Saved branding payload to %s", branding_output_path.resolve())
-
-        extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_output_path)
-        logger.info("Saved jobspec scaffold to %s", jobspec_output_path.resolve())
-
-        # 結果表示
-        click.echo(f"テンプレート抽出が完了しました: {spec_path}")
-        click.echo(f"ブランド設定を出力しました: {branding_output_path}")
-        click.echo(f"ジョブスペック雛形を出力しました: {jobspec_output_path}")
-        click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
-        
-        total_anchors = sum(len(layout.anchors) for layout in template_spec.layouts)
-        click.echo(f"抽出された図形・アンカー数: {total_anchors}")
-        click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
-
-        logger.info("Starting layout validation for %s", template_path)
-        validation_options = LayoutValidationOptions(
+        extraction_result = _run_template_extraction(
             template_path=template_path,
             output_dir=output_dir,
+            layout=layout,
+            anchor=anchor,
+            output_format=format,
         )
-        validation_suite = LayoutValidationSuite(validation_options)
-        validation_result = validation_suite.run()
-        logger.info(
-            "Layout validation finished: warnings=%d errors=%d",
-            validation_result.warnings_count,
-            validation_result.errors_count,
-        )
-
-        click.echo(f"Layouts: {validation_result.layouts_path}")
-        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
-        if validation_result.diff_report_path is not None:
-            click.echo(f"Diff: {validation_result.diff_report_path}")
-        click.echo(
-            "検出結果: warnings=%d, errors=%d"
-            % (validation_result.warnings_count, validation_result.errors_count)
-        )
-
+        _echo_template_extraction_result(extraction_result)
+        validation_result = extraction_result.validation_result
         if validation_result.errors_count > 0:
             click.echo(
                 "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
                 err=True,
             )
             raise click.exceptions.Exit(code=6)
-        if template_spec.warnings:
-            click.echo(f"警告: {len(template_spec.warnings)} 件")
-            for warning in template_spec.warnings:
-                click.echo(f"  - {warning}", err=True)
 
+        template_spec = extraction_result.template_spec
         if template_spec.errors:
-            click.echo(f"エラー: {len(template_spec.errors)} 件")
-            for error in template_spec.errors:
-                click.echo(f"  - {error}", err=True)
-
-        if validation_result.errors_count > 0:
             click.echo(
-                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+                "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
                 err=True,
             )
             raise click.exceptions.Exit(code=6)
-
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -2166,7 +2518,8 @@ def tpl_extract(
     "--template",
     "-t",
     "template_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     required=True,
     help="検証対象の PPTX テンプレートファイル",
 )
@@ -2187,13 +2540,15 @@ def tpl_extract(
 )
 @click.option(
     "--baseline",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="比較対象となる過去の layouts.jsonl",
 )
 @click.option(
     "--analyzer-snapshot",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="Analyzer が出力した構造スナップショット JSON",
 )
@@ -2226,7 +2581,8 @@ def layout_validate(
     if result.diff_report_path is not None:
         click.echo(f"Diff: {result.diff_report_path}")
     click.echo(
-        "検出結果: warnings=%d, errors=%d" % (result.warnings_count, result.errors_count)
+        "検出結果: warnings=%d, errors=%d" % (
+            result.warnings_count, result.errors_count)
     )
 
 
@@ -2270,14 +2626,16 @@ def layout_validate(
 )
 @click.option(
     "--baseline-release",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="比較対象となる過去の template_release.json",
 )
 @click.option(
     "--golden-spec",
     "golden_specs",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
@@ -2295,86 +2653,17 @@ def tpl_release(
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
     try:
-        resolved_template_id = _resolve_template_id(template_id, brand, version)
-
-        extractor = TemplateExtractor(TemplateExtractorOptions(template_path=template_path))
-        spec = extractor.extract()
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        baseline = None
-        if baseline_release is not None:
-            baseline = load_template_release(baseline_release)
-
-        resolved_golden_specs, auto_golden_warnings = _resolve_golden_specs(
-            user_specs=list(golden_specs),
-            baseline=baseline,
-            baseline_release=baseline_release,
-        )
-
-        golden_runs: list[TemplateReleaseGoldenRun] = []
-        golden_warnings: list[str] = []
-        golden_errors: list[str] = []
-        if resolved_golden_specs:
-            golden_runs, golden_warnings, golden_errors = _run_golden_specs(
-                template_path=template_path,
-                golden_specs=resolved_golden_specs,
-                output_dir=output_dir,
-            )
-
-        combined_warnings = golden_warnings + auto_golden_warnings
-
-        release = build_template_release(
+        release_result = _run_template_release(
             template_path=template_path,
-            spec=spec,
-            template_id=resolved_template_id,
             brand=brand,
             version=version,
+            template_id=template_id,
+            output_dir=output_dir,
             generated_by=generated_by,
             reviewed_by=reviewed_by,
-            golden_runs=golden_runs,
-            extra_warnings=combined_warnings,
-            extra_errors=golden_errors,
+            baseline_release=baseline_release,
+            golden_specs=golden_specs,
         )
-        release_path = output_dir / "template_release.json"
-        release_path.write_text(
-            json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        logger.info("Saved template release to %s", release_path.resolve())
-
-        if golden_runs:
-            golden_runs_path = output_dir / "golden_runs.json"
-            golden_runs_path.write_text(
-                json.dumps(
-                    [run.model_dump() for run in golden_runs],
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
-            logger.info("Saved golden run log to %s", golden_runs_path.resolve())
-
-        report = build_release_report(current=release, baseline=baseline)
-        report_path = output_dir / "release_report.json"
-        report_path.write_text(
-            json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        logger.info("Saved release report to %s", report_path.resolve())
-
-        click.echo(f"テンプレートリリースメタを出力しました: {release_path}")
-        click.echo(f"差分レポートを出力しました: {report_path}")
-        if golden_runs:
-            click.echo(f"ゴールデンサンプル結果を出力しました: {golden_runs_path}")
-        if baseline_release is not None:
-            click.echo(f"比較対象: {baseline_release}")
-
-        _print_diagnostics(release.diagnostics)
-
-        if release.diagnostics.errors:
-            raise click.exceptions.Exit(code=6)
-
     except click.exceptions.Exit:
         raise
     except FileNotFoundError as exc:
@@ -2384,6 +2673,11 @@ def tpl_release(
         logging.exception("テンプレートリリース生成中にエラーが発生しました")
         click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
+
+    _echo_template_release_result(release_result)
+
+    if release_result.release.diagnostics.errors:
+        raise click.exceptions.Exit(code=6)
 
 
 def _run_golden_specs(
