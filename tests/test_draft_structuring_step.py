@@ -7,25 +7,53 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.models import ContentApprovalDocument
-from pptx_generator.pipeline import DraftStructuringOptions, DraftStructuringStep
+from pptx_generator.pipeline import (BriefNormalizationOptions,
+                                      BriefNormalizationStep,
+                                      DraftStructuringOptions,
+                                      DraftStructuringStep)
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.models import JobSpec
 
 
 @pytest.fixture()
 def sample_spec() -> JobSpec:
-    spec_path = Path("samples/json/sample_jobspec.json")
-    return JobSpec.parse_file(spec_path)
+    payload = {
+        "meta": {
+            "schema_version": "1.1",
+            "title": "Brief Sample Spec",
+            "client": "Internal QA",
+            "author": "テスト自動化チーム",
+            "created_at": "2025-11-02",
+            "theme": "standard",
+            "locale": "ja-JP",
+        },
+        "auth": {"created_by": "codex"},
+        "slides": [
+            {"id": "intro", "layout": "Title", "title": "イントロダクション"},
+            {"id": "solution", "layout": "Content", "title": "解決策"},
+            {"id": "impact", "layout": "Content", "title": "期待効果"},
+            {"id": "next", "layout": "Content", "title": "次のアクション"},
+        ],
+    }
+    return JobSpec.model_validate(payload)
 
 
 @pytest.fixture()
-def content_approved() -> ContentApprovalDocument:
-    payload = Path("samples/json/sample_content_approved.json").read_text(encoding="utf-8")
-    return ContentApprovalDocument.model_validate_json(payload)
+def brief_paths() -> dict[str, Path]:
+    brief_dir = Path("samples/brief")
+    return {
+        "cards": brief_dir / "brief_cards.json",
+        "log": brief_dir / "brief_log.json",
+        "meta": brief_dir / "ai_generation_meta.json",
+    }
 
 
-def test_draft_structuring_generates_documents(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_spec: JobSpec, content_approved: ContentApprovalDocument) -> None:
+def test_draft_structuring_generates_documents(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_spec: JobSpec,
+    brief_paths: dict[str, Path],
+) -> None:
     monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
 
     layouts_path = tmp_path / "layouts.jsonl"
@@ -56,7 +84,16 @@ def test_draft_structuring_generates_documents(tmp_path: Path, monkeypatch: pyte
     )
 
     context = PipelineContext(spec=sample_spec, workdir=tmp_path)
-    context.add_artifact("content_approved", content_approved)
+
+    brief_step = BriefNormalizationStep(
+        BriefNormalizationOptions(
+            cards_path=brief_paths["cards"],
+            log_path=brief_paths["log"],
+            ai_meta_path=brief_paths["meta"],
+            require_document=True,
+        )
+    )
+    brief_step.run(context)
 
     step = DraftStructuringStep(
         DraftStructuringOptions(

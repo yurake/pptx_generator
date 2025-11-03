@@ -119,7 +119,7 @@
 
 ### フィールド補足
 - `elements` はテンプレ PH 名をキーにした構造。Renderer が直接利用する。
-- `meta.sources`: 元コンテンツ (`content_approved`) の `slide_id` リスト。
+- `meta.sources`: 元コンテンツ（BriefCard）の `card_id` リスト。
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
@@ -133,7 +133,7 @@
 ## バリデーション
 - `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
-- `meta.content_hash` が `content_approved` のハッシュと一致すること（任意検証）。
+- `meta.content_hash` が `brief_cards.json` のハッシュと一致すること（任意検証）。
 
 ## 変更履歴メモ
 - 2025-10-21: `analyzer` セクションとメタの Analyzer 件数サマリを追加。

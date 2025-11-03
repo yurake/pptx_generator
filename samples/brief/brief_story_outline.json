@@ -1,0 +1,35 @@
+{
+  "brief_id": "sample_import_content_summary",
+  "chapters": [
+    {
+      "id": "intro",
+      "title": "イントロダクション",
+      "cards": [
+        "intro"
+      ]
+    },
+    {
+      "id": "problem",
+      "title": "課題整理",
+      "cards": [
+        "solution"
+      ]
+    },
+    {
+      "id": "solution",
+      "title": "解決策",
+      "cards": [
+        "impact"
+      ]
+    },
+    {
+      "id": "impact",
+      "title": "期待効果",
+      "cards": [
+        "next"
+      ]
+    }
+  ],
+  "narrative_theme": null,
+  "summary": null
+}

@@ -1,12 +1,13 @@
 # CLI コマンド設計ガイド
 
 ## 目的
-- CLI の各コマンドが 5 工程パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
+- CLI の各コマンドが 6 工程パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
 - README のクイックスタートで触れ切れない詳細設定（Polisher・PDF 連携・AI プロバイダー切り替え等）を参照できるようにする。
 
 ## パイプライン全体像
-- パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → マッピング（HITL + 自動）→ レンダリング」の 5 工程で構成される。
-- `pptx gen` は工程3〜5を一括実行するファサード。必要に応じて `pptx outline` / `pptx mapping` / `pptx render` を個別に呼び出し、再実行や検証を行う。
+- パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → 構成設計 → マッピング → レンダリング」の 6 工程で構成される。
+- `pptx compose` は工程4-5（ドラフト構成とマッピング）を連続実行するラッパー。HITL 後の再実行時にドラフト成果物と mapping 成果物を同時に更新できる。
+- `pptx gen` は工程5-6 を一括実行するファサード。必要に応じて `pptx mapping` と `pptx render` を個別に呼び出し、再実行や検証を行う。
 
 ### 工程1: テンプレ準備
 テンプレートをブランド資産として登録し、リリースメタを生成する。
@@ -48,10 +49,10 @@
 
 - `template_spec.json` / `template_spec.yaml`（テンプレート仕様）
 - `branding.json`（抽出したブランド設定）
-- `jobspec.json`（ジョブスペック雛形）
-- `layouts.jsonl` / `diagnostics.json`（レイアウト検証結果、`diff_report.json` は比較時のみ）
+- `jobspec.json`（工程3で利用するジョブスペック雛形）
+- `layouts.jsonl` / `diagnostics.json`（自動実行されるレイアウト検証の結果。比較時は `diff_report.json` も出力）
 
-`tpl-extract` 完了時にレイアウト検証を自動実行するため、抽出直後の品質チェックがワンコマンドで完了する。個別検証のみを実施したい場合や出力ディレクトリを分けたい場合は、従来どおり `pptx layout-validate` を直接呼び出す。
+抽出直後に `layout-validate` と同等の検証を自動実行するため、工程2の品質チェックがワンコマンドで完了する。検証のみ個別に実行したい場合や出力先を分けたい場合は、従来どおり `pptx layout-validate` を利用する。
 
 #### `pptx layout-validate`
 | オプション | 説明 | 既定値 |
@@ -68,88 +69,101 @@
 - `diff_report.json`: `--baseline` 指定時の差分レポート（Analyzer 突合を含む）
 - 致命的エラー時は exit code 6
 
-`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく調整したい場合はこちらを直接利用する。
+`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく制御したい場合はこちらを直接利用する。
 
-### 工程3: コンテンツ正規化 (HITL)
-承認済みコンテンツを整形し、後続工程へ渡すためのメタを生成する。抽出済みの `jobspec.json` を第一引数に指定する。
+### 工程3: ブリーフ正規化 (HITL)
+ブリーフ入力（Markdown / JSON 等）を BriefCard モデルへ正規化し、後続工程が参照する成果物を生成する。
 
 #### `pptx content`
-- 既定では生成 AI モードでドラフトを生成し、`config/content_ai_policies.json` と `src/pptx_generator/content_ai/prompts.py` の `prompt_id` を利用する。
-- `--content-source` や `--content-approved` を指定すると非生成モードへ切り替わり、既存資料を正規化する。
+- 既定ポリシー（`config/brief_policies/default.json`）に従って章カードを構築し、`.brief/` 配下に成果物を出力する。
+- 入力形式は `BriefSourceDocument` が自動判定する。`.json` / `.jsonc` は JSON として、その他は Markdown テキストとして解析する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/content` |
-| `--spec-output <filename>` | 承認内容適用後の Spec ファイル名 | `spec_content_applied.json` |
-| `--normalized-content <filename>` | 正規化した `content_approved.json` の保存名 | `content_approved.json` |
-| `--review-output <filename>` | 承認イベントログの保存名 | `content_review_log.json` |
-| `--meta-filename <filename>` | 承認メタ情報ファイル名 | `content_meta.json` |
-| `--content-source <value>` | プレーンテキスト / PDF / URL からドラフトを生成 | 指定なし |
-| `--ai-policy <path>` | 生成 AI ポリシー定義を差し替える | `config/content_ai_policies.json` |
-| `--ai-policy-id <value>` | 適用するポリシー ID | `default_policy_id` |
-| `--ai-output <filename>` | 生成ログ（プロンプト、警告）の出力名 | `content_ai_log.json` |
-| `--ai-meta <filename>` | 生成メタ情報の出力名 | `ai_generation_meta.json` |
-| `--slide-count <int>` | 生成スライド枚数（未指定は LLM の判断、mock 時は 5 枚） | 指定なし |
-| `--content-approved <path>` | 承認済みコンテンツ JSON | 指定なし |
-| `--content-review-log <path>` | 承認イベントログ JSON | 指定なし |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.brief` |
+| `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 
-実行例:
-```bash
-uv run pptx content .pptx/extract/jobspec.json \
-  --content-source samples/contents/sample_import_content.txt \
-  --output .pptx/content
-```
+生成物:
+- `brief_cards.json`: BriefCard の配列（章/メッセージ/補完情報を保持）
+- `brief_log.json`: HITL ログ（初期状態は空配列）
+- `brief_ai_log.json`: 生成時のダイアログ／ワーニングのスタブ情報
+- `ai_generation_meta.json`: 生成メタ（統計・入力ハッシュ等）
+- `brief_story_outline.json`: 章構成とカード紐付け
+- `audit_log.json`: 生成時刻・ポリシー ID・成果物パスをまとめた監査ログ
 
-**AI プロバイダー切り替え（環境変数）**
-- `.env` を読み込んで `PPTX_LLM_PROVIDER` を指定する（`mock`/`openai`/`azure-openai`/`claude`/`aws-claude`）。
-- OpenAI: `OPENAI_API_KEY` 必須。必要に応じて `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`。
-- Azure OpenAI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT` 等を設定。
-- Claude API: `ANTHROPIC_API_KEY` と任意パラメータ（`ANTHROPIC_MODEL` など）。
-- AWS Claude (Bedrock): `AWS_CLAUDE_MODEL_ID` と `AWS_REGION` 等。
-- 各プロバイダーに応じて `openai`, `anthropic`, `boto3` などの追加パッケージを導入する。
+### 工程4: ドラフト構成設計 (HITL)
+章立てやスライド順を設計し、承認済みドラフトを出力する。
 
-### 工程4: マッピング (HITL + 自動)
-章構成の承認とレイアウト割付をまとめて実行し、`draft_approved.json` と `rendering_ready.json` を整備する。
+#### `pptx outline`
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/draft` |
+| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
+| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
+| `--log-filename <filename>` | ドラフトレビュー ログのファイル名 | `draft_review_log.json` |
+| `--meta-filename <filename>` | ドラフトメタ情報のファイル名 | `draft_meta.json` |
+| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
+| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--layouts <path>` | 工程2の `layouts.jsonl` | 指定なし |
+| `--target-length <int>` | 目標スライド枚数 | Spec から推定 |
+| `--structure-pattern <text>` | 章構成パターン名 | `custom` |
+| `--appendix-limit <int>` | 付録枚数の上限 | 5 |
+| `--chapter-templates-dir <dir>` | 章テンプレート辞書ディレクトリ | `config/chapter_templates` |
+| `--chapter-template <id>` | 適用する章テンプレート ID（未指定時は構造パターンから推定） | 推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
+| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
 
-#### 推奨: `pptx compose`
-- 工程4全体を一括で実行し、HITL 差戻し後の再実行を簡素化する。
-- `--draft-output` と `--output` でドラフト成果物とマッピング成果物の出力先を分離できる。
+#### `pptx compose`
+- 工程4と工程5を連続実行し、ドラフト成果物とマッピング成果物を一括で更新する。
+- HITL でドラフト再承認後に `outline` → `mapping` を個別実行する手間を削減し、CLI 出力で両工程の成果物パスを確認できる。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--draft-output <dir>` | 工程4 (HITL) 成果物 (`draft_*`) の保存先 | `.pptx/draft` |
-| `--output <dir>` | 工程4 (自動) 成果物 (`rendering_ready.json` など) の保存先 | `.pptx/gen` |
-| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
-| `--layouts <path>` | 工程2の `layouts.jsonl` を共有する | 指定なし |
-| `--draft-filename` / `--approved-filename` / `--draft-log-filename` | ドラフト成果物のファイル名を上書きする | 既定値を継承 |
-| `--draft-meta-filename` | `draft_meta.json` のファイル名 | `draft_meta.json` |
-| `--rules <path>` | レイアウト割付で参照するルール設定 | `config/rules.json` |
-| `--template <path>` | ブランド抽出に利用するテンプレート | 指定なし |
-| `--branding <path>` | ブランド設定を明示的に指定する | `config/branding.json` |
-| `--show-layout-reasons` | layout_hint スコア詳細を標準出力に表示する | 無効 |
+| `--draft-output <dir>` | ドラフト成果物を保存するディレクトリ | `.pptx/draft` |
+| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
+| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
+| `--log-filename <filename>` | ドラフトレビュー ログファイル名 | `draft_review_log.json` |
+| `--meta-filename <filename>` | ドラフトメタ情報ファイル名 | `draft_meta.json` |
+| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` / `--brief-meta <path>` | `brief_log.json` / `ai_generation_meta.json`（任意） | `.brief/brief_log.json` / `.brief/ai_generation_meta.json` |
+| `--layouts <path>` | `layouts.jsonl` を参照して layout_hint 候補を補強 | 指定なし |
+| `--target-length <int>` / `--structure-pattern <text>` / `--appendix-limit <int>` | ドラフト構成パラメータ | Spec 由来 / 5 |
+| `--chapter-templates-dir <dir>` / `--chapter-template <id>` | 章テンプレート辞書と適用テンプレート ID | `config/chapter_templates` / 推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
+| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
+| `--output <dir>` | `rendering_ready.json` など工程5成果物を保存するディレクトリ | `.pptx/gen` |
+| `--rules <path>` | 文字数や段落制限を定義したルール | `config/rules.json` |
+| `--template <path>` / `--branding <path>` | ブランド抽出テンプレート / ブランド設定 JSON | 指定なし / `config/branding.json` |
 
-実行例:
-```bash
-uv run pptx compose .pptx/extract/jobspec.json \
-  --content-approved .pptx/content/content_approved.json \
-  --draft-output .pptx/draft \
-  --output .pptx/gen \
-  --layouts .pptx/validation/layouts.jsonl
-```
+生成物:
+- `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json`
+- `rendering_ready.json` / `mapping_log.json` / `fallback_report.json`（フォールバック発生時）
 
-#### 補助: `pptx outline`
-- HITL 作業を個別に実行したい場合に利用。`draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json` を生成する。
-- `compose` と同一のドラフト関連オプション（`--target-length`, `--structure-pattern`, `--appendix-limit`, `--chapter-template` など）が利用可能。
+### 工程5: マッピング
+レイアウト割付とプレースホルダー設定を確定し、レンダリング準備を整える。
 
-#### 補助: `pptx mapping`
-- 自動マッピングのみ再実行したい場合に利用し、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
-- `compose` と共通の `--rules`, `--template`, `--branding` などのオプションを保持する。
+#### `pptx mapping`
+- 工程5のみを単独実行し、`rendering_ready.json` と `mapping_log.json` を生成する。
+- 工程4と合わせて再実行したい場合は `pptx compose` を利用する。
 
-### 工程5: レンダリング
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
+| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
+| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
+| `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
+| `--template <path>` | ブランド抽出に使用するテンプレート（メタ情報に記録） | 指定なし |
+| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
+
+### 工程6: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
 #### `pptx render`
-- `rendering_ready.json` を入力に工程5を実行する。`pptx gen` で内部的に呼び出される処理に相当する。
+- `rendering_ready.json` を入力に工程6を実行する。`pptx gen` で内部的に呼び出される処理に相当する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -174,7 +188,7 @@ uv run pptx compose .pptx/extract/jobspec.json \
 | `--verbose` | 追加ログを表示する | 無効 |
 
 #### `pptx gen`
-- 工程4のマッピングと工程5のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx mapping` と `pptx render` を個別に利用する。
+- 工程5のマッピングと工程6のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx mapping` と `pptx render` を個別に利用する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -195,8 +209,9 @@ uv run pptx compose .pptx/extract/jobspec.json \
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
-| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
+| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
+| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
 | `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
 | `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
@@ -204,9 +219,10 @@ uv run pptx compose .pptx/extract/jobspec.json \
 
 ## 生成物とログの設計メモ
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
-- `content_draft.json` / `content_ai_log.json` / `ai_generation_meta.json`: 生成 AI モードで出力されるドラフト本文・プロンプトログ・メタ情報。
-- `spec_content_applied.json`: `--content-approved` 指定時に生成される承認内容適用済み Spec。
-- `content_meta.json`: 承認済みコンテンツとレビュー ログのハッシュや件数をまとめたメタ情報。
+- `brief_cards.json` / `brief_log.json` / `brief_ai_log.json`: ブリーフ正規化工程で作成されるカード本体・HITL ログ・生成ログ。
+- `ai_generation_meta.json`: ブリーフ生成の統計・入力ハッシュ・ポリシー情報。
+- `brief_story_outline.json`: 章テンプレートとカードの対応を示すアウトライン。
+- `audit_log.json`（.brief 配下）: ブリーフ成果物の監査情報。
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
 - `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
