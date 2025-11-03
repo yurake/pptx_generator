@@ -122,6 +122,15 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - [ ] PR 作成
   - メモ:
 
+
+- [ ] 工程2/3改修の取り込み
+  - メモ: origin/main の commit 9a34ddb（工程2/3統合・brief導入）を取り込む。
+    - [ ] 最新 main の差分を精査し、CLI/パイプライン/テスト/サンプル/ドキュメントの影響を整理する。
+    - [ ] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/brief/*`、`pipeline/brief_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
+    - [ ] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
+    - [ ] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
+    - [ ] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
+    - [ ] ToDo に結果メモを追記し、必要なら関連 Issue / ロードマップの更新を検討する。
 ## メモ
 **主変更点**
 - `src_pptx_generator/models.py`, `src/pptx_generator/generate_ready.py`, `src/pptx_generator/cli.py`: 工程4成果物を `generate_ready.json`／`GenerateReadyDocument` 系へ改称し、`pptx gen` を工程4/5統合コマンドとして再構成。互換用の `pptx render` ラッパーと `_execute_generate_ready_command` を撤廃しました。
