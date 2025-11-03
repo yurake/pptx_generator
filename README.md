@@ -135,8 +135,9 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
    - `--baseline-release` で過去バージョンとの差分比較が可能です。`--golden-spec` を複数指定すると代表 spec でのレンダリング検証をまとめて実行します。
 
 ### 工程 2: テンプレ構造抽出
-- テンプレート PPTX からレイアウトとアンカー情報を抽出し、`layouts.jsonl` と `branding.json` を生成します。
-- 差分チェックや品質検証には `pptx layout-validate` を併用します。
+- テンプレート PPTX からレイアウトとアンカー情報を抽出し、`template_spec.json`（または `.yaml`）、`branding.json`、`jobspec.json` を生成します。
+- `pptx tpl-extract` 実行時にレイアウト検証 (`layout-validate`) が自動実行され、同じ出力ディレクトリへ `layouts.jsonl` / `diagnostics.json`（比較時は `diff_report.json`）を保存します。
+- 検証のみを個別に実施したい場合や出力先を分けたい場合は `pptx layout-validate` を直接利用します。
 - 詳細ガイド: `docs/requirements/stages/stage-02-template-structure-extraction.md`
 
 ### 工程 3: ブリーフ正規化

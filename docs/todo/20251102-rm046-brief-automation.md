@@ -78,5 +78,18 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
   - [x] 結果共有（ToDo/ドキュメント更新履歴の記録、必要に応じて docs/notes/ 追加）
     - メモ: 本報告（2025-11-02）で compose 実装内容と検証結果を共有。追加メモは当 ToDo と関連ドキュメントの更新履歴に集約。
 
+- [x] template CLI 統合対応
+  - [x] main 差分の調査と依存ツール確認（LibreOffice, .NET 8, Open XML SDK, テンプレ抽出資産）
+    - メモ: origin/main の tpl-extract 自動検証仕様と追加サンプルを確認し、工程2の要件差分を整理。
+  - [x] main 取り込み／コンフリクト解消と工程2統合仕様のコード反映（`pptx template` サブコマンド／共通ヘルパーの整備）
+    - メモ: `tpl-extract` にジョブスペック雛形保存とレイアウト検証の自動実行を取り込み、例外コードを main と揃えた。
+  - [x] CLI・パイプライン・設定の更新（テンプレ抽出／検証のラッパー化、設定ファイル・サンプルの差し替え）
+    - メモ: `src/pptx_generator/cli.py` を更新し、サンプルコンテンツ `samples/json/sample_content_approved.json` / `sample_content_review_log.json` を追加。
+  - [x] テスト更新と検証（`uv run --extra dev pytest`, `uv run pptx template ...` 実行確認、テンプレ系統の統合テスト追加）
+    - メモ: tpl-extract 関連アサーションを拡充し、README チートシート順の新統合テストを追加。`uv run --extra dev pytest` で 159 ケース通過。
+  - [x] ドキュメント刷新（README, docs/design/cli-command-reference.md, docs/runbooks/, docs/requirements/stages/stage-02-*, docs/policies/config-and-templates.md 等）
+    - メモ: README と CLI リファレンスに抽出＋検証の一括実行と成果物一覧を追記。
+  - [ ] 結果共有（ToDo 更新・必要に応じて docs/notes/ 追加、ロードマップとの整合確認）
+
 ## メモ
 - 実装・テストは当コミットで完了済み。残課題としてドキュメント更新（README, roadmap 等）を別タスクで行う。

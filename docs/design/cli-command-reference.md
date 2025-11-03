@@ -49,10 +49,10 @@
 
 - `template_spec.json` / `template_spec.yaml`（テンプレート仕様）
 - `branding.json`（抽出したブランド設定）
-- `jobspec.json`（ジョブスペック雛形）
-- `layouts.jsonl` / `diagnostics.json`（レイアウト検証結果、`diff_report.json` は比較時のみ）
+- `jobspec.json`（工程3で利用するジョブスペック雛形）
+- `layouts.jsonl` / `diagnostics.json`（自動実行されるレイアウト検証の結果。比較時は `diff_report.json` も出力）
 
-`tpl-extract` 完了時にレイアウト検証を自動実行するため、抽出直後の品質チェックがワンコマンドで完了する。個別検証のみを実施したい場合や出力ディレクトリを分けたい場合は、従来どおり `pptx layout-validate` を直接呼び出す。
+抽出直後に `layout-validate` と同等の検証を自動実行するため、工程2の品質チェックがワンコマンドで完了する。検証のみ個別に実行したい場合や出力先を分けたい場合は、従来どおり `pptx layout-validate` を利用する。
 
 #### `pptx layout-validate`
 | オプション | 説明 | 既定値 |
@@ -69,7 +69,7 @@
 - `diff_report.json`: `--baseline` 指定時の差分レポート（Analyzer 突合を含む）
 - 致命的エラー時は exit code 6
 
-`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく調整したい場合はこちらを直接利用する。
+`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく制御したい場合はこちらを直接利用する。
 
 ### 工程3: ブリーフ正規化 (HITL)
 ブリーフ入力（Markdown / JSON 等）を BriefCard モデルへ正規化し、後続工程が参照する成果物を生成する。

@@ -2158,7 +2158,7 @@ def tpl_extract(
             click.echo(f"警告: {len(template_spec.warnings)} 件")
             for warning in template_spec.warnings:
                 click.echo(f"  - {warning}", err=True)
-        
+
         if template_spec.errors:
             click.echo(f"エラー: {len(template_spec.errors)} 件")
             for error in template_spec.errors:

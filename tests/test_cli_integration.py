@@ -1079,6 +1079,8 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert output_path.exists()
     branding_path = output_dir / "branding.json"
     assert branding_path.exists()
+    jobspec_path = output_dir / "jobspec.json"
+    assert jobspec_path.exists()
 
     # JSON内容の検証
     template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
@@ -1258,6 +1260,8 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         assert output_path.exists()
         branding_path = output_dir / "branding.json"
         assert branding_path.exists()
+        jobspec_path = output_dir / "jobspec.json"
+        assert jobspec_path.exists()
 
         template_spec_data = json.loads(output_path.read_text(encoding="utf-8"))
         template_spec = TemplateSpec.model_validate(template_spec_data)
@@ -1314,7 +1318,6 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         assert jobspec_path.exists()
         assert layouts_path.exists()
         assert diagnostics_path.exists()
-
 
 def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
     runner = CliRunner()
