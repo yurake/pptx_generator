@@ -1,9 +1,9 @@
 # 工程5 PPTX 生成 要件詳細
 
 ## 概要
-- テンプレ PPTX と `generate_ready.json` を使用し、最終 `output.pptx` と付随ログを生成する。`generate_ready` に含まれる `job_meta` / `job_auth` から `JobSpec` を再構成する。
+- 工程4で生成した `generate_ready.json` を元にテンプレ PPTX へ描画し、最終 `output.pptx` と付随ログを生成する。
 - 軽量整合チェックと監査メタの付与を自動化し、配布前の品質を確保する。
-- CLI は `uv run pptx gen <generate_ready.json>` を基本とし、互換目的で `uv run pptx render` も利用できる。
+- CLI からは `uv run pptx gen <jobspec.json> --content-approved <content_approved.json>` を利用して工程4・5を一括実行する。工程4の成果物を事前に確認したい場合は `pptx compose` や `pptx mapping` を使用する。
 
 ## 入力
 - 工程4の `generate_ready.json`（`job_meta` / `job_auth` を内包）。

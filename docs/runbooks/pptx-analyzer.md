@@ -23,13 +23,7 @@
        --template templates/<brand>/<version>/template.pptx \
        --export-pdf
      ```
-  - 工程5のみを再実行する場合（既存の `generate_ready.json` を活用）:
-     ```bash
-     uv run pptx render .pptx/gen/generate_ready.json \
-       --output .pptx/gen \
-       --template templates/<brand>/<version>/template.pptx \
-       --export-pdf
-     ```
+  - 工程4の成果物を点検済みであっても、最終出力を更新する際は `pptx gen` を再実行する。
    - `analysis.json` は `--output` で指定したディレクトリに保存される。既定値は `.pptx/gen/analysis.json`。
    - Review Engine 連携用に `review_engine_analyzer.json` も併せて出力される。設計と一致しない場合は CLI バージョンを確認する。
    - `--export-pdf` は任意。LibreOffice が利用できない場合は外してもよい。

@@ -2,7 +2,7 @@
 
 ## 目的
 - `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。工程3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
-- CLI では `uv run pptx render <generate_ready.json>` で単体実行でき、`uv run pptx gen` は内部で `mapping` → `render` を順に呼び出す。
+- CLI からの実行は `uv run pptx gen <jobspec.json> --content-approved <content_approved.json>` を前提とし、工程4の成果物確認には `pptx compose` / `pptx mapping` を用いる。
 - LibreOffice PDF 変換や Open XML Polisher との統合を考慮した拡張性を持たせる。
 
 ## コンポーネント

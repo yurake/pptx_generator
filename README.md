@@ -102,7 +102,7 @@ flowchart TD
 | 2. テンプレ構造抽出 | `uv run pptx tpl-extract --template samples/templates/templates.pptx`<br>`uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json`, `.pptx/validation/layouts.jsonl` | テンプレ仕様・ジョブスペック雛形・ブランド設定を抽出し、レイアウト候補を検証 |
 | 3. コンテンツ正規化 | `uv run pptx content .pptx/extract/jobspec.json --content-source samples/contents/sample_import_content.txt --output .pptx/content` | `.pptx/content/content_approved.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 4. マッピング (HITL + 自動) | `uv run pptx compose .pptx/extract/jobspec.json --content-approved .pptx/content/content_approved.json --draft-output .pptx/draft --output .pptx/gen --template samples/templates/templates.pptx` | `.pptx/draft/draft_approved.json`, `.pptx/gen/generate_ready.json`, `.pptx/gen/mapping_log.json` | 章構成承認とレイアウト割付をまとめて実行 |
-| 5. レンダリング | `uv run pptx gen .pptx/gen/generate_ready.json --template samples/templates/templates.pptx --branding .pptx/extract/branding.json --output .pptx/gen --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf`（任意） | 監査ログ・Analyzer 結果も同時に出力 |
+| 5. レンダリング | `uv run pptx gen .pptx/extract/jobspec.json --content-approved .pptx/content/content_approved.json --template samples/templates/templates.pptx --branding .pptx/extract/branding.json --output .pptx/gen --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf`（任意） | 工程4/5を一括実行。ドラフト確認は工程4で `compose` を利用 |
 
 
 > 工程4の個別サブコマンド（`pptx outline` / `pptx mapping`）や詳細な運用手順は `docs/design/cli-command-reference.md` と `docs/runbooks/story-outline-ops.md` を参照してください。
@@ -169,15 +169,14 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
   # `draft_*` / `generate_ready.json` / `mapping_log.json` を確認
   ```
 
-### 工程 5: PPTX レンダリング
-- `pptx gen` サブコマンドで `generate_ready.json` を入力し、PPTX／PDF（任意）と監査ログを生成します。
+- `pptx gen` は JobSpec を直接入力し、工程4（マッピング）と工程5（レンダリング）を一括で実行するワンショットコマンドです。ドラフト成果物を都度確認したい場合は `compose` を併用し、最終成果物が必要になったタイミングで `gen` を実行してください。
   ```bash
-  # 工程4で生成した成果物からレンダリングを実行
-  uv run pptx gen .pptx/gen/generate_ready.json \
+  uv run pptx gen .pptx/extract/jobspec.json \
+    --content-approved .pptx/content/content_approved.json \
     --template samples/templates/templates.pptx \
+    --branding .pptx/extract/branding.json \
     --output .pptx/gen
   ```
-- 旧サブコマンド `pptx render` も互換目的で残していますが、今後は `pptx gen` を利用する運用に統一してください。
 - 詳細ガイド: `docs/requirements/stages/stage-05-rendering.md` と `docs/design/stages/stage-05-rendering.md`
 
 ## 主な成果物

@@ -590,7 +590,7 @@ flowchart TB
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-10-23 更新）
 - 期待成果:
-  - `pptx mapping` / `pptx gen` サブコマンドの実装と互換性維持した再設計、`generate_ready` → `JobSpec` 変換ヘルパの提供（legacy `pptx render` は互換目的で維持）。
+  - `pptx mapping` / `pptx gen` サブコマンドの実装と互換性維持した再設計、`generate_ready` → `JobSpec` 変換ヘルパの提供（legacy `pptx render` は 2025-11 時点で廃止済み）。
   - 監査ログ・アーティファクトに `generate_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
   - CI / ローカル双方で工程 5→6 の個別再実行ワークフローとトラブルシュート手順を整備。
 - 依存: RM-025（マッピング補完エンジン）、RM-026（レンダリング監査統合）、RM-033（パイプライン工程3/4独立化準備）、CLI 運用ポリシー（`docs/AGENTS.md`）。

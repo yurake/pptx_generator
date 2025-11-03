@@ -736,94 +736,6 @@ def _run_render_pipeline(
     return context
 
 
-def _execute_generate_ready_command(
-    *,
-    generate_ready_path: Path,
-    output_dir: Path,
-    template: Optional[Path],
-    pptx_name: str,
-    rules: Path,
-    branding: Optional[Path],
-    export_pdf: bool,
-    pdf_mode: str,
-    pdf_output: str,
-    libreoffice_path: Optional[Path],
-    pdf_timeout: int,
-    pdf_retries: int,
-    polisher_toggle: bool | None,
-    polisher_path: Optional[Path],
-    polisher_rules: Optional[Path],
-    polisher_timeout: Optional[int],
-    polisher_args: tuple[str, ...],
-    polisher_cwd: Optional[Path],
-    emit_structure_snapshot: bool,
-) -> None:
-    if not export_pdf and pdf_mode != "both":
-        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
-        raise click.exceptions.Exit(code=2)
-
-    rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
-    analyzer_options = _build_analyzer_options(
-        rules_config, branding_config, emit_structure_snapshot
-    )
-    pdf_options = PdfExportOptions(
-        enabled=export_pdf,
-        mode=pdf_mode,
-        output_filename=pdf_output,
-        soffice_path=libreoffice_path,
-        timeout_sec=pdf_timeout,
-        max_retries=pdf_retries,
-    )
-    polisher_options = _build_polisher_options(
-        rules_config,
-        polisher_toggle=polisher_toggle,
-        polisher_path=polisher_path,
-        polisher_rules=polisher_rules,
-        polisher_timeout=polisher_timeout,
-        polisher_args=polisher_args,
-        polisher_cwd=polisher_cwd,
-        rules_path=rules,
-    )
-
-    try:
-        generate_ready = GenerateReadyDocument.parse_file(generate_ready_path)
-    except Exception as exc:  # noqa: BLE001
-        click.echo(f"generate_ready.json の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-
-    try:
-        context = _run_render_pipeline(
-            generate_ready=generate_ready,
-            generate_ready_path=generate_ready_path,
-            output_dir=output_dir,
-            template=template,
-            pptx_name=pptx_name,
-            branding_config=branding_config,
-            branding_artifact=branding_artifact,
-            analyzer_options=analyzer_options,
-            pdf_options=pdf_options,
-            polisher_options=polisher_options,
-        )
-    except PdfExportError as exc:
-        click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=5) from exc
-    except PolisherError as exc:
-        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("レンダリング実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-
-    analysis_path = context.artifacts.get("analysis_path")
-    _emit_review_engine_analysis(context, analysis_path)
-    audit_path = _write_audit_log(context)
-    _echo_render_outputs(context, audit_path)
-
-
 def _echo_mapping_outputs(context: PipelineContext) -> None:
     draft_path = context.artifacts.get("draft_document_path")
     if draft_path is not None:
@@ -904,9 +816,8 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 
 @app.command("gen")
 @click.argument(
-    "generate_ready_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    "spec_path",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--output",
@@ -920,8 +831,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="PPTX テンプレートファイル",
 )
@@ -933,16 +843,26 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
 )
 @click.option(
+    "--content-approved",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3で承認済みのコンテンツ JSON",
+)
+@click.option(
+    "--content-review-log",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程3の承認イベントログ JSON",
+)
+@click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル",
@@ -957,19 +877,18 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     type=click.Choice(["both", "only"], case_sensitive=False),
     default="both",
     show_default=True,
-    help="PDF のみを生成するかどうか",
+    help="PDF 出力時の挙動。only では PPTX を保存しない",
 )
 @click.option(
     "--pdf-output",
     type=str,
     default="proposal.pdf",
     show_default=True,
-    help="PDF 出力時のファイル名",
+    help="出力 PDF ファイル名",
 )
 @click.option(
     "--libreoffice-path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="LibreOffice (soffice) 実行ファイルのパス",
 )
@@ -995,15 +914,13 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--polisher-path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
 )
 @click.option(
     "--polisher-rules",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="Polisher へ渡すルール設定ファイル",
 )
@@ -1021,21 +938,36 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--polisher-cwd",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=None,
-    help="Polisher 実行時のカレントディレクトリ",
+    help="Polisher 実行時のカレントディレクトリを固定する",
 )
 @click.option(
     "--emit-structure-snapshot",
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
 )
-def gen(
-    generate_ready_path: Path,
+@click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程2で生成した layouts.jsonl のパス",
+)
+@click.option(
+    "--draft-output",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path(".pptx/draft"),
+    show_default=True,
+    help="draft_draft.json / draft_approved.json の出力ディレクトリ",
+)
+def gen(  # noqa: PLR0913
+    spec_path: Path,
     output_dir: Path,
     template: Optional[Path],
     pptx_name: str,
     rules: Path,
+    content_approved: Optional[Path],
+    content_review_log: Optional[Path],
     branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
@@ -1050,29 +982,111 @@ def gen(
     polisher_args: tuple[str, ...],
     polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
+    layouts: Optional[Path],
+    draft_output: Path,
 ) -> None:
-    """generate_ready.json から PPTX / PDF / 監査ログを生成する。"""
-    _execute_generate_ready_command(
-        generate_ready_path=generate_ready_path,
-        output_dir=output_dir,
-        template=template,
-        pptx_name=pptx_name,
-        rules=rules,
-        branding=branding,
-        export_pdf=export_pdf,
-        pdf_mode=pdf_mode,
-        pdf_output=pdf_output,
-        libreoffice_path=libreoffice_path,
-        pdf_timeout=pdf_timeout,
-        pdf_retries=pdf_retries,
+    """JSON 仕様から PPTX を生成する。"""
+
+    if not export_pdf and pdf_mode != "both":
+        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
+        raise click.exceptions.Exit(code=2)
+
+    try:
+        spec = _load_jobspec(spec_path)
+    except SpecValidationError as exc:
+        _echo_errors("スキーマ検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=2) from exc
+
+    rules_config = RulesConfig.load(rules)
+    branding_config, branding_artifact = _prepare_branding(template, branding)
+    analyzer_options = _build_analyzer_options(
+        rules_config, branding_config, emit_structure_snapshot
+    )
+    refiner_options = _build_refiner_options(rules_config, branding_config)
+    pdf_options = PdfExportOptions(
+        enabled=export_pdf,
+        mode=pdf_mode,
+        output_filename=pdf_output,
+        soffice_path=libreoffice_path,
+        timeout_sec=pdf_timeout,
+        max_retries=pdf_retries,
+    )
+    polisher_options = _build_polisher_options(
+        rules_config,
         polisher_toggle=polisher_toggle,
         polisher_path=polisher_path,
         polisher_rules=polisher_rules,
         polisher_timeout=polisher_timeout,
         polisher_args=polisher_args,
         polisher_cwd=polisher_cwd,
-        emit_structure_snapshot=emit_structure_snapshot,
+        rules_path=rules,
     )
+
+    try:
+        mapping_context = _run_mapping_pipeline(
+            spec=spec,
+            output_dir=output_dir,
+            rules_config=rules_config,
+            refiner_options=refiner_options,
+            branding_artifact=branding_artifact,
+            content_approved=content_approved,
+            content_review_log=content_review_log,
+            layouts=layouts,
+            draft_output=draft_output,
+            template=template,
+        )
+    except SpecValidationError as exc:
+        _echo_errors("業務ルール検証に失敗しました", exc.errors)
+        raise click.exceptions.Exit(code=3) from exc
+    except ContentApprovalError as exc:
+        click.echo(f"承認済みコンテンツの読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("パイプライン実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    generate_ready_obj = mapping_context.artifacts.get("generate_ready")
+    if not isinstance(generate_ready_obj, GenerateReadyDocument):
+        click.echo("generate_ready.json が生成されませんでした", err=True)
+        raise click.exceptions.Exit(code=4)
+    generate_ready_path_value = mapping_context.artifacts.get("generate_ready_path")
+    generate_ready_path = (
+        Path(str(generate_ready_path_value))
+        if generate_ready_path_value is not None
+        else None
+    )
+
+    try:
+        render_context = _run_render_pipeline(
+            generate_ready=generate_ready_obj,
+            generate_ready_path=generate_ready_path,
+            output_dir=output_dir,
+            template=template,
+            pptx_name=pptx_name,
+            branding_config=branding_config,
+            branding_artifact=branding_artifact,
+            analyzer_options=analyzer_options,
+            pdf_options=pdf_options,
+            polisher_options=polisher_options,
+            base_artifacts=dict(mapping_context.artifacts),
+        )
+    except PdfExportError as exc:
+        click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=5) from exc
+    except PolisherError as exc:
+        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=6) from exc
+    except FileNotFoundError as exc:
+        click.echo(f"ファイルが見つかりません: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logging.exception("パイプライン実行中にエラーが発生しました")
+        raise click.exceptions.Exit(code=1) from exc
+
+    analysis_path = render_context.artifacts.get("analysis_path")
+    _emit_review_engine_analysis(render_context, analysis_path)
+    audit_path = _write_audit_log(render_context)
+    _echo_render_outputs(render_context, audit_path)
 
 
 @app.command("content")
@@ -1892,172 +1906,6 @@ def compose(  # noqa: PLR0913
         raise click.exceptions.Exit(code=1) from exc
 
     _echo_mapping_outputs(mapping_context)
-
-
-@app.command("render")
-@click.argument(
-    "generate_ready_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-)
-@click.option(
-    "--output",
-    "-o",
-    "output_dir",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
-    show_default=True,
-    help="レンダリング成果物の出力ディレクトリ",
-)
-@click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="PPTX テンプレートファイル",
-)
-@click.option(
-    "--pptx-name",
-    default="proposal.pptx",
-    show_default=True,
-    help="出力 PPTX のファイル名",
-)
-@click.option(
-    "--rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_RULES_PATH,
-    show_default=True,
-    help="Analyzer 設定を含むルールファイル",
-)
-@click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル",
-)
-@click.option(
-    "--export-pdf",
-    is_flag=True,
-    help="LibreOffice を利用して PDF を追加出力する",
-)
-@click.option(
-    "--pdf-mode",
-    type=click.Choice(["both", "only"], case_sensitive=False),
-    default="both",
-    show_default=True,
-    help="PDF 出力時の挙動。only では PPTX を保存しない",
-)
-@click.option(
-    "--pdf-output",
-    type=str,
-    default="proposal.pdf",
-    show_default=True,
-    help="出力 PDF ファイル名",
-)
-@click.option(
-    "--libreoffice-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="LibreOffice (soffice) 実行ファイルのパス",
-)
-@click.option(
-    "--pdf-timeout",
-    type=int,
-    default=120,
-    show_default=True,
-    help="LibreOffice 変換のタイムアウト秒",
-)
-@click.option(
-    "--pdf-retries",
-    type=int,
-    default=2,
-    show_default=True,
-    help="LibreOffice 変換の最大リトライ回数",
-)
-@click.option(
-    "--polisher/--no-polisher",
-    "polisher_toggle",
-    default=None,
-    help="Open XML Polisher を実行するかを明示的に指定する（設定ファイル値を上書き）",
-)
-@click.option(
-    "--polisher-path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
-)
-@click.option(
-    "--polisher-rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="Polisher へ渡すルール設定ファイル",
-)
-@click.option(
-    "--polisher-timeout",
-    type=int,
-    default=None,
-    help="Polisher 実行のタイムアウト秒（設定ファイル値を上書き）",
-)
-@click.option(
-    "--polisher-arg",
-    "polisher_args",
-    multiple=True,
-    help="Polisher へ渡す追加引数（{pptx}, {rules} をプレースホルダーとして利用可能）",
-)
-@click.option(
-    "--polisher-cwd",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=None,
-    help="Polisher 実行時のカレントディレクトリ",
-)
-@click.option(
-    "--emit-structure-snapshot",
-    is_flag=True,
-    help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
-)
-def render(  # noqa: PLR0913
-    generate_ready_path: Path,
-    output_dir: Path,
-    template: Optional[Path],
-    pptx_name: str,
-    rules: Path,
-    branding: Optional[Path],
-    export_pdf: bool,
-    pdf_mode: str,
-    pdf_output: str,
-    libreoffice_path: Optional[Path],
-    pdf_timeout: int,
-    pdf_retries: int,
-    polisher_toggle: bool | None,
-    polisher_path: Optional[Path],
-    polisher_rules: Optional[Path],
-    polisher_timeout: Optional[int],
-    polisher_args: tuple[str, ...],
-    polisher_cwd: Optional[Path],
-    emit_structure_snapshot: bool,
-) -> None:
-    """工程5 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
-    _execute_generate_ready_command(
-        generate_ready_path=generate_ready_path,
-        output_dir=output_dir,
-        template=template,
-        pptx_name=pptx_name,
-        rules=rules,
-        branding=branding,
-        export_pdf=export_pdf,
-        pdf_mode=pdf_mode,
-        pdf_output=pdf_output,
-        libreoffice_path=libreoffice_path,
-        pdf_timeout=pdf_timeout,
-        pdf_retries=pdf_retries,
-        polisher_toggle=polisher_toggle,
-        polisher_path=polisher_path,
-        polisher_rules=polisher_rules,
-        polisher_timeout=polisher_timeout,
-        polisher_args=polisher_args,
-        polisher_cwd=polisher_cwd,
-        emit_structure_snapshot=emit_structure_snapshot,
-    )
 
 
 @app.command("tpl-extract")
