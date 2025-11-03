@@ -1,7 +1,7 @@
 ---
 目的: mainの工程3大型変更をfeat/rm-051-template-integrationへ取り込む
 関連ブランチ: feat/rm-051-template-integration
-関連Issue: 未確認（gh issue list TLS エラーで取得不可）
+関連Issue: #265
 roadmap_item: RM-051 テンプレ工程統合集約
 ---
 
@@ -35,7 +35,7 @@ roadmap_item: RM-051 テンプレ工程統合集約
   - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後に更新する
 - [ ] PR 作成
   - メモ: PR 作成時に番号とURLを記録する
