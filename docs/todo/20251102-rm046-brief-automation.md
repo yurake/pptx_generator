@@ -59,13 +59,18 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
   - メモ: Brief 正規化パイプライン（`src/pptx_generator/brief/*`, `pipeline/brief_normalization.py`）および CLI 更新を実装済み。API のブリーフストア追加、テストの更新（`tests/test_cli_*` 等）も適用済み。今後の残タスクは RM-046 実装範囲に従って別途管理。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest` を実行し 156 テスト通過。主要 CLI テスト（brief 入力、PDF、compose など）も緑化済み。
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+    - メモ: brief policy 廃止によるロードマップ影響なしを確認。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: stage-03 要件文書をポリシー固定仕様へ更新。
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: CLI リファレンス/設計資料を最新仕様に整合。
+  - [x] docs/runbook 配下
+    - メモ: runbook に該当オプション記載なしのため変更不要を確認。
+  - [x] README.md / AGENTS.md
+    - メモ: README の工程3 説明から `--brief-policy` を削除。
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成
@@ -96,9 +101,9 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
     - メモ: tpl-extract 関連アサーションを拡充し、README チートシート順の新統合テストを追加。`uv run --extra dev pytest` で 159 ケース通過。
   - [x] ドキュメント刷新（README, docs/design/cli-command-reference.md, docs/runbooks/, docs/requirements/stages/stage-02-*, docs/policies/config-and-templates.md 等）
     - メモ: README と CLI リファレンスに抽出＋検証の一括実行と成果物一覧を追記。
-  - [ ] 結果共有（ToDo 更新・必要に応じて docs/notes/ 追加、ロードマップとの整合確認）
+  - [x] 結果共有（ToDo 更新・必要に応じて docs/notes/ 追加、ロードマップとの整合確認）
 
-- [ ] brief policy オプション廃止対応
+- [x] brief policy オプション廃止対応
   - [x] main 差分確認と影響範囲整理（`src/pptx_generator/cli.py`, `brief` モジュール、ドキュメント、テスト）
   - [x] CLI から `--brief-policy` / `--ai-policy*` オプションを削除し、既定ポリシー固定にする
   - [x] ブリーフ生成ロジックの依存（`load_brief_policy_set` など）を最小化し、エラーメッセージ・監査ログを新仕様へ揃える
