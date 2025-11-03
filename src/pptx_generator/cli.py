@@ -22,7 +22,7 @@ from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
                     BriefDocument, BriefPolicyError, BriefSourceDocument,
                     load_brief_policy_set)
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
-                                LayoutValidationSuite)
+                                LayoutValidationResult, LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
                      << << << < HEAD
                      RenderingReadyDocument, SpecValidationError, TemplateRelease,
