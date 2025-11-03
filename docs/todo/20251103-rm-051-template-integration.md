@@ -1,7 +1,7 @@
 ---
 目的: 工程1/2の統合要件と影響範囲を整理し、CLI 仕様ドラフトと更新計画を整える
 関連ブランチ: feat/rm-051-template-integration
-関連Issue: 未作成
+関連Issue: #260
 roadmap_item: RM-051 テンプレ工程統合集約
 ---
 
@@ -35,7 +35,7 @@ roadmap_item: RM-051 テンプレ工程統合集約
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
