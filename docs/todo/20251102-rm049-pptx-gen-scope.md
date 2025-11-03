@@ -10,7 +10,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - スコープ
-      - 工程4成果物のファイル名と関連アーティファクトを `rendering_ready.json` から `generate_ready.json` へ改称し、CLI／パイプライン全体で参照を更新する。
+      - 工程4成果物のファイル名と関連アーティファクトを `generate_ready.json` から `generate_ready.json` へ改称し、CLI／パイプライン全体で参照を更新する。
       - `pptx gen` を工程5専用コマンドとして再構成し、Spec 入力および工程3/4向けオプション（`--content-approved` など）を削除して `generate_ready.json` を必須入力とする。
       - テスト・サンプル・ドキュメントを新名称と新 CLI 手順に合わせて更新し、旧「工程3〜5一括」記述や `uv run pptx render` の利用例を整理する。
     - 想定影響ファイル
@@ -26,6 +26,15 @@ roadmap_item: RM-049 pptx gen スコープ最適化
     - ロールバック方法
       - CLI／パイプライン／ドキュメントの変更を差し戻し、成果物名を `generate_ready.json` に復旧する。
     - 承認メッセージ ID／リンク: user-msg-rm049-plan-approval
+    - 計画更新（2025-11-10）
+      - **スコープ**: `pptx gen` を `generate_ready.json` 入力＋ブランド設定に統一し、工程4成果物のテンプレ参照と監査メタを揃えた上で CLI・テスト・ドキュメントを整理する。
+      - **テスト戦略**: `uv run --extra dev pytest` を基本とし、必要に応じて CLI フロー（compose→mapping→gen）と PDF 変換を手動確認する。
+      - **ロールバック方法**: 当該変更コミットを revert し、`generate_ready.json` 前提統合前の CLI 実装へ戻す。
+      - **実施ステップ**
+        1. ToDo と差分内容を突き合わせ、現状の CLI／パイプライン／テスト差分を整理する。
+        2. CLI とパイプラインを `generate_ready` 専用仕様へ整備し、テンプレ参照や監査メタが欠落しないよう調整する。`render` コマンドの扱いも同時に判断する。
+        3. CLI 系テストを新仕様へ更新し、`uv run --extra dev pytest` で緑化する。
+        4. README・設計・要件・runbook・サンプル・ToDo を刷新し、Plan 承認 ID を含む記録を更新する。
     - 追記Plan
       - **スコープ**: `pptx compose` で統合された工程4/5仕様を `feat/rm049-pptx-gen-scope` に反映し、CLI・パイプライン・テスト・ドキュメントを新仕様へ揃える。後方互換対応は不要。
       - **主な作業**
@@ -67,7 +76,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - [x] docs/design 配下
 - [x] 実装
   - メモ:
-    - [x] コード・テスト・ドキュメントの `rendering_ready` 参照を洗い出し、`generate_ready` へ名称変更する。
+    - [x] コード・テスト・ドキュメントの `generate_ready` 参照を洗い出し、`generate_ready` へ名称変更する。
     - [x] `pptx gen` を工程5専用フローに再構成し、Spec 入力や工程3/4向けオプションを削除する。
     - [x] CLI 統合テストなどを `generate_ready.json` 前提に更新し、`uv run --extra dev pytest tests/test_cli_integration.py` を実行する。
     - [x] README / 設計 / 要件 / runbook から旧「工程3〜5一括」記述を削除し、新手順へ更新する。
@@ -85,9 +94,9 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - [ ] 工程4・5統合 `pptx compose` 取り込み
   - [x] `origin/main` の `pptx compose` 差分を調査し、CLI／パイプライン／テスト／ドキュメントの影響を整理する。
     - メモ:
-      - `compose` コマンドは工程4アウトライン→工程5マッピングを連続実行し、`rendering_ready.json` 生成を前提とした CLI・テスト・ドキュメント全面更新が入っている。
+      - `compose` コマンドは工程4アウトライン→工程5マッピングを連続実行し、`generate_ready.json` 生成を前提とした CLI・テスト・ドキュメント全面更新が入っている。
       - `gen` コマンドは JobSpec を受けて工程4/5を通しで実行し直す設計に戻っており、`generate_ready.json` を直接入力する現行フローと乖離している。
-      - パイプラインと監査ログのアーティファクトキーは `rendering_ready` 系に統一されているため、`generate_ready` リネーム方針と突き合わせた整合調整が必要。
+      - パイプラインと監査ログのアーティファクトキーは `generate_ready` 系に統一されているため、`generate_ready` リネーム方針と突き合わせた整合調整が必要。
       - 新しい統合テストは工程4/5の連携を検証しており、出力ディレクトリや生成物パスの命名差異を吸収する必要がある。
   - [x] 取り込み計画に沿った更新内容を具体化し、ToDo の進捗記録を整える。
     - メモ:
@@ -123,26 +132,22 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - メモ:
 
 
-- [ ] 工程2/3改修の取り込み
+- [x] 工程2/3改修の取り込み
   - メモ: origin/main の commit 9a34ddb（工程2/3統合・brief導入）を取り込む。
-    - [ ] 最新 main の差分を精査し、CLI/パイプライン/テスト/サンプル/ドキュメントの影響を整理する。
-    - [ ] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/brief/*`、`pipeline/brief_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
-    - [ ] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
-    - [ ] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
-    - [ ] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
-    - [ ] ToDo に結果メモを追記し、必要なら関連 Issue / ロードマップの更新を検討する。
+    - [x] 最新 main の差分を精査し、CLI/パイプライン/テスト/サンプル/ドキュメントの影響を整理する。
+    - [x] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/brief/*`、`pipeline/brief_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
+    - [x] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
+    - [x] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
+    - [x] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
+    - [x] ToDo に結果メモを追記し、必要なら関連 Issue / ロードマップの更新を検討する。
 ## メモ
 **主変更点**
-- `src_pptx_generator/models.py`, `src/pptx_generator/generate_ready.py`, `src/pptx_generator/cli.py`: 工程4成果物を `generate_ready.json`／`GenerateReadyDocument` 系へ改称し、`pptx gen` を工程4/5統合コマンドとして再構成。互換用の `pptx render` ラッパーと `_execute_generate_ready_command` を撤廃しました。
-- `src/pptx_generator/pipeline/mapping.py`, `src/pptx_generator/pipeline/render_audit.py`: マッピング出力・アーティファクトキーを `generate_ready` 系に統一し、ログ／監査メタも新キーへ更新しました。
-- `tests/test_cli_integration.py`, `tests/test_generate_ready_utils.py`, `tests/test_mapping_step.py`, `tests/test_analyzer.py`: CLI テスト群を `generate_ready.json` 前提に書き換え、新しいレンダリング用テストを追加。旧 `rendering_ready` ユーティリティテストは削除し新ファイルへ差し替えました。
-- README（工程5コマンド例を `generate_ready.json` 前提に更新）、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-04|05-rendering.md`、runbook／roadmap／AGENTS など関連ドキュメントとサンプル文書をすべて `generate_ready.json`／新しい工程5運用に合わせて更新し、旧「工程3〜5一括」記述を削除。また該当ノート類に現行仕様との差分注記を追加しました。
-- `docs/todo/20251102-rm049-pptx-gen-scope.md`: 進捗（実装・テスト・ドキュメント反映）をチェック済みに更新し、方針メモを追加しました。
-- `docs/notes/20251109-generate-ready-meta.md`: generate_ready メタ整備と監査メタ連携の設計メモを作成。
-- `docs/qa/pdf-export-rehearsal.md`, `docs/qa/pdf-export-checklist.md`, `docs/runbooks/pptx-analyzer.md`, `docs/design/cli-command-reference.md`, `docs/design/stages/stage-05-rendering.md`, `docs/requirements/stages/stage-05-rendering.md`: `pptx gen` の利用例を generate_ready 入力必須のインターフェースへ更新。
-
-**テスト**
-- `uv run --extra dev pytest tests/test_cli_integration.py`
-- 手動確認: `uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf --output .pptx/gen/rehearsal`（2025-11-03 23:56 実行で成功、`audit_log.json.pdf_export.status=success`, `elapsed_ms=8306` を確認。詳細は `docs/qa/pdf-export-rehearsal.md` を参照）
+- `src/pptx_generator/cli.py`: `pptx gen` を `generate_ready.json` 専用入力へ統一し、テンプレートパス欠落時にエラーを返す。`pptx mapping` は `--template` 指定を必須化し、監査メタ `mapping_meta` に `template_path` を確実に記録。
+- `src/pptx_generator/pipeline/mapping.py`、`src/pptx_generator/generate_ready.py`: `GenerateReadyDocument.meta.template_path` を埋め込み、`mapping_meta` と監査ログにテンプレート情報を反映。
+- `tests/test_cli_integration.py` / `tests/test_cli_cheatsheet_flow.py` / `tests/test_mapping_step.py`: generate_ready 専用フローに合わせてテンプレート必須化と新エラーハンドリングを検証。
+- README・`docs/design/cli-command-reference.md`・`docs/runbooks/story-outline-ops.md` ほか関連ドキュメントを更新し、`pptx gen` の入力仕様と `--template` 必須化を明記。
+- `docs/notes/20251109-generate-ready-meta.md`: Brief 正規化後も generate_ready メタ方針を維持する旨を追記。
+- **テスト**
+  - `uv run --extra dev pytest`（143 件成功、2025-11-10 実行）
 
 必要に応じて `uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json` を再実行し、ブランド切り替えや PDF オプションの挙動を確認してください。

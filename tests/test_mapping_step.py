@@ -9,6 +9,7 @@ from typing import Iterable
 from pptx_generator.models import JobSpec
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
+from pptx_generator.brief import BriefCard, BriefDocument, BriefStoryContext, BriefStoryInfo
 
 
 def _build_spec(body_lines: Iterable[str]) -> JobSpec:
@@ -42,8 +43,31 @@ def _build_spec(body_lines: Iterable[str]) -> JobSpec:
 def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     spec = _build_spec(["最初のポイント", "次のステップ"])
     context = PipelineContext(spec=spec, workdir=tmp_path)
+    template_path = tmp_path / "template.pptx"
+    template_path.write_bytes(b"")
+    brief_doc = BriefDocument(
+        brief_id="brief-test",
+        cards=[
+            BriefCard(
+                card_id="s01",
+                chapter="概要",
+                message="概要のポイント",
+                narrative=["最初のポイント", "次のステップ"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="introduction"),
+                intent_tags=["overview"],
+            )
+        ],
+        story_context=BriefStoryContext(chapters=[]),
+    )
+    context.add_artifact("brief_document", brief_doc)
 
-    step = MappingStep(MappingOptions(output_dir=tmp_path))
+    step = MappingStep(
+        MappingOptions(
+            output_dir=tmp_path,
+            template_path=template_path,
+        )
+    )
     step.run(context)
 
     generate_ready_path = tmp_path / "generate_ready.json"
@@ -63,6 +87,7 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     meta_payload = generate_ready_payload["meta"]
     assert meta_payload["job_meta"]["title"] == "テスト資料"
     assert meta_payload["job_auth"]["created_by"] == "tester"
+    assert meta_payload["template_path"] == str(template_path)
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_payload["meta"]["fallback_count"] == 0
@@ -79,6 +104,24 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
 def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> None:
     spec = _build_spec(["1行目", "2行目", "3行目"])
     context = PipelineContext(spec=spec, workdir=tmp_path)
+    template_path = tmp_path / "template.pptx"
+    template_path.write_bytes(b"")
+    brief_doc = BriefDocument(
+        brief_id="brief-test",
+        cards=[
+            BriefCard(
+                card_id="s01",
+                chapter="概要",
+                message="概要のポイント",
+                narrative=["1行目", "2行目", "3行目"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="introduction"),
+                intent_tags=["overview"],
+            )
+        ],
+        story_context=BriefStoryContext(chapters=[]),
+    )
+    context.add_artifact("brief_document", brief_doc)
 
     layouts_path = tmp_path / "layouts.jsonl"
     layouts_path.write_text(
@@ -99,6 +142,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
         MappingOptions(
             output_dir=tmp_path,
             layouts_path=layouts_path,
+            template_path=template_path,
         )
     )
     step.run(context)
@@ -111,6 +155,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     body = generate_ready_payload["slides"][0]["elements"]["body"]
     assert body == ["1行目", "2行目"], "最大行数に合わせて本文が縮約されること"
     assert generate_ready_payload["slides"][0]["meta"]["fallback"] == "shrink_text"
+    assert generate_ready_payload["meta"]["template_path"] == str(template_path)
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     slide_log = mapping_payload["slides"][0]
