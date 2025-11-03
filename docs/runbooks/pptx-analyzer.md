@@ -16,13 +16,21 @@
 1. 解析対象 JSON を用意する  
    - `samples/json/sample_jobspec.json` をベースに案件仕様を整備し、必要に応じてブランド設定 (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
 2. CLI でレンダリングと解析を実行する  
-  - 工程4/5をまとめて実行する場合:
-     ```bash
-     uv run pptx gen samples/json/sample_jobspec.json \
-       --output .pptx/gen \
-       --template templates/<brand>/<version>/template.pptx \
-       --export-pdf
-     ```
+  - まず工程4で `generate_ready.json` を用意する（未実施の場合）:
+    ```bash
+    uv run pptx compose samples/json/sample_jobspec.json \
+      --content-approved .pptx/content/content_approved.json \
+      --draft-output .pptx/draft \
+      --output .pptx/gen \
+      --template templates/<brand>/<version>/template.pptx
+    ```
+  - 工程5（レンダリング）を実行し、Analyzer 結果を取得する:
+    ```bash
+    uv run pptx gen .pptx/gen/generate_ready.json \
+      --branding config/branding.json \
+      --output .pptx/gen \
+      --export-pdf
+    ```
   - 工程4の成果物を点検済みであっても、最終出力を更新する際は `pptx gen` を再実行する。
    - `analysis.json` は `--output` で指定したディレクトリに保存される。既定値は `.pptx/gen/analysis.json`。
    - Review Engine 連携用に `review_engine_analyzer.json` も併せて出力される。設計と一致しない場合は CLI バージョンを確認する。

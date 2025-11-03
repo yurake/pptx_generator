@@ -6,7 +6,7 @@
 
 ## パイプライン全体像
 - パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → マッピング（HITL + 自動）→ レンダリング」の 5 工程で構成される。
-- `pptx gen` は工程3〜5を一括実行するファサード。必要に応じて `pptx outline` / `pptx mapping` を個別に呼び出し、ドラフト成果物や `generate_ready` を確認する。
+- `pptx gen` は工程5（レンダリング）専用コマンド。工程4で生成した `generate_ready.json` を入力として最終成果物を出力し、必要に応じて `pptx compose` / `pptx mapping` でドラフトやマッピング成果物を確認する。
 
 ### 工程1: テンプレ準備
 テンプレートをブランド資産として登録し、リリースメタを生成する。
@@ -146,16 +146,15 @@ uv run pptx compose .pptx/extract/jobspec.json \
 - `compose` と共通の `--rules`, `--template`, `--branding` などのオプションを保持する。
 
 ### 工程5: レンダリング
-最終成果物（PPTX/PDF）と監査ログを生成する。CLI からは `pptx gen` が工程4と工程5をまとめて実行するエントリーポイントとなる。
+最終成果物（PPTX/PDF）と監査ログを生成する。CLI からは工程4で生成した `generate_ready.json` を指定して `pptx gen` を実行し、レンダリング工程を完了させる。
 
 #### `pptx gen`
-- 工程3以降の成果物（`content_approved.json` など）を入力に、工程4（マッピング）と工程5（レンダリング）を一括実行するファサード。
+- 工程4で生成した `generate_ready.json` を入力に、工程5（レンダリング）を実行するコマンド。テンプレート参照は `generate_ready.meta.template_path` を利用するため、工程4までにテンプレートの情報を埋め込んでおく必要がある。
 - 工程4の成果物を事前に確認したい場合は `pptx compose` や `pptx mapping` を個別に実行し、最終成果物が必要になったタイミングで `pptx gen` を呼び出す。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
-| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） | `config/branding.json` |
+| `--branding <path>` | ブランド設定 JSON を差し替える（未指定時はテンプレートから抽出） | `config/branding.json` |
 | `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
@@ -171,10 +170,6 @@ uv run pptx compose .pptx/extract/jobspec.json \
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--content-approved <path>` | 工程3の `content_approved.json` を適用する | 指定なし |
-| `--content-review-log <path>` | 工程3の承認ログ JSON (`content_review_log.json`) を適用する | 指定なし |
-| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
-| `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 

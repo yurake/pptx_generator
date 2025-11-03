@@ -1000,13 +1000,30 @@ def gen(  # noqa: PLR0913
         rules_path=rules,
     )
 
+    mapping_meta: dict[str, object] = {
+        "generate_ready_path": str(generate_ready_path),
+        "generate_ready_generated_at": generate_ready.meta.generated_at,
+        "template_version": generate_ready.meta.template_version,
+        "template_path": str(template_path),
+    }
+
     base_artifacts: dict[str, object] = {
         "generate_ready": generate_ready,
         "generate_ready_path": str(generate_ready_path),
+        "mapping_meta": mapping_meta,
     }
+
     mapping_log_path = generate_ready_path.with_name("mapping_log.json")
     if mapping_log_path.exists():
         base_artifacts["mapping_log_path"] = str(mapping_log_path)
+        try:
+            mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("mapping_log.json の読み込みに失敗しました: %s", exc)
+        else:
+            meta_payload = mapping_log.get("meta")
+            if isinstance(meta_payload, dict):
+                mapping_meta.update(meta_payload)
     fallback_path = generate_ready_path.with_name("fallback_report.json")
     if fallback_path.exists():
         base_artifacts["mapping_fallback_report_path"] = str(fallback_path)
