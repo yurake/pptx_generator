@@ -14,9 +14,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.cli import app
-from pptx_generator.layout_validation import (LayoutValidationResult,
-                                              LayoutValidationSuite)
+from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 from pptx_generator.models import (JobSpec, JobSpecScaffold, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec)
@@ -38,6 +36,38 @@ def _collect_paragraph_texts(slide) -> list[str]:
     return texts
 
 
+def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
+    brief_dir = temp_dir / "brief-input"
+    result = runner.invoke(
+        app,
+        [
+            "content",
+            str(BRIEF_SOURCE),
+            "--output",
+            str(brief_dir),
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+    return {
+        "dir": brief_dir,
+        "cards": brief_dir / "brief_cards.json",
+        "log": brief_dir / "brief_log.json",
+        "meta": brief_dir / "ai_generation_meta.json",
+    }
+
+
+def _brief_args(paths: dict[str, Path]) -> list[str]:
+    return [
+        "--brief-cards",
+        str(paths["cards"]),
+        "--brief-log",
+        str(paths["log"]),
+        "--brief-meta",
+        str(paths["meta"]),
+    ]
+
+
 def test_cli_template_basic(tmp_path) -> None:
     runner = CliRunner()
     repo_root = Path(__file__).resolve().parents[1]
@@ -51,18 +81,28 @@ def test_cli_template_basic(tmp_path) -> None:
             [
                 "template",
                 "samples/templates/templates.pptx",
+                "--with-release",
+                "--brand",
+                "Sample",
+                "--version",
+                "1.0.0",
+                "--release-output",
+                ".pptx/release",
             ],
             catch_exceptions=False,
         )
 
         assert result.exit_code == 0
         output_dir = Path(".pptx/extract")
+        release_dir = Path(".pptx/release")
         assert (output_dir / "template_spec.json").exists()
         assert (output_dir / "branding.json").exists()
         assert (output_dir / "jobspec.json").exists()
         assert (output_dir / "layouts.jsonl").exists()
         assert (output_dir / "diagnostics.json").exists()
-        assert "テンプレ工程（抽出＋検証）が完了しました。" in result.output
+        assert (release_dir / "template_release.json").exists()
+        assert (release_dir / "release_report.json").exists()
+        assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in result.output
 
 
 def test_cli_template_with_release(tmp_path) -> None:
@@ -83,6 +123,8 @@ def test_cli_template_with_release(tmp_path) -> None:
                 "Sample",
                 "--version",
                 "1.0.0",
+                "--release-output",
+                ".pptx/release",
             ],
             catch_exceptions=False,
         )
@@ -255,8 +297,7 @@ def test_cli_content_generates_brief_outputs(tmp_path) -> None:
     meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
     assert meta_payload["policy_id"]
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
-    assert audit_payload["brief_normalization"]["statistics"]["cards_total"] == len(
-        cards_payload["cards"])
+    assert audit_payload["brief_normalization"]["statistics"]["cards_total"] == len(cards_payload["cards"])
 
 
 def test_cli_gen_with_brief_inputs(tmp_path) -> None:
@@ -435,8 +476,7 @@ def test_cli_compose_generates_stage45_outputs(tmp_path) -> None:
     assert rendering_ready_path.exists()
     assert mapping_log_path.exists()
 
-    rendering_ready = json.loads(
-        rendering_ready_path.read_text(encoding="utf-8"))
+    rendering_ready = json.loads(rendering_ready_path.read_text(encoding="utf-8"))
     assert len(rendering_ready.get("slides", [])) == len(spec.slides)
 
     mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
@@ -1167,7 +1207,6 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     assert "Diagnostics:" in result.output
     assert "検出結果: warnings=" in result.output
 
-
 def test_cli_tpl_extract_custom_output(tmp_path) -> None:
     """tpl-extract コマンドのカスタム出力パステスト。"""
     template_path = Path("samples/templates/templates.pptx")
@@ -1374,6 +1413,85 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         assert jobspec_path.exists()
         assert layouts_path.exists()
         assert diagnostics_path.exists()
+
+def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        output_dir = Path("out-validation")
+        validation_result = LayoutValidationResult(
+            layouts_path=output_dir / "layouts.jsonl",
+            diagnostics_path=output_dir / "diagnostics.json",
+            diff_report_path=None,
+            record_count=0,
+            warnings_count=0,
+            errors_count=2,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        validation_result.layouts_path.write_text("[]", encoding="utf-8")
+        validation_result.diagnostics_path.write_text("{}", encoding="utf-8")
+
+        monkeypatch.setattr(LayoutValidationSuite, "run", lambda self: validation_result)
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-extract",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--output",
+                str(output_dir),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 6
+        assert "レイアウト検証でエラーが検出されました" in result.output
+
+
+def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        output_dir = Path("out-validation")
+        validation_result = LayoutValidationResult(
+            layouts_path=output_dir / "layouts.jsonl",
+            diagnostics_path=output_dir / "diagnostics.json",
+            diff_report_path=None,
+            record_count=0,
+            warnings_count=0,
+            errors_count=2,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        validation_result.layouts_path.write_text("[]", encoding="utf-8")
+        validation_result.diagnostics_path.write_text("{}", encoding="utf-8")
+
+        monkeypatch.setattr(LayoutValidationSuite, "run", lambda self: validation_result)
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-extract",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--output",
+                str(output_dir),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 6
+        assert "レイアウト検証でエラーが検出されました" in result.output
 
 
 def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:

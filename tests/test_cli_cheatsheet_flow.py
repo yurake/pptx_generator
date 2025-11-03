@@ -11,8 +11,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_BRIEF_SOURCE = Path(
-    "samples/contents/sample_import_content_summary.txt")
+SAMPLE_BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
 
 
 @pytest.mark.skipif(
@@ -51,6 +50,7 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     assert release_payload.get("version") == "v1"
 
     extract_root = tmp_path / "template"
+    release_output = tmp_path / "template_release"
     template_result = runner.invoke(
         app,
         [
@@ -58,23 +58,35 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
             str(SAMPLE_TEMPLATE),
             "--output",
             str(extract_root),
+            "--with-release",
+            "--brand",
+            "demo",
+            "--version",
+            "v1",
+            "--release-output",
+            str(release_output),
         ],
         catch_exceptions=False,
     )
 
     assert template_result.exit_code == 0
-    assert "テンプレ工程（抽出＋検証）が完了しました。" in template_result.output
+    assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in template_result.output
 
     template_spec_path = extract_root / "template_spec.json"
     jobspec_path = extract_root / "jobspec.json"
     branding_path = extract_root / "branding.json"
     layouts_path = extract_root / "layouts.jsonl"
+    diagnostics_path = extract_root / "diagnostics.json"
 
     assert template_spec_path.exists()
     assert jobspec_path.exists()
     assert branding_path.exists()
     assert layouts_path.exists()
     assert diagnostics_path.exists()
+    release_template_path = release_output / "template_release.json"
+    release_report_path = release_output / "release_report.json"
+    assert release_template_path.exists()
+    assert release_report_path.exists()
 
     jobspec_payload = json.loads(jobspec_path.read_text(encoding="utf-8"))
     assert "meta" in jobspec_payload

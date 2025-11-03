@@ -24,27 +24,22 @@ from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
-                     << << << < HEAD
-                     RenderingReadyDocument, SpecValidationError, TemplateRelease,
-                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun)
+                     JobSpecScaffold, RenderingReadyDocument, SpecValidationError,
+                     TemplateRelease, TemplateReleaseDiagnostics,
+                     TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec)
 from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        BriefNormalizationOptions, BriefNormalizationStep,
-                       == == == =
-                       JobSpecScaffold, RenderingReadyDocument, SpecValidationError,
-                       TemplateRelease, TemplateReleaseDiagnostics,
-                       TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec)
-from .pipeline import (AnalyzerOptions, ContentApprovalError,
-                       >>>>>> > 86579b4(feat(cli): add template pipeline command)
-                       ContentApprovalOptions, ContentApprovalStep,
-                       DraftStructuringOptions, DraftStructuringStep,
-                       MappingOptions, MappingStep, MonitoringIntegrationOptions,
-                       MonitoringIntegrationStep, PdfExportError,
-                       PdfExportOptions, PdfExportStep, PipelineContext,
-                       PipelineRunner, PipelineStep, PolisherError, PolisherOptions,
-                       PolisherStep, RefinerOptions, RenderingAuditOptions,
-                       RenderingAuditStep, RenderingOptions, SimpleAnalyzerStep,
-                       SimpleRefinerStep, SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
+                       ContentApprovalError, ContentApprovalOptions,
+                       ContentApprovalStep, DraftStructuringOptions,
+                       DraftStructuringStep, MappingOptions, MappingStep,
+                       MonitoringIntegrationOptions, MonitoringIntegrationStep,
+                       PdfExportError, PdfExportOptions, PdfExportStep,
+                       PipelineContext, PipelineRunner, PipelineStep,
+                       PolisherError, PolisherOptions, PolisherStep,
+                       RefinerOptions, RenderingAuditOptions, RenderingAuditStep,
+                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
+                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
+                       TemplateExtractorOptions)
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
 from .template_audit import (build_release_report, build_template_release,
@@ -901,8 +896,7 @@ def _run_mapping_pipeline(
                 draft_output,
             )
 
-    context = PipelineContext(
-        spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
+    context = PipelineContext(spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
     context.add_artifact("branding", branding_artifact)
 
     spec_validator = SpecValidatorStep(
@@ -1113,8 +1107,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=False, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
     show_default=True,
     help="工程3の brief_cards.json",
@@ -1374,8 +1367,7 @@ def gen(
 @app.command("content")
 @click.argument(
     "brief_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--output",
@@ -1438,8 +1430,7 @@ def content(
     _dump_json(log_path, [])
     _dump_json(
         ai_log_path,
-        [record.model_dump(mode="json", exclude_none=True)
-         for record in ai_logs],
+        [record.model_dump(mode="json", exclude_none=True) for record in ai_logs],
     )
     _dump_json(meta_path, meta.model_dump(mode="json", exclude_none=True))
     _dump_json(story_outline_path, _build_brief_story_outline(document))
@@ -1472,8 +1463,7 @@ def content(
 @app.command("outline")
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--layouts",
@@ -1580,8 +1570,7 @@ def content(
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=False, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
     show_default=True,
     help="工程3の brief_cards.json",
@@ -1693,6 +1682,12 @@ def outline(
     help="工程2で生成した layouts.jsonl のパス",
 )
 @click.option(
+    "--layouts",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="工程2で生成した layouts.jsonl のパス",
+)
+@click.option(
     "--draft-output",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path(".pptx/draft"),
@@ -1793,23 +1788,20 @@ def outline(
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="ブランド抽出に利用するテンプレートファイル（任意）",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
     show_default=True,
     help="工程3の brief_cards.json",
@@ -1894,8 +1886,7 @@ def compose(  # noqa: PLR0913
         logging.exception("compose 実行中にアウトライン工程でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
-    _print_outline_result(
-        outline_result, show_layout_reasons=show_layout_reasons)
+    _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(template, branding)
@@ -1940,8 +1931,7 @@ def compose(  # noqa: PLR0913
 @app.command("mapping")
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--output",
@@ -1954,16 +1944,14 @@ def compose(  # noqa: PLR0913
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
 )
 @click.option(
     "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="layouts.jsonl のパス",
 )
@@ -1977,23 +1965,20 @@ def compose(  # noqa: PLR0913
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     help="ブランド抽出に利用するテンプレートファイル（任意）",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
     show_default=True,
     help="工程3の brief_cards.json",
@@ -2499,6 +2484,21 @@ def tpl_extract(
             output_format=format,
         )
         _echo_template_extraction_result(extraction_result)
+        validation_result = extraction_result.validation_result
+        if validation_result.errors_count > 0:
+            click.echo(
+                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=6)
+
+        template_spec = extraction_result.template_spec
+        if template_spec.errors:
+            click.echo(
+                "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=6)
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
