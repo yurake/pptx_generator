@@ -30,10 +30,10 @@ roadmap_item: RM-051 テンプレ工程統合集約
   - メモ: `uv run --extra dev pytest` を実施し 162 件成功。CLI 統合テストを新仕様に合わせて更新済み。
 - [x] ドキュメント更新
   - メモ: README / design / requirements の工程表現を最新化。roadmap ほか追加更新なしを確認。
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後に更新する
