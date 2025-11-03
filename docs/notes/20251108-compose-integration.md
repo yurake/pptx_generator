@@ -8,7 +8,7 @@ tags:
 ---
 
 ## 背景
-- main ブランチに工程4・5統合機能 (`pptx compose`) が追加され、`rendering_ready.json` を前提とした CLI ハンドリングに切り替わった。
+- main ブランチに工程4・5統合機能 (`pptx compose`) が追加され、`generate_ready.json` を前提とした CLI ハンドリングに切り替わった。
 - feat/rm049-pptx-gen-scope ブランチでは工程5専用 `pptx gen` を実装していたため、仕様差分の吸収と責務再整理が必要だった。
 
 ## 対応概要

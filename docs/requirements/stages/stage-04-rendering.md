@@ -1,4 +1,4 @@
-# 工程5 PPTX 生成 要件詳細
+# 工程4 PPTX 生成 要件詳細
 
 ## 概要
 - 工程4で生成した `generate_ready.json` を元にテンプレ PPTX へ描画し、最終 `output.pptx` と付随ログを生成する。

@@ -151,5 +151,6 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - **テスト**
   - `uv run --extra dev pytest`（143 件成功、2025-11-10 実行）
   - メモ: PR #266 コンフリクト解消後に `uv run --extra dev pytest tests/test_cli_integration.py` を再実行し、generate_ready 前提の CLI フローが緑化することを確認（2025-11-XX）。
+  - 追記: origin/main からの再マージ後も同テストを実行し、コンフリクト解消版が成功することを確認（2025-11-XX）。
 
 必要に応じて `uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json` を再実行し、ブランド切り替えや PDF オプションの挙動を確認してください。

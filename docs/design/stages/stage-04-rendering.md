@@ -1,4 +1,4 @@
-# 工程5 PPTX レンダリング 設計
+# 工程4 PPTX レンダリング 設計
 
 ## 目的
 - `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。工程3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
