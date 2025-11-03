@@ -37,6 +37,6 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] PR 作成
-  - メモ: 既存 PR #262 にて対応。リベース後も同 PR を継続利用。
+  - メモ: PR #262 https://github.com/yurake/pptx_generator/pull/262（2025-11-03 完了）
 
 ## メモ
