@@ -13,14 +13,13 @@
 - **効率指標**: 30 スライド構成を 60 秒以内で PPTX + PDF 出力まで完了させる。
 - **運用指標**: 監査ログの欠損率 0% を維持し、ジョブ失敗時の再実行時間を 5 分以内とする。
 
-## 5 工程一覧
+## 4 工程一覧
 | No. | 工程 | 概要 |
 | --- | --- | --- |
-| 1 | テンプレ準備 | テンプレ資産 (.pptx) の整備と版管理 |
-| 2 | テンプレ構造抽出 | レイアウト構造 JSON / ヒント値の生成 |
-| 3 | コンテンツ正規化 (HITL) | 入力データをスライド素材へ整形し承認 |
-| 4 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`rendering_ready.json`) |
-| 5 | PPTX レンダリング | 最終出力と監査メタ付与 |
+| 1 | テンプレ工程 | テンプレ資産の整備・抽出・検証・リリースメタ生成を一括実行 |
+| 2 | コンテンツ正規化 (HITL) | 入力データをスライド素材へ整形し承認 |
+| 3 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`rendering_ready.json`) |
+| 4 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
 flowchart TB
@@ -34,7 +33,7 @@ flowchart TB
         RM043["RM-043<br/>ドキュメント可読性向上<br/>(完了)"]
     end
 
-    subgraph ST1["Stage 1: テンプレ準備"]
+    subgraph ST1["Stage 1: テンプレ工程"]
         direction TB
         ST1_ANCHOR(( ))
         RM016["RM-016<br/>テンプレート命名整合性<br/>チェッカー<br/>(完了)"]
@@ -42,13 +41,7 @@ flowchart TB
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
-        RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(完了)"]
-        RM051["RM-051<br/>テンプレ工程統合集約<br/>(未着手)"]
-    end
-
-    subgraph ST2["Stage 2: テンプレ構造抽出"]
-        direction TB
-        ST2_ANCHOR(( ))
+        RM051["RM-051<br/>テンプレ工程統合集約<br/>(進行中)"]
         RM008["RM-008<br/>カスタムテンプレート<br/>操作性向上<br/>(完了)"]
         RM009["RM-009<br/>テンプレート設定自動生成<br/>(完了)"]
         RM010["RM-010<br/>テンプレート仕様<br/>エクスポート<br/>(完了)"]
@@ -59,9 +52,9 @@ flowchart TB
         RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(完了)"]
     end
 
-    subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
+    subgraph ST2["Stage 2: コンテンツ正規化 (HITL)"]
         direction TB
-        ST3_ANCHOR(( ))
+        ST2_ANCHOR(( ))
         RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
         RM023["RM-023<br/>コンテンツ承認<br/>オーサリング基盤<br/>(完了)"]
         RM029["RM-029<br/>Analyzer Review<br/>Engine 連携<br/>(完了)"]
@@ -71,9 +64,9 @@ flowchart TB
         RM046["RM-046<br/>生成AIブリーフ<br/>構成自動化<br/>(完了)"]
     end
 
-    subgraph ST4["Stage 4: マッピング (HITL + 自動)"]
+    subgraph ST3["Stage 3: マッピング (HITL + 自動)"]
         direction TB
-        ST4_ANCHOR(( ))
+        ST3_ANCHOR(( ))
         RM024["RM-024<br/>ドラフト構成承認<br/>フロー整備<br/>(完了)"]
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
@@ -88,9 +81,9 @@ flowchart TB
         RM048["RM-048<br/>工程4マッピング<br/>統合CLI整備<br/>(完了)"]
     end
 
-    subgraph ST5["Stage 5: レンダリング・仕上げ"]
+    subgraph ST4["Stage 4: レンダリング・仕上げ"]
         direction TB
-        ST5_ANCHOR(( ))
+        ST4_ANCHOR(( ))
         RM012["RM-012<br/>レンダラー<br/>テキスト強化<br/>(完了)"]
         RM013["RM-013<br/>PPTX 解析<br/>アナライザー実装<br/>(完了)"]
         RM014["RM-014<br/>自動補正・仕上げ<br/>統合<br/>(完了)"]
@@ -108,9 +101,8 @@ flowchart TB
     style ST2_ANCHOR fill:transparent,stroke:transparent
     style ST3_ANCHOR fill:transparent,stroke:transparent
     style ST4_ANCHOR fill:transparent,stroke:transparent
-    style ST5_ANCHOR fill:transparent,stroke:transparent
 
-    GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR --> ST5_ANCHOR
+    GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM001 --> RM003
     RM013 --> RM003
@@ -356,7 +348,7 @@ flowchart TB
 
 <a id="rm-015"></a>
 ### RM-015 ロードマップ再設計
-- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、5 工程（3・4 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
+- ゴール: 全自動パワポ生成パイプラインの戦略を整理し、4 工程（2・3 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
 - 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
 - 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
 - 状況: 完了（2025-10-11 更新）
@@ -760,11 +752,11 @@ flowchart TB
 ### RM-051 テンプレ工程統合集約
 - 対象工程: 1（テンプレ準備）
 - ゴール: 現行の工程1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
-- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-03 追加）
-- 期待成果: `uv run pptx template` 仕様書、`tpl-extract` → `layout-validate` 連携と extra args 指摘時の `tpl-release` 実行要件、工程番号再編に伴うドキュメント更新一覧。
-- 次アクション: CLI 要件ドラフト作成、工程番号影響範囲の棚卸し、対応ToDoとブランチの準備。
+- 参照ドキュメント: [README.md](../README.md), [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
+- 参照 ToDo: [docs/todo/20251103-rm-051-template-integration.md](../todo/20251103-rm-051-template-integration.md)
+- 状況: 進行中（2025-11-03 Plan 承認、CLI 実装および主要ドキュメント更新を実施）
+- 期待成果: `uv run pptx template` の正式ドキュメント整備、テンプレ工程を含む全資料の 4 工程体系への更新、`tpl-extract` / `layout-validate` / `tpl-release` の詳細オプション整理。
+- 次アクション: ロードマップ全体の工程表記差し替え、CI でのテンプレ検証ジョブ自動化検討、残タスクのフォローアップ。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。

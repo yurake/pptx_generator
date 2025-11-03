@@ -11,7 +11,8 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+SAMPLE_BRIEF_SOURCE = Path(
+    "samples/contents/sample_import_content_summary.txt")
 
 
 @pytest.mark.skipif(
@@ -44,30 +45,16 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     template_release_path = release_dir / "template_release.json"
     assert template_release_path.exists()
-    release_payload = json.loads(template_release_path.read_text(encoding="utf-8"))
+    release_payload = json.loads(
+        template_release_path.read_text(encoding="utf-8"))
     assert release_payload.get("brand") == "demo"
     assert release_payload.get("version") == "v1"
 
+    extract_root = tmp_path / "template"
     template_result = runner.invoke(
         app,
         [
             "template",
-            str(SAMPLE_TEMPLATE),
-            "--output",
-            str(tmp_path / "template"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert template_result.exit_code != 0
-    assert "No such command 'template'" in template_result.output
-
-    extract_root = tmp_path / "extract"
-    tpl_extract = runner.invoke(
-        app,
-        [
-            "tpl-extract",
-            "--template",
             str(SAMPLE_TEMPLATE),
             "--output",
             str(extract_root),
@@ -75,13 +62,13 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         catch_exceptions=False,
     )
 
-    assert tpl_extract.exit_code == 0
+    assert template_result.exit_code == 0
+    assert "テンプレ工程（抽出＋検証）が完了しました。" in template_result.output
 
     template_spec_path = extract_root / "template_spec.json"
     jobspec_path = extract_root / "jobspec.json"
     branding_path = extract_root / "branding.json"
     layouts_path = extract_root / "layouts.jsonl"
-    diagnostics_path = extract_root / "diagnostics.json"
 
     assert template_spec_path.exists()
     assert jobspec_path.exists()

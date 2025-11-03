@@ -1,18 +1,71 @@
 # CLI コマンド設計ガイド
 
 ## 目的
-- CLI の各コマンドが 6 工程パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
+- CLI の各コマンドが 4 工程パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
 - README のクイックスタートで触れ切れない詳細設定（Polisher・PDF 連携・AI プロバイダー切り替え等）を参照できるようにする。
 
 ## パイプライン全体像
-- パイプラインは「テンプレ準備 → 構造抽出 → コンテンツ正規化 → 構成設計 → マッピング → レンダリング」の 6 工程で構成される。
+- パイプラインは「テンプレ工程 → コンテンツ正規化 → マッピング（HITL + 自動）→ レンダリング」の 4 工程で構成される。
 - `pptx compose` は工程4-5（ドラフト構成とマッピング）を連続実行するラッパー。HITL 後の再実行時にドラフト成果物と mapping 成果物を同時に更新できる。
-- `pptx gen` は工程5-6 を一括実行するファサード。必要に応じて `pptx mapping` と `pptx render` を個別に呼び出し、再実行や検証を行う。
+- `pptx gen` は工程2〜4を一括実行するファサード。必要に応じて `pptx compose` / `pptx render` を個別に呼び出し、再実行や検証を行う。
 
-### 工程1: テンプレ準備
-テンプレートをブランド資産として登録し、リリースメタを生成する。
+### 工程1: テンプレ工程
+テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
 
-#### `pptx tpl-release`
+#### `pptx template`
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `<template.pptx>` | 解析するテンプレート（必須、位置引数） | - |
+| `--output <dir>` | 抽出・検証成果物を保存するディレクトリ | `.pptx/extract` |
+| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る | 全レイアウト |
+| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る | 全アンカー |
+| `--format <json\|yaml>` | テンプレ仕様の出力形式 | `json` |
+| `--with-release` | リリースメタ（`template_release.json` 等）を生成する | 無効 |
+| `--brand <name>` | `--with-release` 指定時のブランド名 | - |
+| `--version <value>` | `--with-release` 指定時のテンプレバージョン | - |
+| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` | 自動生成 |
+| `--release-output <dir>` | リリース成果物の出力先 | `.pptx/release` |
+| `--generated-by / --reviewed-by` | リリースメタに記録する担当者 | 空 |
+| `--baseline-release <path>` | 過去の `template_release.json` と比較する | 指定なし |
+| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
+
+主要成果物:
+- `.pptx/extract/template_spec.json` / `template_spec.yaml`
+- `.pptx/extract/jobspec.json`
+- `.pptx/extract/branding.json`
+- `.pptx/extract/layouts.jsonl`
+- `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
+- `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
+
+`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ工程が完結する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
+
+#### 詳細: 個別コマンド
+
+##### `pptx tpl-extract`
+`pptx template` の抽出部分のみを実行する。成果物の出力ディレクトリを分けたい場合やフィルタリングを個別に試したい場合に利用する。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--template <path>` | 解析する `.pptx` テンプレート（必須） | - |
+| `--output <dir>` | 抽出結果を保存するディレクトリ | `.pptx/extract` |
+| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る | 全レイアウト |
+| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る | 全アンカー |
+| `--format <json\|yaml>` | 出力形式を選択 | `json` |
+
+##### `pptx layout-validate`
+抽出結果と同等のレイアウト検証を単独で実行する。`--baseline` や `--analyzer-snapshot` を用いて比較条件を変えたいケースで利用する。
+
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `--template <path>` | 検証対象の `.pptx` テンプレート（必須） | - |
+| `--output <dir>` | 検証成果物を保存するディレクトリ | `.pptx/validation` |
+| `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 | 自動導出 |
+| `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する | 比較なし |
+| `--analyzer-snapshot <path>` | `pptx gen --emit-structure-snapshot` が生成した `analysis_snapshot.json` を突合する | 未指定 |
+
+##### `pptx tpl-release`
+テンプレート整備が完了した後、リリースメタのみを生成する場合に利用する。`pptx template --with-release` と同じ成果物構成で、リリースオプションを細かく制御できる。
+
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `--template <path>` | リリース対象のテンプレート（必須） | - |
@@ -24,52 +77,6 @@
 | `--reviewed-by <name>` | レビュー担当者 | 空 |
 | `--baseline-release <path>` | 過去の `template_release.json` と比較する | 比較なし |
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
-| `--verbose` | 詳細ログを表示 | 無効 |
-
-生成物:
-- `template_release.json`: テンプレ受け渡しメタと診断結果（環境メタには Python / CLI / LibreOffice / .NET SDK を記録）
-- `release_report.json`: `--baseline-release` 指定時の差分レポート
-- `golden_runs.json` と `golden_runs/<spec名>/`: ゴールデンサンプル検証結果（失敗時は exit code 6）
-- `--baseline-release` 指定かつ `--golden-spec` 省略時はベースラインの `golden_runs` を自動再実行
-
-### 工程2: テンプレ構造抽出
-レイアウトとアンカー情報を抽出し、テンプレ構造を管理する。
-
-#### `pptx tpl-extract`
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 解析する `.pptx` テンプレート（必須） | - |
-| `--output <dir>` | 抽出結果を保存するディレクトリ | `.pptx/extract` |
-| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る | 全レイアウト |
-| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る | 全アンカー |
-| `--format <json\|yaml>` | 出力形式を選択 | `json` |
-| `--verbose` | 詳細ログを表示 | 無効 |
-
-実行すると以下の成果物が同一ディレクトリに出力される。
-
-- `template_spec.json` / `template_spec.yaml`（テンプレート仕様）
-- `branding.json`（抽出したブランド設定）
-- `jobspec.json`（工程3で利用するジョブスペック雛形）
-- `layouts.jsonl` / `diagnostics.json`（自動実行されるレイアウト検証の結果。比較時は `diff_report.json` も出力）
-
-抽出直後に `layout-validate` と同等の検証を自動実行するため、工程2の品質チェックがワンコマンドで完了する。検証のみ個別に実行したい場合や出力先を分けたい場合は、従来どおり `pptx layout-validate` を利用する。
-
-#### `pptx layout-validate`
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 検証対象の `.pptx` テンプレート（必須） | - |
-| `--output <dir>` | 検証成果物を保存するディレクトリ | `.pptx/validation` |
-| `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 | 自動導出 |
-| `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する | 比較なし |
-| `--analyzer-snapshot <path>` | `pptx gen --emit-structure-snapshot` が生成した `analysis_snapshot.json` を突合する | 未指定 |
-
-生成物:
-- `layouts.jsonl`: プレースホルダー構成とヒント情報
-- `diagnostics.json`: 未知プレースホルダーや抽出エラーの警告/エラー集計
-- `diff_report.json`: `--baseline` 指定時の差分レポート（Analyzer 突合を含む）
-- 致命的エラー時は exit code 6
-
-`tpl-extract` が抽出直後に自動実行する処理と同等だが、成果物の出力ディレクトリや比較オプションを細かく制御したい場合はこちらを直接利用する。
 
 ### 工程3: ブリーフ正規化 (HITL)
 ブリーフ入力（Markdown / JSON 等）を BriefCard モデルへ正規化し、後続工程が参照する成果物を生成する。

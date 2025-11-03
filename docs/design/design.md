@@ -30,9 +30,9 @@
 | Service-G Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
 
 ## 3. データフロー
-最新ロードマップでは、以下の 6 工程で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
+最新ロードマップでは、以下の 4 工程で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
 
-README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化した Mermaid フローを掲載しているため、工程の全体像を素早く把握したい場合は併せて確認する。
+README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化した Mermaid フローを掲載しているため、工程の全体像を素早く把握したい場合は併せて確認する。
 
 1. **テンプレ準備**（自動）  
    テンプレ資産（`.pptx`）を整備し、バージョン管理を行う。差分検証は工程 2 で実施。
@@ -40,14 +40,10 @@ README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化�
    テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
 3. **ブリーフ正規化**（HITL）  
    ブリーフ入力を BriefCard に整形し、AI 補助と監査ログを付与した `brief_cards.json` を確定する。承認フローやログ仕様は `docs/requirements/stages/stage-03-content-normalization.md` を参照。
-4. **ドラフト構成設計**（HITL）  
-   章立て・ページ順・`layout_hint` を決定し、`draft_approved.json` を確定。構成操作は Draft API / CLI を通じて実行し、承認ゲートは Approval-First Policy (`docs/policies/task-management.md`) と連携する。
-5. **マッピング**（自動）  
-   テンプレ構造（工程 2）と Brief / ドラフト成果物（工程 3/4）を突合し、レイアウト選定とプレースホルダ割付を行う。結果は `rendering_ready.json` と `mapping_log.json` に記録。
-6. **PPTX レンダリング**（自動）  
+4. **PPTX レンダリング**（自動）  
    `rendering_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
-工程 3・4 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-03-content-normalization.md` にまとめている。
+工程 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-content-normalization.md` / `docs/design/stages/stage-03-mapping.md` にまとめている。
 
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
@@ -62,12 +58,10 @@ README の「アーキテクチャ概要」節にも同じ 6 工程を視覚化�
 ### 3.2 工程別設計ドキュメント
 | 工程 | 設計ドキュメント | 主な設計観点 |
 | --- | --- | --- |
-| 1 テンプレ準備 | [stage-01-template-preparation.md](./stages/stage-01-template-preparation.md) | Release CLI、差分診断、ゴールデンサンプル運用 |
-| 2 テンプレ構造抽出 | [stage-02-template-structure-extraction.md](./stages/stage-02-template-structure-extraction.md) | 抽出パイプライン、スキーマ検証、差分レポート |
-| 3 コンテンツ正規化 | [stage-03-content-normalization.md](./stages/stage-03-content-normalization.md) | 承認 API（UI はバックログ）、AI レビュー、監査ログ |
-| 4 ドラフト構成設計 | [stage-04-draft-structuring.md](./stages/stage-04-draft-structuring.md) | layout_hint 管理 API、スコアリング、章承認ログ |
-| 5 マッピング | [stage-05-mapping.md](./stages/stage-05-mapping.md) | スコアリング、フォールバック制御、AI 補完 |
-| 6 PPTX 生成 | [stage-06-rendering.md](./stages/stage-06-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+| 1 テンプレ工程 | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
+| 2 コンテンツ正規化 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビュー、監査ログ |
+| 3 マッピング (HITL + 自動) | [stage-03-mapping.md](./stages/stage-03-mapping.md) | Draft API、layout_hint 候補、テンプレ適合率、マッピング制御 |
+| 4 PPTX レンダリング | [stage-04-rendering.md](./stages/stage-04-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
 
 ### 3.3 工程別入出力一覧
 | ファイル名 | 必須区分 | 概要 | 使用する工程 |
