@@ -1,0 +1,35 @@
+[
+  {
+    "slide_id": "title-01",
+    "action": "approve",
+    "actor": "editor@example.com",
+    "timestamp": "2025-10-31T11:05:00+09:00",
+    "notes": "カバーメモを承認済みバージョンへ更新",
+    "ai_grade": "A"
+  },
+  {
+    "slide_id": "agenda-01",
+    "action": "approve",
+    "actor": "editor@example.com",
+    "timestamp": "2025-10-31T11:12:00+09:00",
+    "applied_autofix": [
+      "agenda-bullet-normalize"
+    ],
+    "ai_grade": "B"
+  },
+  {
+    "slide_id": "three_rows_detail-01",
+    "action": "comment",
+    "actor": "reviewer@example.com",
+    "timestamp": "2025-10-31T11:20:00+09:00",
+    "notes": "監査ログへの記載を追記してください",
+    "ai_grade": "B"
+  },
+  {
+    "slide_id": "three_rows_detail-01",
+    "action": "approve",
+    "actor": "editor@example.com",
+    "timestamp": "2025-10-31T11:24:00+09:00",
+    "notes": "確認済み"
+  }
+]

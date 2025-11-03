@@ -8,24 +8,18 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 
-SAMPLE_SPEC = Path("samples/json/sample_jobspec.json")
-SAMPLE_CONTENT = Path("samples/json/sample_content_approved.json")
-SAMPLE_REVIEW = Path("samples/json/sample_content_review_log.json")
+SAMPLE_BRIEF = Path("samples/contents/sample_import_content_summary.txt")
 
 
-def test_content_approve_outputs(tmp_path) -> None:
-    output_dir = tmp_path / "content"
+def test_content_generates_brief_outputs(tmp_path) -> None:
+    output_dir = tmp_path / "brief"
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
             "content",
-            str(SAMPLE_SPEC),
-            "--content-approved",
-            str(SAMPLE_CONTENT),
-            "--content-review-log",
-            str(SAMPLE_REVIEW),
+            str(SAMPLE_BRIEF),
             "--output",
             str(output_dir),
         ],
@@ -34,141 +28,68 @@ def test_content_approve_outputs(tmp_path) -> None:
 
     assert result.exit_code == 0
 
-    spec_output = output_dir / "spec_content_applied.json"
-    assert spec_output.exists()
-    spec_payload = json.loads(spec_output.read_text(encoding="utf-8"))
-    agenda_slide = next(slide for slide in spec_payload["slides"] if slide["id"] == "agenda-01")
-    body_texts = [item["text"] for group in agenda_slide.get("bullets", []) for item in group.get("items", [])]
-    assert "テンプレ適用状況（承認済み）" in body_texts
+    brief_dir = output_dir
+    cards_path = brief_dir / "brief_cards.json"
+    log_path = brief_dir / "brief_log.json"
+    ai_log_path = brief_dir / "brief_ai_log.json"
+    meta_path = brief_dir / "ai_generation_meta.json"
+    outline_path = brief_dir / "brief_story_outline.json"
+    audit_path = brief_dir / "audit_log.json"
 
-    content_output = output_dir / "content_approved.json"
-    assert content_output.exists()
+    for path in [cards_path, log_path, ai_log_path, meta_path, outline_path, audit_path]:
+        assert path.exists(), f"{path} が生成されていること"
 
-    meta_output = output_dir / "content_meta.json"
-    assert meta_output.exists()
-    meta_payload = json.loads(meta_output.read_text(encoding="utf-8"))
-    assert meta_payload["content_approved"]["slides"] == 3
-    assert meta_payload["spec"]["slides"] >= 3
-    assert meta_payload["content_review_log"]["events"] > 0
+    cards_payload = json.loads(cards_path.read_text(encoding="utf-8"))
+    assert cards_payload["brief_id"]
+    assert len(cards_payload["cards"]) == 4
+    first_card = cards_payload["cards"][0]
+    assert first_card["status"] == "draft"
+    assert first_card["story"]["phase"] == "introduction"
+
+    log_payload = json.loads(log_path.read_text(encoding="utf-8"))
+    assert log_payload == []
+
+    outline_payload = json.loads(outline_path.read_text(encoding="utf-8"))
+    assert len(outline_payload["chapters"]) == 4
+
+    audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    brief_meta = audit_payload["brief_normalization"]
+    assert brief_meta["policy_id"]
+    assert brief_meta["statistics"]["cards_total"] == 4
+    outputs = brief_meta["outputs"]
+    assert outputs["brief_cards"].endswith("brief_cards.json")
 
 
-def test_content_approve_rejects_unapproved_cards(tmp_path) -> None:
-    invalid_content = tmp_path / "content_invalid.json"
-    payload = {
-        "slides": [
-            {
-                "id": "agenda-01",
-                "status": "draft",
-                "elements": {"title": "Draft"},
-            }
-        ]
-    }
-    invalid_content.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+def test_content_requires_valid_brief(tmp_path) -> None:
+    invalid_path = tmp_path / "invalid.json"
+    invalid_path.write_text("{}", encoding="utf-8")
 
-    output_dir = tmp_path / "invalid"
+    runner = CliRunner()
+    result = runner.invoke(app, ["content", str(invalid_path)], catch_exceptions=False)
+
+    assert result.exit_code != 0
+    assert "解析に失敗" in result.output
+
+
+def test_content_respects_card_limit(tmp_path) -> None:
+    output_dir = tmp_path / "limited"
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
             "content",
-            str(SAMPLE_SPEC),
-            "--content-approved",
-            str(invalid_content),
+            str(SAMPLE_BRIEF),
             "--output",
             str(output_dir),
+            "--card-limit",
+            "2",
         ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 4
-    assert "検証に失敗" in result.output
-    assert not (output_dir / "spec_content_applied.json").exists()
-
-
-def test_content_import_generates_draft(tmp_path) -> None:
-    source = tmp_path / "input.txt"
-    source.write_text("# インポート\n内容を記述", encoding="utf-8")
-
-    output_dir = tmp_path / "draft"
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "content",
-            str(SAMPLE_SPEC),
-            "--content-source",
-            str(source),
-            "--output",
-            str(output_dir),
-            "--ai-meta",
-            "ai_generation_meta.json",
-        ],
-        env={"PPTX_LLM_PROVIDER": "mock"},
         catch_exceptions=False,
     )
 
     assert result.exit_code == 0
-
-    draft_path = output_dir / "content_draft.json"
-    meta_path = output_dir / "content_import_meta.json"
-    ai_meta_path = output_dir / "ai_generation_meta.json"
-    ai_log_path = output_dir / "content_ai_log.json"
-    assert draft_path.exists()
-    assert meta_path.exists()
-    assert ai_meta_path.exists()
-    assert ai_log_path.exists()
-    assert not (output_dir / "spec_content_applied.json").exists()
-
-    payload = json.loads(draft_path.read_text(encoding="utf-8"))
-    slide_ids = [slide["id"] for slide in payload["slides"]]
-    assert len(slide_ids) == 5
-    assert "title-01" in slide_ids
-
-    log_payload = json.loads(ai_log_path.read_text(encoding="utf-8"))
-    assert log_payload, "AI ログが空ではないこと"
-
-    meta_payload = json.loads(ai_meta_path.read_text(encoding="utf-8"))
-    assert meta_payload["policy_id"]
-    assert meta_payload["slides"], "AI メタにスライド情報が含まれること"
-    assert len(meta_payload["slides"]) == 5
-
-
-def test_content_import_with_slide_count(tmp_path) -> None:
-    source = tmp_path / "input.txt"
-    source.write_text("# インポート\n内容を記述", encoding="utf-8")
-
-    output_dir = tmp_path / "draft"
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "content",
-            str(SAMPLE_SPEC),
-            "--content-source",
-            str(source),
-            "--output",
-            str(output_dir),
-            "--ai-meta",
-            "ai_generation_meta.json",
-            "--slide-count",
-            "3",
-        ],
-        env={"PPTX_LLM_PROVIDER": "mock"},
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-
-    draft_path = output_dir / "content_draft.json"
-    ai_meta_path = output_dir / "ai_generation_meta.json"
-    assert draft_path.exists()
-    assert ai_meta_path.exists()
-
-    payload = json.loads(draft_path.read_text(encoding="utf-8"))
-    assert len(payload["slides"]) == 3
-
-    meta_payload = json.loads(ai_meta_path.read_text(encoding="utf-8"))
-    assert len(meta_payload["slides"]) == 3
+    cards_payload = json.loads((output_dir / "brief_cards.json").read_text(encoding="utf-8"))
+    assert len(cards_payload["cards"]) == 2
+    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    assert meta_payload["statistics"]["cards_total"] == 2

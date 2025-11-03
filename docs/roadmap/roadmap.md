@@ -68,7 +68,7 @@ flowchart TB
         RM039["RM-039<br/>コンテンツ多形式<br/>インポート<br/>(完了)"]
         RM040["RM-040<br/>コンテンツ生成AI<br/>オーケストレーション<br/>(完了)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
-        RM046["RM-046<br/>生成AIブリーフ<br/>構成自動化<br/>(未着手)"]
+        RM046["RM-046<br/>生成AIブリーフ<br/>構成自動化<br/>(完了)"]
     end
 
     subgraph ST4["Stage 4: マッピング (HITL + 自動)"]
@@ -712,7 +712,7 @@ flowchart TB
 - ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 状況: 完了（2025-11-03 更新）
 - 期待成果: 生成AIモードの `pptx content` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
 

@@ -1,0 +1,122 @@
+{
+  "brief_id": "sample_import_content_summary",
+  "cards": [
+    {
+      "card_id": "intro",
+      "chapter": "イントロダクション",
+      "message": "intro 現状と課題",
+      "narrative": [
+        "intro 現状と課題"
+      ],
+      "supporting_points": [
+        {
+          "statement": "営業リードタイムが平均 12 日で業界平均より 1.5 倍長い。"
+        },
+        {
+          "statement": "KPI 可視化が属人化し、意思決定が遅延している。"
+        }
+      ],
+      "story": {
+        "phase": "introduction"
+      },
+      "intent_tags": [
+        "introduction"
+      ],
+      "status": "draft",
+      "autofix_applied": []
+    },
+    {
+      "card_id": "solution",
+      "chapter": "課題整理",
+      "message": "solution 解決策",
+      "narrative": [
+        "solution 解決策"
+      ],
+      "supporting_points": [
+        {
+          "statement": "営業ダッシュボードと自動アラートの導入で現状把握をスピードアップ。"
+        },
+        {
+          "statement": "業務フローを標準化し、ナレッジ共有を促進。"
+        }
+      ],
+      "story": {
+        "phase": "problem"
+      },
+      "intent_tags": [
+        "problem"
+      ],
+      "status": "draft",
+      "autofix_applied": []
+    },
+    {
+      "card_id": "impact",
+      "chapter": "解決策",
+      "message": "impact 期待効果",
+      "narrative": [
+        "impact 期待効果"
+      ],
+      "supporting_points": [
+        {
+          "statement": "レポート作成工数を週 10 時間削減。"
+        },
+        {
+          "statement": "施策導入後 3 ヵ月で商談成約率が 15% 向上。"
+        }
+      ],
+      "story": {
+        "phase": "solution"
+      },
+      "intent_tags": [
+        "solution"
+      ],
+      "status": "draft",
+      "autofix_applied": []
+    },
+    {
+      "card_id": "next",
+      "chapter": "期待効果",
+      "message": "next 次のアクション",
+      "narrative": [
+        "next 次のアクション"
+      ],
+      "supporting_points": [
+        {
+          "statement": "PoC の範囲と必要リソースを合意し、4 週間で検証を実施。"
+        },
+        {
+          "statement": "データ移行と運用教育のリスクを洗い出し、対応策を整理。"
+        }
+      ],
+      "story": {
+        "phase": "impact"
+      },
+      "intent_tags": [
+        "impact"
+      ],
+      "status": "draft",
+      "autofix_applied": []
+    }
+  ],
+  "story_context": {
+    "chapters": [
+      {
+        "id": "intro",
+        "title": "イントロダクション"
+      },
+      {
+        "id": "problem",
+        "title": "課題整理"
+      },
+      {
+        "id": "solution",
+        "title": "解決策"
+      },
+      {
+        "id": "impact",
+        "title": "期待効果"
+      }
+    ],
+    "must_have_messages": []
+  }
+}

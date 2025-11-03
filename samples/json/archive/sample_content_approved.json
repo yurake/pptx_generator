@@ -1,0 +1,54 @@
+{
+  "slides": [
+    {
+      "id": "title-01",
+      "intent": "表紙",
+      "type_hint": "title",
+      "elements": {
+        "title": "RM-043 拡張テンプレート検証(承認済み)",
+        "body": [
+          "承認済み版のサマリをカバーページに反映済み"
+        ],
+        "note": "承認日時 2025-10-31"
+      },
+      "status": "approved"
+    },
+    {
+      "id": "agenda-01",
+      "intent": "アジェンダ",
+      "type_hint": "outline",
+      "elements": {
+        "title": "検証アジェンダ",
+        "body": [
+          "テンプレ適用状況（承認済み）",
+          "layout-validate 結果レビュー（承認済み）",
+          "サンプル JSON 更新内容（承認済み）"
+        ]
+      },
+      "status": "approved",
+      "applied_autofix": [
+        "agenda-bullet-normalize"
+      ]
+    },
+    {
+      "id": "three_rows_detail-01",
+      "intent": "課題整理",
+      "type_hint": "content",
+      "elements": {
+        "title": "品質チェックポイント",
+        "body": [
+          "テンプレ抽出で ValueError が出ないよう例外処理を追加（承認済み）",
+          "レイアウト警告を 0 件まで削減（承認済み）",
+          "CLI テストで 50 スライド構成を検証済み（承認済み）"
+        ],
+        "note": "監査ログ記載済み（承認済み）。"
+      },
+      "status": "approved"
+    }
+  ],
+  "meta": {
+    "tone": "formal",
+    "audience": "QA チーム",
+    "summary": "拡張テンプレート検証の承認済みスライドセット"
+  }
+}

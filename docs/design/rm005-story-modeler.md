@@ -11,14 +11,14 @@
 
 ## スコープ
 - ドキュメント整備（企画、要件、設計）。コード実装は対象外。
-- `story_outline.json` スキーマと `content_approved.json` への拡張項目の設計。
+- `story_outline.json` スキーマと `brief_cards.json` への拡張項目の設計。
 - 工程3 UI での表示仕様、工程4 との連携方法のたたき台作成。
 
 ## データフロー（案）
 1. `story_outline.json` を読み込み、フェーズ・章・メッセージアングルをメモリ上に展開。
 2. コンテンツ生成ロジックがカード単位で内容を構成する際、該当章/フェーズのガイドラインを参照し、カードへメタを付与。
 3. HITL レビュー UI にて、カードごとのストーリーフェーズや章情報を表示し、必要に応じて再割当できるようにする。
-4. 承認後の `content_approved.json` にストーリー情報を保持し、工程4に渡す。
+4. 承認後の `brief_cards.json` にストーリー情報を保持し、工程4に渡す。
 
 ## API / モジュール差し込みポイント（想定）
 - `src/pptx_generator/pipeline/content_normalizer.py`

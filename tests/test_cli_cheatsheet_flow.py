@@ -11,9 +11,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_CONTENT_SOURCE = Path("samples/contents/sample_import_content.txt")
-SAMPLE_CONTENT_APPROVED = Path("samples/json/sample_content_approved.json")
-SAMPLE_CONTENT_REVIEW_LOG = Path("samples/json/sample_content_review_log.json")
+SAMPLE_BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
 
 
 @pytest.mark.skipif(
@@ -79,29 +77,17 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     assert tpl_extract.exit_code == 0
 
-    layout_validate = runner.invoke(
-        app,
-        [
-            "layout-validate",
-            "--template",
-            str(SAMPLE_TEMPLATE),
-            "--output",
-            str(extract_root / "validation"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert layout_validate.exit_code == 0
-
     template_spec_path = extract_root / "template_spec.json"
     jobspec_path = extract_root / "jobspec.json"
     branding_path = extract_root / "branding.json"
-    layouts_path = extract_root / "validation" / "layouts.jsonl"
+    layouts_path = extract_root / "layouts.jsonl"
+    diagnostics_path = extract_root / "diagnostics.json"
 
     assert template_spec_path.exists()
     assert jobspec_path.exists()
     assert branding_path.exists()
     assert layouts_path.exists()
+    assert diagnostics_path.exists()
 
     jobspec_payload = json.loads(jobspec_path.read_text(encoding="utf-8"))
     assert "meta" in jobspec_payload
@@ -111,17 +97,21 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         app,
         [
             "content",
-            str(jobspec_path),
-            "--content-source",
-            str(SAMPLE_CONTENT_SOURCE),
+            str(SAMPLE_BRIEF_SOURCE),
             "--output",
             str(content_output),
         ],
         catch_exceptions=False,
     )
 
-    assert content_cmd.exit_code == 2
-    assert "スキーマ検証に失敗しました" in content_cmd.output
+    assert content_cmd.exit_code == 0
+
+    brief_cards_path = content_output / "brief_cards.json"
+    brief_log_path = content_output / "brief_log.json"
+    brief_meta_path = content_output / "ai_generation_meta.json"
+    assert brief_cards_path.exists()
+    assert brief_log_path.exists()
+    assert brief_meta_path.exists()
 
     compose_output_root = tmp_path / "compose"
     compose_cmd = runner.invoke(
@@ -129,16 +119,18 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         [
             "compose",
             str(jobspec_path),
-            "--content-approved",
-            str(SAMPLE_CONTENT_APPROVED),
-            "--content-review-log",
-            str(SAMPLE_CONTENT_REVIEW_LOG),
             "--draft-output",
             str(compose_output_root / "draft"),
             "--output",
             str(compose_output_root / "gen"),
             "--layouts",
             str(layouts_path),
+            "--brief-cards",
+            str(brief_cards_path),
+            "--brief-log",
+            str(brief_log_path),
+            "--brief-meta",
+            str(brief_meta_path),
         ],
         catch_exceptions=False,
     )

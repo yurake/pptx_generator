@@ -73,14 +73,14 @@
 
 ### 3. コンテンツ作成（素材生成＋HITL）
 - **オペレーション**: 自動生成（draft）＋ AI レビュー ＋ HITL 承認
-- **目的**: 入力データからスライド候補を構造化し、ユーザーが内容を調整・承認した `content_approved.json` を得る。
+- **目的**: 入力データからスライド候補を構造化し、ユーザーが内容を調整・承認した `brief_cards.json` を得る。
 - **入力**:
   - ユーザーデータ（テキスト／Markdown／CSV／Excel／JSON 等）。
   - コンテキスト条件（目的、対象読者、トーン、想定枚数/時間）。
   - テンプレ構造情報（工程2出力の用途タグや layout ヒント）。
 - **出力**:
   - 自動出力: `content_draft.json`（AI が生成したスライド候補）。
-  - HITL 承認後: `content_approved.json`（タイトル・本文・表・注記・intent を確定）。
+  - HITL 承認後: `brief_cards.json`（章・メッセージ・支援コンテンツ・intent タグを確定）。
   - 差分／承認ログ: `content_review_log.json`（変更履歴、承認イベント）。
 - **処理概要**:
   1. **自動生成**: 入力整形 → 主要メッセージ抽出 → スライド候補生成（title/body/note/table-data）→ intent/type_hint 付与。
@@ -93,18 +93,18 @@
   - 文字量超過・冗長表現は後段で調整できるため、意味保持を優先しつつ改善提案で短縮可能。
 - **主要 I/F**:
   - `content_draft.json` ⇄ UI（AI が人向け表示へ変換）。
-  - `content_approved.json`（工程4の唯一の入力）。
+  - `brief_cards.json`（工程4の入力）。
   - `content_review_log.json`（承認イベント、AI レビュー結果、Auto-fix 適用状況）。
 - **完了基準**:
   - すべてのスライド候補に `title` と本文（1 要素以上）・`intent` が存在。
-  - 承認済みスライドのみが `content_approved.json` に含まれ、スキーマ検証に合格。
+  - 承認済みカードのみが `brief_cards.json` に含まれ、スキーマ検証に合格。
   - 承認ログに未解決の警告が残っていない（警告は明示的に保留可）。
 
 ### 4. ドラフト構成設計（HITL）
 - **オペレーション**: 自動組版案生成 ＋ AI レビュー ＋ HITL 承認
 - **目的**: 章立て・ページ順・layout_hint を確定し、`draft_approved.json` を出力する。
 - **入力**:
-  - `content_approved.json`（工程3の承認結果）。
+  - `brief_cards.json`（工程3の承認結果）。
   - テンプレ構造情報（工程2出力）。
   - プレゼン方針（目的、枚数レンジ、構成テンプレート）。
 - **出力**:
@@ -135,7 +135,7 @@
 - **入力**:
   - `draft_approved.json`（章構造・layout_hint）。
   - `layouts.jsonl` / `diagnostics.json`（工程2出力）。
-  - `content_approved.json`（タイトル・本文・表 等）。
+  - `brief_cards.json`（メッセージ、支援ポイント 等）。
 - **出力**:
   - `rendering_ready.json`（各スライドに `layout_id`, `elements`, `meta` を付与）。
   - `mapping_log.json`（レイアウト選定得点、AI 補完箇所、フォールバック履歴）。
@@ -148,7 +148,7 @@
   - 必須要素を満たさないレイアウトは自動的に候補落ちとして次点を試行。
   - 収容不能の場合は順に「文章縮約 → スライド分割 → 付録送り」を適用し、結果をログ化。
   - AI 補完は安全な変更のみ採用し、複数候補がある場合は用途タグ一致率と直前スライド多様性で決定。
-- **主要 I/F**: `rendering_ready.json`（工程5の唯一の入力）、`mapping_log.json`（監査・検証用）。
+- **主要 I/F**: `rendering_ready.json`（工程6の唯一の入力）、`mapping_log.json`（監査・検証用）。
 - **完了基準**:
   - 全スライドに `layout_id` と必要要素が割付済み。
   - `rendering_ready.json` がスキーマ検証に合格し、空要素は意図的かつログ化されている。

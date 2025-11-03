@@ -8,7 +8,7 @@
 - ポリシー定義は `config/content_ai_policies.json` に集約し、`default_policy_id` を CLI で利用する。
 - プロンプト定義は `src/pptx_generator/content_ai/prompts.py` で管理し、ポリシーからは `prompt_id` を参照する。
 - オーケストレーション層は `src/pptx_generator/content_ai/` に専用モジュールを新設し、モック LLM クライアントを通じて本文（40 文字×最大 6 行）を生成する。
-- CLI オプションは `--ai-policy` / `--ai-policy-id` / `--ai-output` / `--ai-meta` を追加し、既存の `--content-source` とは排他利用とする。
+- CLI オプション追加案（`--ai-policy` / `--ai-policy-id` など）は一旦見送り、既定ポリシー固定で生成する方針へ変更する。`--content-source` との排他制御は継続検討。
 - 生成結果は `content_draft.json`（`ContentApprovalDocument` 形式）、`content_ai_log.json`（プロンプトと警告の監査ログ）、`ai_generation_meta.json`（ポリシー・ハッシュ情報）の 3 ファイルを標準出力物とする。
 
 ## 追加検討事項

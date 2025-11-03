@@ -51,29 +51,53 @@ def sample_spec(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def content_approved(tmp_path: Path) -> Path:
-    content_path = tmp_path / "approved.json"
+def brief_cards(tmp_path: Path) -> Path:
+    cards_path = tmp_path / "brief_cards.json"
     _write_json(
-        content_path,
+        cards_path,
         {
-            "slides": [
+            "brief_id": "brief-test",
+            "cards": [
                 {
-                    "id": "s01",
-                    "layout": "overview",
-                    "intent": "overview",
-                    "type_hint": "overview",
-                    "elements": {
-                        "title": "Overview",
-                        "body": ["Line 1", "Line 2"],
-                        "table_data": None,
-                        "note": None
-                    },
-                    "status": "approved",
+                    "card_id": "s01",
+                    "chapter": "Overview",
+                    "message": "Overview summary",
+                    "narrative": ["Line 1", "Line 2"],
+                    "supporting_points": [],
+                    "story": {"phase": "introduction", "goal": None, "tension": None, "resolution": None},
+                    "intent_tags": ["overview"],
+                    "status": "draft",
+                    "autofix_applied": [],
                 }
-            ]
+            ],
+            "story_context": {"chapters": []},
         },
     )
-    return content_path
+    return cards_path
+
+
+@pytest.fixture()
+def brief_log(tmp_path: Path) -> Path:
+    log_path = tmp_path / "brief_log.json"
+    _write_json(log_path, [])
+    return log_path
+
+
+@pytest.fixture()
+def brief_meta(tmp_path: Path) -> Path:
+    meta_path = tmp_path / "ai_generation_meta.json"
+    _write_json(
+        meta_path,
+        {
+            "brief_id": "brief-test",
+            "generated_at": "2025-11-02T00:00:00Z",
+            "policy_id": "brief-default",
+            "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
+            "cards": [],
+            "statistics": {"cards_total": 1, "approved": 0, "returned": 0},
+        },
+    )
+    return meta_path
 
 
 @pytest.fixture()
@@ -97,7 +121,9 @@ def layouts_file(tmp_path: Path) -> Path:
 def test_outline_with_layout_reasons(
     runner: CliRunner,
     sample_spec: Path,
-    content_approved: Path,
+    brief_cards: Path,
+    brief_log: Path,
+    brief_meta: Path,
     layouts_file: Path,
     tmp_path: Path,
 ) -> None:
@@ -107,8 +133,6 @@ def test_outline_with_layout_reasons(
         [
             "outline",
             str(sample_spec),
-            "--content-approved",
-            str(content_approved),
             "--layouts",
             str(layouts_file),
             "--output",
@@ -116,6 +140,12 @@ def test_outline_with_layout_reasons(
             "--chapter-template",
             "bp-report-2025",
             "--show-layout-reasons",
+            "--brief-cards",
+            str(brief_cards),
+            "--brief-log",
+            str(brief_log),
+            "--brief-meta",
+            str(brief_meta),
         ],
     )
 
