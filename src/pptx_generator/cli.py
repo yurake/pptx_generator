@@ -2139,7 +2139,14 @@ def tpl_extract(
             click.echo(f"エラー: {len(template_spec.errors)} 件")
             for error in template_spec.errors:
                 click.echo(f"  - {error}", err=True)
-        
+
+        if validation_result.errors_count > 0:
+            click.echo(
+                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=6)
+
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc

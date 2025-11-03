@@ -20,6 +20,7 @@ from pptx_generator.models import (JobSpec, JobSpecScaffold, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
+from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -1318,6 +1319,46 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         assert jobspec_path.exists()
         assert layouts_path.exists()
         assert diagnostics_path.exists()
+
+def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
+    runner = CliRunner()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as fs:
+        fs_root = Path(fs)
+        shutil.copytree(repo_root / "samples", fs_root / "samples")
+
+        output_dir = Path("out-validation")
+        validation_result = LayoutValidationResult(
+            layouts_path=output_dir / "layouts.jsonl",
+            diagnostics_path=output_dir / "diagnostics.json",
+            diff_report_path=None,
+            record_count=0,
+            warnings_count=0,
+            errors_count=2,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        validation_result.layouts_path.write_text("[]", encoding="utf-8")
+        validation_result.diagnostics_path.write_text("{}", encoding="utf-8")
+
+        monkeypatch.setattr(LayoutValidationSuite, "run", lambda self: validation_result)
+
+        result = runner.invoke(
+            app,
+            [
+                "tpl-extract",
+                "--template",
+                "samples/templates/templates.pptx",
+                "--output",
+                str(output_dir),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 6
+        assert "レイアウト検証でエラーが検出されました" in result.output
+
 
 def test_cli_tpl_extract_validation_failure_exits_with_error(tmp_path, monkeypatch) -> None:
     runner = CliRunner()
