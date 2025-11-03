@@ -1,7 +1,7 @@
 ---
 目的: 工程4でブリーフとテンプレ spec を統合し `draft_approved.json` の生成基盤を整備する
 関連ブランチ: feat/rm047-draft-structuring
-関連Issue: 未作成
+関連Issue: #264
 roadmap_item: RM-047 テンプレ統合構成生成AI連携
 ---
 
@@ -26,7 +26,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 未特定のため要確認
 - [ ] PR 作成
   - メモ: ---
