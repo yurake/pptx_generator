@@ -30,7 +30,7 @@ flowchart TB
         RM002["RM-002<br/>エージェント運用ガイド整備<br/>(完了)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM043["RM-043<br/>ドキュメント可読性向上<br/>(完了)"]
+        RM052["RM-052<br/>ドキュメント可読性向上<br/>(完了)"]
     end
 
     subgraph ST1["Stage 1: テンプレ工程"]
@@ -110,7 +110,7 @@ flowchart TB
     RM025 --> RM006
     RM026 --> RM006
     RM002 --> RM017
-    RM002 --> RM043
+    RM002 --> RM052
     RM007 --> RM012
     RM012 --> RM013
     RM013 --> RM014
@@ -184,9 +184,9 @@ flowchart TB
     RM021 --> RM038
     RM022 --> RM038
     RM025 --> RM038
-    RM038 --> RM043
-    RM022 --> RM043
-    RM025 --> RM043
+    RM038 --> RM052
+    RM022 --> RM052
+    RM025 --> RM052
     RM023 --> RM039
     RM017 --> RM039
     RM023 --> RM040
@@ -199,8 +199,10 @@ flowchart TB
     RM028 --> RM044
     RM044 --> RM045
     RM040 --> RM046
+    RM046 --> RM042
     RM046 --> RM047
     RM036 --> RM047
+    RM047 --> RM041
     RM047 --> RM048
     RM025 --> RM048
     RM031 --> RM048
@@ -654,16 +656,6 @@ flowchart TB
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）、LLM 基盤。
 
 <a id="rm-043"></a>
-### RM-043 ドキュメント可読性向上
-- ゴール: README と `docs/requirements`・`docs/design` の要点を整理し、工程別に参照しやすいナビゲーションと概要サマリを整備する。
-- 対象工程: 全工程（共通ドキュメント整備）
-- 参照ドキュメント: [README.md](../README.md), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
-- 参照 ToDo: [docs/todo/20251031-docs-readability.md](../todo/20251031-docs-readability.md)
-- 状況: 進行中（2025-11-01 更新）
-- 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備。
-- 次アクション: README の工程図追加に合わせた関連ドキュメント整合を完了させ、PR 作成まで進める。
-
-<a id="rm-043"></a>
 ### RM-043 サンプルテンプレ拡充
 - ゴール: `samples/templates/templates.pptx` のレイアウトと `samples/` 配下データを拡充し、工程2・5・6の検証用サンプルパターンを増やす。
 - 対象工程: 1（テンプレ準備）
@@ -757,6 +749,16 @@ flowchart TB
 - 状況: 完了（2025-11-03 更新）
 - 期待成果: `uv run pptx template` の正式ドキュメント整備、テンプレ工程を含む全資料の 4 工程体系への更新、`tpl-extract` / `layout-validate` / `tpl-release` の詳細オプション整理。
 - 次アクション: ロードマップ全体の工程表記差し替え、CI でのテンプレ検証ジョブ自動化検討、残タスクのフォローアップ。
+
+<a id="rm-052"></a>
+### RM-052 ドキュメント可読性向上
+- ゴール: README と `docs/requirements`・`docs/design` の要点を整理し、工程別に参照しやすいナビゲーションと概要サマリを整備する。
+- 対象工程: 全工程（共通ドキュメント整備）
+- 参照ドキュメント: [README.md](../README.md), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
+- 参照 ToDo: [docs/todo/archive/20251031-rm052-docs-readability.md](../todo/archive/20251031-rm052-docs-readability.md)
+- 状況: 完了（2025-11-08 更新）
+- 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備を完了。
+- 次アクション: なし（完了済みテーマとして運用に移行）
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
