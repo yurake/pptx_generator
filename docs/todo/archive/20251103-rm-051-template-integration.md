@@ -37,7 +37,7 @@ roadmap_item: RM-051 テンプレ工程統合集約
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #261 https://github.com/yurake/pptx_generator/pull/261（2025-11-03 完了）
 
 ## メモ

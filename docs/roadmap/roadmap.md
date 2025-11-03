@@ -41,7 +41,7 @@ flowchart TB
         RM027["RM-027<br/>Analyzer テンプレ監査<br/>メトリクス整備<br/>(完了)"]
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
-        RM051["RM-051<br/>テンプレ工程統合集約<br/>(進行中)"]
+        RM051["RM-051<br/>テンプレ工程統合集約<br/>(完了)"]
         RM008["RM-008<br/>カスタムテンプレート<br/>操作性向上<br/>(完了)"]
         RM009["RM-009<br/>テンプレート設定自動生成<br/>(完了)"]
         RM010["RM-010<br/>テンプレート仕様<br/>エクスポート<br/>(完了)"]
@@ -753,8 +753,8 @@ flowchart TB
 - 対象工程: 1（テンプレ準備）
 - ゴール: 現行の工程1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
 - 参照ドキュメント: [README.md](../README.md), [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
-- 参照 ToDo: [docs/todo/20251103-rm-051-template-integration.md](../todo/20251103-rm-051-template-integration.md)
-- 状況: 進行中（2025-11-03 Plan 承認、CLI 実装および主要ドキュメント更新を実施）
+- 参照 ToDo: [docs/todo/archive/20251103-rm-051-template-integration.md](../todo/archive/20251103-rm-051-template-integration.md)
+- 状況: 完了（2025-11-03 更新）
 - 期待成果: `uv run pptx template` の正式ドキュメント整備、テンプレ工程を含む全資料の 4 工程体系への更新、`tpl-extract` / `layout-validate` / `tpl-release` の詳細オプション整理。
 - 次アクション: ロードマップ全体の工程表記差し替え、CI でのテンプレ検証ジョブ自動化検討、残タスクのフォローアップ。
 
