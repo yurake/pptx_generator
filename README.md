@@ -68,17 +68,15 @@ flowchart TD
    ```bash
    uv sync
    ```
-   - uv を未導入の場合は <https://docs.astral.sh/uv/getting-started/installation/> を参照してインストールしてください。
-   - 権限エラーが発生する環境では `UV_CACHE_DIR=.uv-cache uv sync` を使用します。
 3. CLI が動作することを確認します。
    ```bash
    uv run --help
    ```
-4. LibreOffice を利用する場合は headless 実行を確認します（任意、PDF 変換機能を使う際に必要）。
+4. (任意)パワポのPDF出力を実施したい場合は、LibreOffice を導入し headless 実行を確認します。
    ```bash
    soffice --headless --version
    ```
-5. Polisher や仕上げツールを利用する場合は .NET 8 SDK をインストールします（任意）。
+5. (任意、基本不要)パワポの仕上げツールを利用する場合は .NET 8 SDK をインストールします。
 
 ## CLI チートシート
 
