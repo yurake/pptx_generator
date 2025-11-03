@@ -80,11 +80,8 @@
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--brief-policy <path>` | ブリーフ生成ポリシー定義 | `config/brief_policies/default.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ | `.brief` |
 | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
-| `--ai-policy <path>` | 生成エンジンの追加設定（将来拡張用） | 指定なし |
-| `--ai-policy-id <value>` | ポリシーセット内で利用する ID（将来拡張用） | 指定なし |
 
 生成物:
 - `brief_cards.json`: BriefCard の配列（章/メッセージ/補完情報を保持）

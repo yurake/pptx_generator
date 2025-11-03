@@ -150,7 +150,6 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
   ```
   - 生成物: `brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
   - `--card-limit` で生成するカード枚数の上限を制御できます。
-  - `--brief-policy` を差し替えることで章テンプレートや検証ルールを切り替えられます。
   - 旧 `content_approved.json` ベースのフローは廃止し、Brief 成果物を起点に工程4・5へ連携します。
 
 ### 工程 4: ドラフト構成設計

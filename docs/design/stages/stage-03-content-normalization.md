@@ -45,7 +45,7 @@
   - ポリシー設定: `config/content_ai_policies.json` に複数ポリシーを定義し、`default_policy_id` を起点に CLI から選択する。`prompt_id` と `intent` を紐付け、実際のテンプレート文字列は `src/pptx_generator/content_ai/prompts.py` で管理する。
   - オーケストレーター: `ContentAIOrchestrator` が Spec・ポリシー・LLM クライアント（当面はモック）を組み合わせて `ContentApprovalDocument` を構築し、生成ログ／メタ情報を返す。
   - LLM クライアント: `MockLLMClient` は Spec のスライド情報を利用して本文候補を組み立て、長さ制限（40 文字×6 行）を満たすよう調整する。将来は実サービスのクライアントと差し替える。
-- CLI 挙動: `pptx content` 実行時は生成AIモードをデフォルトとし、`--content-source` や `--content-approved` を指定した場合のみ外部入力／承認ファイルモードへ切り替える。`--ai-policy`（定義ファイル上書き）、`--ai-policy-id`（ポリシー ID）、`--ai-output`（生成ログ）、`--ai-meta`（メタ情報）を任意で指定できる。
+- CLI 挙動: `pptx content` 実行時は生成AIモードをデフォルトとし、`--content-source` や `--content-approved` を指定した場合のみ外部入力／承認ファイルモードへ切り替える。生成AIモードでは既定ポリシーを使用し、出力先やカード枚数をオプションで制御する。
 - ログ: 生成AIモードで `-v/--verbose` または `--debug` を指定すると、プロンプトとレスポンスの概要がログ出力される。
 - LLM プロバイダーは環境変数 `PPTX_LLM_PROVIDER` で選択する。サポート対象は `mock` / `openai` / `azure-openai` / `claude` / `aws-claude`。各プロバイダー固有の API キーやエンドポイントは README の表に従って設定する。
 - 出力成果物

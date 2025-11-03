@@ -42,6 +42,13 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
       - テスト戦略: `uv run --extra dev pytest`、`uv run pptx compose ...` の手動確認、LibreOffice ヘッドレス変換 (`soffice --headless --version`) のスポット確認。
       - ロールバック: 取り込みコミット単位で `git revert`、または再度 main からブランチを切り直す。
       - 承認: ユーザー「後方互換への考慮は不要。他については承認」メッセージ（2025-11-02 14:04 JST）。
+    - 追記 (2025-11-03 11:05 JST): brief policy オプション廃止に関する計画を下記の通り整理。
+      - スコープ: `pptx content` サブコマンドから `--brief-policy` / `--ai-policy*` を撤廃し、既定ポリシー固定でブリーフ生成を行う。関連ロジック・ドキュメント・テストも新仕様に合わせる。
+      - 想定更新ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/brief/*`, `tests/test_cli_content.py` ほか content 関連テスト、README、`docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-03-*`, 必要に応じて `docs/notes/`。
+      - 進め方: (1) main の差分を再確認し影響範囲を把握。(2) CLI から該当オプションを削除し、デフォルトポリシーを内部固定化。(3) ブリーフ生成ロジックの依存（`load_brief_policy_set` など）を簡素化し、エラーメッセージや監査ログを更新。(4) テストを更新して `uv run --extra dev pytest` を実行。(5) README 等のドキュメントを新仕様に合わせて改訂。(6) ToDo・必要なドキュメントに結果を共有。
+      - リスク: 既存の `--brief-policy` 利用パターンとの互換性がなくなること、外部ドキュメントにオプション前提の記述が残る可能性。
+      - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx content samples/contents/sample_import_content_summary.txt` など手動確認。
+      - ロールバック: ブランチ上の変更を revert してオプションを復元する。
 - [x] 設計・実装方針の確定
   - メモ: `docs/notes/20251102-rm046-brief-analysis.md` に BriefCard への全面移行と実装ロードマップ／検証方針を整理済み。
 - [x] ドキュメント更新（要件・設計）
@@ -90,6 +97,15 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
   - [x] ドキュメント刷新（README, docs/design/cli-command-reference.md, docs/runbooks/, docs/requirements/stages/stage-02-*, docs/policies/config-and-templates.md 等）
     - メモ: README と CLI リファレンスに抽出＋検証の一括実行と成果物一覧を追記。
   - [ ] 結果共有（ToDo 更新・必要に応じて docs/notes/ 追加、ロードマップとの整合確認）
+
+- [ ] brief policy オプション廃止対応
+  - [x] main 差分確認と影響範囲整理（`src/pptx_generator/cli.py`, `brief` モジュール、ドキュメント、テスト）
+  - [x] CLI から `--brief-policy` / `--ai-policy*` オプションを削除し、既定ポリシー固定にする
+  - [x] ブリーフ生成ロジックの依存（`load_brief_policy_set` など）を最小化し、エラーメッセージ・監査ログを新仕様へ揃える
+  - [x] テスト更新と回帰実行（`tests/test_cli_content.py` ほか、`uv run --extra dev pytest`）
+  - [x] ドキュメント改訂（README, CLI リファレンス, docs/requirements/stages/stage-03-*, docs/design/cli-command-reference.md 等）
+  - [x] 結果共有（ToDo 更新・必要に応じて docs/notes/ 記録、ロードマップへの反映確認）
+    - メモ: 2025-11-03 このメッセージで作業内容とテスト結果を報告。
 
 ## メモ
 - 実装・テストは当コミットで完了済み。残課題としてドキュメント更新（README, roadmap 等）を別タスクで行う。

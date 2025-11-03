@@ -18,7 +18,7 @@
 - **後工程整合**: 旧工程4（当時の `docs/requirements/stages/stage-04-draft-structuring.md` 53 行付近）が legacy コンテンツ承認 JSON のストーリー情報を参照する設計になっており、抽象カード化に合わせたプロパティ再定義が必要。
 
 ## 方向性メモ
-- `pptx content` を「ブリーフビルダー」モードへ再定義し、`--brief-source`（JSON / Markdown / CSV）や `--brief-policy`（章構成プリセット）などテンプレ非依存の入力を受け付ける案。
+- `pptx content` を「ブリーフビルダー」モードへ再定義し、テンプレ非依存の入力（`--brief-source` など）を受け付ける案。ポリシーは既定値固定で扱う。
 - 新しい `BriefCard` モデル（`chapter`, `message`, `narrative`, `supporting_points[]`, `evidence_links[]`, `status` など）を `ContentSlide` から派生または置き換え、`story.phase` / `story.goal` を必須化する。
 - HITL ログは `card_id` と `version`（ETag 相当）を持たせ、差戻し・再生成履歴を保持。AI 生成ログもカード単位で参照できるよう `ai_generation_meta.json` を再設計する。
 - 後工程（RM-047）に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。
@@ -49,7 +49,7 @@
 
 ## 提案するドキュメント更新
 - `docs/requirements/stages/stage-03-content-normalization.md`: 入力を「ブリーフソース」「AI プロンプト設定」「テンプレ独立カード構造」に再構成し、出力を `brief_cards[]` ベースへ更新。品質ゲートとログ要件もカード ID / バージョン軸で書き換える。
-- `docs/design/stages/stage-03-content-normalization.md`: `ContentAIOrchestrator` の役割を「テンプレ依存 → ブリーフ抽象化」へ移行する設計図を追加。`BriefCard` モデルと CLI オプション拡張（`--brief-source`, `--brief-policy`, `--card-limit` など）を反映する。
+- `docs/design/stages/stage-03-content-normalization.md`: `ContentAIOrchestrator` の役割を「テンプレ依存 → ブリーフ抽象化」へ移行する設計図を追加。`BriefCard` モデルと CLI オプション（`--brief-source`, `--card-limit` など）を反映する。
 - `docs/design/schema/stage-03-content-normalization.md`: JSON スキーマを `brief_cards[]`・`story_context`・`supporting_materials[]` に改訂し、旧 `elements.title/body` の制約を撤廃。承認ログも `card_id` / `revision` 前提で書き換える。
 - `docs/notes/20251017-content-approval-platform.md`: 新モデルとの差分と段階移行方針を追記（従来 `ContentSlide` 利用箇所の移行ガイド）。
 - `docs/roadmap/roadmap.md`: RM-046 の「次アクション」を本調査内容に合わせて更新し、ブリーフ抽象化タスクを明確化。

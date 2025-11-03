@@ -1117,13 +1117,6 @@ def gen(
     type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
-    "--brief-policy",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_POLICY_PATH,
-    show_default=True,
-    help="ブリーフ生成ポリシー定義ファイル",
-)
-@click.option(
     "--output",
     "-o",
     "output_dir",
@@ -1138,25 +1131,10 @@ def gen(
     default=None,
     help="生成するカード枚数の上限",
 )
-@click.option(
-    "--ai-policy",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="AI ポリシー定義（将来拡張用）",
-)
-@click.option(
-    "--ai-policy-id",
-    type=str,
-    default=None,
-    help="AI ポリシー ID（将来拡張用）",
-)
 def content(
     brief_path: Path,
-    brief_policy: Path,
     output_dir: Path,
     card_limit: int | None,
-    ai_policy: Path | None,  # noqa: ARG001 - reserved for future use
-    ai_policy_id: str | None,
 ) -> None:
     """工程3 ブリーフ正規化: BriefCard 成果物を生成する。"""
 
@@ -1169,7 +1147,7 @@ def content(
         click.echo(f"ブリーフ入力の解析に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=2) from exc
 
-    policy_path = brief_policy or DEFAULT_BRIEF_POLICY_PATH
+    policy_path = DEFAULT_BRIEF_POLICY_PATH
     try:
         policy_set = load_brief_policy_set(policy_path)
     except BriefPolicyError as exc:
@@ -1180,7 +1158,7 @@ def content(
     try:
         document, meta, ai_logs = orchestrator.generate_document(
             source,
-            policy_id=ai_policy_id,
+            policy_id=None,
             card_limit=card_limit,
         )
     except BriefAIOrchestrationError as exc:
@@ -1227,8 +1205,6 @@ def content(
     click.echo(f"AI Generation Meta: {meta_path}")
     click.echo(f"Brief Story Outline: {story_outline_path}")
     click.echo(f"Audit Log: {audit_path}")
-    if ai_policy:
-        click.echo("※ --ai-policy オプションは現在未対応です（将来拡張用）。", err=True)
 
 
 @app.command("outline")
