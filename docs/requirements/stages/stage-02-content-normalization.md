@@ -1,76 +1,45 @@
-# 工程3 コンテンツ正規化 (HITL) 要件詳細
+# 工程2 コンテンツ正規化 (HITL) 要件詳細
 
 ## 概要
-- 入力データ（Markdown / CSV / JSON 等）をスライド素材へ整形し、ヒューマンレビューで承認を得る。
-- RM-005（プレゼンストーリーモデラー）で定義するストーリー構造を参照し、章立て・導入文・キーアングルをカードへ反映する。
-- AI が生成した案と人の修正を同時に扱い、承認済み要素はロックする。
-- 生成AIの活用により、ユースケース別ポリシーを切り替えながら初期ドラフトを自動生成できる。
+- ブリーフ入力を BriefCard へ正規化し、工程3 で直接利用できる JSON 群を `.brief/` に出力する。
+- 生成 AI とポリシー設定を切り替えられるようにしつつ、HITL による承認・差戻しの記録を残す。
+- 監査証跡と再現性を担保するため、生成結果・統計・成果物パスを `audit_log.json` にまとめる。
 
 ## 入力
-- ブリーフ情報、案件メモ、既存資料から抽出したテキスト・表。
-- 工程2 `layouts.jsonl` から得るレイアウト用途タグ（ヒントとして使用）。
-- ブランド・トーン設定、禁則・必須用語。
-- 生成AIポリシー (`config/content_ai_policies.json`) とポリシー ID。
-- プロンプト定義（`src/pptx_generator/content_ai/prompts.py`）。ポリシーは `prompt_id` を参照し、文字列本体は Python モジュール側で一元管理する。
+- Markdown / JSON 形式のブリーフ資料（CLI では位置引数で指定）。
+- 生成 AI ポリシー定義 `config/brief_policies/default.json`。
+- （任意）カード生成枚数 (`--card-limit`)。
 
 ## 出力
-- `content_approved.json`: スライド候補ごとのタイトル、本文、箇条書き、表、意図タグ、ストーリー要素（章分類、ストーリーフェーズ、メッセージアングル）。
-- レビューアクションログ: 承認/差戻し/付録送り等の操作履歴。
-- AI レビュー結果（グレード、改善提案、Auto-fix 案）。
-- `review_engine_analyzer.json`: Analyzer が出力した `issues` / `fixes` を Review Engine が消費できる形式に変換したファイル。スライド単位の `grade`（A/B/C）とサポートされている Auto-fix の JSON Patch を含む。
-- ストーリー骨子サマリ: RM-005 で規定する `story_outline.json` などドラフト構成連携用メタデータ。
-- `content_ai_log.json`: スライド単位のプロンプト、警告、利用モデルを保持する生成ログ。
-- `ai_generation_meta.json`: ポリシー ID、生成時刻、Spec ハッシュ、スライドごとの `content_hash`・意図タグ・本文行数を保持する。
+- `brief_cards.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）。
+- `brief_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
+- `brief_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
+- `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値。
+- `brief_story_outline.json`: 章 ID とカード ID の対応表。工程3 の章構成初期化に利用する。
+- `audit_log.json`: 生成時刻、ポリシー ID、成果物パス（将来的に SHA256 も記録予定）。
 
-## ワークフロー
-1. AI が候補コンテンツを生成し、カード単位で提示する（章／ストーリーフェーズ案を含む）。
-2. レビュワーが API クライアント（CLI や社内ツール）で文面・数値・意図タグを調整する。
-3. Auto-fix（安全な軽微修正）を適用し、AI レビューの診断結果とストーリー整合性の警告を確認する。
-4. 承認済み要素をロックし、差戻しは理由付きでログ化する。
-5. 承認データを `content_approved.json` として確定し、工程4へ送る。
+## 業務フロー
+1. CLI がブリーフ入力を読み込み、`BriefSourceDocument` へパースする。Markdown の見出しや箇条書きはカード候補に変換される。
+2. `BriefAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `--card-limit` が指定されていない限りポリシーまたは LLM 任せ。
+3. 生成結果を Pydantic モデルで検証し、`brief_cards.json` と関連ログファイルを出力する。
+4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
+5. 工程3 `pptx compose` が `--brief-cards` / `--brief-log` / `--brief-meta` オプションで成果物を参照し、章構成とマッピングを実行する。
 
-## API 要件
-- 認証は OAuth2 Client Credentials（Bearer Token）。未認証時は `401`、権限不足は `403` を返す。
-- ETag (`If-Match`) を用いた楽観的ロックを実装し、競合時は `412 Precondition Failed`。
-- サポートするエンドポイント（詳細は `docs/design/stages/stage-03-content-normalization.md` 参照）:
-  - `POST /v1/content/cards` – 初期カード登録。
-  - `PATCH /v1/content/cards/{slide_id}` – 本文・テーブルの更新、Auto-fix 適用。
-  - `POST /v1/content/cards/{slide_id}/approve` – 承認・ロック。
-  - `POST /v1/content/cards/{slide_id}/return` – 差戻し。
-  - `GET /v1/content/cards/{slide_id}` – 最新内容・履歴の取得。
-  - `GET /v1/content/logs` – 監査ログ取得（ページング／フィルタ対応）。
-- すべての更新系 API は `X-Actor`（操作者）、`X-Request-ID`（トレース ID）ヘッダを必須とする。
+## 監査・品質要件
+- 生成 AI が警告を返した場合は `brief_ai_log.json.warnings` に記録し、CLI 標準出力にも WARN を表示する。
+- `ai_generation_meta.json.statistics.cards_total` と `brief_cards.json.cards.length` が一致すること。
+- 生成カードの `status` 初期値は `draft`。HITL 承認後に `approved` / `returned` を設定して `brief_log.json` へ記録する。
+- 入力ブリーフのハッシュ (`input_hash`) は `audit_log.json` と `ai_generation_meta.json` の両方で整合させる。
 
-## 品質ゲート
-- 各カードに必須要素（タイトル・本文）が揃っていること。
-- ストーリーフェーズ（導入・課題・解決・効果など）が割り当てられ、章立て整合が保たれていること。
-- 数値と単位が整合し、禁則語が含まれていないこと。
-- 意図タグが設定されていること。
-- Auto-fix 適用箇所がログに記録され、再現可能であること。
-- Analyzer の `severity` に応じてスライド単位のグレードが算出され、Review Engine UI で優先度判断に利用できること。
+## CLI 要件
+- `pptx content <brief_path>` はブリーフが存在しない場合に exit code 2 を返す。
+- ポリシー読み込み失敗時（`BriefPolicyError`）は exit code 4 で終了し、エラーメッセージを標準エラーへ出力する。
+- 生成結果は `.brief/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。
+- `--card-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。
+- `--output` を指定して別ディレクトリへ書き込む際もファイル構成（`brief_cards.json` 等）は変えない。
 
-## ログ・インターフェース
-- `slide_id`, `action`, `actor`, `timestamp`, `notes` を最小セットとする監査ログ。
-- AI レビューの結果（評価レベル A/B/C、改善提案一覧、リスク警告）。
-- 差戻し理由と再生成履歴を連携し、再レビュー対象を特定できるようにする。
-- Analyzer 連携ログ: `review_engine_analyzer.json` を生成し、`audit_log.json` の `artifacts.review_engine_analysis` へ保存パスを記録する。サポート対象の Auto-fix タイプ（箇条書きレベル調整・フォントサイズ・文字色）のみ JSON Patch として出力し、それ以外は `notes.unsupported_fix_types` に列挙する。
-- 生成AIログ: `content_ai_log.json` の各エントリは `slide_id`・`prompt`・`model`・`warnings` を含み、監査時にプロンプト差異を追跡できる。
-- 生成AIメタ: `ai_generation_meta.json` に `content_hash` を保持し、将来的に `audit_log.json` の `artifacts.content_ai` セクションへ連携する前提とする。
-- CLI ログ: `pptx content` 実行時に `-v/--verbose` または `--debug` を指定すると、生成AIへのリクエストとレスポンス概要がログ出力される。
-- プロバイダー選択: `PPTX_LLM_PROVIDER`（`mock` / `openai` / `azure-openai` / `claude` / `aws-claude`）で LLM を切り替え、各 API キーやエンドポイントは環境変数で指定する（詳細は README を参照）。
-
-## 未実装項目（機能単位）
-- Review Engine UI での新グレード表示と未対応 Fix タイプのハンドリング。
-- コンテンツ承認 API と監査ログ整備。
-- AI レビューのスコアリングと Auto-fix ワークフロー。
-- 禁則語・必須項目のリアルタイム検知ルール。
-- ストーリー骨子の生成・編集手順（UI は将来計画、現時点では API を前提）。
-
-## CLI 支援
-- `pptx content` コマンドにより、承認済みコンテンツ／レビュー ログを検証したうえで Spec へ適用したスナップショット (`spec_content_applied.json`) とメタ情報 (`content_meta.json`) を生成できる。
-- CLI はコメント付き JSON の除去やハッシュ計算を行い、工程5以降で再利用可能な成果物を `.pptx/content/` 配下へ保存する。
-- 失敗時は `ContentApprovalError` を返し、未承認カードの有無や JSON バリデーションエラーを検知する。
-- 生成AIモードがデフォルトであり、`--content-source` や `--content-approved` を指定した場合のみ外部入力／承認ファイルを利用するモードへ切り替える。
-- 生成AIモードでは `content_draft.json`・`content_ai_log.json`・`ai_generation_meta.json` を出力する。ポリシーは既定設定（`config/content_ai_policies.json` の default_policy_id）を用い、`--content-source` との同時指定は不可。
-- スライド枚数は `--slide-count` オプションで明示指定できる。未指定時は LLM が判断し、モック実行時は 5 枚固定で生成する。
-- 生成AIモードでは `ContentAIOrchestrator` を用いて `status=draft` の `ContentSlide` を生成し、本文 40 文字×最大 6 行の制約を満たすよう抑制する。
+## 今後の拡張
+- ブリーフ差分比較（再生成時の変更可視化）機能。
+- 営業メモや CRM からの直接インポート（Markdown 自動生成）機能。
+- 承認 UI と BriefCard 編集 API。差戻しフローとの統合は RM-051 で管理。
+- 生成 AI のプロバイダーを CLI オプション化（現状は環境変数 `PPTX_LLM_PROVIDER` で切替）。

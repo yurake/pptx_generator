@@ -1,4 +1,4 @@
-# 工程5 PPTX 生成 要件詳細
+# 工程4 PPTX 生成 要件詳細
 
 ## 概要
 - テンプレ PPTX と `rendering_ready.json` を使用し、最終 `output.pptx` と付随ログを生成する。`rendering_ready` に含まれる `job_meta` / `job_auth` から `JobSpec` を再構成する。

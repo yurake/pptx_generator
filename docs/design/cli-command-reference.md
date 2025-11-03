@@ -78,107 +78,80 @@
 | `--baseline-release <path>` | 過去の `template_release.json` と比較する | 比較なし |
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
 
-### 工程3: ブリーフ正規化 (HITL)
-ブリーフ入力（Markdown / JSON 等）を BriefCard モデルへ正規化し、後続工程が参照する成果物を生成する。
+### 工程2: コンテンツ正規化 (HITL)
+ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.brief/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
 
 #### `pptx content`
-- 既定ポリシー（`config/brief_policies/default.json`）に従って章カードを構築し、`.brief/` 配下に成果物を出力する。
-- 入力形式は `BriefSourceDocument` が自動判定する。`.json` / `.jsonc` は JSON として、その他は Markdown テキストとして解析する。
+- 既定では BriefAI オーケストレーターを用いてカードを生成し、`config/brief_policies/default.json` のポリシーに従って AI との対話ログを収集する。
+- 生成カード枚数を制御したい場合は `--card-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `--output <dir>` | 生成物を保存するディレクトリ | `.brief` |
 | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 
-生成物:
-- `brief_cards.json`: BriefCard の配列（章/メッセージ/補完情報を保持）
-- `brief_log.json`: HITL ログ（初期状態は空配列）
-- `brief_ai_log.json`: 生成時のダイアログ／ワーニングのスタブ情報
-- `ai_generation_meta.json`: 生成メタ（統計・入力ハッシュ等）
+実行例:
+```bash
+uv run pptx content samples/contents/sample_import_content_summary.txt   --output .brief
+```
+
+生成物（例）:
+- `brief_cards.json`: BriefCard 配列
+- `brief_log.json`: 承認・差戻しイベントログ（初回は空配列）
+- `brief_ai_log.json`: 生成 AI との対話ログ
+- `ai_generation_meta.json`: 生成統計・入力ハッシュ
 - `brief_story_outline.json`: 章構成とカード紐付け
-- `audit_log.json`: 生成時刻・ポリシー ID・成果物パスをまとめた監査ログ
+- `audit_log.json`: 工程2の監査メタ情報
+### 工程3: マッピング (HITL + 自動)
+章構成の承認とレイアウト割付をまとめて実行し、`draft_approved.json` と `rendering_ready.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
-### 工程4: ドラフト構成設計 (HITL)
-章立てやスライド順を設計し、承認済みドラフトを出力する。
-
-#### `pptx outline`
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/draft` |
-| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
-| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
-| `--log-filename <filename>` | ドラフトレビュー ログのファイル名 | `draft_review_log.json` |
-| `--meta-filename <filename>` | ドラフトメタ情報のファイル名 | `draft_meta.json` |
-| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
-| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
-| `--layouts <path>` | 工程2の `layouts.jsonl` | 指定なし |
-| `--target-length <int>` | 目標スライド枚数 | Spec から推定 |
-| `--structure-pattern <text>` | 章構成パターン名 | `custom` |
-| `--appendix-limit <int>` | 付録枚数の上限 | 5 |
-| `--chapter-templates-dir <dir>` | 章テンプレート辞書ディレクトリ | `config/chapter_templates` |
-| `--chapter-template <id>` | 適用する章テンプレート ID（未指定時は構造パターンから推定） | 推定 |
-| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
-| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
-
-#### `pptx compose`
-- 工程4と工程5を連続実行し、ドラフト成果物とマッピング成果物を一括で更新する。
-- HITL でドラフト再承認後に `outline` → `mapping` を個別実行する手間を削減し、CLI 出力で両工程の成果物パスを確認できる。
+#### 推奨: `pptx compose`
+- 工程3全体を一括で実行し、ドラフト成果物（`.pptx/draft`）とマッピング成果物（`.pptx/gen`）を同時に更新する。
+- `--brief-*` オプションで工程2の成果物を指定する。既定値は `.brief/` 配下のファイルを参照する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--draft-output <dir>` | ドラフト成果物を保存するディレクトリ | `.pptx/draft` |
-| `--draft-filename <filename>` | ドラフト案ファイル名 | `draft_draft.json` |
-| `--approved-filename <filename>` | 承認済みドラフトファイル名 | `draft_approved.json` |
-| `--log-filename <filename>` | ドラフトレビュー ログファイル名 | `draft_review_log.json` |
-| `--meta-filename <filename>` | ドラフトメタ情報ファイル名 | `draft_meta.json` |
-| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` / `--brief-meta <path>` | `brief_log.json` / `ai_generation_meta.json`（任意） | `.brief/brief_log.json` / `.brief/ai_generation_meta.json` |
-| `--layouts <path>` | `layouts.jsonl` を参照して layout_hint 候補を補強 | 指定なし |
-| `--target-length <int>` / `--structure-pattern <text>` / `--appendix-limit <int>` | ドラフト構成パラメータ | Spec 由来 / 5 |
-| `--chapter-templates-dir <dir>` / `--chapter-template <id>` | 章テンプレート辞書と適用テンプレート ID | `config/chapter_templates` / 推定 |
-| `--import-analysis <path>` | `analysis_summary.json` を取り込み Analyzer 支援度を反映 | 指定なし |
-| `--show-layout-reasons` | layout_hint 候補スコアの内訳を標準出力に表示 | 無効 |
-| `--output <dir>` | `rendering_ready.json` など工程5成果物を保存するディレクトリ | `.pptx/gen` |
-| `--rules <path>` | 文字数や段落制限を定義したルール | `config/rules.json` |
-| `--template <path>` / `--branding <path>` | ブランド抽出テンプレート / ブランド設定 JSON | 指定なし / `config/branding.json` |
+| `--draft-output <dir>` | ドラフト成果物 (`draft_*`) の保存先 | `.pptx/draft` |
+| `--output <dir>` | マッピング成果物 (`rendering_ready.json` など) の保存先 | `.pptx/gen` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
+| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.brief/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--draft-filename` / `--approved-filename` / `--log-filename` / `--meta-filename` | ドラフト成果物のファイル名 | 既定値を継承 |
+| `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング | Spec から推定 |
+| `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID | `config/chapter_templates` / 自動推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する | 指定なし |
+| `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する | 無効 |
+| `--rules <path>` | マッピング時に参照するルール設定 | `config/rules.json` |
+| `--template <path>` | ブランド抽出に利用するテンプレート | 指定なし |
+| `--branding <path>` | ブランド設定ファイルを明示指定する | `config/branding.json` |
 
-生成物:
-- `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json`
-- `rendering_ready.json` / `mapping_log.json` / `fallback_report.json`（フォールバック発生時）
+実行例:
+```bash
+uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .brief/brief_cards.json   --brief-log .brief/brief_log.json   --brief-meta .brief/ai_generation_meta.json   --draft-output .pptx/draft   --output .pptx/gen   --layouts .pptx/extract/layouts.jsonl   --template samples/templates/templates.pptx
+```
 
-### 工程5: マッピング
-レイアウト割付とプレースホルダー設定を確定し、レンダリング準備を整える。
+#### 補助: `pptx outline`
+- HITL 作業（章構成確認）だけを個別に実行したい場合に利用。`draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json` を生成する。
+- `--brief-*` オプションは `compose` と共通。ドラフトのみ再生成したいケースやレビュー差戻しで活用する。
 
-#### `pptx mapping`
-- 工程5のみを単独実行し、`rendering_ready.json` と `mapping_log.json` を生成する。
-- 工程4と合わせて再実行したい場合は `pptx compose` を利用する。
-
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
-| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
-| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
-| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
-| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
-| `--draft-output <dir>` | `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` の出力先 | `.pptx/draft` |
-| `--template <path>` | ブランド抽出に使用するテンプレート（メタ情報に記録） | 指定なし |
-| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
-
-### 工程6: レンダリング
+#### 補助: `pptx mapping`
+- 自動マッピングのみを再実行したい場合に利用し、`rendering_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
+- `compose` と同様に `--brief-*` オプションを指定するか、既定の `.brief/` 出力を利用する。
+### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
 #### `pptx render`
-- `rendering_ready.json` を入力に工程6を実行する。`pptx gen` で内部的に呼び出される処理に相当する。
+- `rendering_ready.json` を入力に工程4を実行する。`pptx gen` で内部的に呼び出される処理に相当する。
+- `--export-pdf` を指定すると LibreOffice を用いて PDF も同時生成する。Polisher が有効な場合は PPTX 生成後に実行される。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
 | `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
+| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） | `config/branding.json` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
-| `--rules <path>` | Analyzer 設定を含むルールファイル | `config/rules.json` |
-| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
 | `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
 | `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
@@ -195,7 +168,7 @@
 | `--verbose` | 追加ログを表示する | 無効 |
 
 #### `pptx gen`
-- 工程5のマッピングと工程6のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx mapping` と `pptx render` を個別に利用する。
+- 工程2の成果物（Brief）を入力に、工程3のマッピングと工程4のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx compose` と `pptx render` を個別に利用する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
@@ -216,29 +189,29 @@
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--brief-cards <path>` | 工程3の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` | 工程3の `brief_log.json`（任意） | `.brief/brief_log.json` |
-| `--brief-meta <path>` | 工程3の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
-| `--layouts <path>` | 工程2の `layouts.jsonl` を参照し layout_hint 候補を算出する | 指定なし |
+| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.brief/brief_cards.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.brief/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
 | `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
 | `--verbose` | 追加ログを表示する | 無効 |
 
 ## 生成物とログの設計メモ
-- `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
-- `brief_cards.json` / `brief_log.json` / `brief_ai_log.json`: ブリーフ正規化工程で作成されるカード本体・HITL ログ・生成ログ。
-- `ai_generation_meta.json`: ブリーフ生成の統計・入力ハッシュ・ポリシー情報。
-- `brief_story_outline.json`: 章テンプレートとカードの対応を示すアウトライン。
-- `audit_log.json`（.brief 配下）: ブリーフ成果物の監査情報。
+- `brief_cards.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
 - `rendering_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
-- `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。
-- `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、PDF/Polisher のメタ情報。
 - `draft_draft.json` / `draft_approved.json`: Draft API/CLI が利用する章構成データ。
 - `draft_review_log.json`: Draft 操作ログ。
 - `draft_meta.json`: `pptx outline` が出力する章数・スライド数・承認状況メタ。
+- `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
+- `monitoring_report.json`: Analyzer/レンダリングの警告件数サマリ。
+- `analysis.json` / `review_engine_analyzer.json`: レンダリング結果の解析・レビュー用メタ。
+- `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
+- `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、PDF/Polisher のメタ情報。
 - `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存されるブランド設定。
+
 
 ## 運用上のポイント
 - Polisher を有効化する場合は .NET 8 SDK を導入し、`config/rules.json` の `polisher` 設定と整合させる。

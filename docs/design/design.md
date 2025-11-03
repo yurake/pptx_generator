@@ -34,12 +34,12 @@
 
 README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化した Mermaid フローを掲載しているため、工程の全体像を素早く把握したい場合は併せて確認する。
 
-1. **テンプレ準備**（自動）  
-   テンプレ資産（`.pptx`）を整備し、バージョン管理を行う。差分検証は工程 2 で実施。
-2. **テンプレ構造抽出**（自動）  
-   テンプレからレイアウト情報を抽出し、`layouts.jsonl` / `diagnostics.json` を生成。収容目安はヒントとして扱う。
-3. **ブリーフ正規化**（HITL）  
-   ブリーフ入力を BriefCard に整形し、AI 補助と監査ログを付与した `brief_cards.json` を確定する。承認フローやログ仕様は `docs/requirements/stages/stage-03-content-normalization.md` を参照。
+1. **テンプレ工程**（自動＋HITL）  
+   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
+2. **コンテンツ正規化**（HITL）  
+   ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、`.brief/` に `brief_cards.json`・`brief_log.json`・`brief_ai_log.json`・`ai_generation_meta.json`・`brief_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
+3. **マッピング（HITL + 自動）**  
+   Brief 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。`draft_approved.json` と `rendering_ready.json` を生成し、マッピング履歴や Analyzer 集計を `mapping_log.json` に記録する。
 4. **PPTX レンダリング**（自動）  
    `rendering_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
@@ -48,12 +48,9 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
-| ブリーフ正規化 | ブリーフ入力（Markdown / JSON） | `brief_cards.json`, `brief_log.json`, `ai_generation_meta.json` | BriefCard 生成、監査ログ（`audit_log.json`） |
-| ドラフト構成 | `brief_cards.json`, `layouts.jsonl` | `draft_draft.json` → `draft_approved.json` | 章レーン構成データ（CLI / API 提供）、付録への退避、承認ログ（`draft_review_log.json`） |
-| マッピング | `draft_approved.json`, `brief_cards.json`, `layouts.jsonl` | `rendering_ready.json`, `mapping_log.json` | ルールベース＋AI 補完、フォールバック（縮約→分割→付録） |
-| レンダリング | `rendering_ready.json`, `template.pptx` | `output.pptx`, `rendering_log.json`, `audit_log.json` | 軽量整合チェック（空 PH / 表 / layout ミスマッチ） |
-
-各 JSON のスキーマは `docs/design/schema/README.md` 配下に記載し、実装は `pptx_generator/models.py`・テストは `tests/` 配下で検証する。
+| コンテンツ正規化 | ブリーフ入力（Markdown / JSON） | `brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json` | BriefCard 生成、AI レビュー結果・監査メタを保存 |
+| マッピング (HITL + 自動) | `jobspec.json`, `brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `layouts.jsonl`, `branding.json` | `draft_draft.json` → `draft_approved.json`, `draft_meta.json`, `draft_review_log.json`, `rendering_ready.json`, `mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録） |
+| レンダリング | `rendering_ready.json`, `template.pptx`, `branding.json` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | 軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
 
 ### 3.2 工程別設計ドキュメント
 | 工程 | 設計ドキュメント | 主な設計観点 |
@@ -66,35 +63,35 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 ### 3.3 工程別入出力一覧
 | ファイル名 | 必須区分 | 概要 | 使用する工程 |
 |-------------|-----------|------|---------------|
-| template.pptx | 必須（ユーザー準備） | ユーザー準備のPPTXテンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S2 入 / S5 入 / S6 入 |
+| template.pptx | 必須（ユーザー準備） | ユーザー準備の PPTX テンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S3 入 / S4 入 |
 | template_release.json | 任意 | テンプレのリリースメタ。差分・版管理用。 | S1 入（過去版） / S1 出 |
 | release_report.json | 任意 | テンプレ差分レポート。 | S1 出 |
 | golden_runs/* | 任意 | ゴールデンテスト実行結果。テンプレ検証用。 | S1 出 |
-| branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S2 出 / S5 入 / S6 入 |
-| layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S2 出 / S4 入 / S5 入 |
-| diagnostics.json | 任意 | 抽出/検証時の診断。 | S2 出 |
-| diff_report.json | 任意 | 抽出結果の差分レポート。 | S2 出 |
-| brief_source.(md/json) | 必須（ユーザー準備） | ブリーフ入力。章カード生成の元データ。 | S3 入 |
-| brief_cards.json | 必須 | ブリーフ正規化の成果物。以後の中核データ。 | S3 出 / S4 入 / S5 入 |
-| brief_log.json | 任意 | ブリーフレビューのログ。トレーサビリティ。 | S3 出 / S4 入 / S5 入 |
-| ai_generation_meta.json | 任意 | ブリーフ生成の統計・入力ハッシュ。 | S3 出 / S4 入 |
-| brief_story_outline.json | 任意 | 章構造とカード紐付け。 | S3 出 / S4 入 |
-| draft_approved.json | 必須 | 人手承認済みドラフト。ページ順/章立て確定。 | S4 出 / S5 入 |
-| draft_meta.json | 任意 | ドラフト工程のメタ情報。 | S4 出 |
-| draft_review_log.json | 任意 | ドラフトレビューのログ。 | S4 出 / S5 入 |
-| rules.json | 任意 | 文字量や禁止語などの規則。マッピング/解析に使用。 | S5 入 / S6 入 |
-| rendering_ready.json | 必須 | マッピング結果。レイアウト割付済みの描画直前仕様。 | S5 出 / S6 入 |
-| mapping_log.json | 任意 | マッピング過程のログ。レイアウトスコア等。 | S5 出 |
-| fallback_report.json | 任意 | フォールバック発生の記録。 | S5 出 |
-| proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S6 出 |
-| proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S6 出 |
-| analysis.json | 任意 | 生成物の詳細解析結果。 | S6 出 |
-| rendering_log.json | 任意 | レンダリングの要約ログ。 | S6 出 |
-| audit_log.json | 任意 | 実行監査ログ。 | S6 出 |
-| review_engine_analyzer.json | 任意 | レビュー用に整形した解析出力。 | S6 出 |
-| analysis_snapshot.json | 任意 | 構造スナップショット。PH対応の記録。 | S6 出 |
-| polisher + rules | 任意 | 仕上げ調整用。Polisher利用時に使用。 | S6 入 |
-| PDF出力設定 | 任意 | LibreOffice等のPDF変換設定。 | S6 入 |
+| template_spec.json | 任意 | テンプレートの構造仕様。 | S1 出 / S3 入 |
+| jobspec.json | 必須 | テンプレ依存のスライド仕様カタログ。 | S1 出 / S3 入 / S4 入 |
+| branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S1 出 / S3 入 / S4 入 |
+| layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S1 出 / S3 入 |
+| diagnostics.json / diff_report.json | 任意 | 抽出/検証時の診断および差分レポート。 | S1 出 |
+| brief_cards.json | 必須（工程2出口） | BriefCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |
+| brief_log.json | 任意 | ブリーフレビュー／承認ログ。 | S2 出 / S3 入 |
+| brief_ai_log.json | 任意 | 生成AIとのやり取りログ。 | S2 出 / S3 入 |
+| ai_generation_meta.json | 任意 | 生成カード枚数やハッシュなどの統計情報。 | S2 出 / S3 入 |
+| brief_story_outline.json | 任意 | 章構成とカード紐付け。 | S2 出 / S3 入 |
+| brief/audit_log.json | 任意 | コンテンツ工程の監査ログ。 | S2 出 |
+| draft_draft.json | 任意 | HITL 承認前のドラフト。 | S3 出 |
+| draft_approved.json | 必須 | 章立て・ページ順が確定したドラフト。 | S3 出 / S4 入 |
+| draft_meta.json | 任意 | ドラフト工程のメタ情報。 | S3 出 |
+| draft_review_log.json | 任意 | ドラフトレビューのログ。 | S3 出 |
+| rendering_ready.json | 必須 | レイアウト割付済みの描画直前仕様。 | S3 出 / S4 入 |
+| mapping_log.json | 任意 | スコアリング・フォールバック・AI 補完の記録。 | S3 出 |
+| fallback_report.json | 任意 | 重大フォールバック時の詳細。 | S3 出 |
+| rules.json | 任意 | レイアウト割付で参照するルール設定。 | S3 入 / S4 入 |
+| proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S4 出 |
+| proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S4 出 |
+| analysis.json / review_engine_analyzer.json | 任意 | レンダリング結果の解析・レビュー用メタ。 | S4 出 |
+| rendering_log.json / monitoring_report.json | 任意 | レンダリング工程のサマリと監視レポート。 | S4 出 |
+| audit_log.json | 任意 | レンダリング工程の監査ログ。 | S4 出 |
+| analysis_snapshot.json | 任意 | レイアウト構造スナップショット。 | S4 出 |
 
 ### 3.3 レイアウトカバレッジ指針 (RM-043)
 - テンプレ標準 `samples/templates/templates.pptx` は 50 ページ規模のカバレッジを確保し、セクション区切り・ビジネスサマリー・タイムライン・KPI・財務・組織・プロセス・リスク・データビジュアル・クロージングの各カテゴリへ最低 3 パターンずつ割り当てる。
