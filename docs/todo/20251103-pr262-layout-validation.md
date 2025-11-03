@@ -1,7 +1,7 @@
 ---
 目的: PR #262 のレイアウト検証エラー検出処理の実装を整備する
 関連ブランチ: feat/rm046-brief-automation
-関連Issue: 未作成
+関連Issue: #263
 roadmap_item: RM-046 生成AIブリーフ構成自動化
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
