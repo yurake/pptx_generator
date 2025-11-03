@@ -17,23 +17,23 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
     - テスト方針: `pytest tests/test_cli_integration.py::test_cli_tpl_extract_validation_failure_exits_with_error`（新設）を実行し、終了コードとメッセージを確認。
     - ロールバック方法: 追加ロジックとテストを差分撤回し、`tpl_extract` の処理を元に戻す。
     - 承認メッセージ ID／リンク: （この会話でのユーザー承認。CLI 環境上でメッセージ ID 取得不可のため作業ログで補足）
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針の確定
+  - メモ: Plan で整理した方針（CLI 側でエラー件数を監視し exit code 6 を返す）の通り実装し、追加検討事項は発生せず。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: コード修正のみで既存要件／設計ドキュメントに変更は不要と判断。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `tpl_extract` にレイアウト検証エラー時の終了コード 6 返却処理を追加し、`click.exceptions.Exit` の再ラップを防ぐガードを導入。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_tpl_extract_validation_failure_exits_with_error` / `uv run --extra dev pytest`
-- [ ] ドキュメント更新
-  - メモ: 
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: 影響範囲に追加ドキュメントはなく、既存資料の整合も確認済み。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] PR 作成
