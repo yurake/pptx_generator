@@ -13,6 +13,7 @@ from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 from pptx_generator.models import (JobSpec, JobSpecScaffold, TemplateRelease,

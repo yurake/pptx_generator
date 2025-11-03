@@ -27,7 +27,7 @@ roadmap_item: RM-051 テンプレ工程統合集約
 - [x] 実装
   - メモ: origin/main のブリーフ統合差分をマージし、`cli.py` の競合解消とテンプレ工程コマンドの統合動作を調整。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest` を実施し 162 件成功。CLI 統合テストを新仕様に合わせて更新済み。
+  - メモ: `uv run --extra dev pytest` を実施し 162 件成功。CLI 統合テストを新仕様に合わせて更新済み。2025-11-04 に再マージ差分を確認し、`tests/test_cli_integration.py` の import 整合性を調整後に再実行して全件成功を確認。
 - [x] ドキュメント更新
   - メモ: README / design / requirements の工程表現を最新化。roadmap ほか追加更新なしを確認。
   - [x] docs/roadmap 配下
