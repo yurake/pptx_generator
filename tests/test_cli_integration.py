@@ -1047,9 +1047,18 @@ def test_cli_tpl_extract_basic(tmp_path) -> None:
     jobspec_data = json.loads(jobspec_path.read_text(encoding="utf-8"))
     jobspec = JobSpecScaffold.model_validate(jobspec_data)
     assert jobspec.meta.template_path == str(template_path)
+
+    layouts_path = output_dir / "layouts.jsonl"
+    diagnostics_path = output_dir / "diagnostics.json"
+    assert layouts_path.exists()
+    assert diagnostics_path.exists()
+
     assert jobspec.slides, "少なくとも1件のスライドが出力されること"
     assert "ジョブスペック雛形を出力しました" in result.output
     assert "ジョブスペックのスライド数:" in result.output
+    assert "Layouts:" in result.output
+    assert "Diagnostics:" in result.output
+    assert "検出結果: warnings=" in result.output
 
 
 def test_cli_tpl_extract_custom_output(tmp_path) -> None:
@@ -1174,6 +1183,8 @@ def test_cli_tpl_extract_verbose_output(tmp_path) -> None:
     assert "抽出されたレイアウト数:" in result.output
     assert "抽出された図形・アンカー数:" in result.output
     assert "ジョブスペックのスライド数:" in result.output
+    assert "Layouts:" in result.output
+    assert "Diagnostics:" in result.output
 
 
 def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
@@ -1225,6 +1236,13 @@ def test_cli_tpl_extract_with_mock_presentation(tmp_path) -> None:
         jobspec = JobSpecScaffold.model_validate(jobspec_data)
         assert jobspec.meta.template_path == str(temp_template_path)
 
+        layouts_path = output_dir / "layouts.jsonl"
+        diagnostics_path = output_dir / "diagnostics.json"
+        assert layouts_path.exists()
+        assert diagnostics_path.exists()
+        assert "Layouts:" in result.output
+        assert "Diagnostics:" in result.output
+
     finally:
         # 一時ファイルをクリーンアップ
         temp_template_path.unlink()
@@ -1254,9 +1272,13 @@ def test_cli_tpl_extract_default_output_directory(tmp_path) -> None:
         spec_path = output_dir / "template_spec.json"
         branding_path = output_dir / "branding.json"
         jobspec_path = output_dir / "jobspec.json"
+        layouts_path = output_dir / "layouts.jsonl"
+        diagnostics_path = output_dir / "diagnostics.json"
         assert spec_path.exists()
         assert branding_path.exists()
         assert jobspec_path.exists()
+        assert layouts_path.exists()
+        assert diagnostics_path.exists()
 
 
 def test_cli_tpl_release_generates_outputs(tmp_path) -> None:

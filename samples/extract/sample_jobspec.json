@@ -1,0 +1,2538 @@
+{
+  "meta": {
+    "schema_version": "0.1",
+    "template_path": "samples/templates/templates.pptx",
+    "template_id": "templates",
+    "generated_at": "2025-11-02T12:45:11.641038+00:00",
+    "layout_count": 24
+  },
+  "slides": [
+    {
+      "id": "title-01",
+      "layout": "Title",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Title",
+          "kind": "text",
+          "placeholder_type": "CENTER_TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.34166447944007,
+            "top_in": 2.3344160104986877,
+            "width_in": 12.649997812773403,
+            "height_in": 2.8311679790026245
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.740260279965004,
+            "width_in": 12.6499989063867,
+            "height_in": 0.9480533683289589
+          },
+          "sample_text": "マスター サブタイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Text1",
+          "kind": "text",
+          "placeholder_type": "BODY",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416655730533683,
+            "top_in": 0.5064949693788277,
+            "width_in": 12.649996719160105,
+            "height_in": 0.6883103674540683
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Logo",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 11.991662292213473,
+            "top_in": 0.1948053368328959,
+            "width_in": 1.0,
+            "height_in": 1.0
+          },
+          "sample_text": "logo",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "section_covor_left-01",
+      "layout": "Section Covor Left",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Section Title",
+          "kind": "text",
+          "placeholder_type": "CENTER_TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.34166447944007,
+            "top_in": 2.3344160104986877,
+            "width_in": 12.649997812773403,
+            "height_in": 2.8311679790026245
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Section Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.34166338582677164,
+            "top_in": 5.299324146981627,
+            "width_in": 12.6499989063867,
+            "height_in": 0.9480533683289589
+          },
+          "sample_text": "マスター サブタイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Logo",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 11.991662292213473,
+            "top_in": 0.1948053368328959,
+            "width_in": 1.0,
+            "height_in": 1.0
+          },
+          "sample_text": "logo",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "section_covor_center-01",
+      "layout": "Section Covor Center",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Section Title",
+          "kind": "text",
+          "placeholder_type": "CENTER_TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.34166447944007,
+            "top_in": 2.3344160104986877,
+            "width_in": 12.649997812773403,
+            "height_in": 2.8311679790026245
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Section Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.34166338582677164,
+            "top_in": 5.299324146981627,
+            "width_in": 12.6499989063867,
+            "height_in": 0.9480533683289589
+          },
+          "sample_text": "マスター サブタイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Logo",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 11.991662292213473,
+            "top_in": 0.1948053368328959,
+            "width_in": 1.0,
+            "height_in": 1.0
+          },
+          "sample_text": "logo",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "agenda-01",
+      "layout": "Agenda",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Agenda",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.6493503937007874,
+            "width_in": 12.65,
+            "height_in": 6.059387576552931
+          },
+          "sample_text": "目次1\n目次2\n目次2-1\n目次2-2\n目次2-2-1\n目次2-2-2",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Logo",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 11.991662292213473,
+            "top_in": 0.1948053368328959,
+            "width_in": 1.0,
+            "height_in": 1.0
+          },
+          "sample_text": "logo",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "one_column_detail-01",
+      "layout": "One Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 12.65,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": [
+            "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
+          ]
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "two_rows_detail-01",
+      "layout": "Two Rows Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402613735783028,
+            "width_in": 12.65,
+            "height_in": 2.3824365704286965
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.345825678040245,
+            "width_in": 12.65,
+            "height_in": 2.3824365704286965
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "two_column_detail-01",
+      "layout": "Two Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 6.18260498687664,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 1.740259186351706,
+            "width_in": 6.18260498687664,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "left_highlight_detail-01",
+      "layout": "Left Highlight Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 6.18260498687664,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 1.740259186351706,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4119149168853893
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 4.357655293088364,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4119149168853893
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "right_highlight_detail-01",
+      "layout": "Right Highlight Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 1.7546216097987752,
+            "width_in": 6.18260498687664,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3333333333333333,
+            "top_in": 1.740259186351706,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4119149168853893
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3333333333333333,
+            "top_in": 4.357655293088364,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4119149168853893
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "three_rows_detail-01",
+      "layout": "Three Rows Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7076541994750656,
+            "width_in": 12.65,
+            "height_in": 1.6122615923009624
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.445825678040245,
+            "width_in": 12.65,
+            "height_in": 1.6122615923009624
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.1806091426071745,
+            "width_in": 12.65,
+            "height_in": 1.6122615923009624
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "four_rows_detail-01",
+      "layout": "Four Rows Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.707655293088364,
+            "width_in": 12.65,
+            "height_in": 1.1426531058617673
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.014798775153106,
+            "width_in": 12.65,
+            "height_in": 1.1426531058617673
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.321942257217848,
+            "width_in": 12.65,
+            "height_in": 1.1426531058617673
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.629086832895888,
+            "width_in": 12.65,
+            "height_in": 1.1426531058617673
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "executive_summary-01",
+      "layout": "Executive Summary",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Body Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 6.18260498687664,
+            "height_in": 3.394355861767279
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 1.740259186351706,
+            "width_in": 6.18260498687664,
+            "height_in": 3.394355861767279
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Notes",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.316433727034121,
+            "width_in": 12.65,
+            "height_in": 1.4527974628171478
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "three_column_detail-01",
+      "layout": "Three Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402580927384077,
+            "width_in": 4.13571741032371,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 1.7402569991251093,
+            "width_in": 4.13571741032371,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 1.7402580927384077,
+            "width_in": 4.13571741032371,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "four_column_detail-01",
+      "layout": "Four Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4295505249343834
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 1.740259186351706,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4295505249343834
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.34582239720035,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4295505249343834
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.809061679790026,
+            "top_in": 4.345821303587051,
+            "width_in": 6.18260498687664,
+            "height_in": 2.4295505249343834
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "six_column_detail-01",
+      "layout": "Six Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body Upper Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.740259186351706,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 1.7402580927384077,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Upper Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 1.740259186351706,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.266797900262468,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 4.266796806649169,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Lower Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 4.266797900262468,
+            "width_in": 4.13571741032371,
+            "height_in": 2.3575667104111986
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "nine_column_detail-01",
+      "layout": "Nine Column Detail",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Body Top Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.759265091863517,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Top Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 1.759265091863517,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Top Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 1.759265091863517,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Middle Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.4899726596675418,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Middle Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 3.4899726596675418,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 3.4899726596675418,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Bottom Left",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.220681321084864,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Bottom Right",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 8.855949256342956,
+            "top_in": 5.220681321084864,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Body Bottom Center",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.598807961504812,
+            "top_in": 5.220681321084864,
+            "width_in": 4.13571741032371,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "three_list-01",
+      "layout": "Three List",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.759265091863517,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 1.759265091863517,
+            "width_in": 9.165579615048118,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.4899726596675418,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 3.4899726596675418,
+            "width_in": 9.165579615048118,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.220681321084864,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 5.220681321084864,
+            "width_in": 9.165579615048118,
+            "height_in": 1.529884076990376
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "four_list-01",
+      "layout": "Four List",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.8462204724409448,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 1.8462204724409448,
+            "width_in": 9.165579615048118,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.111783683289589,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 3.111783683289589,
+            "width_in": 9.165579615048118,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.377346894138233,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 4.377346894138233,
+            "width_in": 9.165579615048118,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.642910104986877,
+            "width_in": 3.3105074365704286,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 5.642910104986877,
+            "width_in": 9.165579615048118,
+            "height_in": 1.0510575240594926
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "five_list-01",
+      "layout": "Five List",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.8462204724409448,
+            "width_in": 3.3105074365704286,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 1.8462204724409448,
+            "width_in": 9.165579615048118,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 2.856298118985127,
+            "width_in": 3.3105074365704286,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 2.856298118985127,
+            "width_in": 9.165579615048118,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 3.866375765529309,
+            "width_in": 3.3105074365704286,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 3.866375765529309,
+            "width_in": 9.165579615048118,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 5",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 5.886531058617673,
+            "width_in": 3.3105074365704286,
+            "height_in": 0.8110236220472441
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 5",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 5.886531058617673,
+            "width_in": 9.165579615048118,
+            "height_in": 0.8110236220472441
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Key 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 4.876453412073491,
+            "width_in": 3.3105074365704286,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Value 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.826087051618548,
+            "top_in": 4.876453412073491,
+            "width_in": 9.165579615048118,
+            "height_in": 0.8074354768153981
+          },
+          "sample_text": "マスター テキストの書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "two_flow-01",
+      "layout": "Two Flow",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Flow 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7474398512685914,
+            "width_in": 5.620550087489064,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 7.3711187664042,
+            "top_in": 1.7474398512685914,
+            "width_in": 5.620550087489064,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 1",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 6.394928915135608,
+            "top_in": 3.792957130358705,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "three_flow-01",
+      "layout": "Three Flow",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Flow 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.33758530183727037,
+            "top_in": 1.7474398512685914,
+            "width_in": 3.7597430008748907,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Flow 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.231923665791776,
+            "top_in": 1.7402569991251093,
+            "width_in": 3.7597430008748907,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 4.786795713035871,
+            "top_in": 1.7402580927384077,
+            "width_in": 3.7597430008748907,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 1",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 4.172364391951006,
+            "top_in": 3.7857742782152233,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 2",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 8.614328521434821,
+            "top_in": 3.7857742782152233,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "1_two_flow-01",
+      "layout": "1_Two Flow",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Flow 1",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.36383748906386704,
+            "top_in": 1.7474398512685914,
+            "width_in": 2.383662510936133,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow 2",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 3.7845942694663166,
+            "top_in": 1.7474398512685914,
+            "width_in": 2.383662510936133,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 2",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 6.394928915135608,
+            "top_in": 3.792957130358705,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        },
+        {
+          "anchor": "Flow 3",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 7.205351049868766,
+            "top_in": 1.7474398512685914,
+            "width_in": 2.383662510936133,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow 4",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 10.626107830271216,
+            "top_in": 1.7474398512685914,
+            "width_in": 2.383662510936133,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 1",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 2.9741721347331582,
+            "top_in": 3.792957130358705,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        },
+        {
+          "anchor": "Flow Image Arrow 3",
+          "kind": "other",
+          "placeholder_type": null,
+          "shape_type": "Shape",
+          "is_placeholder": false,
+          "bounds": {
+            "left_in": 9.89219050743657,
+            "top_in": 3.792957130358705,
+            "width_in": 0.543477690288714,
+            "height_in": 0.9239129483814523
+          },
+          "sample_text": null,
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "closing-01",
+      "layout": "Closing",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Body",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 1.7402602799650044,
+            "width_in": 12.65,
+            "height_in": 5.014948600174979
+          },
+          "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
+          "notes": [
+            "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
+          ]
+        },
+        {
+          "anchor": "Num",
+          "kind": "text",
+          "placeholder_type": "SLIDE_NUMBER",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 9.416666666666666,
+            "top_in": 6.951388888888889,
+            "width_in": 3.575,
+            "height_in": 0.3993055555555556
+          },
+          "sample_text": "‹#›",
+          "notes": []
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": []
+        },
+        {
+          "anchor": "Main Message",
+          "kind": "text",
+          "placeholder_type": "TITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.649349300087489,
+            "width_in": 12.65,
+            "height_in": 0.9090912073490813
+          },
+          "sample_text": "マスター タイトルの書式設定",
+          "notes": []
+        }
+      ]
+    },
+    {
+      "id": "closin_covor-01",
+      "layout": "Closin Covor",
+      "sequence": 1,
+      "placeholders": [
+        {
+          "anchor": "Logo",
+          "kind": "image",
+          "placeholder_type": "OBJECT",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 6.166666666666667,
+            "top_in": 3.25,
+            "width_in": 1.0,
+            "height_in": 1.0
+          },
+          "sample_text": "logo",
+          "notes": []
+        }
+      ]
+    }
+  ]
+}

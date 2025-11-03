@@ -43,6 +43,7 @@ flowchart TB
         RM035["RM-035<br/>テンプレートリリース<br/>監査強化<br/>(完了)"]
         RM038["RM-038<br/>テンプレートパターン<br/>拡充<br/>(完了)"]
         RM043["RM-043<br/>サンプルテンプレ<br/>拡充<br/>(完了)"]
+        RM051["RM-051<br/>テンプレ工程統合集約<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: テンプレ構造抽出"]
@@ -54,8 +55,8 @@ flowchart TB
         RM011["RM-011<br/>レイアウトスタイル統一<br/>(完了)"]
         RM022["RM-022<br/>レイアウト解析<br/>検証強化<br/>(完了)"]
         RM028["RM-028<br/>Analyzer 構造抽出<br/>差分連携<br/>(完了)"]
-        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(未着手)"]
-        RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(未着手)"]
+        RM044["RM-044<br/>ジョブスペック雛形<br/>自動生成<br/>(完了)"]
+        RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(完了)"]
     end
 
     subgraph ST3["Stage 3: コンテンツ正規化 (HITL)"]
@@ -689,27 +690,27 @@ flowchart TB
 ### RM-044 ジョブスペック雛形自動生成
 - 対象工程: 2（テンプレ構造抽出）
 - ゴール: テンプレ抽出時にページ単位の spec 雛形を自動生成し、工程3以降で共通利用できる `spec_scaffold.json` を整備する。
-- 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定（本ブランチでロードマップ項目分割後に発行）
-- 状況: 未着手（2025-11-07 追加）
-- 期待成果: CLI/API 仕様、スキーマ定義、サンプルデータ。工程3 の `pptx content` が scaffold を入力に受け取れること。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照 ToDo: [docs/todo/archive/20251102-rm044-spec-scaffold.md](../todo/archive/20251102-rm044-spec-scaffold.md)
+- 状況: 完了（2025-11-02 更新）
+- 達成成果: `tpl-extract` パイプラインで `jobspec.json`（spec scaffold）を自動生成し、`samples/extract/` への成果物提供と CLI ドキュメント更新を完了。工程3 以降で雛形を参照できるようにした。
 - 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
 
 <a id="rm-045"></a>
 ### RM-045 テンプレ抽出検証ラッパー整備
 - 対象工程: 2（テンプレ構造抽出）
 - ゴール: `tpl-extract` と `layout-validate` の連続実行を自動化し、抽出直後の検証をワンコマンドで行えるようにする。
-- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
-- 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照 ToDo: [docs/todo/archive/20251102-rm045-template-validation-wrapper.md](../todo/archive/20251102-rm045-template-validation-wrapper.md)
+- 状況: 完了（2025-11-02 更新）
 - 期待成果: `tpl-extract --validate`（仮）仕様、CI での再実行サンプル、ユーザー向け手順書。
-- 次アクション: CLI オプション案とログ出力フォーマットを整理し、UX 観点の要件レビューを行う。
+- 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
 
 <a id="rm-046"></a>
 ### RM-046 生成AIブリーフ構成自動化
 - 対象工程: 3（コンテンツ正規化）
 - ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
-- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 未着手（2025-11-07 追加）
 - 期待成果: 生成AIモードの `pptx content` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
@@ -719,7 +720,7 @@ flowchart TB
 ### RM-047 テンプレ統合構成生成AI連携
 - 対象工程: 4（ドラフト構成設計）
 - ゴール: 工程3で生成されたブリーフと工程2の spec 雛形をマージし、`layout_hint` 付きの `draft_approved.json` 下書きを生成する。
-- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 未着手（2025-11-07 追加）
 - 期待成果: 生成AIと HITL の連携仕様、`pptx outline` 拡張案、差戻しログの整合。
@@ -729,7 +730,7 @@ flowchart TB
 ### RM-048 工程4+5 統合CLI整備
 - 対象工程: 4（マッピング）
 - ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
-- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
@@ -739,7 +740,7 @@ flowchart TB
 ### RM-049 pptx gen スコープ最適化
 - 対象工程: 5（レンダリング）
 - ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4ラッパーと責務を分離する。
-- 参照ドキュメント: [docs/requirements/stages/stage-05-rendering.md](../requirements/stages/stage-05-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-05-rendering.md](../requirements/stages/stage-05-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 未着手（2025-11-07 追加）
 - 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。
@@ -749,11 +750,21 @@ flowchart TB
 ### RM-050 ロードマップ参照整備
 - 対象工程: 横断（ドキュメント運用）
 - ゴール: ロードマップ項目にジョブスペック再設計ノートなどの参照リンクを追加し、関連ドキュメントの所在を明確化する。
-- 参照ドキュメント: [docs/notes/20251107-stage2-jobspec-overview.md](../notes/20251107-stage2-jobspec-overview.md), [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md)
+- 参照ドキュメント: [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md), [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm050-roadmap-link.md](../todo/archive/20251102-rm050-roadmap-link.md)
 - 状況: 完了（2025-11-01 更新）
 - 期待成果: RM-044〜RM-049 など関連項目の参照ドキュメント欄が統一され、Plan 承認内容の転記運用が徹底されている状態。
 - 次アクション: 参照追加後の運用フローを確認し、追加の参照整備が必要なロードマップ項目を棚卸しする。
+
+<a id="rm-051"></a>
+### RM-051 テンプレ工程統合集約
+- 対象工程: 1（テンプレ準備）
+- ゴール: 現行の工程1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照 ToDo: 作成予定
+- 状況: 未着手（2025-11-03 追加）
+- 期待成果: `uv run pptx template` 仕様書、`tpl-extract` → `layout-validate` 連携と extra args 指摘時の `tpl-release` 実行要件、工程番号再編に伴うドキュメント更新一覧。
+- 次アクション: CLI 要件ドラフト作成、工程番号影響範囲の棚卸し、対応ToDoとブランチの準備。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
