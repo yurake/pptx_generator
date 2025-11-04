@@ -22,7 +22,7 @@
 - 新しい `BriefCard` モデル（`chapter`, `message`, `narrative`, `supporting_points[]`, `evidence_links[]`, `status` など）を `ContentSlide` から派生または置き換え、`story.phase` / `story.goal` を必須化する。
 - HITL ログは `card_id` と `version`（ETag 相当）を持たせ、差戻し・再生成履歴を保持。AI 生成ログもカード単位で参照できるよう `ai_generation_meta.json` を再設計する。
 - 後工程（RM-047）に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。
-- スキーマ更新時は `docs/design/schema/stage-03-content-normalization.md` と `docs/requirements/stages/stage-03-content-normalization.md` を同時更新し、`samples/` 配下に BriefCard 前提のサンプル（例: `samples/brief/prepare_card.sample.jsonc`）を追加する。
+- スキーマ更新時は `docs/design/schema/stage-03-content-normalization.md` と `docs/requirements/stages/stage-03-content-normalization.md` を同時更新し、`samples/` 配下に BriefCard 前提のサンプル（例: `samples/prepare/prepare_card.sample.jsonc`）を追加する。
 
 ## CLI インターフェース検討
 - 要望: `uv run pptx prepare <brief file>` でブリーフ入力を直接指定し、従来必須だった `spec.json` 引数を不要化する。

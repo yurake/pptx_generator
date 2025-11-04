@@ -40,7 +40,7 @@ def sample_spec() -> JobSpec:
 
 @pytest.fixture()
 def brief_paths() -> dict[str, Path]:
-    brief_dir = Path("samples/brief")
+    brief_dir = Path("samples/prepare")
     return {
         "cards": brief_dir / "prepare_card.json",
         "log": brief_dir / "brief_log.json",

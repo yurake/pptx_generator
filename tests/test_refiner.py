@@ -131,7 +131,7 @@ def test_refiner_raises_font_size(tmp_path) -> None:
                             id="bullet-1",
                             text="本文",
                             level=0,
-                            font=FontSpec(name="Yu Gothic", size_pt=12.0, color_hex="#111111"),
+                            font=FontSpec(name="Meiryo UI", size_pt=12.0, color_hex="#111111"),
                         )
                     )
                 ],
@@ -147,7 +147,7 @@ def test_refiner_raises_font_size(tmp_path) -> None:
             enable_font_raise=True,
             min_font_size=18.0,
             enable_color_adjust=False,
-            default_font_name="Yu Gothic",
+            default_font_name="Meiryo UI",
         )
     )
 
@@ -182,7 +182,7 @@ def test_refiner_adjusts_font_color(tmp_path) -> None:
                             id="bullet-1",
                             text="本文",
                             level=0,
-                            font=FontSpec(name="Yu Gothic", size_pt=18.0, color_hex="#FF0000"),
+                            font=FontSpec(name="Meiryo UI", size_pt=18.0, color_hex="#FF0000"),
                         )
                     ),
                     _group(
@@ -207,7 +207,7 @@ def test_refiner_adjusts_font_color(tmp_path) -> None:
             enable_color_adjust=True,
             preferred_text_color=target_color,
             fallback_font_color="#333333",
-            default_font_name="Yu Gothic",
+            default_font_name="Meiryo UI",
         )
     )
 

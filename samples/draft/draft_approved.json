@@ -1,0 +1,13 @@
+{
+  "sections": [],
+  "meta": {
+    "target_length": 0,
+    "structure_pattern": "custom",
+    "appendix_limit": 5,
+    "template_id": null,
+    "template_match_score": null,
+    "template_mismatch": [],
+    "return_reason_stats": {},
+    "analyzer_summary": {}
+  }
+}

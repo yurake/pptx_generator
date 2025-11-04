@@ -1,0 +1,1556 @@
+{
+  "generated_at": "2025-11-04T11:18:48.386698+00:00",
+  "spec_meta": {
+    "schema_version": "1.1",
+    "title": "RM-043 拡張テンプレート検証",
+    "client": "Internal QA",
+    "author": "テンプレート検証チーム",
+    "created_at": "2025-10-31",
+    "theme": "corporate",
+    "locale": "ja-JP"
+  },
+  "slides": 50,
+  "artifacts": {
+    "analysis_before": ".pptx/gen/analysis_pre_polisher.json",
+    "analysis_after": ".pptx/gen/analysis.json",
+    "rendering_log": ".pptx/gen/rendering_log.json"
+  },
+  "rendering": {
+    "warnings_total": 8,
+    "empty_placeholders": 6
+  },
+  "analyzer": {
+    "before_polisher": {
+      "total": 151,
+      "by_severity": {
+        "warning": 151
+      },
+      "by_type": {
+        "grid_misaligned": 143,
+        "margin": 8
+      }
+    },
+    "after_pipeline": {
+      "total": 151,
+      "by_severity": {
+        "warning": 151
+      },
+      "by_type": {
+        "grid_misaligned": 143,
+        "margin": 8
+      }
+    },
+    "improvement": {
+      "resolved": 0,
+      "delta": 0,
+      "resolved_issue_ids": []
+    }
+  },
+  "alerts": [
+    {
+      "slide_id": "title-01",
+      "page_no": 1,
+      "layout_id": "Title",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "margin-title-01-Logo-1",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'title-01' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-title-01-Logo-2",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'title-01' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-title-01-Text1-3",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'title-01' の要素 'Text1' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "title-02",
+      "page_no": 2,
+      "layout_id": "Title",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "margin-title-02-Logo-4",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'title-02' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-title-02-Logo-5",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'title-02' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-title-02-Text1-6",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'title-02' の要素 'Text1' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "section_covor_left-01",
+      "page_no": 3,
+      "layout_id": "Section Covor Left",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-section_covor_left-01-Logo-7",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'section_covor_left-01' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-section_covor_left-01-Logo-8",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'section_covor_left-01' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "section_covor_left-02",
+      "page_no": 4,
+      "layout_id": "Section Covor Left",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-section_covor_left-02-Logo-9",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'section_covor_left-02' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-section_covor_left-02-Logo-10",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'section_covor_left-02' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "section_covor_center-01",
+      "page_no": 5,
+      "layout_id": "Section Covor Center",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-section_covor_center-01-Logo-11",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'section_covor_center-01' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-section_covor_center-01-Logo-12",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'section_covor_center-01' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "section_covor_center-02",
+      "page_no": 6,
+      "layout_id": "Section Covor Center",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-section_covor_center-02-Logo-13",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'section_covor_center-02' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-section_covor_center-02-Logo-14",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'section_covor_center-02' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "agenda-01",
+      "page_no": 7,
+      "layout_id": "Agenda",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-agenda-01-Logo-15",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'agenda-01' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-agenda-01-Logo-16",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'agenda-01' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "agenda-02",
+      "page_no": 8,
+      "layout_id": "Agenda",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "margin-agenda-02-Logo-17",
+          "type": "margin",
+          "severity": "warning",
+          "message": "スライド 'agenda-02' の画像 'Logo' が余白基準 0.5in を外れています"
+        },
+        {
+          "id": "grid_misaligned-agenda-02-Logo-18",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'agenda-02' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "one_column_detail-01",
+      "page_no": 9,
+      "layout_id": "One Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-one_column_detail-01-Body-19",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'one_column_detail-01' の要素 'Body' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "one_column_detail-02",
+      "page_no": 10,
+      "layout_id": "One Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-one_column_detail-02-Body-20",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'one_column_detail-02' の要素 'Body' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_rows_detail-01",
+      "page_no": 11,
+      "layout_id": "Two Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_rows_detail-01-Body Upper-21",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_rows_detail-01' の要素 'Body Upper' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_rows_detail-02",
+      "page_no": 12,
+      "layout_id": "Two Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_rows_detail-02-Body Upper-22",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_rows_detail-02' の要素 'Body Upper' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-two_rows_detail-02-Body Lower-23",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_rows_detail-02' の要素 'Body Lower' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_column_detail-01",
+      "page_no": 13,
+      "layout_id": "Two Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_column_detail-01-Body Left-24",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_column_detail-01' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-two_column_detail-01-Body Right-25",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_column_detail-01' の要素 'Body Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_column_detail-02",
+      "page_no": 14,
+      "layout_id": "Two Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_column_detail-02-Body Left-26",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_column_detail-02' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-two_column_detail-02-Body Right-27",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_column_detail-02' の要素 'Body Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "left_highlight_detail-01",
+      "page_no": 15,
+      "layout_id": "Left Highlight Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-left_highlight_detail-01-Body Left-28",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-01' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-left_highlight_detail-01-Body Upper Right-29",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-01' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-left_highlight_detail-01-Body Lower Right-30",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-01' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "left_highlight_detail-02",
+      "page_no": 16,
+      "layout_id": "Left Highlight Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-left_highlight_detail-02-Body Left-31",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-02' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-left_highlight_detail-02-Body Upper Right-32",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-02' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-left_highlight_detail-02-Body Lower Right-33",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'left_highlight_detail-02' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "right_highlight_detail-01",
+      "page_no": 17,
+      "layout_id": "Right Highlight Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-right_highlight_detail-01-Body Left-34",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-01' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-right_highlight_detail-01-Body Upper Right-35",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-01' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-right_highlight_detail-01-Body Lower Right-36",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-01' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "right_highlight_detail-02",
+      "page_no": 18,
+      "layout_id": "Right Highlight Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-right_highlight_detail-02-Body Left-37",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-02' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-right_highlight_detail-02-Body Upper Right-38",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-02' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-right_highlight_detail-02-Body Lower Right-39",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'right_highlight_detail-02' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_rows_detail-01",
+      "page_no": 19,
+      "layout_id": "Three Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_rows_detail-01-Body Upper-40",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-01' の要素 'Body Upper' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_rows_detail-01-Body Center-41",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-01' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_rows_detail-01-Body Lower-42",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-01' の要素 'Body Lower' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_rows_detail-02",
+      "page_no": 20,
+      "layout_id": "Three Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_rows_detail-02-Body Upper-43",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-02' の要素 'Body Upper' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_rows_detail-02-Body Center-44",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-02' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_rows_detail-02-Body Lower-45",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_rows_detail-02' の要素 'Body Lower' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_rows_detail-01",
+      "page_no": 21,
+      "layout_id": "Four Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_rows_detail-01-Body 1-46",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-01' の要素 'Body 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-01-Body 2-47",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-01' の要素 'Body 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-01-Body 3-48",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-01' の要素 'Body 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-01-Body 4-49",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-01' の要素 'Body 4' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_rows_detail-02",
+      "page_no": 22,
+      "layout_id": "Four Rows Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_rows_detail-02-Body 1-50",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-02' の要素 'Body 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-02-Body 2-51",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-02' の要素 'Body 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-02-Body 3-52",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-02' の要素 'Body 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_rows_detail-02-Body 4-53",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_rows_detail-02' の要素 'Body 4' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "executive_summary-01",
+      "page_no": 23,
+      "layout_id": "Executive Summary",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-executive_summary-01-Body Left-54",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-01' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-executive_summary-01-Body Right-55",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-01' の要素 'Body Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-executive_summary-01-Notes-56",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-01' の要素 'Notes' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "executive_summary-02",
+      "page_no": 24,
+      "layout_id": "Executive Summary",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 3,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-executive_summary-02-Body Left-57",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-02' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-executive_summary-02-Body Right-58",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-02' の要素 'Body Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-executive_summary-02-Notes-59",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'executive_summary-02' の要素 'Notes' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_column_detail-01",
+      "page_no": 25,
+      "layout_id": "Three Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_column_detail-01-Body Left-60",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_column_detail-01' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_column_detail-01-Body Center-61",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_column_detail-01' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_column_detail-02",
+      "page_no": 26,
+      "layout_id": "Three Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_column_detail-02-Body Left-62",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_column_detail-02' の要素 'Body Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_column_detail-02-Body Center-63",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_column_detail-02' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_column_detail-01",
+      "page_no": 27,
+      "layout_id": "Four Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_column_detail-01-Body Upper Left-64",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-01' の要素 'Body Upper Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-01-Body Upper Right-65",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-01' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-01-Body Lower Left-66",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-01' の要素 'Body Lower Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-01-Body Lower Right-67",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-01' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_column_detail-02",
+      "page_no": 28,
+      "layout_id": "Four Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_column_detail-02-Body Upper Left-68",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-02' の要素 'Body Upper Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-02-Body Upper Right-69",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-02' の要素 'Body Upper Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-02-Body Lower Left-70",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-02' の要素 'Body Lower Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_column_detail-02-Body Lower Right-71",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_column_detail-02' の要素 'Body Lower Right' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "six_column_detail-01",
+      "page_no": 29,
+      "layout_id": "Six Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-six_column_detail-01-Body Upper Left-72",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-01' の要素 'Body Upper Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-01-Body Upper Center-73",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-01' の要素 'Body Upper Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-01-Body Lower Left-74",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-01' の要素 'Body Lower Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-01-Body Lower Center-75",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-01' の要素 'Body Lower Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "six_column_detail-02",
+      "page_no": 30,
+      "layout_id": "Six Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 4,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-six_column_detail-02-Body Upper Left-76",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-02' の要素 'Body Upper Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-02-Body Upper Center-77",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-02' の要素 'Body Upper Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-02-Body Lower Left-78",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-02' の要素 'Body Lower Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-six_column_detail-02-Body Lower Center-79",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'six_column_detail-02' の要素 'Body Lower Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "nine_column_detail-01",
+      "page_no": 31,
+      "layout_id": "Nine Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 7,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Top Left-80",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Top Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Top Center-81",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Top Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Middle Left-82",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Middle Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Center-83",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Bottom Left-84",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Bottom Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Bottom Right-85",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Bottom Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-01-Body Bottom Center-86",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-01' の要素 'Body Bottom Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "nine_column_detail-02",
+      "page_no": 32,
+      "layout_id": "Nine Column Detail",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 7,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Top Left-87",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Top Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Top Center-88",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Top Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Middle Left-89",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Middle Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Center-90",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Center' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Bottom Left-91",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Bottom Left' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Bottom Right-92",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Bottom Right' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-nine_column_detail-02-Body Bottom Center-93",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'nine_column_detail-02' の要素 'Body Bottom Center' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_list-01",
+      "page_no": 33,
+      "layout_id": "Three List",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 6,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_list-01-Key 1-94",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-01-Value 1-95",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-01-Key 2-96",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-01-Value 2-97",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-01-Key 3-98",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-01-Value 3-99",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-01' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_list-02",
+      "page_no": 34,
+      "layout_id": "Three List",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 6,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_list-02-Key 1-100",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-02-Value 1-101",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-02-Key 2-102",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-02-Value 2-103",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-02-Key 3-104",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_list-02-Value 3-105",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_list-02' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_list-01",
+      "page_no": 35,
+      "layout_id": "Four List",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 8,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_list-01-Key 1-106",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Value 1-107",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Key 2-108",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Value 2-109",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Key 3-110",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Value 3-111",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Key 4-112",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Key 4' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-01-Value 4-113",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-01' の要素 'Value 4' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "four_list-02",
+      "page_no": 36,
+      "layout_id": "Four List",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 8,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-four_list-02-Key 1-114",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Value 1-115",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Key 2-116",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Value 2-117",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Key 3-118",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Value 3-119",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Key 4-120",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Key 4' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-four_list-02-Value 4-121",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'four_list-02' の要素 'Value 4' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "five_list-01",
+      "page_no": 37,
+      "layout_id": "Five List",
+      "rendering_warning_count": 2,
+      "rendering_warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 11' が空です"
+        },
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 12' が空です"
+        }
+      ],
+      "analyzer_issue_count": 8,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-five_list-01-Key 1-122",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Value 1-123",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Key 2-124",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Value 2-125",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Key 3-126",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Value 3-127",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Key 5-128",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Key 5' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-01-Value 5-129",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-01' の要素 'Value 5' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "five_list-02",
+      "page_no": 38,
+      "layout_id": "Five List",
+      "rendering_warning_count": 2,
+      "rendering_warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 11' が空です"
+        },
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 12' が空です"
+        }
+      ],
+      "analyzer_issue_count": 8,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-five_list-02-Key 1-130",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Key 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Value 1-131",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Value 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Key 2-132",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Key 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Value 2-133",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Value 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Key 3-134",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Key 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Value 3-135",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Value 3' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Key 5-136",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Key 5' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-five_list-02-Value 5-137",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'five_list-02' の要素 'Value 5' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_flow-01",
+      "page_no": 39,
+      "layout_id": "Two Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_flow-01-Flow 1-138",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_flow-01' の要素 'Flow 1' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "two_flow-02",
+      "page_no": 40,
+      "layout_id": "Two Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-two_flow-02-Flow 1-139",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'two_flow-02' の要素 'Flow 1' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_flow-01",
+      "page_no": 41,
+      "layout_id": "Three Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_flow-01-Flow 1-140",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_flow-01' の要素 'Flow 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_flow-01-Flow 2-141",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_flow-01' の要素 'Flow 2' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "three_flow-02",
+      "page_no": 42,
+      "layout_id": "Three Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-three_flow-02-Flow 1-142",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_flow-02' の要素 'Flow 1' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-three_flow-02-Flow 2-143",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'three_flow-02' の要素 'Flow 2' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "1_two_flow-01",
+      "page_no": 43,
+      "layout_id": "1_Two Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-1_two_flow-01-Flow 2-144",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド '1_two_flow-01' の要素 'Flow 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-1_two_flow-01-Flow 3-145",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド '1_two_flow-01' の要素 'Flow 3' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "1_two_flow-02",
+      "page_no": 44,
+      "layout_id": "1_Two Flow",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 2,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-1_two_flow-02-Flow 2-146",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド '1_two_flow-02' の要素 'Flow 2' がグリッド 0.125in に揃っていません"
+        },
+        {
+          "id": "grid_misaligned-1_two_flow-02-Flow 3-147",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド '1_two_flow-02' の要素 'Flow 3' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "closing-01",
+      "page_no": 45,
+      "layout_id": "Closing",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-closing-01-Body-148",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'closing-01' の要素 'Body' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "closing-02",
+      "page_no": 46,
+      "layout_id": "Closing",
+      "rendering_warning_count": 0,
+      "rendering_warnings": [],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-closing-02-Body-149",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'closing-02' の要素 'Body' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "closin_covor-01",
+      "page_no": 47,
+      "layout_id": "Closin Covor",
+      "rendering_warning_count": 1,
+      "rendering_warnings": [
+        {
+          "code": "missing_title",
+          "message": "title プレースホルダーが空です"
+        }
+      ],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-closin_covor-01-Logo-150",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'closin_covor-01' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "closin_covor-02",
+      "page_no": 48,
+      "layout_id": "Closin Covor",
+      "rendering_warning_count": 1,
+      "rendering_warnings": [
+        {
+          "code": "missing_title",
+          "message": "title プレースホルダーが空です"
+        }
+      ],
+      "analyzer_issue_count": 1,
+      "analyzer_issues": [
+        {
+          "id": "grid_misaligned-closin_covor-02-Logo-151",
+          "type": "grid_misaligned",
+          "severity": "warning",
+          "message": "スライド 'closin_covor-02' の要素 'Logo' がグリッド 0.125in に揃っていません"
+        }
+      ],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "_bk-01",
+      "page_no": 49,
+      "layout_id": "_bk",
+      "rendering_warning_count": 1,
+      "rendering_warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 3' が空です"
+        }
+      ],
+      "analyzer_issue_count": 0,
+      "analyzer_issues": [],
+      "resolved_issues": []
+    },
+    {
+      "slide_id": "_bk-02",
+      "page_no": 50,
+      "layout_id": "_bk",
+      "rendering_warning_count": 1,
+      "rendering_warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 3' が空です"
+        }
+      ],
+      "analyzer_issue_count": 0,
+      "analyzer_issues": [],
+      "resolved_issues": []
+    }
+  ],
+  "pipeline": {
+    "polisher": {
+      "status": "disabled",
+      "enabled": false
+    },
+    "pdf_export": {
+      "status": "success",
+      "attempts": 1,
+      "elapsed_sec": 4.468212375068106,
+      "converter": "libreoffice",
+      "mode": "only"
+    }
+  }
+}

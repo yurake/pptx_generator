@@ -124,8 +124,8 @@
 - `audit_log.json` の `outputs` パスは実際に生成された成果物を指すこと。
 
 ## サンプル
-- `samples/brief/prepare_card.json`
-- `samples/brief/brief_ai_log.json`
-- `samples/brief/ai_generation_meta.json`
-- `samples/brief/brief_story_outline.json`
-- `samples/brief/audit_log.json`
+- `samples/prepare/prepare_card.json`
+- `samples/prepare/brief_ai_log.json`
+- `samples/prepare/ai_generation_meta.json`
+- `samples/prepare/brief_story_outline.json`
+- `samples/prepare/audit_log.json`

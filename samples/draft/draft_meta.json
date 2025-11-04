@@ -1,0 +1,22 @@
+{
+  "spec_id": "rm-043-拡張テンプレート検証",
+  "sections": 0,
+  "slides": 0,
+  "approved_sections": [],
+  "section_status": {},
+  "appendix_limit": 5,
+  "structure_pattern": "custom",
+  "target_length": 0,
+  "paths": {
+    "draft_draft": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_draft.json",
+    "draft_approved": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_approved.json",
+    "draft_review_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_review_log.json"
+  },
+  "template": {
+    "template_id": null,
+    "match_score": null,
+    "mismatch": []
+  },
+  "analyzer_summary": {},
+  "return_reason_stats": {}
+}

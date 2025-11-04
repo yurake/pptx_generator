@@ -81,7 +81,7 @@ def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
                             text="本文",
                             level=4,
                             font=FontSpec(
-                                name="Yu Gothic",
+                                name="Meiryo UI",
                                 size_pt=12.0,
                                 color_hex="#FFFFFF",
                             ),
@@ -309,7 +309,7 @@ def test_simple_analyzer_allows_large_text_with_lower_contrast(tmp_path) -> None
                             text="セカンダリカラーの本文",
                             level=0,
                             font=FontSpec(
-                                name="Yu Gothic",
+                                name="Meiryo UI",
                                 size_pt=24.0,
                                 color_hex="#0097A7",
                             ),

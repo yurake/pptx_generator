@@ -94,6 +94,7 @@ flowchart TB
         RM033["RM-033<br/>パイプライン工程3/4独立化<br/>(完了)"]
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
         RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(未着手)"]
+        RM053["RM-053<br/>サンプル資産整備<br/>(完了)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -759,6 +760,16 @@ flowchart TB
 - 状況: 完了（2025-11-08 更新）
 - 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備を完了。
 - 次アクション: なし（完了済みテーマとして運用に移行）
+
+<a id="rm-053"></a>
+### RM-053 サンプル資産整備
+- 対象工程: 4（レンダリング）
+- ゴール: ユーザーと同一手順で生成した PPTX/PDF サンプルを整理し、`.pptx/gen/` の構造と同期した `samples/` 配下の構成を整える。
+- 参照ドキュメント: [README.md](../README.md), [docs/runbooks/support.md](../runbooks/support.md)
+- 参照 ToDo: [docs/todo/archive/20251104-rm053-samples-refresh.md](../todo/archive/20251104-rm053-samples-refresh.md)（作成予定）
+- 状況: 完了（2025-11-04 更新）
+- 期待成果: CLI 操作手順の検証ログと生成物をサンプルとして共有し、ユーザー導線に沿った資料準備が可能な状態。
+- 次アクション: CLI 手順を確認しながらサンプル生成し、`samples/` 配下を `.pptx` 出力構造に合わせて再編する計画を策定。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
