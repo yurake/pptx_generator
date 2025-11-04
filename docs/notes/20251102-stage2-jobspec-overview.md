@@ -10,7 +10,7 @@
 ## 現状確認
 - サンプルファイルの構造差分
   - `samples/json/sample_jobspec.json` には `meta`（案件タイトル・クライアント・テーマなど）、`auth`（作成者、部門）、`slides`（スライド ID・レイアウト名・アンカー・画像パス等）が含まれ、テンプレートのプレースホルダー情報まで埋め込まれている (`samples/json/sample_jobspec.json:1-57` など)。
-  - `samples/brief/sample_prepare_card.json` は工程3の HITL 承認結果を保持し、カードごとに `intent_tags` / `story.phase` / `narrative` / `supporting_points` を持つが、レイアウトアンカーなどテンプレ依存情報は含まない。
+  - `samples/prepare/prepare_card.json` は工程3の HITL 承認結果を保持し、カードごとに `intent_tags` / `story.phase` / `narrative` / `supporting_points` を持つが、レイアウトアンカーなどテンプレ依存情報は含まない。
   - 差分の意味: 工程3以降で同じ `slide_id` をキーに統合するため、ジョブスペック側にテンプレと整合する構造情報が必要になる。
 - ジョブスペックが参照される工程
   - 工程3: `uv run pptx prepare ...` がジョブスペックを参照しつつブリーフ成果物を生成する際のベースになる (`README.md:96-109`)。

@@ -242,7 +242,7 @@ class TestBrandingConfig:
 
         config = BrandingConfig.load(config_path)
 
-        assert config.body_font.name == "Yu Gothic"
+        assert config.body_font.name == "Meiryo UI"
         assert config.body_font.size_pt == pytest.approx(18.0)
         assert config.body_font.color_hex == "#333333"
         assert config.components.table.header.fill_color == "#005BAC"
