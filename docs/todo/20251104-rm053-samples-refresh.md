@@ -1,7 +1,7 @@
 ---
 目的: `.pptx/gen/` のフォルダ構造に合わせて `samples/` 配下を再編し、ユーザー実行手順と同一条件で生成した出力サンプルを整備する
 関連ブランチ: feat/RM-053-samples-refresh
-関連Issue: 未作成
+関連Issue: #268
 roadmap_item: RM-053 サンプル資産整備
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-053 サンプル資産整備
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 未着手。Issue 作成後に番号を反映する。
 - [ ] PR 作成
   - メモ: 未着手。
