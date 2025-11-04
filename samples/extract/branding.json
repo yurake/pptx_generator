@@ -34,7 +34,7 @@
       },
       "header": {
         "font": {
-          "name": "Yu Gothic",
+          "name": "Meiryo UI",
           "size_pt": 18.0,
           "color_hex": "#FFFFFF",
           "bold": true,
@@ -44,7 +44,7 @@
       },
       "body": {
         "font": {
-          "name": "Yu Gothic",
+          "name": "Meiryo UI",
           "size_pt": 16.0,
           "color_hex": "#333333",
           "bold": false,
@@ -75,7 +75,7 @@
       },
       "axis": {
         "font": {
-          "name": "Yu Gothic",
+          "name": "Meiryo UI",
           "size_pt": 14.0,
           "color_hex": "#333333",
           "bold": false,
@@ -100,7 +100,7 @@
         "height_in": 1.5
       },
       "font": {
-        "name": "Yu Gothic",
+        "name": "Meiryo UI",
         "size_pt": 18.0,
         "color_hex": "#333333",
         "bold": false,

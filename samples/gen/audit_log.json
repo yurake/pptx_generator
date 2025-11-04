@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-04T10:54:06.301768+00:00",
+  "generated_at": "2025-11-04T11:18:48.392859+00:00",
   "spec_meta": {
     "schema_version": "1.1",
     "title": "RM-043 拡張テンプレート検証",
@@ -11,11 +11,11 @@
   },
   "slides": 50,
   "artifacts": {
-    "pptx": ".pptx/gen/proposal.pptx",
+    "pptx": null,
     "analysis": ".pptx/gen/analysis.json",
     "analysis_pre_polisher": ".pptx/gen/analysis_pre_polisher.json",
     "review_engine_analysis": ".pptx/gen/review_engine_analyzer.json",
-    "pdf": null,
+    "pdf": ".pptx/gen/proposal.pdf",
     "generate_ready": ".pptx/compose/generate_ready.json",
     "rendering_log": ".pptx/gen/rendering_log.json",
     "mapping_log": ".pptx/compose/mapping_log.json",
@@ -26,7 +26,13 @@
     "warnings_total": 8,
     "empty_placeholders": 6
   },
-  "pdf_export": null,
+  "pdf_export": {
+    "enabled": true,
+    "status": "success",
+    "attempts": 1,
+    "elapsed_ms": 4468,
+    "converter": "libreoffice"
+  },
   "refiner_adjustments": null,
   "branding": {
     "source": {
@@ -76,11 +82,11 @@
   },
   "hashes": {
     "generate_ready": "sha256:a5583c76358751e9d4ef6f204e518f1d19d828d3b08a61b637dbebf19d690c59",
-    "pptx": "sha256:da858d85ff2c1a7d3b0d52492b8a95d2e7d34a089ada164a0791a24e653aa3aa",
     "analysis": "sha256:a109aebc9e6284cff78b6fade34e1439ccc198d1df0e5b629beeb37bbc5d6025",
     "analysis_pre_polisher": "sha256:a109aebc9e6284cff78b6fade34e1439ccc198d1df0e5b629beeb37bbc5d6025",
-    "rendering_log": "sha256:ac7ef1b3bbff5fb2fbb1bef068bdcdf8d11176221761d7342a1987c9f8f8ea7e",
-    "monitoring_report": "sha256:05e5300df3221a41f8aa488dfc9759e79733126b14f9d0803d986bc619a365bf",
+    "pdf": "sha256:9538e85a657a3af7da07e7e3da9f7c1d7508db0067968c5297cc9f1185533f33",
+    "rendering_log": "sha256:da0de1b6f30743bad901b17c9c2e430625dff7dd5a60511928c3a82ccb8087df",
+    "monitoring_report": "sha256:bded5a0981e7d7086fc713790fafba173bc784720741ce7fbd7ad7cd99bf601f",
     "mapping_log": "sha256:eaa8d8e541e0152bb8afd9f6313ec31b22451249ca2efe841b7ac7b753252f98"
   },
   "mapping": {

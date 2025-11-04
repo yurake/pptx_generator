@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-04T10:54:06.295388+00:00",
+  "generated_at": "2025-11-04T11:18:48.386698+00:00",
   "spec_meta": {
     "schema_version": "1.1",
     "title": "RM-043 拡張テンプレート検証",
@@ -1545,6 +1545,12 @@
       "status": "disabled",
       "enabled": false
     },
-    "pdf_export": null
+    "pdf_export": {
+      "status": "success",
+      "attempts": 1,
+      "elapsed_sec": 4.468212375068106,
+      "converter": "libreoffice",
+      "mode": "only"
+    }
   }
 }
