@@ -7,7 +7,7 @@
   - `Two Column Detail` が 5 枚と偏りが大きく、タイムライン・比較・ファクトシート以外の特殊レイアウトが不足。
   - 表／画像／テキストボックスの組み合わせも限定的（グラフ未使用）。
 - 旧 `sample_spec_minimal.json` は撤廃し、最小構成のテストは `tests/test_cli_outline.py` で動的生成する。
-- `samples/brief/sample_prepare_card.json`（新規追加予定）
+- `samples/prepare/prepare_card.json`（新規追加予定）
   - 3 カード（cover / agenda / problem）のみで intent/type が限定的。
 - `samples/json/sample_template_layouts.jsonl`
   - 2 レコード（overview/detail）しかなく、用途タグやヒントの検証に十分でない。
