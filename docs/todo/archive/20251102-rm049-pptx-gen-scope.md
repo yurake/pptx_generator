@@ -68,6 +68,16 @@ roadmap_item: RM-049 pptx gen スコープ最適化
       - **テスト戦略**: 設計タスクのため該当なし（実装フェーズで統合テストを実施）。
       - **ロールバック方法**: 設計メモの破棄または更新停止で対応。
       - **承認メッセージ ID**: _pending approval_
+    - 追加Plan（template サブコマンド維持）
+      - **スコープ**: `pptx template` サブコマンドを `feat/rm049-pptx-gen-scope` の CLI 構成へ再統合し、テンプレ工程の一括実行（抽出・検証・リリース）を継続提供する。generate_ready 統合後の共通処理と競合しないよう調整し、ドキュメントとテストも復元する。
+      - **主な作業**
+        1. main ブランチから `template` 関連の実装（`src/pptx_generator/cli.py` の共通ヘルパー、`_run_template_extraction`／`_run_template_release` など）を取り込み、`feat/rm049-pptx-gen-scope` で削除された差分を整理する。
+        2. generate_ready 専用化で導入したテンプレ参照メタやアーティファクト管理と整合するよう CLI 実装を調整し、`tpl-extract` / `layout-validate` / `tpl-release` と重複する処理を共通化する。
+        3. `tests/test_cli_integration.py` ほかテンプレ工程に関する統合テストを復元・更新し、テンプレ抽出・リリースの期待値が現行成果物に一致することを検証する。
+        4. README・`docs/design/cli-command-reference.md` などテンプレ工程を案内する資料を再確認し、`template` サブコマンドを前提とした説明へ整合させる。
+      - **テスト戦略**: `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_template_basic` を中心にテンプレ工程の統合テストを実行し、余力があれば CLI 全体テストを追加実行する。
+      - **ロールバック方法**: `template` 復元に関するコミットを revert し、テンプレ工程を個別サブコマンド前提へ戻す。
+      - **承認メッセージ ID**: _pending approval_
 - [x] 設計・実装方針の確定
   - メモ: `generate_ready.json` への統一と `pptx gen`（工程5専用）を中心とした CLI 体系で進める。
 - [x] ドキュメント更新（要件・設計）
