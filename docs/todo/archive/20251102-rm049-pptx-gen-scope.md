@@ -163,6 +163,16 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - メモ: PR #266 コンフリクト解消後に `uv run --extra dev pytest tests/test_cli_integration.py` を再実行し、generate_ready 前提の CLI フローが緑化することを確認（2025-11-XX）。
   - 追記: origin/main からの再マージ後も同テストを実行し、コンフリクト解消版が成功することを確認（2025-11-XX）。
 
+- **2025-11-04 CLIテンプレートコマンド復活**
+  - `pptx template` サブコマンドを再実装し、抽出・検証・リリースの一括実行を復旧。CLI 共通ヘルパーを整理し、テンプレ工程のサブコマンド群と競合しない形で再統合。
+  - README・CLI リファレンス・設計ドキュメントを `template` 前提の手順に差し戻し、テンプレ工程の説明を最新化。
+  - 実行テスト: `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_template_basic`。
+
+- **2025-11-04 CLIコンテンツ出力オプション整理**
+  - 工程2の既定出力先を `.pptx/content/` に統一し、`pptx content` の `--output` 省略時に BriefStore と同じパスが選択されるよう CLI／API を調整（ドキュメント・サンプルも更新）。
+  - stage-02/03 要件や runbook のパス記載を刷新し、HITL ログの参照先を新ディレクトリに合わせて確認した。
+  - 後続の `pptx prepare` への改称に備えて命名ポリシーを整理済み。
+
 - **2025-11-04 CLI/ドキュメント再命名対応**
   - 工程2の CLI サブコマンドを `pptx prepare` に統一し、既定出力ディレクトリを `.pptx/prepare/`、成果物名を `prepare_card.json` へ変更。`src/pptx_generator/cli.py` および `BriefStore` 周辺の既定パスを更新。
   - テスト群を新名称に合わせて整理（`tests/test_cli_prepare.py` 追加、統合テストとチートシートテストの参照パス更新）し、サンプル成果物を `prepare_card.json` へ置換。
