@@ -41,10 +41,10 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
       - 承認メッセージ: ユーザー発言「ではtodoに計画を転記し、作業に取り掛かってください。」（2025-11-04）。
 - [x] 設計・実装方針の確定
   - メモ: `generate_ready` 基盤への移行設計はユーザー承認済み（2025-11-04）。関連ドキュメントは `docs/design/stages/stage-03-mapping.md`、`docs/design/design.md`、`docs/requirements/stages/stage-04-draft-structuring.md` で整合を確認済み。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: ---
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: Stage3/4 関連ドキュメントを `generate_ready` 基盤へ更新済み（commit `edfabde`）。追加の設計補足は今後の実装ブランチで反映予定。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [ ] 実装
   - メモ: ---
 - [ ] テスト・検証
