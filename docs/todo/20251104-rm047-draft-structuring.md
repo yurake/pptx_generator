@@ -39,8 +39,8 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
       - テスト方針: 上記テスト更新に加え、`uv run --extra dev pytest` を実行して全体整合を確認する。  
       - ロールバック方法: 変更・追加した Markdown および Python ファイルを個別に戻すことで復旧可能。  
       - 承認メッセージ: ユーザー発言「ではtodoに計画を転記し、作業に取り掛かってください。」（2025-11-04）。
-- [ ] 設計・実装方針の確定
-  - メモ: `docs/design/draft-structuring-RM047.md`・`docs/design/design.md`・`docs/requirements/stages/stage-04-draft-structuring.md` を `generate_ready` ベースへ全面更新済み。実装に進む前にユーザーへレビュー依頼済み（依頼内容: `generate_ready.json` 構造・カード単位 AI 推薦フロー・CLI 引数置換の整合確認）。承認後にモデル／パイプライン／CLI 実装とテストを着手する。
+- [x] 設計・実装方針の確定
+  - メモ: `generate_ready` 基盤への移行設計はユーザー承認済み（2025-11-04）。関連ドキュメントは `docs/design/stages/stage-03-mapping.md`、`docs/design/design.md`、`docs/requirements/stages/stage-04-draft-structuring.md` で整合を確認済み。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: ---
   - [ ] docs/requirements 配下
