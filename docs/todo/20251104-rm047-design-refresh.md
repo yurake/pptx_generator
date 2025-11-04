@@ -46,7 +46,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
     - `docs/runbooks/story-outline-ops.md` を更新し、工程3の成果物・監査手順を `generate_ready` 基盤へ更新（2025-11-04）。
   - [x] README.md / AGENTS.md
     - README の工程3説明とサンプルコマンドを `generate_ready` 出力へ刷新（2025-11-04）。
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
