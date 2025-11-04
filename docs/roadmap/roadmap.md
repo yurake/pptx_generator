@@ -17,8 +17,8 @@
 | No. | 工程 | 概要 |
 | --- | --- | --- |
 | 1 | テンプレ工程 | テンプレ資産の整備・抽出・検証・リリースメタ生成を一括実行 |
-| 2 | コンテンツ正規化 (HITL) | 入力データをスライド素材へ整形し承認 |
-| 3 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`rendering_ready.json`) |
+| 2 | コンテンツ準備 (HITL) | 入力データをスライド素材へ整形し承認 |
+| 3 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`generate_ready.json`) |
 | 4 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
@@ -52,7 +52,7 @@ flowchart TB
         RM045["RM-045<br/>テンプレ抽出<br/>検証ラッパー整備<br/>(完了)"]
     end
 
-    subgraph ST2["Stage 2: コンテンツ正規化 (HITL)"]
+    subgraph ST2["Stage 2: コンテンツ準備 (HITL)"]
         direction TB
         ST2_ANCHOR(( ))
         RM005["RM-005<br/>プレゼンストーリー<br/>モデラー<br/>(完了)"]
@@ -243,7 +243,7 @@ flowchart TB
 <a id="rm-004"></a>
 ### RM-004 営業ナレッジ連携自動化
 - ゴール: CRM や案件管理システムから取得した勝ちパターン・競合情報を提案書自動生成に組み込み、ユーザーにとっての「次の一手」を提案する。
-- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）への外部データ統合
+- 対象工程: 3・4（コンテンツ準備 / ドラフト構成設計）への外部データ統合
 - 参照ドキュメント: [docs/requirements/requirements.md](../requirements/requirements.md)
 - 状況: 完了（2025-10-15 更新）
 - 完了理由: 案件連携のニーズが解消されたため開発を終了。
@@ -254,7 +254,7 @@ flowchart TB
 <a id="rm-005"></a>
 ### RM-005 プレゼンストーリーモデラー
 - ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
-- 対象工程: 3・4（コンテンツ正規化 / ドラフト構成設計）の高度化
+- 対象工程: 3・4（コンテンツ準備 / ドラフト構成設計）の高度化
 - 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
@@ -430,7 +430,7 @@ flowchart TB
 <a id="rm-023"></a>
 ### RM-023 コンテンツ承認オーサリング基盤
 - ゴール: 工程 3 の HITL 承認 API と AI レビュー連携を整備し、承認ログを監査可能にする（UI は将来バックログ）。
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
 - 参照 ToDo: [docs/todo/archive/20251012-content-approval-platform.md](../todo/archive/20251012-content-approval-platform.md)
 - 状況: 完了（2025-10-17 更新）
@@ -450,12 +450,12 @@ flowchart TB
 
 <a id="rm-025"></a>
 ### RM-025 マッピング補完エンジン
-- ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`rendering_ready.json` の確度を高める。
+- ゴール: 工程 5 のスコアリング・フォールバック・AI 補完を実装し、`generate_ready.json` の確度を高める。
 - 対象工程: 5（マッピング）
 - 参照ドキュメント: [docs/requirements/stages/stage-04-mapping.md](../requirements/stages/stage-04-mapping.md)
 - 参照 ToDo: [docs/todo/20251012-mapping-orchestrator.md](../todo/20251012-mapping-orchestrator.md)
 - 状況: 完了（2025-10-18 更新）
-- 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`rendering_ready.json` スキーマ検証ツール。
+- 期待成果: レイアウトスコアリング指標とフォールバック制御、AI 補完差分ログ、`generate_ready.json` スキーマ検証ツール。
 - 依存: RM-022（レイアウト解析検証強化）、RM-024（ドラフト構成承認フロー）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、LLM 推論基盤。
 
 <a id="rm-026"></a>
@@ -489,7 +489,7 @@ flowchart TB
 <a id="rm-029"></a>
 ### RM-029 Analyzer Review Engine 連携
 - ゴール: `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー判断に Analyzer 情報を反映できるようにする。
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: Analyzer `severity` に基づく差戻しカテゴリタグの UI 表示、Auto-fix 推論での Analyzer 補助、HITL レビューでの効率化指標。`review_engine_analyzer.json` で CLI から Review Engine 連携用データを出力済み。
@@ -578,14 +578,14 @@ flowchart TB
 
 <a id="rm-037"></a>
 ### RM-037 パイプライン疎結合 CLI 再設計
-- ゴール: `pptx mapping` / `pptx render` を分離し、`rendering_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
+- ゴール: `pptx mapping` / `pptx gen` を分離し、`generate_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
 - 対象工程: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-10-23 更新）
 - 期待成果:
-  - `pptx mapping` / `pptx render` サブコマンドの実装と互換性維持した `pptx gen` 再設計、`rendering_ready` → `JobSpec` 変換ヘルパの提供。
-  - 監査ログ・アーティファクトに `rendering_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
+  - `pptx mapping` / `pptx gen` サブコマンドの実装と互換性維持した `generate_ready` → `JobSpec` 変換ヘルパの提供。
+  - 監査ログ・アーティファクトに `generate_ready` ハッシュや再実行パスを追記し、工程単位でのリトライと検証を容易化。
   - CI / ローカル双方で工程 5→6 の個別再実行ワークフローとトラブルシュート手順を整備。
 - 依存: RM-025（マッピング補完エンジン）、RM-026（レンダリング監査統合）、RM-033（パイプライン工程3/4独立化準備）、CLI 運用ポリシー（`docs/AGENTS.md`）。
 
@@ -606,7 +606,7 @@ flowchart TB
 <a id="rm-039"></a>
 ### RM-039 コンテンツ多形式インポート
 - ゴール: 工程3の入力を JSON に加えテキスト・PDF・URL へ対応させ、安全に取得・正規化できるパイプラインを整備する。
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-10-25 更新）
@@ -619,7 +619,7 @@ flowchart TB
 <a id="rm-040"></a>
 ### RM-040 コンテンツ生成AIオーケストレーション
 - ゴール: 生成AIを用いたスライド候補整形を目的別ポリシーで制御し、工程3での自動化とレビュー連携を強化する。
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-content-normalization.md](../design/stages/stage-03-content-normalization.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-10-26 更新）
@@ -645,7 +645,7 @@ flowchart TB
 <a id="rm-042"></a>
 ### RM-042 情報ギャップインテリジェンス
 - ゴール: スライド候補生成前に不足情報を検知し、ユーザーへのヒアリングや追記支援を自動化する。
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-10-23 追加）
@@ -692,12 +692,12 @@ flowchart TB
 
 <a id="rm-046"></a>
 ### RM-046 生成AIブリーフ構成自動化
-- 対象工程: 3（コンテンツ正規化）
+- 対象工程: 3（コンテンツ準備）
 - ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 完了（2025-11-03 更新）
-- 期待成果: 生成AIモードの `pptx content` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
+- 期待成果: 生成AIモードの `pptx prepare` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
 
 <a id="rm-047"></a>
@@ -717,7 +717,7 @@ flowchart TB
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
 - 状況: 完了（2025-11-02 更新）
-- 期待成果: 新 CLI サブコマンド仕様、`rendering_ready.json` 生成テスト、個別コマンドとの互換保証。
+- 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
 
 <a id="rm-049"></a>

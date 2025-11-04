@@ -4,7 +4,7 @@
     "policy_id": "brief-default",
     "input_hash": "28ab0872ef4bfe4d9370af3a354a430d4b3314b822b68b9193a0eac46835a9bf",
     "outputs": {
-      "brief_cards": "/private/var/folders/r6/xd_pdxf17fj1mw0gycky76tw0000gn/T/tmp.C9r68uZbF7/brief/brief_cards.json",
+      "prepare_card": "/private/var/folders/r6/xd_pdxf17fj1mw0gycky76tw0000gn/T/tmp.C9r68uZbF7/brief/prepare_card.json",
       "brief_log": "/private/var/folders/r6/xd_pdxf17fj1mw0gycky76tw0000gn/T/tmp.C9r68uZbF7/brief/brief_log.json",
       "brief_ai_log": "/private/var/folders/r6/xd_pdxf17fj1mw0gycky76tw0000gn/T/tmp.C9r68uZbF7/brief/brief_ai_log.json",
       "ai_generation_meta": "/private/var/folders/r6/xd_pdxf17fj1mw0gycky76tw0000gn/T/tmp.C9r68uZbF7/brief/ai_generation_meta.json",

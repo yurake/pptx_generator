@@ -96,7 +96,7 @@
     "generated": true
   },
   "hashes": {
-    "rendering_ready": "sha256:...",
+    "generate_ready": "sha256:...",
     "rendering_log": "sha256:...",
     "analysis": "sha256:...",
     "monitoring_report": "sha256:..."
@@ -122,7 +122,7 @@
 - `environment`: 再現性担保のためのバージョン情報。取得できない場合は null。
 
 ## バリデーション
-- `analysis.json` の `slides` 配列と `rendering_ready.json` のスライド数が一致すること。
+- `analysis.json` の `slides` 配列と `generate_ready.json` のスライド数が一致すること。
 - `monitoring_report.json.rendering.warnings_total` が `rendering_log.json.meta.warnings_total` と一致すること。
 - `audit_log.json.hashes` に記載されたファイルが存在し、ハッシュ検証が成功すること（CLI 側でチェック）。
 

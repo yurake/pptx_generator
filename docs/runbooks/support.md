@@ -22,13 +22,13 @@
 - **レンダリング監査ログの確認方法**
   - `rendering_log.json` にスライド単位の検出結果と警告コードが記録されます。`missing_subtitle` / `empty_placeholder` / `missing_slide` などのコードを確認し、入力データやテンプレ側の欠落箇所を特定してください。
   - `audit_log.json.rendering` に警告件数や空プレースホルダー数が集計されています。Slack などで共有する際は `rendering_log.json` と合わせて添付し、該当スライド番号をコメントに記載します。
-  - `audit_log.json.hashes` から `rendering_ready` / `proposal.pptx` / `rendering_log` のハッシュを取得できるため、受領側で改ざん検知が可能です。
+  - `audit_log.json.hashes` から `generate_ready` / `proposal.pptx` / `rendering_log` のハッシュを取得できるため、受領側で改ざん検知が可能です。
 
 - **LibreOffice による PDF 変換が失敗する**
   - エラーコード `5`（CLI 終了コード）は PDF 変換ステップでの失敗を示す。
   - チェックリスト:
     - `LIBREOFFICE_PATH` を設定しているか、`soffice` が `PATH` に存在するか確認。
-    - `uv run pptx render <rendering_ready.json> --export-pdf --pdf-timeout 180` などでタイムアウトを延長。（工程4と連携する場合は `pptx gen` / `pptx mapping` を併用）
+    - `uv run pptx gen <generate_ready.json> --export-pdf --pdf-timeout 180` などでタイムアウトを延長。（工程4と連携する場合は `pptx compose` / `pptx mapping` を併用）
     - `workdir/outputs/` に生成された `*.log`（LibreOffice 標準出力/エラー）を添付してもらう。
   - 暫定対応: `--pdf-mode both` で PPTX を受け取り、手動で PDF 変換する。
   - 恒久対応: LibreOffice のアップデート、権限設定、CI 上では `PPTXGEN_SKIP_PDF_CONVERT=1` を設定して PDF 変換をスキップし、別ジョブで PDF の有無を検証する。`audit_log.json.pdf_export` に `attempts` と `elapsed_ms` が出力されるため、リトライ状況を必ず確認する。

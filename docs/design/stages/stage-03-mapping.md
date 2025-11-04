@@ -2,7 +2,7 @@
 
 ## 目的
 - Brief 成果物とテンプレ構造を突合し、章構成承認（HITL）とレイアウト割付（自動）を一体化する。
-- `draft_approved.json` と `rendering_ready.json` を同時に更新し、監査しやすいログ (`draft_review_log.json`, `mapping_log.json`) を残す。
+- `draft_approved.json` と `generate_ready.json` を同時に更新し、監査しやすいログ (`draft_review_log.json`, `mapping_log.json`) を残す。
 - 再実行や差戻しが発生した際もディレクトリ構造を固定し、CLI／自動化からの運用を容易にする。
 
 ## コンポーネント
@@ -10,19 +10,19 @@
 | --- | --- | --- | --- |
 | Draft Engine | 章構成・差戻しワークフロー | Python / dataclass | `draft_*` ファイルとテンプレ適合率を管理 |
 | Layout Hint Engine | レイアウト候補スコアリング | Python | Brief の intent / chapter / Analyzer 指摘を参照 |
-| Mapping Engine | プレースホルダ割付・フォールバック制御 | Python | `rendering_ready.json`, `mapping_log.json` を生成 |
+| Mapping Engine | プレースホルダ割付・フォールバック制御 | Python | `generate_ready.json`, `mapping_log.json` を生成 |
 | CLI | `pptx compose` / `pptx outline` / `pptx mapping` | Click | compose が工程3全体をラップ |
 
 ## 入出力
-- 入力: `jobspec.json`, `layouts.jsonl`, `brief_cards.json`, `brief_log.json`, `ai_generation_meta.json`,（任意）`analysis_summary.json`。
-- 出力: `draft_draft.json`, `draft_approved.json`, `draft_meta.json`, `draft_review_log.json`, `rendering_ready.json`, `mapping_log.json`, `fallback_report.json`。
+- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`,（任意）`analysis_summary.json`。
+- 出力: `draft_draft.json`, `draft_approved.json`, `draft_meta.json`, `draft_review_log.json`, `generate_ready.json`, `mapping_log.json`, `fallback_report.json`。
 
 ## ワークフロー概要
 1. `pptx compose` が Brief 成果物を読み込み、章テンプレート辞書 (`config/chapter_templates/`) に基づいて初期章構成を作成。
 2. HITL が `draft_draft.json` を確認し、章順・付録・差戻し理由を調整。`--show-layout-reasons` でレイアウト候補の理由を確認可能。
 3. 章承認が完了すると Draft Engine が `draft_approved.json` を確定し、Mapping Engine へバトンを渡す。
 4. Mapping Engine はレイアウト候補とテンプレ構造を突合し、プレースホルダ割付を実行。必要に応じてフォールバック（縮約→分割→付録送り）を適用し履歴を `mapping_log.json` へ記録。
-5. `rendering_ready.json`／`mapping_log.json` が生成され、監査ログにハッシュと統計が追加される。
+5. `generate_ready.json`／`mapping_log.json` が生成され、監査ログにハッシュと統計が追加される。
 
 ## CLI
 ### `pptx compose`
@@ -30,11 +30,11 @@
   | オプション | 説明 | 既定値 |
   | --- | --- | --- |
   | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
-  | `--brief-cards <path>` | 工程2の BriefCard | `.brief/brief_cards.json` |
-  | `--brief-log <path>` | 工程2のレビュー ログ | `.brief/brief_log.json` |
-  | `--brief-meta <path>` | 工程2の生成メタ | `.brief/ai_generation_meta.json` |
+  | `--brief-cards <path>` | 工程2の BriefCard | `.pptx/prepare/prepare_card.json` |
+  | `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/prepare/brief_log.json` |
+  | `--brief-meta <path>` | 工程2の生成メタ | `.pptx/prepare/ai_generation_meta.json` |
   | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
-  | `--output <dir>` | マッピング成果物のディレクトリ | `.pptx/gen` |
+  | `--output <dir>` | マッピング成果物のディレクトリ | `.pptx/compose` |
   | `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | 任意 |
   | `--template <path>` | ブランド抽出用テンプレート | 任意 |
   | `--rules <path>` | マッピングルール設定 | `config/rules.json` |
@@ -48,7 +48,7 @@
 
 ### `pptx mapping`
 - レイアウト割付のみ再実行する際に利用。既存の `draft_approved.json` と Brief 成果物を入力として受け付ける。
-- `--brief-*`, `--layouts`, `--rules` など `compose` と同じオプションを持ち、`rendering_ready.json` と `mapping_log.json` を更新する。
+- `--brief-*`, `--layouts`, `--rules` など `compose` と同じオプションを持ち、`generate_ready.json` と `mapping_log.json` を更新する。
 
 ## ログ・監査
 - `draft_review_log.json`: 章/スライドの承認・差戻し履歴（`action`, `actor`, `timestamp`, `reason_code`, `notes`）。

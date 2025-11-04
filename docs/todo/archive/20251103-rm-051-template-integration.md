@@ -10,7 +10,7 @@ roadmap_item: RM-051 テンプレ工程統合集約
     - 必ずmainからブランチを切る
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
-    - スコープ: `uv run pptx template` コマンドを新設し、テンプレ工程の抽出・検証を一括化する。`--with-release` 指定時に `tpl-release` を連携実行し、それ以外は抽出＋検証のみを実行する。既存 `tpl-extract` / `layout-validate` / `tpl-release` はヘルパー化して `template` コマンドから再利用し、個別コマンドとしては設計資料にのみ残す。全ドキュメントを 4 工程（テンプレ工程→コンテンツ正規化→マッピング→レンダリング）体系に更新し、README など利用者向け資料から個別コマンド説明を除外する。
+    - スコープ: `uv run pptx template` コマンドを新設し、テンプレ工程の抽出・検証を一括化する。`--with-release` 指定時に `tpl-release` を連携実行し、それ以外は抽出＋検証のみを実行する。既存 `tpl-extract` / `layout-validate` / `tpl-release` はヘルパー化して `template` コマンドから再利用し、個別コマンドとしては設計資料にのみ残す。全ドキュメントを 4 工程（テンプレ工程→コンテンツ準備→マッピング→レンダリング）体系に更新し、README など利用者向け資料から個別コマンド説明を除外する。
     - ドキュメント／コード修正方針: CLI 実装は `src/pptx_generator/cli.py` を中心にヘルパー抽出と新コマンド追加を行い、エラーコードやログ出力は既存仕様を踏襲する。ドキュメントは README、`docs/design`、`docs/requirements/stages`、`docs/runbooks`、`docs/notes`、`docs/roadmap/roadmap.md` など工程番号を含む箇所を洗い出して更新し、テンプレ工程統合メモを `docs/notes/20251103-template-pipeline-integration.md` として記録する。影響一覧を整理しつつ、旧 stage-01/02 文書を統合した新 `stage-01-template-pipeline.md` を作成する。
     - 確認・共有方法: ToDo へ進捗を適宜追記し、Plan 承認メッセージ（ユーザー 2025-11-03 承認）を記録。作業完了後に README・設計資料のリンクを確認し、必要なら `docs/` 配下の README へも追記する。
     - 想定影響ファイル: `src/pptx_generator/cli.py`、`tests/test_cli_integration.py`、`tests/test_cli_cheatsheet_flow.py`、`README.md`、`docs/design/cli-command-reference.md`、`docs/design/design.md`、`docs/requirements/stages/*`、`docs/runbooks/*.md`、`docs/roadmap/roadmap.md`、`docs/notes/20251103-template-pipeline-integration.md`（新規）、`docs/todo/20251103-rm-051-template-integration.md`。

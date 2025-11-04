@@ -1,17 +1,17 @@
-# 工程2 コンテンツ正規化 (HITL) 設計
+# 工程2 コンテンツ準備 (HITL) 設計
 
 ## 目的
 - ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、後続工程が直接利用できる構造化データを提供する。
 - AI 生成と HITL 承認を組み合わせ、監査可能なログと統計情報を残す。
-- `.brief/` 配下に成果物を集約し、工程3 の `pptx compose` がそのまま参照できるようにする。
+- `.pptx/prepare/` 配下に成果物を集約し、工程3 の `pptx compose` がそのまま参照できるようにする。
 
 ## システム構成
 | レイヤ | コンポーネント | 概要 |
 | --- | --- | --- |
-| CLI | `pptx content` | Brief ソースを読み込み、BriefCard 生成・評価・監査ログ出力を実行 |
+| CLI | `pptx prepare` | Brief ソースを読み込み、BriefCard 生成・評価・監査ログ出力を実行 |
 | サービス層 | `BriefAIOrchestrator` | ポリシーに基づいてカードを生成し、AI ログと統計を返す |
 | モデル層 | `BriefDocument` / `BriefCard` | Pydantic モデルで JSON スキーマを表現 |
-| ストレージ | Brief Store | `.brief/brief_cards.json` など成果物一式を保存 |
+| ストレージ | Brief Store | `.pptx/prepare/prepare_card.json` など成果物一式を保存 |
 
 ## データモデル
 - `BriefDocument`: `brief_id`, `cards[]`, `meta`。
@@ -22,19 +22,19 @@
 ## ワークフロー
 1. CLI がブリーフ入力（Markdown / JSON）を読み込み、`brief_source` として渡す。
 2. `BriefAIOrchestrator` がポリシーを選択し、LLM（またはモック）でカード候補を生成。
-3. 生成カードとログを `.brief/` に書き出し、統計情報を `ai_generation_meta.json` に記録。
+3. 生成カードとログを `.pptx/prepare/` に書き出し、統計情報を `ai_generation_meta.json` に記録。
 4. 監査ログ (`audit_log.json`) に成果物パスと SHA256 ハッシュ（将来拡張）を残す。
 5. 工程3 では `--brief-cards`, `--brief-log`, `--brief-meta` を指定して再利用する。差戻し時はカード編集または再生成を実施。
 
-## CLI (`pptx content`)
+## CLI (`pptx prepare`)
 - パラメータ
   | オプション | 説明 | 既定値 |
   | --- | --- | --- |
   | `<brief_path>` | 入力ブリーフ（Markdown / JSON） | 必須 |
-  | `--output <dir>` | 成果物ディレクトリ | `.brief` |
+  | `--output <dir>` | 成果物ディレクトリ | `.pptx/prepare` |
   | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 - 代表的な出力
-  - `brief_cards.json`
+  - `prepare_card.json`
   - `brief_log.json`
   - `brief_ai_log.json`
   - `ai_generation_meta.json`

@@ -3,11 +3,11 @@
 工程3（マッピング）で利用する JSON 仕様を定義する。
 
 ## ファイル
-- `rendering_ready.json`: レンダリングに必要なレイアウト割付済みデータ。
+- `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
 - `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
 - `fallback_report.json`: 収容不能など重大フォールバックの詳細（任意）。
 
-## rendering_ready.json
+## generate_ready.json
 ```jsonc
 {
   "slides": [
@@ -114,11 +114,10 @@
 - 重大フォールバック（章削減、付録移動など）が発生したスライドのみを列挙する任意ファイル。
 - 推奨フィールド: `ref_id`, `applied_strategy`, `reason`, `details`。
 
-## サンプル
-- `samples/rendering_ready.jsonc`
+- `samples/generate_ready.jsonc`
 - `samples/mapping_log.jsonc`
 
 ## バリデーション
-- `rendering_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
+- `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Brief 成果物のハッシュと一致すること（任意検証）。
