@@ -6,7 +6,7 @@
 
 ## パイプライン全体像
 - パイプラインは「テンプレ工程 → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 工程で構成される。
-- `pptx compose` は工程4-5（ドラフト構成とマッピング）を連続実行するラッパー。HITL 後の再実行時にドラフト成果物と mapping 成果物を同時に更新できる。
+- `pptx compose` は工程3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready` 出力までを一括で処理する。
 - `pptx gen` は工程2〜4を一括実行するファサード。必要に応じて `pptx compose` / `pptx render` を個別に呼び出し、再実行や検証を行う。
 
 ### 工程1: テンプレ工程
@@ -103,21 +103,23 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 - `brief_story_outline.json`: 章構成とカード紐付け
 - `audit_log.json`: 工程2の監査メタ情報
 ### 工程3: マッピング (HITL + 自動)
-章構成の承認とレイアウト割付をまとめて実行し、`draft_approved.json` と `generate_ready.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
+章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
-- 工程3全体を一括で実行し、ドラフト成果物（`.pptx/draft`）とマッピング成果物（`.pptx/compose`）を同時に更新する。
+- 工程3全体を一括で実行し、`.pptx/draft/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を生成する。
 - `--brief-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--draft-output <dir>` | ドラフト成果物 (`draft_*`) の保存先 | `.pptx/draft` |
-| `--output <dir>` | マッピング成果物 (`generate_ready.json` など) の保存先 | `.pptx/compose` |
+| `--draft-output <dir>` | `generate_ready` 系成果物の保存先 | `.pptx/draft` |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
 | `--brief-cards <path>` | 工程2の `prepare_card.json` | `.pptx/prepare/prepare_card.json` |
 | `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.pptx/prepare/brief_log.json` |
 | `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.pptx/prepare/ai_generation_meta.json` |
-| `--draft-filename` / `--approved-filename` / `--log-filename` / `--meta-filename` | ドラフト成果物のファイル名 | 既定値を継承 |
+| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 | `generate_ready.json` |
+| `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 | `generate_ready_meta.json` |
+| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 | `draft_review_log.json` |
+| `--mapping-log-filename <name>` | `draft_mapping_log.json` のファイル名 | `draft_mapping_log.json` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング | Spec から推定 |
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID | `config/chapter_templates` / 自動推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する | 指定なし |
@@ -128,16 +130,22 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 
 実行例:
 ```bash
-uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .pptx/prepare/prepare_card.json   --brief-log .pptx/prepare/brief_log.json   --brief-meta .pptx/prepare/ai_generation_meta.json   --draft-output .pptx/draft   --output .pptx/compose   --layouts .pptx/extract/layouts.jsonl   --template samples/templates/templates.pptx
+uv run pptx compose .pptx/extract/jobspec.json \
+  --brief-cards .pptx/prepare/prepare_card.json \
+  --brief-log .pptx/prepare/brief_log.json \
+  --brief-meta .pptx/prepare/ai_generation_meta.json \
+  --draft-output .pptx/draft \
+  --layouts .pptx/extract/layouts.jsonl \
+  --generate-ready-filename generate_ready.json \
+  --generate-ready-meta generate_ready_meta.json
 ```
 
 #### 補助: `pptx outline`
-- HITL 作業（章構成確認）だけを個別に実行したい場合に利用。`draft_draft.json` / `draft_approved.json` / `draft_review_log.json` / `draft_meta.json` を生成する。
-- `--brief-*` オプションは `compose` と共通。ドラフトのみ再生成したいケースやレビュー差戻しで活用する。
+- HITL 作業（章構成確認）だけを個別に実行したい場合に利用し、`generate_ready.json` と関連メタ／ログを再生成する。
+- `--brief-*` オプションは `compose` と共通。差戻し対応や一部章のみ更新したいケースで活用する。
 
 #### 補助: `pptx mapping`
-- 自動マッピングのみを再実行したい場合に利用し、`generate_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
-- `compose` と同様に `--brief-*` オプションを指定するか、既定の `.pptx/prepare/` 出力を利用する。
+- 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
@@ -206,11 +214,10 @@ uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .pptx/prepare/pre
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
 - `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
-- `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
+- `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。
-- `draft_draft.json` / `draft_approved.json`: Draft API/CLI が利用する章構成データ。
-- `draft_review_log.json`: Draft 操作ログ。
-- `draft_meta.json`: `pptx outline` が出力する章数・スライド数・承認状況メタ。
+- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、監査メタ。
+- `draft_review_log.json`: HITL 操作ログ。
 - `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
 - `monitoring_report.json`: Analyzer/レンダリングの警告件数サマリ。
 - `analysis.json` / `review_engine_analyzer.json`: レンダリング結果の解析・レビュー用メタ。

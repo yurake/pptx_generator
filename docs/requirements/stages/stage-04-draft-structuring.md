@@ -1,4 +1,6 @@
-# 工程4 ドラフト構成設計 (HITL) 要件詳細
+# （レガシー）工程4 ドラフト構成設計 (HITL) 要件詳細
+
+> **注記**: 現行フローではドラフト構成設計は工程3「マッピング」で実施し、`generate_ready.json` を出力する。最新要件は [stage-03-mapping.md](../stages/stage-03-mapping.md) を参照。本ファイルは旧 `draft_*` フローの履歴として保持する。
 
 ## 概要
 - BriefCard 成果物を章立て・スライド順に配置し、`layout_hint` を確定させる。
