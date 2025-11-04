@@ -16,7 +16,7 @@ roadmap_item: RM-025 マッピング補完エンジン
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: 完了条件: スコアリング・フォールバック・AI 補完ロジックを含むマッピング補完エンジンを実装し、既存フローと統合する / 実施内容: Pipeline に MappingStep を追加し rendering_ready/mapping_log 生成を実装
+  - メモ: 完了条件: スコアリング・フォールバック・AI 補完ロジックを含むマッピング補完エンジンを実装し、既存フローと統合する / 実施内容: Pipeline に MappingStep を追加し generate_ready/mapping_log 生成を実装
 - [x] テスト・検証
   - メモ: 完了条件: 追加した単体・統合テストを `uv run --extra dev pytest` で実行し結果を記録する / 実施内容: `uv run --extra dev pytest` を実行し 116 件すべて成功、`tests/test_mapping_step.py` を新規追加
 - [x] ドキュメント更新

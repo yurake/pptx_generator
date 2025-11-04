@@ -52,7 +52,7 @@
 - エラー発生時には原因と再実行手順を含むログを残すこと。
 
 ### 4.7 HITL 承認フロー
-- 工程 3（コンテンツ正規化）と工程 4（ドラフト構成設計）で、人による承認・差戻し・部分承認が可能であること。
+- 工程 3（コンテンツ準備）と工程 4（ドラフト構成設計）で、人による承認・差戻し・部分承認が可能であること。
 - 承認ログには `slide_id` / `action` / `actor` / `timestamp` を記録し、後続工程とトレーサブルに連携できること。
 - 承認済みスライドはロックされ、差分生成・再レビュー時に保持されること。
 
@@ -131,6 +131,6 @@
 | 工程 | 詳細設計ドキュメント | 主な未実装項目の例 |
 | --- | --- | --- |
 | 1 テンプレ工程 | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | テンプレ差分レポート、抽出・検証ジョブの自動化、ゴールデンサンプル自動検証 |
-| 2 コンテンツ正規化 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
+| 2 コンテンツ準備 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
 | 3 マッピング (HITL + 自動) | [stage-03-mapping.md](./stages/stage-03-mapping.md) | layout_hint 管理、テンプレ適合率、スコアリング/フォールバック制御、AI 補完監査 |
 | 4 PPTX 生成 | [stage-04-rendering.md](./stages/stage-04-rendering.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |

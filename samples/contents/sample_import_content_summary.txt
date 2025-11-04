@@ -1,5 +1,5 @@
 # intro-outline はじめに
-テスト用の簡易ブリーフ入力です。このテキストを工程3 CLI の `uv run pptx content` に渡すと、内容を BriefCard として正規化し `.brief/` 配下へ成果物を生成します。
+テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。
 
 ## intro 現状と課題
 - 営業リードタイムが平均 12 日で業界平均より 1.5 倍長い。

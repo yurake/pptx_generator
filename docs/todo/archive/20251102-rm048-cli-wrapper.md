@@ -11,7 +11,7 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
   - メモ:
     - スコープ
       - CLI に工程4+5を連続実行する新サブコマンド（名称: compose）を追加し、`outline` → `mapping` の再実行を一括化する。
-      - 共通入出力（spec／ドラフト出力／rendering_ready）とブランド・テンプレート指定の扱いを整理し、必要なガイド更新を行う。
+      - 共通入出力（spec／ドラフト出力／generate_ready）とブランド・テンプレート指定の扱いを整理し、必要なガイド更新を行う。
       - 失敗時のロールバックとログ出力方針を定義し、既存コマンドとの互換性を維持する。
     - 影響ファイル（想定）
       - `src/pptx_generator/cli.py`: サブコマンド追加と共通ユーティリティ抽出。
@@ -21,7 +21,7 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
       - `docs/roadmap/roadmap.md`: 成果反映。
     - 実施ステップ
       1. 既存 `outline` / `mapping` の必須引数・成果物の依存関係を整理し、ラッパーの入出力フローと失敗時の扱いを仕様化（ドキュメント草案作成）。
-      2. CLI 実装：共通の spec ロード・ドラフト出力パス・rendering_ready 出力先を制御しつつ、両コマンドを連続実行するサブコマンドを追加。必要なら共通関数を抽出。
+      2. CLI 実装：共通の spec ロード・ドラフト出力パス・generate_ready 出力先を制御しつつ、両コマンドを連続実行するサブコマンドを追加。必要なら共通関数を抽出。
       3. 統合テストを追加し、正常系で `.pptx/draft` と `.pptx/gen` の成果物が揃うこと、途中失敗時に exit code が伝播することを検証。
       4. 運用ドキュメント更新：新コマンドの使用例、既存 `pptx gen` との役割分担、再実行手順を `docs/runbooks/` 等へ反映し、ロードマップ進捗を更新。
       5. テスト実行 (`uv run --extra dev pytest tests/test_cli_integration.py` など) と CLI ヘルプ確認 (`uv run pptx --help`)、必要に応じ `uv run pptx compose ... --export-pdf` などオプション連携を確認。

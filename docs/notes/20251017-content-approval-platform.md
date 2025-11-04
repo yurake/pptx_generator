@@ -5,7 +5,7 @@
 - `docs/design/stages/stage-03-content-normalization.md` と `docs/design/schema/stage-03-content-normalization.md` に合わせ、API / CLI / ストア構成を再整理した。
 
 ## コンポーネント構成
-- **Brief Core Models**: `BriefCard`, `BriefStoryContext`, `BriefLogEntry`, `BriefAIRecord`。`brief_cards.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` で共通利用する。
+- **Brief Core Models**: `BriefCard`, `BriefStoryContext`, `BriefLogEntry`, `BriefAIRecord`。`prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` で共通利用する。
 - **BriefNormalizationStep**: パイプライン内で BriefCard 集合をロードし、工程4/5 へ `BriefDocument` と `BriefStoryOutline` を提供するステップ。
 - **Review Log Aggregator**: `brief_log.json` を解析し、承認率・差戻し理由・Auto-fix 適用状況を集計する。
 - **Integration Hooks**: Analyzer / Review Engine と連携し、AI 診断・Auto-fix 提案・禁則チェックをカード単位で記録する。
@@ -18,14 +18,14 @@
 - `BriefAIRecord`: プロンプトテンプレ ID、モデル、トークン統計、レスポンスダイジェストを保持。
 
 ## パイプライン連携
-- CLI `uv run pptx content samples/contents/sample_import_content_summary.txt` が BriefCard 生成の入口。`BriefAIOrchestrator` がカード下書きを作成し、`BriefStoreWriter` が `.brief/` 配下へ保存する。
+- CLI `uv run pptx prepare samples/contents/sample_import_content_summary.txt` が BriefCard 生成の入口。`BriefAIOrchestrator` がカード下書きを作成し、`BriefStoreWriter` が `.pptx/prepare/` 配下へ保存する。
 - `BriefNormalizationStep` が `PipelineContext` に `brief_document`, `brief_story_outline`, `brief_log`, `ai_generation_meta` を登録。工程4/5 は `BriefCard` 情報を直接参照する。
 - Analyzer / Review Engine は BriefCard を入力に診断を実行し、結果をログおよびメタへ反映する。
 - DAO / API 層は `BriefStore` を利用し、ETag 制御・監査ログ出力・差戻し履歴管理を提供する。
 
 ## テスト戦略
 - モデル単体: `BriefCard` バリデーション（メッセージ長、証跡必須、ストーリー整合性）、Auto-fix JSON Patch の検証。
-- CLI 統合: `samples/json/sample_brief.json` から `.brief/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
+- CLI 統合: `samples/json/sample_brief.json` から `.pptx/prepare/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
 - API: `httpx` ベースで `/v1/brief/cards` 系エンドポイントをテストし、ETag と監査ログの整合をチェック。
 - パイプライン: `BriefNormalizationStep` が `PipelineContext` に期待アーティファクトをセットすること、および `audit_log.json` の `brief_normalization` セクションが生成されることを確認。
 

@@ -2045,7 +2045,7 @@ ChatGPT
    └─ 人レビュー → [content_reviewing]
          ├─ 修正/追記 → [content_revise]
          ├─ 一部承認（スライド単位）→ [content_partial_approved]
-        └─ 全承認 → [brief_cards] → (4) へ
+        └─ 全承認 → [prepare_card] → (4) へ
 
 (4) ドラフト構成[auto_draft]
    └─ 人レビュー → [draft_reviewing]
@@ -2067,7 +2067,7 @@ ChatGPT
   - `intent`の付け替え（例：”課題整理”→”背景説明”）
   - 不要候補の削除／重複統合
   - 定量情報の確定（単位、丸め、根拠注記）
-- **承認結果**：`brief_cards.json`（スライド候補の確定版）
+- **承認結果**：`prepare_card.json`（スライド候補の確定版）
 
 ## (4) ドラフト構成 HITL
 - **編集対象**：章立て、ページ順、スライドの採否、`layout_hint`
@@ -2082,7 +2082,7 @@ ChatGPT
 # インターフェース（受け渡し契約）
 - (3) 出力（承認後）：
   ```json
-  // brief_cards.json
+  // prepare_card.json
   {"slides":[
     {"id":"s01","intent":"市場動向","type_hint":"content",
      "elements":{"title":"市場環境の変化","body":["…"],"table_data":{…},"note":null}}

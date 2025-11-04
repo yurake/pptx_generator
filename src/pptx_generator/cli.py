@@ -14,46 +14,46 @@ import click
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
-from .branding_extractor import (
-    BrandingExtractionError,
-    extract_branding_config,
-)
+from .branding_extractor import (BrandingExtractionError,
+                                 extract_branding_config)
 from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
                     BriefDocument, BriefPolicyError, BriefSourceDocument,
                     load_brief_policy_set)
+from .draft_intel import load_return_reasons
+from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
-from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
-                     JobSpecScaffold, RenderingReadyDocument, SpecValidationError,
-                     TemplateRelease, TemplateReleaseDiagnostics,
-                     TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec)
+from .models import (ContentApprovalDocument, DraftDocument,
+                     GenerateReadyDocument, JobSpec, JobSpecScaffold,
+                     SpecValidationError, TemplateRelease,
+                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
+                     TemplateReleaseReport, TemplateSpec)
 from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        BriefNormalizationOptions, BriefNormalizationStep,
-                       ContentApprovalError, ContentApprovalOptions,
-                       ContentApprovalStep, DraftStructuringOptions,
-                       DraftStructuringStep, MappingOptions, MappingStep,
+                       ContentApprovalOptions, ContentApprovalStep,
+                       DraftStructuringOptions, DraftStructuringStep,
+                       MappingOptions, MappingStep,
                        MonitoringIntegrationOptions, MonitoringIntegrationStep,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, PipelineStep,
                        PolisherError, PolisherOptions, PolisherStep,
-                       RefinerOptions, RenderingAuditOptions, RenderingAuditStep,
-                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep, TemplateExtractor,
-                       TemplateExtractorOptions)
+                       RefinerOptions, RenderingAuditOptions,
+                       RenderingAuditStep, RenderingOptions,
+                       SimpleAnalyzerStep, SimpleRefinerStep,
+                       SimpleRendererStep, SpecValidatorStep,
+                       TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
+from .settings import BrandingConfig, RulesConfig
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
-from .settings import BrandingConfig, RulesConfig
-from .rendering_ready import rendering_ready_to_jobspec
-from .draft_intel import load_return_reasons
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_BRIEF_POLICY_PATH = Path("config/brief_policies/default.json")
-DEFAULT_BRIEF_OUTPUT_DIR = Path(".brief")
+DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 
 logger = logging.getLogger(__name__)
 
@@ -871,6 +871,10 @@ def _run_mapping_pipeline(
     draft_context: PipelineContext | None = None,
     draft_options: DraftStructuringOptions | None = None,
 ) -> PipelineContext:
+    if template is None:
+        msg = "テンプレートファイルを --template で指定してください。generate_ready.json の meta.template_path を設定します。"
+        raise ValueError(msg)
+
     output_dir.mkdir(parents=True, exist_ok=True)
     draft_output.mkdir(parents=True, exist_ok=True)
 
@@ -896,7 +900,8 @@ def _run_mapping_pipeline(
                 draft_output,
             )
 
-    context = PipelineContext(spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
+    context = PipelineContext(
+        spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
     context.add_artifact("branding", branding_artifact)
 
     spec_validator = SpecValidatorStep(
@@ -920,8 +925,8 @@ def _run_mapping_pipeline(
 
 def _run_render_pipeline(
     *,
-    rendering_ready: RenderingReadyDocument,
-    rendering_ready_path: Optional[Path],
+    generate_ready: GenerateReadyDocument,
+    generate_ready_path: Optional[Path],
     output_dir: Path,
     template: Optional[Path],
     pptx_name: str,
@@ -934,7 +939,7 @@ def _run_render_pipeline(
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    render_spec = rendering_ready_to_jobspec(rendering_ready)
+    render_spec = generate_ready_to_jobspec(generate_ready)
     artifacts = dict(base_artifacts or {})
 
     context = PipelineContext(
@@ -943,9 +948,9 @@ def _run_render_pipeline(
         artifacts=artifacts,
     )
     context.add_artifact("branding", branding_artifact)
-    context.add_artifact("rendering_ready", rendering_ready)
-    if rendering_ready_path is not None:
-        context.add_artifact("rendering_ready_path", str(rendering_ready_path))
+    context.add_artifact("generate_ready", generate_ready)
+    if generate_ready_path is not None:
+        context.add_artifact("generate_ready_path", str(generate_ready_path))
 
     renderer = SimpleRendererStep(
         RenderingOptions(
@@ -993,9 +998,9 @@ def _echo_mapping_outputs(context: PipelineContext) -> None:
     draft_log_path = context.artifacts.get("draft_review_log_path")
     if draft_log_path is not None:
         click.echo(f"Draft Log: {draft_log_path}")
-    rendering_ready_path = context.artifacts.get("rendering_ready_path")
-    if rendering_ready_path is not None:
-        click.echo(f"Rendering Ready: {rendering_ready_path}")
+    generate_ready_path = context.artifacts.get("generate_ready_path")
+    if generate_ready_path is not None:
+        click.echo(f"Generate Ready: {generate_ready_path}")
     mapping_log_path = context.artifacts.get("mapping_log_path")
     if mapping_log_path is not None:
         click.echo(f"Mapping Log: {mapping_log_path}")
@@ -1051,9 +1056,9 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     draft_log_path = context.artifacts.get("draft_review_log_path")
     if draft_log_path is not None:
         click.echo(f"Draft Log: {draft_log_path}")
-    rendering_ready_path = context.artifacts.get("rendering_ready_path")
-    if rendering_ready_path is not None:
-        click.echo(f"Rendering Ready: {rendering_ready_path}")
+    generate_ready_path = context.artifacts.get("generate_ready_path")
+    if generate_ready_path is not None:
+        click.echo(f"Generate Ready: {generate_ready_path}")
     mapping_log_path = context.artifacts.get("mapping_log_path")
     if mapping_log_path is not None:
         click.echo(f"Mapping Log: {mapping_log_path}")
@@ -1070,7 +1075,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
 
 @app.command("gen")
 @click.argument(
-    "spec_path",
+    "generate_ready_path",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
 )
@@ -1079,17 +1084,9 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
+    default=Path(".pptx/compose"),
     show_default=True,
     help="生成物を保存するディレクトリ",
-)
-@click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="PPTX テンプレートファイル",
 )
 @click.option(
     "--pptx-name",
@@ -1106,33 +1103,30 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--brief-cards",
-    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
-    show_default=True,
-    help="工程3の brief_cards.json",
-)
-@click.option(
-    "--brief-log",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
-    show_default=True,
-    help="工程3の brief_log.json（任意）",
-)
-@click.option(
-    "--brief-meta",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
-    show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
-)
-@click.option(
     "--branding",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル",
+)
+@click.option(
+    "--brief-cards",
+    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="後方互換用オプション（無視される）",
+)
+@click.option(
+    "--brief-log",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    default=None,
+    help="後方互換用オプション（無視される）",
+)
+@click.option(
+    "--brief-meta",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    default=None,
+    help="後方互換用オプション（無視される）",
 )
 @click.option(
     "--export-pdf",
@@ -1218,30 +1212,15 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     is_flag=True,
     help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
 )
-@click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="工程2で生成した layouts.jsonl のパス",
-)
-@click.option(
-    "--draft-output",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/draft"),
-    show_default=True,
-    help="draft_draft.json / draft_approved.json の出力ディレクトリ",
-)
-def gen(
-    spec_path: Path,
+def gen(  # noqa: PLR0913
+    generate_ready_path: Path,
     output_dir: Path,
-    template: Optional[Path],
     pptx_name: str,
     rules: Path,
-    brief_cards: Path,
-    brief_log: Path,
-    brief_meta: Path,
     branding: Optional[Path],
+    brief_cards: Optional[Path],
+    brief_log: Optional[Path],
+    brief_meta: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
     pdf_output: str,
@@ -1255,26 +1234,46 @@ def gen(
     polisher_args: tuple[str, ...],
     polisher_cwd: Optional[Path],
     emit_structure_snapshot: bool,
-    layouts: Optional[Path],
-    draft_output: Path,
 ) -> None:
-    """JSON 仕様から PPTX を生成する。"""
+    """generate_ready.json から PPTX / PDF / 監査ログを生成する。"""
+
     if not export_pdf and pdf_mode != "both":
         click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
         raise click.exceptions.Exit(code=2)
 
+    if any(path is not None for path in (brief_cards, brief_log, brief_meta)):
+        logger.debug(
+            "legacy brief options were provided to pptx gen; they are ignored in generate_ready flow"
+        )
+
     try:
-        spec = _load_jobspec(spec_path)
-    except SpecValidationError as exc:
-        _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=2) from exc
+        generate_ready = GenerateReadyDocument.parse_file(generate_ready_path)
+    except Exception as exc:  # noqa: BLE001
+        click.echo(f"generate_ready.json の読み込みに失敗しました: {exc}", err=True)
+        raise click.exceptions.Exit(code=4) from exc
+
+    template_path_str = generate_ready.meta.template_path
+    if not template_path_str:
+        click.echo(
+            "generate_ready.json に template_path が含まれていません。工程4を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=2)
+
+    template_path = Path(template_path_str)
+    if not template_path.is_absolute():
+        candidate = (generate_ready_path.parent / template_path).resolve()
+        template_path = candidate if candidate.exists() else template_path
+    if not template_path.exists():
+        click.echo(f"テンプレートファイルが見つかりません: {template_path}", err=True)
+        raise click.exceptions.Exit(code=4)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
+    branding_config, branding_artifact = _prepare_branding(
+        template_path, branding)
     analyzer_options = _build_analyzer_options(
         rules_config, branding_config, emit_structure_snapshot
     )
-    refiner_options = _build_refiner_options(rules_config, branding_config)
     pdf_options = PdfExportOptions(
         enabled=export_pdf,
         mode=pdf_mode,
@@ -1294,56 +1293,48 @@ def gen(
         rules_path=rules,
     )
 
-    try:
-        mapping_context = _run_mapping_pipeline(
-            spec=spec,
-            output_dir=output_dir,
-            rules_config=rules_config,
-            refiner_options=refiner_options,
-            branding_artifact=branding_artifact,
-            brief_cards=brief_cards,
-            brief_log=brief_log if brief_log.exists() else None,
-            brief_meta=brief_meta if brief_meta.exists() else None,
-            require_brief=True,
-            layouts=layouts,
-            draft_output=draft_output,
-            template=template,
-        )
-    except SpecValidationError as exc:
-        _echo_errors("業務ルール検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=3) from exc
-    except BriefNormalizationError as exc:
-        click.echo(f"ブリーフ成果物の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("パイプライン実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
+    mapping_meta: dict[str, object] = {
+        "generate_ready_path": str(generate_ready_path),
+        "generate_ready_generated_at": generate_ready.meta.generated_at,
+        "template_version": generate_ready.meta.template_version,
+        "template_path": str(template_path),
+    }
 
-    rendering_ready_obj = mapping_context.artifacts.get("rendering_ready")
-    if not isinstance(rendering_ready_obj, RenderingReadyDocument):
-        click.echo("rendering_ready.json が生成されませんでした", err=True)
-        raise click.exceptions.Exit(code=4)
-    rendering_ready_path_value = mapping_context.artifacts.get(
-        "rendering_ready_path")
-    rendering_ready_path = (
-        Path(str(rendering_ready_path_value))
-        if rendering_ready_path_value is not None
-        else None
-    )
+    base_artifacts: dict[str, object] = {
+        "generate_ready": generate_ready,
+        "generate_ready_path": str(generate_ready_path),
+        "mapping_meta": mapping_meta,
+    }
+
+    mapping_log_path = generate_ready_path.with_name("mapping_log.json")
+    if mapping_log_path.exists():
+        base_artifacts["mapping_log_path"] = str(mapping_log_path)
+        try:
+            mapping_log = json.loads(
+                mapping_log_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("mapping_log.json の読み込みに失敗しました: %s", exc)
+        else:
+            meta_payload = mapping_log.get("meta")
+            if isinstance(meta_payload, dict):
+                mapping_meta.update(meta_payload)
+    fallback_path = generate_ready_path.with_name("fallback_report.json")
+    if fallback_path.exists():
+        base_artifacts["mapping_fallback_report_path"] = str(fallback_path)
 
     try:
         render_context = _run_render_pipeline(
-            rendering_ready=rendering_ready_obj,
-            rendering_ready_path=rendering_ready_path,
+            generate_ready=generate_ready,
+            generate_ready_path=generate_ready_path,
             output_dir=output_dir,
-            template=template,
+            template=template_path,
             pptx_name=pptx_name,
             branding_config=branding_config,
             branding_artifact=branding_artifact,
             analyzer_options=analyzer_options,
             pdf_options=pdf_options,
             polisher_options=polisher_options,
-            base_artifacts=dict(mapping_context.artifacts),
+            base_artifacts=base_artifacts,
         )
     except PdfExportError as exc:
         click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
@@ -1364,19 +1355,20 @@ def gen(
     _echo_render_outputs(render_context, audit_path)
 
 
-@app.command("content")
+@app.command("prepare")
 @click.argument(
     "brief_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
 )
 @click.option(
     "--output",
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR,
+    default=DEFAULT_PREPARE_OUTPUT_DIR,
     show_default=True,
-    help="ブリーフ成果物を保存するディレクトリ",
+    help="コンテンツ準備成果物を保存するディレクトリ",
 )
 @click.option(
     "--card-limit",
@@ -1384,12 +1376,12 @@ def gen(
     default=None,
     help="生成するカード枚数の上限",
 )
-def content(
+def prepare(
     brief_path: Path,
     output_dir: Path,
     card_limit: int | None,
 ) -> None:
-    """工程3 ブリーフ正規化: BriefCard 成果物を生成する。"""
+    """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
     try:
         source = BriefSourceDocument.parse_file(brief_path)
@@ -1419,7 +1411,7 @@ def content(
         raise click.exceptions.Exit(code=4) from exc
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    cards_path = output_dir / "brief_cards.json"
+    cards_path = output_dir / "prepare_card.json"
     log_path = output_dir / "brief_log.json"
     ai_log_path = output_dir / "brief_ai_log.json"
     meta_path = output_dir / "ai_generation_meta.json"
@@ -1430,7 +1422,8 @@ def content(
     _dump_json(log_path, [])
     _dump_json(
         ai_log_path,
-        [record.model_dump(mode="json", exclude_none=True) for record in ai_logs],
+        [record.model_dump(mode="json", exclude_none=True)
+         for record in ai_logs],
     )
     _dump_json(meta_path, meta.model_dump(mode="json", exclude_none=True))
     _dump_json(story_outline_path, _build_brief_story_outline(document))
@@ -1441,7 +1434,7 @@ def content(
             "policy_id": meta.policy_id,
             "input_hash": meta.input_hash,
             "outputs": {
-                "brief_cards": str(cards_path.resolve()),
+                "prepare_card": str(cards_path.resolve()),
                 "brief_log": str(log_path.resolve()),
                 "brief_ai_log": str(ai_log_path.resolve()),
                 "ai_generation_meta": str(meta_path.resolve()),
@@ -1452,7 +1445,7 @@ def content(
     }
     _dump_json(audit_path, audit_payload)
 
-    click.echo(f"Brief Cards: {cards_path}")
+    click.echo(f"Prepare Card: {cards_path}")
     click.echo(f"Brief Log: {log_path}")
     click.echo(f"Brief AI Log: {ai_log_path}")
     click.echo(f"AI Generation Meta: {meta_path}")
@@ -1463,7 +1456,8 @@ def content(
 @app.command("outline")
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
 )
 @click.option(
     "--layouts",
@@ -1570,24 +1564,25 @@ def content(
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    type=click.Path(exists=False, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def outline(
     spec_path: Path,
@@ -1682,12 +1677,6 @@ def outline(
     help="工程2で生成した layouts.jsonl のパス",
 )
 @click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="工程2で生成した layouts.jsonl のパス",
-)
-@click.option(
     "--draft-output",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path(".pptx/draft"),
@@ -1773,9 +1762,9 @@ def outline(
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
+    default=Path(".pptx/compose"),
     show_default=True,
-    help="rendering_ready.json 等の出力ディレクトリ",
+    help="generate_ready.json 等の出力ディレクトリ",
 )
 @click.option(
     "--rules",
@@ -1788,37 +1777,40 @@ def outline(
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
-    help="ブランド抽出に利用するテンプレートファイル（任意）",
+    help="generate_ready.json に埋め込むテンプレートファイル（必須）",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def compose(  # noqa: PLR0913
     spec_path: Path,
@@ -1886,7 +1878,8 @@ def compose(  # noqa: PLR0913
         logging.exception("compose 実行中にアウトライン工程でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
-    _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
+    _print_outline_result(
+        outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(template, branding)
@@ -1915,6 +1908,9 @@ def compose(  # noqa: PLR0913
                 log_filename=log_filename,
             ),
         )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
@@ -1931,7 +1927,8 @@ def compose(  # noqa: PLR0913
 @app.command("mapping")
 @click.argument(
     "spec_path",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
 )
 @click.option(
     "--output",
@@ -1940,18 +1937,20 @@ def compose(  # noqa: PLR0913
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path(".pptx/gen"),
     show_default=True,
-    help="rendering_ready.json 等の出力ディレクトリ",
+    help="generate_ready.json 等の出力ディレクトリ",
 )
 @click.option(
     "--rules",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=DEFAULT_RULES_PATH,
     show_default=True,
     help="検証ルール設定ファイル",
 )
 @click.option(
     "--layouts",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="layouts.jsonl のパス",
 )
@@ -1965,37 +1964,40 @@ def compose(  # noqa: PLR0913
 @click.option(
     "--template",
     "-t",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
-    help="ブランド抽出に利用するテンプレートファイル（任意）",
+    help="generate_ready.json に埋め込むテンプレートファイル（必須）",
 )
 @click.option(
     "--branding",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     show_default=str(DEFAULT_BRANDING_PATH),
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
     "--brief-cards",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def mapping(  # noqa: PLR0913
     spec_path: Path,
@@ -2009,7 +2011,7 @@ def mapping(  # noqa: PLR0913
     brief_log: Path,
     brief_meta: Path,
 ) -> None:
-    """工程5 マッピングを実行し rendering_ready.json を生成する。"""
+    """工程5 マッピングを実行し generate_ready.json を生成する。"""
     try:
         spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
@@ -2035,6 +2037,9 @@ def mapping(  # noqa: PLR0913
             draft_output=draft_output,
             template=template,
         )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
@@ -2046,224 +2051,6 @@ def mapping(  # noqa: PLR0913
         raise click.exceptions.Exit(code=1) from exc
 
     _echo_mapping_outputs(context)
-
-
-@app.command("render")
-@click.argument(
-    "rendering_ready_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-)
-@click.option(
-    "--output",
-    "-o",
-    "output_dir",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
-    show_default=True,
-    help="レンダリング成果物の出力ディレクトリ",
-)
-@click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="PPTX テンプレートファイル",
-)
-@click.option(
-    "--pptx-name",
-    default="proposal.pptx",
-    show_default=True,
-    help="出力 PPTX のファイル名",
-)
-@click.option(
-    "--rules",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=DEFAULT_RULES_PATH,
-    show_default=True,
-    help="Analyzer 設定を含むルールファイル",
-)
-@click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル",
-)
-@click.option(
-    "--export-pdf",
-    is_flag=True,
-    help="LibreOffice を利用して PDF を追加出力する",
-)
-@click.option(
-    "--pdf-mode",
-    type=click.Choice(["both", "only"], case_sensitive=False),
-    default="both",
-    show_default=True,
-    help="PDF 出力時の挙動。only では PPTX を保存しない",
-)
-@click.option(
-    "--pdf-output",
-    type=str,
-    default="proposal.pdf",
-    show_default=True,
-    help="出力 PDF ファイル名",
-)
-@click.option(
-    "--libreoffice-path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="LibreOffice (soffice) 実行ファイルのパス",
-)
-@click.option(
-    "--pdf-timeout",
-    type=int,
-    default=120,
-    show_default=True,
-    help="LibreOffice 変換のタイムアウト秒",
-)
-@click.option(
-    "--pdf-retries",
-    type=int,
-    default=2,
-    show_default=True,
-    help="LibreOffice 変換の最大リトライ回数",
-)
-@click.option(
-    "--polisher/--no-polisher",
-    "polisher_toggle",
-    default=None,
-    help="Open XML Polisher を実行するかを明示的に指定する（設定ファイル値を上書き）",
-)
-@click.option(
-    "--polisher-path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="Open XML Polisher (.exe / .dll) もしくはラッパースクリプトのパス",
-)
-@click.option(
-    "--polisher-rules",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="Polisher へ渡すルール設定ファイル",
-)
-@click.option(
-    "--polisher-timeout",
-    type=int,
-    default=None,
-    help="Polisher 実行のタイムアウト秒（設定ファイル値を上書き）",
-)
-@click.option(
-    "--polisher-arg",
-    "polisher_args",
-    multiple=True,
-    help="Polisher へ渡す追加引数（{pptx}, {rules} をプレースホルダーとして利用可能）",
-)
-@click.option(
-    "--polisher-cwd",
-    type=click.Path(exists=True, file_okay=False,
-                    dir_okay=True, path_type=Path),
-    default=None,
-    help="Polisher 実行時のカレントディレクトリ",
-)
-@click.option(
-    "--emit-structure-snapshot",
-    is_flag=True,
-    help="Analyzer の構造スナップショット (analysis_snapshot.json) を出力する",
-)
-def render(  # noqa: PLR0913
-    rendering_ready_path: Path,
-    output_dir: Path,
-    template: Optional[Path],
-    pptx_name: str,
-    rules: Path,
-    branding: Optional[Path],
-    export_pdf: bool,
-    pdf_mode: str,
-    pdf_output: str,
-    libreoffice_path: Optional[Path],
-    pdf_timeout: int,
-    pdf_retries: int,
-    polisher_toggle: bool | None,
-    polisher_path: Optional[Path],
-    polisher_rules: Optional[Path],
-    polisher_timeout: Optional[int],
-    polisher_args: tuple[str, ...],
-    polisher_cwd: Optional[Path],
-    emit_structure_snapshot: bool,
-) -> None:
-    """工程6 レンダリングを実行し PPTX / PDF / 解析結果を生成する。"""
-    if not export_pdf and pdf_mode != "both":
-        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
-        raise click.exceptions.Exit(code=2)
-
-    rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
-    analyzer_options = _build_analyzer_options(
-        rules_config, branding_config, emit_structure_snapshot
-    )
-    pdf_options = PdfExportOptions(
-        enabled=export_pdf,
-        mode=pdf_mode,
-        output_filename=pdf_output,
-        soffice_path=libreoffice_path,
-        timeout_sec=pdf_timeout,
-        max_retries=pdf_retries,
-    )
-    polisher_options = _build_polisher_options(
-        rules_config,
-        polisher_toggle=polisher_toggle,
-        polisher_path=polisher_path,
-        polisher_rules=polisher_rules,
-        polisher_timeout=polisher_timeout,
-        polisher_args=polisher_args,
-        polisher_cwd=polisher_cwd,
-        rules_path=rules,
-    )
-
-    try:
-        rendering_ready = RenderingReadyDocument.parse_file(
-            rendering_ready_path)
-    except Exception as exc:  # noqa: BLE001
-        click.echo(f"rendering_ready.json の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-
-    try:
-        context = _run_render_pipeline(
-            rendering_ready=rendering_ready,
-            rendering_ready_path=rendering_ready_path,
-            output_dir=output_dir,
-            template=template,
-            pptx_name=pptx_name,
-            branding_config=branding_config,
-            branding_artifact=branding_artifact,
-            analyzer_options=analyzer_options,
-            pdf_options=pdf_options,
-            polisher_options=polisher_options,
-        )
-    except PdfExportError as exc:
-        click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=5) from exc
-    except PolisherError as exc:
-        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("レンダリング実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-
-    analysis_path = context.artifacts.get("analysis_path")
-    _emit_review_engine_analysis(context, analysis_path)
-    audit_path = _write_audit_log(context)
-    _echo_render_outputs(context, audit_path)
 
 
 @app.command("template")
@@ -2393,6 +2180,21 @@ def template(  # noqa: PLR0913
 
     _echo_template_extraction_result(extraction_result)
 
+    validation_result = extraction_result.validation_result
+    if validation_result.errors_count > 0:
+        click.echo(
+            "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=6)
+
+    if extraction_result.template_spec.errors:
+        click.echo(
+            "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=6)
+
     if not with_release:
         click.echo("テンプレ工程（抽出＋検証）が完了しました。")
         return
@@ -2483,22 +2285,6 @@ def tpl_extract(
             anchor=anchor,
             output_format=format,
         )
-        _echo_template_extraction_result(extraction_result)
-        validation_result = extraction_result.validation_result
-        if validation_result.errors_count > 0:
-            click.echo(
-                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=6)
-
-        template_spec = extraction_result.template_spec
-        if template_spec.errors:
-            click.echo(
-                "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=6)
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -2511,6 +2297,21 @@ def tpl_extract(
         logging.exception("テンプレート抽出中にエラーが発生しました")
         click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
+    else:
+        _echo_template_extraction_result(extraction_result)
+        validation_result = extraction_result.validation_result
+        if validation_result.errors_count > 0:
+            click.echo(
+                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=6)
+        if extraction_result.template_spec.errors:
+            click.echo(
+                "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=6)
 
 
 @app.command("layout-validate")
@@ -2653,7 +2454,7 @@ def tpl_release(
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
     try:
-        release_result = _run_template_release(
+        result = _run_template_release(
             template_path=template_path,
             brand=brand,
             version=version,
@@ -2673,11 +2474,10 @@ def tpl_release(
         logging.exception("テンプレートリリース生成中にエラーが発生しました")
         click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
-
-    _echo_template_release_result(release_result)
-
-    if release_result.release.diagnostics.errors:
-        raise click.exceptions.Exit(code=6)
+    else:
+        _echo_template_release_result(result)
+        if result.release.diagnostics.errors:
+            raise click.exceptions.Exit(code=6)
 
 
 def _run_golden_specs(
@@ -2966,8 +2766,8 @@ def _write_audit_log(context: PipelineContext) -> Path:
             context.artifacts.get("review_engine_analysis_path")
         ),
         "pdf": _artifact_str(context.artifacts.get("pdf_path")),
-        "rendering_ready": _artifact_str(
-            context.artifacts.get("rendering_ready_path")
+        "generate_ready": _artifact_str(
+            context.artifacts.get("generate_ready_path")
         ),
         "rendering_log": _artifact_str(
             context.artifacts.get("rendering_log_path")
@@ -3009,7 +2809,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
 
     hashes: dict[str, str] = {}
     for label, key in (
-        ("rendering_ready", "rendering_ready_path"),
+        ("generate_ready", "generate_ready_path"),
         ("pptx", "pptx_path"),
         ("analysis", "analysis_path"),
         ("analysis_pre_polisher", "analysis_pre_polisher_path"),

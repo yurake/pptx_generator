@@ -11,14 +11,14 @@ from pptx_generator.cli import app
 SAMPLE_BRIEF = Path("samples/contents/sample_import_content_summary.txt")
 
 
-def test_content_generates_brief_outputs(tmp_path) -> None:
-    output_dir = tmp_path / "brief"
+def test_prepare_generates_outputs(tmp_path) -> None:
+    output_dir = tmp_path / "prepare"
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(SAMPLE_BRIEF),
             "--output",
             str(output_dir),
@@ -28,13 +28,13 @@ def test_content_generates_brief_outputs(tmp_path) -> None:
 
     assert result.exit_code == 0
 
-    brief_dir = output_dir
-    cards_path = brief_dir / "brief_cards.json"
-    log_path = brief_dir / "brief_log.json"
-    ai_log_path = brief_dir / "brief_ai_log.json"
-    meta_path = brief_dir / "ai_generation_meta.json"
-    outline_path = brief_dir / "brief_story_outline.json"
-    audit_path = brief_dir / "audit_log.json"
+    prepare_dir = output_dir
+    cards_path = prepare_dir / "prepare_card.json"
+    log_path = prepare_dir / "brief_log.json"
+    ai_log_path = prepare_dir / "brief_ai_log.json"
+    meta_path = prepare_dir / "ai_generation_meta.json"
+    outline_path = prepare_dir / "brief_story_outline.json"
+    audit_path = prepare_dir / "audit_log.json"
 
     for path in [cards_path, log_path, ai_log_path, meta_path, outline_path, audit_path]:
         assert path.exists(), f"{path} が生成されていること"
@@ -57,28 +57,28 @@ def test_content_generates_brief_outputs(tmp_path) -> None:
     assert brief_meta["policy_id"]
     assert brief_meta["statistics"]["cards_total"] == 4
     outputs = brief_meta["outputs"]
-    assert outputs["brief_cards"].endswith("brief_cards.json")
+    assert outputs["prepare_card"].endswith("prepare_card.json")
 
 
-def test_content_requires_valid_brief(tmp_path) -> None:
+def test_prepare_requires_valid_brief(tmp_path) -> None:
     invalid_path = tmp_path / "invalid.json"
     invalid_path.write_text("{}", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(app, ["content", str(invalid_path)], catch_exceptions=False)
+    result = runner.invoke(app, ["prepare", str(invalid_path)], catch_exceptions=False)
 
     assert result.exit_code != 0
     assert "解析に失敗" in result.output
 
 
-def test_content_respects_card_limit(tmp_path) -> None:
+def test_prepare_respects_card_limit(tmp_path) -> None:
     output_dir = tmp_path / "limited"
     runner = CliRunner()
 
     result = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(SAMPLE_BRIEF),
             "--output",
             str(output_dir),
@@ -89,7 +89,7 @@ def test_content_respects_card_limit(tmp_path) -> None:
     )
 
     assert result.exit_code == 0
-    cards_payload = json.loads((output_dir / "brief_cards.json").read_text(encoding="utf-8"))
+    cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
     assert len(cards_payload["cards"]) == 2
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["statistics"]["cards_total"] == 2

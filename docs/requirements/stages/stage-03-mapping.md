@@ -1,13 +1,13 @@
 # 工程3 マッピング (HITL + 自動) 要件詳細
 
 ## 概要
-- Brief 成果物をもとに章構成とレイアウト割付を連続的に実行し、`draft_approved.json` と `rendering_ready.json` を確定させる。
+- Brief 成果物をもとに章構成とレイアウト割付を連続的に実行し、`draft_approved.json` と `generate_ready.json` を確定させる。
 - HITL が章構成・差戻しを操作できること、かつフォールバックや Analyzer 結果を含む監査ログを残すこと。
 - CLI (`pptx compose` / `pptx outline` / `pptx mapping`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`。
-- Stage2: `brief_cards.json`, `brief_log.json`, `ai_generation_meta.json`。
+- Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
@@ -17,7 +17,7 @@
 - `draft_approved.json`: HITL 承認後の章・スライド構成。
 - `draft_review_log.json`: 承認・差戻し履歴。`action`, `actor`, `timestamp`, `reason_code` を必須とする。
 - `draft_meta.json`: 章テンプレ適合率、付録枚数、Analyzer 指摘件数など統計値。
-- `rendering_ready.json`: レイアウト・プレースホルダ割付済みの最終 JSON。
+- `generate_ready.json`: レイアウト・プレースホルダ割付済みの最終 JSON。
 - `mapping_log.json`: レイアウト候補スコア・フォールバック履歴・AI 補完履歴。
 - `fallback_report.json`: 重大フォールバック（例: 章統合、付録送り）を詳細化した任意ファイル。
 
@@ -45,7 +45,7 @@
 
 ## CLI 要件
 - `pptx compose`
-  - `--brief-*` オプションが未指定でも `.brief/` の既定ファイルを自動参照する。
+  - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--draft-output` と `--output` により、ドラフトとマッピング成果物の保存先を分離できる。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
 - `pptx outline`
@@ -55,7 +55,7 @@
 
 ## 品質ゲート
 - `draft_approved.json` に未承認スライドが存在しない。
-- `rendering_ready.json` のスライド数が `draft_approved.json` と一致する。
+- `generate_ready.json` のスライド数が `draft_approved.json` と一致する。
 - `mapping_log.json` の `warnings` と `analyzer.issue_count` が監視対象（PagerDuty 等）へ連携可能な形式である。
 - フォールバック発生時は `fallback_report.json` に詳細が記録され、HITL が差戻し判断を下せる。
 

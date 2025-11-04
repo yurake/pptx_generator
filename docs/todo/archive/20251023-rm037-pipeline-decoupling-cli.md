@@ -18,7 +18,7 @@ roadmap_item: RM-037 パイプライン疎結合 CLI 再設計
 - [x] 実装
   - メモ: `MappingStep` の `mapping_meta` 拡張と `audit_log` のハッシュ追加、CLI 再実行テストを実装。
 - [x] テスト・検証
-  - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_cli_integration.py tests/test_rendering_ready_utils.py`
+  - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_cli_integration.py tests/test_generate_ready_utils.py`
 - [x] 全テスト実行
   - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest`
 - [x] ドキュメント更新

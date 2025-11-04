@@ -1,8 +1,8 @@
 # 工程4 PPTX レンダリング 設計
 
 ## 目的
-- `rendering_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。工程3/4の成果物は `rendering_ready` 内の `job_meta` / `job_auth` を通じて参照する。
-- CLI では `uv run pptx render <rendering_ready.json>` で単体実行でき、`uv run pptx gen` は内部で `mapping` → `render` を順に呼び出す。
+- `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。工程3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
+- CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を前提とし、工程4の成果物確認には `pptx compose` / `pptx mapping` を用いる。
 - LibreOffice PDF 変換や Open XML Polisher との統合を考慮した拡張性を持たせる。
 
 ## コンポーネント
@@ -15,7 +15,7 @@
 | Polisher Bridge | Open XML SDK プロジェクト呼び出し | .NET 8 CLI |
 
 ## フロー
-1. Rendering Orchestrator がテンプレートを開き、`rendering_ready.json` から再構築した `JobSpec` を基にスライドを生成。  
+1. Rendering Orchestrator がテンプレートを開き、`generate_ready.json` から再構築した `JobSpec` を基にスライドを生成。  
 2. 各 PH にテキスト・表・画像を挿入し、フォーマット調整。  
 3. Pre-Analyzer がレンダリング直後の PPTX を解析し、ベースラインとして `analysis_pre_polisher.json` を生成。  
 4. Rendering Consistency が空プレースホルダーやスライド数不一致をチェックし、検知結果を `rendering_log.json` に追記。  

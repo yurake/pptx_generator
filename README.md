@@ -18,10 +18,10 @@ PowerPoint テンプレートと資料データ（プレーンテキストや PD
 
 | 工程 | 入力 | 出力 | 主な出力先 | 概要 |
 | --- | --- | --- | --- | --- |
-| 1. テンプレ工程 | テンプレートPPTX (`templates.pptx`) | テンプレ仕様 (`jobspec.json`)、ブランド設定 (`branding.json`)、検証ログ | `.pptx/extract/`（`--with-release` 指定時は `.pptx/release/`） | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続工程の基盤データを用意 |
-| 2. コンテンツ正規化 | ブリーフ入力（Markdown / JSON など） | Brief 成果物（`brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`） | `.brief/` | ブリーフを BriefCard へ正規化し、AI ログや監査メタを付与して後続工程に渡す |
-| 3. マッピング | テンプレ仕様 (`jobspec.json`)、Brief 成果物 (`brief_cards.json` ほか)、レイアウト情報 (`layouts.jsonl`) | `draft_approved.json`, `rendering_ready.json`, `mapping_log.json`, `draft_meta.json` | `.pptx/draft/`, `.pptx/gen/` | 章構成承認とレイアウト割付をまとめて実施し、レンダリング直前の JSON を生成 |
-| 4. PPTX生成 | `rendering_ready.json`、テンプレート、ブランド設定 | `proposal.pptx`, `proposal.pdf`（任意）, `analysis.json`, `audit_log.json` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
+| 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続工程の基盤データを用意 |
+| 2. コンテンツ準備 | 資料データ(text,PDFなど)、<br>テンプレ仕様(`jobspec.json`)  | ドラフト(`prepare_card.json`) | `.pptx/prepare/` | 入力データをスライド候補へ整形し、生成AIを併用しながら正規化を行う |
+| 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
+| 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
 
 ```mermaid
 flowchart TD
@@ -32,38 +32,34 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)<br>（ユーザー準備）**"]:::userfile --> S1["**工程 1 テンプレ工程**"]:::stage
-  S1 --> Jobspec["**jobspec.json**"]:::file
-  S1 --> Branding["**branding.json**"]:::file
-  S1 --> Layouts["**layouts.jsonl**"]:::file
+  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**工程 1 テンプレ**"]:::stage
+  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Brief["**brief_source.md / .json（ユーザー準備）**"]:::userfile --> S2["**工程 2 コンテンツ正規化**"]:::stage
-  S2 --> BriefCards["**brief_cards.json ほか**"]:::file
+  Brief["**資料データ (brief_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
+  S2 --> BriefCards["**ドラフト(prepare_card.json)**"]:::file
+  BriefCards --> S3
 
   %% ======= Stage 3 =======
-  Jobspec --> S3["**工程 3 マッピング**"]:::stage
-  BriefCards --> S3
-  Layouts --> S3
-  S3 --> Draft["**draft_approved.json**"]:::file
-  S3 --> Ready["**rendering_ready.json**"]:::file
+  S3["**工程 3 マッピング**"]:::stage
+  Jobspec --> S3
+  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
   Ready --> S4["**工程 4 PPTX生成**"]:::stage
-  Tmpl --> S4
-  Branding --> S4
   S4 --> PPTX["**proposal.pptx**"]:::final
   S4 --> PDF["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
     direction LR
-    A1["青: **工程（自動/HITL）**"]:::stage
-    A2["灰: **システム生成ファイル**"]:::file
-    A3["緑: **ユーザー準備ファイル**"]:::userfile
-    A4["金: **最終成果物**"]:::final
+    A1["**工程（自動/HITL）**"]:::stage
+    A2["**システム生成ファイル**"]:::file
+    A3["**ユーザー準備ファイル**"]:::userfile
+    A4["**最終成果物**"]:::final
   end
 ```
+
 
 
 ### セットアップ
@@ -86,78 +82,75 @@ flowchart TD
 
 | 工程 | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
-| 1. テンプレ工程 | `uv run pptx template samples/templates/templates.pptx --output .pptx/extract --with-release --brand demo --version v1` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json`, `.pptx/extract/layouts.jsonl`, `.pptx/extract/diagnostics.json`, `.pptx/release/template_release.json`, `.pptx/release/release_report.json` | テンプレ抽出と検証を一括実行。`--with-release` を付与するとリリースメタも生成。 |
-| 2. コンテンツ正規化 | `uv run pptx content samples/contents/sample_import_content_summary.txt --output .brief` | `.brief/brief_cards.json`, `.brief/brief_log.json`, `.brief/brief_ai_log.json`, `.brief/ai_generation_meta.json`, `.brief/brief_story_outline.json`, `.brief/audit_log.json` | ブリーフ入力を BriefCard へ整形し、AI ログと監査メタを出力。`--card-limit` で生成枚数を制御可能。 |
-| 3. マッピング (HITL + 自動) | `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --brief-meta .brief/ai_generation_meta.json --draft-output .pptx/draft --output .pptx/gen --layouts .pptx/extract/layouts.jsonl --template samples/templates/templates.pptx` | `.pptx/draft/draft_approved.json`, `.pptx/draft/draft_meta.json`, `.pptx/draft/draft_review_log.json`, `.pptx/gen/rendering_ready.json`, `.pptx/gen/mapping_log.json` | 章構成承認とレイアウト割付をまとめて実行し、ドラフトとレンダリング準備 JSON を同時更新。 |
-| 4. レンダリング | `uv run pptx render .pptx/gen/rendering_ready.json --template samples/templates/templates.pptx --output .pptx/gen --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf`（任意）, `.pptx/gen/audit_log.json`, `.pptx/gen/analysis.json` | Analyzer や監査ログを含む最終成果物を生成。 |
-| 工程2〜4 一括 | `uv run pptx gen .pptx/extract/jobspec.json --template samples/templates/templates.pptx --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --brief-meta .brief/ai_generation_meta.json --output .pptx/gen` | `.pptx/gen/proposal.pptx`（`proposal.pdf` 任意） | コンテンツ正規化の成果物を入力にマッピング～レンダリングを一括実行。 |
+| 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
+| 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
+| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/prepare/prepare_card.json --template samples/templates/templates.pptx` | `.pptx/draft/generate_ready.json` | 章構成承認とレイアウト割付をまとめて実行 |
+| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成。 |
 
-> テンプレ工程の個別サブコマンド（`tpl-extract` / `layout-validate` / `tpl-release`）や中間成果物の詳細は `docs/design/cli-command-reference.md` を参照してください。旧 `outline` / `mapping` の運用手順は `docs/runbooks/story-outline-ops.md` に整理しています。
+補足:
+- 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
+- 1.テンプレの個別サブコマンド（`tpl-extract` / `layout-validate` / `tpl-release`）や中間成果物の詳細は `docs/design/cli-command-reference.md` を参照してください。
+- 3.マッピンングの個別サブコマンド（ `outline` / `mapping` ）の詳細は `docs/runbooks/story-outline-ops.md` を参照してください。
 
-補足資料: 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
-
-CLI の詳細なオプションは各サブコマンドに対して `uv run pptx <cmd> --help` を参照してください。
 
 ## 工程別ガイド概要
 ここでは各工程の目的と主要な参照ドキュメントをまとめます。詳細な手順やチェックリストはリンク先を参照してください。
 
-> `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
+### 原則
+- CLI の詳細なオプションは各サブコマンドに対して `uv run pptx <cmd> --help` を参照してください。
+- `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
 
 ### 工程 1: テンプレ工程
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
-- 抽出と検証は `uv run pptx template` で一括実行します。リリースメタが必要な場合は `--with-release --brand <brand> --version <version> [--release-output <dir>]` を付与してください。
+- 抽出と検証は `uv run pptx template` で一括実行します。リリースメタが必要な場合は `--with-release --brand <brand> --version <ver>` を付与してください。
   ```bash
   uv run pptx template templates/libraries/<brand>/<version>/template.pptx \
     --output .pptx/extract/<brand>_<version> \
-    --with-release --brand <brand> --version <version> \
-    --release-output .pptx/release/<brand>_<version>
+    --with-release --brand <brand> --version <version>
   ```
-  - 既定の出力先は `.pptx/extract/` です。`--with-release` 指定時は `.pptx/release/` に `template_release.json` や `release_report.json` が生成されます。
+  - 既定の出力先は `.pptx/extract/` です。抽出成果物に加え、`--with-release` 指定時は `.pptx/release/` に `template_release.json` や `release_report.json` が生成されます。
 - 個別コマンド（`tpl-extract` / `layout-validate` / `tpl-release`）やゴールデンサンプル運用は `docs/design/cli-command-reference.md` の「テンプレ工程詳細オプション」を参照してください。
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
-### 工程 2: コンテンツ正規化
-- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.brief/` 配下に生成します。生成カード枚数は `--card-limit` で制御可能です。
+### 工程 2: コンテンツ準備
+- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `--card-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
+- `.pptx/prepare/` 配下に `prepare_card.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
   ```bash
-  uv run pptx content samples/contents/sample_import_content_summary.txt \
-    --output .brief
+  uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+    --output .pptx/prepare
   ```
-  - 主な生成物: `brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
+  - 主な生成物: `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
   - 既存の承認済み Brief を再利用する場合は `--brief-cards`, `--brief-log`, `--brief-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
 
 ### 工程 3: マッピング (HITL + 自動)
-- 章構成承認とレイアウト割付を同一工程で扱い、`draft_approved.json` と `rendering_ready.json` を同時に更新します。
-- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（`.pptx/draft` / `.pptx/gen`）を維持します。
+- 章構成承認とレイアウト割付を同一工程で扱い、`draft_approved.json` と `generate_ready.json` を同時に更新します。
+- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（`.pptx/draft` / `.pptx/compose`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
-    --brief-cards .brief/brief_cards.json \
-    --brief-log .brief/brief_log.json \
-    --brief-meta .brief/ai_generation_meta.json \
+    --brief-cards .pptx/prepare/prepare_card.json \
+    --brief-log .pptx/prepare/brief_log.json \
+    --brief-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
-    --output .pptx/gen \
+    --output .pptx/compose \
     --layouts .pptx/extract/layouts.jsonl \
     --template samples/templates/templates.pptx
-  # 完了後に `.pptx/gen/rendering_ready.json` や `mapping_log.json` を確認
+  # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
-- 工程4からの連続実行には `pptx compose` を利用できます。既存ドラフトを再承認した後、同コマンドを再実行すると `draft_*` と `rendering_ready.json` が一括で更新されます。
-- `pptx gen` を実行した場合も内部で `mapping` → `render` が順に呼び出され、従来どおりの成果物を `.pptx/gen/` に保存します。
+- `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
 ### 工程 4: PPTX レンダリング
-- `pptx render` サブコマンドで `rendering_ready.json` を入力し、PPTX／PDF（任意）と監査ログを生成します。
+- `pptx gen` サブコマンドで `generate_ready.json` を入力し、PPTX／PDF（任意）と監査ログを生成します。
   ```bash
-  # 工程5の成果物からレンダリングのみを再実行する例
-  uv run pptx mapping samples/json/sample_jobspec.json --output .pptx/gen
-  uv run pptx render .pptx/gen/rendering_ready.json \
-    --template samples/templates/templates.pptx \
+  uv run pptx gen .pptx/compose/generate_ready.json \
     --output .pptx/gen \
+    --branding config/branding.json \
     --export-pdf
   ```
-- `pptx gen` を利用すると工程2〜4を一括実行できます（`--brief-*` オプションを忘れずに指定してください）。
+- `generate_ready.json` に `meta.template_path` が記録されていれば、`--template` を指定せずにテンプレートを自動解決します。
 - 詳細ガイド: `docs/requirements/stages/stage-04-rendering.md` と `docs/design/stages/stage-04-rendering.md`
 
-## 工程別ガイド概要
 ## 主な成果物
 - 最終成果物（`proposal.pptx` や任意の `proposal.pdf`）および中間ファイルの一覧は `docs/design/design.md` を参照してください。
 
@@ -167,7 +160,7 @@ CLI の詳細なオプションは各サブコマンドに対して `uv run pptx
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
 - CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
-- テスト実行後は `.pptx/gen/` や `.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
+- テスト実行後は `.pptx/compose/` や `.pptx/gen/`、`.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
 
 ## 設定リファレンス
 | ファイル | 役割 | 変更時に参照するドキュメント |
