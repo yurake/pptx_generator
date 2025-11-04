@@ -83,7 +83,7 @@ flowchart TD
 | 工程 | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
 | 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
-| 2. コンテンツ正規化 | `uv run pptx content .pptx/extract/jobspec.json --content-source samples/contents/sample_import_content_summary.txt` | `.pptx/content/brief_cards.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
+| 2. コンテンツ正規化 | `uv run pptx content samples/contents/sample_import_content_summary.txt` | `.pptx/content/brief_cards.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/content/brief_cards.json --template samples/templates/templates.pptx` | `.pptx/draft/generate_ready.json` | 章構成承認とレイアウト割付をまとめて実行 |
 | 4. PPTX生成 | `uv run pptx gen .pptx/gen/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成。 |
 
@@ -119,7 +119,7 @@ flowchart TD
 - `.pptx/content/` 配下に `content_draft.json`（生成AIモード時）、`content_ai_log.json`、`ai_generation_meta.json`、`spec_content_applied.json`、`content_meta.json` を出力します。
   ```bash
   uv run pptx content samples/contents/sample_import_content_summary.txt \
-    --output .brief
+    --output .pptx/content
   ```
   - 主な生成物: `brief_cards.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
   - 既存の承認済み Brief を再利用する場合は `--brief-cards`, `--brief-log`, `--brief-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。

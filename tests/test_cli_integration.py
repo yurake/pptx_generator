@@ -77,6 +77,61 @@ def _brief_args(paths: dict[str, Path]) -> list[str]:
     ]
 
 
+def test_cli_template_basic(tmp_path: Path) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(SAMPLE_TEMPLATE),
+            "--output",
+            str(extract_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (extract_dir / "template_spec.json").exists()
+    assert (extract_dir / "branding.json").exists()
+    assert (extract_dir / "jobspec.json").exists()
+    assert (extract_dir / "layouts.jsonl").exists()
+    assert (extract_dir / "diagnostics.json").exists()
+    assert "テンプレ工程（抽出＋検証）が完了しました。" in result.output
+
+
+def test_cli_template_with_release(tmp_path: Path) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+    release_dir = tmp_path / "release"
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(SAMPLE_TEMPLATE),
+            "--output",
+            str(extract_dir),
+            "--with-release",
+            "--brand",
+            "Sample",
+            "--version",
+            "1.0.0",
+            "--release-output",
+            str(release_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (extract_dir / "template_spec.json").exists()
+    assert (extract_dir / "branding.json").exists()
+    assert (release_dir / "template_release.json").exists()
+    assert (release_dir / "release_report.json").exists()
+    assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in result.output
+
+
 def _prepare_generate_ready(
     runner: CliRunner,
     spec_path: Path,
