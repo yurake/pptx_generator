@@ -1,0 +1,599 @@
+{
+  "meta": {
+    "generated_at": "2025-11-04T10:54:06.154468+00:00",
+    "template_version": "templates",
+    "rendering_time_ms": 460,
+    "warnings_total": 8,
+    "empty_placeholders": 6
+  },
+  "slides": [
+    {
+      "page_no": 1,
+      "layout_id": "Title",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 2,
+      "layout_id": "Title",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 3,
+      "layout_id": "Section Covor Left",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": false,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 4,
+      "layout_id": "Section Covor Left",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": false,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 5,
+      "layout_id": "Section Covor Center",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": false,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 6,
+      "layout_id": "Section Covor Center",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": false,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 7,
+      "layout_id": "Agenda",
+      "detected": {
+        "title": false,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 8,
+      "layout_id": "Agenda",
+      "detected": {
+        "title": false,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 9,
+      "layout_id": "One Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 10,
+      "layout_id": "One Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 11,
+      "layout_id": "Two Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 12,
+      "layout_id": "Two Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 13,
+      "layout_id": "Two Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 14,
+      "layout_id": "Two Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 15,
+      "layout_id": "Left Highlight Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 16,
+      "layout_id": "Left Highlight Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 17,
+      "layout_id": "Right Highlight Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 18,
+      "layout_id": "Right Highlight Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 19,
+      "layout_id": "Three Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 20,
+      "layout_id": "Three Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 21,
+      "layout_id": "Four Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 22,
+      "layout_id": "Four Rows Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 23,
+      "layout_id": "Executive Summary",
+      "detected": {
+        "title": true,
+        "subtitle": false,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 24,
+      "layout_id": "Executive Summary",
+      "detected": {
+        "title": true,
+        "subtitle": false,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 25,
+      "layout_id": "Three Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 26,
+      "layout_id": "Three Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 27,
+      "layout_id": "Four Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 28,
+      "layout_id": "Four Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 29,
+      "layout_id": "Six Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 30,
+      "layout_id": "Six Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 31,
+      "layout_id": "Nine Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 32,
+      "layout_id": "Nine Column Detail",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 33,
+      "layout_id": "Three List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 34,
+      "layout_id": "Three List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 35,
+      "layout_id": "Four List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 36,
+      "layout_id": "Four List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 37,
+      "layout_id": "Five List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 11' が空です"
+        },
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 12' が空です"
+        }
+      ]
+    },
+    {
+      "page_no": 38,
+      "layout_id": "Five List",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 11' が空です"
+        },
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 12' が空です"
+        }
+      ]
+    },
+    {
+      "page_no": 39,
+      "layout_id": "Two Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 40,
+      "layout_id": "Two Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 41,
+      "layout_id": "Three Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 42,
+      "layout_id": "Three Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 43,
+      "layout_id": "1_Two Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 44,
+      "layout_id": "1_Two Flow",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 45,
+      "layout_id": "Closing",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 46,
+      "layout_id": "Closing",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": []
+    },
+    {
+      "page_no": 47,
+      "layout_id": "Closin Covor",
+      "detected": {
+        "title": false,
+        "subtitle": false,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "missing_title",
+          "message": "title プレースホルダーが空です"
+        }
+      ]
+    },
+    {
+      "page_no": 48,
+      "layout_id": "Closin Covor",
+      "detected": {
+        "title": false,
+        "subtitle": false,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "missing_title",
+          "message": "title プレースホルダーが空です"
+        }
+      ]
+    },
+    {
+      "page_no": 49,
+      "layout_id": "_bk",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 3' が空です"
+        }
+      ]
+    },
+    {
+      "page_no": 50,
+      "layout_id": "_bk",
+      "detected": {
+        "title": true,
+        "subtitle": true,
+        "body": true,
+        "notes": false
+      },
+      "warnings": [
+        {
+          "code": "empty_placeholder",
+          "message": "プレースホルダー 'Content Placeholder 3' が空です"
+        }
+      ]
+    }
+  ]
+}

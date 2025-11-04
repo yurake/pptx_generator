@@ -1,0 +1,103 @@
+{
+  "generated_at": "2025-11-04T10:54:06.301768+00:00",
+  "spec_meta": {
+    "schema_version": "1.1",
+    "title": "RM-043 拡張テンプレート検証",
+    "client": "Internal QA",
+    "author": "テンプレート検証チーム",
+    "created_at": "2025-10-31",
+    "theme": "corporate",
+    "locale": "ja-JP"
+  },
+  "slides": 50,
+  "artifacts": {
+    "pptx": ".pptx/gen/proposal.pptx",
+    "analysis": ".pptx/gen/analysis.json",
+    "analysis_pre_polisher": ".pptx/gen/analysis_pre_polisher.json",
+    "review_engine_analysis": ".pptx/gen/review_engine_analyzer.json",
+    "pdf": null,
+    "generate_ready": ".pptx/compose/generate_ready.json",
+    "rendering_log": ".pptx/gen/rendering_log.json",
+    "mapping_log": ".pptx/compose/mapping_log.json",
+    "mapping_fallback_report": null,
+    "monitoring_report": ".pptx/gen/monitoring_report.json"
+  },
+  "rendering": {
+    "warnings_total": 8,
+    "empty_placeholders": 6
+  },
+  "pdf_export": null,
+  "refiner_adjustments": null,
+  "branding": {
+    "source": {
+      "type": "file",
+      "path": "config/branding.json"
+    }
+  },
+  "polisher": {
+    "enabled": false,
+    "status": "disabled",
+    "elapsed_ms": null,
+    "rules_path": null,
+    "summary": null
+  },
+  "monitoring": {
+    "alert_level": "warning",
+    "headline": "50 slides require attention",
+    "rendering_warnings": 8,
+    "analyzer_issues": 151,
+    "alerts": [
+      {
+        "slide_id": "title-01",
+        "rendering_warning_count": 0,
+        "analyzer_issue_count": 3
+      },
+      {
+        "slide_id": "title-02",
+        "rendering_warning_count": 0,
+        "analyzer_issue_count": 3
+      },
+      {
+        "slide_id": "section_covor_left-01",
+        "rendering_warning_count": 0,
+        "analyzer_issue_count": 2
+      },
+      {
+        "slide_id": "section_covor_left-02",
+        "rendering_warning_count": 0,
+        "analyzer_issue_count": 2
+      },
+      {
+        "slide_id": "section_covor_center-01",
+        "rendering_warning_count": 0,
+        "analyzer_issue_count": 2
+      }
+    ]
+  },
+  "hashes": {
+    "generate_ready": "sha256:a5583c76358751e9d4ef6f204e518f1d19d828d3b08a61b637dbebf19d690c59",
+    "pptx": "sha256:da858d85ff2c1a7d3b0d52492b8a95d2e7d34a089ada164a0791a24e653aa3aa",
+    "analysis": "sha256:a109aebc9e6284cff78b6fade34e1439ccc198d1df0e5b629beeb37bbc5d6025",
+    "analysis_pre_polisher": "sha256:a109aebc9e6284cff78b6fade34e1439ccc198d1df0e5b629beeb37bbc5d6025",
+    "rendering_log": "sha256:ac7ef1b3bbff5fb2fbb1bef068bdcdf8d11176221761d7342a1987c9f8f8ea7e",
+    "monitoring_report": "sha256:05e5300df3221a41f8aa488dfc9759e79733126b14f9d0803d986bc619a365bf",
+    "mapping_log": "sha256:eaa8d8e541e0152bb8afd9f6313ec31b22451249ca2efe841b7ac7b753252f98"
+  },
+  "mapping": {
+    "generate_ready_path": ".pptx/compose/generate_ready.json",
+    "generate_ready_generated_at": "2025-11-04T10:50:44Z",
+    "template_version": "templates",
+    "template_path": "/Users/yurak/git/pptx_generator_sub1/samples/templates/templates.pptx",
+    "mapping_time_ms": 0,
+    "fallback_count": 0,
+    "ai_patch_count": 0,
+    "analyzer_issue_count": 151,
+    "analyzer_issue_counts_by_type": {
+      "margin": 8,
+      "grid_misaligned": 143
+    },
+    "analyzer_issue_counts_by_severity": {
+      "warning": 151
+    }
+  }
+}

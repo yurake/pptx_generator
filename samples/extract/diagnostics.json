@@ -1,0 +1,10 @@
+{
+  "template_id": "templates",
+  "warnings": [],
+  "errors": [],
+  "stats": {
+    "layouts_total": 24,
+    "placeholders_total": 157,
+    "extraction_time_ms": 38
+  }
+}
