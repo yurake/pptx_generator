@@ -37,6 +37,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - [ ] ドキュメント更新
   - メモ: 
   - [ ] docs/roadmap 配下
+    - `docs/roadmap/roadmap.md` の工程3説明と RM-024 期待成果を `generate_ready` 基盤へ更新済み（2025-11-04）。他セクションの legacy 記述は今後のロードマップ整理時に再検討。
   - [ ] docs/requirements 配下（実装結果との整合再確認）
     - Stage4 記述が `generate_ready` と矛盾しないか最終確認。Stage3/Stage5 の参照関係も合わせて見直す。
   - [ ] docs/design 配下（実装結果との整合再確認）
