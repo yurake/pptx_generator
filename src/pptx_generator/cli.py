@@ -53,7 +53,7 @@ DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_BRIEF_POLICY_PATH = Path("config/brief_policies/default.json")
-DEFAULT_BRIEF_OUTPUT_DIR = Path(".brief")
+DEFAULT_BRIEF_OUTPUT_DIR = Path(".pptx/content")
 
 logger = logging.getLogger(__name__)
 

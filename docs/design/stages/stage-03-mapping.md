@@ -30,9 +30,9 @@
   | オプション | 説明 | 既定値 |
   | --- | --- | --- |
   | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
-  | `--brief-cards <path>` | 工程2の BriefCard | `.brief/brief_cards.json` |
-  | `--brief-log <path>` | 工程2のレビュー ログ | `.brief/brief_log.json` |
-  | `--brief-meta <path>` | 工程2の生成メタ | `.brief/ai_generation_meta.json` |
+  | `--brief-cards <path>` | 工程2の BriefCard | `.pptx/content/brief_cards.json` |
+  | `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/content/brief_log.json` |
+  | `--brief-meta <path>` | 工程2の生成メタ | `.pptx/content/ai_generation_meta.json` |
   | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
   | `--output <dir>` | マッピング成果物のディレクトリ | `.pptx/gen` |
   | `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | 任意 |

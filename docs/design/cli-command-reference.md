@@ -79,7 +79,7 @@
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
 
 ### 工程2: コンテンツ正規化 (HITL)
-ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.brief/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
+ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.pptx/content/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
 
 #### `pptx content`
 - 既定では BriefAI オーケストレーターを用いてカードを生成し、`config/brief_policies/default.json` のポリシーに従って AI との対話ログを収集する。
@@ -87,12 +87,12 @@
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.brief` |
+| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/content` |
 | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 
 実行例:
 ```bash
-uv run pptx content samples/contents/sample_import_content_summary.txt   --output .brief
+uv run pptx content samples/contents/sample_import_content_summary.txt   --output .pptx/content
 ```
 
 生成物（例）:
@@ -107,16 +107,16 @@ uv run pptx content samples/contents/sample_import_content_summary.txt   --outpu
 
 #### 推奨: `pptx compose`
 - 工程3全体を一括で実行し、ドラフト成果物（`.pptx/draft`）とマッピング成果物（`.pptx/gen`）を同時に更新する。
-- `--brief-*` オプションで工程2の成果物を指定する。既定値は `.brief/` 配下のファイルを参照する。
+- `--brief-*` オプションで工程2の成果物を指定する。既定値は `.pptx/content/` 配下のファイルを参照する。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `--draft-output <dir>` | ドラフト成果物 (`draft_*`) の保存先 | `.pptx/draft` |
 | `--output <dir>` | マッピング成果物 (`generate_ready.json` など) の保存先 | `.pptx/gen` |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
-| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.brief/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.pptx/content/brief_cards.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.pptx/content/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.pptx/content/ai_generation_meta.json` |
 | `--draft-filename` / `--approved-filename` / `--log-filename` / `--meta-filename` | ドラフト成果物のファイル名 | 既定値を継承 |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング | Spec から推定 |
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID | `config/chapter_templates` / 自動推定 |
@@ -128,7 +128,7 @@ uv run pptx content samples/contents/sample_import_content_summary.txt   --outpu
 
 実行例:
 ```bash
-uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .brief/brief_cards.json   --brief-log .brief/brief_log.json   --brief-meta .brief/ai_generation_meta.json   --draft-output .pptx/draft   --output .pptx/gen   --layouts .pptx/extract/layouts.jsonl   --template samples/templates/templates.pptx
+uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .pptx/content/brief_cards.json   --brief-log .pptx/content/brief_log.json   --brief-meta .pptx/content/ai_generation_meta.json   --draft-output .pptx/draft   --output .pptx/gen   --layouts .pptx/extract/layouts.jsonl   --template samples/templates/templates.pptx
 ```
 
 #### 補助: `pptx outline`
@@ -137,7 +137,7 @@ uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .brief/brief_card
 
 #### 補助: `pptx mapping`
 - 自動マッピングのみを再実行したい場合に利用し、`generate_ready.json`・`mapping_log.json`・必要に応じて `fallback_report.json` を更新する。
-- `compose` と同様に `--brief-*` オプションを指定するか、既定の `.brief/` 出力を利用する。
+- `compose` と同様に `--brief-*` オプションを指定するか、既定の `.pptx/content/` 出力を利用する。
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
@@ -195,9 +195,9 @@ uv run pptx compose .pptx/extract/jobspec.json   --brief-cards .brief/brief_card
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.brief/brief_cards.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.brief/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.brief/ai_generation_meta.json` |
+| `--brief-cards <path>` | 工程2の `brief_cards.json` | `.pptx/content/brief_cards.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.pptx/content/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.pptx/content/ai_generation_meta.json` |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
 | `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |

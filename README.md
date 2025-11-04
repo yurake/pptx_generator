@@ -116,7 +116,7 @@ flowchart TD
 - ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/content/` 配下に生成します。生成カード枚数は `--card-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
-- `.pptx/content/` 配下に `content_draft.json`（生成AIモード時）、`content_ai_log.json`、`ai_generation_meta.json`、`spec_content_applied.json`、`content_meta.json` を出力します。
+- `.pptx/content/` 配下に `brief_cards.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
   ```bash
   uv run pptx content samples/contents/sample_import_content_summary.txt \
     --output .pptx/content
@@ -129,9 +129,9 @@ flowchart TD
 - 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（`.pptx/draft` / `.pptx/gen`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
-    --brief-cards .brief/brief_cards.json \
-    --brief-log .brief/brief_log.json \
-    --brief-meta .brief/ai_generation_meta.json \
+    --brief-cards .pptx/content/brief_cards.json \
+    --brief-log .pptx/content/brief_log.json \
+    --brief-meta .pptx/content/ai_generation_meta.json \
     --draft-output .pptx/draft \
     --output .pptx/gen \
     --layouts .pptx/extract/layouts.jsonl \

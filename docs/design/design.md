@@ -37,7 +37,7 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 1. **テンプレ工程**（自動＋HITL）  
    テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
 2. **コンテンツ正規化**（HITL）  
-   ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、`.brief/` に `brief_cards.json`・`brief_log.json`・`brief_ai_log.json`・`ai_generation_meta.json`・`brief_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
+   ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、`.pptx/content/` に `brief_cards.json`・`brief_log.json`・`brief_ai_log.json`・`ai_generation_meta.json`・`brief_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  
   Brief 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。`draft_approved.json` と `generate_ready.json` を生成し、マッピング履歴や Analyzer 集計を `mapping_log.json` に記録する。
 4. **PPTX レンダリング**（自動）  

@@ -135,5 +135,5 @@
 - [docs/design/schema/stage-04-draft-structuring.md](../schema/stage-04-draft-structuring.md)
 - サンプル: [docs/design/schema/samples/draft_approved.jsonc](../schema/samples/draft_approved.jsonc)
 
-- CLI: `uv run pptx outline spec.json --brief-cards .brief/brief_cards.json --show-layout-reasons --chapter-template bp-report-2025`
-- CLI: `uv run pptx outline spec.json --brief-cards .brief/brief_cards.json --brief-log .brief/brief_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`
+- CLI: `uv run pptx outline spec.json --brief-cards .pptx/content/brief_cards.json --show-layout-reasons --chapter-template bp-report-2025`
+- CLI: `uv run pptx outline spec.json --brief-cards .pptx/content/brief_cards.json --brief-log .pptx/content/brief_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`

@@ -18,14 +18,14 @@
 - `BriefAIRecord`: プロンプトテンプレ ID、モデル、トークン統計、レスポンスダイジェストを保持。
 
 ## パイプライン連携
-- CLI `uv run pptx content samples/contents/sample_import_content_summary.txt` が BriefCard 生成の入口。`BriefAIOrchestrator` がカード下書きを作成し、`BriefStoreWriter` が `.brief/` 配下へ保存する。
+- CLI `uv run pptx content samples/contents/sample_import_content_summary.txt` が BriefCard 生成の入口。`BriefAIOrchestrator` がカード下書きを作成し、`BriefStoreWriter` が `.pptx/content/` 配下へ保存する。
 - `BriefNormalizationStep` が `PipelineContext` に `brief_document`, `brief_story_outline`, `brief_log`, `ai_generation_meta` を登録。工程4/5 は `BriefCard` 情報を直接参照する。
 - Analyzer / Review Engine は BriefCard を入力に診断を実行し、結果をログおよびメタへ反映する。
 - DAO / API 層は `BriefStore` を利用し、ETag 制御・監査ログ出力・差戻し履歴管理を提供する。
 
 ## テスト戦略
 - モデル単体: `BriefCard` バリデーション（メッセージ長、証跡必須、ストーリー整合性）、Auto-fix JSON Patch の検証。
-- CLI 統合: `samples/json/sample_brief.json` から `.brief/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
+- CLI 統合: `samples/json/sample_brief.json` から `.pptx/content/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
 - API: `httpx` ベースで `/v1/brief/cards` 系エンドポイントをテストし、ETag と監査ログの整合をチェック。
 - パイプライン: `BriefNormalizationStep` が `PipelineContext` に期待アーティファクトをセットすること、および `audit_log.json` の `brief_normalization` セクションが生成されることを確認。
 

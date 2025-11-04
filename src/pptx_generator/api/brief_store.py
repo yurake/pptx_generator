@@ -73,7 +73,7 @@ class BriefStore:
 
     def __init__(self, base_dir: Path | None = None) -> None:
         env_dir = os.environ.get("BRIEF_STORE_DIR")
-        self._base_dir = base_dir or Path(env_dir or ".brief/store")
+        self._base_dir = base_dir or Path(env_dir or ".pptx/content/store")
         self._base_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------ #
