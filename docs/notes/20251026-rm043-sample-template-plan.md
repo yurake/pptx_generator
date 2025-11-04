@@ -7,7 +7,7 @@
   - `Two Column Detail` が 5 枚と偏りが大きく、タイムライン・比較・ファクトシート以外の特殊レイアウトが不足。
   - 表／画像／テキストボックスの組み合わせも限定的（グラフ未使用）。
 - 旧 `sample_spec_minimal.json` は撤廃し、最小構成のテストは `tests/test_cli_outline.py` で動的生成する。
-- `samples/brief/sample_brief_cards.json`（新規追加予定）
+- `samples/brief/sample_prepare_card.json`（新規追加予定）
   - 3 カード（cover / agenda / problem）のみで intent/type が限定的。
 - `samples/json/sample_template_layouts.jsonl`
   - 2 レコード（overview/detail）しかなく、用途タグやヒントの検証に十分でない。
@@ -40,7 +40,7 @@
 ## 3. サンプル JSON / アセット拡張方針
 
 - `sample_jobspec.json` は 50 ページ構成まで拡張し、カテゴリ別レイアウトを網羅する（旧 `sample_spec_extended.json` 案を統合）。
-- `sample_brief_cards.json` / `sample_brief_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
+- `sample_prepare_card.json` / `sample_brief_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
 - `sample_template_layouts.jsonl` を全レイアウト追加後の `layout-validate` 出力を基準に更新し、用途タグ・ヒントを網羅。
 - 追加レイアウトに必要なダミー画像・アイコンは `samples/assets/` に SVG/PNG 形式で配置。
 

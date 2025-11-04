@@ -34,7 +34,7 @@ tags:
 ## 残検討事項
 - `meta.content_hash` を工程5で活用し、レンダリング後のプレゼンハッシュと突合する仕組み。
 - 監査ログの `mapping.slides` に generate_ready のスライド数を復活させるか、`mapping_log.json` の統計から充足可能かを判断。
-- 監査ログと `.pptx/gen/mapping_log.json` の保管ポリシー整備（保持期間やアーカイブ先）。
+- 監査ログと `.pptx/compose/mapping_log.json` の保管ポリシー整備（保持期間やアーカイブ先）。
 
 ## ToDo 連携
 - `docs/todo/20251102-rm049-pptx-gen-scope.md` の「generate_ready 詳細設計」配下から本メモを参照し、追加検討はこのメモに追記する。

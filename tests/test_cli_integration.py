@@ -46,11 +46,11 @@ def _collect_paragraph_texts(slide) -> list[str]:
 
 
 def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
-    brief_dir = temp_dir / "brief"
+    brief_dir = temp_dir / "prepare"
     result = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(BRIEF_SOURCE),
             "--output",
             str(brief_dir),
@@ -60,7 +60,7 @@ def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
     assert result.exit_code == 0, result.output
     return {
         "dir": brief_dir,
-        "cards": brief_dir / "brief_cards.json",
+        "cards": brief_dir / "prepare_card.json",
         "log": brief_dir / "brief_log.json",
         "meta": brief_dir / "ai_generation_meta.json",
     }
@@ -230,14 +230,14 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
         assert title_shape.text == slide_spec.title
 
 
-def test_cli_content_generates_brief_outputs(tmp_path: Path) -> None:
+def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
     runner = CliRunner()
-    brief_dir = tmp_path / "brief"
+    brief_dir = tmp_path / "prepare"
 
     result = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(BRIEF_SOURCE),
             "--output",
             str(brief_dir),
@@ -247,7 +247,7 @@ def test_cli_content_generates_brief_outputs(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
 
-    cards_path = brief_dir / "brief_cards.json"
+    cards_path = brief_dir / "prepare_card.json"
     meta_path = brief_dir / "ai_generation_meta.json"
     log_path = brief_dir / "brief_ai_log.json"
     audit_path = brief_dir / "audit_log.json"
@@ -384,7 +384,7 @@ def test_cli_mapping_invalid_brief_fails(tmp_path: Path) -> None:
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
 
-    invalid_cards = tmp_path / "brief_cards.json"
+    invalid_cards = tmp_path / "prepare_card.json"
     invalid_cards.write_text("{}", encoding="utf-8")
 
     result = runner.invoke(

@@ -2,10 +2,10 @@
 
 ## 構成
 - `json/sample_jobspec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
-- `brief/`: 工程3で生成した BriefCard サンプル一式（`brief_cards.json`, `brief_log.json`, `ai_generation_meta.json` 等）。CLI やテストでの参照用に常に最新スキーマへ合わせる。
+- `brief/`: 工程2で生成した BriefCard サンプル一式（`prepare_card.json`, `brief_log.json`, `ai_generation_meta.json` 等）。CLI やテストでの参照用に常に最新スキーマへ合わせる。
 - `json/archive/`: 旧 `content_approved.json` 系サンプルを保管する領域。互換テストが不要になった場合は削除を検討する。
 - `json/sample_template_layouts.jsonl`: 工程2のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。
-- `text/sample_import_content.txt`: 外部ソース取り込み向けのプレーンテキスト例。`pptx content --content-source` で工程3インポートを検証する際に利用する。
+- `text/sample_import_content.txt`: 外部ソース取り込み向けのプレーンテキスト例。`pptx prepare --content-source` で工程2インポートを検証する際に利用する。
 - `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
 - `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトに加え、RM-043 で拡充予定のバリエーションもここへ集約する。
 - `skeleton.pptx`: 提案書の初期テンプレート。変更時は `docs/policies/config-and-templates.md` の手順に従い検証する。

@@ -37,7 +37,7 @@
    - リリースメタが必要な場合は `uv run pptx template <template.pptx> --with-release --brand <brand> --version <ver>` を実行し、`template_release.json` を生成する。
    - ゴールデンサンプル検証を行う場合は `--golden-spec` を指定し、互換性エラーを `template_release.json` の diagnostics に反映する。
 4. **成果物アーカイブと配布**
-   - 抽出成果物とリリースメタをリポジトリ／テンプレ資産管理ストレージへ配置し、後続工程（コンテンツ正規化・マッピング）から参照可能にする。
+   - 抽出成果物とリリースメタをリポジトリ／テンプレ資産管理ストレージへ配置し、後続工程（コンテンツ準備・マッピング）から参照可能にする。
 
 ## 推奨 CLI
 - 標準フロー: `uv run pptx template templates/libraries/acme/v1/template.pptx --output .pptx/extract/acme_v1`

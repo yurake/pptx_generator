@@ -23,7 +23,7 @@
 - `chapter_template`: `template_id`, `name`, `structure_pattern`, `required_sections[]`, `optional_sections[]`, `constraints`
 
 ## ワークフロー
-1. `brief_cards.json` から候補カードを生成し章レーンへ配置。  
+1. `prepare_card.json` から候補カードを生成し章レーンへ配置。  
 2. Chapter Template Registry が `structure_pattern` に合致する章テンプレを探し、章候補と不足・過剰を提示。  
 3. Layout Hint Engine が用途タグ・容量・多様性・Analyzer 支援度をスコア化し候補提示。  
 4. ユーザーが CLI / 内製ツールから章・順序・付録を操作し、差戻し時は理由コードを選択。  
@@ -135,5 +135,5 @@
 - [docs/design/schema/stage-04-draft-structuring.md](../schema/stage-04-draft-structuring.md)
 - サンプル: [docs/design/schema/samples/draft_approved.jsonc](../schema/samples/draft_approved.jsonc)
 
-- CLI: `uv run pptx outline spec.json --brief-cards .pptx/content/brief_cards.json --show-layout-reasons --chapter-template bp-report-2025`
-- CLI: `uv run pptx outline spec.json --brief-cards .pptx/content/brief_cards.json --brief-log .pptx/content/brief_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`
+- CLI: `uv run pptx outline spec.json --brief-cards .pptx/prepare/prepare_card.json --show-layout-reasons --chapter-template bp-report-2025`
+- CLI: `uv run pptx outline spec.json --brief-cards .pptx/prepare/prepare_card.json --brief-log .pptx/prepare/brief_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`

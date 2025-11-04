@@ -7,7 +7,7 @@
 
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`。
-- Stage2: `brief_cards.json`, `brief_log.json`, `ai_generation_meta.json`。
+- Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
@@ -45,7 +45,7 @@
 
 ## CLI 要件
 - `pptx compose`
-  - `--brief-*` オプションが未指定でも `.pptx/content/` の既定ファイルを自動参照する。
+  - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--draft-output` と `--output` により、ドラフトとマッピング成果物の保存先を分離できる。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
 - `pptx outline`

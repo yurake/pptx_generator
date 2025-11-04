@@ -25,7 +25,7 @@
 - 未反映領域  
   - 要件・設計・ロードマップに具体的な行動計画は存在しない。RM-022 など関連タスクで扱う余地あり。
 
-### 工程3 コンテンツ正規化 (HITL)
+### 工程3 コンテンツ準備 (HITL)
 - 既存ドキュメント  
   - `docs/design/stages/stage-03-content-normalization.md` では Review Engine の診断と Auto-fix を中心に説明しているが、Analyzer 連携には触れていない。
 - 追加アイデア  

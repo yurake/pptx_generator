@@ -52,7 +52,7 @@ def sample_spec(tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def brief_cards(tmp_path: Path) -> Path:
-    cards_path = tmp_path / "brief_cards.json"
+    cards_path = tmp_path / "prepare_card.json"
     _write_json(
         cards_path,
         {

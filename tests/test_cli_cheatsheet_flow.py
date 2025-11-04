@@ -79,11 +79,11 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     jobspec_payload = json.loads(jobspec_path.read_text(encoding="utf-8"))
     assert "meta" in jobspec_payload
 
-    content_output = tmp_path / "content"
+    content_output = tmp_path / "prepare"
     content_cmd = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(SAMPLE_BRIEF_SOURCE),
             "--output",
             str(content_output),
@@ -93,7 +93,7 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     assert content_cmd.exit_code == 0
 
-    brief_cards_path = content_output / "brief_cards.json"
+    brief_cards_path = content_output / "prepare_card.json"
     brief_log_path = content_output / "brief_log.json"
     brief_meta_path = content_output / "ai_generation_meta.json"
     assert brief_cards_path.exists()

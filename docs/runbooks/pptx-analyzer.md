@@ -19,14 +19,14 @@
   - まず工程4で `generate_ready.json` を用意する（未実施の場合）:
     ```bash
     uv run pptx compose samples/json/sample_jobspec.json \
-      --content-approved .pptx/content/content_approved.json \
+      --content-approved .pptx/prepare/content_approved.json \
       --draft-output .pptx/draft \
-      --output .pptx/gen \
+      --output .pptx/compose \
       --template templates/<brand>/<version>/template.pptx
     ```
   - 工程5（レンダリング）を実行し、Analyzer 結果を取得する:
     ```bash
-    uv run pptx gen .pptx/gen/generate_ready.json \
+    uv run pptx gen .pptx/compose/generate_ready.json \
       --branding config/branding.json \
       --output .pptx/gen \
       --export-pdf

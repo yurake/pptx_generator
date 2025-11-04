@@ -132,7 +132,7 @@
 ## バリデーション
 - `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
-- `meta.content_hash` が `brief_cards.json` のハッシュと一致すること（任意検証）。
+- `meta.content_hash` が `prepare_card.json` のハッシュと一致すること（任意検証）。
 
 ## 変更履歴メモ
 - 2025-10-21: `analyzer` セクションとメタの Analyzer 件数サマリを追加。

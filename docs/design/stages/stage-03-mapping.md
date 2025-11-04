@@ -14,7 +14,7 @@
 | CLI | `pptx compose` / `pptx outline` / `pptx mapping` | Click | compose が工程3全体をラップ |
 
 ## 入出力
-- 入力: `jobspec.json`, `layouts.jsonl`, `brief_cards.json`, `brief_log.json`, `ai_generation_meta.json`,（任意）`analysis_summary.json`。
+- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`,（任意）`analysis_summary.json`。
 - 出力: `draft_draft.json`, `draft_approved.json`, `draft_meta.json`, `draft_review_log.json`, `generate_ready.json`, `mapping_log.json`, `fallback_report.json`。
 
 ## ワークフロー概要
@@ -30,11 +30,11 @@
   | オプション | 説明 | 既定値 |
   | --- | --- | --- |
   | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
-  | `--brief-cards <path>` | 工程2の BriefCard | `.pptx/content/brief_cards.json` |
-  | `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/content/brief_log.json` |
-  | `--brief-meta <path>` | 工程2の生成メタ | `.pptx/content/ai_generation_meta.json` |
+  | `--brief-cards <path>` | 工程2の BriefCard | `.pptx/prepare/prepare_card.json` |
+  | `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/prepare/brief_log.json` |
+  | `--brief-meta <path>` | 工程2の生成メタ | `.pptx/prepare/ai_generation_meta.json` |
   | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
-  | `--output <dir>` | マッピング成果物のディレクトリ | `.pptx/gen` |
+  | `--output <dir>` | マッピング成果物のディレクトリ | `.pptx/compose` |
   | `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | 任意 |
   | `--template <path>` | ブランド抽出用テンプレート | 任意 |
   | `--rules <path>` | マッピングルール設定 | `config/rules.json` |

@@ -1,16 +1,16 @@
-# コンテンツ正規化スキーマ
+# コンテンツ準備スキーマ
 
-工程2（コンテンツ正規化）で生成される Brief 成果物の JSON 仕様を定義する。
+工程2（コンテンツ準備）で生成される Brief 成果物の JSON 仕様を定義する。
 
 ## ファイル
-- `brief_cards.json`: BriefCard コレクション。工程3のドラフト構築・マッピングの基礎データ。
+- `prepare_card.json`: BriefCard コレクション。工程3のドラフト構築・マッピングの基礎データ。
 - `brief_log.json`: ブリーフ承認イベントの監査ログ（初期状態は空配列）。
 - `brief_ai_log.json`: 生成 AI との対話ログとワーニング情報。
 - `ai_generation_meta.json`: ポリシー ID、生成統計、入力ハッシュなどのメタ情報。
 - `brief_story_outline.json`: 章構成とカード ID の対応表。
 - `audit_log.json`: 工程2全体の監査メタ。成果物パスと統計をまとめる。
 
-## brief_cards.json
+## prepare_card.json
 ```jsonc
 {
   "brief_id": "sample_import_content_summary",
@@ -100,7 +100,7 @@
     "policy_id": "brief-default",
     "input_hash": "sha256:...",
     "outputs": {
-      "brief_cards": "/path/to/brief_cards.json",
+      "prepare_card": "/path/to/prepare_card.json",
       "brief_log": "/path/to/brief_log.json",
       "brief_ai_log": "/path/to/brief_ai_log.json",
       "ai_generation_meta": "/path/to/ai_generation_meta.json",
@@ -118,13 +118,13 @@
 - 監査ログは全成果物の絶対パスとハッシュ（将来拡張）を記録する。工程3・4 の `audit_log.json` と同様、`hashes` セクション追加を想定。
 
 ## バリデーション
-- `brief_cards.json` の `cards[].card_id` は一意であること。
-- `brief_story_outline.json` の `chapters[].cards` が `brief_cards.json` に収載されていること。
-- `ai_generation_meta.json` の `cards[].card_id` が `brief_cards.json` と一致すること。
+- `prepare_card.json` の `cards[].card_id` は一意であること。
+- `brief_story_outline.json` の `chapters[].cards` が `prepare_card.json` に収載されていること。
+- `ai_generation_meta.json` の `cards[].card_id` が `prepare_card.json` と一致すること。
 - `audit_log.json` の `outputs` パスは実際に生成された成果物を指すこと。
 
 ## サンプル
-- `samples/brief/brief_cards.json`
+- `samples/brief/prepare_card.json`
 - `samples/brief/brief_ai_log.json`
 - `samples/brief/ai_generation_meta.json`
 - `samples/brief/brief_story_outline.json`

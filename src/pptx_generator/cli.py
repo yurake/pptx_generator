@@ -53,7 +53,7 @@ DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_BRIEF_POLICY_PATH = Path("config/brief_policies/default.json")
-DEFAULT_BRIEF_OUTPUT_DIR = Path(".pptx/content")
+DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 
 logger = logging.getLogger(__name__)
 
@@ -1084,7 +1084,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
+    default=Path(".pptx/compose"),
     show_default=True,
     help="生成物を保存するディレクトリ",
 )
@@ -1355,7 +1355,7 @@ def gen(  # noqa: PLR0913
     _echo_render_outputs(render_context, audit_path)
 
 
-@app.command("content")
+@app.command("prepare")
 @click.argument(
     "brief_path",
     type=click.Path(exists=True, dir_okay=False,
@@ -1366,9 +1366,9 @@ def gen(  # noqa: PLR0913
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR,
+    default=DEFAULT_PREPARE_OUTPUT_DIR,
     show_default=True,
-    help="ブリーフ成果物を保存するディレクトリ",
+    help="コンテンツ準備成果物を保存するディレクトリ",
 )
 @click.option(
     "--card-limit",
@@ -1376,12 +1376,12 @@ def gen(  # noqa: PLR0913
     default=None,
     help="生成するカード枚数の上限",
 )
-def content(
+def prepare(
     brief_path: Path,
     output_dir: Path,
     card_limit: int | None,
 ) -> None:
-    """工程3 ブリーフ正規化: BriefCard 成果物を生成する。"""
+    """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
     try:
         source = BriefSourceDocument.parse_file(brief_path)
@@ -1411,7 +1411,7 @@ def content(
         raise click.exceptions.Exit(code=4) from exc
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    cards_path = output_dir / "brief_cards.json"
+    cards_path = output_dir / "prepare_card.json"
     log_path = output_dir / "brief_log.json"
     ai_log_path = output_dir / "brief_ai_log.json"
     meta_path = output_dir / "ai_generation_meta.json"
@@ -1434,7 +1434,7 @@ def content(
             "policy_id": meta.policy_id,
             "input_hash": meta.input_hash,
             "outputs": {
-                "brief_cards": str(cards_path.resolve()),
+                "prepare_card": str(cards_path.resolve()),
                 "brief_log": str(log_path.resolve()),
                 "brief_ai_log": str(ai_log_path.resolve()),
                 "ai_generation_meta": str(meta_path.resolve()),
@@ -1445,7 +1445,7 @@ def content(
     }
     _dump_json(audit_path, audit_payload)
 
-    click.echo(f"Brief Cards: {cards_path}")
+    click.echo(f"Prepare Card: {cards_path}")
     click.echo(f"Brief Log: {log_path}")
     click.echo(f"Brief AI Log: {ai_log_path}")
     click.echo(f"AI Generation Meta: {meta_path}")
@@ -1566,23 +1566,23 @@ def content(
     "--brief-cards",
     type=click.Path(exists=False, dir_okay=False,
                     readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def outline(
     spec_path: Path,
@@ -1762,7 +1762,7 @@ def outline(
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/gen"),
+    default=Path(".pptx/compose"),
     show_default=True,
     help="generate_ready.json 等の出力ディレクトリ",
 )
@@ -1794,23 +1794,23 @@ def outline(
     "--brief-cards",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def compose(  # noqa: PLR0913
     spec_path: Path,
@@ -1981,23 +1981,23 @@ def compose(  # noqa: PLR0913
     "--brief-cards",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_cards.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程3の brief_cards.json",
+    help="工程2の prepare_card.json",
 )
 @click.option(
     "--brief-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
     show_default=True,
-    help="工程3の brief_log.json（任意）",
+    help="工程2の brief_log.json（任意）",
 )
 @click.option(
     "--brief-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_BRIEF_OUTPUT_DIR / "ai_generation_meta.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
-    help="工程3の ai_generation_meta.json（任意）",
+    help="工程2の ai_generation_meta.json（任意）",
 )
 def mapping(  # noqa: PLR0913
     spec_path: Path,

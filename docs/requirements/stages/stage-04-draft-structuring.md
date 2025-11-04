@@ -5,7 +5,7 @@
 - HITL 承認により構成をロックし、後続工程に安定した入力を提供する。
 
 ## 入力
-- 工程3の `brief_cards.json`（`story.phase` / `intent_tags` / `supporting_points` などカード情報を含む）。
+- 工程3の `prepare_card.json`（`story.phase` / `intent_tags` / `supporting_points` などカード情報を含む）。
 - 工程2の `layouts.jsonl`（利用可能なレイアウトカテゴリのヒント）。
 - 制約情報（本編枚数上限、章構成テンプレ、付録方針）。
 - 章テンプレ定義 (`config/chapter_templates/*.json`) と構成テンプレ適用ポリシー。

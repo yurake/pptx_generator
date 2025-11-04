@@ -149,7 +149,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
       - メモ: PR #266 コンフリクトの主因だった `rendering_ready` への名称変更差分を再度 `generate_ready` に統合し、`compose` 追加部分と整合するよう調整。
     - [x] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
     - [x] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
-    - [x] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
+    - [x] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf` を再確認する。
     - [x] ToDo に結果メモを追記し、必要なら関連 Issue / ロードマップの更新を検討する。
 ## メモ
 **主変更点**
@@ -163,4 +163,10 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - メモ: PR #266 コンフリクト解消後に `uv run --extra dev pytest tests/test_cli_integration.py` を再実行し、generate_ready 前提の CLI フローが緑化することを確認（2025-11-XX）。
   - 追記: origin/main からの再マージ後も同テストを実行し、コンフリクト解消版が成功することを確認（2025-11-XX）。
 
-必要に応じて `uv run pptx gen .pptx/gen/generate_ready.json --branding config/branding.json` を再実行し、ブランド切り替えや PDF オプションの挙動を確認してください。
+- **2025-11-04 CLI/ドキュメント再命名対応**
+  - 工程2の CLI サブコマンドを `pptx prepare` に統一し、既定出力ディレクトリを `.pptx/prepare/`、成果物名を `prepare_card.json` へ変更。`src/pptx_generator/cli.py` および `BriefStore` 周辺の既定パスを更新。
+  - テスト群を新名称に合わせて整理（`tests/test_cli_prepare.py` 追加、統合テストとチートシートテストの参照パス更新）し、サンプル成果物を `prepare_card.json` へ置換。
+  - README／design／requirements／runbook／samples の各ドキュメントを「コンテンツ準備」表記に統一し、命名ポリシーを `docs/policies/config-and-templates.md` に追記。
+  - 実行テスト: `uv run --extra dev pytest tests/test_cli_prepare.py`, `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_prepare_generates_outputs`, `uv run --extra dev pytest tests/test_cli_cheatsheet_flow.py`。
+
+必要に応じて `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を再実行し、ブランド切り替えや PDF オプションの挙動を確認してください。

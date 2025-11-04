@@ -12,7 +12,7 @@
 
 ## 実装時の動作確認
 - 単体テスト: 対象モジュールに応じて `pytest` のマーカーを絞る。例: `uv run --extra dev pytest tests/test_renderer.py`。
-- パイプライン全体: `uv run pptx compose samples/json/sample_jobspec.json --draft-output .pptx/draft --output .pptx/gen --template samples/templates/templates.pptx` で `generate_ready.json` を生成し、続けて `uv run pptx gen .pptx/gen/generate_ready.json --template samples/templates/templates.pptx` を実行して `audit_log.json` の差分を確認。
+- パイプライン全体: `uv run pptx compose samples/json/sample_jobspec.json --draft-output .pptx/draft --output .pptx/compose --template samples/templates/templates.pptx` で `generate_ready.json` を生成し、続けて `uv run pptx gen .pptx/gen/generate_ready.json --template samples/templates/templates.pptx` を実行して `audit_log.json` の差分を確認。
 - PDF 変換: LibreOffice がインストールされている環境で `--export-pdf` と `--pdf-mode=only` の双方を確認する。
 
 ## 変更とドキュメントの同期

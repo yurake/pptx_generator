@@ -16,7 +16,7 @@ roadmap_item: RM-033 パイプライン工程3/4独立化準備
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: `pptx content` / `pptx outline` コマンドを追加し、`cli.py` にパイプラインヘルパー・メタ出力を実装。`generate_ready_to_jobspec` 既存機能との整合確認済み。
+  - メモ: `pptx prepare` / `pptx outline` コマンドを追加し、`cli.py` にパイプラインヘルパー・メタ出力を実装。`generate_ready_to_jobspec` 既存機能との整合確認済み。
 - [x] テスト・検証
   - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest` を実行し、126 件すべて成功。`tests/test_cli_content.py` / `tests/test_cli_draft.py` を新規追加。
 - [x] ドキュメント更新

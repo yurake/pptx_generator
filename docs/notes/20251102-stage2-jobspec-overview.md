@@ -10,18 +10,18 @@
 ## 現状確認
 - サンプルファイルの構造差分
   - `samples/json/sample_jobspec.json` には `meta`（案件タイトル・クライアント・テーマなど）、`auth`（作成者、部門）、`slides`（スライド ID・レイアウト名・アンカー・画像パス等）が含まれ、テンプレートのプレースホルダー情報まで埋め込まれている (`samples/json/sample_jobspec.json:1-57` など)。
-  - `samples/brief/sample_brief_cards.json` は工程3の HITL 承認結果を保持し、カードごとに `intent_tags` / `story.phase` / `narrative` / `supporting_points` を持つが、レイアウトアンカーなどテンプレ依存情報は含まない。
+  - `samples/brief/sample_prepare_card.json` は工程3の HITL 承認結果を保持し、カードごとに `intent_tags` / `story.phase` / `narrative` / `supporting_points` を持つが、レイアウトアンカーなどテンプレ依存情報は含まない。
   - 差分の意味: 工程3以降で同じ `slide_id` をキーに統合するため、ジョブスペック側にテンプレと整合する構造情報が必要になる。
 - ジョブスペックが参照される工程
-  - 工程3: `uv run pptx content ...` がジョブスペックを参照しつつブリーフ成果物を生成する際のベースになる (`README.md:96-109`)。
+  - 工程3: `uv run pptx prepare ...` がジョブスペックを参照しつつブリーフ成果物を生成する際のベースになる (`README.md:96-109`)。
   - 工程4: `uv run pptx outline ...` が章構成とページ順を決める際にジョブスペックの `slides` 配列を参照し、`layout_hint` などの候補提示に利用する (`README.md:111-121`)。
   - 工程5: `uv run pptx mapping ...` がジョブスペック＋承認済みコンテンツを結合して `generate_ready.json` を生成する際、レイアウト名・アンカー・画像指定をジョブスペックから取得する (`README.md:123-140`)。
 - 工程1/2で得られる情報
   - 工程1（テンプレ準備）はテンプレート PPTX の管理・命名・バージョン整理に専念しており、ジョブスペックのようなスライド構造データは生成しない (`README.md:51-62`)。
   - 工程2（テンプレ構造抽出）は `uv run pptx tpl-extract ...` や `layout-validate` でレイアウト構造・アンカー・ブランド設定を JSON / YAML 化するが、生成されるのは `layouts.jsonl`・`branding.json` 等であり、ジョブスペック形式の `slides` 配列は出力されない (`README.md:63-95`)。
 - ドキュメント記載との整合
-  - `docs/requirements/stages/stage-03-content-normalization.md` はジョブスペックを工程3の入力（ブリーフ整形済みデータ）と位置付け、HITL 承認後に `brief_cards.json` を生成する流れを定義。
-  - `docs/design/design.md:34-60` も「工程3: ブリーフ正規化（HITL）が `spec.json` とテンプレ構造を参照しつつ `brief_cards.json` を作る」前提でアーキテクチャ図を記載しており、ジョブスペックは工程3より前に人が整備する想定になっている。
+  - `docs/requirements/stages/stage-03-content-normalization.md` はジョブスペックを工程3の入力（ブリーフ整形済みデータ）と位置付け、HITL 承認後に `prepare_card.json` を生成する流れを定義。
+  - `docs/design/design.md:34-60` も「工程3: ブリーフ正規化（HITL）が `spec.json` とテンプレ構造を参照しつつ `prepare_card.json` を作る」前提でアーキテクチャ図を記載しており、ジョブスペックは工程3より前に人が整備する想定になっている。
 
 ## 再設計案（ユーザー要望ベース）
 - 工程2でジョブスペック雛形を生成する案
@@ -29,7 +29,7 @@
   - ジョブスペック雛形は章構成やスライド順を含まないテンプレートカタログ的なデータとし、本文やメッセージ領域は空欄（またはプレースホルダ説明のみ）で出力する。
 - 工程3 (生成AI) の位置づけを調整
   - 案件側の生情報を入力に、生成AIが章構成案・スライド順・各ページのメインメッセージおよび支えるコンテンツ候補を整理したブリーフ（抽象カード集合）を作成する。
-  - テンプレとのマージは行わず、`brief_cards.json` や関連ログをテンプレ非依存の構造として出力する。
+  - テンプレとのマージは行わず、`prepare_card.json` や関連ログをテンプレ非依存の構造として出力する。
   - 工程3出力にはストーリーフェーズ・意図タグ・メッセージアングルなど既存要件 (`docs/requirements/stages/stage-03-content-normalization.md:3-45`) を維持。
 - 工程4 (生成AI) の役割再定義
   - 工程3で作成したブリーフ（抽象カード）と、工程2のジョブスペック雛形／テンプレ構造 JSON をマージし、`layout_hint` やページ割り当てまで具体的に埋めた `draft_approved.json` を生成する。
@@ -44,7 +44,7 @@
   - 生成AIがブリーフを構築する際に参照するユーザー入力（テキスト資料、メモ、要件定義など）の形式や最低限必要な情報を整理する。
   - 既存サンプル（旧コンテンツ承認 JSON など）との互換性を考慮し、ストーリー情報や intent タグをどの段階で付与するか明確化する。
 - CLI / API 影響範囲
-  - 新規ラッパーコマンドの追加、`pptx content` や `pptx outline` の引数変更、`pptx gen` のスコープ変更が発生するため、既存ドキュメント・テストの更新が必須。
+  - 新規ラッパーコマンドの追加、`pptx prepare` や `pptx outline` の引数変更、`pptx gen` のスコープ変更が発生するため、既存ドキュメント・テストの更新が必須。
   - API（工程3/4のHITL管理）にジョブスペック自動生成をどう組み込むか検討が必要。既存エンドポイントとの整合性を確認する。
 - ドキュメント更新計画
   - `README.md`、`docs/design/design.md`、`docs/requirements/stages/*.md` の工程説明を刷新する必要がある。
