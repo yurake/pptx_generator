@@ -23,9 +23,9 @@ from ..models import (
     MappingLogMeta,
     MappingLogSlide,
     MappingSlideMeta,
-    RenderingReadyDocument,
-    RenderingReadyMeta,
-    RenderingReadySlide,
+    GenerateReadyDocument,
+    GenerateReadyMeta,
+    GenerateReadySlide,
     JsonPatchOperation,
     Slide,
     JobSpec,
@@ -41,7 +41,7 @@ class MappingOptions:
 
     layouts_path: Path | None = None
     output_dir: Path | None = None
-    rendering_ready_filename: str = "rendering_ready.json"
+    generate_ready_filename: str = "generate_ready.json"
     mapping_log_filename: str = "mapping_log.json"
     fallback_report_filename: str | None = "fallback_report.json"
     max_candidates: int = 5
@@ -69,7 +69,7 @@ class LayoutProfile:
 
 
 class MappingStep:
-    """承認済みドラフトを基に rendering_ready.json を生成するステップ。"""
+    """承認済みドラフトを基に generate_ready.json を生成するステップ。"""
 
     name = "mapping"
 
@@ -93,7 +93,7 @@ class MappingStep:
             else {}
         )
 
-        rendering_slides: list[RenderingReadySlide] = []
+        generate_ready_slides: list[GenerateReadySlide] = []
         log_slides: list[MappingLogSlide] = []
         fallback_records: list[dict[str, Any]] = []
         fallback_slide_ids: set[str] = set()
@@ -150,8 +150,8 @@ class MappingStep:
                 ai_patch_count += len(ai_patches)
                 ai_patch_slide_ids.add(slide.id)
 
-            rendering_slides.append(
-                RenderingReadySlide(
+            generate_ready_slides.append(
+                GenerateReadySlide(
                     layout_id=selected_layout,
                     elements=elements,
                     meta=MappingSlideMeta(
@@ -178,16 +178,25 @@ class MappingStep:
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
-        rendering_meta = RenderingReadyMeta(
+        template_path_str: str | None = None
+        if self.options.template_path is not None:
+            try:
+                # resolve() で絶対パスへ正規化し、生成物持ち運び時にも一意に解決できるようにする
+                template_path_str = str(self.options.template_path.resolve())
+            except OSError:
+                template_path_str = str(self.options.template_path)
+
+        generate_ready_meta = GenerateReadyMeta(
             template_version=self._resolve_template_version(context),
+            template_path=template_path_str,
             content_hash=self._resolve_content_hash(context),
             generated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             job_meta=context.spec.meta,
             job_auth=context.spec.auth,
         )
-        rendering_document = RenderingReadyDocument(
-            slides=rendering_slides,
-            meta=rendering_meta,
+        generate_ready_document = GenerateReadyDocument(
+            slides=generate_ready_slides,
+            meta=generate_ready_meta,
         )
         mapping_log = MappingLog(
             slides=log_slides,
@@ -201,10 +210,10 @@ class MappingStep:
         output_dir = self.options.output_dir or context.workdir
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        rendering_path = output_dir / self.options.rendering_ready_filename
-        rendering_path.write_text(
+        generate_ready_path = output_dir / self.options.generate_ready_filename
+        generate_ready_path.write_text(
             json.dumps(
-                rendering_document.model_dump(mode="json"),
+                generate_ready_document.model_dump(mode="json"),
                 ensure_ascii=False,
                 indent=2,
             ),
@@ -226,7 +235,7 @@ class MappingStep:
             fallback_path.write_text(
                 json.dumps(
                     {
-                        "generated_at": rendering_meta.generated_at,
+                        "generated_at": generate_ready_meta.generated_at,
                         "slides": fallback_records,
                     },
                     ensure_ascii=False,
@@ -236,27 +245,29 @@ class MappingStep:
             )
             context.add_artifact("mapping_fallback_report_path", str(fallback_path))
 
-        context.add_artifact("rendering_ready", rendering_document)
-        context.add_artifact("rendering_ready_path", str(rendering_path))
+        context.add_artifact("generate_ready", generate_ready_document)
+        context.add_artifact("generate_ready_path", str(generate_ready_path))
         context.add_artifact("mapping_log", mapping_log)
         context.add_artifact("mapping_log_path", str(mapping_log_path))
         mapping_meta = {
             "elapsed_ms": elapsed_ms,
-            "slides": len(rendering_slides),
+            "slides": len(generate_ready_slides),
             "fallback_count": len(fallback_slide_ids),
             "fallback_slide_ids": sorted(fallback_slide_ids),
             "ai_patch_count": ai_patch_count,
             "ai_patch_slide_ids": sorted(ai_patch_slide_ids),
-            "rendering_ready_generated_at": rendering_meta.generated_at,
-            "template_version": rendering_meta.template_version,
-            "content_hash": rendering_meta.content_hash,
-            "rendering_ready_path": str(rendering_path),
+            "generate_ready_generated_at": generate_ready_meta.generated_at,
+            "template_version": generate_ready_meta.template_version,
+            "content_hash": generate_ready_meta.content_hash,
+            "generate_ready_path": str(generate_ready_path),
         }
+        if template_path_str is not None:
+            mapping_meta["template_path"] = template_path_str
         context.add_artifact("mapping_meta", mapping_meta)
 
         logger.info(
-            "rendering_ready.json を生成しました: slides=%d fallback=%d ai_patch=%d",
-            len(rendering_slides),
+            "generate_ready.json を生成しました: slides=%d fallback=%d ai_patch=%d",
+            len(generate_ready_slides),
             len(fallback_slide_ids),
             ai_patch_count,
         )

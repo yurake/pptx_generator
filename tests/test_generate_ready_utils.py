@@ -1,17 +1,17 @@
-"""rendering_ready ユーティリティのテスト。"""
+"""generate_ready ユーティリティのテスト。"""
 
 from __future__ import annotations
 
 from pptx_generator.models import (JobAuth, JobMeta, MappingSlideMeta,
-                                   RenderingReadyDocument,
-                                   RenderingReadyMeta, RenderingReadySlide)
-from pptx_generator.rendering_ready import rendering_ready_to_jobspec
+                                   GenerateReadyDocument,
+                                   GenerateReadyMeta, GenerateReadySlide)
+from pptx_generator.generate_ready import generate_ready_to_jobspec
 
 
-def test_rendering_ready_to_jobspec_conversion() -> None:
-    document = RenderingReadyDocument(
+def test_generate_ready_to_jobspec_conversion() -> None:
+    document = GenerateReadyDocument(
         slides=[
-            RenderingReadySlide(
+            GenerateReadySlide(
                 layout_id="layout_basic",
                 elements={
                     "title": "タイトル",
@@ -36,7 +36,7 @@ def test_rendering_ready_to_jobspec_conversion() -> None:
                 ),
             )
         ],
-        meta=RenderingReadyMeta(
+        meta=GenerateReadyMeta(
             template_version="v1",
             content_hash="sha256:abc",
             generated_at="2025-10-18T00:00:00Z",
@@ -53,7 +53,7 @@ def test_rendering_ready_to_jobspec_conversion() -> None:
         ),
     )
 
-    spec = rendering_ready_to_jobspec(document)
+    spec = generate_ready_to_jobspec(document)
 
     assert spec.meta.title == "資料タイトル"
     assert spec.auth.created_by == "tester"
@@ -92,10 +92,10 @@ def test_rendering_ready_to_jobspec_conversion() -> None:
     assert textbox.text == "テキストボックス"
 
 
-def test_rendering_ready_to_jobspec_defaults() -> None:
-    document = RenderingReadyDocument(
+def test_generate_ready_to_jobspec_defaults() -> None:
+    document = GenerateReadyDocument(
         slides=[
-            RenderingReadySlide(
+            GenerateReadySlide(
                 layout_id="layout_basic",
                 elements={},
                 meta=MappingSlideMeta(
@@ -106,7 +106,7 @@ def test_rendering_ready_to_jobspec_defaults() -> None:
                 ),
             )
         ],
-        meta=RenderingReadyMeta(
+        meta=GenerateReadyMeta(
             template_version=None,
             content_hash=None,
             generated_at="2025-10-18T00:00:00Z",
@@ -115,7 +115,7 @@ def test_rendering_ready_to_jobspec_defaults() -> None:
         ),
     )
 
-    spec = rendering_ready_to_jobspec(document)
+    spec = generate_ready_to_jobspec(document)
 
     assert spec.meta.title == "Untitled Deck"
     assert spec.meta.schema_version == "unknown"

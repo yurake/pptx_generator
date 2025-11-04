@@ -30,7 +30,7 @@ from pptx_generator.pipeline import (
     SimpleAnalyzerStep,
     SimpleRendererStep,
 )
-from pptx_generator.rendering_ready import rendering_ready_to_jobspec
+from pptx_generator.generate_ready import generate_ready_to_jobspec
 
 
 def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
@@ -192,8 +192,8 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
     mapping_step = MappingStep(MappingOptions(output_dir=tmp_path))
     mapping_step.run(mapping_context)
 
-    rendering_ready = mapping_context.artifacts["rendering_ready"]
-    render_spec = rendering_ready_to_jobspec(rendering_ready)
+    generate_ready = mapping_context.artifacts["generate_ready"]
+    render_spec = generate_ready_to_jobspec(generate_ready)
     render_context = PipelineContext(
         spec=render_spec,
         workdir=tmp_path,

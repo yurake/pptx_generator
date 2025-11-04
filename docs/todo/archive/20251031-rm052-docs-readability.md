@@ -2,7 +2,7 @@
 目的: README と docs/requirements・docs/design 系ドキュメントの可読性を向上させる
 関連ブランチ: docs/readability-refactor
 関連Issue: #244
-roadmap_item: RM-043 ドキュメント可読性向上
+roadmap_item: RM-052 ドキュメント可読性向上
 ---
 
 - [x] ブランチ作成と初期コミット
@@ -34,4 +34,3 @@ roadmap_item: RM-043 ドキュメント可読性向上
 ## メモ
 - README / 要件 / 設計の構成整理まで完了。後続で README の詳細コマンド節と関連 runbook の整合を確認する。
 - README の工程図を参照する導線を requirements/design/runbook/roadmap に追記済み。
-

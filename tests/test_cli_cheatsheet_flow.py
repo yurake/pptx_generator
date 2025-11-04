@@ -11,7 +11,8 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+SAMPLE_BRIEF_SOURCE = Path(
+    "samples/contents/sample_import_content_summary.txt")
 
 
 @pytest.mark.skipif(
@@ -44,26 +45,13 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     template_release_path = release_dir / "template_release.json"
     assert template_release_path.exists()
-    release_payload = json.loads(template_release_path.read_text(encoding="utf-8"))
+    release_payload = json.loads(
+        template_release_path.read_text(encoding="utf-8"))
     assert release_payload.get("brand") == "demo"
     assert release_payload.get("version") == "v1"
 
+    extract_root = tmp_path / "template"
     template_result = runner.invoke(
-        app,
-        [
-            "template",
-            str(SAMPLE_TEMPLATE),
-            "--output",
-            str(tmp_path / "template"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert template_result.exit_code != 0
-    assert "No such command 'template'" in template_result.output
-
-    extract_root = tmp_path / "extract"
-    tpl_extract = runner.invoke(
         app,
         [
             "tpl-extract",
@@ -75,7 +63,7 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         catch_exceptions=False,
     )
 
-    assert tpl_extract.exit_code == 0
+    assert template_result.exit_code == 0
 
     template_spec_path = extract_root / "template_spec.json"
     jobspec_path = extract_root / "jobspec.json"
@@ -88,15 +76,14 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     assert branding_path.exists()
     assert layouts_path.exists()
     assert diagnostics_path.exists()
-
     jobspec_payload = json.loads(jobspec_path.read_text(encoding="utf-8"))
     assert "meta" in jobspec_payload
 
-    content_output = tmp_path / "content"
+    content_output = tmp_path / "prepare"
     content_cmd = runner.invoke(
         app,
         [
-            "content",
+            "prepare",
             str(SAMPLE_BRIEF_SOURCE),
             "--output",
             str(content_output),
@@ -106,7 +93,7 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     assert content_cmd.exit_code == 0
 
-    brief_cards_path = content_output / "brief_cards.json"
+    brief_cards_path = content_output / "prepare_card.json"
     brief_log_path = content_output / "brief_log.json"
     brief_meta_path = content_output / "ai_generation_meta.json"
     assert brief_cards_path.exists()
@@ -131,6 +118,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
             str(brief_log_path),
             "--brief-meta",
             str(brief_meta_path),
+            "--template",
+            str(SAMPLE_TEMPLATE),
         ],
         catch_exceptions=False,
     )

@@ -14,7 +14,7 @@
    - `src/pptx_generator/pipeline/template_extractor.py` で `shape.placeholder_format` 取得時の `ValueError` / `AttributeError` を握り潰すよう改修。
 4. サンプル JSON 整備:
    - `samples/json/sample_jobspec.json` を 50 ページ構成へ拡張（Two Column Detail アジェンダ、KPI チャート追加など）。
-  - `samples/brief/sample_brief_cards.json` / `samples/brief/sample_brief_log.json` の `current-challenges` 参照を同期。
+  - `samples/brief/sample_prepare_card.json` / `samples/brief/sample_brief_log.json` の `current-challenges` 参照を同期。
    - `samples/json/sample_template_layouts.jsonl` を最新の抽出結果で更新。
 5. ドキュメント更新:
    - `docs/requirements/requirements.md`, `docs/design/design.md`, `docs/runbooks/release.md` に RM-043 の運用手順を追記。

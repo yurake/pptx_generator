@@ -77,17 +77,17 @@ class BriefNormalizationStep:
         try:
             text = path.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
-            msg = f"brief_cards.json を読み込めません: {path}"
+            msg = f"prepare_card.json を読み込めません: {path}"
             raise BriefNormalizationError(msg) from exc
         try:
             payload = json.loads(text)
         except json.JSONDecodeError as exc:
-            msg = f"brief_cards.json の解析に失敗しました: {path}"
+            msg = f"prepare_card.json の解析に失敗しました: {path}"
             raise BriefNormalizationError(msg) from exc
         try:
             return BriefDocument.model_validate(payload)
         except ValueError as exc:
-            msg = f"brief_cards.json の検証に失敗しました: {path}"
+            msg = f"prepare_card.json の検証に失敗しました: {path}"
             raise BriefNormalizationError(msg) from exc
 
     def _load_logs(self, path: Path | None) -> list[BriefLogEntry] | None:

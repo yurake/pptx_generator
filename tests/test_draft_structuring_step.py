@@ -42,7 +42,7 @@ def sample_spec() -> JobSpec:
 def brief_paths() -> dict[str, Path]:
     brief_dir = Path("samples/brief")
     return {
-        "cards": brief_dir / "brief_cards.json",
+        "cards": brief_dir / "prepare_card.json",
         "log": brief_dir / "brief_log.json",
         "meta": brief_dir / "ai_generation_meta.json",
     }

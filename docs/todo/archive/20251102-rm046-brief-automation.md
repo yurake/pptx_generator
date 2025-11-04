@@ -43,11 +43,11 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
       - ロールバック: 取り込みコミット単位で `git revert`、または再度 main からブランチを切り直す。
       - 承認: ユーザー「後方互換への考慮は不要。他については承認」メッセージ（2025-11-02 14:04 JST）。
     - 追記 (2025-11-03 11:05 JST): brief policy オプション廃止に関する計画を下記の通り整理。
-      - スコープ: `pptx content` サブコマンドから `--brief-policy` / `--ai-policy*` を撤廃し、既定ポリシー固定でブリーフ生成を行う。関連ロジック・ドキュメント・テストも新仕様に合わせる。
+      - スコープ: `pptx prepare` サブコマンドから `--brief-policy` / `--ai-policy*` を撤廃し、既定ポリシー固定でブリーフ生成を行う。関連ロジック・ドキュメント・テストも新仕様に合わせる。
       - 想定更新ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/brief/*`, `tests/test_cli_content.py` ほか content 関連テスト、README、`docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-03-*`, 必要に応じて `docs/notes/`。
       - 進め方: (1) main の差分を再確認し影響範囲を把握。(2) CLI から該当オプションを削除し、デフォルトポリシーを内部固定化。(3) ブリーフ生成ロジックの依存（`load_brief_policy_set` など）を簡素化し、エラーメッセージや監査ログを更新。(4) テストを更新して `uv run --extra dev pytest` を実行。(5) README 等のドキュメントを新仕様に合わせて改訂。(6) ToDo・必要なドキュメントに結果を共有。
       - リスク: 既存の `--brief-policy` 利用パターンとの互換性がなくなること、外部ドキュメントにオプション前提の記述が残る可能性。
-      - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx content samples/contents/sample_import_content_summary.txt` など手動確認。
+      - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx prepare samples/contents/sample_import_content_summary.txt` など手動確認。
       - ロールバック: ブランチ上の変更を revert してオプションを復元する。
 - [x] 設計・実装方針の確定
   - メモ: `docs/notes/20251102-rm046-brief-analysis.md` に BriefCard への全面移行と実装ロードマップ／検証方針を整理済み。
@@ -82,7 +82,7 @@ roadmap_item: RM-046 生成AIブリーフ構成自動化
   - [x] main 取り込み／コンフリクト解消と compose 新仕様のコード反映
     - メモ: `src/pptx_generator/cli.py` へ `OutlineResult` ヘルパと `pptx compose` サブコマンドを追加し、`outline` / `mapping` の処理を共通化。`_run_mapping_pipeline` に既存ドラフトコンテキストを渡せるよう拡張。
   - [x] CLI・パイプライン・設定の更新（`uv run pptx compose` 系コマンド、入力 JSON、テンプレ参照）
-    - メモ: Compose で `draft_*` と `rendering_ready.json` を一括生成する動線を実装し、`pipeline/__init__.py` に `BriefNormalization*` を再エクスポートして CLI 依存を解消。
+    - メモ: Compose で `draft_*` と `generate_ready.json` を一括生成する動線を実装し、`pipeline/__init__.py` に `BriefNormalization*` を再エクスポートして CLI 依存を解消。
   - [x] テスト更新と検証（`uv run --extra dev pytest`, `uv run pptx compose ...` 実行確認）
     - メモ: `tests/test_cli_integration.py::test_cli_compose_generates_stage45_outputs` を追加。`uv run --extra dev pytest tests/test_cli_integration.py` を実行し 30 ケース成功。手動で `uv run pptx compose` を走らせ、標準出力と生成物を確認。
   - [x] ドキュメント刷新（README, AGENTS, docs/requirements/, docs/design/, docs/runbooks/ 等）

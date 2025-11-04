@@ -92,9 +92,9 @@ class RenderingAuditStep:
                 )
 
         template_version: str | None = None
-        rendering_ready = context.artifacts.get("rendering_ready")
-        if rendering_ready is not None:
-            template_version = getattr(getattr(rendering_ready, "meta", None), "template_version", None)
+        generate_ready = context.artifacts.get("generate_ready")
+        if generate_ready is not None:
+            template_version = getattr(getattr(generate_ready, "meta", None), "template_version", None)
 
         renderer_stats = context.artifacts.get("renderer_stats") or {}
 
