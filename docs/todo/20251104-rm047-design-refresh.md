@@ -41,8 +41,10 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
     - Stage4 記述が `generate_ready` と矛盾しないか最終確認。Stage3/Stage5 の参照関係も合わせて見直す。
   - [ ] docs/design 配下（実装結果との整合再確認）
     - 設計ドキュメントのフロー図・成果物一覧・CLI セクションが `generate_ready` 基盤を反映しているかをチェック。
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+    - `docs/runbooks/story-outline-ops.md` を更新し、工程3の成果物・監査手順を `generate_ready` 基盤へ更新（2025-11-04）。
+  - [x] README.md / AGENTS.md
+    - README の工程3説明とサンプルコマンドを `generate_ready` 出力へ刷新（2025-11-04）。
 - [ ] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
