@@ -34,7 +34,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号の更新状況を記録する。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録する。
