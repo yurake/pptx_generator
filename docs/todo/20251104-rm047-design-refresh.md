@@ -5,8 +5,8 @@
 roadmap_item: RM-047 テンプレ統合構成生成AI連携
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: feat/rm047-draft-structuring を main から作成済み（既存ブランチを流用）
+- [x] ブランチ作成と初期コミット
+  - メモ: feat/rm047-draft-structuring を main から作成済み（既存ブランチを流用済み）。以降の作業は同ブランチ上で実施。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
       - **対象整理**  
@@ -24,32 +24,30 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
       - **承認メッセージ**: ユーザー発言「ok」。
 - [x] 設計・実装方針の確定
   - メモ: Stage3（マッピング）で `generate_ready` 系成果物を確定させ、旧工程4（ドラフト構成）はレガシー扱いとする方針を文書化。`docs/design/stages/stage-03-mapping.md` を刷新し、`docs/design/stages/stage-04-draft-structuring.md` へレガシーノートを追記済み。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 対象ドキュメントの整合を `generate_ready` 基盤へ更新済み（commit `edfabde`）。
   - [x] docs/requirements 配下
     - 対象: `docs/requirements/stages/stage-03-mapping.md`, `docs/requirements/stages/stage-04-draft-structuring.md`, `docs/requirements/requirements.md` を更新し、`generate_ready` 前提とレガシーノートを反映。
   - [x] docs/design 配下
     - 対象: `docs/design/stages/stage-03-mapping.md`, `docs/design/stages/stage-04-draft-structuring.md`, `docs/design/design.md`, `docs/design/cli-command-reference.md`, `docs/design/20251019-stage3-4-cli.md` を更新し、工程3の成果物・CLI オプション・legacy 注意書きを整理。
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 
-  - [ ] docs/roadmap 配下
+- [x] 実装
+  - メモ: ドキュメント再配置・レガシー注記追加などの反映を完了（commit `edfabde` ほか）。
+- [x] テスト・検証
+  - メモ: 実装不要タスクのためテスト対象なし。ドキュメント確認のみ。
+- [x] ドキュメント更新
+  - メモ: 全関連ドキュメントの整合を確認し、必要箇所は更新済み。
+  - [x] docs/roadmap 配下
     - `docs/roadmap/roadmap.md` の工程3説明と RM-024 期待成果を `generate_ready` 基盤へ更新済み（2025-11-04）。他セクションの legacy 記述は今後のロードマップ整理時に再検討。
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-    - Stage4 記述が `generate_ready` と矛盾しないか最終確認。Stage3/Stage5 の参照関係も合わせて見直す。
-  - [ ] docs/design 配下（実装結果との整合再確認）
-    - 設計ドキュメントのフロー図・成果物一覧・CLI セクションが `generate_ready` 基盤を反映しているかをチェック。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - Stage4 記述が `generate_ready` と矛盾しないか最終確認済み。
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - 設計ドキュメントのフロー図・成果物一覧・CLI セクションが `generate_ready` 基盤を反映していることを確認済み。
   - [x] docs/runbook 配下
-    - `docs/runbooks/story-outline-ops.md` を更新し、工程3の成果物・監査手順を `generate_ready` 基盤へ更新（2025-11-04）。
   - [x] README.md / AGENTS.md
-    - README の工程3説明とサンプルコマンドを `generate_ready` 出力へ刷新（2025-11-04）。
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: 本 ToDo の結果は既存ブランチで管理、最終 PR は RM-047 実装完了時にまとめて作成予定（現段階では内部完結）。
 
 ## メモ
 - 現行ステージドキュメント確認結果（更新反映済み）
