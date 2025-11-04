@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,7 @@ import tempfile
 from pathlib import Path
 from collections import Counter
 
+import pytest
 from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -22,6 +24,13 @@ from pptx_generator.layout_validation import LayoutValidationResult, LayoutValid
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+
+
+def _libreoffice_available() -> bool:
+    env_path = os.environ.get("LIBREOFFICE_PATH")
+    if env_path and Path(env_path).exists():
+        return True
+    return shutil.which("soffice") is not None
 
 
 def _collect_paragraph_texts(slide) -> list[str]:
@@ -96,6 +105,11 @@ def _prepare_generate_ready(
 
     ready_path = mapping_dir / "generate_ready.json"
     assert ready_path.exists()
+    payload = json.loads(ready_path.read_text(encoding="utf-8"))
+    meta = payload.get("meta", {})
+    template_path = meta.get("template_path")
+    assert template_path is not None
+    assert Path(template_path).is_absolute()
     return ready_path
 
 
@@ -389,6 +403,9 @@ def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
+    if not _libreoffice_available():
+        pytest.skip("LibreOffice が利用できないためスキップします")
+
     spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"

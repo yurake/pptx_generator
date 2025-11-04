@@ -178,11 +178,13 @@ class MappingStep:
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
-        template_path_str = (
-            str(self.options.template_path)
-            if self.options.template_path is not None
-            else None
-        )
+        template_path_str: str | None = None
+        if self.options.template_path is not None:
+            try:
+                # resolve() で絶対パスへ正規化し、生成物持ち運び時にも一意に解決できるようにする
+                template_path_str = str(self.options.template_path.resolve())
+            except OSError:
+                template_path_str = str(self.options.template_path)
 
         generate_ready_meta = GenerateReadyMeta(
             template_version=self._resolve_template_version(context),
