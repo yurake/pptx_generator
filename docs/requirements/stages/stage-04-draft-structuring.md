@@ -1,9 +1,10 @@
-# 工程4 ドラフト構成設計 要件
+# （レガシー）工程4 ドラフト構成設計 (HITL) 要件詳細
+
+> **注記**: 現行フローではドラフト構成設計は工程3「マッピング」で実施し、`generate_ready.json` を出力する。最新要件は [stage-03-mapping.md](../stages/stage-03-mapping.md) を参照。本ファイルは旧 `draft_*` フローの履歴として保持する。
 
 ## 概要
-- 工程3で承認された `brief_cards.json` と、工程2で整備した `jobspec.json` を統合し、工程5が入力として利用する `generate_ready.json` を生成する。
-- 生成AIがカード単位でテンプレート割当を提案し、HITL オペレータが承認／差戻し／付録送りなどを指示できる操作フローを提供する。
-- 既存の `draft_draft.json` / `draft_approved.json` / `rendering_ready.json` を用いたワークフローは廃止し、`generate_ready` 出力へ全面移行する。
+- BriefCard 成果物を章立て・スライド順に配置し、`layout_hint` を確定させる。
+- HITL 承認により構成をロックし、後続工程に安定した入力を提供する。
 
 ## 入力
 - 工程3の `prepare_card.json`（`story.phase` / `intent_tags` / `supporting_points` などカード情報を含む）。
@@ -14,96 +15,72 @@
 - 差戻し理由テンプレート辞書 (`return_reasons.json`)。
 
 ## 出力
-- `generate_ready.json`: 工程5が唯一参照する構成ファイル。`slides[*]` にはテンプレートレイアウトIDとプレースホルダへ配置する要素を格納。`meta` に章情報、生成時間、`job_meta` / `job_auth` を含む。
-- `generate_ready_meta.json`: 章別状態、テンプレ適合率、AI 推薦の採用状況、Analyzer 指摘要約、差戻し統計を記録。
-- `draft_mapping_log.json`: カード割当処理の詳細ログ。AI 推薦スコア、ヒューリスティック理由、フォールバック履歴を保持。
-- `draft_review_log.json`: HITL 操作ログ。ターゲット種別（章／スライド）、アクション（`approve`/`return`/`appendix`/`hint` 等）、操作者、差戻し理由コードを記録。
-- `audit_log.json`（工程4セクション）: Approval-First Policy に基づく監査情報。CLI 実行時に更新する。
+- `draft_approved.json`: 章構成、スライド順、`layout_hint`、付録フラグ。
+- 承認ログ: 章/スライド単位の承認・差戻し履歴。
+- レイアウト候補一覧と選定理由を含む提案ログ。
+- `draft_meta.json`: 章テンプレ適合率、Analyzer 指摘件数、差戻し理由コード別集計。
+- 差戻しテンプレート辞書（`return_reasons.json`）と Draft ログのテンプレ紐付け。
+- Analyzer 連携ログ（最新 `analysis_summary.json` の取り込み時刻と結果）。
 
 ## ワークフロー
-1. **文脈読み込み**: `BriefNormalizationStep` が `brief_cards`・`brief_log`・`ai_generation_meta` を検証し、`PipelineContext` に `brief_document` と互換用 `content_approved` を格納する。
-2. **テンプレ解析**: `jobspec.json` を読み込み、スライドごとに利用可能アンカー、用途タグ（`layouts.jsonl` 連携）、収容目安を整理する。
-3. **カード特徴抽出**: 各カードについて情報量指標（本文文字数、支援ポイント数、証憑有無）、意図タグ、ストーリー段階を算出し、テンプレへの適合度推定に利用する。
-4. **AI 推薦**: カード単位で LLM へプロンプトを生成し、最適なテンプレ候補を最大 N 件返却する。プロンプトには以下を含む。
-   - カード要約（メッセージ、支援ポイント、想定アウトプット種別）。
-   - 利用可能なテンプレ一覧（用途タグ、収容目安、主要アンカー名）。
-   - 制約条件（章テンプレ要件、本編枚数上限、付録上限）。
-   - 出力形式（`layout_id`, `score`, `rationale[]`）。
-   AI が失敗した場合は用途タグ一致度＋容量適合度＋多様性スコアでヒューリスティックを組み合わせる。
-5. **割当計算**: 推薦結果をもとにカードとテンプレを一意にマッピングする。ルールは以下の通り。
-   - `jobspec.slides` の未使用レイアウトに優先割当。該当レイアウトが不足する場合は類似タグを持つスライドにフォールバック。
-   - 章テンプレ辞書に `required_sections` が定義されている場合は必須章を先に充足する。
-   - 本編枚数超過時はスコア下位のカードを付録候補としてフラグ付けし、HITL が再配置できるよう明示する。
-6. **HITL 操作**: CLI/UI を通じて章・スライド単位で承認／差戻し／付録送りを行う。差戻し時は `return_reasons.json` からコードを選択しメモを付与。操作結果は `draft_review_log.json` と `generate_ready_meta.json` に反映。
-7. **成果物生成**: 最終的な割当結果を `generate_ready.json` と `generate_ready_meta.json` に書き出す。同時に `draft_mapping_log.json` を生成し、AI 推薦スコアやフォールバック履歴を保持する。
+1. Draft API / CLI が章レーンとスライドカードの構成データを提示する。
+2. AI が提案する構成案をベースに、人が CLI / 外部ツールから順序や章を調整する。
+3. `layout_hint` を選択し、必要に応じて付録送りや統合を行う。
+4. 承認単位（章・スライド）で承認フラグを更新し、差戻し理由を記録する。
+5. 承認完了後に `draft_approved.json` を出力し、工程5へ渡す。
 
 ## 品質ゲート
-- すべてのカードが `generate_ready.slides` に割り当てられているか、もしくは付録フラグが付与されている。
-- `generate_ready.slides[*].meta.sources` にカード ID が必ず含まれている（トレーサビリティ担保）。
-- 章テンプレ適合率がしきい値（既定 0.8）を下回る場合は警告を出し、HITL 確認を必須化する。
-- 付録スライド数が `appendix_limit` を超えない。超過時は CLI が再割当を促す。
-- `generate_ready_meta.statistics.cards_total == brief_cards.cards.length` を満たす。
-- 差戻しログの `return_reason_code` は辞書に定義された値である。
+- すべてのスライドが章に所属し、章順が定義されている。
+- 工程3のストーリーフェーズ情報と章構成が整合している（不一致は差戻しまたは章調整を実施）。
+- `layout_hint` が未設定のスライドが存在しない。
+- 本編枚数が制約内に収まっている（超過は付録へ移動済み）。
+- 承認ログが揃い、差戻し理由が空欄でない。
 
-## ログ・監査要件
-- `draft_mapping_log.json` は以下の情報を保持する。
-  - `card_id`: 割当対象カード。
-  - `selected_layout`: 最終採用レイアウト ID。
-  - `candidates[]`: AI 推薦およびヒューリスティックの候補。スコア、理由、推奨タイプ（`ai` / `heuristic`）を含む。
-  - `fallback`: 容量超過などで適用したフォールバック履歴。
-  - `analyzer_summary`: `analysis_summary.json` から引き継いだ重大度件数。
-- `draft_review_log.json` は Approval-First Policy に従い、操作主体・タイムスタンプ・差戻し理由を必須化する。
-- CLI 実行時に生成される `audit_log.json` の工程4セクションへ `generate_ready` 出力パスとハッシュ値、カード割当統計を追記する。
+## ログ・連携
+- 承認イベントログと工程3ログを `slide_uid` で突合可能にする。
+- レイアウト候補のスコア（用途タグ一致率、容量適合度、多様性）を記録する。
+- 付録送り・統合の履歴を残し、後続のマッピングで参照する。
+- Analyzer 指摘サマリを章・スライド単位で保存し、差戻しテンプレートと相互参照できるようにする。
+- 章テンプレ適用結果（適合率、過不足スライド）をメタ情報として保持する。
 
-## CLI / API 要件
-- `uv run pptx outline` の引数を以下とする。
-  - 第1引数: `jobspec.json`（工程2の成果物）。
-  - `--brief-cards`: 必須。`brief_cards.json` のパス。
-  - `--brief-log`, `--brief-meta`: 任意。存在しない場合はスキップ。
-  - `--layouts`, `--analysis-summary`, `--chapter-template`, `--appendix-limit`, `--target-length`: 任意。
-  - `--output`: 出力ディレクトリ（既定 `.pptx/draft`）。
-  - `--generate-ready-filename`, `--meta-filename`, `--mapping-log-filename`, `--review-log-filename`: 既定値はそれぞれ `generate_ready.json`, `generate_ready_meta.json`, `draft_mapping_log.json`, `draft_review_log.json`。
-  - `--ai-recommender`: AI 推薦を有効化する設定（`auto|off|force`）。
-- 廃止するオプション: `--draft-filename`, `--approved-filename` など `draft_*` 系。
-- CLI 完了時に生成ファイルへの絶対パスを出力し、`generate_ready.json` の枚数と章ステータス概要を表示する。
-- API 側では `POST /draft/outline` のレスポンスを `generate_ready` ベースに変更し、旧 `draft_*` フィールドは返却しない。
+## RM-036 追加要件
+- 章テンプレプリセット: `structure_pattern` ごとにテンプレ ID を定義し、Draft API / CLI が章候補・過不足・適合率を表示する。`draft_*` には `chapter_template_id` と `template_match_score` を章単位で記録する。
+- layout_hint インテリジェンス: Layout Hint Engine が候補ごとに `layout_score_detail`（用途タグ・容量・多様性・Analyzer 支援度）を算出し、CLI と Dashboard が理由を提示できるようにする。
+- 差戻し理由テンプレート: 差戻し時に `return_reason_code` を必須化し、任意の補足コメントを `return_reason_note` に分離する。コードはテンプレ辞書で管理し、ログで集計可能にする。
+- Analyzer 連携: スライド単位の Analyzer 指摘件数を Draft ダッシュボードへ表示し、重大度順に差戻しテンプレート候補を優先表示する。`analyzer_summary` を Draft メタへ出力する。
+- HITL UX への反映: 章テンプレ・layout_hint 候補・差戻し理由コードを CLI / API から取得できるようインターフェースを拡張する。PoC では CLI 表示と JSON 出力の整合確認を行う。
+- CLI 機能拡張: `--show-layout-reasons`, `--return-reasons`, `--import-analysis`, `--chapter-template` などのオプションを提供し、PoC では標準出力と JSON 出力の両方で新情報を確認できること。
+- API 機能拡張: テンプレ辞書・差戻しテンプレ・Analyzer 連携の取得/登録エンドポイントを追加し、既存レスポンスに `layout_score_detail`, `analyzer_summary` 等を含める。
 
-## データモデル（概要）
-### GenerateReadyDocument
-| フィールド | 型 | 説明 |
-| --- | --- | --- |
-| `slides[]` | `GenerateReadySlide` | テンプレレイアウト単位の描画指示。 |
-| `slides[].layout_id` | string | `jobspec.slides[].layout` と一致するテンプレ ID。 |
-| `slides[].elements` | dict | `jobspec` のアンカーに対応する要素。タイトル、本文、リスト、表、画像、チャート、テキストボックスを含む。 |
-| `slides[].meta.section` | string | 章識別子。章テンプレ評価に利用。 |
-| `slides[].meta.sources` | list[string] | 元となる `card_id` / その他参照元。 |
-| `meta.template_version` | string | 使用テンプレのバージョン識別子。 |
-| `meta.generated_at` | ISO8601 | 生成日時。 |
-| `meta.job_meta` / `meta.job_auth` | object | `jobspec.meta` / `auth` を再掲。 |
+### 章テンプレ辞書仕様
+- ファイル配置: `config/chapter_templates/<pattern>/<template_id>.json`
+- 必須フィールド: `template_id`, `name`, `structure_pattern`, `required_sections[]`, `constraints`.
+- `required_sections[].id` は Draft 章とのマッピングに利用し、重複不可。`min_slides` > 0 の場合は必須章。
+- `constraints.max_main_pages` を超過した場合は承認不可または付録送りを促す警告を自動表示。
+- 運用要件: テンプレ辞書の更新時はバージョン差分を `docs/policies/config-and-templates.md` に記録し、互換性テストを実施。
 
-### draft_review_log.json
-| フィールド | 型 | 説明 |
-| --- | --- | --- |
-| `target_type` | `section` \| `slide` | 操作対象。 |
-| `target_id` | string | 章 ID またはカード ID。 |
-| `action` | `approve` \| `return` \| `appendix` \| `hint` \| `move` | 操作種別。 |
-| `actor` | string | 操作者。 |
-| `timestamp` | ISO8601 | 操作時刻。 |
-| `changes` | dict | 差戻し理由コード、コメント、再割当候補など。 |
+### 差戻し理由テンプレ仕様
+- 辞書形式: 配列 (`return_reasons.json`) でコードを管理。`code` はシステム内部 ID、`label` は表示名。
+- `severity=blocker` のコードが指定された差戻しは再承認までブロック。`severity=warn` は警告表示のみ。
+- `related_analyzer_tags` により Analyzer 指摘との紐付けを行い、差戻し UI / CLI で優先表示。
+- 運用要件: コードの追加・変更は HITL 運用ポリシーに基づき承認プロセスを実施し、辞書更新時は CLI で自動取得できること。
 
-### generate_ready_meta.json
-- `sections[]`: 章単位の状態とスライドリスト。`status`（`draft`/`approved`/`returned`）、`slides[].ai_recommended`、`slides[].appendix` を含む。
-- `template.match_score`: 章テンプレ適合率。
-- `statistics`: `cards_total`, `approved_slides`, `appendix_slides`, `ai_recommendation_used`, `analyzer_issue_counts` など。
+### Analyzer サマリ連携要件
+- 工程6が生成する `analysis_summary.json` の形式を標準化（スライド単位の `severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at`）。
+- Draft 工程は読み込み時にスライド ID の整合性チェックを行い、不一致があれば詳細エラーを返却する。
+- analyzer_summary の導入により、差戻しテンプレ候補や layout_hint スコアに Analyzer 情報を反映する。
+- 運用要件: `analysis_summary.json` は 24 時間以内のデータを使用し、古いデータは再解析を促す。
 
-## テスト要件
-- サンプルデータ（`samples/json/sample_jobspec.json`, `samples/brief/sample_brief_cards.json`）を用いて CLI 統合テストを構築し、`generate_ready.json` に 1:1 でカードが割り当てられていることを検証する。
-- AI 推薦をモック化したユニットテストを用意し、候補スコアの並びやフォールバック処理を確認する。
-- テンプレ適合率がしきい値を下回るケース、付録上限超過ケース、差戻しログ付きケースのシナリオテストを実施する。
+## 未実装項目（機能単位）
+- 構成管理 API（UI はバックログ）と `layout_hint` 管理機能。
+- 多様性を考慮したレイアウト候補スコアリング。
+- 付録送り・統合操作の履歴管理と再承認フロー。
+- `story_outline` と `layout_hint` の整合チェックおよび警告表示。
+- 章テンプレ適用率の算出と `chapter_template_id` の読み書き。
+- `layout_score_detail` と `analyzer_summary` を含む候補提示の整備。
+- 差戻し理由コード辞書と Draft ログのテンプレ紐付け。
 
-## 未実装・フォローアップ
-- 差戻し理由辞書と AI 推薦ロジックの相互連携（返却理由から再推薦パターンを選択する仕組み）。
-- 章テンプレ辞書の不足項目（セクション別レイアウト上限など）の定義拡張。
-- `generate_ready_meta` と工程5監査ログ（`rendering_log.json` / `audit_log.json`）の突合レポート自動化。
-
-以上を満たす設計を実装前にレビューし、承認を得たうえで開発を進める。
+## CLI 支援
+- `pptx outline` コマンドは Brief 成果物とレイアウト候補を入力に `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` を生成し、章・スライド統計を `draft_meta.json` に出力する。
+- `--brief-cards` / `--brief-log` / `--brief-meta` を指定して工程3の成果物を取り込み、Spec と組み合わせて構成計算を実行する。
+- メタ情報には章ごとの承認状態や付録枚数上限が含まれ、工程5以降の監査ログや再実行時のトレースに活用できる。
