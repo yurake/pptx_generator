@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | 1 | テンプレ工程 | テンプレ資産の整備・抽出・検証・リリースメタ生成を一括実行 |
 | 2 | コンテンツ準備 (HITL) | 入力データをスライド素材へ整形し承認 |
-| 3 | マッピング (HITL + 自動) | 章構成承認 (`draft_*`) とレイアウト割付 (`generate_ready.json`) |
+| 3 | マッピング (HITL + 自動) | 章構成承認とレイアウト割付を実施し、`generate_ready.json`／`generate_ready_meta.json` を出力 |
 | 4 | PPTX レンダリング | 最終出力と監査メタ付与 |
 
 ```mermaid
@@ -445,7 +445,7 @@ flowchart TB
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md)
 - 参照 ToDo: [docs/todo/archive/20251012-draft-structuring-workbench.md](../todo/archive/20251012-draft-structuring-workbench.md)
 - 状況: 完了（2025-10-17 更新）
-- 期待成果: layout_hint 候補スコアリング、付録操作履歴、章承認ログを備えた CLI / API、`draft_draft.json`／`draft_approved.json` の出力整備。
+- 期待成果: layout_hint 候補スコアリング、付録操作履歴、章承認ログを備えた CLI / API。現行運用では `generate_ready.json`／`generate_ready_meta.json` へ統合済み（legacy `draft_*` 出力は参照のみ）。
 - 依存: RM-023（コンテンツ承認基盤）、RM-022（レイアウト解析検証強化）、RM-005（プレゼンストーリーモデラー）、RM-017（パイプライン機能拡張）。
 
 <a id="rm-025"></a>
