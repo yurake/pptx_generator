@@ -146,8 +146,8 @@
 ```
 
 ## CLI / API 更新点
-- `uv run pptx outline` / `pptx compose` に `--generate-ready-filename` と `--generate-ready-meta-filename` を追加し、ドラフト成果物と同時に `generate_ready` 系ファイルを出力できるようにした。
-- `--mapping-log-filename` と `--fallback-report-filename` を追加し、`mapping_log.json` / `fallback_report.json` の命名や出力有無を制御可能とした（既定はそれぞれ `mapping_log.json` / `fallback_report.json`）。`--fallback-report-filename ""` でレポート出力を抑止できる。
+- `uv run pptx outline` / `pptx compose` は `generate_ready.json` / `generate_ready_meta.json` を既定名で出力し、MappingStep 側でも同名で成果物を揃える。
+- `mapping_log.json` / `fallback_report.json` は既定名で出力し、フォールバックが発生した場合にのみレポートを生成する。
 - 従来の `--draft-filename` / `--approved-filename` / `--meta-filename` は後方互換のため継続し、CLI 実行後は Draft 系と Ready 系の生成物パスが両方表示される。
 - `pptx mapping` も同じ命名オプションを受け取り、工程5 が参照する `generate_ready` / `mapping_log.json` を統一出力する。
 - API 側のドラフト関連エンドポイントは `generate_ready` を第一級成果物として扱い、工程5 での参照を `generate_ready` 系に一本化する。

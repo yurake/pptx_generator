@@ -36,11 +36,6 @@
 | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
 | `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | 任意 |
 | `--analysis-summary <path>` | Analyzer サマリ | 任意 |
-| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 | `generate_ready.json` |
-| `--generate-ready-meta-filename <name>` | `generate_ready_meta.json` のファイル名 | `generate_ready_meta.json` |
-| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 | `draft_review_log.json` |
-| `--mapping-log-filename <name>` | `mapping_log.json` のファイル名 | `mapping_log.json` |
-| `--fallback-report-filename <name>` | `fallback_report.json` のファイル名（空文字指定で生成しない） | `fallback_report.json` |
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 | `--return-reasons` | 差戻し理由テンプレ一覧を表示 | 無効 |
 

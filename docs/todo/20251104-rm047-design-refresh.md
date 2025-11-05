@@ -58,7 +58,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - Stage4 再設計案（草案）
   - 成果物: `generate_ready.json` を章/カード割当の主ファイル、`generate_ready_meta.json` を章テンプレ・AI 推薦・Analyzer サマリ・承認タイムラインのメタとして位置付ける。`draft_review_log.json`／`mapping_log.json` は名称維持しつつ `generate_ready` と ID 連携。  
   - フロー: `pptx outline` は `generate_ready` を直接操作し、承認状態を `generate_ready_meta.sections[*].status` で管理。Chapter Template Registry は `generate_ready_meta.template` で適合率を出力し、Analyzer 情報は `sections[*].analyzer_summary` へ集約。  
-  - CLI: `pptx outline` は `--draft-*` を廃止し `--generate-ready-filename` 等へ置換。`pptx compose` は Stage3 全体の再実行時に Stage4 モジュールを呼び出し、`pptx mapping` は `generate_ready.json` を唯一の入力とする。  
+  - CLI: `pptx outline` は `draft_*` 系成果物を既定名で生成し、`pptx compose` は Stage3 全体の再実行時に Stage4 モジュールを呼び出す。`pptx mapping` は `generate_ready.json` を唯一の入力とする。  
   - モデル/パイプライン: `GenerateReadyDocument` に HITL 状態を追加し、`generate_ready.py` で Stage4→Stage5 変換を拡張。`pipeline/draft_structuring.py` は `GenerateReadyDocument` を出力し、`pipeline/mapping.py` は旧 `draft_*` 参照を削除。  
   - リスク: CLI オプション変更に伴う互換性問題、`generate_ready_meta.json` 構造確定、既存テスト／ドキュメントの大規模更新が必要。
 - ステージ構成の前提

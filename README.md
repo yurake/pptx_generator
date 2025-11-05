@@ -126,7 +126,7 @@ flowchart TD
 
 ### 工程 3: マッピング (HITL + 自動)
 - 章構成承認とレイアウト割付を同一工程で扱い、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`mapping_log.json`・`fallback_report.json` を同時に更新します。
-- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（既定 `.pptx/draft/`）を維持します。ファイル名は `--generate-ready-filename` や `--mapping-log-filename` などで変更可能です。
+- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（既定 `.pptx/draft/`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
     --brief-cards .pptx/prepare/prepare_card.json \

@@ -44,7 +44,6 @@
 ## CLI 要件
 - `pptx compose`
   - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
-  - `--generate-ready-filename` / `--generate-ready-meta-filename` / `--review-log-filename` / `--mapping-log-filename` / `--fallback-report-filename` で成果物ファイル名を制御する。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
 - `pptx outline`
   - `generate_ready` 系成果物のみ再生成する。`--refresh-candidates` 指定時は候補スコアも再計算する。
