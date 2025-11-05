@@ -1,0 +1,72 @@
+name: "バグ報告"
+description: "不具合の内容と再現手順を報告する"
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 事前確認
+        以下の項目を確認した上で記入してください。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 必須チェック
+      options:
+        - label: 同じ内容の Issue が存在しないことを確認しました。
+          required: true
+        - label: 最新の `main` ブランチで再現することを確認しました。
+          required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 発生している不具合の概要を記載してください。
+      placeholder: 例）PPTX 生成時に ValueError が発生する
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 不具合を再現するための手順を番号付きで記載してください。
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される結果
+      description: 本来期待している挙動を記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の結果
+      description: 実際に発生した挙動やエラーメッセージを記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 実行環境
+      description: OS、Python バージョン、LibreOffice バージョンなど関連する情報を記載してください。
+      placeholder: |
+        - OS: 
+        - Python: 
+        - LibreOffice: 
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: 追加情報
+      description: ログやスクリーンショットなど、調査に役立つ情報があれば添付してください。
+      placeholder: 例）エラーログ、生成物、スクリーンショットなど
+    validations:
+      required: false
