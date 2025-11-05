@@ -6,7 +6,10 @@
 - 工程1への追加: `template_spec` に `layout_mode: dynamic|static` と静的テンプレ用 Blueprint を追加。テンプレ抽出 CLI は Blueprint を生成し、テンプレ版ごとの固定スライド構成を提供する。
 - 工程2の拡張:
   - CLI オプションで Blueprint を指定 (`--template-spec` など) し、生成 AI が slot 情報を参照してテキストを構成。
+  - `pptx prepare` 実行時に `--mode (dynamic|static)` を必須にし、選択モードを `ai_generation_meta.json` と `audit_log.json` に記録して後工程でトレースできるようにする。
   - `prepare_card.json` に `slot_id`、`slide_id`、必須/任意の充足ステータス、`layout_mode` を追加。
+  - 静的モード時は Blueprint の slot に沿ってカードを個別生成し、必要であれば `LLMClient.generate()` をスライド（=slot）単位で呼び出す。
+  - 動的モードとの整合を保つため、Blueprint 由来の骨子と `BriefAIOrchestrator` のカード単位生成を統合する設計を検討する。
   - `ai_generation_meta.json` に必須 slot 充足率や Blueprint 参照情報を記録し、監査ログへ連携する。
 - 工程3の分岐:
   - 動的モード: 現行どおりレイアウトスコアリング・フォールバック・`generate_ready` 生成を担当。
@@ -16,5 +19,5 @@
 - 未決定事項:
   - Blueprint スキーマの詳細（入れ子構造、付録扱い）とテンプレ差分管理方法。
   - 静的テンプレ専用の差戻し理由セットや UI 連携方法。
-  - 動的・静的モードの CLI UX（自動判定 vs オプション指定）の最終方針。
+  - `--mode` 必須化後のテンプレ自動判定や既存スクリプト互換性の整理（デフォルトモード廃止に伴う導線調整）。
 - 次アクション: Blueprint スキーマ案と CLI 拡張仕様を起票し、工程2/3 のスキーマ変更案を `docs/requirements/` と `docs/design/` へ落とし込む。関連タスクを細分化して RM-054 の ToDo へ展開する。

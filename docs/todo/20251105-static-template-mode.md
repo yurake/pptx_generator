@@ -18,9 +18,9 @@ roadmap_item: RM-054 静的テンプレ構成統合
     - ロールバック方法: 追記したドキュメントを revert すれば元の状態へ戻せる。
     - 承認メッセージ ID／リンク: ユーザー承認 (2025-11-05)
 - [ ] 設計・実装方針の確定
-  - メモ: 
+  - メモ: `pptx prepare` へ `--mode (dynamic|static)` を必須追加し、生成モードを `ai_generation_meta.json`／`audit_log.json` に記録する案で整理。工程3は `ai_generation_meta.json.mode` を参照して静的テンプレ分岐を行う。
 - [ ] ドキュメント更新（要件・設計）
-  - メモ: 
+  - メモ: 要件草案として `docs/requirements/stages/stage-02-content-normalization.md` と `docs/requirements/stages/stage-03-mapping.md` にモード必須化の記述を追加済み。実装時に再確認する。
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
 - [ ] 実装
