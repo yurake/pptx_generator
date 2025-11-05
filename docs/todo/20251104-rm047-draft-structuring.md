@@ -45,10 +45,10 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - メモ: Stage3/4 関連ドキュメントを `generate_ready` 基盤へ更新済み（commit `edfabde`）。追加の設計補足は今後の実装ブランチで反映予定。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
-- [ ] 実装
-  - メモ: `DraftStructuringStep` で `generate_ready.json` / `generate_ready_meta.json` を生成。`pptx outline` / `compose` / `mapping` に generate_ready 系オプションを追加し、出力ログを刷新済み。`MappingStep` の最終成果物整理は継続課題。
-- [ ] テスト・検証
-  - メモ: `pytest tests/test_cli_outline.py` でアウトライン工程の回帰を確認。全体テストは未実施。
+- [x] 実装
+  - メモ: `DraftStructuringStep` で `generate_ready.json` / `generate_ready_meta.json` を生成。`pptx outline` / `compose` / `mapping` に generate_ready 系オプションを追加し、`MappingStep` でも `generate_ready_meta.json` を出力先へ複製するよう調整済み。
+- [x] テスト・検証
+  - メモ: 個別テストに加えて `uv run --extra dev pytest` を実行し、全体の回帰を確認済み。
 - [ ] ドキュメント更新
   - メモ: README と `docs/design/cli-command-reference.md`、`docs/design/stages/stage-03-mapping.md`、`docs/requirements/stages/stage-03-mapping.md` を更新し、`mapping_log.json` へのリネームと CLI 新オプションを反映済み。runbook の運用手順も追随。
   - [ ] docs/roadmap 配下
