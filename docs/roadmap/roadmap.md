@@ -72,6 +72,7 @@ flowchart TB
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(進行中)"]
+        RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(検討中)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -770,6 +771,16 @@ flowchart TB
 - 状況: 完了（2025-11-04 更新）
 - 期待成果: CLI 操作手順の検証ログと生成物をサンプルとして共有し、ユーザー導線に沿った資料準備が可能な状態。
 - 次アクション: CLI 手順を確認しながらサンプル生成し、`samples/` 配下を `.pptx` 出力構造に合わせて再編する計画を策定。
+
+<a id="rm-054"></a>
+### RM-054 静的テンプレ構成統合プランニング
+- 対象工程: 2〜3（コンテンツ準備 / マッピング）
+- ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md)
+- 参照 ToDo: [docs/todo/20251105-static-template-mode.md](../todo/20251105-static-template-mode.md)
+- 状況: 検討中（2025-11-05 追加）
+- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ。
+- 次アクション: 検討ノートを作成し、設計レビューへ向けた論点整理と後続タスク分解を行う。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
