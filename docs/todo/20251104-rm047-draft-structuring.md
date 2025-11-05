@@ -24,11 +24,11 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
          - `pipeline/brief_normalization.py`・`pipeline/mapping.py` を含む CLI パイプラインを全面刷新し、`draft_*`／`rendering_ready` 出力を廃止。`generate_ready.json` を唯一の後続入力として扱う。  
          - `src/pptx_generator/cli.py` の `pptx outline` コマンドを新仕様に対応させ、不要オプションを廃止しつつ `generate_ready` 出力と承認ログ・メタファイルを生成する。  
       5. **生成AIマッピング補助の実装**  
-         - BriefCard を 1 枚ずつ評価するマッピング補助ロジック（AI 推薦＋ヒューリスティック）を実装し、推奨結果を `DraftLayoutCandidate` 相当のスコアに反映。  
-         - 生成AIのプロンプト設計を工程3 の実装を参考に整理し、コード上の拡張ポイントとして組み込む。最終品質ゲートは工程5（`pptx mapping`）で実施する前提を明記する。  
+         - [ ] BriefCard を 1 枚ずつ評価するマッピング補助ロジック（AI 推薦＋ヒューリスティック）を実装し、推奨結果を `DraftLayoutCandidate` 相当のスコアに反映。  
+         - [ ] 生成AIのプロンプト設計を工程3 の実装を参考に整理し、コード上の拡張ポイントとして組み込む。最終品質ゲートは工程5（`pptx mapping`）で実施する前提を明記する。  
       6. **テストの更新・追加**  
-         - `tests/test_draft_structuring_step.py`、`tests/test_cli_integration.py` など既存テストを `generate_ready` ベースへ更新し、新旧出力の差異を検証する。  
-         - `tests/test_generate_ready_utils.py` を追加し、ユーティリティの変換結果を検証する。AI 推薦スタブを用いたカード割当テストを必要に応じて追加。  
+         - [ ] `tests/test_draft_structuring_step.py` などモデル／ユーティリティ単位のテストを `generate_ready` ベースへ更新し、新旧出力の差異を検証する。  
+         - [ ] `tests/test_generate_ready_utils.py` を追加して変換ロジックをカバーし、必要に応じて AI 推薦スタブを用いたカード割当テストを追加する。  
       7. **テスト実行と検証**  
          - `uv run --extra dev pytest` を実行し、主要テストの成功を確認する。必要に応じて `ruff`・`black --check`・`mypy` を適用する。  
       8. **フォローアップ**  
