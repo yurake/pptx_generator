@@ -17,7 +17,7 @@
 ### 出力
 - `generate_ready.json`: 工程5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
 - `generate_ready_meta.json`: 主に HITL と運用向けのメタ情報。章テンプレ適合率、カード割当結果、Analyzer 指摘要約、AI 推薦の適用件数などを記録。
-- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容、HITL アクションを保持する。
+- `mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容、HITL アクションを保持する。
 - `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
@@ -146,15 +146,11 @@
 ```
 
 ## CLI / API 更新点
-- `uv run pptx outline` の引数を刷新し、最低限以下を必須とする。
-  - `jobspec`（旧 `spec_path`）: 工程2 の `jobspec.json`。
-  - `--brief-cards`: 工程3 の `brief_cards.json`。
-  - `--output`: 出力ディレクトリ。既定 `.pptx/draft`。
-  - `--generate-ready-filename`: 既定 `generate_ready.json`。
-- 廃止予定のオプション: `--draft-filename`, `--approved-filename`, `--meta-filename` など `draft_*` 系。互換目的の出力は生成しない。
-- 追加オプション: `--ai-recommender`（AI 利用設定）、`--analysis-summary`, `--chapter-template`, `--appendix-limit` 等は継続。
-- CLI 実行後は `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json` のパスを表示する。
-- API 側も同名エンドポイントへ置換し、工程5 で `generate_ready` を直接参照するよう更新する。
+- `uv run pptx outline` / `pptx compose` に `--generate-ready-filename` と `--generate-ready-meta-filename` を追加し、ドラフト成果物と同時に `generate_ready` 系ファイルを出力できるようにした。
+- `--mapping-log-filename` と `--fallback-report-filename` を追加し、`mapping_log.json` / `fallback_report.json` の命名や出力有無を制御可能とした（既定はそれぞれ `mapping_log.json` / `fallback_report.json`）。`--fallback-report-filename ""` でレポート出力を抑止できる。
+- 従来の `--draft-filename` / `--approved-filename` / `--meta-filename` は後方互換のため継続し、CLI 実行後は Draft 系と Ready 系の生成物パスが両方表示される。
+- `pptx mapping` も同じ命名オプションを受け取り、工程5 が参照する `generate_ready` / `mapping_log.json` を統一出力する。
+- API 側のドラフト関連エンドポイントは `generate_ready` を第一級成果物として扱い、工程5 での参照を `generate_ready` 系に一本化する。
 
 ## 未決事項とリスク
 - AI 推薦のプロンプト詳細とモデル選定。工程3 で使用しているローカル LLM スタブを流用し、将来的な API 連携に備えた抽象化が必要。

@@ -125,8 +125,8 @@ flowchart TD
   - 既存の承認済み Brief を再利用する場合は `--brief-cards`, `--brief-log`, `--brief-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
 
 ### 工程 3: マッピング (HITL + 自動)
-- 章構成承認とレイアウト割付を同一工程で扱い、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を同時に更新します。
-- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（既定 `.pptx/draft/`）を維持します。
+- 章構成承認とレイアウト割付を同一工程で扱い、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`mapping_log.json`・`fallback_report.json` を同時に更新します。
+- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（既定 `.pptx/draft/`）を維持します。ファイル名は `--generate-ready-filename` や `--mapping-log-filename` などで変更可能です。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
     --brief-cards .pptx/prepare/prepare_card.json \
@@ -134,7 +134,7 @@ flowchart TD
     --brief-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
     --layouts .pptx/extract/layouts.jsonl
-  # 完了後に `.pptx/draft/generate_ready.json` や `draft_mapping_log.json` を確認
+  # 完了後に `.pptx/draft/generate_ready.json` や `mapping_log.json` を確認
   ```
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 

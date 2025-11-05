@@ -4,14 +4,30 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
-from ..models import (ContentApprovalDocument, ContentSlide, DraftDocument,
-                      DraftLayoutCandidate, DraftLayoutScoreDetail, DraftMeta,
-                      DraftSection, DraftSlideCard, DraftAnalyzerSummary,
-                      JobSpec)
+from ..models import (
+    ContentApprovalDocument,
+    ContentSlide,
+    DraftAnalyzerSummary,
+    DraftDocument,
+    DraftLayoutCandidate,
+    DraftLayoutScoreDetail,
+    DraftMeta,
+    DraftSection,
+    DraftSlideCard,
+    GenerateReadyDocument,
+    GenerateReadyMeta,
+    GenerateReadySlide,
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    MappingSlideMeta,
+    Slide,
+)
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..draft_intel import (
     ChapterTemplate,
@@ -38,6 +54,8 @@ class DraftStructuringOptions:
     draft_filename: str = "draft_draft.json"
     approved_filename: str = "draft_approved.json"
     log_filename: str = "draft_review_log.json"
+    generate_ready_filename: str = "generate_ready.json"
+    generate_ready_meta_filename: str = "generate_ready_meta.json"
     target_length: int | None = None
     structure_pattern: str | None = None
     appendix_limit: int = 5
@@ -107,6 +125,23 @@ class DraftStructuringStep:
         self._write_document(draft_path, draft)
         self._write_document(approved_path, draft)
         self._write_log(log_path, [])
+
+        generate_ready = self._build_generate_ready_document(
+            spec=context.spec,
+            draft=draft,
+        )
+        ready_path = output_dir / self.options.generate_ready_filename
+        self._write_json(ready_path, generate_ready.model_dump(mode="json"))
+        context.add_artifact("generate_ready", generate_ready)
+        context.add_artifact("generate_ready_path", str(ready_path))
+
+        ready_meta_payload = self._build_generate_ready_meta_payload(
+            draft=draft,
+            generate_ready=generate_ready,
+        )
+        ready_meta_path = output_dir / self.options.generate_ready_meta_filename
+        self._write_json(ready_meta_path, ready_meta_payload)
+        context.add_artifact("generate_ready_meta_path", str(ready_meta_path))
 
         context.add_artifact("draft_document", draft)
         context.add_artifact("draft_document_path", str(approved_path))
@@ -353,6 +388,10 @@ class DraftStructuringStep:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @staticmethod
+    def _write_json(path: Path, payload: object) -> None:
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    @staticmethod
     def _write_log(path: Path, entries: Iterable[dict[str, object]]) -> None:
         payload = list(entries)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -364,6 +403,149 @@ class DraftStructuringStep:
         normalized = "".join(ch.lower() if ch.isalnum() else "-" for ch in title)
         normalized = normalized.strip("-") or "default"
         return normalized[:64]
+
+    def _build_generate_ready_document(
+        self,
+        *,
+        spec: JobSpec,
+        draft: DraftDocument,
+    ) -> GenerateReadyDocument:
+        section_lookup: dict[str, str] = {}
+        card_lookup: dict[str, DraftSlideCard] = {}
+        for section in draft.sections:
+            for card in section.slides:
+                section_lookup[card.ref_id] = section.name
+                card_lookup[card.ref_id] = card
+
+        slides: list[GenerateReadySlide] = []
+        for index, spec_slide in enumerate(spec.slides, start=1):
+            card = card_lookup.get(spec_slide.id)
+            section_name = section_lookup.get(spec_slide.id)
+            layout_id = card.layout_hint if card and card.layout_hint else spec_slide.layout
+            slides.append(
+                GenerateReadySlide(
+                    layout_id=layout_id,
+                    elements=self._convert_slide_elements(spec_slide),
+                    meta=MappingSlideMeta(
+                        section=section_name,
+                        page_no=index,
+                        sources=[spec_slide.id],
+                        fallback="none",
+                    ),
+                )
+            )
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        meta = GenerateReadyMeta(
+            template_version=draft.meta.template_id,
+            template_path=None,
+            content_hash=None,
+            generated_at=timestamp,
+            job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+            job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+        )
+        return GenerateReadyDocument(slides=slides, meta=meta)
+
+    def _build_generate_ready_meta_payload(
+        self,
+        *,
+        draft: DraftDocument,
+        generate_ready: GenerateReadyDocument,
+    ) -> dict[str, Any]:
+        sections_payload: list[dict[str, Any]] = []
+        main_slides_total = 0
+        appendix_slides_total = 0
+
+        for section in draft.sections:
+            main_count = sum(1 for card in section.slides if not card.appendix)
+            appendix_count = sum(1 for card in section.slides if card.appendix)
+            main_slides_total += main_count
+            appendix_slides_total += appendix_count
+            sections_payload.append(
+                {
+                    "name": section.name,
+                    "order": section.order,
+                    "status": section.status,
+                    "slides": len(section.slides),
+                    "main_slides": main_count,
+                    "appendix_slides": appendix_count,
+                    "locked": any(card.locked for card in section.slides),
+                }
+            )
+
+        template_info = {
+            "template_id": draft.meta.template_id,
+            "structure_pattern": draft.meta.structure_pattern,
+            "target_length": draft.meta.target_length,
+            "appendix_limit": draft.meta.appendix_limit,
+            "match_score": draft.meta.template_match_score,
+            "mismatch": [item.model_dump(mode="json") for item in draft.meta.template_mismatch],
+        }
+
+        payload = {
+            "generated_at": generate_ready.meta.generated_at,
+            "sections": sections_payload,
+            "statistics": {
+                "total_slides": len(generate_ready.slides),
+                "main_slides": main_slides_total,
+                "appendix_slides": appendix_slides_total,
+            },
+            "template": template_info,
+            "analyzer_summary": draft.meta.analyzer_summary,
+            "return_reason_stats": draft.meta.return_reason_stats,
+        }
+        return payload
+
+    @staticmethod
+    def _convert_slide_elements(slide: Slide) -> dict[str, Any]:
+        elements: dict[str, Any] = {}
+        if slide.title:
+            elements["title"] = slide.title
+        if slide.subtitle:
+            elements["subtitle"] = slide.subtitle
+        if slide.notes:
+            elements["note"] = slide.notes
+
+        body_lines: list[str] = []
+        for group in slide.bullets:
+            texts = [bullet.text for bullet in group.items]
+            if not texts:
+                continue
+            if group.anchor:
+                elements[group.anchor] = texts
+            else:
+                body_lines.extend(texts)
+        if body_lines:
+            elements["body"] = body_lines
+
+        for index, table in enumerate(slide.tables, start=1):
+            key = table.anchor or f"table_{index}"
+            elements[key] = {
+                "headers": table.columns,
+                "rows": table.rows,
+            }
+
+        for index, image in enumerate(slide.images, start=1):
+            key = image.anchor or f"image_{index}"
+            elements[key] = {
+                "source": str(image.source),
+                "sizing": image.sizing,
+            }
+
+        for index, chart in enumerate(slide.charts, start=1):
+            key = chart.anchor or f"chart_{index}"
+            elements[key] = {
+                "type": chart.type,
+                "categories": chart.categories,
+                "series": [series.model_dump(mode="json") for series in chart.series],
+                "options": chart.options.model_dump(mode="json") if chart.options else None,
+            }
+
+        for index, textbox in enumerate(slide.textboxes, start=1):
+            key = textbox.anchor or f"textbox_{index}"
+            elements[key] = {"text": textbox.text}
+
+        return elements
 
     def _evaluate_chapter_template(
         self,

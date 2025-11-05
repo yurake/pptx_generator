@@ -67,6 +67,8 @@ class OutlineResult:
     approved_path: Path
     log_path: Path
     meta_path: Path
+    generate_ready_path: Path
+    generate_ready_meta_path: Path
 
 
 load_dotenv()
@@ -739,6 +741,12 @@ def _write_draft_meta(
     log_path = context.artifacts.get("draft_review_log_path")
     if isinstance(log_path, str):
         paths["draft_review_log"] = str(Path(log_path).resolve())
+    ready_path = context.artifacts.get("generate_ready_path")
+    if isinstance(ready_path, str):
+        paths["generate_ready"] = str(Path(ready_path).resolve())
+    ready_meta_path = context.artifacts.get("generate_ready_meta_path")
+    if isinstance(ready_meta_path, str):
+        paths["generate_ready_meta"] = str(Path(ready_meta_path).resolve())
 
     meta_payload = {
         "spec_id": context.artifacts.get("draft_spec_id"),
@@ -772,6 +780,8 @@ def _execute_outline(
     draft_filename: str,
     approved_filename: str,
     log_filename: str,
+    generate_ready_filename: str,
+    generate_ready_meta_filename: str,
     meta_filename: str,
     target_length: int | None,
     structure_pattern: str | None,
@@ -790,6 +800,8 @@ def _execute_outline(
         draft_filename=draft_filename,
         approved_filename=approved_filename,
         log_filename=log_filename,
+        generate_ready_filename=generate_ready_filename,
+        generate_ready_meta_filename=generate_ready_meta_filename,
         target_length=target_length,
         structure_pattern=structure_pattern,
         appendix_limit=appendix_limit,
@@ -817,12 +829,27 @@ def _execute_outline(
         log_filename=log_filename,
     )
 
+    ready_artifact = context.artifacts.get("generate_ready_path")
+    ready_meta_artifact = context.artifacts.get("generate_ready_meta_path")
+    ready_path = (
+        Path(ready_artifact)
+        if isinstance(ready_artifact, str)
+        else (output_dir / generate_ready_filename)
+    )
+    ready_meta_path = (
+        Path(ready_meta_artifact)
+        if isinstance(ready_meta_artifact, str)
+        else (output_dir / generate_ready_meta_filename)
+    )
+
     return OutlineResult(
         context=context,
         draft_path=output_dir / draft_filename,
         approved_path=output_dir / approved_filename,
         log_path=output_dir / log_filename,
         meta_path=meta_path,
+        generate_ready_path=ready_path,
+        generate_ready_meta_path=ready_meta_path,
     )
 
 
@@ -831,6 +858,8 @@ def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -
     click.echo(f"Outline Approved: {result.approved_path}")
     click.echo(f"Outline Review Log: {result.log_path}")
     click.echo(f"Outline Meta: {result.meta_path}")
+    click.echo(f"Outline Generate Ready: {result.generate_ready_path}")
+    click.echo(f"Outline Ready Meta: {result.generate_ready_meta_path}")
 
     if not show_layout_reasons:
         return
@@ -870,6 +899,9 @@ def _run_mapping_pipeline(
     template: Optional[Path],
     draft_context: PipelineContext | None = None,
     draft_options: DraftStructuringOptions | None = None,
+    generate_ready_filename: str = "generate_ready.json",
+    mapping_log_filename: str = "mapping_log.json",
+    fallback_report_filename: str | None = "fallback_report.json",
 ) -> PipelineContext:
     if template is None:
         msg = "テンプレートファイルを --template で指定してください。generate_ready.json の meta.template_path を設定します。"
@@ -915,6 +947,9 @@ def _run_mapping_pipeline(
         MappingOptions(
             layouts_path=layouts,
             output_dir=output_dir,
+            generate_ready_filename=generate_ready_filename,
+            mapping_log_filename=mapping_log_filename,
+            fallback_report_filename=fallback_report_filename,
             template_path=template,
         )
     )
@@ -1497,6 +1532,20 @@ def prepare(
     help="ドラフトレビュー ログのファイル名",
 )
 @click.option(
+    "--generate-ready-filename",
+    type=str,
+    default="generate_ready.json",
+    show_default=True,
+    help="generate_ready.json のファイル名",
+)
+@click.option(
+    "--generate-ready-meta-filename",
+    type=str,
+    default="generate_ready_meta.json",
+    show_default=True,
+    help="generate_ready_meta.json のファイル名",
+)
+@click.option(
     "--meta-filename",
     type=str,
     default="draft_meta.json",
@@ -1591,6 +1640,8 @@ def outline(
     draft_filename: str,
     approved_filename: str,
     log_filename: str,
+    generate_ready_filename: str,
+    generate_ready_meta_filename: str,
     meta_filename: str,
     target_length: int | None,
     structure_pattern: str | None,
@@ -1636,6 +1687,8 @@ def outline(
             draft_filename=draft_filename,
             approved_filename=approved_filename,
             log_filename=log_filename,
+            generate_ready_filename=generate_ready_filename,
+            generate_ready_meta_filename=generate_ready_meta_filename,
             meta_filename=meta_filename,
             target_length=target_length,
             structure_pattern=structure_pattern,
@@ -1705,6 +1758,20 @@ def outline(
     help="ドラフトレビュー ログのファイル名",
 )
 @click.option(
+    "--generate-ready-filename",
+    type=str,
+    default="generate_ready.json",
+    show_default=True,
+    help="工程3/4 の generate_ready.json のファイル名",
+)
+@click.option(
+    "--generate-ready-meta-filename",
+    type=str,
+    default="generate_ready_meta.json",
+    show_default=True,
+    help="工程3/4 の generate_ready_meta.json のファイル名",
+)
+@click.option(
     "--meta-filename",
     type=str,
     default="draft_meta.json",
@@ -1756,6 +1823,20 @@ def outline(
     is_flag=True,
     default=False,
     help="layout_hint 候補のスコア内訳を表示する",
+)
+@click.option(
+    "--mapping-log-filename",
+    type=str,
+    default="mapping_log.json",
+    show_default=True,
+    help="マッピング工程のログファイル名",
+)
+@click.option(
+    "--fallback-report-filename",
+    type=str,
+    default="fallback_report.json",
+    show_default=True,
+    help="フォールバック詳細レポートのファイル名（不要なら空文字）",
 )
 @click.option(
     "--output",
@@ -1819,6 +1900,8 @@ def compose(  # noqa: PLR0913
     draft_filename: str,
     approved_filename: str,
     log_filename: str,
+    generate_ready_filename: str,
+    generate_ready_meta_filename: str,
     meta_filename: str,
     target_length: int | None,
     structure_pattern: str | None,
@@ -1827,6 +1910,8 @@ def compose(  # noqa: PLR0913
     chapter_template: str | None,
     analysis_summary_path: Path | None,
     show_layout_reasons: bool,
+    mapping_log_filename: str,
+    fallback_report_filename: str,
     output_dir: Path,
     rules: Path,
     template: Optional[Path],
@@ -1853,6 +1938,8 @@ def compose(  # noqa: PLR0913
             draft_filename=draft_filename,
             approved_filename=approved_filename,
             log_filename=log_filename,
+            generate_ready_filename=generate_ready_filename,
+            generate_ready_meta_filename=generate_ready_meta_filename,
             meta_filename=meta_filename,
             target_length=target_length,
             structure_pattern=structure_pattern,
@@ -1906,6 +1993,13 @@ def compose(  # noqa: PLR0913
                 draft_filename=draft_filename,
                 approved_filename=approved_filename,
                 log_filename=log_filename,
+                generate_ready_filename=generate_ready_filename,
+                generate_ready_meta_filename=generate_ready_meta_filename,
+            ),
+            generate_ready_filename=generate_ready_filename,
+            mapping_log_filename=mapping_log_filename,
+            fallback_report_filename=(
+                fallback_report_filename or None
             ),
         )
     except ValueError as exc:
@@ -1962,6 +2056,27 @@ def compose(  # noqa: PLR0913
     help="draft_draft.json / draft_approved.json の出力先",
 )
 @click.option(
+    "--generate-ready-filename",
+    type=str,
+    default="generate_ready.json",
+    show_default=True,
+    help="generate_ready.json のファイル名",
+)
+@click.option(
+    "--mapping-log-filename",
+    type=str,
+    default="mapping_log.json",
+    show_default=True,
+    help="マッピングログのファイル名",
+)
+@click.option(
+    "--fallback-report-filename",
+    type=str,
+    default="fallback_report.json",
+    show_default=True,
+    help="フォールバック詳細レポートのファイル名（不要なら空文字）",
+)
+@click.option(
     "--template",
     "-t",
     type=click.Path(exists=True, dir_okay=False,
@@ -2005,6 +2120,9 @@ def mapping(  # noqa: PLR0913
     rules: Path,
     layouts: Optional[Path],
     draft_output: Path,
+    generate_ready_filename: str,
+    mapping_log_filename: str,
+    fallback_report_filename: str,
     template: Optional[Path],
     branding: Optional[Path],
     brief_cards: Path,
@@ -2036,6 +2154,9 @@ def mapping(  # noqa: PLR0913
             layouts=layouts,
             draft_output=draft_output,
             template=template,
+            generate_ready_filename=generate_ready_filename,
+            mapping_log_filename=mapping_log_filename,
+            fallback_report_filename=fallback_report_filename or None,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)

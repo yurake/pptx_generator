@@ -156,3 +156,14 @@ def test_outline_with_layout_reasons(
     slide = draft["sections"][0]["slides"][0]
     assert "layout_score_detail" in slide
     assert slide["layout_score_detail"]["uses_tag"] > 0
+
+    ready_path = output_dir / "generate_ready.json"
+    assert ready_path.exists()
+    ready = json.loads(ready_path.read_text(encoding="utf-8"))
+    assert ready["slides"][0]["layout_id"]
+    assert ready["meta"]["generated_at"]
+
+    ready_meta_path = output_dir / "generate_ready_meta.json"
+    assert ready_meta_path.exists()
+    ready_meta = json.loads(ready_meta_path.read_text(encoding="utf-8"))
+    assert ready_meta["statistics"]["total_slides"] == 1

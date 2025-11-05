@@ -46,16 +46,16 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [ ] 実装
-  - メモ: ---
+  - メモ: `DraftStructuringStep` で `generate_ready.json` / `generate_ready_meta.json` を生成。`pptx outline` / `compose` / `mapping` に generate_ready 系オプションを追加し、出力ログを刷新済み。`MappingStep` の最終成果物整理は継続課題。
 - [ ] テスト・検証
-  - メモ: ---
+  - メモ: `pytest tests/test_cli_outline.py` でアウトライン工程の回帰を確認。全体テストは未実施。
 - [ ] ドキュメント更新
-  - メモ: ---
+  - メモ: README と `docs/design/cli-command-reference.md`、`docs/design/stages/stage-03-mapping.md`、`docs/requirements/stages/stage-03-mapping.md` を更新し、`mapping_log.json` へのリネームと CLI 新オプションを反映済み。runbook の運用手順も追随。
   - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 未特定のため要確認
 - [ ] PR 作成
