@@ -1,0 +1,68 @@
+name: "機能改善・新機能の提案"
+description: "新しい機能の追加や改善要望を報告する"
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 事前確認
+        以下の項目を確認した上で記入してください。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 必須チェック
+      options:
+        - label: 同じ内容の Issue が存在しないことを確認しました。
+          required: true
+        - label: 既存のドキュメントや設定で代替できないことを確認しました。
+          required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 提案内容
+      description: 追加・改善したい機能の概要を記載してください。
+      placeholder: 例）画像差し替え機能で PNG 以外の形式に対応したい
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景・課題
+      description: なぜこの提案が必要なのか、背景や課題を記載してください。
+      placeholder: 例）顧客向けテンプレートで JPEG の使用が必須になったため
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 想定する解決策
+      description: 実装案や要件があれば記載してください。
+      placeholder: 例）設定ファイルで許可する拡張子を追加できるようにする
+    validations:
+      required: false
+  - type: textarea
+    id: alternative
+    attributes:
+      label: 検討した代替案
+      description: 他に試した方法や却下した案があれば記載してください。
+      placeholder: 例）LibreOffice マクロでの代替を検討したが設定変更が必要になる
+    validations:
+      required: false
+  - type: textarea
+    id: impacts
+    attributes:
+      label: 影響範囲・想定リスク
+      description: 想定している影響範囲やリスク、テスト観点があれば記載してください。
+      placeholder: 例）画像差し替え処理のテスト追加が必要
+    validations:
+      required: false
+  - type: textarea
+    id: refs
+    attributes:
+      label: 関連資料
+      description: 参考リンクや仕様書などがあれば記載してください。
+      placeholder: 例）社内仕様書リンク、関連チケット番号
+    validations:
+      required: false
