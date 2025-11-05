@@ -21,7 +21,7 @@ PowerPoint テンプレートと資料データ（プレーンテキストや PD
 | 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続工程の基盤データを用意 |
 | 2. コンテンツ準備 | 資料データ(text,PDFなど)、<br>テンプレ仕様(`jobspec.json`)  | ドラフト(`prepare_card.json`) | `.pptx/prepare/` | 入力データをスライド候補へ整形し、生成AIを併用しながら正規化を行う |
 | 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
-| 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録 |
+| 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録（デフォルト出力先は `.pptx/gen/`） |
 
 ```mermaid
 flowchart TD
@@ -85,7 +85,7 @@ flowchart TD
 | 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/prepare/prepare_card.json --template samples/templates/templates.pptx` | `.pptx/draft/generate_ready.json` | 章構成承認とレイアウト割付をまとめて実行 |
-| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成。 |
+| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成（`--output` 未指定時は `.pptx/gen/` へ出力）。 |
 
 補足:
 - 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
