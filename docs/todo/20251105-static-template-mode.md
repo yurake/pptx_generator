@@ -1,7 +1,7 @@
 ---
 目的: 静的テンプレート対応の検討内容を整理し、ロードマップおよびノートへ反映する
 関連ブランチ: feat/rm054-static-template-mode
-関連Issue: 未作成
+関連Issue: #272
 roadmap_item: RM-054 静的テンプレ構成統合
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 対応 Issue 未作成
 - [ ] PR 作成
   - メモ: todo-auto-complete により自動更新予定
