@@ -148,6 +148,7 @@ uv run pptx compose .pptx/extract/jobspec.json \
 
 #### 補助: `pptx mapping`
 - 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
+- `--generate-ready-meta-filename` でメタファイル名も制御でき、`generate_ready_meta.json` が出力ディレクトリへ複製される。
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
@@ -216,6 +217,7 @@ uv run pptx compose .pptx/extract/jobspec.json \
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
 - `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
+- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリなどのメタ情報。
 - `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。
 - `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、監査メタ。

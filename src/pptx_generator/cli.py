@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import shutil
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -900,6 +901,7 @@ def _run_mapping_pipeline(
     draft_context: PipelineContext | None = None,
     draft_options: DraftStructuringOptions | None = None,
     generate_ready_filename: str = "generate_ready.json",
+    generate_ready_meta_filename: str = "generate_ready_meta.json",
     mapping_log_filename: str = "mapping_log.json",
     fallback_report_filename: str | None = "fallback_report.json",
 ) -> PipelineContext:
@@ -955,6 +957,22 @@ def _run_mapping_pipeline(
     )
 
     PipelineRunner([spec_validator, refiner, mapping]).execute(context)
+
+    meta_source = context.artifacts.get("generate_ready_meta_path")
+    if isinstance(meta_source, str):
+        source_path = Path(meta_source)
+        destination = output_dir / generate_ready_meta_filename
+        try:
+            if source_path.exists():
+                if destination.resolve() != source_path.resolve():
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source_path, destination)
+                context.add_artifact("generate_ready_meta_path", str(destination))
+        except OSError as exc:  # noqa: PERF203 - unexpected copy failure should bubble up later
+            raise RuntimeError(
+                f"generate_ready_meta.json のコピーに失敗しました: {exc}"
+            ) from exc
+
     return context
 
 
@@ -1036,6 +1054,9 @@ def _echo_mapping_outputs(context: PipelineContext) -> None:
     generate_ready_path = context.artifacts.get("generate_ready_path")
     if generate_ready_path is not None:
         click.echo(f"Generate Ready: {generate_ready_path}")
+    generate_ready_meta_path = context.artifacts.get("generate_ready_meta_path")
+    if generate_ready_meta_path is not None:
+        click.echo(f"Generate Ready Meta: {generate_ready_meta_path}")
     mapping_log_path = context.artifacts.get("mapping_log_path")
     if mapping_log_path is not None:
         click.echo(f"Mapping Log: {mapping_log_path}")
@@ -1997,6 +2018,7 @@ def compose(  # noqa: PLR0913
                 generate_ready_meta_filename=generate_ready_meta_filename,
             ),
             generate_ready_filename=generate_ready_filename,
+            generate_ready_meta_filename=generate_ready_meta_filename,
             mapping_log_filename=mapping_log_filename,
             fallback_report_filename=(
                 fallback_report_filename or None
@@ -2063,6 +2085,13 @@ def compose(  # noqa: PLR0913
     help="generate_ready.json のファイル名",
 )
 @click.option(
+    "--generate-ready-meta-filename",
+    type=str,
+    default="generate_ready_meta.json",
+    show_default=True,
+    help="generate_ready_meta.json のファイル名",
+)
+@click.option(
     "--mapping-log-filename",
     type=str,
     default="mapping_log.json",
@@ -2121,6 +2150,7 @@ def mapping(  # noqa: PLR0913
     layouts: Optional[Path],
     draft_output: Path,
     generate_ready_filename: str,
+    generate_ready_meta_filename: str,
     mapping_log_filename: str,
     fallback_report_filename: str,
     template: Optional[Path],
@@ -2155,6 +2185,7 @@ def mapping(  # noqa: PLR0913
             draft_output=draft_output,
             template=template,
             generate_ready_filename=generate_ready_filename,
+            generate_ready_meta_filename=generate_ready_meta_filename,
             mapping_log_filename=mapping_log_filename,
             fallback_report_filename=fallback_report_filename or None,
         )

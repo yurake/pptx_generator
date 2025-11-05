@@ -160,6 +160,8 @@ def _prepare_generate_ready(
 
     ready_path = mapping_dir / "generate_ready.json"
     assert ready_path.exists()
+    meta_path = mapping_dir / "generate_ready_meta.json"
+    assert meta_path.exists()
     payload = json.loads(ready_path.read_text(encoding="utf-8"))
     meta = payload.get("meta", {})
     template_path = meta.get("template_path")
@@ -345,6 +347,7 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert (output_dir / "generate_ready.json").exists()
     assert (output_dir / "mapping_log.json").exists()
+    assert (output_dir / "generate_ready_meta.json").exists()
 
 
 def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
