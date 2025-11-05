@@ -74,6 +74,7 @@ flowchart TB
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(進行中)"]
         RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(検討中)"]
         RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(未着手)"]
+        RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -820,6 +821,20 @@ flowchart TB
   - `placeholders` ベースのテンプレ情報を工程3の `Slide` 構造（textboxes / images 等）へ変換するマッピング仕様を確立し、余剰プロパティによるバリデーションエラーを解消する。
   - README や `docs/requirements/stages/stage-03-mapping.md` にテンプレ抽出〜マッピング間のフロー変更を反映する。
 - 次アクション: スキャフォールド→JobSpec 変換ステップの設計と、CLI/ドキュメントの改訂範囲を洗い出す。
+
+<a id="rm-058"></a>
+### RM-058 ブリーフポリシー内製化
+- 対象工程: 2（コンテンツ準備）
+- ゴール: `config/brief_policies/default.json` への依存を解消し、ブリーフ骨子の定義をコードまたは他工程の成果物に統合する。
+- 参照ドキュメント: [docs/notes/20251105-brief-policy-removal.md](../notes/20251105-brief-policy-removal.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - `BriefAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
+  - CLI `prepare` と関連ドキュメント（README、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-02-content-normalization.md`）の仕様を更新する。
+  - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
+- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIブリーフ構成自動化）、テンプレ Blueprint 設計。
+- 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
