@@ -96,6 +96,7 @@ flowchart TB
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
         RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(未着手)"]
         RM053["RM-053<br/>サンプル資産整備<br/>(完了)"]
+        RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(未着手)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -781,6 +782,17 @@ flowchart TB
 - 状況: 検討中（2025-11-05 追加）
 - 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ。
 - 次アクション: 検討ノートを作成し、設計レビューへ向けた論点整理と後続タスク分解を行う。
+
+<a id="rm-055"></a>
+### RM-055 AI生成文言フッタ自動付与
+- 対象工程: 4（レンダリング・仕上げ）
+- ゴール: PPTX 出力の先頭スライド下部へ AI 生成であることを示す定型文を自動配置し、PDF 変換後も文言を維持する。
+- 参照ドキュメント: 作成予定
+- 参照 ToDo: 作成予定
+- 関連Issue: [#271](https://github.com/yurake/pptx_generator/issues/271)
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果: PPTX/ PDF 双方での文言表示統一、ブランド別テンプレとの整合確認、生成プロセスへの設定パラメータ追加方針整理。
+- 次アクション: 文言挿入位置とテンプレ依存ルールの要件定義を行い、CLI オプションと既存レンダリングテストへの反映手順を策定する。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
