@@ -73,6 +73,7 @@ flowchart TB
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(進行中)"]
         RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(検討中)"]
+        RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -806,6 +807,19 @@ flowchart TB
   - 取得元メタ情報（URL、取得時刻、ハッシュ）を監査ログへ記録し、既存 JSON 入力と同一スキーマで扱えるようにする。
   - 多形式入力時の失敗ハンドリングとユーザー通知、ライセンス・認証要件の整理。
 - 次アクション: CLI サブコマンド設計（オプション構成、ContentImportService 呼び出し）とテキスト化品質の評価指標を定義し、README や `docs/requirements/` を含む関連ドキュメント更新の計画を立てる。
+
+<a id="rm-057"></a>
+### RM-057 JobSpec スキャフォールド整合
+- 対象工程: 3（マッピング）
+- ゴール: テンプレ抽出で生成する `jobspec.json` を工程3の `JobSpec` スキーマへ適合させ、`pptx compose` で直接利用できるようにする。
+- 参照ドキュメント: [docs/notes/20251105-jobspec-scaffold-validation.md](../notes/20251105-jobspec-scaffold-validation.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - スキャフォールド出力で不足している `meta.title` / `auth` などの必須フィールド補完ロジックを実装する。
+  - `placeholders` ベースのテンプレ情報を工程3の `Slide` 構造（textboxes / images 等）へ変換するマッピング仕様を確立し、余剰プロパティによるバリデーションエラーを解消する。
+  - README や `docs/requirements/stages/stage-03-mapping.md` にテンプレ抽出〜マッピング間のフロー変更を反映する。
+- 次アクション: スキャフォールド→JobSpec 変換ステップの設計と、CLI/ドキュメントの改訂範囲を洗い出す。
 
 ## バックログ
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
