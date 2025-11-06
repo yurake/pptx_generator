@@ -72,7 +72,7 @@ flowchart TB
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(完了)"]
-        RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(検討中)"]
+        RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(完了)"]
         RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(未着手)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
@@ -710,7 +710,7 @@ flowchart TB
 - 対象工程: 4（ドラフト構成設計）
 - ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
-- 参照 ToDo: [docs/todo/20251104-rm047-draft-structuring.md](../todo/20251104-rm047-draft-structuring.md)
+- 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
 - 状況: 完了（2025-11-06 更新）
 - 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
 - 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
@@ -780,8 +780,8 @@ flowchart TB
 - 対象工程: 2〜3（コンテンツ準備 / マッピング）
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md)
-- 参照 ToDo: [docs/todo/20251105-static-template-mode.md](../todo/20251105-static-template-mode.md)
-- 状況: 検討中（2025-11-05 追加）
+- 参照 ToDo: [docs/todo/archive/20251105-static-template-mode.md](../todo/archive/20251105-static-template-mode.md)
+- 状況: 完了（2025-11-06 更新）
 - 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理。
 - 次アクション: 検討ノートを作成し、設計レビューへ向けた論点整理と後続タスク分解を行う。併せて `pptx prepare --mode` 必須化の CLI 仕様を `docs/requirements`・`docs/design` に反映する草案を準備する。
 
