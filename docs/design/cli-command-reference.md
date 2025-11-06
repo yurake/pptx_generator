@@ -103,10 +103,10 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 - `brief_story_outline.json`: 章構成とカード紐付け
 - `audit_log.json`: 工程2の監査メタ情報
 ### 工程3: マッピング (HITL + 自動)
-章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`mapping_log.json`・`fallback_report.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
+章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
-- 工程3全体を一括で実行し、`.pptx/draft/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`mapping_log.json`（および必要に応じて `fallback_report.json`）を生成する。
+- 工程3全体を一括で実行し、`.pptx/draft/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を生成する。
 - `--brief-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照する。
 
 | オプション | 説明 | 既定値 |
@@ -116,6 +116,10 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 | `--brief-cards <path>` | 工程2の `prepare_card.json` | `.pptx/prepare/prepare_card.json` |
 | `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.pptx/prepare/brief_log.json` |
 | `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.pptx/prepare/ai_generation_meta.json` |
+| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 | `generate_ready.json` |
+| `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 | `generate_ready_meta.json` |
+| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 | `draft_review_log.json` |
+| `--mapping-log-filename <name>` | `draft_mapping_log.json` のファイル名 | `draft_mapping_log.json` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング | Spec から推定 |
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID | `config/chapter_templates` / 自動推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する | 指定なし |
@@ -131,7 +135,9 @@ uv run pptx compose .pptx/extract/jobspec.json \
   --brief-log .pptx/prepare/brief_log.json \
   --brief-meta .pptx/prepare/ai_generation_meta.json \
   --draft-output .pptx/draft \
-  --layouts .pptx/extract/layouts.jsonl
+  --layouts .pptx/extract/layouts.jsonl \
+  --generate-ready-filename generate_ready.json \
+  --generate-ready-meta generate_ready_meta.json
 ```
 
 #### 補助: `pptx outline`
@@ -208,9 +214,9 @@ uv run pptx compose .pptx/extract/jobspec.json \
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
 - `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
-- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、監査メタ。
-- `mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
+- `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。
+- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、監査メタ。
 - `draft_review_log.json`: HITL 操作ログ。
 - `rendering_log.json`: レンダリング監査結果（検出要素・警告コード・空プレースホルダー件数）。
 - `monitoring_report.json`: Analyzer/レンダリングの警告件数サマリ。

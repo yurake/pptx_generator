@@ -1131,7 +1131,7 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     "-o",
     "output_dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=Path(".pptx/compose"),
+    default=Path(".pptx/gen"),
     show_default=True,
     help="生成物を保存するディレクトリ",
 )

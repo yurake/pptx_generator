@@ -14,9 +14,9 @@
 - `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）。
 - `brief_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
 - `brief_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
-- `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値。
+- `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、選択した `mode`（`dynamic` / `static`）。
 - `brief_story_outline.json`: 章 ID とカード ID の対応表。工程3 の章構成初期化に利用する。
-- `audit_log.json`: 生成時刻、ポリシー ID、成果物パス（将来的に SHA256 も記録予定）。
+- `audit_log.json`: 生成時刻、ポリシー ID、成果物パス、実行モード（将来的に SHA256 も記録予定）。
 
 ## 業務フロー
 1. CLI がブリーフ入力を読み込み、`BriefSourceDocument` へパースする。Markdown の見出しや箇条書きはカード候補に変換される。
@@ -28,11 +28,13 @@
 ## 監査・品質要件
 - 生成 AI が警告を返した場合は `brief_ai_log.json.warnings` に記録し、CLI 標準出力にも WARN を表示する。
 - `ai_generation_meta.json.statistics.cards_total` と `prepare_card.json.cards.length` が一致すること。
+- `ai_generation_meta.json.mode` と `audit_log.json.brief_normalization.mode` が一致し、後工程で参照できるように保持すること。
 - 生成カードの `status` 初期値は `draft`。HITL 承認後に `approved` / `returned` を設定して `brief_log.json` へ記録する。
 - 入力ブリーフのハッシュ (`input_hash`) は `audit_log.json` と `ai_generation_meta.json` の両方で整合させる。
 
 ## CLI 要件
 - `pptx prepare <brief_path>` はブリーフが存在しない場合に exit code 2 を返す。
+- `--mode` オプション（`dynamic` / `static`）を必須とし、実行モード未指定の場合は CLI がエラーで終了する。
 - ポリシー読み込み失敗時（`BriefPolicyError`）は exit code 4 で終了し、エラーメッセージを標準エラーへ出力する。
 - 生成結果は `.pptx/prepare/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。
 - `--card-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。

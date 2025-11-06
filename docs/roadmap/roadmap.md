@@ -71,7 +71,10 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM036["RM-036<br/>ドラフト構成<br/>インテリジェンス拡張<br/>(完了)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(進行中)"]
+        RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(完了)"]
+        RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(完了)"]
+        RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(未着手)"]
+        RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -95,6 +98,7 @@ flowchart TB
         RM034["RM-034<br/>Renderer 段落スタイル<br/>再設計<br/>(完了)"]
         RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(未着手)"]
         RM053["RM-053<br/>サンプル資産整備<br/>(完了)"]
+        RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(未着手)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -706,8 +710,8 @@ flowchart TB
 - 対象工程: 4（ドラフト構成設計）
 - ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
-- 参照 ToDo: [docs/todo/20251104-rm047-draft-structuring.md](../todo/20251104-rm047-draft-structuring.md)
-- 状況: 進行中（2025-11-04 更新）
+- 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
+- 状況: 完了（2025-11-06 更新）
 - 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
 - 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
 
@@ -771,7 +775,80 @@ flowchart TB
 - 期待成果: CLI 操作手順の検証ログと生成物をサンプルとして共有し、ユーザー導線に沿った資料準備が可能な状態。
 - 次アクション: CLI 手順を確認しながらサンプル生成し、`samples/` 配下を `.pptx` 出力構造に合わせて再編する計画を策定。
 
-## バックログ
+<a id="rm-054"></a>
+### RM-054 静的テンプレ構成統合プランニング
+- 対象工程: 2〜3（コンテンツ準備 / マッピング）
+- ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md)
+- 参照 ToDo: [docs/todo/archive/20251105-static-template-mode.md](../todo/archive/20251105-static-template-mode.md)
+- 状況: 完了（2025-11-06 更新）
+- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理。
+- 次アクション: 検討ノートを作成し、設計レビューへ向けた論点整理と後続タスク分解を行う。併せて `pptx prepare --mode` 必須化の CLI 仕様を `docs/requirements`・`docs/design` に反映する草案を準備する。
+
+<a id="rm-055"></a>
+### RM-055 AI生成文言フッタ自動付与
+- 対象工程: 4（レンダリング・仕上げ）
+- ゴール: PPTX 出力の先頭スライド下部へ AI 生成であることを示す定型文を自動配置し、PDF 変換後も文言を維持する。
+- 参照ドキュメント: 作成予定
+- 参照 ToDo: 作成予定
+- 関連Issue: [#271](https://github.com/yurake/pptx_generator/issues/271)
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果: PPTX/ PDF 双方での文言表示統一、ブランド別テンプレとの整合確認、生成プロセスへの設定パラメータ追加方針整理。
+- 次アクション: 文言挿入位置とテンプレ依存ルールの要件定義を行い、CLI オプションと既存レンダリングテストへの反映手順を策定する。
+
+<a id="rm-056"></a>
+### RM-056 多形式インポートCLI統合
+- 対象工程: 2（コンテンツ準備）
+- ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用ブリーフを自動生成できるようにする。
+- 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - CLI レイヤーで PDF や URL を指定可能にし、LibreOffice 連携を含む変換パイプラインを標準実装する。
+  - 取得元メタ情報（URL、取得時刻、ハッシュ）を監査ログへ記録し、既存 JSON 入力と同一スキーマで扱えるようにする。
+  - 多形式入力時の失敗ハンドリングとユーザー通知、ライセンス・認証要件の整理。
+- 次アクション: CLI サブコマンド設計（オプション構成、ContentImportService 呼び出し）とテキスト化品質の評価指標を定義し、README や `docs/requirements/` を含む関連ドキュメント更新の計画を立てる。
+
+<a id="rm-057"></a>
+### RM-057 JobSpec スキャフォールド整合
+- 対象工程: 3（マッピング）
+- ゴール: テンプレ抽出で生成する `jobspec.json` を工程3の `JobSpec` スキーマへ適合させ、`pptx compose` で直接利用できるようにする。
+- 参照ドキュメント: [docs/notes/20251105-jobspec-scaffold-validation.md](../notes/20251105-jobspec-scaffold-validation.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - スキャフォールド出力で不足している `meta.title` / `auth` などの必須フィールド補完ロジックを実装する。
+  - `placeholders` ベースのテンプレ情報を工程3の `Slide` 構造（textboxes / images 等）へ変換するマッピング仕様を確立し、余剰プロパティによるバリデーションエラーを解消する。
+  - README や `docs/requirements/stages/stage-03-mapping.md` にテンプレ抽出〜マッピング間のフロー変更を反映する。
+- 次アクション: スキャフォールド→JobSpec 変換ステップの設計と、CLI/ドキュメントの改訂範囲を洗い出す。
+
+<a id="rm-058"></a>
+### RM-058 ブリーフポリシー内製化
+- 対象工程: 2（コンテンツ準備）
+- ゴール: `config/brief_policies/default.json` への依存を解消し、ブリーフ骨子の定義をコードまたは他工程の成果物に統合する。
+- 参照ドキュメント: [docs/notes/20251105-brief-policy-removal.md](../notes/20251105-brief-policy-removal.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - `BriefAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
+  - CLI `prepare` と関連ドキュメント（README、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-02-content-normalization.md`）の仕様を更新する。
+  - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
+- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIブリーフ構成自動化）、テンプレ Blueprint 設計。
+- 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
+
+<a id="rm-059"></a>
+### RM-059 Mermaid 図自動レンダリング
+- ゴール: README の Mermaid 図を手描き風 PNG に自動変換し、コード更新と連動して画像を再生成できる CI を整備する。
+- 対象工程: 横断（ドキュメント／ナレッジ共有）
+- 参照ドキュメント: [docs/notes/20251105-mermaid-render-automation.md](../notes/20251105-mermaid-render-automation.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-05 追加）
+- 期待成果:
+  - `diagrams/` にソースを管理し、生成 PNG/SVG を `assets/diagrams/` 配下へ出力する構成を整備する。
+  - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
+  - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
+- 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
+
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。

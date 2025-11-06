@@ -28,3 +28,7 @@ temp/
 
 # Private configuration files
 AGENTS_PRIVATE.md
+
+# Templates (keep README only)
+templates/*
+!templates/README.md

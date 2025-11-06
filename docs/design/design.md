@@ -39,7 +39,7 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 2. **コンテンツ準備**（HITL）  
    ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`brief_log.json`・`brief_ai_log.json`・`ai_generation_meta.json`・`brief_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  
-  Brief 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`mapping_log.json` に集約される。
+  Brief 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
 4. **PPTX レンダリング**（自動）  
   `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
@@ -49,7 +49,7 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
 | コンテンツ準備 | ブリーフ入力（Markdown / JSON） | `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json` | BriefCard 生成、AI レビュー結果・監査メタを保存 |
-| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
+| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
 | レンダリング | `generate_ready.json`, `template.pptx`, `branding.json` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | 軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
 
 ### 3.2 工程別設計ドキュメント
@@ -81,7 +81,7 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | generate_ready.json | 必須 | レイアウト割付済みの描画直前仕様。 | S3 出 / S4 入 |
 | generate_ready_meta.json | 必須 | 章テンプレ適合率、承認統計、Analyzer サマリ。 | S3 出 |
 | draft_review_log.json | 任意 | HITL 承認・差戻しの操作履歴。 | S3 出 |
-| mapping_log.json | 任意 | レイアウト候補スコア、フォールバック履歴、AI 推薦結果。 | S3 出 |
+| draft_mapping_log.json | 任意 | レイアウト候補スコア、フォールバック履歴、AI 推薦結果。 | S3 出 |
 | fallback_report.json | 任意 | 重大フォールバック時の詳細。 | S3 出 |
 | rules.json | 任意 | レイアウト割付で参照するルール設定。 | S3 入 / S4 入 |
 | proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S4 出 |
