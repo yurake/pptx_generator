@@ -14,13 +14,13 @@
 2. 工程3 のカード生成設定に骨子ファイルのパスを渡し、`story.phase` / `story.chapter_id` / `story.angle` がカード単位で埋まることを確認する。
 3. HITL 承認 API を利用するツール（CLI など）で章・フェーズ表示を確認し、必要に応じて再割当を行う。差分はレビューコメントとして記録する。
 4. 承認後の `prepare_card.json` を確認し、全カードにストーリー情報が保存されていること、章ごとのカード数が骨子の想定範囲内であることをチェックする。
-5. 工程3 へ引き渡す前に `uv run pptx prepare <brief_source> --output .pptx/prepare` でブリーフ成果物を検証し、続けて `uv run pptx outline ... --brief-cards .pptx/prepare/prepare_card.json --brief-log .pptx/prepare/brief_log.json --output .pptx/draft --chapter-template <template_id> --show-layout-reasons` を実行して章テンプレ適合率と layout_hint 候補スコアを確認する。必要に応じて `draft_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば `--return-reasons` で差戻しテンプレ一覧を確認しつつ理由を明示する。ドラフト承認直後にマッピング成果物まで更新する場合は `uv run pptx compose ... --draft-output .pptx/draft --output .pptx/compose` を用いると、工程3/4 を一括で再実行できる。レンダリングのみをやり直す場合は従来どおり `pptx mapping` → `pptx render` の順で工程4へ進む。
-6. 工程4 完了後は `.pptx/gen/audit_log.json` の `mapping` セクションと `hashes.mapping_log` を確認し、`.pptx/compose/generate_ready.json`／`mapping_log.json` のパスと SHA-256 が記録されているかをチェックする。フォールバックが発生した場合は `mapping_meta.fallback_slide_ids` を参照し、差戻しや再分配の対象スライドを追跡する。
+5. 工程3 へ引き渡す前に `uv run pptx prepare <brief_source> --output .pptx/prepare` でブリーフ成果物を検証し、続けて `uv run pptx outline ... --brief-cards .pptx/prepare/prepare_card.json --brief-log .pptx/prepare/brief_log.json --draft-output .pptx/draft --chapter-template <template_id> --show-layout-reasons` を実行して章テンプレ適合率と layout_hint 候補スコアを確認する。必要に応じて `generate_ready_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば `--return-reasons` で差戻しテンプレ一覧を確認しつつ理由を明示する。HITL 承認直後に成果物をまとめて更新する場合は `uv run pptx compose ... --draft-output .pptx/draft` を用いると、工程3を一括で再実行できる。レンダリングのみをやり直す場合は `pptx gen` のみを実行する。
+6. 工程4 完了後は `.pptx/gen/audit_log.json` の `mapping` セクションと `hashes.draft_mapping_log` を確認し、`.pptx/draft/generate_ready.json`／`draft_mapping_log.json` のパスと SHA-256 が記録されているかをチェックする。フォールバックが発生した場合は `draft_mapping_log.json.fallback` の履歴と `generate_ready_meta.sections[*]` を参照し、差戻しや再分配の対象スライドを追跡する。
 
 ## レビュー観点
 - フェーズ必須項目（導入／課題／解決）は欠落していないか。
 - 骨子の `default_slide_count` と実際のカード数が大きく乖離していないか。
-- 付録送りや統合を行ったスライドの章情報が `draft_review_log.json` と一致しており、章承認後は `locked` が設定されているか。
+- 付録送りや統合を行ったスライドの章情報が `draft_review_log.json` と `generate_ready_meta.sections[*]` に反映されており、章承認後は `status=approved` になっているか。
 - ストーリー骨子の更新履歴・レビュー記録が `docs/todo/` や関連 Issue に残っているか。
 
 ## ロールバックとエスカレーション

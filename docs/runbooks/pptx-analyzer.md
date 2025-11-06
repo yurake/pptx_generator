@@ -24,7 +24,7 @@
       --output .pptx/compose \
       --template templates/<brand>/<version>/template.pptx
     ```
-  - 工程5（レンダリング）を実行し、Analyzer 結果を取得する:
+  - 工程5（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \
       --branding config/branding.json \
