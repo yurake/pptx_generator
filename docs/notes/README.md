@@ -28,5 +28,9 @@
 これらのルールを維持することで、`docs/` 全体の構造を分かりやすく保てます。
 
 ## 最近追加したメモ
+- `20251105-stage3-input-and-ai-unit.md`: 工程3の JobSpec 入力要件と生成AI呼び出し単位（カード単位）に関する調査。
+- `20251105-brief-policy-removal.md`: 工程2で参照しているブリーフポリシー外部ファイルの廃止検討メモ。
+- `20251105-jobspec-scaffold-validation.md`: テンプレ抽出の `jobspec.json` が JobSpec モデルと不整合となる要因の調査メモ。
+- `20251105-cli-input-formats-verification.md`: CLI ブリーフ入力形式の事実確認と多形式インポート機能の現状整理。
 - `20251015-layout-validation-suite.md`: レイアウト検証スイート（RM-022）初期実装の概要とフォローアップ項目。
 - `20251023-rm036-draft-intelligence.md`: RM-036 ドラフト構成インテリジェンス調査メモ。章テンプレ・layout_hint 候補・差戻し理由テンプレ PoC の整理。
