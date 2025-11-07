@@ -156,6 +156,7 @@ def test_outline_with_layout_reasons(
     slide = draft["sections"][0]["slides"][0]
     assert "layout_score_detail" in slide
     assert slide["layout_score_detail"]["uses_tag"] > 0
+    assert "ai_recommendation" in slide["layout_score_detail"]
 
     ready_path = output_dir / "generate_ready.json"
     assert ready_path.exists()
@@ -167,3 +168,9 @@ def test_outline_with_layout_reasons(
     assert ready_meta_path.exists()
     ready_meta = json.loads(ready_meta_path.read_text(encoding="utf-8"))
     assert ready_meta["statistics"]["total_slides"] == 1
+    assert ready_meta["ai_recommendation"]["used"] >= 0
+
+    mapping_log_path = output_dir / "draft_mapping_log.json"
+    assert mapping_log_path.exists()
+    mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+    assert mapping_log and "candidates" in mapping_log[0]

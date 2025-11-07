@@ -17,7 +17,7 @@
 ### 出力
 - `generate_ready.json`: 工程5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
 - `generate_ready_meta.json`: 主に HITL と運用向けのメタ情報。章テンプレ適合率、カード割当結果、Analyzer 指摘要約、AI 推薦の適用件数などを記録。
-- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容、HITL アクションを保持する。
+- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容（LLM 応答の model / recommended / reasons）とシミュレーション結果、HITL アクションを保持する。
 - `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
@@ -141,6 +141,14 @@
     "approved_slides": 12,
     "appendix_slides": 1,
     "ai_recommendation_used": 10
+  },
+  "ai_recommendation": {
+    "invoked": 12,
+    "used": 10,
+    "simulated": 2,
+    "models": {
+      "mock-layout": 12
+    }
   }
 }
 ```

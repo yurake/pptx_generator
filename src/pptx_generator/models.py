@@ -429,10 +429,18 @@ class DraftLayoutScoreDetail(BaseModel):
     content_capacity: float = 0.0
     diversity: float = 0.0
     analyzer_support: float = 0.0
+    ai_recommendation: float = 0.0
 
     @property
     def total(self) -> float:
-        return round(self.uses_tag + self.content_capacity + self.diversity + self.analyzer_support, 3)
+        return round(
+            self.uses_tag
+            + self.content_capacity
+            + self.diversity
+            + self.analyzer_support
+            + self.ai_recommendation,
+            3,
+        )
 
 
 class DraftAnalyzerSummary(BaseModel):

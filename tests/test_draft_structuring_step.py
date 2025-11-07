@@ -113,6 +113,17 @@ def test_draft_structuring_generates_documents(
     first_slide = first_section["slides"][0]
     assert first_slide["layout_hint"], "layout_hint should be populated"
     assert first_slide["layout_candidates"], "layout_candidates should not be empty"
+    assert "layout_score_detail" in first_slide
+    detail = first_slide["layout_score_detail"]
+    assert "ai_recommendation" in detail
+    assert detail["ai_recommendation"] >= 0.0
 
     assert context.artifacts["draft_document_path"] == str(draft_path)
     assert (tmp_path / "draft_review_log.json").exists()
+    mapping_log_path = tmp_path / "draft_mapping_log.json"
+    assert mapping_log_path.exists()
+    mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+    assert mapping_payload and mapping_payload[0]["ai_recommendation_used"] is not None
+    ready_meta_path = tmp_path / "generate_ready_meta.json"
+    meta_payload = json.loads(ready_meta_path.read_text(encoding="utf-8"))
+    assert meta_payload["ai_recommendation"]["used"] >= 0
