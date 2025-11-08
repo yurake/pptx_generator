@@ -27,21 +27,25 @@
 ## CLI
 ### `pptx compose`
 - 主なオプション
-  | オプション | 説明 | 既定値 |
-  | --- | --- | --- |
-  | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
-  | `--brief-cards <path>` | 工程2の BriefCard | `.pptx/prepare/prepare_card.json` |
-  | `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/prepare/brief_log.json` |
-  | `--brief-meta <path>` | 工程2の生成メタ | `.pptx/prepare/ai_generation_meta.json` |
+| オプション | 説明 | 既定値 |
+| --- | --- | --- |
+| `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
+| `--brief-cards <path>` | 工程2の BriefCard | `.pptx/prepare/prepare_card.json` |
+| `--brief-log <path>` | 工程2のレビュー ログ | `.pptx/prepare/brief_log.json` |
+| `--brief-meta <path>` | 工程2の生成メタ | `.pptx/prepare/ai_generation_meta.json` |
 | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
-| `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | 任意 |
-| `--analysis-summary <path>` | Analyzer サマリ | 任意 |
-| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 | `generate_ready.json` |
-| `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 | `generate_ready_meta.json` |
-| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 | `draft_review_log.json` |
-| `--mapping-log-filename <name>` | `draft_mapping_log.json` のファイル名 | `draft_mapping_log.json` |
+| `--target-length <int>` | 目標スライド枚数 | 未指定 |
+| `--structure-pattern <name>` | 章構成パターン名 | 未指定 |
+| `--appendix-limit <int>` | 付録枚数の上限 | `5` |
+| `--chapter-templates-dir <dir>` | 章テンプレート辞書ディレクトリ | `config/chapter_templates` |
+| `--chapter-template <id>` | 強制適用する章テンプレート ID | 未指定 |
+| `--import-analysis <path>` | `analysis_summary.json` のパス | 未指定 |
+| `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | jobspec の meta から解決 |
+| `--output, -o <dir>` | `generate_ready.json` 等の出力ディレクトリ | `.pptx/compose` |
+| `--rules <path>` | 検証ルール設定ファイル | `config/rules.json` |
+| `--template, -t <path>` | テンプレートファイル | jobspec の meta から解決 |
+| `--branding <path>` | ブランド設定ファイル | `config/branding.json` |
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
-| `--return-reasons` | 差戻し理由テンプレ一覧を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit`, `--chapter-template` など。詳細は CLI リファレンスを参照。
 
@@ -50,14 +54,14 @@
 - 差戻し後に Draft のみ更新したいケースや UI 連携での個別更新時に利用する。
 
 ### `pptx mapping`
-- 工程4（PPTX 作成）で `generate_ready.json` を入力にレンダリングを実行するコマンド。
-- `--generate-ready`（必須）とテンプレートパスを受け取り、旧 `draft_*` ファイルを参照しない。
+- 工程3のマッピング処理だけを個別に実行し、`.pptx/gen/`（既定）配下に `generate_ready.json` などを生成するコマンド。
+- `pptx compose` とほぼ同じオプションを持ち、Brief 成果物・テンプレート解決の扱いも共通。レンダリング工程（工程4）は `pptx gen` が担当する。
 
 ## ログ・監査
 - `draft_review_log.json`: 章/スライドの承認・差戻し履歴（`action`, `actor`, `timestamp`, `reason_code`, `notes`）。
 - `draft_mapping_log.json`: レイアウト候補スコア、AI 補完、フォールバック履歴、Analyzer サマリ。
 - `fallback_report.json`: 重大フォールバックの詳細（適用戦略、対象スライド、理由）。
-- `generate_ready_meta.json.audit` には主要ファイルのハッシュと実行統計を記録する。
+- `generate_ready_meta.json` には章テンプレ適合率、承認統計、AI 推薦採用件数などを記録し、ハッシュ情報は別途 `audit_log.json` に集約する。
 
 ## Analyzer 連携
 - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
