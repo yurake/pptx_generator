@@ -118,22 +118,23 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 
 | オプション | 説明 | 必須 | 既定値 |
 | --- | --- | --- | --- |
-| `--draft-output <dir>` | `generate_ready` 系成果物の保存先 | いいえ | `.pptx/draft` |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` | いいえ | 指定なし |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` | はい | `.pptx/prepare/prepare_card.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json` | いいえ | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` | いいえ | `.pptx/prepare/ai_generation_meta.json` |
-| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 | いいえ | `generate_ready.json` |
-| `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 | いいえ | `generate_ready_meta.json` |
-| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 | いいえ | `draft_review_log.json` |
-| `--mapping-log-filename <name>` | `draft_mapping_log.json` のファイル名 | いいえ | `draft_mapping_log.json` |
-| `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング | いいえ | Spec から推定 |
-| `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID | いいえ | `config/chapter_templates` / 自動推定 |
-| `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する | いいえ | 指定なし |
-| `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する | いいえ | 無効 |
-| `--rules <path>` | マッピング時に参照するルール設定 | いいえ | `config/rules.json` |
-| `--template <path>` | ブランド抽出に利用するテンプレート | いいえ | 指定なし |
-| `--branding <path>` | ブランド設定ファイルを明示指定する | いいえ | `config/branding.json` |
+| `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | - |
+| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ | `.pptx/prepare/prepare_card.json` |
+| `--template <path>` | ブランド抽出に利用するテンプレート | ✅ | 指定なし |
+| `--draft-output <dir>` | `generate_ready` 系成果物の保存先 |  | `.pptx/draft` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  | 指定なし |
+| `--brief-log <path>` | 工程2の `brief_log.json` |  | `.pptx/prepare/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  | `.pptx/prepare/ai_generation_meta.json` |
+| `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  | `generate_ready.json` |
+| `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  | `generate_ready_meta.json` |
+| `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  | `draft_review_log.json` |
+| `--mapping-log-filename <name>` | `draft_mapping_log.json` のファイル名 |  | `draft_mapping_log.json` |
+| `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  | Spec から推定 |
+| `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID |  | `config/chapter_templates` / 自動推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  | 指定なし |
+| `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  | 無効 |
+| `--rules <path>` | マッピング時に参照するルール設定 |  | `config/rules.json` |
+| `--branding <path>` | ブランド設定ファイルを明示指定する |  | `config/branding.json` |
 
 実行例:
 ```bash
