@@ -13,21 +13,21 @@
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
 
 #### `pptx template`
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `<template.pptx>` | 解析するテンプレート（必須、位置引数） | - |
-| `--output <dir>` | 抽出・検証成果物を保存するディレクトリ | `.pptx/extract` |
-| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る | 全レイアウト |
-| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る | 全アンカー |
-| `--format <json\|yaml>` | テンプレ仕様の出力形式 | `json` |
-| `--with-release` | リリースメタ（`template_release.json` 等）を生成する | 無効 |
-| `--brand <name>` | `--with-release` 指定時のブランド名 | - |
-| `--version <value>` | `--with-release` 指定時のテンプレバージョン | - |
-| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` | 自動生成 |
-| `--release-output <dir>` | リリース成果物の出力先 | `.pptx/release` |
-| `--generated-by / --reviewed-by` | リリースメタに記録する担当者 | 空 |
-| `--baseline-release <path>` | 過去の `template_release.json` と比較する | 指定なし |
-| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<template.pptx>` | 解析するテンプレート | ✅ | ✅ | - |
+| `--output <dir>` | 抽出・検証成果物を保存するディレクトリ |  |  | `.pptx/extract` |
+| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
+| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
+| `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
+| `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
+| `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
+| `--version <value>` | `--with-release` 指定時のテンプレバージョン |  |  | - |
+| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` |  |  | 自動生成 |
+| `--release-output <dir>` | リリース成果物の出力先 |  |  | `.pptx/release` |
+| `--generated-by / --reviewed-by` | リリースメタに記録する担当者 |  |  | 空 |
+| `--baseline-release <path>` | 過去の `template_release.json` と比較する |  |  | 指定なし |
+| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） |  |  | 指定なし |
 
 オプションを省略した場合は、抽出結果が既定の `.pptx/extract/` 配下に出力される。例えば以下のようにテンプレートファイルのみを指定すれば、最小構成で抽出と検証が実行できる。
 
@@ -50,39 +50,39 @@ uv run pptx template templates/jri_template.pptx
 ##### `pptx tpl-extract`
 `pptx template` の抽出部分のみを実行する。成果物の出力ディレクトリを分けたい場合やフィルタリングを個別に試したい場合に利用する。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 解析する `.pptx` テンプレート（必須） | - |
-| `--output <dir>` | 抽出結果を保存するディレクトリ | `.pptx/extract` |
-| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る | 全レイアウト |
-| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る | 全アンカー |
-| `--format <json\|yaml>` | 出力形式を選択 | `json` |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `--template <path>` | 解析する `.pptx` テンプレート | ✅ |  | - |
+| `--output <dir>` | 抽出結果を保存するディレクトリ |  |  | `.pptx/extract` |
+| `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
+| `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
+| `--format <json\|yaml>` | 出力形式を選択 |  |  | `json` |
 
 ##### `pptx layout-validate`
 抽出結果と同等のレイアウト検証を単独で実行する。`--baseline` や `--analyzer-snapshot` を用いて比較条件を変えたいケースで利用する。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 検証対象の `.pptx` テンプレート（必須） | - |
-| `--output <dir>` | 検証成果物を保存するディレクトリ | `.pptx/validation` |
-| `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 | 自動導出 |
-| `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する | 比較なし |
-| `--analyzer-snapshot <path>` | `pptx gen --emit-structure-snapshot` が生成した `analysis_snapshot.json` を突合する | 未指定 |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `--template <path>` | 検証対象の `.pptx` テンプレート | ✅ |  | - |
+| `--output <dir>` | 検証成果物を保存するディレクトリ |  |  | `.pptx/validation` |
+| `--template-id <value>` | `layouts.jsonl` に記録するテンプレート ID。未指定時はファイル名から導出 |  |  | 自動導出 |
+| `--baseline <path>` | 過去に出力した `layouts.jsonl` と比較し差分を算出する |  |  | 比較なし |
+| `--analyzer-snapshot <path>` | `pptx gen --emit-structure-snapshot` が生成した `analysis_snapshot.json` を突合する |  |  | 未指定 |
 
 ##### `pptx tpl-release`
 テンプレート整備が完了した後、リリースメタのみを生成する場合に利用する。`pptx template --with-release` と同じ成果物構成で、リリースオプションを細かく制御できる。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | リリース対象のテンプレート（必須） | - |
-| `--brand <name>` | ブランド名（必須） | - |
-| `--version <value>` | テンプレートのバージョン（必須） | - |
-| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` を自動生成 | 自動生成 |
-| `--output <dir>` | リリース成果物の出力先 | `.pptx/release` |
-| `--generated-by <name>` | リリース実施者 | 空 |
-| `--reviewed-by <name>` | レビュー担当者 | 空 |
-| `--baseline-release <path>` | 過去の `template_release.json` と比較する | 比較なし |
-| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） | 指定なし |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `--template <path>` | リリース対象のテンプレート | ✅ |  | - |
+| `--brand <name>` | ブランド名 | ✅ |  | - |
+| `--version <value>` | テンプレートのバージョン | ✅ |  | - |
+| `--template-id <value>` | リリース ID。未指定時は `<brand>_<version>` を自動生成 |  |  | 自動生成 |
+| `--output <dir>` | リリース成果物の出力先 |  |  | `.pptx/release` |
+| `--generated-by <name>` | リリース実施者 |  |  | 空 |
+| `--reviewed-by <name>` | レビュー担当者 |  |  | 空 |
+| `--baseline-release <path>` | 過去の `template_release.json` と比較する |  |  | 比較なし |
+| `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） |  |  | 指定なし |
 
 ### 工程2: コンテンツ準備 (HITL)
 ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
@@ -91,9 +91,9 @@ uv run pptx template templates/jri_template.pptx
 - 既定では BriefAI オーケストレーターを用いてカードを生成し、`config/brief_policies/default.json` のポリシーに従って AI との対話ログを収集する。
 - 生成カード枚数を制御したい場合は `--card-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/prepare` |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
 | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 
 実行例:
@@ -152,8 +152,36 @@ uv run pptx compose .pptx/extract/jobspec.json \
 - HITL 作業（章構成確認）だけを個別に実行したい場合に利用し、`generate_ready.json` と関連メタ／ログを再生成する。
 - `--brief-*` オプションは `compose` と共通。差戻し対応や一部章のみ更新したいケースで活用する。
 
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
+| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | 指定なし |
+| `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
+| `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
+| `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID |  |  | `config/chapter_templates` / 自動推定 |
+| `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
+| `--return-reasons-path <path>` | 差戻し理由テンプレート辞書のパス |  |  | `config/return_reasons.json` |
+| `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
+| `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
+| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
+
 #### 補助: `pptx mapping`
 - 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
+
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
+| `--template <path>` | generate_ready.json に埋め込むテンプレートファイル | ✅ |  | - |
+| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
+| `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | 指定なし |
+| `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
+| `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
@@ -161,63 +189,62 @@ uv run pptx compose .pptx/extract/jobspec.json \
 - `generate_ready.json` を入力に工程4を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
 - `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。`--brief-*` オプションは後方互換目的で受け付けるが無視される。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
-| `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
-| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル | `config/rules.json` |
-| `--branding <path>` | ブランド設定 JSON を差し替える | `config/branding.json` |
-| `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
-| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
-| `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
-| `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
-| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒 | 120 |
-| `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
-| `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 | 設定ファイル準拠 |
-| `--polisher-path <path>` | Polisher 実行ファイルのパス | 指定なし |
-| `--polisher-rules <path>` | Polisher のルール設定 | 指定なし |
-| `--polisher-timeout <sec>` | Polisher のタイムアウト秒 | 指定なし |
-| `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ | 指定なし |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する | 無効 |
-| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
-| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
-| `--verbose` | 追加ログを表示する | 無効 |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<generate_ready.json>` | generate_ready ドキュメント | ✅ | ✅ | - |
+| `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
+| `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
+| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `config/rules.json` |
+| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
+| `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
+| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
+| `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
+| `--libreoffice-path <path>` | `soffice` のパスを明示する |  |  | `PATH` から探索 |
+| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒 |  |  | 120 |
+| `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
+| `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 |  |  | 設定ファイル準拠 |
+| `--polisher-path <path>` | Polisher 実行ファイルのパス |  |  | 指定なし |
+| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし |
+| `--polisher-timeout <sec>` | Polisher のタイムアウト秒 |  |  | 指定なし |
+| `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
+| `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
+| `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 #### `pptx gen`
 - 工程2の成果物（Brief）を入力に、工程3のマッピングと工程4のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx compose` と `pptx render` を個別に利用する。
 
-| オプション | 説明 | 既定値 |
-| --- | --- | --- |
-| `--template <path>` | 利用する `.pptx` テンプレートを指定 | 同梱テンプレート |
-| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） | `config/branding.json` |
-| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 | `config/rules.json` |
-| `--output <dir>` | 生成物を保存するディレクトリ | `.pptx/gen` |
-| `--pptx-name <filename>` | 出力 PPTX 名を変更する | `proposal.pptx` |
-| `--export-pdf` | LibreOffice 経由で PDF を同時生成 | 無効 |
-| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 | `both` |
-| `--pdf-output <filename>` | 出力 PDF 名を変更する | `proposal.pdf` |
-| `--libreoffice-path <path>` | `soffice` のパスを明示する | `PATH` から探索 |
-| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 | 120 |
-| `--pdf-retries <count>` | PDF 変換のリトライ回数 | 2 |
-| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 | ルール設定の値 |
-| `--polisher-path <path>` | Polisher 実行ファイルを明示する | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える | `config/rules.json` の `polisher.rules_path` |
-| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する | カレントディレクトリ |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` | `.pptx/prepare/prepare_card.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json`（任意） | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json`（任意） | `.pptx/prepare/ai_generation_meta.json` |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` | 指定なし |
-| `--draft-output <dir>` | ドラフト成果物の出力先 | `.pptx/draft` |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 | 無効 |
-| `--verbose` | 追加ログを表示する | 無効 |
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `--template <path>` | 利用する `.pptx` テンプレートを指定 | ✅ |  | 同梱テンプレート |
+| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） |  |  | `config/branding.json` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `config/rules.json` |
+| `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
+| `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
+| `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
+| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
+| `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
+| `--libreoffice-path <path>` | `soffice` のパスを明示する |  |  | `PATH` から探索 |
+| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 |  |  | 120 |
+| `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
+| `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 |  |  | ルール設定の値 |
+| `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す |  |  | 指定なし |
+| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
+| `--brief-cards <path>` | 工程2の `prepare_card.json` |  |  | `.pptx/prepare/prepare_card.json` |
+| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
+| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
+| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | 指定なし |
+| `--draft-output <dir>` | ドラフト成果物の出力先 |  |  | `.pptx/draft` |
+| `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 |  |  | 無効 |
+| `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
