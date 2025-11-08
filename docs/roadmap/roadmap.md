@@ -814,13 +814,13 @@ flowchart TB
 - 対象工程: 3（マッピング）
 - ゴール: テンプレ抽出で生成する `jobspec.json` を工程3の `JobSpec` スキーマへ適合させ、`pptx compose` で直接利用できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-jobspec-scaffold-validation.md](../notes/20251105-jobspec-scaffold-validation.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-05 追加）
+- 参照 ToDo: [docs/todo/20251108-rm059-jobspec-scaffold.md](../todo/20251108-rm059-jobspec-scaffold.md)
+- 状況: 進行中（2025-11-08 更新）
 - 期待成果:
   - スキャフォールド出力で不足している `meta.title` / `auth` などの必須フィールド補完ロジックを実装する。
   - `placeholders` ベースのテンプレ情報を工程3の `Slide` 構造（textboxes / images 等）へ変換するマッピング仕様を確立し、余剰プロパティによるバリデーションエラーを解消する。
   - README や `docs/requirements/stages/stage-03-mapping.md` にテンプレ抽出〜マッピング間のフロー変更を反映する。
-- 次アクション: スキャフォールド→JobSpec 変換ステップの設計と、CLI/ドキュメントの改訂範囲を洗い出す。
+- 次アクション: JobSpecScaffold 変換ロジックの拡張（画像・表プレースホルダの取り扱い強化）と、変換後 JobSpec を起点とした追加テスト / 監査ログ更新を検討する。
 
 <a id="rm-058"></a>
 ### RM-058 ブリーフポリシー内製化
