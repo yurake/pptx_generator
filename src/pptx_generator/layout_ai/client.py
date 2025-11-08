@@ -51,6 +51,12 @@ def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
     provider_env = os.getenv("PPTX_LLM_PROVIDER")
     base_provider = policy.provider.strip().lower() if policy.provider else "mock"
     provider = provider_env.strip().lower() if provider_env else base_provider
+    logger.info(
+        "layout AI provider resolved: env=%s policy=%s -> %s",
+        provider_env or "",
+        base_provider,
+        provider,
+    )
     if provider in {"mock", ""}:
         return MockLayoutAIClient()
     if provider in {"openai", "openai-api"}:
