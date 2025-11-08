@@ -48,7 +48,9 @@ class LayoutAIClientConfigurationError(RuntimeError):
 
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
-    provider = (policy.provider or os.getenv("PPTX_LLM_PROVIDER", "mock")).lower()
+    provider_env = os.getenv("PPTX_LLM_PROVIDER")
+    base_provider = policy.provider.strip().lower() if policy.provider else "mock"
+    provider = provider_env.strip().lower() if provider_env else base_provider
     if provider in {"mock", ""}:
         return MockLayoutAIClient()
     if provider in {"openai", "openai-api"}:
