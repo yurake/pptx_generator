@@ -119,12 +119,13 @@ def layouts_file(tmp_path: Path) -> Path:
     return layouts
 
 
-def test_compose_resolves_template_from_jobspec_meta(
+def test_compose_resolves_paths_from_jobspec_meta(
     tmp_path: Path,
     runner: CliRunner,
 ) -> None:
     spec_path = tmp_path / "input" / "jobspec.json"
     spec_path.parent.mkdir(parents=True, exist_ok=True)
+    layouts_relative = "layouts/layouts.jsonl"
     _write_json(
         spec_path,
         {
@@ -133,6 +134,7 @@ def test_compose_resolves_template_from_jobspec_meta(
                 "title": "Auto Template Spec",
                 "client": "Example Co.",
                 "template_path": "templates/jri_template.pptx",
+                "layouts_path": layouts_relative,
                 "locale": "ja-JP",
             },
             "auth": {"created_by": "tester"},
@@ -184,7 +186,8 @@ def test_compose_resolves_template_from_jobspec_meta(
         },
     )
 
-    layouts_path = tmp_path / "layouts.jsonl"
+    layouts_path = spec_path.parent / layouts_relative
+    layouts_path.parent.mkdir(parents=True, exist_ok=True)
     layouts_path.write_text(
         json.dumps(
             {
@@ -211,8 +214,6 @@ def test_compose_resolves_template_from_jobspec_meta(
             str(brief_log_path),
             "--brief-meta",
             str(brief_meta_path),
-            "--layouts",
-            str(layouts_path),
             "--draft-output",
             str(draft_dir),
             "--output",
@@ -222,6 +223,92 @@ def test_compose_resolves_template_from_jobspec_meta(
 
     assert result.exit_code == 0, result.output
     assert (compose_dir / "generate_ready.json").exists()
+
+
+def test_mapping_resolves_layouts_from_jobspec_meta(
+    tmp_path: Path,
+    runner: CliRunner,
+) -> None:
+    spec_path = tmp_path / "input" / "jobspec.json"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    layouts_relative = "layouts/layouts.jsonl"
+    _write_json(
+        spec_path,
+        {
+            "meta": {
+                "schema_version": "1.1",
+                "title": "Mapping Spec",
+                "client": "Example Co.",
+                "template_path": "templates/jri_template.pptx",
+                "layouts_path": layouts_relative,
+                "locale": "ja-JP",
+            },
+            "auth": {"created_by": "tester"},
+            "slides": [
+                {
+                    "id": "intro",
+                    "layout": "Title",
+                    "title": "Intro",
+                }
+            ],
+        },
+    )
+
+    layouts_path = spec_path.parent / layouts_relative
+    layouts_path.parent.mkdir(parents=True, exist_ok=True)
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    cards_path = tmp_path / "prepare_card.json"
+    _write_json(
+        cards_path,
+        {
+            "brief_id": "brief-1",
+            "cards": [
+                {
+                    "card_id": "intro",
+                    "chapter": "Intro",
+                    "message": "Intro message",
+                    "narrative": ["Line 1"],
+                    "supporting_points": [],
+                    "story": {"phase": "introduction"},
+                    "intent_tags": ["intro"],
+                    "status": "approved",
+                    "autofix_applied": [],
+                }
+            ],
+            "story_context": {"chapters": []},
+        },
+    )
+
+    output_dir = tmp_path / "compose"
+    draft_dir = tmp_path / "draft"
+
+    result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--brief-cards",
+            str(cards_path),
+            "--output",
+            str(output_dir),
+            "--draft-output",
+            str(draft_dir),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (output_dir / "generate_ready.json").exists()
 
 
 def test_outline_with_layout_reasons(

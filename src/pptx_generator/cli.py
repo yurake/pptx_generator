@@ -243,6 +243,58 @@ def _resolve_template_path(
     return resolved
 
 
+def _resolve_layouts_path(
+    *,
+    spec: JobSpec,
+    spec_source: Path,
+    layouts_option: Path | None,
+) -> Path | None:
+    """ジョブスペックとオプションから layouts.jsonl のパスを決定する。"""
+
+    if layouts_option is not None:
+        return layouts_option
+
+    layouts_path_value: str | None = None
+    meta = getattr(spec, "meta", None)
+    if meta is not None:
+        layouts_path_value = getattr(meta, "layouts_path", None)
+        if layouts_path_value is None and isinstance(meta, BaseModel):
+            extra = getattr(meta, "model_extra", None)
+            if isinstance(extra, dict):
+                layouts_path_value = extra.get("layouts_path")
+        if layouts_path_value is None and isinstance(meta, dict):
+            layouts_path_value = meta.get("layouts_path")
+
+    if layouts_path_value is None:
+        try:
+            raw_spec = json.loads(spec_source.read_text(encoding="utf-8"))
+            layouts_path_value = raw_spec.get("meta", {}).get("layouts_path")
+        except Exception:  # noqa: BLE001
+            layouts_path_value = None
+
+    if not layouts_path_value:
+        return None
+
+    candidate_raw = Path(layouts_path_value)
+    candidates: list[Path]
+    if candidate_raw.is_absolute():
+        candidates = [candidate_raw]
+    else:
+        spec_relative = (spec_source.parent / candidate_raw).resolve()
+        cwd_relative = (Path.cwd() / candidate_raw).resolve()
+        candidates = [spec_relative, cwd_relative]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    message = (
+        "レイアウト定義ファイルを --layouts で指定するか、jobspec.meta.layouts_path に有効なパスを設定してください。"
+        f"（確認したパス: {', '.join(str(path) for path in candidates)}）"
+    )
+    raise ValueError(message)
+
+
 @dataclass(slots=True)
 class TemplateExtractionResult:
     template_spec: TemplateSpec
@@ -315,10 +367,6 @@ def _run_template_extraction(
     branding_path.write_text(branding_text, encoding="utf-8")
     logger.info("Saved branding payload to %s", branding_path.resolve())
 
-    jobspec_path = output_dir / "jobspec.json"
-    extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
-    logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
-
     logger.info("Starting layout validation for %s", template_path)
     validation_options = LayoutValidationOptions(
         template_path=template_path,
@@ -331,6 +379,20 @@ def _run_template_extraction(
         validation_result.warnings_count,
         validation_result.errors_count,
     )
+
+    layouts_relative: str | None = None
+    try:
+        layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
+    except ValueError:
+        layouts_relative = str(validation_result.layouts_path)
+
+    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
+        update={"layouts_path": layouts_relative}
+    )
+
+    jobspec_path = output_dir / "jobspec.json"
+    extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
+    logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
 
     return TemplateExtractionResult(
         template_spec=template_spec,
@@ -1889,13 +1951,22 @@ def compose(  # noqa: PLR0913
     except ValueError as exc:
         click.echo(str(exc), err=True)
         raise click.exceptions.Exit(code=2) from exc
+    try:
+        resolved_layouts = _resolve_layouts_path(
+            spec=spec,
+            spec_source=spec_path,
+            layouts_option=layouts,
+        )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
 
     templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
 
     try:
         outline_result = _execute_outline(
             spec=spec,
-            layouts=layouts,
+            layouts=resolved_layouts,
             output_dir=draft_output,
             target_length=target_length,
             structure_pattern=structure_pattern,
@@ -1941,12 +2012,12 @@ def compose(  # noqa: PLR0913
             brief_log=brief_log if brief_log.exists() else None,
             brief_meta=brief_meta if brief_meta.exists() else None,
             require_brief=True,
-            layouts=layouts,
+            layouts=resolved_layouts,
             draft_output=draft_output,
             template=resolved_template,
             draft_context=outline_result.context,
             draft_options=DraftStructuringOptions(
-                layouts_path=layouts,
+                layouts_path=resolved_layouts,
                 output_dir=draft_output,
                 target_length=target_length,
                 structure_pattern=structure_pattern,
@@ -2076,6 +2147,16 @@ def mapping(  # noqa: PLR0913
         click.echo(str(exc), err=True)
         raise click.exceptions.Exit(code=2) from exc
 
+    try:
+        resolved_layouts = _resolve_layouts_path(
+            spec=spec,
+            spec_source=spec_path,
+            layouts_option=layouts,
+        )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
+
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(
         resolved_template, branding
@@ -2093,7 +2174,7 @@ def mapping(  # noqa: PLR0913
             brief_log=brief_log if brief_log.exists() else None,
             brief_meta=brief_meta if brief_meta.exists() else None,
             require_brief=True,
-            layouts=layouts,
+            layouts=resolved_layouts,
             draft_output=draft_output,
             template=resolved_template,
         )
