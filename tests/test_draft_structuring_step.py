@@ -128,6 +128,9 @@ def test_draft_structuring_generates_documents(
     ready_meta_path = tmp_path / "generate_ready_meta.json"
     meta_payload = json.loads(ready_meta_path.read_text(encoding="utf-8"))
     assert meta_payload["ai_recommendation"]["used"] >= 0
+    assert "content_alignment_meta" in context.artifacts
+    alignment_meta = context.artifacts["content_alignment_meta"]
+    assert alignment_meta["applied"] >= 1
 
 
 def test_draft_structuring_fails_when_slide_id_missing(

@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from ..brief.models import BriefDocument
 from ..models import (
     ContentApprovalDocument,
     ContentSlide,
@@ -42,6 +43,7 @@ from ..draft_intel import (
     summarize_analyzer_counts,
 )
 from .base import PipelineContext
+from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,9 @@ class DraftStructuringOptions:
     layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
     layout_ai_policy_id: str | None = "layout-default"
     enable_ai_simulation: bool = True
+    enable_slide_alignment: bool = True
+    slide_alignment_threshold: float = 0.6
+    slide_alignment_max_candidates: int = 12
     layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
     layout_ai_policy_id: str | None = "layout-default"
     enable_ai_simulation: bool = True
@@ -101,6 +106,27 @@ class DraftStructuringStep:
             msg = "content_approved artifact の型が不正です"
             raise DraftStructuringError(msg)
         document = artifact
+
+        if self.options.enable_slide_alignment:
+            aligner = SlideIdAligner(
+                SlideIdAlignerOptions(
+                    confidence_threshold=self.options.slide_alignment_threshold,
+                    max_candidates=self.options.slide_alignment_max_candidates,
+                )
+            )
+            brief_document = context.artifacts.get("brief_document")
+            alignment = aligner.align(
+                spec=context.spec,
+                brief_document=brief_document if isinstance(brief_document, BriefDocument) else None,
+                content_document=document,
+            )
+            document = alignment.document
+            context.add_artifact("content_alignment_meta", alignment.meta)
+            context.add_artifact(
+                "content_alignment_records",
+                [asdict(record) for record in alignment.records],
+            )
+            context.add_artifact("content_approved", document)
 
         layouts = self._load_layouts(self.options.layouts_path)
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
