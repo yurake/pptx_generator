@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -116,6 +117,116 @@ def layouts_file(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return layouts
+
+
+def test_compose_resolves_template_from_jobspec_meta(
+    tmp_path: Path,
+    runner: CliRunner,
+) -> None:
+    template_src = Path("templates/jri_template.pptx").resolve()
+    template_dir = tmp_path / "input" / "templates"
+    template_dir.mkdir(parents=True, exist_ok=True)
+    template_dest = template_dir / "jri_template.pptx"
+    shutil.copy(template_src, template_dest)
+
+    spec_path = tmp_path / "input" / "jobspec.json"
+    _write_json(
+        spec_path,
+        {
+            "meta": {
+                "schema_version": "1.1",
+                "title": "Auto Template Spec",
+                "client": "Example Co.",
+                "template_path": "templates/jri_template.pptx",
+                "locale": "ja-JP",
+            },
+            "auth": {"created_by": "tester"},
+            "slides": [
+                {
+                    "id": "intro",
+                    "layout": "Title",
+                    "title": "Intro",
+                }
+            ],
+        },
+    )
+
+    brief_dir = tmp_path / "prepare"
+    brief_dir.mkdir(parents=True, exist_ok=True)
+    cards_path = brief_dir / "prepare_card.json"
+    _write_json(
+        cards_path,
+        {
+            "brief_id": "brief-1",
+            "cards": [
+                {
+                    "card_id": "intro",
+                    "chapter": "Intro",
+                    "message": "Intro message",
+                    "narrative": ["Line 1"],
+                    "supporting_points": [],
+                    "story": {"phase": "introduction"},
+                    "intent_tags": ["intro"],
+                    "status": "approved",
+                    "autofix_applied": [],
+                }
+            ],
+            "story_context": {"chapters": []},
+        },
+    )
+    brief_log_path = brief_dir / "brief_log.json"
+    _write_json(brief_log_path, [])
+    brief_meta_path = brief_dir / "ai_generation_meta.json"
+    _write_json(
+        brief_meta_path,
+        {
+            "brief_id": "brief-1",
+            "generated_at": "2025-11-02T00:00:00Z",
+            "policy_id": "brief-default",
+            "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
+            "cards": [],
+            "statistics": {"cards_total": 1, "approved": 1, "returned": 0},
+        },
+    )
+
+    layouts_path = tmp_path / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    draft_dir = tmp_path / "draft"
+    compose_dir = tmp_path / "compose"
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--brief-cards",
+            str(cards_path),
+            "--brief-log",
+            str(brief_log_path),
+            "--brief-meta",
+            str(brief_meta_path),
+            "--layouts",
+            str(layouts_path),
+            "--draft-output",
+            str(draft_dir),
+            "--output",
+            str(compose_dir),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (compose_dir / "generate_ready.json").exists()
 
 
 def test_outline_with_layout_reasons(

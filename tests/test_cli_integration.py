@@ -318,7 +318,10 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "テンプレートファイルを --template で指定してください" in result.output
+    assert (
+        "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+        in result.output
+    )
 
 
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:

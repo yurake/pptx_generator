@@ -13,7 +13,7 @@ from typing import Any, Optional
 
 import click
 from dotenv import load_dotenv
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import (BrandingExtractionError,
                                  extract_branding_config)
@@ -184,6 +184,50 @@ def _prepare_branding(
     if branding_payload is not None:
         artifact["config"] = branding_payload
     return branding_config, artifact
+
+
+def _resolve_template_path(
+    *,
+    spec: JobSpec,
+    spec_source: Path,
+    template_option: Path | None,
+) -> Path:
+    """ジョブスペックとオプションからテンプレートパスを決定する。"""
+
+    if template_option is not None:
+        return template_option
+
+    template_path_value: str | None = None
+    meta = getattr(spec, "meta", None)
+    if meta is not None:
+        template_path_value = getattr(meta, "template_path", None)
+        if template_path_value is None and isinstance(meta, BaseModel):
+            extra = getattr(meta, "model_extra", None)
+            if isinstance(extra, dict):
+                template_path_value = extra.get("template_path")
+        if template_path_value is None and isinstance(meta, dict):
+            template_path_value = meta.get("template_path")
+
+    if not template_path_value:
+        try:
+            raw_spec = json.loads(spec_source.read_text(encoding="utf-8"))
+            template_path_value = raw_spec.get("meta", {}).get("template_path")
+        except Exception:  # noqa: BLE001
+            template_path_value = None
+
+    if not template_path_value:
+        raise ValueError(
+            "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+        )
+
+    candidate = Path(template_path_value)
+    if not candidate.is_absolute():
+        candidate = (spec_source.parent / candidate).resolve()
+
+    if not candidate.exists():
+        raise ValueError(f"テンプレートファイルが見つかりません: {candidate}")
+
+    return candidate
 
 
 @dataclass(slots=True)
@@ -1823,6 +1867,16 @@ def compose(  # noqa: PLR0913
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
 
+    try:
+        resolved_template = _resolve_template_path(
+            spec=spec,
+            spec_source=spec_path,
+            template_option=template,
+        )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
+
     templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
 
     try:
@@ -1858,7 +1912,9 @@ def compose(  # noqa: PLR0913
         outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
+    branding_config, branding_artifact = _prepare_branding(
+        resolved_template, branding
+    )
     refiner_options = _build_refiner_options(rules_config, branding_config)
 
     try:
@@ -1874,7 +1930,7 @@ def compose(  # noqa: PLR0913
             require_brief=True,
             layouts=layouts,
             draft_output=draft_output,
-            template=template,
+            template=resolved_template,
             draft_context=outline_result.context,
             draft_options=DraftStructuringOptions(
                 layouts_path=layouts,
@@ -1997,8 +2053,20 @@ def mapping(  # noqa: PLR0913
         _echo_errors("スキーマ検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=2) from exc
 
+    try:
+        resolved_template = _resolve_template_path(
+            spec=spec,
+            spec_source=spec_path,
+            template_option=template,
+        )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
+
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(template, branding)
+    branding_config, branding_artifact = _prepare_branding(
+        resolved_template, branding
+    )
     refiner_options = _build_refiner_options(rules_config, branding_config)
 
     try:
@@ -2014,7 +2082,7 @@ def mapping(  # noqa: PLR0913
             require_brief=True,
             layouts=layouts,
             draft_output=draft_output,
-            template=template,
+            template=resolved_template,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)
