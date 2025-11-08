@@ -1,7 +1,7 @@
 ---
 目的: Stage3 ドラフト構成で JobSpec と BriefCard のスライド ID 不整合を即時検知し、処理を停止する品質ゲートを導入する
 関連ブランチ: fix/rm060-stage3-id-enforce
-関連Issue: 未作成
+関連Issue: #276
 roadmap_item: RM-060 Stage3 ID 整合性強制
 ---
 
@@ -39,7 +39,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
