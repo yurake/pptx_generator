@@ -180,6 +180,10 @@ class JobMeta(BaseModel):
     created_at: str | None = None
     theme: str | None = None
     locale: str = "ja-JP"
+    layout_count: int | None = None
+    layouts_path: str | None = None
+    template_path: str | None = None
+    template_id: str | None = None
 
 
 class JobAuth(BaseModel):
@@ -243,6 +247,7 @@ class JobSpecScaffoldMeta(BaseModel):
     template_id: str
     generated_at: str
     layout_count: int
+    layouts_path: str | None = None
 
 
 class JobSpecScaffold(BaseModel):
