@@ -520,6 +520,7 @@ flowchart TB
 - 期待成果: `mapping_log.json` への Analyzer 情報追加、`font_min` や `contrast_low` に基づく補完トリガー、自動フォローアップ候補の生成。
 - 依存: RM-013（PPTX 解析アナライザー実装）、RM-017（パイプライン機能拡張）、RM-018（レンダラー リッチコンテンツ対応）、RM-025（マッピング補完エンジン）。
 - 進捗: mapping_log.json に Analyzer 件数サマリおよびスライド別指摘リストを追加し、SimpleAnalyzerStep から自動連携する実装を追加。ユニット／インテグレーションテストを更新済み。
+- 補足 (2025-11-08): `draft_mapping_log.json` にはフォールバック履歴や Analyzer 要約が出力されておらず、記録先が `mapping_log.json` に集約されています。成果物割り当てとドキュメント整合の追加検討が必要です。
 
 <a id="rm-032"></a>
 ### RM-032 Analyzer レンダリング監視統合
@@ -705,6 +706,7 @@ flowchart TB
 - 状況: 完了（2025-11-03 更新）
 - 期待成果: 生成AIモードの `pptx prepare` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
+- 補足 (2025-11-08): 現状の `pptx prepare` では `brief_log.json` に承認／差戻し履歴が反映されず空配列のまま出力されるため、ログ保存フローの実装課題を本テーマで追跡します。
 
 <a id="rm-047"></a>
 ### RM-047 テンプレ統合構成生成AI連携
@@ -715,6 +717,7 @@ flowchart TB
 - 状況: 完了（2025-11-06 更新）
 - 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
 - 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
+- 補足 (2025-11-08): `DraftStructuringStep` では `draft_review_log.json` が未更新のまま書き出され、`generate_ready_meta.sections[*].status` も固定値となっています。承認ワークフローの整備・整合調整をこのテーマで管理します。
 
 <a id="rm-048"></a>
 ### RM-048 工程4+5 統合CLI整備
@@ -725,6 +728,7 @@ flowchart TB
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
+- 補足 (2025-11-08): `docs/design/cli-command-reference.md` など一部ドキュメントのオプション表記が旧仕様 (`--generate-ready-filename` 等) のままであり、実装とのギャップ解消が必要です。
 
 <a id="rm-049"></a>
 ### RM-049 pptx gen スコープ最適化
@@ -785,6 +789,7 @@ flowchart TB
 - 状況: 完了（2025-11-06 更新）
 - 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理。
 - 次アクション: 検討ノートを作成し、設計レビューへ向けた論点整理と後続タスク分解を行う。併せて `pptx prepare --mode` 必須化の CLI 仕様を `docs/requirements`・`docs/design` に反映する草案を準備する。
+- 補足 (2025-11-08): 現行 CLI (`src/pptx_generator/cli.py`) では `--mode` オプションと成果物へのモード記録が未実装のため、仕様との差分解消を本テーマで追跡します。
 
 <a id="rm-055"></a>
 ### RM-055 AI生成文言フッタ自動付与

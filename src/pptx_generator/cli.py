@@ -907,6 +907,7 @@ def _execute_outline(
     spec: JobSpec,
     layouts: Path | None,
     output_dir: Path,
+    spec_source_path: Path,
     target_length: int | None,
     structure_pattern: str | None,
     appendix_limit: int,
@@ -921,6 +922,7 @@ def _execute_outline(
     draft_options = DraftStructuringOptions(
         layouts_path=layouts,
         output_dir=output_dir,
+        spec_source_path=spec_source_path,
         target_length=target_length,
         structure_pattern=structure_pattern,
         appendix_limit=appendix_limit,
@@ -1006,6 +1008,7 @@ def _run_mapping_pipeline(
     *,
     spec: JobSpec,
     output_dir: Path,
+    spec_source_path: Path,
     rules_config: RulesConfig,
     refiner_options: RefinerOptions,
     branding_artifact: dict[str, object],
@@ -1038,6 +1041,7 @@ def _run_mapping_pipeline(
             or DraftStructuringOptions(
                 layouts_path=layouts,
                 output_dir=draft_output,
+                spec_source_path=spec_source_path,
             ),
         )
     else:
@@ -1768,6 +1772,7 @@ def outline(
             spec=spec,
             layouts=layouts,
             output_dir=output_dir,
+            spec_source_path=spec_path,
             target_length=target_length,
             structure_pattern=structure_pattern,
             appendix_limit=appendix_limit,
@@ -1968,6 +1973,7 @@ def compose(  # noqa: PLR0913
             spec=spec,
             layouts=resolved_layouts,
             output_dir=draft_output,
+            spec_source_path=spec_path,
             target_length=target_length,
             structure_pattern=structure_pattern,
             appendix_limit=appendix_limit,
@@ -2005,6 +2011,7 @@ def compose(  # noqa: PLR0913
         mapping_context = _run_mapping_pipeline(
             spec=spec,
             output_dir=output_dir,
+            spec_source_path=spec_path,
             rules_config=rules_config,
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
@@ -2019,6 +2026,7 @@ def compose(  # noqa: PLR0913
             draft_options=DraftStructuringOptions(
                 layouts_path=resolved_layouts,
                 output_dir=draft_output,
+                spec_source_path=spec_path,
                 target_length=target_length,
                 structure_pattern=structure_pattern,
                 appendix_limit=appendix_limit,
@@ -2167,6 +2175,7 @@ def mapping(  # noqa: PLR0913
         context = _run_mapping_pipeline(
             spec=spec,
             output_dir=output_dir,
+            spec_source_path=spec_path,
             rules_config=rules_config,
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
