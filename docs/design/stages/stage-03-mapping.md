@@ -8,6 +8,7 @@
 ## コンポーネント
 | コンポーネント | 役割 | 技術 | 備考 |
 | --- | --- | --- | --- |
+| Slide ID Aligner (新規) | BriefCard ↔ JobSpec の card/slide ID を AI で突合 | Python / content_ai | `content_approved` の `ContentSlide.id` を補正、監査ログへ出力 |
 | Draft Structuring Engine | 章構成・差戻しワークフロー | Python / dataclass | `generate_ready_meta.sections[]`・`draft_review_log.json` を管理 |
 | Layout Hint Engine | レイアウト候補スコアリング | Python | Brief の intent / chapter / Analyzer 指摘を参照 |
 | GenerateReady Builder | プレースホルダ割付・フォールバック制御 | Python | `generate_ready.json`, `draft_mapping_log.json` を生成 |
@@ -19,10 +20,11 @@
 
 ## ワークフロー概要
 1. `pptx compose` が Brief 成果物とテンプレ構造を読み込み、章テンプレ辞書 (`config/chapter_templates/`) に基づいて初期章構成を作成する。
-2. `CardLayoutRecommender` がカード単位でレイアウト候補を算出し、スコア内訳と共に `draft_mapping_log.json` に記録する。Analyzer 連携がある場合は重大度情報を候補に付与する。
-3. HITL が CLI から章・スライド単位で承認／差戻し／付録送りを行い、操作履歴を `draft_review_log.json` に追記する。差戻し理由コードは `return_reasons.json` の定義に従って必須入力とする。
-4. GenerateReady Builder が承認済みカードをテンプレ構造と突合し、フォールバック（縮約→分割→付録送り）を適用しながら `generate_ready.json` を生成する。
-5. `generate_ready_meta.json` を出力し、章テンプレ適合率、承認統計、AI 推薦採用件数、Analyzer サマリ、監査メタ情報を集約する。
+2. Slide ID Aligner が `prepare_card.json` と `jobspec.json` を参照し、AI マッチングでカード ↔ スライド ID を突合。採用された ID は `content_approved` に反映し、信頼度や未確定カードをログへ記録する。
+3. `CardLayoutRecommender` がカード単位でレイアウト候補を算出し、スコア内訳と共に `draft_mapping_log.json` に記録する。Analyzer 連携がある場合は重大度情報を候補に付与する。
+4. HITL が CLI から章・スライド単位で承認／差戻し／付録送りを行い、操作履歴を `draft_review_log.json` に追記する。差戻し理由コードは `return_reasons.json` の定義に従って必須入力とする。
+5. GenerateReady Builder が承認済みカードをテンプレ構造と突合し、フォールバック（縮約→分割→付録送り）を適用しながら `generate_ready.json` を生成する。
+6. `generate_ready_meta.json` を出力し、章テンプレ適合率、承認統計、AI 推薦採用件数、Analyzer サマリ、監査メタ情報を集約する。
 
 ## CLI
 ### `pptx compose`
