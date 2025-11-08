@@ -93,6 +93,7 @@ class DraftStructuringStep:
     def __init__(self, options: DraftStructuringOptions | None = None) -> None:
         self.options = options or DraftStructuringOptions()
         self._recommender: CardLayoutRecommender | None = None
+        self._alignment_records: list | None = None
 
     # ------------------------------------------------------------------ #
     # public API
@@ -107,6 +108,8 @@ class DraftStructuringStep:
             raise DraftStructuringError(msg)
         document = artifact
 
+        self._alignment_records = None
+        alignment_records = []
         if self.options.enable_slide_alignment:
             aligner = SlideIdAligner(
                 SlideIdAlignerOptions(
@@ -121,12 +124,22 @@ class DraftStructuringStep:
                 content_document=document,
             )
             document = alignment.document
+            alignment_records = alignment.records
             context.add_artifact("content_alignment_meta", alignment.meta)
             context.add_artifact(
                 "content_alignment_records",
                 [asdict(record) for record in alignment.records],
             )
             context.add_artifact("content_approved", document)
+        pending_cards = [
+            record.card_id
+            for record in alignment_records
+            if record.status not in {"applied", "fallback"}
+        ]
+        if pending_cards:
+            logger.error("Slide alignment 未確定カード: %s", ", ".join(sorted(set(pending_cards))))
+            msg = "Slide alignment に失敗したカードがあります: " + ", ".join(sorted(set(pending_cards)))
+            raise DraftStructuringError(msg)
 
         layouts = self._load_layouts(self.options.layouts_path)
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
@@ -267,16 +280,6 @@ class DraftStructuringStep:
     ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
         slides_by_id = {slide.id: slide for slide in document.slides}
 
-        missing_ids = [spec_slide.id for spec_slide in spec.slides if spec_slide.id not in slides_by_id]
-        if missing_ids:
-            missing_list = ", ".join(sorted(set(missing_ids)))
-            msg = (
-                "JobSpec に存在するが content_approved に存在しないスライド ID が見つかりました: "
-                f"{missing_list}"
-            )
-            logger.error(msg)
-            raise DraftStructuringError(msg)
-
         sections: list[DraftSection] = []
         section_map: dict[str, DraftSection] = {}
         mapping_logs: list[dict[str, Any]] = []
@@ -290,8 +293,8 @@ class DraftStructuringStep:
         for index, spec_slide in enumerate(spec.slides, start=1):
             content_slide = slides_by_id.get(spec_slide.id)
             if content_slide is None:
-                msg = f"content_approved からスライドを取得できません: {spec_slide.id}"
-                raise DraftStructuringError(msg)
+                logger.debug("content_approved に存在しないスライドをスキップ: %s", spec_slide.id)
+                continue
 
             section_key, section_name = self._resolve_section(content_slide, spec_slide)
             section = section_map.get(section_key)

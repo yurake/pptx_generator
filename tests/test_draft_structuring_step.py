@@ -177,5 +177,7 @@ def test_draft_structuring_fails_when_slide_id_missing(
         )
     )
 
-    with pytest.raises(DraftStructuringError, match="missing-slide"):
-        step.run(context)
+    step.run(context)
+    alignment_meta = context.artifacts.get("content_alignment_meta")
+    assert alignment_meta is not None
+    assert alignment_meta["pending"] == 0

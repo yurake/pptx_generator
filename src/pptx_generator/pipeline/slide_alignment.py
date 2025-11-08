@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-from typing import Iterable
+from typing import Iterable, Literal
 
 from ..brief.models import BriefCard, BriefDocument
 from ..content_ai import (LLMClient, SlideMatchCandidate,
@@ -24,7 +24,8 @@ class SlideAlignmentRecord:
     recommended_slide_id: str | None
     confidence: float
     reason: str | None
-    status: str
+    status: Literal["applied", "pending", "fallback", "skipped"]
+    candidates: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -87,7 +88,7 @@ class SlideIdAligner:
                 },
             )
 
-        assignments: dict[str, SlideMatchResponse] = {}
+        slide_assignments: dict[str, int] = {}
         records: list[SlideAlignmentRecord] = []
 
         for slide in content_document.slides:
@@ -110,41 +111,66 @@ class SlideIdAligner:
             match_request = self._build_match_request(card, candidates)
             response = self._client.match_slide(match_request)
 
-            status = "pending"
-            recommended_slide_id = response.slide_id
-            if recommended_slide_id is not None and response.confidence >= self._options.confidence_threshold:
-                if recommended_slide_id in assignments and assignments[recommended_slide_id].confidence >= response.confidence:
-                    logger.info(
-                        "SlideIdAligner: card_id=%s は slide_id=%s に推奨されたが既に高スコアで割当済みのため保留",
-                        card.card_id,
-                        recommended_slide_id,
-                    )
-                    status = "conflict"
-                    recommended_slide_id = None
-                else:
-                    assignments[recommended_slide_id] = response
-                    status = "applied"
-
-            records.append(
-                SlideAlignmentRecord(
-                    card_id=card.card_id,
-                    recommended_slide_id=recommended_slide_id,
-                    confidence=response.confidence,
-                    reason=response.reason,
-                    status=status,
-                )
+            candidate_ids = tuple(candidate.id for candidate in candidates)
+            record = SlideAlignmentRecord(
+                card_id=card.card_id,
+                recommended_slide_id=response.slide_id,
+                confidence=response.confidence,
+                reason=response.reason,
+                status="pending",
+                candidates=candidate_ids,
             )
+
+            recommended_slide_id = response.slide_id
+            if recommended_slide_id and recommended_slide_id not in record.candidates:
+                recommended_slide_id = None
+                record.recommended_slide_id = None
+
+            if recommended_slide_id and response.confidence >= self._options.confidence_threshold:
+                previous_index = slide_assignments.get(recommended_slide_id)
+                if previous_index is None:
+                    record.status = "applied"
+                    slide_assignments[recommended_slide_id] = len(records)
+                else:
+                    previous_record = records[previous_index]
+                    if response.confidence > previous_record.confidence:
+                        previous_record.recommended_slide_id = None
+                        previous_record.status = "pending"
+                        previous_record.reason = (previous_record.reason or "") + " | reassigned"
+                        record.status = "applied"
+                        slide_assignments[recommended_slide_id] = len(records)
+                    else:
+                        record.status = "pending"
+                        record.reason = (record.reason or "") + " | lower_than_existing"
+                        record.recommended_slide_id = None
+            records.append(record)
+
+        assigned_slides = {slide_id for slide_id in slide_assignments}
+        fallback_applied = 0
+        for index, record in enumerate(records):
+            if record.status == "applied" and record.recommended_slide_id:
+                continue
+            if not record.candidates:
+                continue
+            for candidate_id in record.candidates:
+                if candidate_id not in assigned_slides:
+                    record.recommended_slide_id = candidate_id
+                    record.status = "fallback"
+                    record.reason = (record.reason or "") + " | fallback_candidate"
+                    assigned_slides.add(candidate_id)
+                    slide_assignments[candidate_id] = index
+                    fallback_applied += 1
+                    break
 
         updated_slides: list[ContentSlide] = []
         applied = 0
         for slide in content_document.slides:
             original_id = slide.id
             record = next((entry for entry in records if entry.card_id == original_id), None)
-            if record and record.status == "applied" and record.recommended_slide_id:
-                updated_slides.append(
-                    slide.model_copy(update={"id": record.recommended_slide_id})
-                )
-                applied += 1
+            if record and record.recommended_slide_id:
+                updated_slides.append(slide.model_copy(update={"id": record.recommended_slide_id}))
+                if record.status in {"applied", "fallback"}:
+                    applied += 1
             else:
                 updated_slides.append(slide)
 
@@ -154,7 +180,8 @@ class SlideIdAligner:
             "threshold": self._options.confidence_threshold,
             "cards_total": len(content_document.slides),
             "applied": applied,
-            "pending": sum(1 for record in records if record.status != "applied"),
+            "fallback": fallback_applied,
+            "pending": sum(1 for record in records if record.status not in {"applied", "fallback"}),
         }
         logger.info(
             "SlideIdAligner: cards_total=%d applied=%d pending=%d threshold=%.2f",
