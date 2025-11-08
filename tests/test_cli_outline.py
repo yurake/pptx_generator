@@ -123,13 +123,8 @@ def test_compose_resolves_template_from_jobspec_meta(
     tmp_path: Path,
     runner: CliRunner,
 ) -> None:
-    template_src = Path("templates/jri_template.pptx").resolve()
-    template_dir = tmp_path / "input" / "templates"
-    template_dir.mkdir(parents=True, exist_ok=True)
-    template_dest = template_dir / "jri_template.pptx"
-    shutil.copy(template_src, template_dest)
-
     spec_path = tmp_path / "input" / "jobspec.json"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(
         spec_path,
         {

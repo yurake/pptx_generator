@@ -223,14 +223,24 @@ def _resolve_template_path(
             "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
         )
 
-    candidate = Path(template_path_value)
-    if not candidate.is_absolute():
-        candidate = (spec_source.parent / candidate).resolve()
-
-    if not candidate.exists():
-        raise ValueError(f"テンプレートファイルが見つかりません: {candidate}")
-
-    return candidate
+    candidate_raw = Path(template_path_value)
+    if candidate_raw.is_absolute():
+        resolved = candidate_raw
+    else:
+        spec_relative = (spec_source.parent / candidate_raw).resolve()
+        cwd_relative = (Path.cwd() / candidate_raw).resolve()
+        if spec_relative.exists():
+            resolved = spec_relative
+        elif cwd_relative.exists():
+            resolved = cwd_relative
+        else:
+            raise ValueError(
+                "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+                f"（確認したパス: {spec_relative}, {cwd_relative}）"
+            )
+    if not resolved.exists():
+        raise ValueError(f"テンプレートファイルが見つかりません: {resolved}")
+    return resolved
 
 
 @dataclass(slots=True)
