@@ -52,6 +52,7 @@ class DraftStructuringOptions:
 
     layouts_path: Path | None = None
     output_dir: Path | None = None
+    spec_source_path: Path | None = None
     draft_filename: str = "draft_draft.json"
     approved_filename: str = "draft_approved.json"
     log_filename: str = "draft_review_log.json"
@@ -188,7 +189,15 @@ class DraftStructuringStep:
 
     def _load_layouts(self, path: Path | None) -> list[LayoutProfile]:
         if path is None:
-            logger.info("layouts.jsonl が指定されていないため、候補スコアは既定値を使用します")
+            source_hint = (
+                str(self.options.spec_source_path)
+                if self.options.spec_source_path is not None
+                else "in-memory JobSpec"
+            )
+            logger.info(
+                "layouts.jsonl が指定されていないため、JobSpec (%s) の layout を基準にしたヒューリスティック候補を使用します",
+                source_hint,
+            )
             return []
 
         records: list[LayoutProfile] = []
