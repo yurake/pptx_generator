@@ -84,8 +84,8 @@ flowchart TD
 | --- | --- | --- | --- |
 | 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
-| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/prepare/prepare_card.json --template samples/templates/templates.pptx` | `.pptx/draft/generate_ready.json` | 章構成承認とレイアウト割付をまとめて実行 |
-| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成（`--output` 未指定時は `.pptx/gen/` へ出力）。 |
+| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/prepare/prepare_card.json` | `.pptx/draft/generate_ready.json` | jobspec の `meta.template_path` が設定されていれば `--template` 不要。章構成承認とレイアウト割付をまとめて実行 |
+| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json` | `.pptx/gen/proposal.pptx` | `generate_ready.json` に埋め込まれたテンプレ／ブランド設定を利用して最終成果物を生成（PDF も出力したい場合は `--export-pdf` を追加）。 |
 
 補足:
 - 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
