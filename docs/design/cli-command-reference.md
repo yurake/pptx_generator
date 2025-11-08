@@ -180,8 +180,6 @@ uv run pptx compose .pptx/extract/jobspec.json \
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | 指定なし |
 | `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
 | `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
