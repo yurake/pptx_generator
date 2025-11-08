@@ -9,6 +9,7 @@ import pytest
 
 from pptx_generator.pipeline import (BriefNormalizationOptions,
                                       BriefNormalizationStep,
+                                      DraftStructuringError,
                                       DraftStructuringOptions,
                                       DraftStructuringStep)
 from pptx_generator.pipeline.base import PipelineContext
@@ -127,3 +128,51 @@ def test_draft_structuring_generates_documents(
     ready_meta_path = tmp_path / "generate_ready_meta.json"
     meta_payload = json.loads(ready_meta_path.read_text(encoding="utf-8"))
     assert meta_payload["ai_recommendation"]["used"] >= 0
+
+
+def test_draft_structuring_fails_when_slide_id_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_spec: JobSpec,
+    brief_paths: dict[str, Path],
+) -> None:
+    monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
+
+    layouts_path = tmp_path / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Content",
+                "usage_tags": ["content"],
+                "text_hint": {"max_lines": 6},
+                "media_hint": {"allow_table": True},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    spec_with_gap = sample_spec.model_copy(deep=True)
+    spec_with_gap.slides.append(sample_spec.slides[0].model_copy(update={"id": "missing-slide", "title": "欠損"}))
+
+    context = PipelineContext(spec=spec_with_gap, workdir=tmp_path)
+
+    brief_step = BriefNormalizationStep(
+        BriefNormalizationOptions(
+            cards_path=brief_paths["cards"],
+            log_path=brief_paths["log"],
+            ai_meta_path=brief_paths["meta"],
+            require_document=True,
+        )
+    )
+    brief_step.run(context)
+
+    step = DraftStructuringStep(
+        DraftStructuringOptions(
+            layouts_path=layouts_path,
+            output_dir=tmp_path,
+        )
+    )
+
+    with pytest.raises(DraftStructuringError, match="missing-slide"):
+        step.run(context)

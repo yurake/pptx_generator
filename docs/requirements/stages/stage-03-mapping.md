@@ -54,6 +54,7 @@
   - `generate_ready` 系成果物のみ再生成する。`--refresh-candidates` 指定時は候補スコアも再計算する。
 
 ## 品質ゲート
+- JobSpec の `slides[*].id` が `prepare_card.json` 由来の `content_approved` に存在しない場合は処理を停止し、欠損 ID をエラーログへ出力する。
 - `generate_ready_meta.sections[*].status` に未承認 (`pending`) が残っていない。
 - `generate_ready.json` のスライド数が `generate_ready_meta.statistics.cards_total` と一致する。
 - `draft_mapping_log.json` の `warnings` と `analyzer.issue_count` が監視対象（PagerDuty 等）へ連携可能な形式である。

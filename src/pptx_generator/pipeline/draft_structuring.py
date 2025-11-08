@@ -241,6 +241,16 @@ class DraftStructuringStep:
     ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
         slides_by_id = {slide.id: slide for slide in document.slides}
 
+        missing_ids = [spec_slide.id for spec_slide in spec.slides if spec_slide.id not in slides_by_id]
+        if missing_ids:
+            missing_list = ", ".join(sorted(set(missing_ids)))
+            msg = (
+                "JobSpec に存在するが content_approved に存在しないスライド ID が見つかりました: "
+                f"{missing_list}"
+            )
+            logger.error(msg)
+            raise DraftStructuringError(msg)
+
         sections: list[DraftSection] = []
         section_map: dict[str, DraftSection] = {}
         mapping_logs: list[dict[str, Any]] = []
@@ -254,8 +264,8 @@ class DraftStructuringStep:
         for index, spec_slide in enumerate(spec.slides, start=1):
             content_slide = slides_by_id.get(spec_slide.id)
             if content_slide is None:
-                logger.debug("content_approved に存在しないスライドをスキップ: %s", spec_slide.id)
-                continue
+                msg = f"content_approved からスライドを取得できません: {spec_slide.id}"
+                raise DraftStructuringError(msg)
 
             section_key, section_name = self._resolve_section(content_slide, spec_slide)
             section = section_map.get(section_key)

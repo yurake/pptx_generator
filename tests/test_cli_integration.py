@@ -18,7 +18,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.models import JobSpec, TemplateRelease, TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec
+from pptx_generator.models import JobSpec, Slide, TemplateRelease, TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 
@@ -75,6 +75,40 @@ def _brief_args(paths: dict[str, Path]) -> list[str]:
         "--brief-meta",
         str(paths["meta"]),
     ]
+
+
+def _create_matching_jobspec(root: Path, brief_paths: dict[str, Path], *, filename: str = "matching_jobspec.json") -> Path:
+    base_spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
+    cards_payload = json.loads(brief_paths["cards"].read_text(encoding="utf-8"))
+    cards = cards_payload.get("cards", [])
+
+    slides: list[Slide] = []
+    for index, card in enumerate(cards, start=1):
+        card_id = card.get("card_id") or f"card-{index:03d}"
+        title = card.get("chapter") or card.get("message") or card_id
+        slides.append(
+            Slide(
+                id=card_id,
+                layout="Content" if index > 1 else "Title",
+                title=title[:120],
+                notes=card.get("message"),
+            )
+        )
+
+    jobspec = JobSpec(
+        meta=base_spec.meta.model_copy(deep=True),
+        auth=base_spec.auth.model_copy(deep=True),
+        slides=slides,
+    )
+
+    spec_path = root / filename
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = jobspec.model_dump(mode="json")
+    spec_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return spec_path
 
 
 def test_cli_template_basic(tmp_path: Path) -> None:
@@ -171,12 +205,12 @@ def _prepare_generate_ready(
 
 
 def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
     generate_ready_path = _prepare_generate_ready(
@@ -264,12 +298,12 @@ def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
 
 
 def test_cli_mapping_then_gen(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "render"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -297,11 +331,11 @@ def test_cli_mapping_then_gen(tmp_path: Path) -> None:
 
 
 def test_cli_mapping_requires_template(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     result = runner.invoke(
         app,
@@ -325,11 +359,11 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
 
 
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     draft_dir = tmp_path / "compose-draft"
     output_dir = tmp_path / "compose-gen"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     result = runner.invoke(
         app,
@@ -354,11 +388,11 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
 
 
 def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -384,11 +418,11 @@ def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
 
 
 def test_cli_mapping_invalid_brief_fails(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     invalid_cards = tmp_path / "prepare_card.json"
     invalid_cards.write_text("{}", encoding="utf-8")
@@ -415,12 +449,12 @@ def test_cli_mapping_invalid_brief_fails(tmp_path: Path) -> None:
 
 
 def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -467,12 +501,12 @@ def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
     if not _libreoffice_available():
         pytest.skip("LibreOffice が利用できないためスキップします")
 
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf-only"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -507,12 +541,12 @@ def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
 
 
 def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf-skip"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -548,7 +582,6 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
 
 
 def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-polisher"
@@ -578,6 +611,7 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
 
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
     ready_path = _prepare_generate_ready(
         runner,
         spec_path,
@@ -620,7 +654,6 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
 
 
 def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-template-branding"
@@ -644,6 +677,7 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
 
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
     ready_path = _prepare_generate_ready(
         runner,
         spec_path,
@@ -675,12 +709,12 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
 
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
-    spec_path = Path("samples/json/sample_jobspec.json")
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-template-fallback"
     runner = CliRunner()
     brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
 
     ready_path = _prepare_generate_ready(
         runner,
@@ -720,11 +754,16 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
         shutil.copytree(repo_root / "config", Path(fs_root) / "config")
 
         brief_paths = _prepare_brief_inputs(runner, Path(fs_root))
+        spec_path = _create_matching_jobspec(
+            Path(fs_root) / "samples/json",
+            brief_paths,
+            filename="jobspec_matching_cards.json",
+        )
         mapping_result = runner.invoke(
             app,
             [
                 "mapping",
-                "samples/json/sample_jobspec.json",
+                str(spec_path.relative_to(Path(fs_root))),
                 "--output",
                 "samples/gen-ready",
                 "--template",
