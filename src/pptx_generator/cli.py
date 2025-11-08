@@ -136,7 +136,10 @@ def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
     return resolved
 
 
-@click.group(help="JSON 仕様から PPTX を生成する CLI")
+@click.group(
+    help="JSON 仕様から PPTX を生成する CLI",
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.option("-v", "--verbose", is_flag=True, help="INFO レベルの冗長ログを出力する")
 @click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
 def app(verbose: bool, debug: bool) -> None:
@@ -1808,7 +1811,7 @@ def outline(
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
     default=None,
-    help="generate_ready.json に埋め込むテンプレートファイル（必須）",
+    help="generate_ready.json に埋め込むテンプレートファイル（未指定時は jobspec.meta.template_path を利用）",
 )
 @click.option(
     "--branding",
@@ -2002,7 +2005,7 @@ def compose(  # noqa: PLR0913
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
     default=None,
-    help="generate_ready.json に埋め込むテンプレートファイル（必須）",
+    help="generate_ready.json に埋め込むテンプレートファイル（未指定時は jobspec.meta.template_path を利用）",
 )
 @click.option(
     "--branding",
