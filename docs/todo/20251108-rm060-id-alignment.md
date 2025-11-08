@@ -1,7 +1,7 @@
 ---
 目的: Stage3 Drafter が JobSpec と BriefCard の ID を自動整合させ、不一致カードを検知前に補正する
 関連ブランチ: fix/rm060-stage3-id-enforce
-関連Issue: 未作成
+関連Issue: #277
 roadmap_item: RM-060 Stage3 ID 整合性強制
 ---
 
@@ -30,7 +30,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
 - [ ] PR 作成
 
 ## メモ
