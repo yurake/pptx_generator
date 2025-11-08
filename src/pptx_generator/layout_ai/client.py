@@ -7,14 +7,14 @@ import logging
 import os
 from dataclasses import dataclass, field
 import re
-from typing import Protocol
+from typing import Iterable, Protocol
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 
 logger = logging.getLogger(__name__)
 
 _LAYOUT_LLM_LOGGER = logging.getLogger("pptx_generator.layout_ai.llm")
-DEFAULT_MAX_TOKENS = 256
+DEFAULT_MAX_TOKENS = 512
 
 
 @dataclass(slots=True)
@@ -46,6 +46,10 @@ class LayoutAIClient(Protocol):
 
 class LayoutAIClientConfigurationError(RuntimeError):
     """クライアント設定のエラー。"""
+
+
+class LayoutAIResponseFormatError(RuntimeError):
+    """LLM 応答の解析に失敗した場合の例外。"""
 
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
@@ -127,26 +131,143 @@ class OpenAIChatLayoutClient:
         return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
+        from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
+
         messages = [
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
-        kwargs: dict[str, object] = {
-            "model": self._model,
-            "messages": messages,
+        base_kwargs: dict[str, object] = {
+            "input": messages,
             "temperature": self._temperature,
             "response_format": {"type": "json_object"},
         }
         if self._max_tokens > 0:
-            kwargs["max_completion_tokens"] = self._max_tokens
+            base_kwargs["max_output_tokens"] = self._max_tokens
 
-        response = self._client.chat.completions.create(**kwargs)  # type: ignore[attr-defined]
-        choice = response.choices[0]
-        message = choice.message
-        content = getattr(message, "content", None)
-        if not isinstance(content, str):
-            raise LayoutAIClientConfigurationError("LLM 応答が文字列ではありません")
-        return _parse_layout_response(content, model=self._model)
+        candidate_models: list[str] = []
+        for value in (
+            request.policy.model,
+            os.getenv("OPENAI_MODEL"),
+            self._model,
+            os.getenv("OPENAI_FALLBACK_MODEL"),
+            "gpt-4o-mini",
+            "gpt-4o-mini-2024-07-18",
+        ):
+            if not value:
+                continue
+            normalized = value.strip()
+            if normalized in {"", "mock", "mock-local", "mock-layout"}:
+                continue
+            if normalized not in candidate_models:
+                candidate_models.append(normalized)
+        if not candidate_models:
+            candidate_models.append(self._model)
+
+        for model_name in candidate_models:
+            attempt_kwargs = dict(base_kwargs)
+            attempt_kwargs["model"] = model_name
+            expanded_tokens = False
+            removed_response_format = False
+            while True:
+                try:
+                    response = self._client.responses.create(**attempt_kwargs)  # type: ignore[attr-defined]
+                except Exception as exc:
+                    message = str(exc)
+                    if isinstance(exc, TypeError) and "response_format" in message and "unexpected" in message.lower():
+                        attempt_kwargs.pop("response_format", None)
+                        removed_response_format = True
+                        logger.debug(
+                            "retrying OpenAI layout completion without response_format (model=%s)",
+                            model_name,
+                        )
+                        continue
+                    logger.warning(
+                        "OpenAI layout request failed for model '%s': %s",
+                        model_name,
+                        exc,
+                    )
+                    break
+
+                logger.debug("OpenAI layout raw response: %s", response)
+                text_segments: list[str] = []
+                incomplete = False
+                for item in getattr(response, "output", []) or []:
+                    if isinstance(item, ResponseOutputMessage):
+                        if getattr(item, "status", None) == "incomplete":
+                            incomplete = True
+                        for content in item.content:
+                            if isinstance(content, ResponseOutputText):
+                                text_segments.append(content.text)
+                            elif isinstance(content, ResponseOutputRefusal):  # pragma: no cover - refusal path
+                                logger.info("OpenAI layout AI refusal: %s", content.refusal)
+                if getattr(response, "status", None) == "incomplete":
+                    incomplete = True
+                content = "\n".join(segment.strip() for segment in text_segments if segment.strip())
+
+                parse_failed = False
+                parsed_response: LayoutAIResponse | None = None
+                if content:
+                    try:
+                        parsed_response = _parse_layout_response(content, model=model_name)
+                    except LayoutAIResponseFormatError as exc:
+                        parse_failed = True
+                        logger.debug(
+                            "OpenAI layout response parse failed (model=%s): %s",
+                            model_name,
+                            exc,
+                        )
+                else:
+                    logger.debug(
+                        "OpenAI layout completion produced no content (status=%s model=%s) kwargs=%s",
+                        getattr(response, "status", None),
+                        model_name,
+                        attempt_kwargs,
+                    )
+
+                if parsed_response and parsed_response.recommended:
+                    return parsed_response
+
+                if (incomplete or parse_failed) and not expanded_tokens and "max_output_tokens" in attempt_kwargs:
+                    value = attempt_kwargs.get("max_output_tokens")
+                    try:
+                        current = int(value) if value is not None else self._max_tokens
+                    except (TypeError, ValueError):
+                        current = self._max_tokens
+                    attempt_kwargs["max_output_tokens"] = min((current or self._max_tokens or DEFAULT_MAX_TOKENS) * 2, 4096)
+                    expanded_tokens = True
+                    logger.debug(
+                        "retrying OpenAI layout completion with expanded max_output_tokens=%s (model=%s)",
+                        attempt_kwargs["max_output_tokens"],
+                        model_name,
+                    )
+                    continue
+
+                if parse_failed and not removed_response_format and "response_format" in attempt_kwargs:
+                    attempt_kwargs.pop("response_format", None)
+                    removed_response_format = True
+                    logger.debug(
+                        "retrying OpenAI layout completion after removing response_format (model=%s)",
+                        model_name,
+                    )
+                    continue
+
+                if parsed_response and not parsed_response.recommended:
+                    logger.debug("OpenAI layout model %s returned no recommendations", model_name)
+                    break
+
+                if parse_failed:
+                    logger.warning(
+                        "OpenAI layout model %s returned unparsable content after fallbacks",
+                        model_name,
+                    )
+                    break
+                if incomplete:
+                    logger.debug("OpenAI layout model %s produced no usable content", model_name)
+                    break
+
+                break
+        raise LayoutAIClientConfigurationError("OpenAI 応答が空でした")
 
 
 class AzureOpenAIChatLayoutClient:
@@ -204,10 +325,24 @@ class AzureOpenAIChatLayoutClient:
             "input": messages,
             "temperature": self._temperature,
         }
+        kwargs["response_format"] = {"type": "json_object"}
         if self._max_tokens > 0:
             kwargs["max_output_tokens"] = self._max_tokens
 
-        response = self._client.responses.create(**kwargs)  # type: ignore[attr-defined]
+        attempt_kwargs = dict(kwargs)
+        for attempt in range(2):
+            try:
+                response = self._client.responses.create(**attempt_kwargs)  # type: ignore[attr-defined]
+                break
+            except TypeError as exc:
+                message = str(exc)
+                if "response_format" in message and "unexpected" in message.lower():
+                    attempt_kwargs.pop("response_format", None)
+                    continue
+                raise
+        else:  # pragma: no cover - safeguard
+            raise LayoutAIClientConfigurationError("Azure OpenAI 応答を取得できませんでした")
+        logger.debug("Azure OpenAI raw response: %s", response)
         text_segments: list[str] = []
         for item in getattr(response, "output", []) or []:
             if isinstance(item, ResponseOutputMessage):
@@ -215,11 +350,15 @@ class AzureOpenAIChatLayoutClient:
                     if isinstance(content, ResponseOutputText):
                         text_segments.append(content.text)
                     elif isinstance(content, ResponseOutputRefusal):  # pragma: no cover - refusal path
-                        logger.warning("Azure OpenAI layout AI refusal: %s", content.refusal)
+                        logger.info("Azure OpenAI layout AI refusal: %s", content.refusal)
         content = "\n".join(segment.strip() for segment in text_segments if segment.strip())
         if not content:
             raise LayoutAIClientConfigurationError("Azure OpenAI 応答が空でした")
-        return _parse_layout_response(content, model=request_model)
+        try:
+            return _parse_layout_response(content, model=request_model)
+        except LayoutAIResponseFormatError as exc:
+            logger.debug("Azure OpenAI layout response parse failed: %s", exc)
+            return LayoutAIResponse(model=request_model, raw_text=content)
 
 
 class AnthropicClaudeLayoutClient:
@@ -294,7 +433,7 @@ class AnthropicClaudeLayoutClient:
 
                 last_error = exc
                 if isinstance(exc, APIStatusError):
-                    logger.warning(
+                    logger.info(
                         "Anthropic layout AI request failed for model '%s': %s",
                         candidate,
                         exc,
@@ -309,7 +448,11 @@ class AnthropicClaudeLayoutClient:
         content = "\n".join(text_parts)
         if not content:
             raise LayoutAIClientConfigurationError("Anthropic 応答が空でした")
-        return _parse_layout_response(content, model=model_name)
+        try:
+            return _parse_layout_response(content, model=model_name)
+        except LayoutAIResponseFormatError as exc:
+            logger.debug("Anthropic layout response parse failed: %s", exc)
+            return LayoutAIResponse(model=model_name, raw_text=content)
 
 
 class AwsClaudeLayoutClient:
@@ -400,32 +543,58 @@ class AwsClaudeLayoutClient:
         content = "\n".join(text_parts)
         if not content:
             raise LayoutAIClientConfigurationError("AWS Claude 応答が空でした")
-        return _parse_layout_response(content, model=model_id)
+        try:
+            return _parse_layout_response(content, model=model_id)
+        except LayoutAIResponseFormatError as exc:
+            logger.debug("AWS Claude layout response parse failed: %s", exc)
+            return LayoutAIResponse(model=model_id, raw_text=content)
 
 
 def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
     try:
         data = _extract_json_object(text)
-    except json.JSONDecodeError:
-        logger.warning("layout AI response is not valid JSON: %s", text)
-        return LayoutAIResponse(model=model, recommended=[], reasons={}, raw_text=text)
-    entries: list[tuple[str, float]] = []
-    for item in data.get("recommended", []):
-        if not isinstance(item, dict):
+    except json.JSONDecodeError as exc:
+        raise LayoutAIResponseFormatError(text) from exc
+
+    recommended_map: dict[str, float] = {}
+    reasons_map: dict[str, str] = {}
+    order: list[str] = []
+
+    def register(layout_id: str, score: float | None, reason: object | None) -> None:
+        if layout_id not in order:
+            order.append(layout_id)
+        if score is not None:
+            try:
+                value = float(score)
+                recommended_map[layout_id] = max(0.0, min(1.0, value))
+            except (TypeError, ValueError):
+                pass
+        if layout_id not in reasons_map and reason is not None:
+            reasons_map[layout_id] = _stringify_reason(reason)
+
+    for layout_id, score, reason in _iter_layout_candidates(data):
+        if not layout_id:
             continue
-        layout_id = item.get("layout_id")
-        score = item.get("score")
-        if isinstance(layout_id, str):
-            entries.append((layout_id, float(score) if score is not None else 0.0))
-    reasons = {
-        str(k): str(v)
-        for k, v in (data.get("reasons") or {}).items()
-        if isinstance(k, str)
-    }
+        register(layout_id, score, reason)
+
+    fallback_choice = data.get("recommended_layout") or data.get("best_layout")
+    if isinstance(fallback_choice, str):
+        register(fallback_choice, recommended_map.get(fallback_choice, 1.0), None)
+
+    direct_reasons = data.get("reasons")
+    if isinstance(direct_reasons, dict):
+        for key, value in direct_reasons.items():
+            reasons_map[str(key)] = _stringify_reason(value)
+
+    entries: list[tuple[str, float]] = []
+    for layout_id in order:
+        score = recommended_map.get(layout_id, 0.0)
+        entries.append((layout_id, score))
+
     return LayoutAIResponse(
         model=model,
         recommended=entries,
-        reasons=reasons,
+        reasons=reasons_map,
         raw_text=text,
     )
 
@@ -440,11 +609,95 @@ def _extract_json_object(text: str) -> dict[str, object]:
         return json.loads(match.group(0))
 
 
+def _iter_layout_candidates(data: dict[str, object]) -> Iterable[tuple[str | None, float | None, object | None]]:
+    buckets: list[object] = []
+    for key in (
+        "recommended",
+        "recommendations",
+        "layout_rankings",
+        "evaluation_results",
+        "candidates",
+        "results",
+    ):
+        value = data.get(key)
+        if isinstance(value, list):
+            buckets.append(value)
+
+    for bucket in buckets:
+        for item in bucket:  # type: ignore[assignment]
+            if not isinstance(item, dict):
+                continue
+            layout_id = _coerce_layout_id(item)
+            score = _coerce_layout_score(item)
+            reason = _extract_reason(item)
+            yield layout_id, score, reason
+
+
+def _coerce_layout_id(item: dict[str, object]) -> str | None:
+    for key in (
+        "layout_id",
+        "layoutId",
+        "layout_name",
+        "layout",
+        "layout_provider",
+        "id",
+    ):
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _coerce_layout_score(item: dict[str, object]) -> float | None:
+    for key in (
+        "score",
+        "fit_score",
+        "match_score",
+        "confidence",
+        "probability",
+        "weight",
+        "ranking_score",
+    ):
+        value = item.get(key)
+        if value is None:
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _extract_reason(item: dict[str, object]) -> object | None:
+    for key in ("reason", "reasons", "reasoning", "explanation", "notes"):
+        if key in item:
+            return item[key]
+    return None
+
+
+def _stringify_reason(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, dict):
+        parts = [f"{k}: {v}" for k, v in value.items()]
+        return "; ".join(str(part) for part in parts if part)
+    if isinstance(value, (list, tuple)):
+        parts = [str(item).strip() for item in value if str(item).strip()]
+        return " / ".join(parts)
+    return str(value)
+
+
 def _build_system_prompt(request: LayoutAIRequest) -> str:
     return (
         "あなたは B2B プレゼン資料のレイアウト推薦エージェントです。"
         "入力される JSON 情報を解析し、最も適したレイアウトを高精度に提案してください。"
-        "応答は JSON オブジェクトのみで返してください。"
+        "応答は JSON オブジェクトのみで返し、次のスキーマを厳守してください: "
+        '{"recommended":[{"layout_id":"<候補ID>","score":0.0}],"reasons":{"<候補ID>":"根拠"}}.'
+        "recommended 以外のキーやコードフェンス、説明文は含めず、score は 0〜1 の範囲で数値にしてください。"
     )
 
 
