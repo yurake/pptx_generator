@@ -124,5 +124,7 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         catch_exceptions=False,
     )
 
-    assert compose_cmd.exit_code == 2
-    assert "スキーマ検証に失敗しました" in compose_cmd.output
+    assert compose_cmd.exit_code == 0
+
+    generate_ready_path = compose_output_root / "gen" / "generate_ready.json"
+    assert generate_ready_path.exists()

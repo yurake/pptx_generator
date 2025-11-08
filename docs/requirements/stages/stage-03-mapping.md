@@ -7,6 +7,7 @@
 
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`。
+  - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
 - Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
@@ -48,6 +49,7 @@
   - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--generate-ready-filename` / `--generate-ready-meta` / `--review-log-filename` / `--mapping-log-filename` で成果物ファイル名を制御する。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
+  - テンプレ抽出成果物（JobSpecScaffold）を渡された場合は不足フィールド補完と textboxes 変換を行い、`pptx compose` の入力要件を満たす `JobSpec` へ整形する。
 - `pptx outline`
   - `generate_ready` 系成果物のみ再生成する。`--refresh-candidates` 指定時は候補スコアも再計算する。
 

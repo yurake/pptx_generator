@@ -43,6 +43,7 @@ from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        SimpleAnalyzerStep, SimpleRefinerStep,
                        SimpleRendererStep, SpecValidatorStep,
                        TemplateExtractor, TemplateExtractorOptions)
+from .spec_loader import load_jobspec_from_path
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import BrandingConfig, RulesConfig
@@ -585,7 +586,7 @@ def _build_brief_story_outline(document: BriefDocument) -> dict[str, Any]:
 
 def _load_jobspec(path: Path) -> JobSpec:
     logger.info("Loading JobSpec from %s", path.resolve())
-    return JobSpec.parse_file(path)
+    return load_jobspec_from_path(path)
 
 
 def _run_content_approval_pipeline(
