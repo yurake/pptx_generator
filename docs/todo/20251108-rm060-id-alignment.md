@@ -22,8 +22,8 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - メモ: 新しい整合ロジックと優先順位、フォールバック条件を整理する。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
-- [ ] 実装
-- [ ] テスト・検証
+- [x] 実装
+- [x] テスト・検証
   - メモ: CLI / pipeline レベルのテストで補正後に DraftStructuring が成功するケースを追加。
 - [ ] ドキュメント更新
   - [ ] docs/roadmap 配下
