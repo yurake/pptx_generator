@@ -11,6 +11,7 @@ from .models import (
     BriefCard,
     BriefDocument,
     BriefGenerationMeta,
+    BriefStatusType,
     BriefStoryContext,
     BriefStoryInfo,
 )
@@ -36,6 +37,7 @@ class BriefAIOrchestrator:
         *,
         policy_id: str | None = None,
         card_limit: int | None = None,
+        all_cards_status: BriefStatusType | None = None,
     ) -> tuple[BriefDocument, BriefGenerationMeta, list[BriefAIRecord]]:
         try:
             policy = self._policy_set.get_policy(policy_id)
@@ -43,6 +45,10 @@ class BriefAIOrchestrator:
             raise BriefAIOrchestrationError(str(exc)) from exc
 
         cards = self._build_cards(source, policy, card_limit)
+        if all_cards_status is not None:
+            for card in cards:
+                card.status = all_cards_status
+
         story_context = self._build_story_context(source, policy)
         brief_id = source.meta.brief_id or f"brief-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
         document = BriefDocument(brief_id=brief_id, cards=cards, story_context=story_context)

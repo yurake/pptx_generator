@@ -1547,10 +1547,17 @@ def gen(  # noqa: PLR0913
     default=None,
     help="生成するカード枚数の上限",
 )
+@click.option(
+    "--approved",
+    is_flag=True,
+    default=False,
+    help="生成する全カードのステータスを approved に設定する",
+)
 def prepare(
     brief_path: Path,
     output_dir: Path,
     card_limit: int | None,
+    approved: bool,
 ) -> None:
     """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
@@ -1576,6 +1583,7 @@ def prepare(
             source,
             policy_id=None,
             card_limit=card_limit,
+            all_cards_status="approved" if approved else None,
         )
     except BriefAIOrchestrationError as exc:
         click.echo(f"ブリーフカードの生成に失敗しました: {exc}", err=True)
