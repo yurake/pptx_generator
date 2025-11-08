@@ -1,7 +1,7 @@
 ---
 目的: テンプレ抽出の jobspec スキャフォールドを工程3 JobSpec と整合させる方針と実装をまとめる
 関連ブランチ: feat/rm057-jobspec-scaffold
-関連Issue: 未作成
+関連Issue: #274
 roadmap_item: RM-057 JobSpec スキャフォールド整合
 ---
 
