@@ -61,6 +61,11 @@
 - `fallback_report.json`: 重大フォールバックの詳細（適用戦略、対象スライド、理由）。
 - `generate_ready_meta.json.audit` には主要ファイルのハッシュと実行統計を記録する。
 
+## 品質ゲート
+- `jobspec.json.slides[*].id` に含まれる ID はすべて `content_approved.slides[*].id` に存在することを必須とし、不一致が 1 件でも見つかった場合は `DraftStructuringError` を送出して工程3を即時停止する。エラーメッセージには欠損 ID 一覧を含め、CLI 側では exit code 6 として扱う。
+- Slide ID Aligner が `content_approved` を補正した後も未解決の ID が残るケースを前提とし、品質ゲートに到達する前に INFO ログで検出状況を通知する。
+- 例外発生時は `.pptx/draft/` 配下へ中間成果物を出力せず、HITL は `prepare_card.json` / `jobspec.json` を突合して ID 設定ミスを修正した上で再実行する。
+
 ## Analyzer 連携
 - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
 - Analyzer 指摘件数が閾値を超える場合は候補スコアを減点し、差戻しを優先表示する。

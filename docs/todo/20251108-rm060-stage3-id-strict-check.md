@@ -22,12 +22,12 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
     - テスト方針: 単体テストで ID 不整合時の例外発生を検証し、`uv run --extra dev pytest` で回帰確認する。
     - ロールバック方法: 例外化部分を元のログ出力に戻し、テスト／ドキュメントの追加分を revert する。
     - 承認メッセージ ID／リンク: ユーザー返信「ok, roadmapに新規RM-0XXX番号を採番し、todoファイルを作成して対応を進めよう。」（2025-11-08）
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 要件・設計の合意内容を整理し、迷う点はユーザーへ相談した結果を残す
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針の確定
+  - メモ: Stage3 DraftStructuringStep での Slide ID 突合を例外化し、エラーメッセージに欠損 ID を含めて CLI から即時検知できるようにする。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: Stage3 マッピングの要件・設計ドキュメントへ ID 整合性ゲートの停止条件とログ出力の扱いを追記した。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: DraftStructuringStep に ID 不整合検知を追加し、CLI テスト群用に JobSpec 生成ヘルパーを導入。影響範囲は draft_structuring, pipeline/__init__, CLI 統合テスト。
 - [x] テスト・検証
@@ -36,9 +36,9 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - メモ: ロードマップへ RM-060 を追加し、stage-03 要件に ID 整合性ゲートを追記。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成
