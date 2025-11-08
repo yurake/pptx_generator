@@ -108,6 +108,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 #### 推奨: `pptx compose`
 - 工程3全体を一括で実行し、`.pptx/draft/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を生成する。
 - `--brief-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照する。
+- ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
 
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |

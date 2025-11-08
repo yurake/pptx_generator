@@ -22,7 +22,7 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/requirements/stages/stage-03-mapping.md` へ自動変換仕様を追記。
   - [x] docs/requirements 配下
-  - [ ] docs/design 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `spec_loader.load_jobspec_from_path` を追加し、CLI `_load_jobspec` 経由で JobSpecScaffold→JobSpec 変換を適用。`tests/test_spec_loader.py` を新設。
 - [x] テスト・検証
@@ -31,11 +31,15 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
   - メモ: `docs/roadmap/roadmap.md` で RM-057 ステータスを更新し、`docs/notes/20251105-jobspec-scaffold-validation.md` に実装内容を記録。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
-  - メモ:
+- [x] docs/runbook 配下
+  - メモ: 追加変更不要を確認。既存 Runbook で `.pptx/prepare` を参照しており今回の仕様変更影響なし。
+- [x] README.md / AGENTS.md
+  - メモ: 新規オプション追加がないため現状記述で問題なしと判断し確認完了。
+- [x] 関連Issue 行の更新
+  - メモ: 対応する Issue は存在しないため `関連Issue: 未作成` のまま確認済み。
 - [ ] PR 作成
   - メモ:
 
