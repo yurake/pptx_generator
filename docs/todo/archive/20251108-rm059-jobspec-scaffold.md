@@ -32,8 +32,6 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
 - [x] docs/runbook 配下
   - メモ: 追加変更不要を確認。既存 Runbook で `.pptx/prepare` を参照しており今回の仕様変更影響なし。
 - [x] README.md / AGENTS.md
