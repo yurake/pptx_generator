@@ -73,7 +73,7 @@ flowchart TB
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM047["RM-047<br/>テンプレ統合<br/>構成生成AI連携<br/>(完了)"]
         RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(完了)"]
-        RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(未着手)"]
+        RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(完了)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
@@ -815,12 +815,16 @@ flowchart TB
 - ゴール: テンプレ抽出で生成する `jobspec.json` を工程3の `JobSpec` スキーマへ適合させ、`pptx compose` で直接利用できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-jobspec-scaffold-validation.md](../notes/20251105-jobspec-scaffold-validation.md)
 - 参照 ToDo: [docs/todo/20251108-rm059-jobspec-scaffold.md](../todo/20251108-rm059-jobspec-scaffold.md)
-- 状況: 進行中（2025-11-08 更新）
+- 状況: 完了（2025-11-08 更新）
 - 期待成果:
   - スキャフォールド出力で不足している `meta.title` / `auth` などの必須フィールド補完ロジックを実装する。
   - `placeholders` ベースのテンプレ情報を工程3の `Slide` 構造（textboxes / images 等）へ変換するマッピング仕様を確立し、余剰プロパティによるバリデーションエラーを解消する。
   - README や `docs/requirements/stages/stage-03-mapping.md` にテンプレ抽出〜マッピング間のフロー変更を反映する。
-- 次アクション: JobSpecScaffold 変換ロジックの拡張（画像・表プレースホルダの取り扱い強化）と、変換後 JobSpec を起点とした追加テスト / 監査ログ更新を検討する。
+- 成果:
+  - `tpl-extract` で生成される `jobspec.json` について `meta.*`・`auth` などの必須項目補完とデフォルト値整備を実施し、工程3 `JobSpec` スキーマへ準拠させた。
+  - `placeholders` 情報を工程3の `Slide` 定義へ正規化する変換パイプラインを実装し、`pptx compose` 実行時のバリデーションエラーを解消した。
+  - 更新内容を `docs/requirements/stages/stage-03-mapping.md`・`README`・監査ログ運用に反映し、テンプレ抽出からマッピング利用までのフローを整備した。
+- 次アクション: JobSpec スキーマ拡張やテンプレ抽出仕様変更が発生した際に差分検証を実施し、変換ロジックのアップデート方針を定期レビューする。
 
 <a id="rm-058"></a>
 ### RM-058 ブリーフポリシー内製化
