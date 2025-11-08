@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
+import re
 from typing import Protocol
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
@@ -404,9 +405,10 @@ class AwsClaudeLayoutClient:
 
 def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
     try:
-        data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise LayoutAIClientConfigurationError("LLM 応答が JSON 形式ではありません") from exc
+        data = _extract_json_object(text)
+    except json.JSONDecodeError:
+        logger.warning("layout AI response is not valid JSON: %s", text)
+        return LayoutAIResponse(model=model, recommended=[], reasons={}, raw_text=text)
     entries: list[tuple[str, float]] = []
     for item in data.get("recommended", []):
         if not isinstance(item, dict):
@@ -426,6 +428,16 @@ def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
         reasons=reasons,
         raw_text=text,
     )
+
+
+def _extract_json_object(text: str) -> dict[str, object]:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
 
 
 def _build_system_prompt(request: LayoutAIRequest) -> str:
