@@ -28,6 +28,11 @@ dev = [
 [project.scripts]
 pptx = "pptx_generator.cli:app"
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: 統合テストに分類されるケース",
+]
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
