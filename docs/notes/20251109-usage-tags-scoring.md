@@ -5,11 +5,11 @@
 - 生成 AI へ渡す入力としてレイアウト情報を活用するため、タグ付けの意味付けと後続工程での利用方法を整理する。
 
 ## usage_tags の抽出ロジック
-- 実装: `src/pptx_generator/layout_validation/suite.py:520` 付近の `_derive_usage_tags`。
-- ルール:
-  - レイアウト名に `title` / `cover` が含まれると `title`、`agenda` / `toc` で `agenda`、`summary` / `overview` で `overview` などを付与。
-  - プレースホルダー種別が `chart` / `table` / `image` / `title` / `body` の場合に、それぞれ `chart` / `table` / `visual` / `title` / `content` を追加。
-- 結果: タイトル型プレースホルダーを 1 つ含むだけで `title` タグが付与されるため、汎用レイアウトでも `title` が混入する。
+- Stage1 では `TemplateAIService` を介して生成 AI にレイアウト構造（プレースホルダー種類、テキスト・メディアヒント、ヒューリスティック結果）を渡し、`usage_tags` を返してもらう。  
+  実装: `src/pptx_generator/template_ai/service.py`
+- AI がタグを返さない場合や未知語のみを返した場合は、従来の `_derive_usage_tags` ヒューリスティックでフォールバックする。  
+  実装: `src/pptx_generator/layout_validation/suite.py:320` 付近
+- `diagnostics.json` には `template_ai_*` 統計とレイアウト単位の推定結果が記録される。
 
 ## usage_tags の利用箇所
 - 工程3 ドラフト構築: `src/pptx_generator/pipeline/draft_structuring.py:282` 付近。
@@ -36,7 +36,7 @@
 1. 生成 AI による分類の活用  
    - レイアウトごとのプレースホルダー構成・テキスト／メディア収容力をメタデータとして AI へ渡し、`allowed_tags` を明示した上で分類タグを返してもらう。  
    - 応答のタグは `layout_id` 単位で正規化し、未知語が残った場合でも差分をログ化して人手確認へ回せるようにする。
-2. 抽出ロジックの改修  
+2. フォールバックの維持  
    - `_derive_usage_tags` をフォールバックの基準とし、本文プレースホルダーを持つ汎用レイアウトでは `title` を抑制するなどルールベースの品質を維持する。  
    - AI がタグを返さない／未知語のみの場合は、このフォールバック結果を有効タグとして使用する。
 3. バリデーションの強化  
@@ -46,8 +46,7 @@
 短期的には **1** で分類結果を主軸に据えつつ、**2** をフォールバックとして活かし、**3** で運用監視を補完する形を目指す。
 
 ## 実装状況メモ（2025-11-09）
-- `_derive_usage_tags` をリファクタリングし、本文プレースホルダーが存在するレイアウトでは `title` タグを付与しないよう調整。レイアウト名が「Title and Content」のようなケースを除外しつつ、表紙・セクション系は維持。
-- `layout_validation` で `usage_tag_title_suppressed` / `usage_tag_unknown` 警告を出せるようにし、未知タグは正規化時に除外して警告のみ記録。
-- `pptx_generator/utils/usage_tags.py` を追加し、タグ正規化ユーティリティとシノニムマップを定義。`mapping` / `draft_structuring` / `draft_recommender` で共通利用し、`intent`・`type_hint`・AI 出力を同じ語彙に揃える。
-- `CardLayoutRecommender` から AI へ送る payload にレイアウトメタデータ（プレースホルダー要約、text/media ヒント、許容タグ）を添付し、応答に含まれるタグを `normalize_usage_tags_with_unknown` で正規化して採用する仕組みを導入。未知語は `ai_unknown_tags` としてログ／診断に残す。
-- 単体テスト (`tests/test_utils_usage_tags.py`, `tests/test_layout_validation_usage_tags.py`, `tests/test_layout_recommender.py`) を更新し、AI タグの正規化とフォールバック挙動を検証する。
+- `TemplateAIService` を新設し、Stage1 (`pptx template` / `tpl-extract`) で usage_tags を生成 AI へ委譲。ポリシー設定と CLI オプション（`--template-ai-policy` / `--template-ai-policy-id` / `--disable-template-ai`）を追加。
+- `layout_validation` で AI 応答を採用しつつ、生成失敗時には従来ヒューリスティックへフォールバック。`diagnostics.json` にテンプレ AI の統計（invoked / success / fallback / failed）とレイアウト単位の推定結果を出力。
+- 未知語やエラー時の診断コード（`usage_tag_ai_unknown` / `usage_tag_ai_error` / `usage_tag_ai_fallback`）を追加し、CI で逸脱を検知できるようにした。
+- ユニットテスト `tests/test_template_ai.py`（新設）と `tests/test_layout_validation_template_ai.py` で AI 推定およびフォールバックの動作を確認。既存の usage_tags ユーティリティテストも維持。
