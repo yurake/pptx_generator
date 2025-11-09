@@ -20,6 +20,7 @@
 | `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
+| `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
 | `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
 | `--version <value>` | `--with-release` 指定時のテンプレバージョン |  |  | - |
@@ -43,7 +44,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
-`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ工程が完結する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
+`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ工程が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
 
 #### 詳細: 個別コマンド
 
@@ -57,6 +58,7 @@ uv run pptx template samples/templates/templates.pptx
 | `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | 出力形式を選択 |  |  | `json` |
+| `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 
 ##### `pptx layout-validate`
 抽出結果と同等のレイアウト検証を単独で実行する。`--baseline` や `--analyzer-snapshot` を用いて比較条件を変えたいケースで利用する。
@@ -83,32 +85,38 @@ uv run pptx template samples/templates/templates.pptx
 | `--reviewed-by <name>` | レビュー担当者 |  |  | 空 |
 | `--baseline-release <path>` | 過去の `template_release.json` と比較する |  |  | 比較なし |
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） |  |  | 指定なし |
+| `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 
 ### 工程2: コンテンツ準備 (HITL)
 ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
 
 #### `pptx prepare`
-- 既定では BriefAI オーケストレーターを用いてカードを生成し、`config/brief_policies/default.json` のポリシーに従って AI との対話ログを収集する。
+- `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
+- 静的モードでは `--template-spec` に `template_spec.json`（Blueprint を含む）を指定する。layout_mode が `static` 以外の場合や Blueprint 欠落時は CLI がエラー終了する。`--mode=static` と `--page-limit` の併用はできない。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<brief.txt>` | ブリーフ入力ファイル | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
+| `--mode <dynamic\|static>` | 生成モードを指定する | ✅ |  | - |
+| `--template-spec <path>` | Blueprint を含むテンプレ仕様 | 静的モードで ✅ |  | 指定なし |
 | `-p/--page-limit <int>` | 生成するカード枚数の上限 |  |  | 指定なし |
 
 実行例:
 ```bash
-uv run pptx prepare samples/contents/sample_import_content_summary.txt   --output .pptx/prepare
+uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+  --mode dynamic \
+  --output .pptx/prepare
 ```
 
 生成物（例）:
-- `prepare_card.json`: BriefCard 配列
+- `prepare_card.json`: BriefCard 配列（静的モード時は `slide_id` / `slot_id` / `required` / `layout_mode` を含む）
 - `brief_log.json`: 承認・差戻しイベントログ（初回は空配列）
 - `brief_ai_log.json`: 生成 AI との対話ログ
-- `ai_generation_meta.json`: 生成統計・入力ハッシュ
+- `ai_generation_meta.json`: 生成統計・入力ハッシュ・モード情報・Blueprint 参照
 - `brief_story_outline.json`: 章構成とカード紐付け
-- `audit_log.json`: 工程2の監査メタ情報
+- `audit_log.json`: 工程2の監査メタ情報（静的モード時は slot 充足率・Blueprint パスを記録）
 ### 工程3: マッピング (HITL + 自動)
 章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 

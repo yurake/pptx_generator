@@ -651,10 +651,10 @@ flowchart TB
 ### RM-054 静的テンプレ構成統合プランニング
 - 対象工程: 2〜3（コンテンツ準備 / マッピング）
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
-- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md)
-- 参照 ToDo: [docs/todo/archive/20251105-static-template-mode.md](../todo/archive/20251105-static-template-mode.md)
-- 状況: 未着手（2025-11-06 更新）
-- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/rm054-static-template-blueprint.md](../design/rm054-static-template-blueprint.md)
+- 参照 ToDo: [docs/todo/20251109-rm054-static-blueprint-plan.md](../todo/20251109-rm054-static-blueprint-plan.md)
+- 状況: 進行中（2025-11-09 更新）
+- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理、Blueprint 運用設計メモ整備。
 
 <a id="rm-055"></a>
 ### RM-055 AI生成文言フッタ自動付与

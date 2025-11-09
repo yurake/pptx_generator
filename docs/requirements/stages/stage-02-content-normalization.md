@@ -11,12 +11,12 @@
 - （任意）カード生成枚数 (`-p/--page-limit`)。
 
 ## 出力
-- `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）。
+- `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）に加え、静的モード時は `layout_mode` / `slide_id` / `slot_id` / `required` / `slot_fulfilled` / `blueprint_slot`（`anchor`・`content_type`・`intent_tags`・`fulfilled`）を付与する。
 - `brief_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
 - `brief_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
-- `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、選択した `mode`（`dynamic` / `static`）。
+- `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、`mode`（`dynamic` / `static`）、静的モード時は Blueprint 情報（`blueprint_path` / `blueprint_hash` / `slot_coverage`）。
 - `brief_story_outline.json`: 章 ID とカード ID の対応表。工程3 の章構成初期化に利用する。
-- `audit_log.json`: 生成時刻、ポリシー ID、成果物パス、実行モード（将来的に SHA256 も記録予定）。
+- `audit_log.json`: 生成時刻、ポリシー ID、成果物パス、実行モード、Blueprint 参照、統計値（必須 slot 充足率など）、`slot_summary`。
 
 ## 業務フロー
 1. CLI がブリーフ入力を読み込み、`BriefSourceDocument` へパースする。Markdown の見出しや箇条書きはカード候補に変換される。
@@ -35,10 +35,19 @@
 ## CLI 要件
 - `pptx prepare <brief_path>` はブリーフが存在しない場合に exit code 2 を返す。
 - `--mode` オプション（`dynamic` / `static`）を必須とし、実行モード未指定の場合は CLI がエラーで終了する。
+- 静的モード (`--mode=static`) では `--template-spec <path>` で Blueprint を含むテンプレ仕様を指定する。未指定や Blueprint 欠落時は exit code 2 を返す。
+- `--template-spec` を指定した場合は `ai_generation_meta.json.blueprint_path` に絶対パスを記録し、`audit_log.json` にも同様の参照を追加する。
 - ポリシー読み込み失敗時（`BriefPolicyError`）は exit code 4 で終了し、エラーメッセージを標準エラーへ出力する。
 - 生成結果は `.pptx/prepare/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。
 - `-p/--page-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。
 - `--output` を指定して別ディレクトリへ書き込む際もファイル構成（`prepare_card.json` 等）は変えない。
+
+## 静的モード固有要件
+- Blueprint 内の必須 slot (`required=true`) は工程2でカードを生成する際に必ず割当し、未割当がある場合は exit code 6 を返す。
+- Blueprint の `slide_id` 順にカードを出力し、`prepare_card.json.cards[*].slot_id` で slot を一意に識別できるようにする。
+- `ai_generation_meta.json.statistics` に `required_slot_total` / `required_slot_fulfilled` / `optional_slot_used` を追記し、監査ログ `audit_log.json.brief_normalization.slot_summary` と整合させる。
+- Blueprint が指定されても `--mode=dynamic` の場合は従来どおりの動作とし、slot 情報は出力しない。
+- `--mode=static` 選択時は `--page-limit` を併用できない。
 
 ## 今後の拡張
 - ブリーフ差分比較（再生成時の変更可視化）機能。

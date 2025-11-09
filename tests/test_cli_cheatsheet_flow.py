@@ -85,6 +85,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         [
             "prepare",
             str(SAMPLE_BRIEF_SOURCE),
+            "--mode",
+            "dynamic",
             "--output",
             str(content_output),
         ],

@@ -71,6 +71,12 @@ class BriefCard(BaseModel):
     status: BriefStatusType = "draft"
     autofix_applied: list[str] = Field(default_factory=list)
     meta: BriefCardMeta | None = None
+    layout_mode: Literal["dynamic", "static"] = "dynamic"
+    slide_id: str | None = None
+    slot_id: str | None = Field(None, pattern=r"^[a-z0-9_\-\.]+$")
+    required: bool | None = None
+    slot_fulfilled: bool | None = None
+    blueprint_slot: dict[str, Any] | None = None
 
     @field_validator("intent_tags", mode="before")
     @classmethod
@@ -163,6 +169,10 @@ class BriefGenerationMeta(BaseModel):
     input_hash: str
     cards: list[dict[str, Any]] = Field(default_factory=list)
     statistics: dict[str, int] = Field(default_factory=dict)
+    mode: Literal["dynamic", "static"] = "dynamic"
+    blueprint_path: str | None = None
+    blueprint_hash: str | None = None
+    slot_coverage: dict[str, int] = Field(default_factory=dict)
 
     @classmethod
     def from_document(
@@ -172,6 +182,10 @@ class BriefGenerationMeta(BaseModel):
         policy_id: str,
         source_payload: dict[str, Any],
         cards_meta: list[dict[str, Any]],
+        mode: Literal["dynamic", "static"] = "dynamic",
+        blueprint_path: str | None = None,
+        blueprint_hash: str | None = None,
+        slot_summary: dict[str, int] | None = None,
     ) -> "BriefGenerationMeta":
         normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
@@ -180,10 +194,24 @@ class BriefGenerationMeta(BaseModel):
             "approved": sum(1 for card in document.cards if card.status == "approved"),
             "returned": sum(1 for card in document.cards if card.status == "returned"),
         }
+        slot_coverage = slot_summary or {}
+        if slot_summary:
+            stats.update(
+                {
+                    "required_slot_total": slot_summary.get("required_total", 0),
+                    "required_slot_fulfilled": slot_summary.get("required_fulfilled", 0),
+                    "optional_slot_total": slot_summary.get("optional_total", 0),
+                    "optional_slot_used": slot_summary.get("optional_used", 0),
+                }
+            )
         return cls(
             brief_id=document.brief_id,
             policy_id=policy_id,
             input_hash=hash_value,
             cards=cards_meta,
             statistics=stats,
+            mode=mode,
+            blueprint_path=blueprint_path,
+            blueprint_hash=blueprint_hash,
+            slot_coverage=slot_coverage,
         )

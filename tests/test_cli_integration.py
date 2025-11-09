@@ -16,7 +16,7 @@ from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from pptx_generator.cli import app
+from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
 from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.models import JobSpec, Slide, TemplateRelease, TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec
 from pptx_generator.pipeline import pdf_exporter
@@ -52,6 +52,8 @@ def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
         [
             "prepare",
             str(BRIEF_SOURCE),
+            "--mode",
+            "dynamic",
             "--output",
             str(brief_dir),
         ],
@@ -284,6 +286,8 @@ def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
         [
             "prepare",
             str(BRIEF_SOURCE),
+            "--mode",
+            "dynamic",
             "--output",
             str(brief_dir),
         ],
@@ -792,3 +796,155 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
             catch_exceptions=False,
         )
         assert result.exit_code == 0
+
+
+def test_static_mode_pipeline(tmp_path: Path) -> None:
+    runner = CliRunner()
+    template_path = Path("samples/templates/templates.pptx")
+
+    blueprint_payload = {
+        "template_path": str(template_path),
+        "extracted_at": "2025-11-09T00:00:00Z",
+        "layouts": [],
+        "warnings": [],
+        "errors": [],
+        "layout_mode": "static",
+        "blueprint": {
+            "slides": [
+                {
+                    "slide_id": "title-01",
+                    "layout": "Title",
+                    "required": True,
+                    "intent_tags": ["opening"],
+                    "slots": [
+                        {
+                            "slot_id": "title-01.slot01",
+                            "anchor": "Title",
+                            "content_type": "text",
+                            "required": True,
+                            "intent_tags": ["headline"],
+                        }
+                    ],
+                },
+                {
+                    "slide_id": "section_covor_left-01",
+                    "layout": "Section Covor Left",
+                    "required": True,
+                    "intent_tags": ["body"],
+                    "slots": [
+                        {
+                            "slot_id": "section_covor_left-01.slot01",
+                            "anchor": "Section Title",
+                            "content_type": "text",
+                            "required": True,
+                            "intent_tags": ["headline"],
+                        }
+                    ],
+                },
+            ]
+        },
+    }
+    blueprint_path = tmp_path / "static_template_spec.json"
+    blueprint_path.write_text(json.dumps(blueprint_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    brief_payload = {
+        "meta": {"brief_id": "static-brief", "title": "Static Brief"},
+        "chapters": [
+            {
+                "id": "intro",
+                "title": "Intro",
+                "message": "Welcome",
+                "details": ["Welcome"],
+                "supporting_points": [],
+                "intent_tags": ["opening"],
+            },
+            {
+                "id": "overview",
+                "title": "Overview",
+                "message": "Overview message",
+                "details": ["Overview detail"],
+                "supporting_points": [],
+                "intent_tags": ["body"],
+            },
+        ],
+    }
+    brief_path = tmp_path / "brief_static.json"
+    brief_path.write_text(json.dumps(brief_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    prepare_dir = tmp_path / "prepare_static"
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(brief_path),
+            "--mode",
+            "static",
+            "--template-spec",
+            str(blueprint_path),
+            "--output",
+            str(prepare_dir),
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+
+    meta_payload = json.loads((prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    assert meta_payload["mode"] == "static"
+    assert meta_payload["slot_coverage"]["required_total"] == 2
+
+    jobspec_payload = {
+        "meta": {
+            "schema_version": "1.1",
+            "title": "Static Deck",
+            "template_path": str(template_path),
+            "layouts_path": str(Path("samples/extract/layouts.jsonl")),
+            "locale": "ja-JP",
+        },
+        "auth": {"created_by": "tester"},
+        "slides": [
+            {"id": "title-01", "layout": "Title", "title": "Intro"},
+            {"id": "section_covor_left-01", "layout": "Section Covor Left", "title": "Overview"},
+        ],
+    }
+    jobspec_path = tmp_path / "jobspec_static.json"
+    jobspec_path.write_text(json.dumps(jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    mapping_dir = tmp_path / "mapping_static"
+    draft_dir = tmp_path / "draft_static"
+    result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(jobspec_path),
+            "--template",
+            str(template_path),
+            "--layouts",
+            str(Path("samples/extract/layouts.jsonl")),
+            "--brief-cards",
+            str(prepare_dir / "prepare_card.json"),
+            "--brief-log",
+            str(prepare_dir / "brief_log.json"),
+            "--brief-meta",
+            str(prepare_dir / "ai_generation_meta.json"),
+            "--output",
+            str(mapping_dir),
+            "--draft-output",
+            str(draft_dir),
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+
+    ready_payload = json.loads((mapping_dir / "generate_ready.json").read_text(encoding="utf-8"))
+    assert ready_payload["meta"]["layout_mode"] == "static"
+    first_slot = ready_payload["slides"][0]["meta"]["blueprint_slots"][0]
+    assert first_slot["fulfilled"] is True
+
+    mapping_log_payload = json.loads((mapping_dir / "mapping_log.json").read_text(encoding="utf-8"))
+    assert mapping_log_payload["mode"] == "static"
+    assert mapping_log_payload["static_slot_checks"]["unused_slots"] == []
+    assert mapping_log_payload["slot_summary"]["required_total"] == 2
+
+    generate_ready_meta_payload = json.loads((mapping_dir / DEFAULT_GENERATE_READY_META_FILENAME).read_text(encoding="utf-8"))
+    assert generate_ready_meta_payload["mode"] == "static"
+    assert Path(generate_ready_meta_payload["blueprint_path"]).resolve() == blueprint_path.resolve()

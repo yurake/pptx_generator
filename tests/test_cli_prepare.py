@@ -20,6 +20,8 @@ def test_prepare_generates_outputs(tmp_path) -> None:
         [
             "prepare",
             str(SAMPLE_BRIEF),
+            "--mode",
+            "dynamic",
             "--output",
             str(output_dir),
         ],
@@ -49,6 +51,9 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     log_payload = json.loads(log_path.read_text(encoding="utf-8"))
     assert log_payload == []
 
+    meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert meta_payload["mode"] == "dynamic"
+
     outline_payload = json.loads(outline_path.read_text(encoding="utf-8"))
     assert len(outline_payload["chapters"]) == 4
 
@@ -56,6 +61,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     brief_meta = audit_payload["brief_normalization"]
     assert brief_meta["policy_id"]
     assert brief_meta["statistics"]["cards_total"] == 4
+    assert brief_meta["mode"] == "dynamic"
     outputs = brief_meta["outputs"]
     assert outputs["prepare_card"].endswith("prepare_card.json")
 
@@ -65,7 +71,11 @@ def test_prepare_requires_valid_brief(tmp_path) -> None:
     invalid_path.write_text("{}", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(app, ["prepare", str(invalid_path)], catch_exceptions=False)
+    result = runner.invoke(
+        app,
+        ["prepare", str(invalid_path), "--mode", "dynamic"],
+        catch_exceptions=False,
+    )
 
     assert result.exit_code != 0
     assert "解析に失敗" in result.output
@@ -80,6 +90,8 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
         [
             "prepare",
             str(SAMPLE_BRIEF),
+            "--mode",
+            "dynamic",
             "--output",
             str(output_dir),
             "--page-limit",
@@ -104,6 +116,8 @@ def test_prepare_sets_cards_approved_when_flag_enabled(tmp_path) -> None:
         [
             "prepare",
             str(SAMPLE_BRIEF),
+            "--mode",
+            "dynamic",
             "--output",
             str(output_dir),
             "--approved",
@@ -129,6 +143,8 @@ def test_prepare_page_limit_short_option(tmp_path) -> None:
         [
             "prepare",
             str(SAMPLE_BRIEF),
+            "--mode",
+            "dynamic",
             "--output",
             str(output_dir),
             "-p",

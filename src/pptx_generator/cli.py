@@ -333,6 +333,7 @@ def _run_template_extraction(
     layout: str | None,
     anchor: str | None,
     output_format: str,
+    layout_mode: str,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -341,6 +342,7 @@ def _run_template_extraction(
         layout_filter=layout,
         anchor_filter=anchor,
         format=fmt,
+        layout_mode=layout_mode,
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -355,7 +357,7 @@ def _run_template_extraction(
 
         spec_path = output_dir / "template_spec.yaml"
         spec_content = yaml.dump(
-            template_spec.model_dump(),
+            template_spec.model_dump(mode="json", exclude_none=True),
             allow_unicode=True,
             default_flow_style=False,
             indent=2,
@@ -363,7 +365,7 @@ def _run_template_extraction(
     else:
         spec_path = output_dir / "template_spec.json"
         spec_content = json.dumps(
-            template_spec.model_dump(),
+            template_spec.model_dump(mode="json", exclude_none=True),
             indent=2,
             ensure_ascii=False,
         )
@@ -424,6 +426,9 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
     click.echo(f"ブランド設定を出力しました: {result.branding_path}")
     click.echo(f"ジョブスペック雛形を出力しました: {result.jobspec_path}")
     click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
+    click.echo(f"Layout Mode: {template_spec.layout_mode}")
+    if template_spec.blueprint:
+        click.echo(f"Blueprint Slides: {len(template_spec.blueprint.slides)}")
 
     total_anchors = sum(len(layout.anchors)
                         for layout in template_spec.layouts)
@@ -461,11 +466,12 @@ def _run_template_release(
     reviewed_by: str | None,
     baseline_release: Path | None,
     golden_specs: tuple[Path, ...],
+    layout_mode: str,
 ) -> TemplateReleaseExecutionResult:
     resolved_template_id = _resolve_template_id(template_id, brand, version)
 
     extractor = TemplateExtractor(
-        TemplateExtractorOptions(template_path=template_path))
+        TemplateExtractorOptions(template_path=template_path, layout_mode=layout_mode))
     spec = extractor.extract()
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1039,6 +1045,12 @@ def _run_mapping_pipeline(
     output_dir.mkdir(parents=True, exist_ok=True)
     draft_output.mkdir(parents=True, exist_ok=True)
 
+    mapping_options = MappingOptions(
+        layouts_path=layouts,
+        output_dir=output_dir,
+        template_path=template,
+    )
+
     if draft_context is None:
         draft_context = _run_draft_pipeline(
             spec=spec,
@@ -1062,6 +1074,15 @@ def _run_mapping_pipeline(
                 draft_output,
             )
 
+    draft_generate_ready = draft_context.artifacts.get("generate_ready")
+    if isinstance(draft_generate_ready, GenerateReadyDocument) and draft_generate_ready.meta.layout_mode == "static":
+        return _pass_through_static_generate_ready(
+            spec=spec,
+            draft_context=draft_context,
+            output_dir=output_dir,
+            mapping_options=mapping_options,
+        )
+
     context = PipelineContext(
         spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
     context.add_artifact("branding", branding_artifact)
@@ -1073,13 +1094,7 @@ def _run_mapping_pipeline(
         forbidden_words=rules_config.forbidden_words,
     )
     refiner = SimpleRefinerStep(refiner_options)
-    mapping = MappingStep(
-        MappingOptions(
-            layouts_path=layouts,
-            output_dir=output_dir,
-            template_path=template,
-        )
-    )
+    mapping = MappingStep(mapping_options)
 
     PipelineRunner([spec_validator, refiner, mapping]).execute(context)
 
@@ -1097,6 +1112,87 @@ def _run_mapping_pipeline(
             raise RuntimeError(
                 f"generate_ready_meta.json のコピーに失敗しました: {exc}"
             ) from exc
+
+    return context
+
+
+def _pass_through_static_generate_ready(
+    *,
+    spec: JobSpec,
+    draft_context: PipelineContext,
+    output_dir: Path,
+    mapping_options: MappingOptions,
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    artifacts = dict(draft_context.artifacts)
+    context = PipelineContext(spec=spec, workdir=output_dir, artifacts=artifacts)
+
+    generate_ready = artifacts.get("generate_ready")
+    if not isinstance(generate_ready, GenerateReadyDocument):
+        raise RuntimeError("static モードの成果物に generate_ready が存在しません")
+
+    ready_dest = output_dir / mapping_options.generate_ready_filename
+    ready_src_value = artifacts.get("generate_ready_path")
+    ready_src = Path(ready_src_value) if isinstance(ready_src_value, str) else None
+    if ready_src and ready_src.exists() and ready_src.resolve() != ready_dest.resolve():
+        shutil.copy2(ready_src, ready_dest)
+    else:
+        ready_dest.write_text(
+            json.dumps(
+                generate_ready.model_dump(mode="json", exclude_none=True),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    context.add_artifact("generate_ready", generate_ready)
+    context.add_artifact("generate_ready_path", str(ready_dest))
+
+    meta_dest = output_dir / DEFAULT_GENERATE_READY_META_FILENAME
+    meta_src_value = artifacts.get("generate_ready_meta_path")
+    meta_src = Path(meta_src_value) if isinstance(meta_src_value, str) else None
+    if meta_src and meta_src.exists() and meta_src.resolve() != meta_dest.resolve():
+        shutil.copy2(meta_src, meta_dest)
+    else:
+        meta_dest.write_text(
+            json.dumps(
+                generate_ready.meta.model_dump(mode="json", exclude_none=True),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    context.add_artifact("generate_ready_meta_path", str(meta_dest))
+
+    mapping_log_dest = output_dir / mapping_options.mapping_log_filename
+    draft_mapping_log_path = artifacts.get("draft_mapping_log_path")
+    mapping_src = Path(draft_mapping_log_path) if isinstance(draft_mapping_log_path, str) else None
+    if mapping_src and mapping_src.exists() and mapping_src.resolve() != mapping_log_dest.resolve():
+        shutil.copy2(mapping_src, mapping_log_dest)
+    elif mapping_src and mapping_src.exists():
+        # same path, nothing to copy
+        pass
+    else:
+        mapping_log_dest.write_text(
+            json.dumps(
+                artifacts.get("draft_mapping_log", {}),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    context.add_artifact("mapping_log_path", str(mapping_log_dest))
+
+    mapping_meta = {
+        "mode": "static",
+        "slot_summary": generate_ready.meta.slot_summary or {},
+        "generate_ready_generated_at": generate_ready.meta.generated_at,
+        "template_path": generate_ready.meta.template_path,
+        "blueprint_path": generate_ready.meta.blueprint_path,
+        "blueprint_hash": generate_ready.meta.blueprint_hash,
+    }
+    context.add_artifact("mapping_meta", mapping_meta)
 
     return context
 
@@ -1526,6 +1622,18 @@ def gen(  # noqa: PLR0913
     help="コンテンツ準備成果物を保存するディレクトリ",
 )
 @click.option(
+    "--mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    required=True,
+    help="カード生成モード。static は Blueprint を利用する",
+)
+@click.option(
+    "--template-spec",
+    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="Blueprint を含む template_spec.json (static モードで必須)",
+)
+@click.option(
     "-p",
     "--page-limit",
     "--card-limit",
@@ -1542,6 +1650,8 @@ def gen(  # noqa: PLR0913
 def prepare(
     brief_path: Path,
     output_dir: Path,
+    mode: str,
+    template_spec: Path | None,
     page_limit: int | None,
     approved: bool,
 ) -> None:
@@ -1563,6 +1673,53 @@ def prepare(
         click.echo(f"ブリーフポリシーの読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
 
+    blueprint_spec: TemplateSpec | None = None
+    blueprint_ref: dict[str, str] | None = None
+    normalized_mode = mode.lower()
+    if normalized_mode not in {"dynamic", "static"}:
+        raise click.exceptions.BadParameter("--mode には dynamic か static を指定してください")
+
+    if normalized_mode == "static":
+        if template_spec is None:
+            click.echo("static モードでは --template-spec を指定してください", err=True)
+            raise click.exceptions.Exit(code=2)
+        if page_limit is not None:
+            click.echo("static モードでは --page-limit を利用できません", err=True)
+            raise click.exceptions.Exit(code=2)
+        try:
+            template_spec_text = template_spec.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            click.echo(f"template_spec の読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+        try:
+            if template_spec.suffix.lower() in {".yaml", ".yml"}:
+                import yaml
+
+                payload = yaml.safe_load(template_spec_text)
+                blueprint_spec = TemplateSpec.model_validate(payload)
+            else:
+                blueprint_spec = TemplateSpec.model_validate_json(template_spec_text)
+        except ValueError as exc:
+            click.echo(f"template_spec の検証に失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+        if blueprint_spec.layout_mode != "static":
+            click.echo("template_spec の layout_mode が static ではありません", err=True)
+            raise click.exceptions.Exit(code=2)
+        if blueprint_spec.blueprint is None:
+            click.echo("template_spec に blueprint が含まれていません", err=True)
+            raise click.exceptions.Exit(code=2)
+        blueprint_hash = hashlib.sha256(
+            json.dumps(
+                blueprint_spec.blueprint.model_dump(mode="json"),
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+        blueprint_ref = {
+            "path": str(template_spec.resolve()),
+            "hash": f"sha256:{blueprint_hash}",
+        }
+
     orchestrator = BriefAIOrchestrator(policy_set)
     try:
         document, meta, ai_logs = orchestrator.generate_document(
@@ -1570,10 +1727,14 @@ def prepare(
             policy_id=None,
             page_limit=page_limit,
             all_cards_status="approved" if approved else None,
+            mode=normalized_mode,  # type: ignore[arg-type]
+            blueprint=blueprint_spec.blueprint if blueprint_spec else None,
+            blueprint_ref=blueprint_ref,
         )
     except BriefAIOrchestrationError as exc:
         click.echo(f"ブリーフカードの生成に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
+        exit_code = 6 if normalized_mode == "static" else 4
+        raise click.exceptions.Exit(code=exit_code) from exc
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cards_path = output_dir / "prepare_card.json"
@@ -1598,6 +1759,7 @@ def prepare(
             "generated_at": meta.generated_at.isoformat(),
             "policy_id": meta.policy_id,
             "input_hash": meta.input_hash,
+            "mode": meta.mode,
             "outputs": {
                 "prepare_card": str(cards_path.resolve()),
                 "brief_log": str(log_path.resolve()),
@@ -1608,6 +1770,12 @@ def prepare(
             "statistics": meta.statistics,
         }
     }
+    if template_spec is not None:
+        audit_payload["brief_normalization"]["outputs"]["template_spec"] = str(template_spec.resolve())
+    if blueprint_ref:
+        audit_payload["brief_normalization"]["blueprint"] = blueprint_ref
+    if meta.slot_coverage:
+        audit_payload["brief_normalization"]["slot_summary"] = meta.slot_coverage
     _dump_json(audit_path, audit_payload)
 
     click.echo(f"Prepare Card: {cards_path}")
@@ -2230,6 +2398,13 @@ def mapping(  # noqa: PLR0913
     help="抽出対象アンカー名のフィルタ（前方一致）",
 )
 @click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
+)
+@click.option(
     "--with-release",
     is_flag=True,
     help="抽出・検証後にテンプレートリリースメタも生成する",
@@ -2292,6 +2467,7 @@ def template(  # noqa: PLR0913
     format: str,
     layout: str | None,
     anchor: str | None,
+    layout_mode: str,
     with_release: bool,
     brand: str | None,
     version: str | None,
@@ -2311,6 +2487,7 @@ def template(  # noqa: PLR0913
             layout=layout,
             anchor=anchor,
             output_format=format,
+            layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2359,6 +2536,7 @@ def template(  # noqa: PLR0913
             reviewed_by=reviewed_by,
             baseline_release=baseline_release,
             golden_specs=golden_specs,
+            layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2406,6 +2584,13 @@ def template(  # noqa: PLR0913
     help="出力形式",
 )
 @click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
+)
+@click.option(
     "--output",
     "-o",
     "output_dir",
@@ -2420,6 +2605,7 @@ def tpl_extract(
     layout: Optional[str],
     anchor: Optional[str],
     format: str,
+    layout_mode: str,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
@@ -2429,6 +2615,7 @@ def tpl_extract(
             layout=layout,
             anchor=anchor,
             output_format=format,
+            layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2585,6 +2772,13 @@ def layout_validate(
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
+@click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
+)
 def tpl_release(
     template_path: Path,
     brand: str,
@@ -2595,6 +2789,7 @@ def tpl_release(
     reviewed_by: Optional[str],
     baseline_release: Optional[Path],
     golden_specs: tuple[Path, ...],
+    layout_mode: str,
 ) -> None:
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
@@ -2609,6 +2804,7 @@ def tpl_release(
             reviewed_by=reviewed_by,
             baseline_release=baseline_release,
             golden_specs=golden_specs,
+            layout_mode=layout_mode,
         )
     except click.exceptions.Exit:
         raise

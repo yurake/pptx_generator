@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from ..brief.models import BriefDocument
+from ..brief.models import BriefCard, BriefDocument, BriefGenerationMeta
 from ..models import (
     ContentApprovalDocument,
     ContentSlide,
@@ -19,6 +19,7 @@ from ..models import (
     DraftMeta,
     DraftSection,
     DraftSlideCard,
+    DraftLayoutCandidate,
     GenerateReadyDocument,
     GenerateReadyMeta,
     GenerateReadySlide,
@@ -26,7 +27,11 @@ from ..models import (
     JobMeta,
     JobSpec,
     MappingSlideMeta,
+    TemplateBlueprint,
+    TemplateBlueprintSlide,
+    TemplateBlueprintSlot,
     Slide,
+    TemplateSpec,
 )
 from ..draft_recommender import (
     CardLayoutRecommender,
@@ -84,6 +89,15 @@ class DraftStructuringOptions:
     enable_ai_simulation: bool = True
 
 
+@dataclass(slots=True)
+class StaticArtifacts:
+    draft: DraftDocument
+    generate_ready: GenerateReadyDocument
+    mapping_log: dict[str, Any]
+    ai_summary: dict[str, Any]
+    slot_summary: dict[str, int]
+
+
 class DraftStructuringError(RuntimeError):
     """ドラフト構成処理の失敗を表す。"""
 
@@ -111,6 +125,15 @@ class DraftStructuringStep:
             msg = "content_approved artifact の型が不正です"
             raise DraftStructuringError(msg)
         document = artifact
+
+        brief_generation_meta = context.artifacts.get("brief_generation_meta")
+        if isinstance(brief_generation_meta, BriefGenerationMeta) and (brief_generation_meta.mode or "dynamic") == "static":
+            self._run_static_mode(
+                context=context,
+                content_document=document,
+                brief_meta=brief_generation_meta,
+            )
+            return
 
         self._alignment_records = None
         alignment_records = []
@@ -663,6 +686,13 @@ class DraftStructuringStep:
             },
         }
         payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
+        payload["mode"] = generate_ready.meta.layout_mode
+        if generate_ready.meta.slot_summary:
+            payload["slot_summary"] = generate_ready.meta.slot_summary
+        if generate_ready.meta.blueprint_path:
+            payload["blueprint_path"] = generate_ready.meta.blueprint_path
+        if generate_ready.meta.blueprint_hash:
+            payload["blueprint_hash"] = generate_ready.meta.blueprint_hash
         return payload
 
     def _merge_slide_elements(
@@ -776,3 +806,348 @@ class DraftStructuringStep:
 
         evaluation.section_scores = normalized_scores
         return evaluation
+
+    def _run_static_mode(
+        self,
+        *,
+        context: PipelineContext,
+        content_document: ContentApprovalDocument,
+        brief_meta: BriefGenerationMeta,
+    ) -> None:
+        brief_document = context.artifacts.get("brief_document")
+        if not isinstance(brief_document, BriefDocument):
+            msg = "static モードでは brief_document が必要です"
+            raise DraftStructuringError(msg)
+
+        blueprint_path_str = brief_meta.blueprint_path
+        if not blueprint_path_str:
+            msg = "ai_generation_meta に blueprint_path が含まれていません"
+            raise DraftStructuringError(msg)
+
+        blueprint_path = Path(blueprint_path_str)
+        template_spec = self._load_template_spec(blueprint_path)
+        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
+            msg = "template_spec が static Blueprint を含んでいません"
+            raise DraftStructuringError(msg)
+
+        if brief_meta.blueprint_hash:
+            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
+            if brief_meta.blueprint_hash != computed_hash:
+                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
+                raise DraftStructuringError(msg)
+
+        self._layout_name_lookup = {layout.name: layout.name for layout in template_spec.layouts}
+
+        artifacts = self._build_static_artifacts(
+            spec=context.spec,
+            brief_document=brief_document,
+            content_document=content_document,
+            template_spec=template_spec,
+            brief_meta=brief_meta,
+        )
+
+        output_dir = self.options.output_dir or context.workdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        draft_path = output_dir / self.options.draft_filename
+        approved_path = output_dir / self.options.approved_filename
+        log_path = output_dir / self.options.log_filename
+        mapping_log_path = output_dir / self.options.mapping_log_filename
+
+        self._write_document(draft_path, artifacts.draft)
+        self._write_document(approved_path, artifacts.draft)
+        self._write_log(log_path, [])
+        self._write_json(mapping_log_path, artifacts.mapping_log)
+
+        ready_path = output_dir / self.options.generate_ready_filename
+        self._write_json(ready_path, artifacts.generate_ready.model_dump(mode="json", exclude_none=True))
+        context.add_artifact("generate_ready", artifacts.generate_ready)
+        context.add_artifact("generate_ready_path", str(ready_path))
+
+        ready_meta_payload = self._build_generate_ready_meta_payload(
+            draft=artifacts.draft,
+            generate_ready=artifacts.generate_ready,
+            ai_summary=artifacts.ai_summary,
+        )
+        ready_meta_path = output_dir / self.options.generate_ready_meta_filename
+        self._write_json(ready_meta_path, ready_meta_payload)
+        context.add_artifact("generate_ready_meta_path", str(ready_meta_path))
+
+        context.add_artifact("draft_document", artifacts.draft)
+        context.add_artifact("draft_document_path", str(approved_path))
+        context.add_artifact("draft_review_log_path", str(log_path))
+        context.add_artifact("draft_mapping_log_path", str(mapping_log_path))
+
+        spec_id = self._spec_id_from_title(getattr(context.spec.meta, "title", None))
+        context.add_artifact("draft_spec_id", spec_id)
+
+        store = DraftStore()
+        try:
+            store.create_board(spec_id, artifacts.draft)
+        except BoardAlreadyExistsError:
+            store.overwrite_board(spec_id, artifacts.draft)
+
+        logger.info(
+            "Static テンプレート向け Draft ドキュメントを生成しました: slides=%d",
+            sum(len(section.slides) for section in artifacts.draft.sections),
+        )
+
+    def _build_static_artifacts(
+        self,
+        *,
+        spec: JobSpec,
+        brief_document: BriefDocument,
+        content_document: ContentApprovalDocument,
+        template_spec: TemplateSpec,
+        brief_meta: BriefGenerationMeta,
+    ) -> StaticArtifacts:
+        blueprint: TemplateBlueprint = template_spec.blueprint  # type: ignore[assignment]
+
+        cards_by_slot = {card.slot_id: card for card in brief_document.cards if card.slot_id}
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+
+        total_slots = 0
+        required_total = 0
+        required_fulfilled = 0
+        optional_used = 0
+        unused_slots: list[str] = []
+        blueprint_slot_ids: set[str] = set()
+
+        for blueprint_slide in blueprint.slides:
+            for slot in blueprint_slide.slots:
+                blueprint_slot_ids.add(slot.slot_id)
+                total_slots += 1
+                card = cards_by_slot.get(slot.slot_id)
+                if slot.required:
+                    required_total += 1
+                    if card is not None and card.slot_fulfilled:
+                        required_fulfilled += 1
+                else:
+                    if card is not None and card.slot_fulfilled:
+                        optional_used += 1
+                    else:
+                        unused_slots.append(slot.slot_id)
+
+        if required_fulfilled < required_total:
+            missing = required_total - required_fulfilled
+            msg = f"必須 slot に対応するカードが不足しています: missing={missing}"
+            raise DraftStructuringError(msg)
+
+        slot_summary = {
+            "required_total": required_total,
+            "required_fulfilled": required_fulfilled,
+            "optional_total": total_slots - required_total,
+            "optional_used": optional_used,
+        }
+
+        orphan_cards = [card.slot_id for card in brief_document.cards if card.slot_id and card.slot_id not in blueprint_slot_ids]
+
+        section = DraftSection(name="Static Template", order=1, status="draft", slides=[])
+        draft_sections = [section]
+
+        generate_ready_slides: list[GenerateReadySlide] = []
+        mapping_entries: list[dict[str, Any]] = []
+
+        layout_lookup = self._layout_name_lookup
+
+        for page_no, blueprint_slide in enumerate(blueprint.slides, start=1):
+            spec_slide = spec_lookup.get(blueprint_slide.slide_id)
+            layout_id = spec_slide.layout if spec_slide else blueprint_slide.layout
+            layout_name = layout_lookup.get(layout_id, layout_id)
+
+            slide_card = DraftSlideCard(
+                ref_id=spec_slide.id if spec_slide else blueprint_slide.slide_id,
+                order=page_no,
+                layout_hint=layout_id,
+                locked=False,
+                status="draft",
+                layout_candidates=[DraftLayoutCandidate(layout_id=layout_id, score=1.0)],
+                appendix=False,
+            )
+            section.slides.append(slide_card)
+
+            elements: dict[str, Any] = {}
+            slot_records: list[dict[str, Any]] = []
+
+            for slot in blueprint_slide.slots:
+                card = cards_by_slot.get(slot.slot_id)
+                fulfilled = bool(card and card.slot_fulfilled)
+                slot_records.append(
+                    {
+                        "slot_id": slot.slot_id,
+                        "anchor": slot.anchor,
+                        "required": slot.required,
+                        "card_id": card.card_id if card else None,
+                        "fulfilled": fulfilled,
+                    }
+                )
+                if card is None:
+                    continue
+                lines = self._card_to_lines(card)
+                self._assign_slot_to_elements(elements, slot, card, lines)
+
+            sources: list[str] = []
+            if spec_slide is not None:
+                sources.append(spec_slide.id)
+            else:
+                sources.append(blueprint_slide.slide_id)
+
+            slide_meta = MappingSlideMeta(
+                section="Static Template",
+                page_no=page_no,
+                sources=sources,
+                fallback="none",
+                layout_mode="static",
+                blueprint_slide_id=blueprint_slide.slide_id,
+                blueprint_slots=slot_records,
+            )
+
+            generate_ready_slides.append(
+                GenerateReadySlide(
+                    layout_id=layout_id,
+                    layout_name=layout_name,
+                    elements=elements,
+                    meta=slide_meta,
+                )
+            )
+
+            mapping_entries.append(
+                {
+                    "mode": "static",
+                    "slide_id": blueprint_slide.slide_id,
+                    "layout": layout_id,
+                    "slots": slot_records,
+                }
+            )
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        content_hash = self._compute_content_hash(content_document)
+
+        generate_ready = GenerateReadyDocument(
+            slides=generate_ready_slides,
+            meta=GenerateReadyMeta(
+                template_version=None,
+                template_path=None,
+                content_hash=content_hash,
+                generated_at=timestamp,
+                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+                layout_mode="static",
+                blueprint_path=brief_meta.blueprint_path,
+                blueprint_hash=brief_meta.blueprint_hash,
+                slot_summary=slot_summary,
+            ),
+        )
+
+        draft_meta = DraftMeta(
+            target_length=len(blueprint.slides),
+            structure_pattern="static",
+            appendix_limit=self.options.appendix_limit,
+            template_id=template_spec.template_path,
+            template_match_score=1.0,
+            template_mismatch=[],
+            return_reason_stats={},
+            analyzer_summary={},
+        )
+        draft = DraftDocument(sections=draft_sections, meta=draft_meta)
+
+        mapping_log = {
+            "mode": "static",
+            "slides": mapping_entries,
+            "slot_summary": slot_summary,
+            "static_slot_checks": {
+                "unused_slots": unused_slots,
+                "orphan_cards": orphan_cards,
+            },
+            "blueprint_path": brief_meta.blueprint_path,
+        }
+
+        ai_summary = {
+            "mode": "static",
+            "invoked": 0,
+            "used": 0,
+            "simulated": 0,
+            "models": {},
+        }
+
+        return StaticArtifacts(
+            draft=draft,
+            generate_ready=generate_ready,
+            mapping_log=mapping_log,
+            ai_summary=ai_summary,
+            slot_summary=slot_summary,
+        )
+
+    def _load_template_spec(self, path: Path) -> TemplateSpec:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            msg = f"template_spec を読み込めません: {path}"
+            raise DraftStructuringError(msg) from exc
+
+        try:
+            if path.suffix.lower() in {".yaml", ".yml"}:
+                import yaml
+
+                payload = yaml.safe_load(text)
+                return TemplateSpec.model_validate(payload)
+            return TemplateSpec.model_validate_json(text)
+        except ValueError as exc:
+            msg = f"template_spec の解析に失敗しました: {path}"
+            raise DraftStructuringError(msg) from exc
+
+    @staticmethod
+    def _compute_blueprint_hash(blueprint: TemplateBlueprint) -> str:
+        payload = blueprint.model_dump(mode="json")
+        digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+        return f"sha256:{hashlib.sha256(digest.encode('utf-8')).hexdigest()}"
+
+    @staticmethod
+    def _compute_content_hash(document: ContentApprovalDocument | None) -> str | None:
+        if document is None:
+            return None
+        try:
+            payload = document.model_dump(mode="json")
+            digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            return hashlib.sha256(digest.encode("utf-8")).hexdigest()
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _card_to_lines(card: BriefCard) -> list[str]:
+        lines: list[str] = []
+        if card.narrative:
+            lines.extend(card.narrative)
+        elif card.message:
+            lines.append(card.message)
+        if card.supporting_points:
+            lines.extend(point.statement for point in card.supporting_points)
+        return [line for line in lines if line]
+
+    @staticmethod
+    def _assign_slot_to_elements(
+        elements: dict[str, Any],
+        slot: TemplateBlueprintSlot,
+        card: BriefCard,
+        lines: list[str],
+    ) -> None:
+        anchor = slot.anchor or slot.slot_id
+        if not anchor:
+            return
+        anchor_lower = anchor.lower()
+        if anchor_lower in {"title", "main message"}:
+            if card.message:
+                elements["title"] = card.message
+            return
+        if "subtitle" in anchor_lower:
+            if card.message:
+                elements["subtitle"] = card.message
+            return
+        if anchor_lower in {"body", "content"}:
+            if lines:
+                elements["body"] = lines
+            elif card.message:
+                elements["body"] = [card.message]
+            return
+        if lines:
+            elements[anchor] = lines

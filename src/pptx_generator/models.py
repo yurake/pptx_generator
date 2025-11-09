@@ -533,6 +533,9 @@ class MappingSlideMeta(BaseModel):
     page_no: int | None = None
     sources: list[str] = Field(default_factory=list)
     fallback: str = "none"
+    layout_mode: Literal["dynamic", "static"] | None = None
+    blueprint_slide_id: str | None = None
+    blueprint_slots: list[dict[str, Any]] | None = None
 
 
 class GenerateReadySlide(BaseModel):
@@ -549,6 +552,10 @@ class GenerateReadyMeta(BaseModel):
     generated_at: str
     job_meta: JobMeta | None = None
     job_auth: JobAuth | None = None
+    layout_mode: Literal["dynamic", "static"] = "dynamic"
+    blueprint_path: str | None = None
+    blueprint_hash: str | None = None
+    slot_summary: dict[str, int] | None = None
 
 
 class GenerateReadyDocument(BaseModel):
@@ -664,6 +671,34 @@ class LayoutInfo(BaseModel):
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
 
 
+class TemplateBlueprintSlot(BaseModel):
+    """Blueprint 上の slot 情報。"""
+
+    slot_id: str = Field(..., description="Blueprint 上の一意な slot ID")
+    anchor: str = Field(..., description="紐付け先のアンカー名")
+    content_type: Literal["text", "image", "table", "chart", "shape", "other"] = Field(
+        ..., description="slot に期待するコンテンツ種別"
+    )
+    required: bool = Field(True, description="必須 slot かどうか")
+    intent_tags: list[str] = Field(default_factory=list, description="意図タグ（プロンプト補助用）")
+
+
+class TemplateBlueprintSlide(BaseModel):
+    """Blueprint 上のスライド情報。"""
+
+    slide_id: str = Field(..., description="Blueprint 上のスライド ID")
+    layout: str = Field(..., description="利用するレイアウト名")
+    required: bool = Field(True, description="必須スライドかどうか")
+    intent_tags: list[str] = Field(default_factory=list, description="スライド意図タグ")
+    slots: list[TemplateBlueprintSlot] = Field(default_factory=list, description="slot 一覧")
+
+
+class TemplateBlueprint(BaseModel):
+    """テンプレートの Blueprint 定義。"""
+
+    slides: list[TemplateBlueprintSlide] = Field(default_factory=list, description="Blueprint スライド一覧")
+
+
 class TemplateSpec(BaseModel):
     """テンプレート仕様全体を表現するモデル。"""
 
@@ -672,6 +707,12 @@ class TemplateSpec(BaseModel):
     layouts: list[LayoutInfo] = Field(default_factory=list, description="レイアウト一覧")
     warnings: list[str] = Field(default_factory=list, description="警告メッセージ")
     errors: list[str] = Field(default_factory=list, description="エラーメッセージ")
+    layout_mode: Literal["dynamic", "static"] = Field(
+        "dynamic", description="テンプレートの運用モード"
+    )
+    blueprint: TemplateBlueprint | None = Field(
+        None, description="静的テンプレート向け Blueprint 定義"
+    )
 
 
 # テンプレートリリース管理用モデル
