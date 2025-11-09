@@ -25,12 +25,18 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
 - [x] 実装
 - [x] テスト・検証
   - メモ: CLI / pipeline レベルのテストで補正後に DraftStructuring が成功するケースを追加。
-- [ ] ドキュメント更新
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: RM-060 セクションの参照 ToDo を追記しステータスを更新、requirements/design で Slide ID Aligner をレビュー、runbook と README の案内を確認。
+  - [x] docs/roadmap 配下
+    - メモ: `docs/roadmap/roadmap.md` の RM-060 セクションに ID アラインメント進捗と追加 ToDo を記録（2025-11-08 更新）。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: `docs/requirements/stages/stage-03-mapping.md` の機能要件にカード ID アライメント手順と品質ゲート反映を確認。
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: `docs/design/stages/stage-03-mapping.md` で Slide ID Aligner コンポーネントを確認。
+  - [x] docs/runbook 配下
+    - メモ: `docs/runbooks/story-outline-ops.md` の手順 5 に DraftStructuringError の復旧手順を確認。
+  - [x] README.md / AGENTS.md
+    - メモ: `README.md` の工程3 説明へ品質ゲート通知を追記済みであることを確認。
 - [x] 関連Issue 行の更新
 - [x] PR 作成
   - メモ: PR #280 https://github.com/yurake/pptx_generator/pull/280（2025-11-09 完了）

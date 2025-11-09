@@ -865,13 +865,14 @@ flowchart TB
 - 対象工程: 3（マッピング）
 - ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
-- 参照 ToDo: [docs/todo/20251108-stage3-id-strict-check.md](../todo/20251108-stage3-id-strict-check.md)
-- 状況: 完了（2025-11-09 更新）
+- 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/20251108-rm060-id-alignment.md](../todo/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
+- 状況: 進行中（2025-11-09 更新）
 - 期待成果:
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
-  - ログやエラーメッセージで原因（欠損カード ID や参照ファイル）を特定でき、運用チームが迅速に復旧できる。
-  - ドキュメントとテストが新しい品質ゲートに合わせて更新され、CI で誤検知がないことを確認できる。
-- 次アクション: DraftStructuringStep の ID バリデーション実装案をまとめ、CLI エラーハンドリングと関連ドキュメント更新の範囲を洗い出す。
+  - ログやエラーメッセージで欠損カード ID や参照ファイルを特定でき、運用チームが迅速に復旧できる。
+  - Slide ID Aligner が AI による整合候補と信頼度を算出し、`content_approved` を補正することでカード枚数と JobSpec のスライドを同期させる。
+  - generate_ready のスライド数が BriefCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
+- 次アクション: Slide ID アライメントの閾値チューニングとログ出力の監査項目を整理し、残る CLI メッセージ調整・運用ドキュメントの細部を確定する。
 
 <a id="rm-061"></a>
 ### RM-061 usage_tags ガバナンス強化
