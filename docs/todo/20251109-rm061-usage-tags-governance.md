@@ -7,16 +7,16 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
 
 - [x] ブランチ作成と初期コミット
   - メモ: 2025-11-09 `main` から `feat/rm061-usage-tags-governance` を作成し、本 ToDo を追加する初期コミット（`docs(todo): bootstrap rm061 usage tags governance ai extraction`）を実施。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan を記載する。
-    - 対象整理（スコープ、対象ファイル、前提）: 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 
+    - 対象整理（スコープ、対象ファイル、前提）: テンプレ抽出ステップ（`TemplateExtractor`／`layout_validation`）を中心に、Stage1 で `usage_tags` を生成 AI に置き換える。既存 `usage_tags` ヒューリスティックはフォールバックとして残し、Stage3 以降の呼び出しには影響させない。
+    - ドキュメント／コード修正方針: `template_ai` モジュールを新設し、テンプレ抽出中にレイアウト情報を AI へ渡してタグを受け取る。`layout_validation` で AI 由来タグとフォールバックを記録し、`diagnostics` に統計を出力する。CLI からの設定・ログ出力・ドキュメント（`docs/notes/20251109-usage-tags-scoring.md` 等）を更新する。
+    - 確認・共有方法（レビュー、ToDo 更新など）: 各工程完了後に ToDo を更新し、最終的に PR で差分・ログ出力・検証結果を共有。必要に応じて `docs/notes` に検討事項を追記する。
+    - 想定影響ファイル: `src/pptx_generator/pipeline/template_extractor.py`, `src/pptx_generator/layout_validation/suite.py`, 新規 `src/pptx_generator/template_ai/*`, CLI 設定（`src/pptx_generator/cli/template.py` など）、`docs/notes/20251109-usage-tags-scoring.md`, テスト類。
+    - リスク: AI 応答フォーマット揺らぎやタイムアウトによる抽出失敗、API 呼び出しコスト増、既存テンプレとの差異で Stage3 以降のスコアリングが変わる可能性。フォールバックと詳細ログで影響を可視化し、設定で OFF にできるようにする。
+    - テスト方針: 新規ユーティリティのユニットテスト、テンプレ抽出フローのモック検証、`uv run pptx tpl-extract` を用いた手動確認。必要に応じて `tests/test_template_extraction_*.py` を追加。
+    - ロールバック方法: `feat/rm061-usage-tags-governance` のコミットをリバートし、AI 呼び出しを無効化して既存ヒューリスティックへ戻す。
+    - 承認メッセージ ID／リンク: チャットログ（2025-11-09 Plan 承認）
 - [ ] 設計・実装方針の確定
   - メモ: 
 - [ ] ドキュメント更新（要件・設計）
