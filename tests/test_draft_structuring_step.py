@@ -177,7 +177,11 @@ def test_draft_structuring_fails_when_slide_id_missing(
         )
     )
 
-    step.run(context)
+    with pytest.raises(DraftStructuringError) as exc_info:
+        step.run(context)
+
+    assert "Slide alignment" in str(exc_info.value)
     alignment_meta = context.artifacts.get("content_alignment_meta")
     assert alignment_meta is not None
-    assert alignment_meta["pending"] == 0
+    assert alignment_meta["pending"] >= 1
+    assert alignment_meta["jobspec_unassigned"] >= 1

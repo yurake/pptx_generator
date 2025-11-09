@@ -82,3 +82,22 @@ def test_slide_id_aligner_skips_without_brief() -> None:
 
     assert result.document == document
     assert result.meta["status"] == "skipped"
+
+
+def test_slide_id_aligner_reports_unassigned_spec_slide() -> None:
+    spec = _build_spec()
+    brief = _build_brief()
+    document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+        ]
+    )
+    aligner = SlideIdAligner(SlideIdAlignerOptions(confidence_threshold=0.1))
+
+    result = aligner.align(spec=spec, brief_document=brief, content_document=document)
+
+    pending_records = {record.card_id: record for record in result.records if record.status != "applied"}
+    assert "solution-slide" in pending_records
+    assert pending_records["solution-slide"].reason == "jobspec_unassigned"
+    assert result.meta["jobspec_unassigned"] == 1
+    assert result.meta["pending"] >= 1
