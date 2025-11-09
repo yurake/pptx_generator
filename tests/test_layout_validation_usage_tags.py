@@ -49,7 +49,7 @@ def test_title_and_content_layout_suppresses_title_tag():
 
     assert not errors
     assert records[0]["usage_tags"] == ["content"]
-    assert not any(warning["code"] == "usage_tag_title_suppressed" for warning in warnings)
+    assert not warnings
 
 
 def test_pure_title_layout_retains_title_tag():

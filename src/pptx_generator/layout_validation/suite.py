@@ -278,7 +278,7 @@ class LayoutValidationSuite:
             usage_tags_set = set(usage_tags_tuple)
 
             title_conflict_removed = False
-            if "title" in usage_tags_set and has_body_placeholder:
+            if "title" in usage_tags_set and has_body_placeholder and not title_from_name:
                 usage_tags_set.discard("title")
                 title_conflict_removed = True
 
@@ -572,10 +572,13 @@ class LayoutValidationSuite:
         has_image_placeholder = False
 
         for placeholder in placeholders:
-            p_type = (placeholder.get("type") or "").casefold()
+            p_type_raw = placeholder.get("type") or ""
+            p_type = p_type_raw.casefold()
+            placeholder_name_cf = (placeholder.get("name") or "").casefold()
+
             if p_type == "title":
                 has_title_placeholder = True
-            elif p_type == "body":
+            elif p_type in {"body", "content", "text"}:
                 has_body_placeholder = True
                 tags.add("content")
             elif p_type == "chart":
@@ -587,6 +590,17 @@ class LayoutValidationSuite:
             elif p_type == "image":
                 has_image_placeholder = True
                 tags.add("visual")
+            elif p_type == "object":
+                if any(keyword in placeholder_name_cf for keyword in ("body", "content", "text", "message")):
+                    has_body_placeholder = True
+                    tags.add("content")
+                elif any(keyword in placeholder_name_cf for keyword in ("logo", "image", "picture", "visual")):
+                    has_image_placeholder = True
+                    tags.add("visual")
+            elif p_type == "media":
+                if any(keyword in placeholder_name_cf for keyword in ("image", "picture", "photo", "visual")):
+                    has_image_placeholder = True
+                    tags.add("visual")
 
         if has_chart_placeholder and "chart" not in tags:
             tags.add("chart")
