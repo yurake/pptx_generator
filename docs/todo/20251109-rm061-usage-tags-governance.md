@@ -6,7 +6,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
 ---
 
 - [x] ブランチ作成と初期コミット
-  - メモ: 2025-11-09 `main` から `feat/rm061-usage-tags-governance` を作成し、本 ToDo を追加する初期コミットを実施予定。
+  - メモ: 2025-11-09 `main` から `feat/rm061-usage-tags-governance` を作成し、`docs(todo): bootstrap rm061 usage tags governance` で本 ToDo を追加する初期コミットを実施済み。
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: Plan 承認後に更新する。
     - 対象整理（スコープ、対象ファイル、前提）: 
