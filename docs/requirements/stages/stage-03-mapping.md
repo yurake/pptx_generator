@@ -14,7 +14,7 @@
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
 
 ## 出力
-- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持する。
+- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持し、スライド数は `prepare_card.json.cards` と一致する。
 - `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。
 - `draft_review_log.json`: 承認・差戻し履歴。`action`, `actor`, `timestamp`, `reason_code` を必須とする。
 - `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完履歴、Analyzer 情報を記録する。

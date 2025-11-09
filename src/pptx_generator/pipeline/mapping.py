@@ -92,6 +92,7 @@ class MappingStep:
             if content_document is not None
             else {}
         )
+        spec_lookup = {slide.id: slide for slide in context.spec.slides}
 
         generate_ready_slides: list[GenerateReadySlide] = []
         log_slides: list[MappingLogSlide] = []
@@ -101,23 +102,48 @@ class MappingStep:
         ai_patch_slide_ids: set[str] = set()
         previous_layout: str | None = None
 
-        for index, slide in enumerate(context.spec.slides, start=1):
-            card = card_lookup.get(slide.id)
-            content_slide = content_lookup.get(slide.id)
-            section_name = section_lookup.get(slide.id)
+        ordered_cards: list[tuple[str | None, DraftSlideCard]] = []
+        for section in draft_document.sections:
+            for card in section.slides:
+                ordered_cards.append((section.name, card))
 
+        if ordered_cards:
+            work_items = [
+                (
+                    index,
+                    section_name,
+                    spec_lookup.get(card.ref_id),
+                    card,
+                    content_lookup.get(card.ref_id),
+                )
+                for index, (section_name, card) in enumerate(ordered_cards, start=1)
+            ]
+        else:
+            work_items = [
+                (
+                    index,
+                    section_lookup.get(slide.id),
+                    slide,
+                    card_lookup.get(slide.id),
+                    content_lookup.get(slide.id),
+                )
+                for index, slide in enumerate(context.spec.slides, start=1)
+            ]
+
+        for page_no, section_name, spec_slide, card, content_slide in work_items:
+            slide_id = (
+                spec_slide.id
+                if spec_slide is not None
+                else (card.ref_id if card is not None else f"page-{page_no}")
+            )
             candidates = self._score_candidates(
-                slide_id=slide.id,
+                slide_id=slide_id,
                 content_slide=content_slide,
                 layout_catalog=layout_catalog,
                 previous_layout=previous_layout,
             )
             if card and card.layout_candidates:
-                # layout_candidates から score を引き継ぎ、欠損分を補う
-                merged = {
-                    candidate.layout_id: candidate.score
-                    for candidate in candidates
-                }
+                merged = {candidate.layout_id: candidate.score for candidate in candidates}
                 for candidate in card.layout_candidates:
                     merged.setdefault(candidate.layout_id, candidate.score)
                 candidates = [
@@ -127,28 +153,38 @@ class MappingStep:
                 candidates.sort(key=lambda candidate: candidate.score, reverse=True)
                 candidates = candidates[: self.options.max_candidates]
 
-            selected_layout = self._select_layout(slide.layout, card, candidates)
+            default_layout = ""
+            if spec_slide is not None:
+                default_layout = spec_slide.layout
+            elif card is not None:
+                default_layout = card.layout_hint
+            base_layout = default_layout or "title"
+            selected_layout = self._select_layout(base_layout, card, candidates)
             previous_layout = selected_layout
 
-            elements = self._build_elements(slide)
+            elements = self._build_elements(spec_slide, content_slide)
             fallback_state, ai_patches, warnings = self._apply_capacity_controls(
-                slide_id=slide.id,
+                slide_id=slide_id,
                 layout=layout_catalog.get(selected_layout),
                 elements=elements,
             )
 
             if fallback_state.applied:
-                fallback_slide_ids.add(slide.id)
+                fallback_slide_ids.add(slide_id)
                 fallback_records.append(
                     {
-                        "slide_id": slide.id,
+                        "slide_id": slide_id,
                         "history": list(fallback_state.history),
                         "reason": fallback_state.reason,
                     }
                 )
             if ai_patches:
                 ai_patch_count += len(ai_patches)
-                ai_patch_slide_ids.add(slide.id)
+                ai_patch_slide_ids.add(slide_id)
+
+            sources = [slide_id]
+            if spec_slide is not None:
+                sources = [spec_slide.id]
 
             generate_ready_slides.append(
                 GenerateReadySlide(
@@ -156,8 +192,8 @@ class MappingStep:
                     elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,
-                        page_no=index,
-                        sources=[slide.id],
+                        page_no=page_no,
+                        sources=sources,
                         fallback=fallback_state.history[-1]
                         if fallback_state.applied and fallback_state.history
                         else "none",
@@ -167,7 +203,7 @@ class MappingStep:
 
             log_slides.append(
                 MappingLogSlide(
-                    ref_id=slide.id,
+                    ref_id=slide_id,
                     selected_layout=selected_layout,
                     candidates=candidates[: self.options.max_candidates],
                     fallback=fallback_state,
@@ -414,17 +450,49 @@ class MappingStep:
         return default_layout
 
     @staticmethod
-    def _build_elements(slide: Slide) -> dict[str, Any]:
+    def _build_elements(
+        spec_slide: Slide | None,
+        content_slide: ContentSlide | None,
+    ) -> dict[str, Any]:
+        if content_slide is not None and content_slide.elements is not None:
+            base = MappingStep._build_elements(spec_slide, None)
+            elements: dict[str, Any] = {
+                "title": content_slide.elements.title,
+            }
+            if content_slide.elements.body:
+                elements["body"] = list(content_slide.elements.body)
+            elif "body" in base:
+                elements["body"] = base["body"]
+            if content_slide.elements.note:
+                elements["note"] = content_slide.elements.note
+            elif "note" in base:
+                elements["note"] = base["note"]
+            if content_slide.elements.table_data is not None:
+                elements["table"] = {
+                    "headers": list(content_slide.elements.table_data.headers),
+                    "rows": [list(row) for row in content_slide.elements.table_data.rows],
+                }
+            if spec_slide is not None and spec_slide.subtitle and "subtitle" not in elements:
+                elements["subtitle"] = spec_slide.subtitle
+            for key, value in base.items():
+                if key in {"title", "body", "note", "subtitle"}:
+                    continue
+                elements.setdefault(key, value)
+            return elements
+
+        if spec_slide is None:
+            return {}
+
         elements: dict[str, Any] = {}
-        if slide.title:
-            elements["title"] = slide.title
-        if slide.subtitle:
-            elements["subtitle"] = slide.subtitle
-        if slide.notes:
-            elements["note"] = slide.notes
+        if spec_slide.title:
+            elements["title"] = spec_slide.title
+        if spec_slide.subtitle:
+            elements["subtitle"] = spec_slide.subtitle
+        if spec_slide.notes:
+            elements["note"] = spec_slide.notes
 
         body_lines: list[str] = []
-        for group_index, group in enumerate(slide.bullets, start=1):
+        for group_index, group in enumerate(spec_slide.bullets, start=1):
             texts = [bullet.text for bullet in group.items]
             if not texts:
                 continue
@@ -435,7 +503,7 @@ class MappingStep:
         if body_lines:
             elements["body"] = body_lines
 
-        for table_index, table in enumerate(slide.tables, start=1):
+        for table_index, table in enumerate(spec_slide.tables, start=1):
             table_payload = {
                 "headers": table.columns,
                 "rows": table.rows,
@@ -443,13 +511,13 @@ class MappingStep:
             key = table.anchor or f"table_{table_index}"
             elements[key] = table_payload
 
-        for image_index, image in enumerate(slide.images, start=1):
+        for image_index, image in enumerate(spec_slide.images, start=1):
             key = image.anchor or f"image_{image_index}"
             elements[key] = {
                 "source": str(image.source),
                 "sizing": image.sizing,
             }
-        for chart_index, chart in enumerate(slide.charts, start=1):
+        for chart_index, chart in enumerate(spec_slide.charts, start=1):
             key = chart.anchor or f"chart_{chart_index}"
             elements[key] = {
                 "type": chart.type,
@@ -457,7 +525,7 @@ class MappingStep:
                 "series": [series.model_dump() for series in chart.series],
                 "options": chart.options.model_dump() if chart.options else None,
             }
-        for textbox_index, textbox in enumerate(slide.textboxes, start=1):
+        for textbox_index, textbox in enumerate(spec_slide.textboxes, start=1):
             key = textbox.anchor or f"textbox_{textbox_index}"
             elements[key] = {
                 "text": textbox.text,

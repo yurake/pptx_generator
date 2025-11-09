@@ -23,7 +23,7 @@
 2. Slide ID Aligner が `prepare_card.json` と `jobspec.json` を参照し、AI マッチングでカード ↔ スライド ID を突合。採用された ID は `content_approved` に反映し、信頼度や未確定カードをログへ記録する。
 3. `CardLayoutRecommender` がカード単位でレイアウト候補を算出し、スコア内訳と共に `draft_mapping_log.json` に記録する。Analyzer 連携がある場合は重大度情報を候補に付与する。
 4. HITL が CLI から章・スライド単位で承認／差戻し／付録送りを行い、操作履歴を `draft_review_log.json` に追記する。差戻し理由コードは `return_reasons.json` の定義に従って必須入力とする。
-5. GenerateReady Builder が承認済みカードをテンプレ構造と突合し、フォールバック（縮約→分割→付録送り）を適用しながら `generate_ready.json` を生成する。
+5. GenerateReady Builder が承認済みカードをテンプレ構造と突合し、カードのメッセージ／サポートポイントを `elements` として再構成しつつ、フォールバック（縮約→分割→付録送り）を適用しながら `generate_ready.json` を生成する。生成されるスライド数は BriefCard に依存し、未割当の JobSpec スライドは出力しない。
 6. `generate_ready_meta.json` を出力し、章テンプレ適合率、承認統計、AI 推薦採用件数、Analyzer サマリ、監査メタ情報を集約する。
 
 ## CLI

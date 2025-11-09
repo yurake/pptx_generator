@@ -255,15 +255,19 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     assert mapping_info is not None
     assert mapping_info.get("generate_ready_path") == str(generate_ready_path)
 
+    cards_payload = json.loads(brief_paths["cards"].read_text(encoding="utf-8"))
+    cards = cards_payload["cards"]
+
     presentation = Presentation(pptx_path)
-    assert len(presentation.slides) == len(spec.slides)
-    for slide_spec, slide in zip(spec.slides, presentation.slides, strict=False):
-        if not slide_spec.title:
+    assert len(presentation.slides) == len(cards) == len(spec.slides)
+    for card, slide in zip(cards, presentation.slides, strict=False):
+        expected_title = (card.get("message") or card.get("chapter") or card.get("card_id") or "").strip()
+        if not expected_title:
             continue
         title_shape = slide.shapes.title
         if title_shape is None:
             continue
-        assert title_shape.text == slide_spec.title
+        assert title_shape.text == expected_title
 
 
 def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:

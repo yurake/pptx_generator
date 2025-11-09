@@ -15,7 +15,7 @@ from .layout_ai import (
     create_layout_ai_client,
     load_layout_policy_set,
 )
-from .layout_ai.client import LayoutAIClient
+from .layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
 from .layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
 from .models import (
     ContentSlide,
@@ -237,6 +237,9 @@ class CardLayoutRecommender:
                     candidate_ids,
                 )
             response = client.recommend(request)
+        except LayoutAIClientConfigurationError as exc:
+            logger.info("layout AI recommend skipped: %s", exc)
+            return {}, None
         except Exception as exc:  # noqa: BLE001
             logger.warning("layout AI recommend failed: %s", exc)
             return {}, None

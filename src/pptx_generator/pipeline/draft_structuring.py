@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timezone
@@ -176,6 +177,7 @@ class DraftStructuringStep:
         generate_ready = self._build_generate_ready_document(
             spec=context.spec,
             draft=draft,
+            content_document=document,
         )
         ready_path = output_dir / self.options.generate_ready_filename
         self._write_json(ready_path, generate_ready.model_dump(mode="json"))
@@ -516,27 +518,71 @@ class DraftStructuringStep:
         *,
         spec: JobSpec,
         draft: DraftDocument,
+        content_document: ContentApprovalDocument | None,
     ) -> GenerateReadyDocument:
         section_lookup: dict[str, str] = {}
-        card_lookup: dict[str, DraftSlideCard] = {}
+        cards_in_order: list[DraftSlideCard] = []
         for section in draft.sections:
             for card in section.slides:
                 section_lookup[card.ref_id] = section.name
-                card_lookup[card.ref_id] = card
+                cards_in_order.append(card)
+
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+        content_lookup: dict[str, ContentSlide] = {}
+        content_hash: str | None = None
+        if content_document is not None:
+            content_lookup = {slide.id: slide for slide in content_document.slides}
+            try:
+                payload = content_document.model_dump(mode="json")
+                digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+                content_hash = hashlib.sha256(digest.encode("utf-8")).hexdigest()
+            except (TypeError, ValueError) as exc:
+                logger.debug("content_approved のハッシュ化に失敗しました: %s", exc)
 
         slides: list[GenerateReadySlide] = []
-        for index, spec_slide in enumerate(spec.slides, start=1):
-            card = card_lookup.get(spec_slide.id)
-            section_name = section_lookup.get(spec_slide.id)
-            layout_id = card.layout_hint if card and card.layout_hint else spec_slide.layout
+        if not cards_in_order:
+            for index, spec_slide in enumerate(spec.slides, start=1):
+                slides.append(
+                    GenerateReadySlide(
+                        layout_id=spec_slide.layout,
+                        elements=self._convert_slide_elements(spec_slide),
+                        meta=MappingSlideMeta(
+                            section=None,
+                            page_no=index,
+                            sources=[spec_slide.id],
+                            fallback="none",
+                        ),
+                    )
+                )
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            meta = GenerateReadyMeta(
+                template_version=draft.meta.template_id,
+                template_path=None,
+                content_hash=content_hash,
+                generated_at=timestamp,
+                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+            )
+            return GenerateReadyDocument(slides=slides, meta=meta)
+
+        for index, card in enumerate(cards_in_order, start=1):
+            spec_slide = spec_lookup.get(card.ref_id)
+            section_name = section_lookup.get(card.ref_id)
+            content_slide = content_lookup.get(card.ref_id)
+            layout_id = card.layout_hint
+            if not layout_id and spec_slide is not None:
+                layout_id = spec_slide.layout
+            layout_id = layout_id or "title"
+            elements = self._merge_slide_elements(spec_slide, content_slide)
+            sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
             slides.append(
                 GenerateReadySlide(
                     layout_id=layout_id,
-                    elements=self._convert_slide_elements(spec_slide),
+                    elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,
                         page_no=index,
-                        sources=[spec_slide.id],
+                        sources=sources,
                         fallback="none",
                     ),
                 )
@@ -546,7 +592,7 @@ class DraftStructuringStep:
         meta = GenerateReadyMeta(
             template_version=draft.meta.template_id,
             template_path=None,
-            content_hash=None,
+            content_hash=content_hash,
             generated_at=timestamp,
             job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
             job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
@@ -611,8 +657,50 @@ class DraftStructuringStep:
         payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
         return payload
 
+    def _merge_slide_elements(
+        self,
+        spec_slide: Slide | None,
+        content_slide: ContentSlide | None,
+    ) -> dict[str, Any]:
+        base = self._convert_slide_elements(spec_slide) if spec_slide is not None else {}
+        if content_slide is None or content_slide.elements is None:
+            return base
+
+        elements: dict[str, Any] = {}
+        title = content_slide.elements.title
+        if title:
+            elements["title"] = title
+
+        if content_slide.elements.body:
+            elements["body"] = list(content_slide.elements.body)
+        elif "body" in base:
+            elements["body"] = base["body"]
+
+        if content_slide.elements.note:
+            elements["note"] = content_slide.elements.note
+        elif "note" in base:
+            elements["note"] = base["note"]
+
+        if content_slide.elements.table_data is not None:
+            elements["table"] = {
+                "headers": list(content_slide.elements.table_data.headers),
+                "rows": [list(row) for row in content_slide.elements.table_data.rows],
+            }
+
+        if spec_slide is not None:
+            if spec_slide.subtitle and "subtitle" not in elements:
+                elements["subtitle"] = spec_slide.subtitle
+            for key, value in base.items():
+                if key in {"title", "body", "note", "subtitle"}:
+                    continue
+                elements.setdefault(key, value)
+
+        return elements
+
     @staticmethod
-    def _convert_slide_elements(slide: Slide) -> dict[str, Any]:
+    def _convert_slide_elements(slide: Slide | None) -> dict[str, Any]:
+        if slide is None:
+            return {}
         elements: dict[str, Any] = {}
         if slide.title:
             elements["title"] = slide.title
