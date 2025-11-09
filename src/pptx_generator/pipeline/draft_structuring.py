@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timezone
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from ..brief.models import BriefDocument
 from ..models import (
     ContentApprovalDocument,
     ContentSlide,
@@ -31,6 +33,7 @@ from ..draft_recommender import (
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
+from ..utils.usage_tags import normalize_usage_tags
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..draft_intel import (
     ChapterTemplate,
@@ -42,6 +45,7 @@ from ..draft_intel import (
     summarize_analyzer_counts,
 )
 from .base import PipelineContext
+from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +76,9 @@ class DraftStructuringOptions:
     layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
     layout_ai_policy_id: str | None = "layout-default"
     enable_ai_simulation: bool = True
+    enable_slide_alignment: bool = True
+    slide_alignment_threshold: float = 0.6
+    slide_alignment_max_candidates: int = 12
     layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
     layout_ai_policy_id: str | None = "layout-default"
     enable_ai_simulation: bool = True
@@ -89,6 +96,8 @@ class DraftStructuringStep:
     def __init__(self, options: DraftStructuringOptions | None = None) -> None:
         self.options = options or DraftStructuringOptions()
         self._recommender: CardLayoutRecommender | None = None
+        self._alignment_records: list | None = None
+        self._layout_name_lookup: dict[str, str] = {}
 
     # ------------------------------------------------------------------ #
     # public API
@@ -103,7 +112,37 @@ class DraftStructuringStep:
             raise DraftStructuringError(msg)
         document = artifact
 
+        self._alignment_records = None
+        alignment_records = []
+        if self.options.enable_slide_alignment:
+            aligner = SlideIdAligner(
+                SlideIdAlignerOptions(
+                    confidence_threshold=self.options.slide_alignment_threshold,
+                    max_candidates=self.options.slide_alignment_max_candidates,
+                )
+            )
+            brief_document = context.artifacts.get("brief_document")
+            alignment = aligner.align(
+                spec=context.spec,
+                brief_document=brief_document if isinstance(brief_document, BriefDocument) else None,
+                content_document=document,
+            )
+            document = alignment.document
+            alignment_records = alignment.records
+            context.add_artifact("content_alignment_meta", alignment.meta)
+            context.add_artifact(
+                "content_alignment_records",
+                [asdict(record) for record in alignment.records],
+            )
+            context.add_artifact("content_approved", document)
+        pending_cards = [record.card_id for record in alignment_records if record.status == "pending"]
+        if pending_cards:
+            logger.error("Slide alignment 未確定カード: %s", ", ".join(sorted(set(pending_cards))))
+            msg = "Slide alignment に失敗したカードがあります: " + ", ".join(sorted(set(pending_cards)))
+            raise DraftStructuringError(msg)
+
         layouts = self._load_layouts(self.options.layouts_path)
+        self._layout_name_lookup = {profile.layout_id: profile.layout_name for profile in layouts}
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
         template: ChapterTemplate | None = None
         if self.options.chapter_templates_dir:
@@ -137,6 +176,7 @@ class DraftStructuringStep:
         generate_ready = self._build_generate_ready_document(
             spec=context.spec,
             draft=draft,
+            content_document=document,
         )
         ready_path = output_dir / self.options.generate_ready_filename
         self._write_json(ready_path, generate_ready.model_dump(mode="json"))
@@ -231,7 +271,8 @@ class DraftStructuringStep:
 
             record = LayoutProfile(
                 layout_id=layout_id,
-                usage_tags=tuple(str(tag) for tag in payload.get("usage_tags", [])),
+                layout_name=payload.get("layout_name") or layout_id,
+                usage_tags=normalize_usage_tags(payload.get("usage_tags", [])),
                 text_hint=text_hint,
                 media_hint=media_hint,
             )
@@ -477,27 +518,79 @@ class DraftStructuringStep:
         *,
         spec: JobSpec,
         draft: DraftDocument,
+        content_document: ContentApprovalDocument | None,
     ) -> GenerateReadyDocument:
         section_lookup: dict[str, str] = {}
-        card_lookup: dict[str, DraftSlideCard] = {}
+        cards_in_order: list[DraftSlideCard] = []
         for section in draft.sections:
             for card in section.slides:
                 section_lookup[card.ref_id] = section.name
-                card_lookup[card.ref_id] = card
+                cards_in_order.append(card)
+
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+        content_lookup: dict[str, ContentSlide] = {}
+        content_hash: str | None = None
+        if content_document is not None:
+            content_lookup = {slide.id: slide for slide in content_document.slides}
+            try:
+                payload = content_document.model_dump(mode="json")
+                digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+                content_hash = hashlib.sha256(digest.encode("utf-8")).hexdigest()
+            except (TypeError, ValueError) as exc:
+                logger.debug("content_approved のハッシュ化に失敗しました: %s", exc)
 
         slides: list[GenerateReadySlide] = []
-        for index, spec_slide in enumerate(spec.slides, start=1):
-            card = card_lookup.get(spec_slide.id)
-            section_name = section_lookup.get(spec_slide.id)
-            layout_id = card.layout_hint if card and card.layout_hint else spec_slide.layout
+        if not cards_in_order:
+            for index, spec_slide in enumerate(spec.slides, start=1):
+                layout_name = self._layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
+                slides.append(
+                    GenerateReadySlide(
+                        layout_id=spec_slide.layout,
+                        layout_name=layout_name,
+                        elements=self._convert_slide_elements(spec_slide),
+                        meta=MappingSlideMeta(
+                            section=None,
+                            page_no=index,
+                            sources=[spec_slide.id],
+                            fallback="none",
+                        ),
+                    )
+                )
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            meta = GenerateReadyMeta(
+                template_version=draft.meta.template_id,
+                template_path=None,
+                content_hash=content_hash,
+                generated_at=timestamp,
+                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+            )
+            return GenerateReadyDocument(slides=slides, meta=meta)
+
+        for index, card in enumerate(cards_in_order, start=1):
+            spec_slide = spec_lookup.get(card.ref_id)
+            section_name = section_lookup.get(card.ref_id)
+            content_slide = content_lookup.get(card.ref_id)
+            layout_id = card.layout_hint
+            if not layout_id and spec_slide is not None:
+                layout_id = spec_slide.layout
+            layout_id = layout_id or "title"
+            layout_name = self._layout_name_lookup.get(layout_id)
+            if layout_name is None and spec_slide is not None and spec_slide.layout == layout_id:
+                layout_name = spec_slide.layout
+            if layout_name is None:
+                layout_name = layout_id
+            elements = self._merge_slide_elements(spec_slide, content_slide)
+            sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
             slides.append(
                 GenerateReadySlide(
                     layout_id=layout_id,
-                    elements=self._convert_slide_elements(spec_slide),
+                    layout_name=layout_name,
+                    elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,
                         page_no=index,
-                        sources=[spec_slide.id],
+                        sources=sources,
                         fallback="none",
                     ),
                 )
@@ -507,7 +600,7 @@ class DraftStructuringStep:
         meta = GenerateReadyMeta(
             template_version=draft.meta.template_id,
             template_path=None,
-            content_hash=None,
+            content_hash=content_hash,
             generated_at=timestamp,
             job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
             job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
@@ -572,8 +665,50 @@ class DraftStructuringStep:
         payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
         return payload
 
+    def _merge_slide_elements(
+        self,
+        spec_slide: Slide | None,
+        content_slide: ContentSlide | None,
+    ) -> dict[str, Any]:
+        base = self._convert_slide_elements(spec_slide) if spec_slide is not None else {}
+        if content_slide is None or content_slide.elements is None:
+            return base
+
+        elements: dict[str, Any] = {}
+        title = content_slide.elements.title
+        if title:
+            elements["title"] = title
+
+        if content_slide.elements.body:
+            elements["body"] = list(content_slide.elements.body)
+        elif "body" in base:
+            elements["body"] = base["body"]
+
+        if content_slide.elements.note:
+            elements["note"] = content_slide.elements.note
+        elif "note" in base:
+            elements["note"] = base["note"]
+
+        if content_slide.elements.table_data is not None:
+            elements["table"] = {
+                "headers": list(content_slide.elements.table_data.headers),
+                "rows": [list(row) for row in content_slide.elements.table_data.rows],
+            }
+
+        if spec_slide is not None:
+            if spec_slide.subtitle and "subtitle" not in elements:
+                elements["subtitle"] = spec_slide.subtitle
+            for key, value in base.items():
+                if key in {"title", "body", "note", "subtitle"}:
+                    continue
+                elements.setdefault(key, value)
+
+        return elements
+
     @staticmethod
-    def _convert_slide_elements(slide: Slide) -> dict[str, Any]:
+    def _convert_slide_elements(slide: Slide | None) -> dict[str, Any]:
+        if slide is None:
+            return {}
         elements: dict[str, Any] = {}
         if slide.title:
             elements["title"] = slide.title

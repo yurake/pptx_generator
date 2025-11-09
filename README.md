@@ -138,6 +138,7 @@ flowchart TD
     --template samples/templates/templates.pptx
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
+- JobSpec と BriefCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
 ### 工程 4: PPTX レンダリング

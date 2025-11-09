@@ -75,6 +75,8 @@ flowchart TB
         RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(完了)"]
         RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(完了)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
+        RM060["RM-060<br/>Stage3 ID 整合性強制<br/>(完了)"]
+        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -857,6 +859,33 @@ flowchart TB
   - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
   - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
 - 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
+
+<a id="rm-060"></a>
+### RM-060 Stage3 ID 整合性強制
+- 対象工程: 3（マッピング）
+- ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
+- 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
+- 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/archive/20251108-rm060-id-alignment.md](../todo/archive/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
+- 状況: 完了（2025-11-09 更新）
+- 期待成果:
+  - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
+  - ログやエラーメッセージで欠損カード ID や参照ファイルを特定でき、運用チームが迅速に復旧できる。
+  - Slide ID Aligner が AI による整合候補と信頼度を算出し、`content_approved` を補正することでカード枚数と JobSpec のスライドを同期させる。
+  - generate_ready のスライド数が BriefCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
+- 次アクション: Slide ID アライメントの閾値チューニングとログ出力の監査項目を整理し、残る CLI メッセージ調整・運用ドキュメントの細部を確定する。
+
+<a id="rm-061"></a>
+### RM-061 usage_tags ガバナンス強化
+- 対象工程: 3（マッピング）
+- ゴール: `usage_tags` の付与・利用をガバナンスし、レイアウト意図と `intent`/`type_hint` の一致具合を安定させる。
+- 参照ドキュメント: [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
+- 参照 ToDo: [docs/todo/20251109-rm061-usage-tags-governance.md](../todo/20251109-rm061-usage-tags-governance.md)
+- 状況: 未着手（2025-11-09 追加）
+- 期待成果:
+  - `_derive_usage_tags` のロジックを調整し、`title` タグを意図的レイアウトに限定する。
+  - layout_validation にタグ過剰付与の診断を追加し、CI で逸脱を検知する。
+  - 生成 AI が返すレイアウト分類を `usage_tags` 語彙へ正規化する仕組みを整備する。
+- 次アクション: 抽出ルールの改修案とバリデーション仕様、AI 正規化フローの実装範囲を整理し、Plan 承認へ進める。
 
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。

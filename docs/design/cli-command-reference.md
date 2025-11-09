@@ -32,7 +32,7 @@
 オプションを省略した場合は、抽出結果が既定の `.pptx/extract/` 配下に出力される。例えば以下のようにテンプレートファイルのみを指定すれば、最小構成で抽出と検証が実行できる。
 
 ```bash
-uv run pptx template templates/jri_template.pptx
+uv run pptx template samples/templates/templates.pptx
 ```
 
 主要成果物:

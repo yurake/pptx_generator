@@ -95,6 +95,31 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
     assert meta_payload["statistics"]["cards_total"] == 2
 
 
+def test_prepare_sets_cards_approved_when_flag_enabled(tmp_path) -> None:
+    output_dir = tmp_path / "approved"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(SAMPLE_BRIEF),
+            "--output",
+            str(output_dir),
+            "--approved",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
+    assert {card["status"] for card in cards_payload["cards"]} == {"approved"}
+
+    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    assert meta_payload["statistics"]["approved"] == len(cards_payload["cards"])
+
+
 def test_prepare_page_limit_short_option(tmp_path) -> None:
     output_dir = tmp_path / "short"
     runner = CliRunner()

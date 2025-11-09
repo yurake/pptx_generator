@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import shutil
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -98,6 +99,15 @@ def _configure_llm_logger() -> None:
         llm_logger.addHandler(handler)
     llm_logger.setLevel(logging.INFO)
     llm_logger.propagate = False
+
+
+def _log_current_llm_provider(context: str) -> None:
+    provider_env = os.getenv("PPTX_LLM_PROVIDER")
+    provider = provider_env.strip().lower() if provider_env else "mock"
+    source = "env" if provider_env else "default"
+    logging.getLogger("pptx_generator.cli.llm").info(
+        "LLM provider (%s): %s (source=%s)", context, provider, source
+    )
 
 
 def _configure_file_logging() -> None:
@@ -1544,14 +1554,22 @@ def gen(  # noqa: PLR0913
 @click.option(
     "-p",
     "--page-limit",
+    "--card-limit",
     type=click.IntRange(1, None),
     default=None,
     help="生成するカード枚数の上限",
+)
+@click.option(
+    "--approved",
+    is_flag=True,
+    default=False,
+    help="生成する全カードのステータスを approved に設定する",
 )
 def prepare(
     brief_path: Path,
     output_dir: Path,
     page_limit: int | None,
+    approved: bool,
 ) -> None:
     """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
@@ -1577,6 +1595,7 @@ def prepare(
             source,
             policy_id=None,
             page_limit=page_limit,
+            all_cards_status="approved" if approved else None,
         )
     except BriefAIOrchestrationError as exc:
         click.echo(f"ブリーフカードの生成に失敗しました: {exc}", err=True)
@@ -2310,6 +2329,7 @@ def template(  # noqa: PLR0913
     golden_specs: tuple[Path, ...],
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
+    _log_current_llm_provider("template")
     try:
         extraction_result = _run_template_extraction(
             template_path=template_path,
