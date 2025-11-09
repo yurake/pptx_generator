@@ -97,6 +97,7 @@ class DraftStructuringStep:
         self.options = options or DraftStructuringOptions()
         self._recommender: CardLayoutRecommender | None = None
         self._alignment_records: list | None = None
+        self._layout_name_lookup: dict[str, str] = {}
 
     # ------------------------------------------------------------------ #
     # public API
@@ -141,6 +142,7 @@ class DraftStructuringStep:
             raise DraftStructuringError(msg)
 
         layouts = self._load_layouts(self.options.layouts_path)
+        self._layout_name_lookup = {profile.layout_id: profile.layout_name for profile in layouts}
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
         template: ChapterTemplate | None = None
         if self.options.chapter_templates_dir:
@@ -269,6 +271,7 @@ class DraftStructuringStep:
 
             record = LayoutProfile(
                 layout_id=layout_id,
+                layout_name=payload.get("layout_name") or layout_id,
                 usage_tags=normalize_usage_tags(payload.get("usage_tags", [])),
                 text_hint=text_hint,
                 media_hint=media_hint,
@@ -539,9 +542,11 @@ class DraftStructuringStep:
         slides: list[GenerateReadySlide] = []
         if not cards_in_order:
             for index, spec_slide in enumerate(spec.slides, start=1):
+                layout_name = self._layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
                 slides.append(
                     GenerateReadySlide(
                         layout_id=spec_slide.layout,
+                        layout_name=layout_name,
                         elements=self._convert_slide_elements(spec_slide),
                         meta=MappingSlideMeta(
                             section=None,
@@ -570,11 +575,17 @@ class DraftStructuringStep:
             if not layout_id and spec_slide is not None:
                 layout_id = spec_slide.layout
             layout_id = layout_id or "title"
+            layout_name = self._layout_name_lookup.get(layout_id)
+            if layout_name is None and spec_slide is not None and spec_slide.layout == layout_id:
+                layout_name = spec_slide.layout
+            if layout_name is None:
+                layout_name = layout_id
             elements = self._merge_slide_elements(spec_slide, content_slide)
             sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
             slides.append(
                 GenerateReadySlide(
                     layout_id=layout_id,
+                    layout_name=layout_name,
                     elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,

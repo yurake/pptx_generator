@@ -33,6 +33,7 @@ class LayoutProfile:
     """layouts.jsonl の 1 レコードを抽象化したもの。"""
 
     layout_id: str
+    layout_name: str
     usage_tags: tuple[str, ...]
     text_hint: dict[str, object]
     media_hint: dict[str, object]
