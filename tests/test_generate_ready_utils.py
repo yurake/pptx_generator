@@ -13,6 +13,7 @@ def test_generate_ready_to_jobspec_conversion() -> None:
         slides=[
             GenerateReadySlide(
                 layout_id="layout_basic",
+                layout_name="Layout Basic Human",
                 elements={
                     "title": "タイトル",
                     "subtitle": "サブタイトル",
@@ -61,7 +62,7 @@ def test_generate_ready_to_jobspec_conversion() -> None:
 
     slide = spec.slides[0]
     assert slide.id == "slide-1"
-    assert slide.layout == "layout_basic"
+    assert slide.layout == "Layout Basic Human"
     assert slide.title == "タイトル"
     assert slide.subtitle == "サブタイトル"
     assert slide.notes == "ノートです"
@@ -97,6 +98,7 @@ def test_generate_ready_to_jobspec_defaults() -> None:
         slides=[
             GenerateReadySlide(
                 layout_id="layout_basic",
+                layout_name=None,
                 elements={},
                 meta=MappingSlideMeta(
                     section=None,

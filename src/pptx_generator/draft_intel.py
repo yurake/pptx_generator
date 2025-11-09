@@ -359,9 +359,11 @@ def clamp_score_detail(detail: DraftLayoutScoreDetail) -> DraftLayoutScoreDetail
         detail.content_capacity = round(detail.content_capacity * scale, 3)
         detail.diversity = round(detail.diversity * scale, 3)
         detail.analyzer_support = round(detail.analyzer_support * scale, 3)
+        detail.ai_recommendation = round(detail.ai_recommendation * scale, 3)
     if detail.total < 0.0:
         detail.uses_tag = round(max(0.0, detail.uses_tag), 3)
         detail.content_capacity = round(max(0.0, detail.content_capacity), 3)
         detail.diversity = round(max(0.0, detail.diversity), 3)
         detail.analyzer_support = round(max(-0.5, detail.analyzer_support), 3)
+        detail.ai_recommendation = round(max(0.0, detail.ai_recommendation), 3)
     return detail

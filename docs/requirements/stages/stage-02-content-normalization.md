@@ -8,7 +8,7 @@
 ## 入力
 - Markdown / JSON 形式のブリーフ資料（CLI では位置引数で指定）。
 - 生成 AI ポリシー定義 `config/brief_policies/default.json`。
-- （任意）カード生成枚数 (`--card-limit`)。
+- （任意）カード生成枚数 (`-p/--page-limit`)。
 
 ## 出力
 - `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）。
@@ -20,7 +20,7 @@
 
 ## 業務フロー
 1. CLI がブリーフ入力を読み込み、`BriefSourceDocument` へパースする。Markdown の見出しや箇条書きはカード候補に変換される。
-2. `BriefAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `--card-limit` が指定されていない限りポリシーまたは LLM 任せ。
+2. `BriefAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `-p/--page-limit` が指定されていない限りポリシーまたは LLM 任せ。
 3. 生成結果を Pydantic モデルで検証し、`prepare_card.json` と関連ログファイルを出力する。
 4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
 5. 工程3 `pptx compose` が `--brief-cards` / `--brief-log` / `--brief-meta` オプションで成果物を参照し、章構成とマッピングを実行する。
@@ -37,7 +37,7 @@
 - `--mode` オプション（`dynamic` / `static`）を必須とし、実行モード未指定の場合は CLI がエラーで終了する。
 - ポリシー読み込み失敗時（`BriefPolicyError`）は exit code 4 で終了し、エラーメッセージを標準エラーへ出力する。
 - 生成結果は `.pptx/prepare/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。
-- `--card-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。
+- `-p/--page-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。
 - `--output` を指定して別ディレクトリへ書き込む際もファイル構成（`prepare_card.json` 等）は変えない。
 
 ## 今後の拡張

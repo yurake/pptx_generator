@@ -84,8 +84,8 @@ flowchart TD
 | --- | --- | --- | --- |
 | 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
-| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json --brief-cards .pptx/prepare/prepare_card.json --template samples/templates/templates.pptx` | `.pptx/draft/generate_ready.json` | 章構成承認とレイアウト割付をまとめて実行 |
-| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json --branding .pptx/extract/branding.json --export-pdf` | `.pptx/gen/proposal.pptx`, `proposal.pdf` | `generate_ready.json` に記録されたテンプレ情報を用いて最終成果物を生成（`--output` 未指定時は `.pptx/gen/` へ出力）。 |
+| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json` | `.pptx/compose/generate_ready.json` | `.pptx/prepare/` 配下の既定成果物を参照し、jobspec の `meta.template_path` / `meta.layouts_path` からテンプレートとレイアウトを自動解決 |
+| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json` | `.pptx/gen/proposal.pptx` | `generate_ready.json` に埋め込まれたテンプレ／ブランド設定を利用して最終成果物を生成（PDF も出力したい場合は `--export-pdf` を追加）。 |
 
 補足:
 - 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
@@ -113,7 +113,7 @@ flowchart TD
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
 ### 工程 2: コンテンツ準備
-- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `--card-limit` で制御可能です。
+- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
 - `.pptx/prepare/` 配下に `prepare_card.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
@@ -138,6 +138,7 @@ flowchart TD
     --template samples/templates/templates.pptx
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
+- JobSpec と BriefCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
 ### 工程 4: PPTX レンダリング

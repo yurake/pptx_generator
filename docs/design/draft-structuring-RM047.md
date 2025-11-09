@@ -17,7 +17,7 @@
 ### 出力
 - `generate_ready.json`: 工程5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
 - `generate_ready_meta.json`: 主に HITL と運用向けのメタ情報。章テンプレ適合率、カード割当結果、Analyzer 指摘要約、AI 推薦の適用件数などを記録。
-- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容、HITL アクションを保持する。
+- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容（LLM 応答の model / recommended / reasons）とシミュレーション結果、HITL アクションを保持する。
 - `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
@@ -27,6 +27,8 @@
 4. **AI 推薦（カード単位）**:
    - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
    - プロンプトにはカード本文、意図タグ、章テンプレ要件、利用可能なテンプレ一覧（用途タグと主要アンカー情報）を含める。
+   - LLM プロバイダは `PPTX_LLM_PROVIDER` で切り替える。`openai`（gpt-5-mini → JSON 応答が得られない場合は自動的に gpt-4o-mini 系へフェイルオーバー）、`azure`（Azure OpenAI Responses API）、`anthropic`（Claude 3 系列）、`aws-claude`（Bedrock Claude 3 系列）をサポートし、いずれも JSON オブジェクト形式で `recommended` / `reasons` を返す前提とする。
+   - プロバイダ毎の互換性は `scripts/test_layout_providers.sh` で検証できる。`UV_CACHE_DIR` をリポジトリ直下に指定しておけば、初回承認後は同一キャッシュを再利用できる。
    - 推薦結果は `layout_candidates[]`（`layout_id`, `score`, `reasons[]`）として保持する。AI 応答が得られない場合はヒューリスティック（用途タグ一致、容量適合度、章配列バランス）で補完する。
 5. **カード→スライド割当**:
    - `jobspec.slides` に未使用スライドがある限り、カード候補のうち `layout_id` が一致するものを選定する。
@@ -141,6 +143,14 @@
     "approved_slides": 12,
     "appendix_slides": 1,
     "ai_recommendation_used": 10
+  },
+  "ai_recommendation": {
+    "invoked": 12,
+    "used": 10,
+    "simulated": 2,
+    "models": {
+      "mock-layout": 12
+    }
   }
 }
 ```

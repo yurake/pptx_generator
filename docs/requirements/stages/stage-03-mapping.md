@@ -7,37 +7,44 @@
 
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`。
+  - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
 - Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
 
 ## 出力
-- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持する。
+- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持し、スライド数は `prepare_card.json.cards` と一致する。
 - `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。
 - `draft_review_log.json`: 承認・差戻し履歴。`action`, `actor`, `timestamp`, `reason_code` を必須とする。
 - `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完履歴、Analyzer 情報を記録する。
 - `fallback_report.json`: 重大フォールバック（例: 章統合、付録送り）を詳細化した任意ファイル。
 
 ## 機能要件
-1. **章構成管理（HITL）**
+1. **カード ID アライメント（AI + 事前整合）**
+   - `prepare_card.json.cards[*].card_id` と `jobspec.json.slides[*].id` を AI スライドマッチャで突合し、カードごとに最適な `slide_id` を推奨する。
+   - 推奨結果は `content_approved` の `ContentSlide.id` として反映し、信頼度（閾値）未満のカードは保留扱いとして最終フェイルセーフ（`DraftStructuringError`）で検知する。
+   - アライメント結果（採用数・信頼度・未確定カード）を監査メタへ記録し、ログに INFO レベルで出力する。
+   - このステップは工程3開始前に実施され、以降のレイアウト候補評価・フォールバック処理とは独立して動作する。
+
+2. **章構成管理（HITL）**
    - 章テンプレートの適合率を計算し、過不足章は `generate_ready_meta.template.mismatch[]` に出力する。
    - `layout_hint` 候補ごとにスコア (`layout_score_detail`) を算出。指標: 用途タグ一致度、容量適合度、多様性、Analyzer 支援度、テンプレ適合度。
    - 差戻し時は `return_reason_code` を必須化し、自由記述は `draft_review_log.json` の `notes` に記録する。
    - 承認完了後に章順・スライド順・付録情報を `generate_ready.json` に保存し、章ステータスを `generate_ready_meta.sections[*].status` へ反映。
 
-2. **レイアウト割付（自動）**
+3. **レイアウト割付（自動）**
   - BriefCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
   - スコア上位候補から割付を試み、収容不可の場合は `shrink_text` → `split_slide` → `appendix` の順でフォールバック。
   - フォールバック結果と理由を `draft_mapping_log.json.fallback` と `fallback_report.json` に記録する。
   - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
   - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする（RM-054 計画）。
 
-3. **Analyzer 連携**
+4. **Analyzer 連携**
    - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度に応じて候補スコアを補正する。
    - Analyzer 指摘サマリは `generate_ready_meta.sections[*].analyzer_summary` と `draft_mapping_log.json.analyzer` に保存する。
 
-4. **監査・再現性**
+5. **監査・再現性**
   - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
   - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
   - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
@@ -48,10 +55,12 @@
   - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--generate-ready-filename` / `--generate-ready-meta` / `--review-log-filename` / `--mapping-log-filename` で成果物ファイル名を制御する。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
+  - テンプレ抽出成果物（JobSpecScaffold）を渡された場合は不足フィールド補完と textboxes 変換を行い、`pptx compose` の入力要件を満たす `JobSpec` へ整形する。
 - `pptx outline`
   - `generate_ready` 系成果物のみ再生成する。`--refresh-candidates` 指定時は候補スコアも再計算する。
 
 ## 品質ゲート
+- JobSpec の `slides[*].id` が `prepare_card.json` 由来の `content_approved` に存在しない場合は `DraftStructuringError` を送出し、欠損 ID 一覧を含むメッセージと共に工程3を停止する。CLI では exit code 6 を返し、HITL が ID を修正後に再実行すること。
 - `generate_ready_meta.sections[*].status` に未承認 (`pending`) が残っていない。
 - `generate_ready.json` のスライド数が `generate_ready_meta.statistics.cards_total` と一致する。
 - `draft_mapping_log.json` の `warnings` と `analyzer.issue_count` が監視対象（PagerDuty 等）へ連携可能な形式である。

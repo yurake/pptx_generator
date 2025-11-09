@@ -13,6 +13,7 @@ from time import perf_counter
 from typing import Any, Iterable
 
 from ..models import LayoutInfo, ShapeInfo, TemplateSpec
+from ..utils.usage_tags import normalize_usage_tags_with_unknown
 from ..pipeline.template_extractor import TemplateExtractor, TemplateExtractorOptions
 from .schema import (
     DIAGNOSTICS_VALIDATOR,
@@ -266,7 +267,48 @@ class LayoutValidationSuite:
                     }
                 )
 
-            usage_tags = sorted(self._derive_usage_tags(layout, placeholder_records) or ["generic"])
+            (
+                raw_usage_tags,
+                has_title_placeholder,
+                has_body_placeholder,
+                title_from_name,
+            ) = self._derive_usage_tags(layout, placeholder_records)
+
+            usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
+            usage_tags_set = set(usage_tags_tuple)
+
+            title_conflict_removed = False
+            if "title" in usage_tags_set and has_body_placeholder and not title_from_name:
+                usage_tags_set.discard("title")
+                title_conflict_removed = True
+
+            if not usage_tags_set:
+                usage_tags_set.add("generic")
+
+            usage_tags = sorted(usage_tags_set)
+
+            if unknown_tags:
+                warnings.append(
+                    {
+                        "code": "usage_tag_unknown",
+                        "layout_id": layout_id,
+                        "name": layout.name,
+                        "detail": ", ".join(sorted(unknown_tags)),
+                    }
+                )
+
+            if title_conflict_removed:
+                detail = "タイトルタグが本文プレースホルダーの存在により除外されました"
+                if not title_from_name:
+                    detail += "（名前ベースの判定外）"
+                warnings.append(
+                    {
+                        "code": "usage_tag_title_suppressed",
+                        "layout_id": layout_id,
+                        "name": layout.name,
+                        "detail": detail,
+                    }
+                )
             text_hint = self._derive_text_hint(placeholder_records)
             media_hint = self._derive_media_hint(placeholder_records)
 
@@ -515,36 +557,98 @@ class LayoutValidationSuite:
 
         return warnings, errors, issues
 
+    @staticmethod
     def _derive_usage_tags(
-        self, layout: LayoutInfo, placeholders: Iterable[dict[str, Any]]
-    ) -> set[str]:
+        layout: LayoutInfo, placeholders: Iterable[dict[str, Any]]
+    ) -> tuple[set[str], bool, bool, bool]:
         tags: set[str] = set()
-        name = layout.name.casefold()
-        if "title" in name or "cover" in name:
-            tags.add("title")
-        if "agenda" in name or "toc" in name:
-            tags.add("agenda")
-        if "summary" in name or "overview" in name:
-            tags.add("overview")
-        if "chart" in name:
-            tags.add("chart")
-        if "table" in name:
-            tags.add("table")
+        name = layout.name or ""
+        name_cf = name.casefold()
+
+        has_title_placeholder = False
+        has_body_placeholder = False
+        has_chart_placeholder = False
+        has_table_placeholder = False
+        has_image_placeholder = False
 
         for placeholder in placeholders:
-            p_type = placeholder.get("type")
-            if p_type == "chart":
-                tags.add("chart")
-            if p_type == "table":
-                tags.add("table")
-            if p_type == "image":
-                tags.add("visual")
-            if p_type == "title":
-                tags.add("title")
-            if p_type == "body":
-                tags.add("content")
+            p_type_raw = placeholder.get("type") or ""
+            p_type = p_type_raw.casefold()
+            placeholder_name_cf = (placeholder.get("name") or "").casefold()
 
-        return tags
+            if p_type == "title":
+                has_title_placeholder = True
+            elif p_type in {"body", "content", "text"}:
+                has_body_placeholder = True
+                tags.add("content")
+            elif p_type == "chart":
+                has_chart_placeholder = True
+                tags.add("chart")
+            elif p_type == "table":
+                has_table_placeholder = True
+                tags.add("table")
+            elif p_type == "image":
+                has_image_placeholder = True
+                tags.add("visual")
+            elif p_type == "object":
+                if any(keyword in placeholder_name_cf for keyword in ("body", "content", "text", "message")):
+                    has_body_placeholder = True
+                    tags.add("content")
+                elif any(keyword in placeholder_name_cf for keyword in ("logo", "image", "picture", "visual")):
+                    has_image_placeholder = True
+                    tags.add("visual")
+            elif p_type == "media":
+                if any(keyword in placeholder_name_cf for keyword in ("image", "picture", "photo", "visual")):
+                    has_image_placeholder = True
+                    tags.add("visual")
+
+        if has_chart_placeholder and "chart" not in tags:
+            tags.add("chart")
+        if has_table_placeholder and "table" not in tags:
+            tags.add("table")
+        if has_image_placeholder and "visual" not in tags:
+            tags.add("visual")
+
+        if "agenda" in name_cf or "toc" in name_cf:
+            tags.add("agenda")
+        if "summary" in name_cf or "overview" in name_cf:
+            tags.add("overview")
+        if "table" in name_cf:
+            tags.add("table")
+        if "chart" in name_cf:
+            tags.add("chart")
+
+        title_from_name = LayoutValidationSuite._looks_like_title_layout(name, name_cf)
+        if title_from_name:
+            tags.add("title")
+        elif has_title_placeholder and not has_body_placeholder:
+            tags.add("title")
+
+        if has_body_placeholder:
+            tags.add("content")
+
+        return tags, has_title_placeholder, has_body_placeholder, title_from_name
+
+    @staticmethod
+    def _looks_like_title_layout(name: str, name_cf: str) -> bool:
+        if not name:
+            return False
+
+        # ASCII keywords
+        if any(keyword in name_cf for keyword in ("cover", "front page")):
+            return True
+        if "title" in name_cf and "content" not in name_cf:
+            return True
+
+        # Japanese keywords（casefold では変わらないためそのまま検索）
+        if "タイトル" in name and "コンテンツ" not in name:
+            return True
+        if "表紙" in name:
+            return True
+        if "セクション" in name and ("タイトル" in name or "表紙" in name):
+            return True
+
+        return False
 
     def _derive_text_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, int]:
         max_chars = 0

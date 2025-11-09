@@ -32,7 +32,7 @@
   | --- | --- | --- |
   | `<brief_path>` | 入力ブリーフ（Markdown / JSON） | 必須 |
   | `--output <dir>` | 成果物ディレクトリ | `.pptx/prepare` |
-  | `--card-limit <int>` | 生成するカード枚数の上限 | 指定なし |
+  | `-p/--page-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 - 代表的な出力
   - `prepare_card.json`
   - `brief_log.json`

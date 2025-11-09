@@ -30,3 +30,8 @@ feat/047-draft-structuring での調査結果
 
 1. スキャフォールドを正式な JobSpec へ整形する変換ステップの設計・実装。
 2. もしくはテンプレ抽出成果物と compose 入力スキーマ統合に向けたロードマップ項目の起票。
+
+## 2025-11-08 更新
+- `pptx_generator.spec_loader.load_jobspec_from_path` を導入し、テンプレ抽出 `jobspec.json` を読み込んだ際に `JobSpecScaffold` を `JobSpec` へ自動変換する処理を追加。
+- 変換時はテンプレプレースホルダから `Slide.textboxes` を生成し、タイトル／サブタイトルの初期値や非テキスト要素の要約を `notes` に残す。
+- CLI (`pptx compose` / `pptx mapping`) は従来どおり `_load_jobspec` を経由するため、テンプレ抽出直後の `jobspec.json` でもバリデーションエラーなく実行できる。

@@ -2,7 +2,8 @@
 
 from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
                      LLMClientConfigurationError, MockLLMClient,
-                     create_llm_client)
+                     SlideMatchCandidate, SlideMatchRequest,
+                     SlideMatchResponse, create_llm_client)
 from .orchestrator import ContentAIOrchestrator, ContentAIOrchestrationError
 from .policy import (
     ContentAIPolicy,
@@ -18,6 +19,9 @@ __all__ = [
     "LLMClient",
     "MockLLMClient",
     "LLMClientConfigurationError",
+    "SlideMatchCandidate",
+    "SlideMatchRequest",
+    "SlideMatchResponse",
     "create_llm_client",
     "ContentAIOrchestrator",
     "ContentAIOrchestrationError",

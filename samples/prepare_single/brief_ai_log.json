@@ -1,0 +1,62 @@
+[
+  {
+    "card_id": "intro",
+    "prompt_template": "brief.default",
+    "model": "mock-local",
+    "response_digest": "intro 現状と課題",
+    "warnings": [
+      "llm_stub"
+    ],
+    "tokens": {
+      "prompt": 0,
+      "completion": 0,
+      "total": 0
+    },
+    "generated_at": "2025-11-04T10:50:09.367822Z"
+  },
+  {
+    "card_id": "solution",
+    "prompt_template": "brief.default",
+    "model": "mock-local",
+    "response_digest": "solution 解決策",
+    "warnings": [
+      "llm_stub"
+    ],
+    "tokens": {
+      "prompt": 0,
+      "completion": 0,
+      "total": 0
+    },
+    "generated_at": "2025-11-04T10:50:09.367829Z"
+  },
+  {
+    "card_id": "impact",
+    "prompt_template": "brief.default",
+    "model": "mock-local",
+    "response_digest": "impact 期待効果",
+    "warnings": [
+      "llm_stub"
+    ],
+    "tokens": {
+      "prompt": 0,
+      "completion": 0,
+      "total": 0
+    },
+    "generated_at": "2025-11-04T10:50:09.367832Z"
+  },
+  {
+    "card_id": "next",
+    "prompt_template": "brief.default",
+    "model": "mock-local",
+    "response_digest": "next 次のアクション",
+    "warnings": [
+      "llm_stub"
+    ],
+    "tokens": {
+      "prompt": 0,
+      "completion": 0,
+      "total": 0
+    },
+    "generated_at": "2025-11-04T10:50:09.367833Z"
+  }
+]

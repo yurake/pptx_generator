@@ -86,7 +86,8 @@ class DraftStore:
 
     def __init__(self, base_dir: Path | None = None) -> None:
         env_dir = os.environ.get("DRAFT_STORE_DIR")
-        self._base_dir = base_dir or Path(env_dir or ".pptx/draft_store")
+        default_dir = Path(".pptx/draft/store")
+        self._base_dir = base_dir or Path(env_dir or default_dir)
         self._base_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------ #

@@ -49,7 +49,7 @@
 
 ## 提案するドキュメント更新
 - `docs/requirements/stages/stage-03-content-normalization.md`: 入力を「ブリーフソース」「AI プロンプト設定」「テンプレ独立カード構造」に再構成し、出力を `prepare_card` ベースへ更新。品質ゲートとログ要件もカード ID / バージョン軸で書き換える。
-- `docs/design/stages/stage-03-content-normalization.md`: `ContentAIOrchestrator` の役割を「テンプレ依存 → ブリーフ抽象化」へ移行する設計図を追加。`BriefCard` モデルと CLI オプション（`--brief-source`, `--card-limit` など）を反映する。
+- `docs/design/stages/stage-03-content-normalization.md`: `ContentAIOrchestrator` の役割を「テンプレ依存 → ブリーフ抽象化」へ移行する設計図を追加。`BriefCard` モデルと CLI オプション（`--brief-source`, `-p/--page-limit` など）を反映する。
 - `docs/design/schema/stage-03-content-normalization.md`: JSON スキーマを `prepare_card`・`story_context`・`supporting_materials[]` に改訂し、旧 `elements.title/body` の制約を撤廃。承認ログも `card_id` / `revision` 前提で書き換える。
 - `docs/notes/20251017-content-approval-platform.md`: 新モデルとの差分と段階移行方針を追記（従来 `ContentSlide` 利用箇所の移行ガイド）。
 - `docs/roadmap/roadmap.md`: RM-046 の「次アクション」を本調査内容に合わせて更新し、ブリーフ抽象化タスクを明確化。
