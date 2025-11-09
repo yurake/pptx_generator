@@ -1,7 +1,7 @@
 ---
 目的: usage_tags の付与・診断・AI 連携を再設計し、レイアウト選定の整合性を高める
 関連ブランチ: feat/rm061-usage-tags-governance
-関連Issue: 未作成
+関連Issue: #281
 roadmap_item: RM-061 usage_tags ガバナンス強化
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] PR 作成
   - メモ: 
