@@ -11,7 +11,7 @@
       "temperature": 0.0,
       "prompt_template": "各レイアウトproviderの適合度を0〜1で評価し、最適な順に並べてください。",
       "slide_policies": [],
-      "max_tokens": 1024
+      "max_tokens": 10240
     }
   ]
 }
