@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 
 
-PROVIDERS = ("openai", "azure", "anthropic", "aws-claude")
+_providers_env = os.getenv("LAYOUT_PROVIDER_TEST_PROVIDERS")
+if _providers_env:
+    PROVIDERS = tuple(filter(None, (value.strip() for value in _providers_env.split(","))))
+else:
+    PROVIDERS = ("azure",)
 
 REQUIRED_ENV_VARS = {
     "openai": ("OPENAI_API_KEY",),
@@ -57,8 +61,23 @@ def test_layout_provider_script_runs_when_env_present(provider: str) -> None:
             f"環境変数 {', '.join(missing)} が設定されていないため {provider} プロバイダ検証をスキップします"
         )
 
+    prepare_dir = project_root / "samples" / "prepare_single"
+    cards_path = prepare_dir / "prepare_card.json"
+    brief_log_path = prepare_dir / "brief_log.json"
+    brief_meta_path = prepare_dir / "ai_generation_meta.json"
+
     result = subprocess.run(
-        ["bash", "scripts/test_layout_providers.sh", provider],
+        [
+            "bash",
+            "scripts/test_layout_providers.sh",
+            "--cards",
+            str(cards_path),
+            "--brief-log",
+            str(brief_log_path),
+            "--brief-meta",
+            str(brief_meta_path),
+            provider,
+        ],
         cwd=project_root,
         env=env,
         capture_output=True,

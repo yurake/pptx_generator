@@ -1,0 +1,50 @@
+{
+  "brief_id": "sample_import_content_summary",
+  "cards": [
+    {
+      "card_id": "intro",
+      "chapter": "イントロダクション",
+      "message": "intro 現状と課題",
+      "narrative": [
+        "intro 現状と課題"
+      ],
+      "supporting_points": [
+        {
+          "statement": "営業リードタイムが平均 12 日で業界平均より 1.5 倍長い。"
+        },
+        {
+          "statement": "KPI 可視化が属人化し、意思決定が遅延している。"
+        }
+      ],
+      "story": {
+        "phase": "introduction"
+      },
+      "intent_tags": [
+        "introduction"
+      ],
+      "status": "draft",
+      "autofix_applied": []
+    }
+  ],
+  "story_context": {
+    "chapters": [
+      {
+        "id": "intro",
+        "title": "イントロダクション"
+      },
+      {
+        "id": "problem",
+        "title": "課題整理"
+      },
+      {
+        "id": "solution",
+        "title": "解決策"
+      },
+      {
+        "id": "impact",
+        "title": "期待効果"
+      }
+    ],
+    "must_have_messages": []
+  }
+}

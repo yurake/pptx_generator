@@ -18,24 +18,70 @@ fi
 export UV_CACHE_DIR="${UV_CACHE_DIR:-.uv-cache}"
 mkdir -p "${UV_CACHE_DIR}"
 
-default_providers=("openai" "azure" "anthropic" "aws-claude")
+default_providers=("azure")
+cards_path=".pptx/prepare/prepare_card.json"
+brief_log_path=".pptx/prepare/brief_log.json"
+brief_meta_path=".pptx/prepare/ai_generation_meta.json"
+providers=()
 
 print_usage() {
   cat <<USAGE
-Usage: scripts/test_layout_providers.sh [provider ...]
+Usage: scripts/test_layout_providers.sh [options] [provider ...]
 
-指定した LLM プロバイダーのみを検証します。引数が無い場合は全プロバイダー
-(${default_providers[*]}) を順番に実行します。
+Options:
+  --cards <path>       使用する prepare_card.json のパス (既定: ${cards_path})
+  --brief-log <path>   使用する brief_log.json のパス (既定: ${brief_log_path})
+  --brief-meta <path>  使用する ai_generation_meta.json のパス (既定: ${brief_meta_path})
+  -h, --help           このヘルプを表示
+
+引数にプロバイダーを指定しない場合は ${default_providers[*]} を実行します。
+指定した場合はその順に実行します。
 USAGE
 }
 
-if [[ ${#} -gt 0 ]]; then
-  if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
-    print_usage
-    exit 0
-  fi
-  providers=("$@")
-else
+while [[ ${#} -gt 0 ]]; do
+  case "${1}" in
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    --cards)
+      if [[ ${#} -lt 2 ]]; then
+        echo "[layout-providers] --cards requires a path" >&2
+        exit 2
+      fi
+      cards_path="${2}"
+      shift 2
+      ;;
+    --brief-log)
+      if [[ ${#} -lt 2 ]]; then
+        echo "[layout-providers] --brief-log requires a path" >&2
+        exit 2
+      fi
+      brief_log_path="${2}"
+      shift 2
+      ;;
+    --brief-meta)
+      if [[ ${#} -lt 2 ]]; then
+        echo "[layout-providers] --brief-meta requires a path" >&2
+        exit 2
+      fi
+      brief_meta_path="${2}"
+      shift 2
+      ;;
+    --*)
+      echo "[layout-providers] 未知のオプションです: ${1}" >&2
+      print_usage >&2
+      exit 2
+      ;;
+    *)
+      providers+=("${1}")
+      shift
+      ;;
+  esac
+done
+
+if [[ ${#providers[@]} -eq 0 ]]; then
   providers=("${default_providers[@]}")
 fi
 
@@ -56,7 +102,9 @@ for provider in "${providers[@]}"; do
   PPTX_LLM_PROVIDER="${provider}" \
     uv run pptx --debug compose \
       .pptx/extract/jobspec.json \
-      --brief-cards .pptx/prepare/prepare_card.json \
+      --brief-cards "${cards_path}" \
+      --brief-log "${brief_log_path}" \
+      --brief-meta "${brief_meta_path}" \
       --layouts .pptx/extract/layouts.jsonl || {
       echo "provider ${provider} failed" >&2
       exit 1

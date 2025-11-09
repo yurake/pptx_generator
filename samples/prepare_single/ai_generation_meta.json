@@ -1,0 +1,22 @@
+{
+  "brief_id": "sample_import_content_summary",
+  "generated_at": "2025-11-04T10:50:09.367322Z",
+  "policy_id": "brief-default",
+  "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
+  "cards": [
+    {
+      "card_id": "intro",
+      "intent_tags": [
+        "introduction"
+      ],
+      "story_phase": "introduction",
+      "content_hash": "c028dc3a020d6678a61492227b4fff4a4c4764f545552fc7269309926d2d6a5d",
+      "body_lines": 1
+    }
+  ],
+  "statistics": {
+    "cards_total": 1,
+    "approved": 0,
+    "returned": 0
+  }
+}
