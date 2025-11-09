@@ -5,9 +5,9 @@
 roadmap_item: RM-063 assets 運用ガイド整備
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: ブランチ `docs/rm063-assets-guide` を作成済み。初期コミットは未実施。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] ブランチ作成と初期コミット
+  - メモ: ブランチ `docs/rm063-assets-guide` を作成し、`docs: assets運用ガイドを追加` で初期コミット済み。
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: `assets/` 直下のガイド文書新設と、`docs/README.md`・`docs/AGENTS.md` への導線追加。既存バイナリアセットの内容変更は行わない。
     - ドキュメント／コード修正方針: `assets/README.md` を新規作成し、目的・構造・命名規則・更新手順・機微情報取り扱いを整理。関連ドキュメントへリンクを追記し重複を避ける。
@@ -23,17 +23,17 @@ roadmap_item: RM-063 assets 運用ガイド整備
   - メモ: 
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: 
+- [x] 実装
+  - メモ: `assets/README.md` を整備し、ロゴ生成手順と運用方針を反映。併せて関連導線を整理。
 - [ ] テスト・検証
   - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 
+- [x] ドキュメント更新
+  - メモ: `docs/README.md` と `docs/AGENTS.md` のカテゴリ案内を更新し、assets ガイドへの導線を追加。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
