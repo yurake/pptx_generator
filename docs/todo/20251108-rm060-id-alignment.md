@@ -32,7 +32,8 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-- [ ] PR 作成
+- [x] PR 作成
+  - メモ: PR #280 https://github.com/yurake/pptx_generator/pull/280（2025-11-09 完了）
 
 ## メモ
 -

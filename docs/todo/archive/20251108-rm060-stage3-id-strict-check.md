@@ -41,8 +41,8 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #280 https://github.com/yurake/pptx_generator/pull/280（2025-11-09 完了）
 
 ## メモ
 -
