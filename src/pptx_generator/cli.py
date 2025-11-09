@@ -333,6 +333,9 @@ def _run_template_extraction(
     layout: str | None,
     anchor: str | None,
     output_format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -344,6 +347,16 @@ def _run_template_extraction(
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    ai_policy_path = template_ai_policy
+    if ai_policy_path is None and not disable_template_ai:
+        env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
+        if env_policy:
+            ai_policy_path = Path(env_policy)
+    ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
+    effective_disable = disable_template_ai or ai_policy_path is None
+    if effective_disable:
+        ai_policy_path = None
 
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
@@ -381,6 +394,9 @@ def _run_template_extraction(
     validation_options = LayoutValidationOptions(
         template_path=template_path,
         output_dir=output_dir,
+        template_ai_policy_path=ai_policy_path,
+        template_ai_policy_id=ai_policy_id,
+        disable_template_ai=effective_disable,
     )
     validation_suite = LayoutValidationSuite(validation_options)
     validation_result = validation_suite.run()
@@ -2286,6 +2302,24 @@ def mapping(  # noqa: PLR0913
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
 def template(  # noqa: PLR0913
     template_path: Path,
     output: Path,
@@ -2301,6 +2335,9 @@ def template(  # noqa: PLR0913
     reviewed_by: str | None,
     baseline_release: Path | None,
     golden_specs: tuple[Path, ...],
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
     _log_current_llm_provider("template")
@@ -2311,6 +2348,9 @@ def template(  # noqa: PLR0913
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2414,12 +2454,33 @@ def template(  # noqa: PLR0913
     show_default=True,
     help="テンプレート仕様とブランド設定を保存するディレクトリ",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
 def tpl_extract(
     template_path: Path,
     output_dir: Path,
     layout: Optional[str],
     anchor: Optional[str],
     format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
@@ -2429,6 +2490,9 @@ def tpl_extract(
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
