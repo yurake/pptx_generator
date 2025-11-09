@@ -5,18 +5,18 @@
 roadmap_item: RM-061 usage_tags ガバナンス強化
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: 2025-11-09 `origin/fix/rm060-stage3-id-enforce` から `feat/rm061-usage-tags-governance` を作成。初期コミットでロードマップと ToDo を追加予定。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] ブランチ作成と初期コミット
+  - メモ: 2025-11-09 `origin/fix/rm060-stage3-id-enforce` から `feat/rm061-usage-tags-governance` を作成し、ロードマップ／ToDo／調査メモを初期コミット済み（`docs: bootstrap rm061 usage tags governance`）。
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 
-    - 対象整理（スコープ、対象ファイル、前提）: 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+    - 対象整理（スコープ、対象ファイル、前提）: layout_validation の `_derive_usage_tags`、関連スキーマ、Stage3 パイプライン（`draft_structuring.py`、`mapping.py`、`draft_recommender.py`）のタグ利用箇所、及び関連ドキュメント。
+    - ドキュメント／コード修正方針: 抽出ロジックを厳格化し、共通タグ正規化ユーティリティを導入。layout_validation にタグ診断を追加し、必要に応じて要件ドキュメントとメモを更新。
+    - 確認・共有方法（レビュー、ToDo 更新など）: この ToDo と Plan に沿って進行し、各工程完了時に ToDo 更新。PR で最終共有。
+    - 想定影響ファイル: `src/pptx_generator/layout_validation/suite.py`、`schema.py`、`pipeline/draft_structuring.py`、`pipeline/mapping.py`、`draft_recommender.py`、必要な新モジュール、`docs/notes/20251109-usage-tags-scoring.md`、Stage3 関連ドキュメント。
+    - リスク: 既存テンプレのスコアリング変動、CI 警告増加。テンプレ抽出結果の確認と警告ガイド整備で対応。
+    - テスト方針: 該当ユーティリティの単体テスト追加、テンプレ抽出結果のスナップショット確認、`pytest tests/test_cli_integration.py` で回帰検証。
+    - ロールバック方法: `feat/rm061-usage-tags-governance` 内のコミットをリバート／ブランチ破棄で `fix/rm060-stage3-id-enforce` 状態へ戻す。
+    - 承認メッセージ ID／リンク: チャットログ (2025-11-09 Plan 承認)
 - [ ] 設計・実装方針の確定
   - メモ: 
 - [ ] ドキュメント更新（要件・設計）
