@@ -174,9 +174,10 @@ class SlideIdAligner:
             else:
                 updated_slides.append(slide)
 
-        unmatched_spec_slides = [
-            candidate.id for candidate in candidate_slides if candidate.id not in assigned_slides
-        ]
+        relevant_spec_ids = {
+            candidate.id for candidate in candidate_slides if candidate.id in card_map
+        }
+        unmatched_spec_slides = [slide_id for slide_id in relevant_spec_ids if slide_id not in assigned_slides]
         for slide_id in unmatched_spec_slides:
             records.append(
                 SlideAlignmentRecord(
@@ -184,7 +185,7 @@ class SlideIdAligner:
                     recommended_slide_id=None,
                     confidence=0.0,
                     reason="jobspec_unassigned",
-                    status="pending",
+                    status="skipped",
                 )
             )
 
@@ -193,11 +194,11 @@ class SlideIdAligner:
             "status": "completed",
             "threshold": self._options.confidence_threshold,
             "cards_total": len(content_document.slides),
-            "jobspec_total": len(candidate_slides),
+            "jobspec_total": len(relevant_spec_ids),
             "jobspec_unassigned": len(unmatched_spec_slides),
             "applied": applied,
             "fallback": fallback_applied,
-            "pending": sum(1 for record in records if record.status not in {"applied", "fallback"}),
+            "pending": sum(1 for record in records if record.status == "pending"),
         }
         logger.info(
             "SlideIdAligner: cards_total=%d jobspec_total=%d jobspec_unassigned=%d applied=%d pending=%d threshold=%.2f",

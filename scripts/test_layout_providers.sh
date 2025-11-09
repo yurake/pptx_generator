@@ -18,7 +18,38 @@ fi
 export UV_CACHE_DIR="${UV_CACHE_DIR:-.uv-cache}"
 mkdir -p "${UV_CACHE_DIR}"
 
-providers=("openai" "azure" "anthropic" "aws-claude")
+default_providers=("openai" "azure" "anthropic" "aws-claude")
+
+print_usage() {
+  cat <<USAGE
+Usage: scripts/test_layout_providers.sh [provider ...]
+
+指定した LLM プロバイダーのみを検証します。引数が無い場合は全プロバイダー
+(${default_providers[*]}) を順番に実行します。
+USAGE
+}
+
+if [[ ${#} -gt 0 ]]; then
+  if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+    print_usage
+    exit 0
+  fi
+  providers=("$@")
+else
+  providers=("${default_providers[@]}")
+fi
+
+for provider in "${providers[@]}"; do
+  case "${provider}" in
+    openai|azure|anthropic|aws-claude)
+      ;;
+    *)
+      echo "[layout-providers] 未対応のプロバイダーが指定されました: ${provider}" >&2
+      print_usage >&2
+      exit 2
+      ;;
+  esac
+done
 
 for provider in "${providers[@]}"; do
   echo "=== Testing provider: ${provider} ==="

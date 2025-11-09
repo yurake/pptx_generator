@@ -13,6 +13,9 @@ from pptx_generator.pipeline import (BriefNormalizationOptions,
                                       DraftStructuringOptions,
                                       DraftStructuringStep)
 from pptx_generator.pipeline.base import PipelineContext
+from pptx_generator.pipeline.draft_structuring import SlideIdAligner
+from pptx_generator.pipeline.slide_alignment import (SlideAlignmentRecord,
+                                                     SlideAlignmentResult)
 from pptx_generator.models import JobSpec
 
 
@@ -56,6 +59,37 @@ def test_draft_structuring_generates_documents(
     brief_paths: dict[str, Path],
 ) -> None:
     monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
+
+    def fake_align(
+        self: SlideIdAligner,
+        *,
+        spec: JobSpec,
+        brief_document,
+        content_document,
+    ) -> SlideAlignmentResult:
+        records = [
+            SlideAlignmentRecord(
+                card_id=slide.id,
+                recommended_slide_id=slide.id,
+                confidence=1.0,
+                reason="mock",
+                status="applied",
+            )
+            for slide in content_document.slides
+        ]
+        meta = {
+            "status": "completed",
+            "threshold": 0.5,
+            "cards_total": len(content_document.slides),
+            "jobspec_total": 0,
+            "jobspec_unassigned": 0,
+            "applied": len(content_document.slides),
+            "fallback": 0,
+            "pending": 0,
+        }
+        return SlideAlignmentResult(document=content_document, records=records, meta=meta)
+
+    monkeypatch.setattr(SlideIdAligner, "align", fake_align)
 
     layouts_path = tmp_path / "layouts.jsonl"
     layouts_path.write_text(
@@ -141,6 +175,36 @@ def test_draft_structuring_fails_when_slide_id_missing(
 ) -> None:
     monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
 
+    def fake_align_failure(
+        self: SlideIdAligner,
+        *,
+        spec: JobSpec,
+        brief_document,
+        content_document,
+    ) -> SlideAlignmentResult:
+        records = [
+            SlideAlignmentRecord(
+                card_id="missing-slide",
+                recommended_slide_id=None,
+                confidence=0.0,
+                reason="jobspec_unassigned",
+                status="pending",
+            )
+        ]
+        meta = {
+            "status": "completed",
+            "threshold": 0.5,
+            "cards_total": len(content_document.slides),
+            "jobspec_total": 1,
+            "jobspec_unassigned": 1,
+            "applied": 0,
+            "fallback": 0,
+            "pending": 1,
+        }
+        return SlideAlignmentResult(document=content_document, records=records, meta=meta)
+
+    monkeypatch.setattr(SlideIdAligner, "align", fake_align_failure)
+
     layouts_path = tmp_path / "layouts.jsonl"
     layouts_path.write_text(
         json.dumps(
@@ -155,10 +219,7 @@ def test_draft_structuring_fails_when_slide_id_missing(
         encoding="utf-8",
     )
 
-    spec_with_gap = sample_spec.model_copy(deep=True)
-    spec_with_gap.slides.append(sample_spec.slides[0].model_copy(update={"id": "missing-slide", "title": "欠損"}))
-
-    context = PipelineContext(spec=spec_with_gap, workdir=tmp_path)
+    context = PipelineContext(spec=sample_spec, workdir=tmp_path)
 
     brief_step = BriefNormalizationStep(
         BriefNormalizationOptions(

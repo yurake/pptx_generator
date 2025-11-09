@@ -21,6 +21,7 @@ def _build_spec() -> JobSpec:
         slides=[
             Slide(id="intro-slide", layout="Title", title="イントロダクション"),
             Slide(id="solution-slide", layout="Content", title="解決策の概要"),
+            Slide(id="orphan", layout="Content", title="未割当"),
         ],
     )
 
@@ -47,6 +48,15 @@ def _build_brief() -> BriefDocument:
                 story=BriefStoryInfo(phase="solution"),
                 intent_tags=["solution"],
             ),
+            BriefCard(
+                card_id="orphan",
+                chapter="解決策",
+                message="孤立スライド",
+                narrative=["孤立カード"],
+                supporting_points=[],
+                story=BriefStoryInfo(phase="solution"),
+                intent_tags=["solution"],
+            ),
         ],
     )
 
@@ -56,6 +66,7 @@ def _build_content_document() -> ContentApprovalDocument:
         slides=[
             ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
             ContentSlide(id="solution", intent="solution", elements=ContentElements(title="解決策")),
+            ContentSlide(id="orphan", intent="solution", elements=ContentElements(title="孤立")),
         ]
     )
 
@@ -69,8 +80,8 @@ def test_slide_id_aligner_applies_matching() -> None:
     result = aligner.align(spec=spec, brief_document=brief, content_document=document)
 
     aligned_ids = [slide.id for slide in result.document.slides]
-    assert aligned_ids == ["intro-slide", "solution-slide"]
-    assert result.meta["applied"] == 2
+    assert aligned_ids == ["intro-slide", "solution-slide", "orphan"]
+    assert result.meta["applied"] == 3
 
 
 def test_slide_id_aligner_skips_without_brief() -> None:
@@ -90,6 +101,7 @@ def test_slide_id_aligner_reports_unassigned_spec_slide() -> None:
     document = ContentApprovalDocument(
         slides=[
             ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+            ContentSlide(id="solution", intent="solution", elements=ContentElements(title="解決策")),
         ]
     )
     aligner = SlideIdAligner(SlideIdAlignerOptions(confidence_threshold=0.1))
@@ -97,7 +109,9 @@ def test_slide_id_aligner_reports_unassigned_spec_slide() -> None:
     result = aligner.align(spec=spec, brief_document=brief, content_document=document)
 
     pending_records = {record.card_id: record for record in result.records if record.status != "applied"}
-    assert "solution-slide" in pending_records
-    assert pending_records["solution-slide"].reason == "jobspec_unassigned"
+    assert "orphan" in pending_records
+    assert pending_records["orphan"].reason == "jobspec_unassigned"
+    assert pending_records["orphan"].status == "skipped"
+    assert result.meta["jobspec_total"] == 1
     assert result.meta["jobspec_unassigned"] == 1
-    assert result.meta["pending"] >= 1
+    assert result.meta["pending"] == 0

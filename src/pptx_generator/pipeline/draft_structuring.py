@@ -134,11 +134,7 @@ class DraftStructuringStep:
                 [asdict(record) for record in alignment.records],
             )
             context.add_artifact("content_approved", document)
-        pending_cards = [
-            record.card_id
-            for record in alignment_records
-            if record.status not in {"applied", "fallback"}
-        ]
+        pending_cards = [record.card_id for record in alignment_records if record.status == "pending"]
         if pending_cards:
             logger.error("Slide alignment 未確定カード: %s", ", ".join(sorted(set(pending_cards))))
             msg = "Slide alignment に失敗したカードがあります: " + ", ".join(sorted(set(pending_cards)))
