@@ -743,7 +743,7 @@ flowchart TB
 - 対象工程: 3（マッピング）
 - ゴール: `usage_tags` の付与・利用をガバナンスし、レイアウト意図と `intent`/`type_hint` の一致具合を安定させる。
 - 参照ドキュメント: [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
-- 参照 ToDo: [docs/todo/20251109-rm061-usage-tags-governance.md](../todo/20251109-rm061-usage-tags-governance.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-09 追加）
 - 期待成果:
   - `_derive_usage_tags` のロジックを調整し、`title` タグを意図的レイアウトに限定する。
@@ -781,14 +781,15 @@ flowchart TB
 ### RM-064 レイアウト候補メタ情報拡充
 - 対象工程: 3（マッピング）
 - ゴール: LLM に渡すレイアウト候補へ構造・制約のメタ情報を追加し、`pptx compose` のスコアリング精度と説明性を向上させる。
-- 参照ドキュメント: [docs/notes/20251110-layout-ai-candidate-metadata.md](../notes/20251110-layout-ai-candidate-metadata.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-10 追加）
+- 参照ドキュメント: [docs/notes/20251110-layout-ai-candidate-metadata.md](../notes/20251110-layout-ai-candidate-metadata.md), [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
+- 参照 ToDo: [docs/todo/20251109-rm064-layout-ai-metadata.md](../todo/20251109-rm064-layout-ai-metadata.md)
+- 状況: 進行中（2025-11-09 更新）
 - 期待成果:
   - `candidate_layouts` へ `usage_tags`・`text_hint` などの要約を添付し、LLM が構造・制約を理解できるようにする。
   - `LayoutProfile` から抽出する属性とシリアライズ形式を再設計し、ポリシー／プロンプトとの互換性を保ったまま拡張する。
   - スコアリング結果ログと根拠説明を強化し、監査・テストの観点を整備する。
 - 依存: RM-047（テンプレ統合構成生成AI連携）、RM-061（usage_tags ガバナンス強化）
+- 進捗メモ: Stage3 `layout_ai` でテンプレ構造メタを利用しタグ正規化を行う機構を整備済み。Stage1 連携と layout_ai policy 再設計は未着手。
 
 <a id="rm-065"></a>
 ### RM-065 フォールバック警告ログ整備
