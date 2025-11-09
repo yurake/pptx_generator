@@ -36,7 +36,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue #258 の進捗に応じて更新予定。
-- [ ] PR 作成
-  - メモ:
+- [x] PR 作成
+  - メモ: PR #283 https://github.com/yurake/pptx_generator/pull/283（2025-11-09 完了）
 
 ## メモ
