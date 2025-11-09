@@ -71,7 +71,7 @@ def test_prepare_requires_valid_brief(tmp_path) -> None:
     assert "解析に失敗" in result.output
 
 
-def test_prepare_respects_card_limit(tmp_path) -> None:
+def test_prepare_respects_page_limit(tmp_path) -> None:
     output_dir = tmp_path / "limited"
     runner = CliRunner()
 
@@ -82,7 +82,7 @@ def test_prepare_respects_card_limit(tmp_path) -> None:
             str(SAMPLE_BRIEF),
             "--output",
             str(output_dir),
-            "--card-limit",
+            "--page-limit",
             "2",
         ],
         catch_exceptions=False,
@@ -93,3 +93,50 @@ def test_prepare_respects_card_limit(tmp_path) -> None:
     assert len(cards_payload["cards"]) == 2
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["statistics"]["cards_total"] == 2
+
+
+def test_prepare_sets_cards_approved_when_flag_enabled(tmp_path) -> None:
+    output_dir = tmp_path / "approved"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(SAMPLE_BRIEF),
+            "--output",
+            str(output_dir),
+            "--approved",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
+    assert {card["status"] for card in cards_payload["cards"]} == {"approved"}
+
+    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    assert meta_payload["statistics"]["approved"] == len(cards_payload["cards"])
+
+
+def test_prepare_page_limit_short_option(tmp_path) -> None:
+    output_dir = tmp_path / "short"
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(SAMPLE_BRIEF),
+            "--output",
+            str(output_dir),
+            "-p",
+            "1",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
+    assert len(cards_payload["cards"]) == 1

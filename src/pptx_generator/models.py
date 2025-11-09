@@ -180,6 +180,10 @@ class JobMeta(BaseModel):
     created_at: str | None = None
     theme: str | None = None
     locale: str = "ja-JP"
+    layout_count: int | None = None
+    layouts_path: str | None = None
+    template_path: str | None = None
+    template_id: str | None = None
 
 
 class JobAuth(BaseModel):
@@ -243,6 +247,7 @@ class JobSpecScaffoldMeta(BaseModel):
     template_id: str
     generated_at: str
     layout_count: int
+    layouts_path: str | None = None
 
 
 class JobSpecScaffold(BaseModel):
@@ -429,10 +434,18 @@ class DraftLayoutScoreDetail(BaseModel):
     content_capacity: float = 0.0
     diversity: float = 0.0
     analyzer_support: float = 0.0
+    ai_recommendation: float = 0.0
 
     @property
     def total(self) -> float:
-        return round(self.uses_tag + self.content_capacity + self.diversity + self.analyzer_support, 3)
+        return round(
+            self.uses_tag
+            + self.content_capacity
+            + self.diversity
+            + self.analyzer_support
+            + self.ai_recommendation,
+            3,
+        )
 
 
 class DraftAnalyzerSummary(BaseModel):
@@ -524,6 +537,7 @@ class MappingSlideMeta(BaseModel):
 
 class GenerateReadySlide(BaseModel):
     layout_id: str
+    layout_name: str | None = None
     elements: dict[str, Any] = Field(default_factory=dict)
     meta: MappingSlideMeta
 

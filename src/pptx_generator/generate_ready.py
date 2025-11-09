@@ -107,9 +107,11 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
                 )
                 continue
 
+    layout_name = slide.layout_name or slide.layout_id
+
     return Slide(
         id=slide_id,
-        layout=slide.layout_id,
+        layout=layout_name,
         title=title,
         subtitle=subtitle,
         notes=notes,

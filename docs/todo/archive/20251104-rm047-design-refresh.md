@@ -47,7 +47,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] PR 作成
-  - メモ: PR #273 https://github.com/yurake/pptx_generator/pull/273（2025-11-06 完了）
+  - メモ: PR #282 https://github.com/yurake/pptx_generator/pull/282（2025-11-09 完了）
 
 ## メモ
 - 現行ステージドキュメント確認結果（更新反映済み）
@@ -56,9 +56,9 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - `docs/design/design.md`: 工程3の成果物・入出力表を `generate_ready` 基盤へ更新。
   - `docs/design/stages/stage-03-mapping.md`: 目的・入出力・ワークフローを刷新し、`generate_ready.json` / `generate_ready_meta.json` を中心とした記述へ更新。
 - Stage4 再設計案（草案）
-  - 成果物: `generate_ready.json` を章/カード割当の主ファイル、`generate_ready_meta.json` を章テンプレ・AI 推薦・Analyzer サマリ・承認タイムラインのメタとして位置付ける。`draft_review_log.json`／`draft_mapping_log.json` は名称維持しつつ `generate_ready` と ID 連携。  
+  - 成果物: `generate_ready.json` を章/カード割当の主ファイル、`generate_ready_meta.json` を章テンプレ・AI 推薦・Analyzer サマリ・承認タイムラインのメタとして位置付ける。`draft_review_log.json`／`mapping_log.json` は名称維持しつつ `generate_ready` と ID 連携。  
   - フロー: `pptx outline` は `generate_ready` を直接操作し、承認状態を `generate_ready_meta.sections[*].status` で管理。Chapter Template Registry は `generate_ready_meta.template` で適合率を出力し、Analyzer 情報は `sections[*].analyzer_summary` へ集約。  
-  - CLI: `pptx outline` は `--draft-*` を廃止し `--generate-ready-filename` 等へ置換。`pptx compose` は Stage3 全体の再実行時に Stage4 モジュールを呼び出し、`pptx mapping` は `generate_ready.json` を唯一の入力とする。  
+  - CLI: `pptx outline` は `draft_*` 系成果物を既定名で生成し、`pptx compose` は Stage3 全体の再実行時に Stage4 モジュールを呼び出す。`pptx mapping` は `generate_ready.json` を唯一の入力とする。  
   - モデル/パイプライン: `GenerateReadyDocument` に HITL 状態を追加し、`generate_ready.py` で Stage4→Stage5 変換を拡張。`pipeline/draft_structuring.py` は `GenerateReadyDocument` を出力し、`pipeline/mapping.py` は旧 `draft_*` 参照を削除。  
   - リスク: CLI オプション変更に伴う互換性問題、`generate_ready_meta.json` 構造確定、既存テスト／ドキュメントの大規模更新が必要。
 - ステージ構成の前提

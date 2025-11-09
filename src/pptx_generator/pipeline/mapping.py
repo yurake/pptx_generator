@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,7 @@ from ..models import (
     Slide,
     JobSpec,
 )
+from ..utils.usage_tags import normalize_usage_tag_value, normalize_usage_tags
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,7 @@ class LayoutProfile:
     """layouts.jsonl のレコードを抽象化したもの。"""
 
     layout_id: str
+    layout_name: str
     usage_tags: tuple[str, ...]
     text_hint: Mapping[str, Any]
     media_hint: Mapping[str, Any]
@@ -92,6 +95,7 @@ class MappingStep:
             if content_document is not None
             else {}
         )
+        spec_lookup = {slide.id: slide for slide in context.spec.slides}
 
         generate_ready_slides: list[GenerateReadySlide] = []
         log_slides: list[MappingLogSlide] = []
@@ -101,23 +105,48 @@ class MappingStep:
         ai_patch_slide_ids: set[str] = set()
         previous_layout: str | None = None
 
-        for index, slide in enumerate(context.spec.slides, start=1):
-            card = card_lookup.get(slide.id)
-            content_slide = content_lookup.get(slide.id)
-            section_name = section_lookup.get(slide.id)
+        ordered_cards: list[tuple[str | None, DraftSlideCard]] = []
+        for section in draft_document.sections:
+            for card in section.slides:
+                ordered_cards.append((section.name, card))
 
+        if ordered_cards:
+            work_items = [
+                (
+                    index,
+                    section_name,
+                    spec_lookup.get(card.ref_id),
+                    card,
+                    content_lookup.get(card.ref_id),
+                )
+                for index, (section_name, card) in enumerate(ordered_cards, start=1)
+            ]
+        else:
+            work_items = [
+                (
+                    index,
+                    section_lookup.get(slide.id),
+                    slide,
+                    card_lookup.get(slide.id),
+                    content_lookup.get(slide.id),
+                )
+                for index, slide in enumerate(context.spec.slides, start=1)
+            ]
+
+        for page_no, section_name, spec_slide, card, content_slide in work_items:
+            slide_id = (
+                spec_slide.id
+                if spec_slide is not None
+                else (card.ref_id if card is not None else f"page-{page_no}")
+            )
             candidates = self._score_candidates(
-                slide_id=slide.id,
+                slide_id=slide_id,
                 content_slide=content_slide,
                 layout_catalog=layout_catalog,
                 previous_layout=previous_layout,
             )
             if card and card.layout_candidates:
-                # layout_candidates から score を引き継ぎ、欠損分を補う
-                merged = {
-                    candidate.layout_id: candidate.score
-                    for candidate in candidates
-                }
+                merged = {candidate.layout_id: candidate.score for candidate in candidates}
                 for candidate in card.layout_candidates:
                     merged.setdefault(candidate.layout_id, candidate.score)
                 candidates = [
@@ -127,37 +156,51 @@ class MappingStep:
                 candidates.sort(key=lambda candidate: candidate.score, reverse=True)
                 candidates = candidates[: self.options.max_candidates]
 
-            selected_layout = self._select_layout(slide.layout, card, candidates)
+            default_layout = ""
+            if spec_slide is not None:
+                default_layout = spec_slide.layout
+            elif card is not None:
+                default_layout = card.layout_hint
+            base_layout = default_layout or "title"
+            selected_layout = self._select_layout(base_layout, card, candidates)
             previous_layout = selected_layout
 
-            elements = self._build_elements(slide)
+            elements = self._build_elements(spec_slide, content_slide)
             fallback_state, ai_patches, warnings = self._apply_capacity_controls(
-                slide_id=slide.id,
+                slide_id=slide_id,
                 layout=layout_catalog.get(selected_layout),
                 elements=elements,
             )
 
             if fallback_state.applied:
-                fallback_slide_ids.add(slide.id)
+                fallback_slide_ids.add(slide_id)
                 fallback_records.append(
                     {
-                        "slide_id": slide.id,
+                        "slide_id": slide_id,
                         "history": list(fallback_state.history),
                         "reason": fallback_state.reason,
                     }
                 )
             if ai_patches:
                 ai_patch_count += len(ai_patches)
-                ai_patch_slide_ids.add(slide.id)
+                ai_patch_slide_ids.add(slide_id)
+
+            sources = [slide_id]
+            if spec_slide is not None:
+                sources = [spec_slide.id]
+
+            selected_profile = layout_catalog.get(selected_layout)
+            layout_name = selected_profile.layout_name if selected_profile else selected_layout
 
             generate_ready_slides.append(
                 GenerateReadySlide(
                     layout_id=selected_layout,
+                    layout_name=layout_name,
                     elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,
-                        page_no=index,
-                        sources=[slide.id],
+                        page_no=page_no,
+                        sources=sources,
                         fallback=fallback_state.history[-1]
                         if fallback_state.applied and fallback_state.history
                         else "none",
@@ -167,7 +210,7 @@ class MappingStep:
 
             log_slides.append(
                 MappingLogSlide(
-                    ref_id=slide.id,
+                    ref_id=slide_id,
                     selected_layout=selected_layout,
                     candidates=candidates[: self.options.max_candidates],
                     fallback=fallback_state,
@@ -178,13 +221,20 @@ class MappingStep:
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
+        output_dir = self.options.output_dir or context.workdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         template_path_str: str | None = None
         if self.options.template_path is not None:
+            template_candidate = self.options.template_path
             try:
-                # resolve() で絶対パスへ正規化し、生成物持ち運び時にも一意に解決できるようにする
-                template_path_str = str(self.options.template_path.resolve())
+                resolved_template = template_candidate.resolve()
             except OSError:
-                template_path_str = str(self.options.template_path)
+                resolved_template = template_candidate
+
+            template_path_str = self._format_template_path(
+                resolved_template, output_dir
+            )
 
         generate_ready_meta = GenerateReadyMeta(
             template_version=self._resolve_template_version(context),
@@ -206,9 +256,6 @@ class MappingStep:
                 ai_patch_count=ai_patch_count,
             ),
         )
-
-        output_dir = self.options.output_dir or context.workdir
-        output_dir.mkdir(parents=True, exist_ok=True)
 
         generate_ready_path = output_dir / self.options.generate_ready_filename
         generate_ready_path.write_text(
@@ -324,9 +371,12 @@ class MappingStep:
             layout_id = payload.get("layout_id")
             if not layout_id:
                 continue
+            usage_tags = normalize_usage_tags(payload.get("usage_tags", []))
+            layout_name = payload.get("layout_name") or layout_id
             catalog[layout_id] = LayoutProfile(
                 layout_id=layout_id,
-                usage_tags=tuple(str(tag).lower() for tag in payload.get("usage_tags", [])),
+                layout_name=layout_name,
+                usage_tags=usage_tags,
                 text_hint=payload.get("text_hint") or {},
                 media_hint=payload.get("media_hint") or {},
             )
@@ -358,11 +408,15 @@ class MappingStep:
         layout_catalog: Mapping[str, LayoutProfile],
         previous_layout: str | None,
     ) -> list[MappingCandidate]:
-        intent = (content_slide.intent if content_slide else None) or ""
-        intent = intent.lower()
-        type_hint = (
-            (content_slide.type_hint if content_slide else None) or ""
-        ).lower()
+        raw_intent = (content_slide.intent if content_slide else None)
+        intent = normalize_usage_tag_value(raw_intent)
+        if intent is None:
+            intent = (raw_intent or "").casefold()
+
+        raw_type_hint = (content_slide.type_hint if content_slide else None)
+        type_hint = normalize_usage_tag_value(raw_type_hint)
+        if type_hint is None:
+            type_hint = (raw_type_hint or "").casefold()
         body_lines = (
             len(content_slide.elements.body) if content_slide and content_slide.elements else 0
         )
@@ -414,17 +468,49 @@ class MappingStep:
         return default_layout
 
     @staticmethod
-    def _build_elements(slide: Slide) -> dict[str, Any]:
+    def _build_elements(
+        spec_slide: Slide | None,
+        content_slide: ContentSlide | None,
+    ) -> dict[str, Any]:
+        if content_slide is not None and content_slide.elements is not None:
+            base = MappingStep._build_elements(spec_slide, None)
+            elements: dict[str, Any] = {
+                "title": content_slide.elements.title,
+            }
+            if content_slide.elements.body:
+                elements["body"] = list(content_slide.elements.body)
+            elif "body" in base:
+                elements["body"] = base["body"]
+            if content_slide.elements.note:
+                elements["note"] = content_slide.elements.note
+            elif "note" in base:
+                elements["note"] = base["note"]
+            if content_slide.elements.table_data is not None:
+                elements["table"] = {
+                    "headers": list(content_slide.elements.table_data.headers),
+                    "rows": [list(row) for row in content_slide.elements.table_data.rows],
+                }
+            if spec_slide is not None and spec_slide.subtitle and "subtitle" not in elements:
+                elements["subtitle"] = spec_slide.subtitle
+            for key, value in base.items():
+                if key in {"title", "body", "note", "subtitle"}:
+                    continue
+                elements.setdefault(key, value)
+            return elements
+
+        if spec_slide is None:
+            return {}
+
         elements: dict[str, Any] = {}
-        if slide.title:
-            elements["title"] = slide.title
-        if slide.subtitle:
-            elements["subtitle"] = slide.subtitle
-        if slide.notes:
-            elements["note"] = slide.notes
+        if spec_slide.title:
+            elements["title"] = spec_slide.title
+        if spec_slide.subtitle:
+            elements["subtitle"] = spec_slide.subtitle
+        if spec_slide.notes:
+            elements["note"] = spec_slide.notes
 
         body_lines: list[str] = []
-        for group_index, group in enumerate(slide.bullets, start=1):
+        for group_index, group in enumerate(spec_slide.bullets, start=1):
             texts = [bullet.text for bullet in group.items]
             if not texts:
                 continue
@@ -435,7 +521,7 @@ class MappingStep:
         if body_lines:
             elements["body"] = body_lines
 
-        for table_index, table in enumerate(slide.tables, start=1):
+        for table_index, table in enumerate(spec_slide.tables, start=1):
             table_payload = {
                 "headers": table.columns,
                 "rows": table.rows,
@@ -443,13 +529,13 @@ class MappingStep:
             key = table.anchor or f"table_{table_index}"
             elements[key] = table_payload
 
-        for image_index, image in enumerate(slide.images, start=1):
+        for image_index, image in enumerate(spec_slide.images, start=1):
             key = image.anchor or f"image_{image_index}"
             elements[key] = {
                 "source": str(image.source),
                 "sizing": image.sizing,
             }
-        for chart_index, chart in enumerate(slide.charts, start=1):
+        for chart_index, chart in enumerate(spec_slide.charts, start=1):
             key = chart.anchor or f"chart_{chart_index}"
             elements[key] = {
                 "type": chart.type,
@@ -457,7 +543,7 @@ class MappingStep:
                 "series": [series.model_dump() for series in chart.series],
                 "options": chart.options.model_dump() if chart.options else None,
             }
-        for textbox_index, textbox in enumerate(slide.textboxes, start=1):
+        for textbox_index, textbox in enumerate(spec_slide.textboxes, start=1):
             key = textbox.anchor or f"textbox_{textbox_index}"
             elements[key] = {
                 "text": textbox.text,
@@ -507,6 +593,17 @@ class MappingStep:
             warnings.append("body が空です")
 
         return fallback, ai_patches, warnings
+
+    @staticmethod
+    def _format_template_path(template_path: Path, output_dir: Path) -> str:
+        try:
+            relative = template_path.relative_to(output_dir)
+            return str(relative)
+        except ValueError:
+            try:
+                return os.path.relpath(template_path, output_dir)
+            except ValueError:
+                return str(template_path)
 
     def _resolve_template_version(self, context: PipelineContext) -> str | None:
         branding = context.artifacts.get("branding")

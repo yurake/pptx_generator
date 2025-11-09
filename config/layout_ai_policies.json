@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "default_policy_id": "layout-default",
+  "policies": [
+    {
+      "id": "layout-default",
+      "name": "レイアウト候補推薦スタンダード",
+      "description": "工程4 ドラフト構成向けの標準レイアウト推薦ポリシー",
+      "provider": "mock",
+      "model": "mock-layout",
+      "temperature": 0.0,
+      "prompt_template": "各レイアウトproviderの適合度を0〜1で評価し、最適な順に並べてください。",
+      "slide_policies": [],
+      "max_tokens": 10240
+    }
+  ]
+}

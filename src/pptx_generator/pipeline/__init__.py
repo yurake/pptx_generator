@@ -7,7 +7,11 @@ from .brief_normalization import (BriefNormalizationError,
                                   BriefNormalizationStep)
 from .content_approval import (ContentApprovalError, ContentApprovalOptions,
                                ContentApprovalStep)
-from .draft_structuring import DraftStructuringOptions, DraftStructuringStep
+from .draft_structuring import (
+    DraftStructuringError,
+    DraftStructuringOptions,
+    DraftStructuringStep,
+)
 from .mapping import MappingOptions, MappingStep
 from .monitoring import MonitoringIntegrationOptions, MonitoringIntegrationStep
 from .pdf_exporter import PdfExportError, PdfExportOptions, PdfExportResult, PdfExportStep
@@ -28,6 +32,7 @@ __all__ = [
     "ContentApprovalStep",
     "DraftStructuringOptions",
     "DraftStructuringStep",
+    "DraftStructuringError",
     "RefinerOptions",
     "PipelineContext",
     "PipelineRunner",

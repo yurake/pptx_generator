@@ -123,7 +123,15 @@ class SimpleRendererStep:
             if layout.name == slide_spec.layout:
                 return layout
         logger.debug("レイアウト '%s' が見つからないため既定を使用", slide_spec.layout)
-        return presentation.slide_layouts[1]
+        try:
+            return presentation.slide_layouts[1]
+        except IndexError:
+            if len(presentation.slide_layouts) == 0:
+                raise RuntimeError("テンプレートに利用可能なレイアウトが存在しません")
+            logger.warning(
+                "テンプレートにレイアウト index=1 が存在しないため、index=0 を使用します"
+            )
+            return presentation.slide_layouts[0]
 
     def _apply_title(self, slide, slide_spec: Slide) -> None:
         if slide_spec.title is None:

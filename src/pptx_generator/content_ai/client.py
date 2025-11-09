@@ -8,6 +8,7 @@ import os
 import re
 import textwrap
 from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 from typing import Protocol
 
 from ..models import JobSpec, Slide
@@ -52,11 +53,52 @@ class AIGenerationResponse:
     raw_text: str | None = None
 
 
+@dataclass(slots=True)
+class SlideMatchCandidate:
+    """スライド ID 整合の候補情報。"""
+
+    slide_id: str
+    title: str | None = None
+    layout: str | None = None
+    subtitle: str | None = None
+    notes: str | None = None
+
+
+@dataclass(slots=True)
+class SlideMatchRequest:
+    """スライド ID 整合用のリクエスト。"""
+
+    card_id: str
+    card_chapter: str | None
+    card_intent: tuple[str, ...]
+    card_story_phase: str | None
+    card_summary: str
+    prompt: str
+    system_prompt: str
+    candidates: list[SlideMatchCandidate]
+    model: str | None = None
+
+
+@dataclass(slots=True)
+class SlideMatchResponse:
+    """スライド ID 整合の応答。"""
+
+    slide_id: str | None
+    confidence: float
+    reason: str | None
+    model: str = "mock-local"
+    warnings: list[str] = field(default_factory=list)
+    raw_text: str | None = None
+
+
 class LLMClient(Protocol):
     """生成 AI クライアント共通インターフェース。"""
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         """リクエストに基づきスライド候補を生成する。"""
+
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        """カードと JobSpec スライドの対応付けを推論する。"""
 
 
 def create_llm_client() -> LLMClient:
@@ -221,6 +263,91 @@ def _build_response_from_text(
     )
 
 
+def _normalize_confidence(value: object) -> float:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if confidence < 0.0:
+        return 0.0
+    if confidence > 1.0:
+        return 1.0
+    return confidence
+
+
+def _build_slide_match_response(
+    text: str,
+    request: SlideMatchRequest,
+    *,
+    model: str,
+    finish_reason: str | None = None,
+    refusal: str | None = None,
+) -> SlideMatchResponse:
+    _LLM_LOGGER.info(
+        "LLM slide match response",
+        extra={
+            "card_id": request.card_id,
+            "model": model,
+            "raw_response": text,
+            "finish_reason": finish_reason or "",
+            "refusal": refusal or "",
+        },
+    )
+    warnings: list[str] = []
+    if not text and refusal:
+        warnings.append("response_refused")
+        text = refusal
+    elif not text and finish_reason and finish_reason != "stop":
+        warnings.append(f"finish_{finish_reason}")
+
+    if not text:
+        return SlideMatchResponse(
+            slide_id=None,
+            confidence=0.0,
+            reason=refusal,
+            model=model,
+            warnings=warnings,
+            raw_text=text,
+        )
+
+    try:
+        data = _extract_json_from_text(text)
+    except json.JSONDecodeError:
+        warnings.append("response_not_json")
+        return SlideMatchResponse(
+            slide_id=None,
+            confidence=0.0,
+            reason=text.strip() or refusal,
+            model=model,
+            warnings=warnings,
+            raw_text=text,
+        )
+
+    slide_id_value = (
+        data.get("slide_id")
+        or data.get("recommended_slide_id")
+        or data.get("slideId")
+        or data.get("match")
+    )
+    slide_id = str(slide_id_value).strip() if slide_id_value else None
+    reason_value = data.get("reason") or data.get("explanation")
+    reason = str(reason_value).strip() if isinstance(reason_value, str) else None
+    confidence = _normalize_confidence(data.get("confidence") or data.get("score"))
+
+    candidate_ids = {candidate.slide_id for candidate in request.candidates}
+    if slide_id and slide_id not in candidate_ids:
+        warnings.append("unknown_slide_id")
+
+    return SlideMatchResponse(
+        slide_id=slide_id if slide_id in candidate_ids else None,
+        confidence=confidence if slide_id in candidate_ids else 0.0,
+        reason=reason,
+        model=model,
+        warnings=warnings,
+        raw_text=text,
+    )
+
+
 class MockLLMClient:
     """開発用のモック LLM クライアント。"""
 
@@ -262,6 +389,56 @@ class MockLLMClient:
             model=request.policy.model,
             warnings=warnings,
             raw_text=json.dumps(raw_payload, ensure_ascii=False),
+        )
+
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        if not request.candidates:
+            return SlideMatchResponse(
+                slide_id=None,
+                confidence=0.0,
+                reason="no candidates",
+                model="mock-local",
+            )
+
+        def score_candidate(candidate: SlideMatchCandidate) -> float:
+            score = 0.0
+            if candidate.slide_id == request.card_id:
+                score += 5.0
+            title = (candidate.title or "").lower()
+            chapter = (request.card_chapter or "").lower()
+            if chapter and chapter in title:
+                score += 3.0
+            summary = request.card_summary.lower()
+            if title and summary:
+                ratio = SequenceMatcher(None, title, summary[: len(title)]).ratio()
+                score += ratio * 2.0
+            if request.card_story_phase:
+                phase = request.card_story_phase.lower()
+                layout = (candidate.layout or "").lower()
+                if phase in layout or layout.startswith(phase[:3]):
+                    score += 1.0
+            if request.card_intent:
+                for intent in request.card_intent:
+                    if intent and intent.lower() in title:
+                        score += 1.0
+            return score
+
+        scored = [(score_candidate(candidate), candidate) for candidate in request.candidates]
+        scored.sort(key=lambda item: item[0], reverse=True)
+        best_score, best_candidate = scored[0]
+        if best_score <= 0:
+            return SlideMatchResponse(
+                slide_id=None,
+                confidence=0.0,
+                reason="heuristic match not found",
+                model="mock-local",
+            )
+        confidence = min(1.0, best_score / 5.0)
+        return SlideMatchResponse(
+            slide_id=best_candidate.slide_id,
+            confidence=confidence,
+            reason=f"heuristic score={best_score:.2f}",
+            model="mock-local",
         )
 
 
@@ -369,6 +546,79 @@ class OpenAIChatClient:
             refusal=getattr(message, "refusal", None),
         )
 
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        messages = [
+            {"role": "system", "content": request.system_prompt},
+            {"role": "user", "content": request.prompt},
+        ]
+        model_name = request.model or self._model
+        if model_name == "mock-local":
+            model_name = self._model
+        kwargs: dict[str, object] = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": self._temperature,
+            "response_format": {"type": "json_object"},
+        }
+        if self._max_tokens > 0:
+            kwargs["max_completion_tokens"] = self._max_tokens
+        for _ in range(3):
+            try:
+                response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+                    **kwargs,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001
+                _LLM_LOGGER.warning(
+                    "OpenAI chat completion error: %s",
+                    exc,
+                    extra={
+                        "model": model_name,
+                        "card_id": request.card_id,
+                    },
+                )
+                message = str(exc).lower()
+                if (
+                    "max_completion_tokens" in message
+                    and "max_tokens" in message
+                    and "max_completion_tokens" in kwargs
+                ):
+                    kwargs.pop("max_completion_tokens", None)
+                    if self._max_tokens > 0:
+                        kwargs["max_tokens"] = self._max_tokens
+                    continue
+                if (
+                    "max_tokens" in message
+                    and "max_completion_tokens" in message
+                    and "max_tokens" in kwargs
+                ):
+                    kwargs.pop("max_tokens", None)
+                    if self._max_tokens > 0:
+                        kwargs["max_completion_tokens"] = self._max_tokens
+                    continue
+                if "response_format" in message and "not" in message and "support" in message:
+                    kwargs.pop("response_format", None)
+                    continue
+                raise
+        else:  # pragma: no cover - safeguard
+            raise RuntimeError("OpenAI API match call failed after applying compatibility fallbacks")
+        choice = response.choices[0]  # type: ignore[index]
+        message = choice.message
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            text = content
+        elif content is None:
+            text = ""
+        else:
+            text = "".join(str(part) for part in content)
+        return _build_slide_match_response(
+            text,
+            request,
+            model=model_name,
+            finish_reason=getattr(choice, "finish_reason", None),
+            refusal=getattr(message, "refusal", None),
+        )
+
 
 class AzureOpenAIChatClient:
     """Azure OpenAI Chat Completions API クライアント。"""
@@ -458,6 +708,48 @@ class AzureOpenAIChatClient:
             refusal=refusal_text,
         )
 
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        from openai.types.responses import ResponseOutputMessage
+        from openai.types.responses.response_output_text import ResponseOutputText
+        from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+
+        deployment = request.model or self._deployment
+        if deployment == "mock-local":
+            deployment = self._deployment
+        kwargs: dict[str, object] = {
+            "model": deployment,
+            "input": [
+                {"role": "system", "content": request.system_prompt},
+                {"role": "user", "content": request.prompt},
+            ],
+            "temperature": self._temperature,
+        }
+        if self._max_tokens > 0:
+            kwargs["max_output_tokens"] = self._max_tokens
+        response = self._client.responses.create(  # type: ignore[attr-defined]
+            **kwargs,
+        )
+
+        text_segments: list[str] = []
+        refusal_segments: list[str] = []
+        for item in getattr(response, "output", []) or []:
+            if isinstance(item, ResponseOutputMessage):
+                for content in item.content:
+                    if isinstance(content, ResponseOutputText):
+                        text_segments.append(content.text)
+                    elif isinstance(content, ResponseOutputRefusal):
+                        refusal_segments.append(content.refusal)
+
+        raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
+        refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
+        return _build_slide_match_response(
+            raw_text,
+            request,
+            model=deployment,
+            finish_reason=(response.incomplete_details.reason if getattr(response, "incomplete_details", None) else None),
+            refusal=refusal_text,
+        )
+
 
 class AnthropicClaudeClient:
     """Anthropic Claude API クライアント。"""
@@ -508,6 +800,31 @@ class AnthropicClaudeClient:
         text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
         text = "\n".join(text_parts)
         return _build_response_from_text(text, request, model=model_name)
+
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        model_name = request.model or self._model
+        if model_name == "mock-local":
+            model_name = self._model
+        response = self._client.messages.create(  # type: ignore[attr-defined]
+            model=model_name,
+            system=request.system_prompt,
+            max_tokens=self._max_tokens,
+            temperature=float(os.getenv("ANTHROPIC_TEMPERATURE", "0.3")),
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": request.prompt,
+                        }
+                    ],
+                }
+            ],
+        )
+        text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
+        text = "\n".join(text_parts)
+        return _build_slide_match_response(text, request, model=model_name)
 
 
 class AwsClaudeClient:
@@ -620,10 +937,55 @@ class AwsClaudeClient:
         text = "\n".join(text_parts)
         return _build_response_from_text(text, request, model=model_id)
 
+    def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
+        payload = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": self._max_tokens,
+            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.3")),
+            "system": request.system_prompt,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": request.prompt,
+                        }
+                    ],
+                }
+            ],
+        }
+        model_id = request.model or self._model_id
+        if model_id == "mock-local":
+            model_id = self._model_id
+        invoke_kwargs = {
+            "modelId": model_id,
+            "body": json.dumps(payload),
+            "contentType": "application/json",
+            "accept": "application/json",
+        }
+        if self._inference_profile_arn:
+            invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
+
+        response = self._client.invoke_model(**invoke_kwargs)
+        body = response.get("body")
+        if hasattr(body, "read"):
+            body_text = body.read()
+        else:  # pragma: no cover - unexpected response type
+            body_text = body
+        data = json.loads(body_text)
+        contents = data.get("content", [])
+        text_parts = [item.get("text", "") for item in contents if isinstance(item, dict)]
+        text = "\n".join(text_parts)
+        return _build_slide_match_response(text, request, model=model_id)
+
 
 __all__ = [
     "AIGenerationRequest",
     "AIGenerationResponse",
+    "SlideMatchCandidate",
+    "SlideMatchRequest",
+    "SlideMatchResponse",
     "LLMClient",
     "LLMClientConfigurationError",
     "MockLLMClient",
