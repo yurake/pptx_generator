@@ -537,6 +537,7 @@ class MappingSlideMeta(BaseModel):
 
 class GenerateReadySlide(BaseModel):
     layout_id: str
+    layout_name: str | None = None
     elements: dict[str, Any] = Field(default_factory=dict)
     meta: MappingSlideMeta
 

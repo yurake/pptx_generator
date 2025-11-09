@@ -54,6 +54,7 @@ class LayoutProfile:
     """layouts.jsonl のレコードを抽象化したもの。"""
 
     layout_id: str
+    layout_name: str
     usage_tags: tuple[str, ...]
     text_hint: Mapping[str, Any]
     media_hint: Mapping[str, Any]
@@ -187,9 +188,13 @@ class MappingStep:
             if spec_slide is not None:
                 sources = [spec_slide.id]
 
+            selected_profile = layout_catalog.get(selected_layout)
+            layout_name = selected_profile.layout_name if selected_profile else selected_layout
+
             generate_ready_slides.append(
                 GenerateReadySlide(
                     layout_id=selected_layout,
+                    layout_name=layout_name,
                     elements=elements,
                     meta=MappingSlideMeta(
                         section=section_name,
@@ -362,8 +367,10 @@ class MappingStep:
             if not layout_id:
                 continue
             usage_tags = normalize_usage_tags(payload.get("usage_tags", []))
+            layout_name = payload.get("layout_name") or layout_id
             catalog[layout_id] = LayoutProfile(
                 layout_id=layout_id,
+                layout_name=layout_name,
                 usage_tags=usage_tags,
                 text_hint=payload.get("text_hint") or {},
                 media_hint=payload.get("media_hint") or {},
