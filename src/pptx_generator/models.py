@@ -184,6 +184,7 @@ class JobMeta(BaseModel):
     layouts_path: str | None = None
     template_path: str | None = None
     template_id: str | None = None
+    template_spec_path: str | None = None
 
 
 class JobAuth(BaseModel):
@@ -248,6 +249,7 @@ class JobSpecScaffoldMeta(BaseModel):
     generated_at: str
     layout_count: int
     layouts_path: str | None = None
+    template_spec_path: str | None = None
 
 
 class JobSpecScaffold(BaseModel):

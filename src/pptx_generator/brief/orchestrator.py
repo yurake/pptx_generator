@@ -82,17 +82,15 @@ class BriefAIOrchestrator:
             blueprint_hash=blueprint_ref.get("hash") if blueprint_ref else None,
             slot_summary=slot_summary,
         )
-        logs = [
-            BriefAIRecord(
-                card_id=card.card_id,
-                prompt_template=policy.prompt_template_id or "brief.default",
-                response_digest=card.message,
-                warnings=["llm_stub"],
-                tokens={"prompt": 0, "completion": 0, "total": 0},
-            )
-            for card in cards
-        ]
-        return document, meta, logs
+        batch_record = BriefAIRecord(
+            card_id="batch",
+            prompt_template=policy.prompt_template_id or "brief.batch",
+            response_digest=f"cards={len(cards)} mode={mode}",
+            warnings=["llm_stub"],
+            tokens={"prompt": 0, "completion": 0, "total": 0},
+            batch_card_ids=[card.card_id for card in cards],
+        )
+        return document, meta, [batch_record]
 
     def _build_cards(
         self,

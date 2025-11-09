@@ -871,6 +871,24 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     brief_path = tmp_path / "brief_static.json"
     brief_path.write_text(json.dumps(brief_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    jobspec_payload = {
+        "meta": {
+            "schema_version": "1.1",
+            "title": "Static Deck",
+            "template_path": str(template_path),
+            "layouts_path": str(Path("samples/extract/layouts.jsonl")),
+            "locale": "ja-JP",
+            "template_spec_path": str(blueprint_path),
+        },
+        "auth": {"created_by": "tester"},
+        "slides": [
+            {"id": "title-01", "layout": "Title", "title": "Intro"},
+            {"id": "section_covor_left-01", "layout": "Section Covor Left", "title": "Overview"},
+        ],
+    }
+    jobspec_path = tmp_path / "jobspec_static.json"
+    jobspec_path.write_text(json.dumps(jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     prepare_dir = tmp_path / "prepare_static"
     result = runner.invoke(
         app,
@@ -879,8 +897,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
             str(brief_path),
             "--mode",
             "static",
-            "--template-spec",
-            str(blueprint_path),
+            "--jobspec",
+            str(jobspec_path),
             "--output",
             str(prepare_dir),
         ],
@@ -891,23 +909,6 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     meta_payload = json.loads((prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["mode"] == "static"
     assert meta_payload["slot_coverage"]["required_total"] == 2
-
-    jobspec_payload = {
-        "meta": {
-            "schema_version": "1.1",
-            "title": "Static Deck",
-            "template_path": str(template_path),
-            "layouts_path": str(Path("samples/extract/layouts.jsonl")),
-            "locale": "ja-JP",
-        },
-        "auth": {"created_by": "tester"},
-        "slides": [
-            {"id": "title-01", "layout": "Title", "title": "Intro"},
-            {"id": "section_covor_left-01", "layout": "Section Covor Left", "title": "Overview"},
-        ],
-    }
-    jobspec_path = tmp_path / "jobspec_static.json"
-    jobspec_path.write_text(json.dumps(jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     mapping_dir = tmp_path / "mapping_static"
     draft_dir = tmp_path / "draft_static"

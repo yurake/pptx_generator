@@ -23,15 +23,15 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: `docs/requirements/stages/stage-02-content-normalization.md` / `stage-03-mapping.md`、`docs/design/schema/stage-01-template-preparation.md`、`docs/design/cli-command-reference.md`、新規メモ `docs/design/rm054-static-template-blueprint.md` を更新。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 
+- [x] 実装
+  - メモ: jobspec.meta.template_spec_path を追加し、静的モードは jobspec を参照して Blueprint を取得。`--template-spec` を廃止し CLI とパイプラインを統一。動的モードの AI ログをバッチ化し、呼び出し回数を 1 件扱いに変更。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_cheatsheet_flow.py tests/test_cli_integration.py::test_static_mode_pipeline` を実行し、静的・動的双方のフローが成功することを確認。
+- [x] ドキュメント更新
+  - メモ: CLI ガイドと requirements/design スキーマを更新し、`template_spec_path` 参照とバッチログ仕様を反映。ロードマップの記載は変更不要のため未更新。
   - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新

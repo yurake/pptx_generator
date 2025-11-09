@@ -266,10 +266,14 @@ class TemplateExtractorStep:
         """テンプレート仕様をファイルに保存する。"""
         if self.options.format == "yaml":
             import yaml
-            data = template_spec.model_dump()
+            data = template_spec.model_dump(mode="json", exclude_none=True)
             content = yaml.dump(data, allow_unicode=True, default_flow_style=False, indent=2)
         else:
-            content = json.dumps(template_spec.model_dump(), indent=2, ensure_ascii=False)
+            content = json.dumps(
+                template_spec.model_dump(mode="json", exclude_none=True),
+                indent=2,
+                ensure_ascii=False,
+            )
 
         output_path.write_text(content, encoding="utf-8")
         logger.info("テンプレート仕様を保存: %s", output_path)
@@ -399,8 +403,6 @@ class TemplateExtractorStep:
             return "table"
         if "picture" in shape_type or "image" in shape_type or "bitmap" in shape_type:
             return "image"
-        if "shape" in shape_type:
-            return "shape"
         if shape.text:
             return "text"
         return "other"

@@ -14,6 +14,7 @@
 - `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）に加え、静的モード時は `layout_mode` / `slide_id` / `slot_id` / `required` / `slot_fulfilled` / `blueprint_slot`（`anchor`・`content_type`・`intent_tags`・`fulfilled`）を付与する。
 - `brief_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
 - `brief_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
+- 動的モードでは呼び出しを 1 回に集約し、`brief_ai_log.json` にはバッチ単位のレコードを出力する。
 - `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、`mode`（`dynamic` / `static`）、静的モード時は Blueprint 情報（`blueprint_path` / `blueprint_hash` / `slot_coverage`）。
 - `brief_story_outline.json`: 章 ID とカード ID の対応表。工程3 の章構成初期化に利用する。
 - `audit_log.json`: 生成時刻、ポリシー ID、成果物パス、実行モード、Blueprint 参照、統計値（必須 slot 充足率など）、`slot_summary`。
@@ -35,8 +36,8 @@
 ## CLI 要件
 - `pptx prepare <brief_path>` はブリーフが存在しない場合に exit code 2 を返す。
 - `--mode` オプション（`dynamic` / `static`）を必須とし、実行モード未指定の場合は CLI がエラーで終了する。
-- 静的モード (`--mode=static`) では `--template-spec <path>` で Blueprint を含むテンプレ仕様を指定する。未指定や Blueprint 欠落時は exit code 2 を返す。
-- `--template-spec` を指定した場合は `ai_generation_meta.json.blueprint_path` に絶対パスを記録し、`audit_log.json` にも同様の参照を追加する。
+- 静的モード (`--mode=static`) では `jobspec.meta.template_spec_path` を参照して Blueprint を読み込む。`--jobspec` 未指定時は `.pptx/extract/jobspec.json` を探索し、見つからない場合はエラーにする。
+- 参照した Blueprint パスは `ai_generation_meta.json.blueprint_path` と監査ログに記録する。
 - ポリシー読み込み失敗時（`BriefPolicyError`）は exit code 4 で終了し、エラーメッセージを標準エラーへ出力する。
 - 生成結果は `.pptx/prepare/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。
 - `-p/--page-limit` を指定した場合、生成枚数が制限値を超えた際に WARN を出力してリストをトリムする。
@@ -47,6 +48,7 @@
 - Blueprint の `slide_id` 順にカードを出力し、`prepare_card.json.cards[*].slot_id` で slot を一意に識別できるようにする。
 - `ai_generation_meta.json.statistics` に `required_slot_total` / `required_slot_fulfilled` / `optional_slot_used` を追記し、監査ログ `audit_log.json.brief_normalization.slot_summary` と整合させる。
 - Blueprint が指定されても `--mode=dynamic` の場合は従来どおりの動作とし、slot 情報は出力しない。
+- `jobspec.meta.template_spec_path` が欠落している場合はテンプレ抽出を再実行するようエラー案内する。
 - `--mode=static` 選択時は `--page-limit` を併用できない。
 
 ## 今後の拡張

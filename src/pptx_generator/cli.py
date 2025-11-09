@@ -57,6 +57,7 @@ DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_BRIEF_POLICY_PATH = Path("config/brief_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
+DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 
 logger = logging.getLogger(__name__)
 
@@ -398,8 +399,17 @@ def _run_template_extraction(
     except ValueError:
         layouts_relative = str(validation_result.layouts_path)
 
+    template_spec_relative: str | None = None
+    try:
+        template_spec_relative = str(spec_path.relative_to(output_dir))
+    except ValueError:
+        template_spec_relative = str(spec_path)
+
     jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
-        update={"layouts_path": layouts_relative}
+        update={
+            "layouts_path": layouts_relative,
+            "template_spec_path": template_spec_relative,
+        }
     )
 
     jobspec_path = output_dir / "jobspec.json"
@@ -1628,10 +1638,10 @@ def gen(  # noqa: PLR0913
     help="カード生成モード。static は Blueprint を利用する",
 )
 @click.option(
-    "--template-spec",
+    "--jobspec",
     type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     default=None,
-    help="Blueprint を含む template_spec.json (static モードで必須)",
+    help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
 )
 @click.option(
     "-p",
@@ -1650,8 +1660,8 @@ def gen(  # noqa: PLR0913
 def prepare(
     brief_path: Path,
     output_dir: Path,
+    jobspec: Path | None,
     mode: str,
-    template_spec: Path | None,
     page_limit: int | None,
     approved: bool,
 ) -> None:
@@ -1675,24 +1685,55 @@ def prepare(
 
     blueprint_spec: TemplateSpec | None = None
     blueprint_ref: dict[str, str] | None = None
+    template_spec_path: Path | None = None
+    jobspec_path: Path | None = jobspec
     normalized_mode = mode.lower()
     if normalized_mode not in {"dynamic", "static"}:
         raise click.exceptions.BadParameter("--mode には dynamic か static を指定してください")
 
     if normalized_mode == "static":
-        if template_spec is None:
-            click.echo("static モードでは --template-spec を指定してください", err=True)
-            raise click.exceptions.Exit(code=2)
         if page_limit is not None:
             click.echo("static モードでは --page-limit を利用できません", err=True)
             raise click.exceptions.Exit(code=2)
+        resolved_jobspec = jobspec_path or DEFAULT_JOBSPEC_PATH
+        if not resolved_jobspec.exists():
+            click.echo(
+                "static モードでは --jobspec で jobspec.json のパスを指定するか、.pptx/extract/jobspec.json を用意してください",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
         try:
-            template_spec_text = template_spec.read_text(encoding="utf-8")
+            spec_for_static = JobSpec.parse_file(resolved_jobspec)
+        except (FileNotFoundError, ValidationError) as exc:
+            click.echo(f"jobspec.json の読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+
+        template_spec_ref = getattr(spec_for_static.meta, "template_spec_path", None)
+        if not template_spec_ref:
+            click.echo(
+                "jobspec.meta.template_spec_path が設定されていません。テンプレ抽出を再実行してください",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
+
+        template_spec_path = Path(template_spec_ref)
+        if not template_spec_path.is_absolute():
+            template_spec_path = (resolved_jobspec.parent / template_spec_path).resolve()
+
+        if not template_spec_path.exists():
+            click.echo(
+                f"template_spec.json が見つかりません: {template_spec_path}",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
+
+        try:
+            template_spec_text = template_spec_path.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
             click.echo(f"template_spec の読み込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=2) from exc
         try:
-            if template_spec.suffix.lower() in {".yaml", ".yml"}:
+            if template_spec_path.suffix.lower() in {".yaml", ".yml"}:
                 import yaml
 
                 payload = yaml.safe_load(template_spec_text)
@@ -1708,6 +1749,7 @@ def prepare(
         if blueprint_spec.blueprint is None:
             click.echo("template_spec に blueprint が含まれていません", err=True)
             raise click.exceptions.Exit(code=2)
+
         blueprint_hash = hashlib.sha256(
             json.dumps(
                 blueprint_spec.blueprint.model_dump(mode="json"),
@@ -1716,7 +1758,7 @@ def prepare(
             ).encode("utf-8")
         ).hexdigest()
         blueprint_ref = {
-            "path": str(template_spec.resolve()),
+            "path": str(template_spec_path),
             "hash": f"sha256:{blueprint_hash}",
         }
 
@@ -1770,8 +1812,8 @@ def prepare(
             "statistics": meta.statistics,
         }
     }
-    if template_spec is not None:
-        audit_payload["brief_normalization"]["outputs"]["template_spec"] = str(template_spec.resolve())
+    if template_spec_path is not None:
+        audit_payload["brief_normalization"]["outputs"]["template_spec"] = str(template_spec_path)
     if blueprint_ref:
         audit_payload["brief_normalization"]["blueprint"] = blueprint_ref
     if meta.slot_coverage:

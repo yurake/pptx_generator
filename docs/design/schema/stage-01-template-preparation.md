@@ -3,7 +3,7 @@
 工程1ではテンプレート受け渡しの品質を確保するため、以下の成果物を想定する。
 
 ## ファイル
-- `template_spec.json`: テンプレ抽出結果。`layout_mode` や Blueprint を含むテンプレ構造を表現する。
+- `template_spec.json`: テンプレ抽出結果。`layout_mode` や Blueprint を含むテンプレ構造を表現し、`jobspec.json.meta.template_spec_path` から参照される。
 - `template_release.json`: テンプレートのメタ情報と検証結果を記録。
 - `release_report.json`: 差分結果や警告一覧。
 - `golden_runs/*.log`: ゴールデンサンプル実行ログ（任意）。
@@ -11,6 +11,7 @@
 ## Blueprint スキーマ
 - 静的テンプレートを扱う場合は `template_spec.json.blueprint` にスライド順と slot 情報を保持する。
 - `layout_mode` は `dynamic` / `static` を取り、`static` の場合は Blueprint を必須とする。
+- `jobspec.json.meta.template_spec_path` には `template_spec.json` への相対パスを記録し、工程2/3 から Blueprint を参照できるようにする。
 
 ```jsonc
 {

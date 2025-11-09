@@ -92,7 +92,7 @@ uv run pptx template samples/templates/templates.pptx
 
 #### `pptx prepare`
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
-- 静的モードでは `--template-spec` に `template_spec.json`（Blueprint を含む）を指定する。layout_mode が `static` 以外の場合や Blueprint 欠落時は CLI がエラー終了する。`--mode=static` と `--page-limit` の併用はできない。
+- 静的モードでは `jobspec.meta.template_spec_path` に記録された Blueprint を参照する。`jobspec` が見つからない場合は `.pptx/extract/jobspec.json` を自動探索し、`--jobspec` で明示指定も可能。`--mode=static` と `--page-limit` の併用はできない。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
@@ -100,7 +100,7 @@ uv run pptx template samples/templates/templates.pptx
 | `<brief.txt>` | ブリーフ入力ファイル | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
 | `--mode <dynamic\|static>` | 生成モードを指定する | ✅ |  | - |
-| `--template-spec <path>` | Blueprint を含むテンプレ仕様 | 静的モードで ✅ |  | 指定なし |
+| `--jobspec <path>` | `jobspec.json` を指定（template_spec_path を参照） | 静的モードで ✅ |  | `.pptx/extract/jobspec.json` を探索 |
 | `-p/--page-limit <int>` | 生成するカード枚数の上限 |  |  | 指定なし |
 
 実行例:

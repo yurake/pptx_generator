@@ -819,13 +819,35 @@ class DraftStructuringStep:
             msg = "static モードでは brief_document が必要です"
             raise DraftStructuringError(msg)
 
-        blueprint_path_str = brief_meta.blueprint_path
-        if not blueprint_path_str:
-            msg = "ai_generation_meta に blueprint_path が含まれていません"
+        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
+        template_spec_candidate: Path | None = None
+
+        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
+        if template_spec_meta:
+            candidate = Path(template_spec_meta)
+            if not candidate.is_absolute() and spec_source_path is not None:
+                candidate = (spec_source_path.parent / candidate).resolve()
+            elif not candidate.is_absolute():
+                candidate = candidate.resolve()
+            template_spec_candidate = candidate
+
+        if template_spec_candidate is None:
+            blueprint_path_str = brief_meta.blueprint_path
+            if blueprint_path_str:
+                candidate = Path(blueprint_path_str)
+                if not candidate.is_absolute():
+                    candidate = candidate.resolve()
+                template_spec_candidate = candidate
+
+        if template_spec_candidate is None:
+            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
             raise DraftStructuringError(msg)
 
-        blueprint_path = Path(blueprint_path_str)
-        template_spec = self._load_template_spec(blueprint_path)
+        if not template_spec_candidate.exists():
+            msg = f"template_spec が見つかりません: {template_spec_candidate}"
+            raise DraftStructuringError(msg)
+
+        template_spec = self._load_template_spec(template_spec_candidate)
         if template_spec.layout_mode != "static" or template_spec.blueprint is None:
             msg = "template_spec が static Blueprint を含んでいません"
             raise DraftStructuringError(msg)
@@ -1051,6 +1073,8 @@ class DraftStructuringStep:
         )
         draft = DraftDocument(sections=draft_sections, meta=draft_meta)
 
+        blueprint_path_value = brief_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
+
         mapping_log = {
             "mode": "static",
             "slides": mapping_entries,
@@ -1059,7 +1083,7 @@ class DraftStructuringStep:
                 "unused_slots": unused_slots,
                 "orphan_cards": orphan_cards,
             },
-            "blueprint_path": brief_meta.blueprint_path,
+            "blueprint_path": blueprint_path_value,
         }
 
         ai_summary = {

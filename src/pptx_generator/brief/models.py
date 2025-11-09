@@ -158,6 +158,7 @@ class BriefAIRecord(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     tokens: dict[str, int] = Field(default_factory=dict)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    batch_card_ids: list[str] | None = None
 
 
 class BriefGenerationMeta(BaseModel):

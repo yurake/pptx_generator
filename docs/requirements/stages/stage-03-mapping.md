@@ -74,6 +74,7 @@
 - 静的モード時の exit code 6 は Blueprint の必須 slot 未充足または `slot_id` 重複検知を表す。CLI は詳細を標準エラーに出力する。
 - `generate_ready.slides[*].meta.blueprint_slots[*].fulfilled` を監査し、slot 充足状況を `draft_mapping_log.json` と同期させる。
 - `draft_mapping_log.json.static_slot_checks.orphan_cards` に Blueprint へ取り込めなかったカードを記録し、CI で差分検証できるようにする。
+- jobspec 側に `template_spec_path` が存在することを前提とし、静的モードではそれを参照して Blueprint を取得する。
 
 ## 将来計画 / 未解決事項
 - Layout Hint Engine の ML 化と学習データパイプライン。

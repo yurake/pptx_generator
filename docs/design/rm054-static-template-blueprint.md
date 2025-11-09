@@ -42,7 +42,7 @@
 - `required`（slide レベル）: 付録や任意スライドの扱いを明示する。`false` の場合は未生成でもエラー扱いしない。
 
 ## 工程2（`pptx prepare`）連携
-- CLI は `--mode` を必須化し、`static` 選択時は `--template-spec` を受け取る。
+- CLI は `--mode` を必須化し、`static` 選択時は `jobspec.meta.template_spec_path` を参照する（必要に応じて `--jobspec` で明示指定）。
 - Blueprint の slot を順番に巡回し、slot ごとにカードを生成。必要に応じて AI プロンプトに `slot_id` / `anchor` / `intent_tags` を付加する。
 - 生成カードには以下の追加メタを付与する。
   - `slide_id`: Blueprint スライドと一致させる。
