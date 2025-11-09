@@ -18,20 +18,20 @@ roadmap_item: RM-054 静的テンプレ構成統合
     - ロールバック方法: 変更済みドキュメント・コードを個別に `git revert` で戻し、`--mode` オプション必須化を解除して Blueprint 処理を元に戻す。
     - 承認メッセージ ID／リンク: ユーザー承認 (2025-11-09)
 - [x] 設計・実装方針の確定
-  - メモ: 静的モードでは Blueprint から slot 単位でカードを生成し、工程3で slot 充足検証と `generate_ready` 直接生成を行う方針を確定。CLI `prepare` に `--mode` / `--template-spec` を追加し、mapping は static 時にバイパス処理。
+  - メモ: 静的モードでは Blueprint から slot 単位でカードを生成し、工程3で slot 充足検証と `generate_ready` 直接生成を行う方針を確定。CLI `prepare` の `--template-spec` は最終的に廃止し、`jobspec.meta.template_spec_path` を参照する形へ統一。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/requirements/stages/stage-02-content-normalization.md` / `stage-03-mapping.md`、`docs/design/schema/stage-01-template-preparation.md`、`docs/design/cli-command-reference.md`、新規メモ `docs/design/rm054-static-template-blueprint.md` を更新。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
-- [x] 実装
-  - メモ: `TemplateSpec` に Blueprint モデル追加、テンプレ抽出・工程2・工程3・CLI を静的モード対応。`MappingStep` の static パススルーやメタ拡張を実装済み。
-- [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_integration.py::test_static_mode_pipeline` を実行し、新旧テストが成功することを確認。
-- [x] ドキュメント更新
-  - メモ: ロードマップ状況を更新し、静的モード仕様をドキュメントへ反映。
-  - [x] docs/roadmap 配下
-  - [x] docs/requirements 配下（実装結果との整合再確認）
-  - [x] docs/design 配下（実装結果との整合再確認）
+- [ ] 実装
+  - メモ: 
+- [ ] テスト・検証
+  - メモ: 
+- [ ] ドキュメント更新
+  - メモ: 
+  - [ ] docs/roadmap 配下
+  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
