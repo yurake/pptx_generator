@@ -36,8 +36,8 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
   - [x] README.md / AGENTS.md（N/A）
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #280 https://github.com/yurake/pptx_generator/pull/280（2025-11-09 完了）
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
