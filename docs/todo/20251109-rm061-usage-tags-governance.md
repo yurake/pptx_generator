@@ -17,18 +17,18 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
     - テスト方針: 該当ユーティリティの単体テスト追加、テンプレ抽出結果のスナップショット確認、`pytest tests/test_cli_integration.py` で回帰検証。
     - ロールバック方法: `feat/rm061-usage-tags-governance` 内のコミットをリバート／ブランチ破棄で `fix/rm060-stage3-id-enforce` 状態へ戻す。
     - 承認メッセージ ID／リンク: チャットログ (2025-11-09 Plan 承認)
-- [ ] 設計・実装方針の確定
-  - メモ: 
+- [x] 設計・実装方針の確定
+  - メモ: タグ正規化ユーティリティ導入と layout_validation の警告方針を確定し、Stage3 パイプラインの比較処理にも同ユーティリティを適用する構成で進行。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: 
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 
+- [x] 実装
+  - メモ: `_derive_usage_tags` の改修、`utils/usage_tags.py` 追加、Stage3 パイプラインの正規化実装、CLI 検証スクリプトを整備。
+- [x] テスト・検証
+  - メモ: `pytest tests/test_utils_usage_tags.py tests/test_layout_validation_usage_tags.py tests/test_template_extraction_script.py`、`pytest tests/test_cli_integration.py`、`bash scripts/test_template_extraction.sh` を実行。
+- [x] ドキュメント更新
+  - メモ: `docs/notes/20251109-usage-tags-scoring.md` に実装内容を追記。要件／設計ドキュメントの更新は今回対象外。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
