@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import shutil
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -98,6 +99,15 @@ def _configure_llm_logger() -> None:
         llm_logger.addHandler(handler)
     llm_logger.setLevel(logging.INFO)
     llm_logger.propagate = False
+
+
+def _log_current_llm_provider(context: str) -> None:
+    provider_env = os.getenv("PPTX_LLM_PROVIDER")
+    provider = provider_env.strip().lower() if provider_env else "mock"
+    source = "env" if provider_env else "default"
+    logging.getLogger("pptx_generator.cli.llm").info(
+        "LLM provider (%s): %s (source=%s)", context, provider, source
+    )
 
 
 def _configure_file_logging() -> None:
@@ -2319,6 +2329,7 @@ def template(  # noqa: PLR0913
     golden_specs: tuple[Path, ...],
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
+    _log_current_llm_provider("template")
     try:
         extraction_result = _run_template_extraction(
             template_path=template_path,
