@@ -200,7 +200,12 @@ def _prepare_generate_ready(
     meta = payload.get("meta", {})
     template_path = meta.get("template_path")
     assert template_path is not None
-    assert Path(template_path).is_absolute()
+    template_path_obj = Path(template_path)
+    if template_path_obj.is_absolute():
+        assert template_path_obj.exists()
+    else:
+        resolved = (ready_path.parent / template_path_obj).resolve()
+        assert resolved.exists()
     return ready_path
 
 
@@ -700,7 +705,6 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
             str(output_dir),
             "--branding",
             str(branding_path),
-            *_brief_args(brief_paths),
         ],
         catch_exceptions=False,
     )

@@ -179,7 +179,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt   --outpu
 
 #### `pptx gen`
 - `generate_ready.json` を入力に工程4を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。`--brief-*` オプションは後方互換目的で受け付けるが無視される。
+- `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |

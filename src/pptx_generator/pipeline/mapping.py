@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -220,13 +221,20 @@ class MappingStep:
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
+        output_dir = self.options.output_dir or context.workdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         template_path_str: str | None = None
         if self.options.template_path is not None:
+            template_candidate = self.options.template_path
             try:
-                # resolve() で絶対パスへ正規化し、生成物持ち運び時にも一意に解決できるようにする
-                template_path_str = str(self.options.template_path.resolve())
+                resolved_template = template_candidate.resolve()
             except OSError:
-                template_path_str = str(self.options.template_path)
+                resolved_template = template_candidate
+
+            template_path_str = self._format_template_path(
+                resolved_template, output_dir
+            )
 
         generate_ready_meta = GenerateReadyMeta(
             template_version=self._resolve_template_version(context),
@@ -248,9 +256,6 @@ class MappingStep:
                 ai_patch_count=ai_patch_count,
             ),
         )
-
-        output_dir = self.options.output_dir or context.workdir
-        output_dir.mkdir(parents=True, exist_ok=True)
 
         generate_ready_path = output_dir / self.options.generate_ready_filename
         generate_ready_path.write_text(
@@ -588,6 +593,17 @@ class MappingStep:
             warnings.append("body が空です")
 
         return fallback, ai_patches, warnings
+
+    @staticmethod
+    def _format_template_path(template_path: Path, output_dir: Path) -> str:
+        try:
+            relative = template_path.relative_to(output_dir)
+            return str(relative)
+        except ValueError:
+            try:
+                return os.path.relpath(template_path, output_dir)
+            except ValueError:
+                return str(template_path)
 
     def _resolve_template_version(self, context: PipelineContext) -> str | None:
         branding = context.artifacts.get("branding")

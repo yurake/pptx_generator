@@ -1292,24 +1292,6 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     help="ブランド設定ファイル",
 )
 @click.option(
-    "--brief-cards",
-    type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
-    default=None,
-    help="後方互換用オプション（無視される）",
-)
-@click.option(
-    "--brief-log",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=None,
-    help="後方互換用オプション（無視される）",
-)
-@click.option(
-    "--brief-meta",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=None,
-    help="後方互換用オプション（無視される）",
-)
-@click.option(
     "--export-pdf",
     is_flag=True,
     help="LibreOffice を利用して PDF を追加出力する",
@@ -1399,9 +1381,6 @@ def gen(  # noqa: PLR0913
     pptx_name: str,
     rules: Path,
     branding: Optional[Path],
-    brief_cards: Optional[Path],
-    brief_log: Optional[Path],
-    brief_meta: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
     pdf_output: str,
@@ -1421,11 +1400,6 @@ def gen(  # noqa: PLR0913
     if not export_pdf and pdf_mode != "both":
         click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
         raise click.exceptions.Exit(code=2)
-
-    if any(path is not None for path in (brief_cards, brief_log, brief_meta)):
-        logger.debug(
-            "legacy brief options were provided to pptx gen; they are ignored in generate_ready flow"
-        )
 
     try:
         generate_ready = GenerateReadyDocument.parse_file(generate_ready_path)
