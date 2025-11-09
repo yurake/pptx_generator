@@ -866,7 +866,7 @@ flowchart TB
 - ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
 - 参照 ToDo: [docs/todo/20251108-stage3-id-strict-check.md](../todo/20251108-stage3-id-strict-check.md)
-- 状況: 未着手（2025-11-08 追加）
+- 状況: 完了（2025-11-09 更新）
 - 期待成果:
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
   - ログやエラーメッセージで原因（欠損カード ID や参照ファイル）を特定でき、運用チームが迅速に復旧できる。
