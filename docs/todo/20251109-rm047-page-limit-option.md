@@ -38,8 +38,8 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 未作成。必要に応じて更新する。
-- [ ] PR 作成
-  - メモ: PR 作成時に番号と URL を記録する。
+- [x] PR 作成
+  - メモ: PR #282 (fix: align pptx gen with generate_ready flow) にて CLI オプション整備の成果を共有済み。フォローアップが必要な場合は同 PR で管理する。
 
 ## メモ
 - RM-047 完了後の派生タスクとして CLI オプション整備を実施する。
