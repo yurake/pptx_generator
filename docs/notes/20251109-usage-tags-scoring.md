@@ -33,20 +33,21 @@
 - レイアウトレビュー時に `usage_tags` を点検し、タイトル用途のレイアウトに限定して `title` を設定する運用を検討する。
 
 ## 対応案の方向性
-1. 抽出ロジックの改修
-   - `_derive_usage_tags` に「タイトル型プレースホルダーが 1 つだけ存在し、`body` がある場合は `title` を付けない」などの条件を追加する。
-   - 併せて `layout_name` のパターン判定を強化し、`title` 判定には `title` / `cover` など特定語を厳密に要求する。
-3. 生成 AI による分類の活用
-   - AI が出力した分類をテンプレート内の `layout_id` 単位で正規化（例: `primary-title` → `title`）する辞書を用意し、スコアリングと整合する語彙に変換する。
-   - AI 結果はログに残し、差異が大きい場合に人手確認へ回す運用とする。
-4. バリデーションの強化
-   - `layout_validation` に、`title` タグの付与条件を満たしているかを診断するルールを追加し、`title` タグ過剰時には警告を出す。
-   - CI で `usage_tags` の語彙セットをチェックし、未知タグの混入や `title` 過多を検出する。
+1. 生成 AI による分類の活用  
+   - レイアウトごとのプレースホルダー構成・テキスト／メディア収容力をメタデータとして AI へ渡し、`allowed_tags` を明示した上で分類タグを返してもらう。  
+   - 応答のタグは `layout_id` 単位で正規化し、未知語が残った場合でも差分をログ化して人手確認へ回せるようにする。
+2. 抽出ロジックの改修  
+   - `_derive_usage_tags` をフォールバックの基準とし、本文プレースホルダーを持つ汎用レイアウトでは `title` を抑制するなどルールベースの品質を維持する。  
+   - AI がタグを返さない／未知語のみの場合は、このフォールバック結果を有効タグとして使用する。
+3. バリデーションの強化  
+   - `layout_validation` に `usage_tag_title_suppressed` / `usage_tag_unknown` の診断を追加し、CI 上で逸脱を検知する。  
+   - タグ語彙の集計値を `diagnostics.json` に残し、テンプレ更新時の差分を追えるようにする。
 
-短期的には **1**（抽出ロジック改修）と **4**（バリデーション強化）を優先し、`title` タグの過剰付与を構造的に抑止する。生成 AI を使う場合は **3** の正規化を前提条件とし、語彙の統一を担保する。
+短期的には **1** で分類結果を主軸に据えつつ、**2** をフォールバックとして活かし、**3** で運用監視を補完する形を目指す。
 
 ## 実装状況メモ（2025-11-09）
 - `_derive_usage_tags` をリファクタリングし、本文プレースホルダーが存在するレイアウトでは `title` タグを付与しないよう調整。レイアウト名が「Title and Content」のようなケースを除外しつつ、表紙・セクション系は維持。
 - `layout_validation` で `usage_tag_title_suppressed` / `usage_tag_unknown` 警告を出せるようにし、未知タグは正規化時に除外して警告のみ記録。
 - `pptx_generator/utils/usage_tags.py` を追加し、タグ正規化ユーティリティとシノニムマップを定義。`mapping` / `draft_structuring` / `draft_recommender` で共通利用し、`intent`・`type_hint`・AI 出力を同じ語彙に揃える。
-- 単体テスト (`tests/test_utils_usage_tags.py`, `tests/test_layout_validation_usage_tags.py`) を追加し、レイアウト抽出とユーティリティの振る舞いをカバー。
+- `CardLayoutRecommender` から AI へ送る payload にレイアウトメタデータ（プレースホルダー要約、text/media ヒント、許容タグ）を添付し、応答に含まれるタグを `normalize_usage_tags_with_unknown` で正規化して採用する仕組みを導入。未知語は `ai_unknown_tags` としてログ／診断に残す。
+- 単体テスト (`tests/test_utils_usage_tags.py`, `tests/test_layout_validation_usage_tags.py`, `tests/test_layout_recommender.py`) を更新し、AI タグの正規化とフォールバック挙動を検証する。
