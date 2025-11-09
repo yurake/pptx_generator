@@ -58,8 +58,8 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: Issue 未特定のため要確認
-- [ ] PR 作成
-  - メモ: ---
+- [x] PR 作成
+  - メモ: PR #282 https://github.com/yurake/pptx_generator/pull/282（2025-11-09 完了）
 
 ## メモ
 ---
