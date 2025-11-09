@@ -36,7 +36,7 @@ class BriefAIOrchestrator:
         source: BriefSourceDocument,
         *,
         policy_id: str | None = None,
-        card_limit: int | None = None,
+        page_limit: int | None = None,
         all_cards_status: BriefStatusType | None = None,
     ) -> tuple[BriefDocument, BriefGenerationMeta, list[BriefAIRecord]]:
         try:
@@ -44,7 +44,7 @@ class BriefAIOrchestrator:
         except BriefPolicyError as exc:
             raise BriefAIOrchestrationError(str(exc)) from exc
 
-        cards = self._build_cards(source, policy, card_limit)
+        cards = self._build_cards(source, policy, page_limit)
         if all_cards_status is not None:
             for card in cards:
                 card.status = all_cards_status
@@ -74,10 +74,10 @@ class BriefAIOrchestrator:
         self,
         source: BriefSourceDocument,
         policy: BriefPolicy,
-        card_limit: int | None,
+        page_limit: int | None,
     ) -> list[BriefCard]:
         cards: list[BriefCard] = []
-        chapters = source.chapters[: card_limit] if card_limit is not None else source.chapters
+        chapters = source.chapters[: page_limit] if page_limit is not None else source.chapters
         if not chapters:
             logger.warning("Brief source に章がありません。ダミーカードを生成します。")
             dummy = self._build_dummy_card(policy, index=0)

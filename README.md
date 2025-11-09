@@ -113,7 +113,7 @@ flowchart TD
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
 ### 工程 2: コンテンツ準備
-- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `--card-limit` で制御可能です。
+- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
 - `.pptx/prepare/` 配下に `prepare_card.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
