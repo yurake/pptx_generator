@@ -1,7 +1,7 @@
 ---
 目的: CLI オプションの名称を page-limit へ統一し、利用者向けヘルプを最新状態に整備する
 関連ブランチ: feat/rm047-draft-structuring
-関連Issue: 未作成
+関連Issue: #278
 roadmap_item: RM-047 テンプレ統合構成生成AI連携
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 未作成。必要に応じて更新する。
 - [ ] PR 作成
   - メモ: PR 作成時に番号と URL を記録する。
