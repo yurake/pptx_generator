@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from collections import Counter
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -269,15 +270,90 @@ class DraftStructuringStep:
             if not isinstance(media_hint, dict):
                 media_hint = {}
 
+            placeholder_records = payload.get("placeholders") or []
+            if not isinstance(placeholder_records, list):
+                placeholder_records = []
+            placeholder_summary = self._summarize_placeholders(placeholder_records)
+
             record = LayoutProfile(
                 layout_id=layout_id,
                 layout_name=payload.get("layout_name") or layout_id,
                 usage_tags=normalize_usage_tags(payload.get("usage_tags", [])),
                 text_hint=text_hint,
                 media_hint=media_hint,
+                placeholder_summary=placeholder_summary,
             )
             records.append(record)
         return records
+
+    @staticmethod
+    def _summarize_placeholders(
+        placeholders: Sequence[dict[str, Any]],
+    ) -> dict[str, Any]:
+        if not placeholders:
+            return {}
+
+        counts: Counter[str] = Counter()
+        processed: list[tuple[float, dict[str, Any]]] = []
+
+        for placeholder in placeholders:
+            raw_type = placeholder.get("type")
+            p_type = str(raw_type or "").casefold()
+            if not p_type:
+                p_type = "unknown"
+            counts[p_type] += 1
+
+            bbox = placeholder.get("bbox") or {}
+            width = float(bbox.get("width") or 0.0)
+            height = float(bbox.get("height") or 0.0)
+            area = max(width, 0.0) * max(height, 0.0)
+
+            shape_type = placeholder.get("shape_type")
+            shape_type_str = str(shape_type or "").casefold() or None
+            flags = placeholder.get("flags")
+            flags_list = (
+                [str(flag) for flag in flags[:6]]
+                if isinstance(flags, list)
+                else []
+            )
+
+            entry: dict[str, Any] = {
+                "name": str(placeholder.get("name") or "")[:64],
+                "type": p_type,
+            }
+            if shape_type_str:
+                entry["shape_type"] = shape_type_str
+            if flags_list:
+                entry["flags"] = flags_list
+            processed.append((area, entry))
+
+        total_area = sum(area for area, _ in processed)
+        details: list[dict[str, Any]] = []
+        for area, entry in sorted(processed, key=lambda item: item[0], reverse=True)[:8]:
+            ratio = round(area / total_area, 3) if total_area > 0 else None
+            entry = dict(entry)
+            entry["area_ratio"] = ratio
+            details.append(entry)
+
+        attributes = {
+            "total": sum(counts.values()),
+            "has_title": counts.get("title", 0) + counts.get("subtitle", 0) > 0,
+            "has_body": counts.get("body", 0) + counts.get("content", 0) > 0,
+            "has_table": counts.get("table", 0) > 0,
+            "has_chart": counts.get("chart", 0) > 0,
+            "has_visual": (
+                counts.get("image", 0)
+                + counts.get("media", 0)
+                + counts.get("object", 0)
+            )
+            > 0,
+        }
+
+        return {
+            "counts": {key: counts[key] for key in sorted(counts)},
+            "details": details,
+            "attributes": attributes,
+        }
 
     def _build_document(
         self,
@@ -352,11 +428,16 @@ class DraftStructuringStep:
 
             candidate_logs: list[dict[str, Any]] = []
             for candidate, detail in recommendation.candidates:
+                layout_id = candidate.layout_id
                 candidate_logs.append(
                     {
-                        "layout_id": candidate.layout_id,
+                        "layout_id": layout_id,
                         "score": candidate.score,
-                        "ai_score": ai_scores.get(candidate.layout_id, 0.0),
+                        "ai_score": ai_scores.get(layout_id, 0.0),
+                        "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
+                        "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
+                        "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
+                        "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
                         "detail": {
                             "uses_tag": detail.uses_tag,
                             "content_capacity": detail.content_capacity,
@@ -373,14 +454,22 @@ class DraftStructuringStep:
                     "model": recommendation.ai_response.model,
                     "recommended": recommendation.ai_response.recommended,
                     "reasons": recommendation.ai_response.reasons,
+                    "classifications": {
+                        key: list(value)
+                        for key, value in recommendation.ai_response.classifications.items()
+                    },
                 }
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        "layout AI response: slide_id=%s model=%s recommended=%s reasons=%s",
+                        (
+                            "layout AI response: slide_id=%s model=%s recommended=%s "
+                            "reasons=%s classifications=%s"
+                        ),
                         content_slide.id,
                         recommendation.ai_response.model,
                         recommendation.ai_response.recommended,
                         recommendation.ai_response.reasons,
+                        recommendation.ai_response.classifications,
                     )
             elif (
                 self.options.enable_ai_recommender

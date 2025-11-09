@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from pptx_generator.draft_recommender import (
     CardLayoutRecommender,
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
+from pptx_generator.layout_ai.client import LayoutAIResponse
 from pptx_generator.models import ContentElements, ContentSlide, DraftAnalyzerSummary
 
 
@@ -127,3 +130,61 @@ def test_layout_ai_missing_policy_falls_back_to_simulation(tmp_path) -> None:
     assert result.candidates
     _, detail = result.candidates[0]
     assert detail.ai_recommendation > 0.0
+
+
+def test_ai_classification_overrides_usage_tags(monkeypatch: pytest.MonkeyPatch) -> None:
+    slide = _sample_slide()
+    layouts = [
+        LayoutProfile(
+            layout_id="Content",
+            layout_name="Content",
+            usage_tags=("content",),
+            text_hint={"max_lines": 5},
+            media_hint={"allow_table": False},
+        )
+    ]
+
+    config = CardLayoutRecommenderConfig(
+        enable_ai=True,
+        ai_weight=0.4,
+        max_candidates=1,
+        policy_path=Path("dummy-policy.json"),
+    )
+    recommender = CardLayoutRecommender(config)
+
+    class FakePolicy:
+        provider = "mock"
+        model = "mock-layout"
+
+        def resolve_prompt(self) -> str:
+            return "classify layouts"
+
+    class FakeClient:
+        def recommend(self, request) -> LayoutAIResponse:
+            return LayoutAIResponse(
+                model="mock-layout",
+                recommended=[("Content", 0.9)],
+                reasons={"Content": "fits slide intent"},
+                classifications={"Content": ("title", "overview")},
+            )
+
+    def fake_ensure(self) -> tuple[FakePolicy, FakeClient]:
+        return FakePolicy(), FakeClient()
+
+    monkeypatch.setattr(
+        CardLayoutRecommender,
+        "_ensure_layout_ai",
+        fake_ensure,
+        raising=False,
+    )
+
+    result = recommender.recommend(
+        slide=slide,
+        preferred_layout="Content",
+        layouts=layouts,
+        analyzer_summary=None,
+    )
+
+    assert result.classified_tags["Content"] == ("title", "overview")
+    assert result.effective_tags["Content"] == ("title", "overview")
+    assert "Content" not in result.ai_unknown_tags
