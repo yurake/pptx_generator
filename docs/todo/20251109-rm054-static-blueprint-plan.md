@@ -34,7 +34,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
