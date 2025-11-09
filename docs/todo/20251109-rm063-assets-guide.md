@@ -1,7 +1,7 @@
 ---
 目的: `assets/` ディレクトリの運用ガイドを整備し、ブランド資産管理のルールと更新フローを明文化する
 関連ブランチ: docs/rm063-assets-guide
-関連Issue: 未作成
+関連Issue: #284
 roadmap_item: RM-063 assets 運用ガイド整備
 ---
 
@@ -33,8 +33,8 @@ roadmap_item: RM-063 assets 運用ガイド整備
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
-  - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+  - [ ] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
