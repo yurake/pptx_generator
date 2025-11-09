@@ -9,9 +9,9 @@
       "provider": "mock",
       "model": "mock-layout",
       "temperature": 0.0,
-      "max_tokens": 256,
       "prompt_template": "各レイアウトproviderの適合度を0〜1で評価し、最適な順に並べてください。",
-      "slide_policies": []
+      "slide_policies": [],
+      "max_tokens": 1024
     }
   ]
 }
