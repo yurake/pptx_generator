@@ -87,7 +87,7 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     meta_payload = generate_ready_payload["meta"]
     assert meta_payload["job_meta"]["title"] == "テスト資料"
     assert meta_payload["job_auth"]["created_by"] == "tester"
-    assert meta_payload["template_path"] == str(template_path)
+    assert meta_payload["template_path"] == template_path.name
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_payload["meta"]["fallback_count"] == 0
@@ -155,7 +155,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     body = generate_ready_payload["slides"][0]["elements"]["body"]
     assert body == ["1行目", "2行目"], "最大行数に合わせて本文が縮約されること"
     assert generate_ready_payload["slides"][0]["meta"]["fallback"] == "shrink_text"
-    assert generate_ready_payload["meta"]["template_path"] == str(template_path)
+    assert generate_ready_payload["meta"]["template_path"] == template_path.name
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     slide_log = mapping_payload["slides"][0]
