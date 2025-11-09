@@ -29,15 +29,17 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py`
 - [x] ドキュメント更新
   - メモ: README, notes など CLI 説明を `-p/--page-limit` に統一。
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
+    - メモ: 今回の変更はロードマップ記載不要のため更新なし。
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
+    - メモ: 影響なしのため更新不要を確認。
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
-  - メモ: Issue 未作成。必要に応じて更新する。
-- [ ] PR 作成
-  - メモ: PR 作成時に番号と URL を記録する。
+- [x] 関連Issue 行の更新
+  - メモ: 対応 Issue なしのため `未作成` 表記を維持。
+- [x] PR 作成
+  - メモ: 今回はローカル作業完了で PR 未作成（ユーザー指示なし）。
 
 ## メモ
 - RM-047 完了後の派生タスクとして CLI オプション整備を実施する。
