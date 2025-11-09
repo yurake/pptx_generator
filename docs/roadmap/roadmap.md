@@ -75,7 +75,7 @@ flowchart TB
         RM054["RM-054<br/>静的テンプレ構成<br/>統合プランニング<br/>(完了)"]
         RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(完了)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
-        RM060["RM-060<br/>Stage3 ID 整合性強制<br/>(未着手)"]
+        RM060["RM-060<br/>Stage3 ID 整合性強制<br/>(完了)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
@@ -865,8 +865,8 @@ flowchart TB
 - 対象工程: 3（マッピング）
 - ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
-- 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/20251108-rm060-id-alignment.md](../todo/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
-- 状況: 進行中（2025-11-09 更新）
+- 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/archive/20251108-rm060-id-alignment.md](../todo/archive/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
+- 状況: 完了（2025-11-09 更新）
 - 期待成果:
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
   - ログやエラーメッセージで欠損カード ID や参照ファイルを特定でき、運用チームが迅速に復旧できる。
