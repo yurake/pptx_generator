@@ -17,23 +17,23 @@ roadmap_item: RM-063 assets 運用ガイド整備
     - テスト方針: ドキュメントのみのため自動テストは実施せず、リンクと Markdown の構造を目視確認。
     - ロールバック方法: 追加・更新した Markdown を `git checkout -- <path>` で差し戻す。
     - 承認メッセージ ID／リンク: ユーザー承認メッセージ「おk」（2025-11-09）
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針の確定
+  - メモ: 対象外（追加の設計・実装方針は不要と判断）
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 対象外（仕様・設計ドキュメントに変更なし）
+  - [x] docs/requirements 配下（対象外）
+  - [x] docs/design 配下（対象外）
 - [x] 実装
   - メモ: `assets/README.md` を整備し、ロゴ生成手順と運用方針を反映。併せて関連導線を整理。
-- [ ] テスト・検証
-  - メモ: 
+- [x] テスト・検証
+  - メモ: 対象外（ドキュメント更新のみのためテスト不要）
 - [x] ドキュメント更新
   - メモ: `docs/README.md` と `docs/AGENTS.md` のカテゴリ案内を更新し、assets ガイドへの導線を追加。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（対象外）
+  - [x] docs/requirements 配下（実装結果との整合再確認、対象外）
+  - [x] docs/design 配下（実装結果との整合再確認、対象外）
+  - [x] docs/runbook 配下（対象外）
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
