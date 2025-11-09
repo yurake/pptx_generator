@@ -31,12 +31,14 @@ def test_recommend_returns_ai_boost_when_enabled() -> None:
     layouts = [
         LayoutProfile(
             layout_id="Title",
+            layout_name="Title",
             usage_tags=("title", "overview"),
             text_hint={"max_lines": 3},
             media_hint={"allow_table": False},
         ),
         LayoutProfile(
             layout_id="Content",
+            layout_name="Content",
             usage_tags=("content",),
             text_hint={"max_lines": 6},
             media_hint={"allow_table": True},
@@ -73,6 +75,7 @@ def test_recommend_without_ai_keeps_ai_score_zero() -> None:
     layouts = [
         LayoutProfile(
             layout_id="Problem",
+            layout_name="Problem",
             usage_tags=("problem",),
             text_hint={},
             media_hint={},
@@ -99,6 +102,7 @@ def test_layout_ai_missing_policy_falls_back_to_simulation(tmp_path) -> None:
     layouts = [
         LayoutProfile(
             layout_id="Content",
+            layout_name="Content",
             usage_tags=("content",),
             text_hint={},
             media_hint={},

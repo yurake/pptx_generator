@@ -148,6 +148,13 @@ def test_compose_resolves_paths_from_jobspec_meta(
         },
     )
 
+    template_src = Path(__file__).resolve().parent.parent / "templates" / "jri_template.pptx"
+    if not template_src.exists():
+        template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_dst = spec_path.parent / "templates" / "jri_template.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(template_src, template_dst)
+
     brief_dir = tmp_path / "prepare"
     brief_dir.mkdir(parents=True, exist_ok=True)
     cards_path = brief_dir / "prepare_card.json"
@@ -253,6 +260,13 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
             ],
         },
     )
+
+    template_src = Path(__file__).resolve().parent.parent / "templates" / "jri_template.pptx"
+    if not template_src.exists():
+        template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_dst = spec_path.parent / "templates" / "jri_template.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(template_src, template_dst)
 
     layouts_path = spec_path.parent / layouts_relative
     layouts_path.parent.mkdir(parents=True, exist_ok=True)
