@@ -33,6 +33,7 @@ from ..draft_recommender import (
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
+from ..utils.usage_tags import normalize_usage_tags
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..draft_intel import (
     ChapterTemplate,
@@ -268,7 +269,7 @@ class DraftStructuringStep:
 
             record = LayoutProfile(
                 layout_id=layout_id,
-                usage_tags=tuple(str(tag) for tag in payload.get("usage_tags", [])),
+                usage_tags=normalize_usage_tags(payload.get("usage_tags", [])),
                 text_hint=text_hint,
                 media_hint=media_hint,
             )

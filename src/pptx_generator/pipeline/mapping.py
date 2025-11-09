@@ -30,6 +30,7 @@ from ..models import (
     Slide,
     JobSpec,
 )
+from ..utils.usage_tags import normalize_usage_tag_value, normalize_usage_tags
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -360,9 +361,10 @@ class MappingStep:
             layout_id = payload.get("layout_id")
             if not layout_id:
                 continue
+            usage_tags = normalize_usage_tags(payload.get("usage_tags", []))
             catalog[layout_id] = LayoutProfile(
                 layout_id=layout_id,
-                usage_tags=tuple(str(tag).lower() for tag in payload.get("usage_tags", [])),
+                usage_tags=usage_tags,
                 text_hint=payload.get("text_hint") or {},
                 media_hint=payload.get("media_hint") or {},
             )
@@ -394,11 +396,15 @@ class MappingStep:
         layout_catalog: Mapping[str, LayoutProfile],
         previous_layout: str | None,
     ) -> list[MappingCandidate]:
-        intent = (content_slide.intent if content_slide else None) or ""
-        intent = intent.lower()
-        type_hint = (
-            (content_slide.type_hint if content_slide else None) or ""
-        ).lower()
+        raw_intent = (content_slide.intent if content_slide else None)
+        intent = normalize_usage_tag_value(raw_intent)
+        if intent is None:
+            intent = (raw_intent or "").casefold()
+
+        raw_type_hint = (content_slide.type_hint if content_slide else None)
+        type_hint = normalize_usage_tag_value(raw_type_hint)
+        if type_hint is None:
+            type_hint = (raw_type_hint or "").casefold()
         body_lines = (
             len(content_slide.elements.body) if content_slide and content_slide.elements else 0
         )
