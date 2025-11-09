@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pptx_generator.brief.models import BriefCard, BriefDocument, BriefStoryInfo
+from pptx_generator.content_ai import SlideMatchResponse
 from pptx_generator.models import (ContentApprovalDocument, ContentElements,
                                    ContentSlide, JobAuth, JobMeta, JobSpec,
                                    Slide)
@@ -115,3 +118,31 @@ def test_slide_id_aligner_reports_unassigned_spec_slide() -> None:
     assert result.meta["jobspec_total"] == 1
     assert result.meta["jobspec_unassigned"] == 1
     assert result.meta["pending"] == 0
+
+
+def test_slide_id_aligner_does_not_replace_id_when_pending(monkeypatch: pytest.MonkeyPatch) -> None:
+    spec = _build_spec()
+    brief = _build_brief()
+    document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+        ]
+    )
+    aligner = SlideIdAligner(SlideIdAlignerOptions(confidence_threshold=0.9))
+
+    captured: dict[str, str] = {}
+
+    class DummyClient:
+        def match_slide(self, request):
+            candidate_id = request.candidates[0].slide_id
+            captured["candidate"] = candidate_id
+            return SlideMatchResponse(slide_id=candidate_id, confidence=0.1, reason="low confidence")
+
+    monkeypatch.setattr(aligner, "_client", DummyClient())
+
+    result = aligner.align(spec=spec, brief_document=brief, content_document=document)
+
+    assert result.document.slides[0].id == "intro"
+    pending = next(record for record in result.records if record.card_id == "intro")
+    assert pending.status == "pending"
+    assert pending.recommended_slide_id == captured["candidate"]

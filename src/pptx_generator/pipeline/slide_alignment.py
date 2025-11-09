@@ -150,6 +150,8 @@ class SlideIdAligner:
         for index, record in enumerate(records):
             if record.status == "applied" and record.recommended_slide_id:
                 continue
+            if record.status == "pending" and record.recommended_slide_id:
+                continue
             if not record.candidates:
                 continue
             for candidate_id in record.candidates:
@@ -167,10 +169,9 @@ class SlideIdAligner:
         for slide in content_document.slides:
             original_id = slide.id
             record = next((entry for entry in records if entry.card_id == original_id), None)
-            if record and record.recommended_slide_id:
+            if record and record.recommended_slide_id and record.status in {"applied", "fallback"}:
                 updated_slides.append(slide.model_copy(update={"id": record.recommended_slide_id}))
-                if record.status in {"applied", "fallback"}:
-                    applied += 1
+                applied += 1
             else:
                 updated_slides.append(slide)
 
