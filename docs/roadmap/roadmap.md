@@ -76,6 +76,7 @@ flowchart TB
         RM057["RM-057<br/>JobSpec スキャフォールド<br/>整合<br/>(完了)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
         RM060["RM-060<br/>Stage3 ID 整合性強制<br/>(未着手)"]
+        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM007["RM-007<br/>SlideBullet<br/>アンカー拡張<br/>(完了)"]
         RM017["RM-017<br/>パイプライン<br/>機能拡張<br/>(完了)"]
         RM018["RM-018<br/>レンダラー<br/>リッチコンテンツ対応<br/>(完了)"]
@@ -871,6 +872,19 @@ flowchart TB
   - ログやエラーメッセージで原因（欠損カード ID や参照ファイル）を特定でき、運用チームが迅速に復旧できる。
   - ドキュメントとテストが新しい品質ゲートに合わせて更新され、CI で誤検知がないことを確認できる。
 - 次アクション: DraftStructuringStep の ID バリデーション実装案をまとめ、CLI エラーハンドリングと関連ドキュメント更新の範囲を洗い出す。
+
+<a id="rm-061"></a>
+### RM-061 usage_tags ガバナンス強化
+- 対象工程: 3（マッピング）
+- ゴール: `usage_tags` の付与・利用をガバナンスし、レイアウト意図と `intent`/`type_hint` の一致具合を安定させる。
+- 参照ドキュメント: [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
+- 参照 ToDo: [docs/todo/20251109-rm061-usage-tags-governance.md](../todo/20251109-rm061-usage-tags-governance.md)
+- 状況: 未着手（2025-11-09 追加）
+- 期待成果:
+  - `_derive_usage_tags` のロジックを調整し、`title` タグを意図的レイアウトに限定する。
+  - layout_validation にタグ過剰付与の診断を追加し、CI で逸脱を検知する。
+  - 生成 AI が返すレイアウト分類を `usage_tags` 語彙へ正規化する仕組みを整備する。
+- 次アクション: 抽出ルールの改修案とバリデーション仕様、AI 正規化フローの実装範囲を整理し、Plan 承認へ進める。
 
 - `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
