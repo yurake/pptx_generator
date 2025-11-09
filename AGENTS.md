@@ -19,10 +19,15 @@
 
 # 4 CLI 実行の基本
 - 入力 JSON を `samples/json/sample_jobspec.json` から派生させ、必要に応じてブランド設定 JSON (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
-- PPTX と解析結果を生成する基本コマンド:
+- PPTX と解析結果を生成する基本コマンド例:
   ```bash
-  uv run pptx gen samples/json/sample_jobspec.json --template samples/templates/templates.pptx
+  uv run pptx compose samples/json/sample_jobspec.json \
+    --template samples/templates/templates.pptx \
+    --output .pptx/compose --draft-output .pptx/draft
+
+  uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen
   ```
+  - `generate_ready.json` にテンプレートパスが埋め込まれるため、`pptx gen` に `--template` を指定する必要はない。
   - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
   - ブランド設定を差し替える場合は `--branding <path>` を指定する。
   - `--export-pdf` で LibreOffice 経由の PDF 生成を有効化できる。
