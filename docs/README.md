@@ -36,3 +36,7 @@
 - `docs/todo/README.md`: 作成・更新・アーカイブのガイド。
 - `docs/todo/template.md`: ToDo ファイルの雛形。
 - `docs/todo/archive/`: 完了済み ToDo の保管場所。
+
+## assets
+- ロゴや図版など、プロジェクト共通で再利用するブランド資産を保管。
+- `assets/README.md`: 資産構造・命名規則・更新手順をまとめた運用ガイド。
