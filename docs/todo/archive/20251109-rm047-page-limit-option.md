@@ -39,7 +39,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - [x] 関連Issue 行の更新
   - メモ: Issue 未作成。必要に応じて更新する。
 - [x] PR 作成
-  - メモ: PR #282 (fix: align pptx gen with generate_ready flow) にて CLI オプション整備の成果を共有済み。フォローアップが必要な場合は同 PR で管理する。
+  - メモ: PR #282 https://github.com/yurake/pptx_generator/pull/282（2025-11-09 完了）
 
 ## メモ
 - RM-047 完了後の派生タスクとして CLI オプション整備を実施する。

@@ -715,7 +715,7 @@ flowchart TB
 - ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
-- 状況: 完了（2025-11-06 更新）
+- 状況: 完了（2025-11-09 更新）
 - 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
 - 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
 - 補足 (2025-11-08): `DraftStructuringStep` では `draft_review_log.json` が未更新のまま書き出され、`generate_ready_meta.sections[*].status` も固定値となっています。承認ワークフローの整備・整合調整をこのテーマで管理します。
