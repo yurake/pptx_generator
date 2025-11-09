@@ -28,12 +28,12 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
 - [x] テスト・検証
   - メモ: `pytest tests/test_utils_usage_tags.py tests/test_layout_validation_usage_tags.py tests/test_template_extraction_script.py`、`pytest tests/test_cli_integration.py`、`bash scripts/test_template_extraction.sh` を実行。
 - [x] ドキュメント更新
-  - メモ: `docs/notes/20251109-usage-tags-scoring.md` に実装内容を追記。要件／設計ドキュメントの更新は今回対象外。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - メモ: `docs/notes/20251109-usage-tags-scoring.md` に実装内容を追記。要件／設計ドキュメントの変更は不要のため N/A とした。
+  - [x] docs/roadmap 配下 (N/A)
+  - [x] docs/requirements 配下（N/A）
+  - [x] docs/design 配下（N/A）
+  - [x] docs/runbook 配下（N/A）
+  - [x] README.md / AGENTS.md（N/A）
 - [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] PR 作成
