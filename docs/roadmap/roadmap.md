@@ -62,7 +62,7 @@ flowchart TB
     subgraph ST4["Stage 4: PPTX生成"]
         direction TB
         ST4_ANCHOR(( ))
-        RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(未着手)"]
+        RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(完了)"]
         RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(未着手)"]
     end
 
@@ -80,7 +80,6 @@ flowchart TB
     RM062 --> RM066
     RM054 --> RM058
 ```
-
 
 ## 個別状況
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
@@ -603,7 +602,7 @@ flowchart TB
 - ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4ラッパーと責務を分離する。
 - 参照ドキュメント: [docs/requirements/stages/stage-05-rendering.md](../requirements/stages/stage-05-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
-- 状況: 未着手（2025-11-07 追加）
+- 状況: 完了（2025-11-09 更新）
 - 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。
 - 次アクション: 既存 `pptx gen` の呼び出し箇所を棚卸しし、後方互換サポート方針を決める。
 
