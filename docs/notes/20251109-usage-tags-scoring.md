@@ -44,3 +44,9 @@
    - CI で `usage_tags` の語彙セットをチェックし、未知タグの混入や `title` 過多を検出する。
 
 短期的には **1**（抽出ロジック改修）と **4**（バリデーション強化）を優先し、`title` タグの過剰付与を構造的に抑止する。生成 AI を使う場合は **3** の正規化を前提条件とし、語彙の統一を担保する。
+
+## 実装状況メモ（2025-11-09）
+- `_derive_usage_tags` をリファクタリングし、本文プレースホルダーが存在するレイアウトでは `title` タグを付与しないよう調整。レイアウト名が「Title and Content」のようなケースを除外しつつ、表紙・セクション系は維持。
+- `layout_validation` で `usage_tag_title_suppressed` / `usage_tag_unknown` 警告を出せるようにし、未知タグは正規化時に除外して警告のみ記録。
+- `pptx_generator/utils/usage_tags.py` を追加し、タグ正規化ユーティリティとシノニムマップを定義。`mapping` / `draft_structuring` / `draft_recommender` で共通利用し、`intent`・`type_hint`・AI 出力を同じ語彙に揃える。
+- 単体テスト (`tests/test_utils_usage_tags.py`, `tests/test_layout_validation_usage_tags.py`) を追加し、レイアウト抽出とユーティリティの振る舞いをカバー。

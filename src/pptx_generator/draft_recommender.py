@@ -23,6 +23,7 @@ from .models import (
     DraftLayoutCandidate,
     DraftLayoutScoreDetail,
 )
+from .utils.usage_tags import normalize_usage_tag_value
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +144,21 @@ class CardLayoutRecommender:
         score = 0.1
         detail = DraftLayoutScoreDetail(content_capacity=0.1)
 
-        usage_tags = {tag.lower() for tag in profile.usage_tags}
-        if slide.intent and slide.intent.lower() in usage_tags:
+        usage_tags = set(profile.usage_tags)
+
+        intent_tag = normalize_usage_tag_value(slide.intent)
+        if intent_tag and intent_tag in usage_tags:
+            score += 0.4
+            detail.uses_tag += 0.4
+        elif slide.intent and slide.intent.casefold() in usage_tags:
             score += 0.4
             detail.uses_tag += 0.4
 
-        if slide.type_hint and slide.type_hint.lower() in usage_tags:
+        type_hint_tag = normalize_usage_tag_value(slide.type_hint)
+        if type_hint_tag and type_hint_tag in usage_tags:
+            score += 0.25
+            detail.uses_tag += 0.25
+        elif slide.type_hint and slide.type_hint.casefold() in usage_tags:
             score += 0.25
             detail.uses_tag += 0.25
 
@@ -301,7 +311,7 @@ class CardLayoutRecommender:
         elif slide.ai_review and slide.ai_review.grade == "B":
             boost += self._config.ai_weight * 0.1
 
-        usage_tags = {tag.lower() for tag in profile.usage_tags}
+        usage_tags = set(profile.usage_tags)
         if tags and usage_tags:
             overlap = tags & usage_tags
             if overlap:
@@ -313,19 +323,23 @@ class CardLayoutRecommender:
     def _extract_slide_tags(slide: ContentSlide) -> set[str]:
         tags: set[str] = set()
         if slide.intent:
-            tags.add(slide.intent.lower())
+            canonical_intent = normalize_usage_tag_value(slide.intent)
+            tags.add(canonical_intent or slide.intent.casefold())
         if slide.type_hint:
-            tags.add(slide.type_hint.lower())
+            canonical_hint = normalize_usage_tag_value(slide.type_hint)
+            tags.add(canonical_hint or slide.type_hint.casefold())
 
         title = slide.elements.title.lower()
         for token in CardLayoutRecommender._tokenize(title):
             if len(token) >= 3:
-                tags.add(token)
+                canonical_token = normalize_usage_tag_value(token)
+                tags.add(canonical_token or token)
 
         for line in slide.elements.body:
             for token in CardLayoutRecommender._tokenize(line.lower()):
                 if len(token) >= 3:
-                    tags.add(token)
+                    canonical_token = normalize_usage_tag_value(token)
+                    tags.add(canonical_token or token)
         return tags
 
     @staticmethod
