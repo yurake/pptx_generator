@@ -89,13 +89,13 @@ uv run pptx template templates/jri_template.pptx
 
 #### `pptx prepare`
 - 既定では BriefAI オーケストレーターを用いてカードを生成し、`config/brief_policies/default.json` のポリシーに従って AI との対話ログを収集する。
-- 生成カード枚数を制御したい場合は `--card-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
+- 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<brief.txt>` | ブリーフ入力ファイル | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
-| `--card-limit <int>` | 生成するカード枚数の上限 |  |  | 指定なし |
+| `-p/--page-limit <int>` | 生成するカード枚数の上限 |  |  | 指定なし |
 
 実行例:
 ```bash

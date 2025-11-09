@@ -1542,7 +1542,8 @@ def gen(  # noqa: PLR0913
     help="コンテンツ準備成果物を保存するディレクトリ",
 )
 @click.option(
-    "--card-limit",
+    "-p",
+    "--page-limit",
     type=click.IntRange(1, None),
     default=None,
     help="生成するカード枚数の上限",
@@ -1550,7 +1551,7 @@ def gen(  # noqa: PLR0913
 def prepare(
     brief_path: Path,
     output_dir: Path,
-    card_limit: int | None,
+    page_limit: int | None,
 ) -> None:
     """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
@@ -1575,7 +1576,7 @@ def prepare(
         document, meta, ai_logs = orchestrator.generate_document(
             source,
             policy_id=None,
-            card_limit=card_limit,
+            page_limit=page_limit,
         )
     except BriefAIOrchestrationError as exc:
         click.echo(f"ブリーフカードの生成に失敗しました: {exc}", err=True)
