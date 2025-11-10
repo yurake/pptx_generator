@@ -50,3 +50,8 @@
 - `layout_validation` で AI 応答を採用しつつ、生成失敗時には従来ヒューリスティックへフォールバック。`diagnostics.json` にテンプレ AI の統計（invoked / success / fallback / failed）とレイアウト単位の推定結果を出力。
 - 未知語やエラー時の診断コード（`usage_tag_ai_unknown` / `usage_tag_ai_error` / `usage_tag_ai_fallback`）を追加し、CI で逸脱を検知できるようにした。
 - ユニットテスト `tests/test_template_ai.py`（新設）と `tests/test_layout_validation_template_ai.py` で AI 推定およびフォールバックの動作を確認。既存の usage_tags ユーティリティテストも維持。
+
+## 追加検証メモ（2025-11-10）
+- `PPTX_TEMPLATE_LLM_PROVIDER=mock uv run pptx --debug template samples/templates/templates.pptx` を実行し、`diagnostics.json.template_ai` に静的ルール採用状況が記録されること、DEBUG ログにレイアウトごとの推定結果が出力されることを確認。
+- `uv run --extra dev pytest` を完走し、Stage3 (`draft_recommender` / `mapping`) を含む 170 件のテストが成功することを確認。usage_tags 正規化の変更によるスコアリング回帰は発生していない。
+- layout_ai policy は `config/layout_ai_policies.json` に従来どおり残り、canonical usage_tags は Stage3 コードで `utils/usage_tags` を通じて正規化済みのため追加変更不要と判断。RM-064 でのポリシー拡張時に再評価する。

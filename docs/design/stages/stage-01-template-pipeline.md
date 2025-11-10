@@ -11,6 +11,12 @@
 | Template Release CLI | `template_release.json` 生成、差分チェック起動 | Python, `python-pptx`, Click |
 | Golden Sample Runner | 代表 spec / レンダリングジョブの実行 | `uv run pptx gen`, LibreOffice |
 
+### Template AI 連携
+- `layout_validation` ステップで Template AI サービスを初期化し、レイアウトごとのプレースホルダー構造・テキスト／メディア推定・ヒューリスティックタグを payload にまとめて LLM へ送る。
+- プロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）の環境変数を優先して解決し、`config/template_ai_policies.json` のプロンプト定義を使って JSON 応答を取得する。
+- `config/usage_tags.json` に canonical タグと説明、静的ルールを集約し、LLM 応答の正規化や `mock` 利用時のフォールバックに再利用する。
+- `pptx_generator.template_ai.llm` ロガーへ JSON 応答を出力し、`diagnostics.json.template_ai` に推論ソース・タグ・未知語・エラーを記録する。静的ルールが適用された場合も同様に記録し、後続工程から差分を確認できるようにする。
+
 ## フロー詳細
 1. **テンプレ編集**  
    - 作業結果を `templates/libraries/<brand>/<version>/template.pptx` に保存。  

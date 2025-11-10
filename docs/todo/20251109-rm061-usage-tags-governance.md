@@ -19,34 +19,34 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
     - 承認メッセージ ID／リンク: チャットログ（2025-11-09 Plan 承認）
 - [x] 設計・実装方針の確定
   - メモ: テンプレ抽出で AI 推定を主としつつヒューリスティックをフォールバックに回す構成とし、`template_ai` 新設・CLI 連携・診断拡張までをスコープとする方針を確定。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/requirements/requirements.md` と `docs/requirements/stages/stage-01-template-pipeline.md` に Template AI 既定挙動と `config/usage_tags.json` の扱いを追記。`docs/design/design.md` および `docs/design/stages/stage-01-template-pipeline.md` へも canonical 語彙連携とログ出力の設計を反映した。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `template_ai` モジュールを追加し、`layout_validation` で AI 推定を採用。CLI オプション／診断統計の拡張、フォールバックおよび警告ロジックを実装。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_template_ai.py tests/test_layout_validation_template_ai.py tests/test_layout_validation_usage_tags.py` を実行し、AI 推定とフォールバックの挙動を確認。
 - [x] ドキュメント更新
-  - メモ: `docs/notes/20251109-usage-tags-scoring.md` に Stage1 AI 推定の流れと CLI オプションを追記。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - メモ: `docs/notes/20251109-usage-tags-scoring.md` に CLI 検証ログと Stage3 テスト結果を追記し、各カテゴリドキュメントへリンクを反映。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
 
-- [ ] layout_ai policy への影響確認
-  - メモ: Stage3 で利用する layout_ai policy との整合性、タグ語彙の差異有無を確認する。
-- [ ] Stage3 スコアリング差異の評価
-  - メモ: AI 由来タグが Stage3 推薦に与える影響を検証し、必要な調整があれば別 ToDo / PR へ切り出す。
+- [x] layout_ai policy への影響確認
+  - メモ: `config/layout_ai_policies.json` は既存の `usage_tags` 正規化と整合していることを確認。RM-064 着手時に policy 拡張の再評価を実施する旨を `docs/notes/20251109-usage-tags-scoring.md` に記録。
+- [x] Stage3 スコアリング差異の評価
+  - メモ: `uv run --extra dev pytest` を完走させ、`draft_recommender`／`mapping` 関連テストを含む 170 件がグリーンとなることを確認。差異なしであることを `docs/notes/20251109-usage-tags-scoring.md` に追記。
 - [x] CLI 統合テストの追加
   - メモ: `scripts/test_template_ai.sh` と `tests/test_template_ai_script.py` で `uv run pptx tpl-extract` のモックポリシー検証を追加。
-- [ ] README / AGENTS / roadmap 更新
-  - メモ: CLI オプション追加とテンプレ AI 設定例を各ドキュメントへ反映する。
+- [x] README / AGENTS / roadmap 更新
+  - メモ: README に Template AI 既定挙動と `config/usage_tags.json` を記載し、`docs/AGENTS.md` に config 更新時の対応を追記。`docs/roadmap/roadmap.md` は RM-061 を進行中へ更新し、次アクションを Stage3 整合レビューに差し替えた。
 - [ ] 用途タグ体系の再設計（Plan）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: Canonical usage tags を「Intent（章区切り・クロージング等）」と「Media（chart/table/visual）」の2軸で再定義し、`utils/usage_tags.py`・テンプレ AI・layout_ai スコアリングの語彙を統一する。テンプレ抽出／Stage3 双方で新語彙に対応する改修を行う。

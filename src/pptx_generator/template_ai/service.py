@@ -11,6 +11,7 @@ from typing import Any
 from ..utils.usage_tags import (
     CANONICAL_USAGE_TAGS,
     get_usage_tag_config,
+    normalize_usage_tags,
     normalize_usage_tags_with_unknown,
 )
 from .client import (
@@ -93,6 +94,25 @@ class TemplateAIService:
             tags = self._apply_static_rules(layout_name)
             if tags is not None:
                 canonical, unknown = normalize_usage_tags_with_unknown(tags)
+                merged: list[str]
+                has_body_placeholder = any(
+                    isinstance(placeholder, dict)
+                    and (placeholder.get("type") or "").casefold() in {"body", "content", "text"}
+                    for placeholder in placeholders
+                )
+
+                if has_body_placeholder:
+                    heuristic_canonical = normalize_usage_tags(heuristic_usage_tags)
+                    merged = []
+                    for value in (*canonical, *heuristic_canonical):
+                        if value and value not in merged:
+                            merged.append(value)
+                else:
+                    merged = list(canonical)
+
+                if has_body_placeholder and "title" in merged and "content" in merged:
+                    merged = [value for value in merged if value != "title"]
+                canonical = tuple(merged)
                 if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
                     _TEMPLATE_LLM_LOGGER.debug(
                         "template AI static rule matched: layout=%s tags=%s",
@@ -100,7 +120,7 @@ class TemplateAIService:
                         canonical,
                     )
                 return TemplateAIResult(
-                    usage_tags=canonical,
+                    usage_tags=canonical if canonical else None,
                     unknown_tags=tuple(sorted(unknown)),
                     reason="static-rule",
                     raw_text=None,
