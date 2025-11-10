@@ -353,8 +353,14 @@ def _run_template_extraction(
         env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
         if env_policy:
             ai_policy_path = Path(env_policy)
+        else:
+            default_policy = Path("config/template_ai_policies.json")
+            if default_policy.exists():
+                ai_policy_path = default_policy
     ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
-    effective_disable = disable_template_ai or ai_policy_path is None
+    if ai_policy_path is not None:
+        ai_policy_path = Path(ai_policy_path)
+    effective_disable = disable_template_ai or ai_policy_path is None or not ai_policy_path.exists()
     if effective_disable:
         ai_policy_path = None
 

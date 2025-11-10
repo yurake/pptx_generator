@@ -5,18 +5,13 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "${script_dir}/.." && pwd)"
 
 template_path="${project_root}/samples/templates/templates.pptx"
-policy_path="${project_root}/samples/policies/template_ai_mock.json"
+policy_path="${project_root}/config/template_ai_policies.json"
 output_dir="${project_root}/temp/template-ai-e2e"
 
 if [[ ! -f "${template_path}" ]]; then
   echo "[template-ai] samples/templates/templates.pptx が見つかりません" >&2
   exit 0
 fi
-if [[ ! -f "${policy_path}" ]]; then
-  echo "[template-ai] モックポリシーが存在しないためスキップします: ${policy_path}" >&2
-  exit 0
-fi
-
 rm -rf "${output_dir}"
 mkdir -p "${output_dir}"
 
@@ -28,7 +23,6 @@ log_path="$(mktemp "${output_dir}/tpl-extract-XXXX.log")"
 if ! uv run pptx tpl-extract \
   --template "${template_path}" \
   --output "${output_dir}" \
-  --template-ai-policy "${policy_path}" \
   >"${log_path}" 2>&1; then
   cat "${log_path}" >&2
   echo "[template-ai] uv run pptx tpl-extract が失敗しました" >&2

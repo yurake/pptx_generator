@@ -18,6 +18,7 @@ from .client import (
 from .policy import TemplateAIPolicy, TemplateAIPolicyError, TemplateAIPolicySet, load_template_policy_set
 
 logger = logging.getLogger(__name__)
+_TEMPLATE_LLM_LOGGER = logging.getLogger("pptx_generator.template_ai.llm")
 
 
 @dataclass(slots=True)
@@ -82,10 +83,24 @@ class TemplateAIService:
             "heuristic_usage_tags": heuristic_usage_tags,
         }
 
+        if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+            _TEMPLATE_LLM_LOGGER.debug(
+                "template AI request payload: template=%s layout=%s heuristic=%s",
+                template_id,
+                layout_id,
+                heuristic_usage_tags,
+            )
+
         # 静的ルールがあれば先に適用する
         tags = self._apply_static_rules(layout_name)
         if tags is not None:
             canonical, unknown = normalize_usage_tags_with_unknown(tags)
+            if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+                _TEMPLATE_LLM_LOGGER.debug(
+                    "template AI static rule matched: layout=%s tags=%s",
+                    layout_id,
+                    canonical,
+                )
             return TemplateAIResult(
                 usage_tags=canonical,
                 unknown_tags=tuple(sorted(unknown)),
@@ -101,6 +116,11 @@ class TemplateAIService:
             response = self._client.classify(request)
         except TemplateAIClientConfigurationError as exc:
             logger.warning("template AI classify failed: %s", exc)
+            _TEMPLATE_LLM_LOGGER.warning(
+                "template AI classify failed: layout=%s error=%s",
+                layout_id,
+                exc,
+            )
             return TemplateAIResult(
                 usage_tags=None,
                 unknown_tags=(),
@@ -112,6 +132,23 @@ class TemplateAIService:
 
         usage_tags = response.usage_tags or ()
         canonical, unknown = normalize_usage_tags_with_unknown(usage_tags)
+
+        if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+            _TEMPLATE_LLM_LOGGER.debug(
+                "template AI response summary: layout=%s source=%s tags=%s unknown=%s reason=%s",
+                layout_id,
+                response.model,
+                canonical,
+                unknown,
+                response.reason,
+            )
+            if response.raw_text:
+                _TEMPLATE_LLM_LOGGER.debug(
+                    "template AI raw response (layout=%s): %s",
+                    layout_id,
+                    response.raw_text,
+                )
+
         return TemplateAIResult(
             usage_tags=canonical if canonical else None,
             unknown_tags=tuple(sorted(unknown)),
