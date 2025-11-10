@@ -36,10 +36,14 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [ ] README.md / AGENTS.md
 - [ ] layout_ai policy の拡張検討
   - メモ: 既存 policy JSON の構造と prompt 設計を見直し、メタデータ活用方針を整理する。
+  - [ ] usage_tags 記述を `config/usage_tags.json` の説明と連携させ、Stage1/Stage3 で共通語彙を参照する設計をまとめる。
+  - [ ] LLM プロンプトへ Canonical usage tags の説明を組み込み、Stage1 の prompt 方針と差異がないか確認する。
 - [ ] Stage1 メタデータ抽出強化の検討
   - メモ: `pptx template` でのプレースホルダー要約や AI 連携可否を洗い出し、Stage3 と連携するための差分をまとめる。
+  - [ ] Stage1 で付与する usage_tags とメタデータを Stage3 に引き渡すインターフェース案を作成する。
 - [ ] CLI / ログ / テスト整備
   - メモ: 新しいメタデータを利用する CLI オプションやログ項目を定義し、必要な統合テスト追加を検討する。
+  - [ ] Canonical usage tags の共通利用を確認する CLI 統合テストを設計し、`scripts/` / `tests/` に追加する案をまとめる。
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
