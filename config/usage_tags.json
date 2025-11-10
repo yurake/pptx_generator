@@ -1,0 +1,19 @@
+{
+  "intent_tags": [
+    "title",
+    "agenda",
+    "overview",
+    "content",
+    "section_break",
+    "closing",
+    "summary",
+    "next_steps",
+    "call_to_action"
+  ],
+  "media_tags": [
+    "chart",
+    "table",
+    "visual"
+  ],
+  "fallback_tag": "generic"
+}

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..utils.usage_tags import normalize_usage_tags_with_unknown
+from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags_with_unknown
 from .client import (
     TemplateAIClient,
     TemplateAIClientConfigurationError,
@@ -80,6 +80,7 @@ class TemplateAIService:
             "text_hint": text_hint,
             "media_hint": media_hint,
             "heuristic_usage_tags": heuristic_usage_tags,
+            "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
         }
 
         # 静的ルールがあれば先に適用する
