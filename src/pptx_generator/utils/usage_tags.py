@@ -20,6 +20,12 @@ def _load_config() -> dict[str, object]:
     return _CONFIG_DATA
 
 
+def get_usage_tag_config() -> dict[str, object]:
+    """Return the usage tag configuration dictionary."""
+    config = _load_config()
+    return json.loads(json.dumps(config))
+
+
 def _extract_tag_list(entries: list[object]) -> list[str]:
     tags: list[str] = []
     for entry in entries:
@@ -123,4 +129,5 @@ __all__ = [
     "normalize_usage_tag_value",
     "normalize_usage_tags",
     "normalize_usage_tags_with_unknown",
+    "get_usage_tag_config",
 ]

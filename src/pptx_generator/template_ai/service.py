@@ -156,6 +156,23 @@ class TemplateAIService:
         for rule in self._policy.static_rules:
             if rule.matches(layout_name):
                 return rule.tags
+
+        config = get_usage_tag_config()
+        config_rules = config.get("static_rules") or []
+        for rule in config_rules:
+            if not isinstance(rule, dict):
+                continue
+            pattern = rule.get("layout_name_pattern")
+            tags = rule.get("tags")
+            if not isinstance(tags, list):
+                continue
+            try:
+                import re
+
+                if pattern is None or re.search(pattern, layout_name, re.IGNORECASE):
+                    return tags
+            except re.error:
+                continue
         return None
 
     def _build_payload(
