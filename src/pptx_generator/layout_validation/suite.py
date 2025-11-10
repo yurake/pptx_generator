@@ -64,7 +64,7 @@ class LayoutValidationOptions:
     template_id: str | None = None
     baseline_path: Path | None = None
     analyzer_snapshot_path: Path | None = None
-    template_ai_policy_path: Path | None = None
+    template_ai_policy_path: Path | None = Path("config/template_ai_policies.json")
     template_ai_policy_id: str | None = None
     disable_template_ai: bool = False
 
@@ -105,7 +105,7 @@ class LayoutValidationSuite:
             logger.info("template AI is disabled by option")
             return
         policy_path = self.options.template_ai_policy_path
-        if policy_path is None:
+        if policy_path is None or not policy_path.exists():
             return
         try:
             service = TemplateAIService(

@@ -20,7 +20,8 @@ class TemplateAIStaticRule(BaseModel):
     layout_name_pattern: str | None = Field(
         default=None, description="レイアウト名に適用する正規表現（省略時は任意）"
     )
-    tags: list[str] = Field(default_factory=list, description="付与する usage_tags")
+    tags: list[str] = Field(default_factory=list,
+                            description="付与する usage_tags")
 
     def matches(self, layout_name: str) -> bool:
         if not self.layout_name_pattern:
