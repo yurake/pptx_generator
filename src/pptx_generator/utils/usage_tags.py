@@ -20,20 +20,38 @@ def _load_config() -> dict[str, object]:
     return _CONFIG_DATA
 
 
+def _extract_tag_list(entries: list[object]) -> list[str]:
+    tags: list[str] = []
+    for entry in entries:
+        if isinstance(entry, str):
+            value = entry.strip().casefold()
+            if value:
+                tags.append(value)
+        elif isinstance(entry, dict):
+            tag_value = entry.get("tag")
+            if isinstance(tag_value, str):
+                value = tag_value.strip().casefold()
+                if value:
+                    tags.append(value)
+    return tags
+
+
 def _build_canonical_tags() -> frozenset[str]:
     config = _load_config()
-    intent_tags = config.get("intent_tags") or []
-    media_tags = config.get("media_tags") or []
-    fallback = config.get("fallback_tag") or "generic"
-    tags = set()
-    for value in intent_tags:
-        if isinstance(value, str) and value:
-            tags.add(value.strip().casefold())
-    for value in media_tags:
-        if isinstance(value, str) and value:
-            tags.add(value.strip().casefold())
-    if isinstance(fallback, str) and fallback:
-        tags.add(fallback.strip().casefold())
+    intent_tags = _extract_tag_list(config.get("intent_tags") or [])
+    media_tags = _extract_tag_list(config.get("media_tags") or [])
+    fallback = config.get("fallback_tag")
+    tags = set(intent_tags) | set(media_tags)
+    if isinstance(fallback, str):
+        value = fallback.strip().casefold()
+        if value:
+            tags.add(value)
+    elif isinstance(fallback, dict):
+        tag_value = fallback.get("tag")
+        if isinstance(tag_value, str):
+            value = tag_value.strip().casefold()
+            if value:
+                tags.add(value)
     return frozenset(tags)
 
 
