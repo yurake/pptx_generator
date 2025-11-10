@@ -227,7 +227,26 @@ class TestTemplateExtractorStep:
             missing_fields=[],
             conflict=None,
         )
-        layout = LayoutInfo(name="Title", identifier="0001", anchors=[title_shape, image_shape], error=None)
+        slide_number_shape = ShapeInfo(
+            name="Num",
+            shape_type="LayoutPlaceholder",
+            left_in=9.4,
+            top_in=6.9,
+            width_in=3.5,
+            height_in=0.4,
+            text="‹#›",
+            placeholder_type="SLIDE_NUMBER",
+            is_placeholder=True,
+            error=None,
+            missing_fields=[],
+            conflict=None,
+        )
+        layout = LayoutInfo(
+            name="Title",
+            identifier="0001",
+            anchors=[title_shape, image_shape, slide_number_shape],
+            error=None,
+        )
         template_spec = TemplateSpec(
             template_path=str(options.template_path),
             extracted_at="2025-11-02T00:00:00Z",
@@ -249,6 +268,8 @@ class TestTemplateExtractorStep:
         assert slide.placeholders[0].sample_text == "表紙タイトル"
         assert slide.placeholders[1].kind == "image"
         assert slide.placeholders[1].sample_text is None
+        anchor_names = [placeholder.anchor for placeholder in slide.placeholders]
+        assert "Num" not in anchor_names
 
     def test_slide_bullet_conflict_detection(self):
         """SlideBullet競合検出のテスト。"""

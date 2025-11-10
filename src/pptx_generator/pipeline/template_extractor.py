@@ -30,6 +30,15 @@ SLIDE_BULLET_ANCHORS = {"bullets", "bullet_list", "content", "body"}
 JOBSPEC_SCHEMA_VERSION = "0.1"
 MAX_SAMPLE_TEXT_LENGTH = 200
 
+# PowerPoint 側で自動描画されるプレースホルダー種別
+AUTO_DRAW_PLACEHOLDER_TYPES = {
+    "SLIDE_NUMBER",
+    "DATE",
+    "DATETIME",
+    "FOOTER",
+    "HEADER",
+}
+
 
 @dataclass
 class TemplateExtractorOptions:
@@ -300,6 +309,16 @@ class TemplateExtractorStep:
 
             placeholders: list[JobSpecScaffoldPlaceholder] = []
             for index, anchor in enumerate(layout.anchors, start=1):
+                placeholder_type = (anchor.placeholder_type or "").upper()
+                if placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES:
+                    logger.debug(
+                        "自動描画プレースホルダーを jobspec から除外: layout=%s anchor=%s type=%s",
+                        layout.name,
+                        anchor.name,
+                        placeholder_type,
+                    )
+                    continue
+
                 anchor_name = anchor.name or f"shape_{index:02d}"
                 bounds = JobSpecScaffoldBounds(
                     left_in=anchor.left_in,

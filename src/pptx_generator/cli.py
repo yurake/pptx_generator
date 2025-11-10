@@ -61,6 +61,17 @@ DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 
 logger = logging.getLogger(__name__)
 
+_LOG_LEVEL_ALIASES = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "warn": logging.WARNING,
+    "error": logging.ERROR,
+    "err": logging.ERROR,
+    "fatal": logging.CRITICAL,
+    "critical": logging.CRITICAL,
+}
+
 
 @dataclass(slots=True)
 class OutlineResult:
@@ -85,6 +96,54 @@ DEFAULT_DRAFT_META_FILENAME = "draft_meta.json"
 
 
 load_dotenv()
+
+
+def _parse_log_level(value: str | None) -> int | None:
+    if value is None:
+        return None
+    candidate = value.strip()
+    if not candidate:
+        return None
+    lowered = candidate.lower()
+    if lowered in _LOG_LEVEL_ALIASES:
+        return _LOG_LEVEL_ALIASES[lowered]
+    try:
+        numeric_level = int(candidate)
+    except ValueError:
+        return None
+    return numeric_level
+
+
+def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int, str]]]:
+    """CLI 全体のログレベルを決定する。"""
+    deferred_logs: list[tuple[int, str]] = []
+
+    if debug:
+        return logging.DEBUG, deferred_logs
+    if verbose:
+        return logging.INFO, deferred_logs
+
+    env_level = os.getenv("LOG_LEVEL")
+    parsed_level = _parse_log_level(env_level)
+    if env_level:
+        if parsed_level is not None:
+            return parsed_level, deferred_logs
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                f"LOG_LEVEL='{env_level}' を解釈できません。WARNING レベルにフォールバックします。",
+            )
+        )
+
+    if os.getenv("OPENAI_LOG"):
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                "OPENAI_LOG 環境変数は廃止されました。LOG_LEVEL を利用してください。",
+            )
+        )
+
+    return logging.WARNING, deferred_logs
 
 
 def _configure_llm_logger() -> None:
@@ -155,9 +214,16 @@ def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
 @click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
 def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
-    level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
+    level, deferred_logs = _determine_log_level(verbose, debug)
     logging.basicConfig(
-        level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        force=True,
+    )
+    logging.getLogger("openai").setLevel(level)
+    cli_logger = logging.getLogger("pptx_generator.cli")
+    for message_level, message in deferred_logs:
+        cli_logger.log(message_level, message)
     _configure_llm_logger()
     _configure_file_logging()
 
