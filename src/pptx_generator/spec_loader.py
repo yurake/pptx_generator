@@ -85,6 +85,8 @@ def _convert_slide(scaffold_slide: JobSpecScaffoldSlide) -> Slide:
     counters = defaultdict(int)
 
     for placeholder in scaffold_slide.placeholders:
+        if placeholder.auto_draw:
+            continue
         placeholder_type = (placeholder.placeholder_type or "").upper()
         if placeholder.kind == "text":
             title, subtitle, textboxes = _apply_text_placeholder(
@@ -152,6 +154,8 @@ def _format_placeholder_note(placeholder: JobSpecScaffoldPlaceholder) -> str:
     kind = placeholder.kind
     placeholder_type = placeholder.placeholder_type or ""
     sample = placeholder.sample_text or ""
+    if placeholder.auto_draw:
+        return f"[{anchor}] kind={kind} type={placeholder_type} auto_draw=true"
     return f"[{anchor}] kind={kind} type={placeholder_type} sample={sample}"
 
 

@@ -229,6 +229,7 @@ class JobSpecScaffoldPlaceholder(BaseModel):
     bounds: JobSpecScaffoldBounds
     sample_text: str | None = None
     notes: list[str] = Field(default_factory=list)
+    auto_draw: bool = False
 
 
 class JobSpecScaffoldSlide(BaseModel):

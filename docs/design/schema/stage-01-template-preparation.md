@@ -47,9 +47,11 @@
 - `slots[*].anchor` はテンプレ内の shape 名に一致させ、`required=true` の slot は工程2/3 で必須充足を検査する。
 - `content_type` は `text` / `image` / `table` / `chart` / `shape` / `other` を想定し、工程2 のカード生成と工程3 のマッピングに利用する。
 
-### jobspec 雛形に含めない情報
-- PowerPoint が自動描画するプレースホルダー（例: `SLIDE_NUMBER`、`DATE`／`DATETIME`、`FOOTER`、`HEADER`）は `jobspec.json` では扱わない。テンプレ抽出ステップでこれらのアンカーは Blueprint／テンプレ構造には残しつつ、jobspec 雛形からは自動的に除外される。  
-- 上記以外のプレースホルダーは利用シナリオごとに jobspec へ残り、工程2 以降でコンテンツ差し込み対象となる。
+### 自動描画プレースホルダーの扱い
+- PowerPoint が自動描画するプレースホルダー（例: `SLIDE_NUMBER`、`DATE`／`DATETIME`、`FOOTER`、`HEADER`）は `jobspec.json` にそのまま残るが、`auto_draw=true` が付与される。  
+- Blueprint には自動描画プレースホルダーの slot を生成しないため、工程2/3 のカード整形でコンテンツ差し込み対象とはならない。  
+- 実装側（レンダラー等）は `auto_draw` を判定してテンプレート既定の描画枠を維持する。  
+- 上記以外のプレースホルダーは従来通り jobspec に残り、工程2 以降でコンテンツ差し込み対象となる。
 
 ## template_release.json
 ```jsonc

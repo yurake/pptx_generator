@@ -309,17 +309,10 @@ class TemplateExtractorStep:
 
             placeholders: list[JobSpecScaffoldPlaceholder] = []
             for index, anchor in enumerate(layout.anchors, start=1):
-                placeholder_type = (anchor.placeholder_type or "").upper()
-                if placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES:
-                    logger.debug(
-                        "自動描画プレースホルダーを jobspec から除外: layout=%s anchor=%s type=%s",
-                        layout.name,
-                        anchor.name,
-                        placeholder_type,
-                    )
-                    continue
-
                 anchor_name = anchor.name or f"shape_{index:02d}"
+                placeholder_type = (anchor.placeholder_type or "").upper()
+                is_auto_draw = placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES
+
                 bounds = JobSpecScaffoldBounds(
                     left_in=anchor.left_in,
                     top_in=anchor.top_in,
@@ -335,6 +328,7 @@ class TemplateExtractorStep:
                     bounds=bounds,
                     sample_text=self._sanitize_sample_text(anchor.text),
                     notes=self._collect_placeholder_notes(anchor),
+                    auto_draw=is_auto_draw,
                 )
                 placeholders.append(placeholder)
 
@@ -357,6 +351,15 @@ class TemplateExtractorStep:
             slot_sequence = 1
             slots: list[TemplateBlueprintSlot] = []
             for anchor in layout.anchors:
+                placeholder_type = (anchor.placeholder_type or "").upper()
+                if placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES:
+                    logger.debug(
+                        "Blueprint から自動描画プレースホルダーを除外: slide=%s anchor=%s type=%s",
+                        slide_id,
+                        anchor.name,
+                        placeholder_type,
+                    )
+                    continue
                 content_type = self._infer_placeholder_kind(anchor)
                 slot_id = f"{slide_id}.slot{slot_sequence:02d}"
                 slot_sequence += 1

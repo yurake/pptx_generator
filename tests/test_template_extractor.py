@@ -268,8 +268,19 @@ class TestTemplateExtractorStep:
         assert slide.placeholders[0].sample_text == "表紙タイトル"
         assert slide.placeholders[1].kind == "image"
         assert slide.placeholders[1].sample_text is None
-        anchor_names = [placeholder.anchor for placeholder in slide.placeholders]
-        assert "Num" not in anchor_names
+        slide_number_placeholder = next(
+            (placeholder for placeholder in slide.placeholders if placeholder.anchor == "Num"),
+            None,
+        )
+        assert slide_number_placeholder is not None
+        assert slide_number_placeholder.auto_draw is True
+        template_spec.blueprint = step._build_blueprint([layout])
+        slot_anchors = [
+            slot.anchor
+            for blueprint_slide in template_spec.blueprint.slides
+            for slot in blueprint_slide.slots
+        ]
+        assert "Num" not in slot_anchors
 
     def test_slide_bullet_conflict_detection(self):
         """SlideBullet競合検出のテスト。"""
