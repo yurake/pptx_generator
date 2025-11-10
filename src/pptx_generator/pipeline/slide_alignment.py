@@ -126,10 +126,12 @@ class SlideIdAligner:
                 recommended_slide_id = None
                 record.recommended_slide_id = None
 
-            if recommended_slide_id and response.confidence >= self._options.confidence_threshold:
+            if recommended_slide_id:
                 previous_index = slide_assignments.get(recommended_slide_id)
                 if previous_index is None:
                     record.status = "applied"
+                    if response.confidence < self._options.confidence_threshold:
+                        record.reason = (record.reason or "") + " | low_confidence"
                     slide_assignments[recommended_slide_id] = len(records)
                 else:
                     previous_record = records[previous_index]
@@ -138,8 +140,12 @@ class SlideIdAligner:
                         previous_record.status = "pending"
                         previous_record.reason = (previous_record.reason or "") + " | reassigned"
                         record.status = "applied"
+                        if response.confidence < self._options.confidence_threshold:
+                            record.reason = (record.reason or "") + " | low_confidence"
                         slide_assignments[recommended_slide_id] = len(records)
                     else:
+                        if previous_record.confidence < self._options.confidence_threshold:
+                            previous_record.reason = (previous_record.reason or "") + " | low_confidence"
                         record.status = "pending"
                         record.reason = (record.reason or "") + " | lower_than_existing"
                         record.recommended_slide_id = None

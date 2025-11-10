@@ -62,6 +62,11 @@ def _convert_meta(scaffold: JobSpecScaffold) -> JobMeta:
         title=title,
         created_at=created_at,
         locale="ja-JP",
+        template_path=str(template_path),
+        template_id=scaffold.meta.template_id,
+        layout_count=scaffold.meta.layout_count,
+        layouts_path=scaffold.meta.layouts_path,
+        template_spec_path=scaffold.meta.template_spec_path,
     )
 
 
