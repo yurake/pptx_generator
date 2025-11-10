@@ -6,8 +6,8 @@
 
 ## パイプライン全体像
 - パイプラインは「テンプレ工程 → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 工程で構成される。
-- `pptx compose` は工程3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready` 出力までを一括で処理する。
-- `pptx gen` は工程2〜4を一括実行するファサード。必要に応じて `pptx compose` / `pptx render` を個別に呼び出し、再実行や検証を行う。
+- `pptx compose` は工程3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
+- `pptx gen` は工程4（レンダリング）を担当し、工程3で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
 
 ### 工程1: テンプレ工程
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
@@ -217,12 +217,13 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 #### `pptx gen`
-- 工程2の成果物（Brief）を入力に、工程3のマッピングと工程4のレンダリングを一括実行するファサード。工程ごとの成果物を確認したい場合は `pptx compose` と `pptx render` を個別に利用する。
+- 工程3で生成した `generate_ready.json` を入力に、工程4のレンダリング・Polisher・PDF 変換を実行するコマンド。
+- `generate_ready.json.meta.template_path` からテンプレートを解決するため、`--template` オプションは存在しない。テンプレート情報が欠落している場合は CLI がエラーで停止し、再マッピングを促す。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
-| `--template <path>` | 利用する `.pptx` テンプレートを指定 | ✅ |  | 同梱テンプレート |
-| `--branding <path>` | ブランド設定 JSON を差し替える（テンプレート指定時は自動抽出が既定） |  |  | `config/branding.json` |
+| `<generate_ready.json>` | レンダリング対象の generate_ready | ✅ | ✅ | - |
+| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
 | `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `config/rules.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
@@ -236,13 +237,8 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
 | `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す |  |  | 指定なし |
+| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}` `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` |  |  | `.pptx/prepare/prepare_card.json` |
-| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | 指定なし |
-| `--draft-output <dir>` | ドラフト成果物の出力先 |  |  | `.pptx/draft` |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 |  |  | 無効 |
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
 
