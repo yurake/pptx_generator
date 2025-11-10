@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,7 @@ class TemplateAIService:
             self._client: TemplateAIClient = create_template_ai_client(self._policy)
         except TemplateAIClientConfigurationError as exc:
             raise TemplateAIClientConfigurationError(str(exc)) from exc
+        self._provider = (os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER") or "mock").strip().lower()
 
     def classify_layout(
         self,
@@ -87,23 +89,23 @@ class TemplateAIService:
             heuristic_usage_tags=heuristic_usage_tags,
         )
 
-        # 静的ルールがあれば先に適用する
-        tags = self._apply_static_rules(layout_name)
-        if tags is not None:
-            canonical, unknown = normalize_usage_tags_with_unknown(tags)
-            if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
-                _TEMPLATE_LLM_LOGGER.debug(
-                    "template AI static rule matched: layout=%s tags=%s",
-                    layout_id,
-                    canonical,
+        if self._provider in {"mock", ""}:
+            tags = self._apply_static_rules(layout_name)
+            if tags is not None:
+                canonical, unknown = normalize_usage_tags_with_unknown(tags)
+                if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+                    _TEMPLATE_LLM_LOGGER.debug(
+                        "template AI static rule matched: layout=%s tags=%s",
+                        layout_id,
+                        canonical,
+                    )
+                return TemplateAIResult(
+                    usage_tags=canonical,
+                    unknown_tags=tuple(sorted(unknown)),
+                    reason="static-rule",
+                    raw_text=None,
+                    source="static",
                 )
-            return TemplateAIResult(
-                usage_tags=canonical,
-                unknown_tags=tuple(sorted(unknown)),
-                reason="static-rule",
-                raw_text=None,
-                source="static",
-            )
 
         prompt = self._policy.resolve_prompt()
         request = TemplateAIRequest(prompt=prompt, policy=self._policy, payload=payload)

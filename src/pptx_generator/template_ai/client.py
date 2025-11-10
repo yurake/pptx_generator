@@ -48,12 +48,14 @@ def create_template_ai_client(policy: TemplateAIPolicy) -> TemplateAIClient:
     """ポリシー設定から適切なクライアントを生成する。"""
 
     provider_env = os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER")
-    base_provider = policy.provider.strip().lower() if policy.provider else "mock"
-    provider = provider_env.strip().lower() if provider_env else base_provider
+    if provider_env:
+        provider = provider_env.strip().lower()
+    else:
+        provider = "mock"
     logger.info(
         "template AI provider resolved: env=%s policy=%s -> %s",
         provider_env or "",
-        base_provider,
+        "env",
         provider,
     )
     if provider in {"mock", ""}:

@@ -6,8 +6,6 @@
       "id": "mock",
       "name": "Mock Template AI Policy",
       "description": "Static rules for template AI integration tests.",
-      "provider": "mock",
-      "model": "mock-template",
       "prompt_template": "Classify the layout usage tags using the provided metadata."
     }
   ]
