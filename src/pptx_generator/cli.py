@@ -893,6 +893,17 @@ def _run_draft_pipeline(
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if brief_cards is not None:
+        resolved_cards = brief_cards if brief_cards.is_absolute() else (
+            Path.cwd() / brief_cards
+        )
+        resolved_cards = resolved_cards.resolve()
+        try:
+            display_path = resolved_cards.relative_to(Path.cwd())
+        except ValueError:
+            display_path = resolved_cards
+        logger.info("prepare_card.json を読み込みます: %s", display_path)
+
     steps: list[PipelineStep] = []
     steps.append(
         BriefNormalizationStep(
