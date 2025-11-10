@@ -16,7 +16,7 @@ from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.draft_structuring import SlideIdAligner
 from pptx_generator.pipeline.slide_alignment import (SlideAlignmentRecord,
                                                      SlideAlignmentResult)
-from pptx_generator.models import JobSpec
+from pptx_generator.models import JobSpec, Slide
 
 
 @pytest.fixture()
@@ -165,6 +165,19 @@ def test_draft_structuring_generates_documents(
     assert "content_alignment_meta" in context.artifacts
     alignment_meta = context.artifacts["content_alignment_meta"]
     assert alignment_meta["applied"] >= 1
+
+
+def test_convert_slide_elements_omits_auto_draw_anchor() -> None:
+    slide = Slide(
+        id="intro",
+        layout="Title",
+        title="イントロ",
+        auto_draw_anchors=["Num"],
+    )
+
+    elements = DraftStructuringStep._convert_slide_elements(slide)
+
+    assert "Num" not in elements
 
 
 def test_draft_structuring_fails_when_slide_id_missing(

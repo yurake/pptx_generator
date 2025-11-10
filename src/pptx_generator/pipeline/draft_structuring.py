@@ -732,6 +732,8 @@ class DraftStructuringStep:
                 if key in {"title", "body", "note", "subtitle"}:
                     continue
                 elements.setdefault(key, value)
+            for anchor in spec_slide.auto_draw_anchors:
+                elements.pop(anchor, None)
 
         return elements
 
@@ -785,6 +787,9 @@ class DraftStructuringStep:
         for index, textbox in enumerate(slide.textboxes, start=1):
             key = textbox.anchor or f"textbox_{index}"
             elements[key] = {"text": textbox.text}
+
+        for anchor in slide.auto_draw_anchors:
+            elements.pop(anchor, None)
 
         return elements
 

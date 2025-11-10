@@ -157,6 +157,7 @@ class Slide(BaseModel):
     tables: list[SlideTable] = Field(default_factory=list)
     charts: list[SlideChart] = Field(default_factory=list)
     textboxes: list[SlideTextbox] = Field(default_factory=list)
+    auto_draw_anchors: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
 

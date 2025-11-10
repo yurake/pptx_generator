@@ -81,11 +81,14 @@ def _convert_slide(scaffold_slide: JobSpecScaffoldSlide) -> Slide:
     subtitle: str | None = None
     textboxes: list[SlideTextbox] = []
     notes_entries: list[str] = []
+    auto_draw_anchors: list[str] = []
 
     counters = defaultdict(int)
 
     for placeholder in scaffold_slide.placeholders:
         if placeholder.auto_draw:
+            if placeholder.anchor:
+                auto_draw_anchors.append(placeholder.anchor)
             continue
         placeholder_type = (placeholder.placeholder_type or "").upper()
         if placeholder.kind == "text":
@@ -109,6 +112,7 @@ def _convert_slide(scaffold_slide: JobSpecScaffoldSlide) -> Slide:
         subtitle=subtitle,
         notes=notes,
         textboxes=textboxes,
+        auto_draw_anchors=auto_draw_anchors,
     )
 
 
