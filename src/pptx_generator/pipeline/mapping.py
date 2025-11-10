@@ -191,6 +191,18 @@ class MappingStep:
 
             selected_profile = layout_catalog.get(selected_layout)
             layout_name = selected_profile.layout_name if selected_profile else selected_layout
+            auto_draw_payload: list[dict[str, float]] = []
+            if spec_slide is not None:
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
 
             generate_ready_slides.append(
                 GenerateReadySlide(
@@ -204,6 +216,7 @@ class MappingStep:
                         fallback=fallback_state.history[-1]
                         if fallback_state.applied and fallback_state.history
                         else "none",
+                        auto_draw=auto_draw_payload,
                     ),
                 )
             )

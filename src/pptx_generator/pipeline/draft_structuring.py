@@ -550,7 +550,7 @@ class DraftStructuringStep:
                 section_lookup[card.ref_id] = section.name
                 cards_in_order.append(card)
 
-        spec_lookup = {slide.id: slide for slide in spec.slides}
+            spec_lookup = {slide.id: slide for slide in spec.slides}
         content_lookup: dict[str, ContentSlide] = {}
         content_hash: str | None = None
         if content_document is not None:
@@ -566,6 +566,16 @@ class DraftStructuringStep:
         if not cards_in_order:
             for index, spec_slide in enumerate(spec.slides, start=1):
                 layout_name = self._layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
                 slides.append(
                     GenerateReadySlide(
                         layout_id=spec_slide.layout,
@@ -576,6 +586,7 @@ class DraftStructuringStep:
                             page_no=index,
                             sources=[spec_slide.id],
                             fallback="none",
+                            auto_draw=auto_draw_payload,
                         ),
                     )
                 )
@@ -605,6 +616,18 @@ class DraftStructuringStep:
                 layout_name = layout_id
             elements = self._merge_slide_elements(spec_slide, content_slide)
             sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
+            auto_draw_payload = []
+            if spec_slide is not None:
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
             slides.append(
                 GenerateReadySlide(
                     layout_id=layout_id,
@@ -615,6 +638,7 @@ class DraftStructuringStep:
                         page_no=index,
                         sources=sources,
                         fallback="none",
+                        auto_draw=auto_draw_payload,
                     ),
                 )
             )

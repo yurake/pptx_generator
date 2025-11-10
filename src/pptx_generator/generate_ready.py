@@ -8,7 +8,7 @@ from typing import Any
 from .models import (ChartOptions, ChartSeries, JobAuth, JobMeta, JobSpec,
                      GenerateReadyDocument, GenerateReadySlide, Slide,
                      SlideBullet, SlideBulletGroup, SlideChart, SlideImage,
-                     SlideTable, SlideTextbox)
+                     SlideTable, SlideTextbox, TextboxPosition)
 
 
 def generate_ready_to_jobspec(document: GenerateReadyDocument) -> JobSpec:
@@ -48,6 +48,8 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
     images: list[SlideImage] = []
     charts: list[SlideChart] = []
     textboxes: list[SlideTextbox] = []
+    auto_draw_anchors: list[str] = []
+    auto_draw_boxes: dict[str, TextboxPosition] = {}
 
     for key, value in elements.items():
         if key in {"title", "subtitle", "note", "body"}:
@@ -109,6 +111,23 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
 
     layout_name = slide.layout_name or slide.layout_id
 
+    if slide.meta.auto_draw:
+        for entry in slide.meta.auto_draw:
+            anchor = entry.get("anchor")
+            if not anchor:
+                continue
+            try:
+                position = TextboxPosition(
+                    left_in=float(entry.get("left_in", 0.0)),
+                    top_in=float(entry.get("top_in", 0.0)),
+                    width_in=float(entry.get("width_in", 0.0)),
+                    height_in=float(entry.get("height_in", 0.0)),
+                )
+            except (TypeError, ValueError):
+                continue
+            auto_draw_anchors.append(anchor)
+            auto_draw_boxes[anchor] = position
+
     return Slide(
         id=slide_id,
         layout=layout_name,
@@ -120,6 +139,8 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
         tables=tables,
         charts=charts,
         textboxes=textboxes,
+        auto_draw_anchors=auto_draw_anchors,
+        auto_draw_boxes=auto_draw_boxes,
     )
 
 

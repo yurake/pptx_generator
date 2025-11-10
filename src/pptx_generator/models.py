@@ -158,6 +158,7 @@ class Slide(BaseModel):
     charts: list[SlideChart] = Field(default_factory=list)
     textboxes: list[SlideTextbox] = Field(default_factory=list)
     auto_draw_anchors: list[str] = Field(default_factory=list)
+    auto_draw_boxes: dict[str, TextboxPosition] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -540,6 +541,7 @@ class MappingSlideMeta(BaseModel):
     layout_mode: Literal["dynamic", "static"] | None = None
     blueprint_slide_id: str | None = None
     blueprint_slots: list[dict[str, Any]] | None = None
+    auto_draw: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class GenerateReadySlide(BaseModel):

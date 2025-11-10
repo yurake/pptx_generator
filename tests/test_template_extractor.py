@@ -10,6 +10,7 @@ import pytest
 
 from pptx_generator.models import (JobSpecScaffold, LayoutInfo, ShapeInfo,
                                    TemplateSpec)
+from pptx_generator.spec_loader import convert_scaffold_to_jobspec
 from pptx_generator.pipeline.template_extractor import (
     JOBSPEC_SCHEMA_VERSION,
     SLIDE_BULLET_ANCHORS,
@@ -281,6 +282,13 @@ class TestTemplateExtractorStep:
             for slot in blueprint_slide.slots
         ]
         assert "Num" not in slot_anchors
+
+        job_spec = convert_scaffold_to_jobspec(jobspec)
+        render_slide = job_spec.slides[0]
+        assert render_slide.auto_draw_anchors == ["Num"]
+        assert "Num" in render_slide.auto_draw_boxes
+        num_box = render_slide.auto_draw_boxes["Num"]
+        assert num_box.left_in == pytest.approx(9.4, rel=1e-3)
 
     def test_slide_bullet_conflict_detection(self):
         """SlideBullet競合検出のテスト。"""

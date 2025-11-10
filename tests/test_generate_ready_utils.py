@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pptx_generator.models import (JobAuth, JobMeta, MappingSlideMeta,
                                    GenerateReadyDocument,
                                    GenerateReadyMeta, GenerateReadySlide)
@@ -127,3 +129,37 @@ def test_generate_ready_to_jobspec_defaults() -> None:
     slide = spec.slides[0]
     assert slide.id == "slide-1"
     assert slide.layout == "layout_basic"
+
+
+def test_generate_ready_to_jobspec_respects_auto_draw() -> None:
+    document = GenerateReadyDocument(
+        slides=[
+            GenerateReadySlide(
+                layout_id="layout_basic",
+                layout_name="Layout Basic",
+                elements={"title": "タイトル"},
+                meta=MappingSlideMeta(
+                    section=None,
+                    page_no=1,
+                    sources=["slide-1"],
+                    fallback="none",
+                    auto_draw=[{"anchor": "Num", "left_in": 9.0, "top_in": 6.5, "width_in": 1.0, "height_in": 0.4}],
+                ),
+            )
+        ],
+        meta=GenerateReadyMeta(
+            template_version=None,
+            content_hash=None,
+            generated_at="2025-10-18T00:00:00Z",
+            job_meta=None,
+            job_auth=None,
+        ),
+    )
+
+    spec = generate_ready_to_jobspec(document)
+
+    slide = spec.slides[0]
+    assert slide.auto_draw_anchors == ["Num"]
+    assert "Num" in slide.auto_draw_boxes
+    box = slide.auto_draw_boxes["Num"]
+    assert box.left_in == pytest.approx(9.0)
