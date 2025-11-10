@@ -73,24 +73,15 @@ class TemplateAIService:
     ) -> TemplateAIResult:
         """レイアウト単位で usage_tags を推定する。"""
 
-        payload = {
-            "template_id": template_id,
-            "layout_id": layout_id,
-            "layout_name": layout_name,
-            "placeholders": placeholders,
-            "text_hint": text_hint,
-            "media_hint": media_hint,
-            "heuristic_usage_tags": heuristic_usage_tags,
-            "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
-        }
-
-        if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
-            _TEMPLATE_LLM_LOGGER.debug(
-                "template AI request payload: template=%s layout=%s heuristic=%s",
-                template_id,
-                layout_id,
-                heuristic_usage_tags,
-            )
+        payload = self._build_payload(
+            template_id=template_id,
+            layout_id=layout_id,
+            layout_name=layout_name,
+            placeholders=placeholders,
+            text_hint=text_hint,
+            media_hint=media_hint,
+            heuristic_usage_tags=heuristic_usage_tags,
+        )
 
         # 静的ルールがあれば先に適用する
         tags = self._apply_static_rules(layout_name)
@@ -163,3 +154,45 @@ class TemplateAIService:
             if rule.matches(layout_name):
                 return rule.tags
         return None
+
+    def _build_payload(
+        self,
+        *,
+        template_id: str,
+        layout_id: str,
+        layout_name: str,
+        placeholders: list[dict[str, Any]],
+        text_hint: dict[str, Any],
+        media_hint: dict[str, Any],
+        heuristic_usage_tags: list[str],
+    ) -> dict[str, object]:
+        config = _load_config()
+        intent_tags = config.get("intent_tags") or []
+        media_tags = config.get("media_tags") or []
+        fallback = config.get("fallback_tag")
+        static_rules = config.get("static_rules") or []
+
+        payload: dict[str, object] = {
+            "template_id": template_id,
+            "layout_id": layout_id,
+            "layout_name": layout_name,
+            "placeholders": placeholders,
+            "text_hint": text_hint,
+            "media_hint": media_hint,
+            "heuristic_usage_tags": heuristic_usage_tags,
+            "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
+            "intent_tags": intent_tags,
+            "media_tags": media_tags,
+            "fallback_tag": fallback,
+            "static_rules": static_rules,
+        }
+
+        if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+            _TEMPLATE_LLM_LOGGER.debug(
+                "template AI request payload: template=%s layout=%s heuristic=%s",
+                template_id,
+                layout_id,
+                heuristic_usage_tags,
+            )
+
+        return payload

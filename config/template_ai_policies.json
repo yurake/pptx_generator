@@ -8,25 +8,7 @@
       "description": "Static rules for template AI integration tests.",
       "provider": "mock",
       "model": "mock-template",
-      "prompt_template": "Classify the layout usage tags using the provided metadata.",
-      "static_rules": [
-        {
-          "layout_name_pattern": ".*Title.*",
-          "tags": ["title"]
-        },
-        {
-          "layout_name_pattern": ".*Agenda.*",
-          "tags": ["agenda"]
-        },
-        {
-          "layout_name_pattern": ".*executive.*summary.*",
-          "tags": ["overview", "content"]
-        },
-        {
-          "layout_name_pattern": null,
-          "tags": ["content"]
-        }
-      ]
+      "prompt_template": "Classify the layout usage tags using the provided metadata."
     }
   ]
 }
