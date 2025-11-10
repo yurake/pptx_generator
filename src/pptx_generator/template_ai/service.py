@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags_with_unknown
+from ..utils.usage_tags import (
+    CANONICAL_USAGE_TAGS,
+    get_usage_tag_config,
+    normalize_usage_tags_with_unknown,
+)
 from .client import (
     TemplateAIClient,
     TemplateAIClientConfigurationError,
@@ -153,6 +157,23 @@ class TemplateAIService:
         for rule in self._policy.static_rules:
             if rule.matches(layout_name):
                 return rule.tags
+
+        config = get_usage_tag_config()
+        config_rules = config.get("static_rules") or []
+        for rule in config_rules:
+            if not isinstance(rule, dict):
+                continue
+            pattern = rule.get("layout_name_pattern")
+            tags = rule.get("tags")
+            if not isinstance(tags, list):
+                continue
+            try:
+                import re
+
+                if pattern is None or re.search(pattern, layout_name, re.IGNORECASE):
+                    return tags
+            except re.error:
+                continue
         return None
 
     def _build_payload(
@@ -166,7 +187,7 @@ class TemplateAIService:
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
     ) -> dict[str, object]:
-        config = _load_config()
+        config = get_usage_tag_config()
         intent_tags = config.get("intent_tags") or []
         media_tags = config.get("media_tags") or []
         fallback = config.get("fallback_tag")
