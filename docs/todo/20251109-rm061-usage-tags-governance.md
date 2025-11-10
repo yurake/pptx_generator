@@ -47,15 +47,6 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
   - メモ: `scripts/test_template_ai.sh` と `tests/test_template_ai_script.py` で `uv run pptx tpl-extract` のモックポリシー検証を追加。
 - [x] README / AGENTS / roadmap 更新
   - メモ: README に Template AI 既定挙動と `config/usage_tags.json` を記載し、`docs/AGENTS.md` に config 更新時の対応を追記。`docs/roadmap/roadmap.md` は RM-061 を進行中へ更新し、次アクションを Stage3 整合レビューに差し替えた。
-- [ ] 用途タグ体系の再設計（Plan）
-  - メモ: 
-    - 対象整理（スコープ、対象ファイル、前提）: Canonical usage tags を「Intent（章区切り・クロージング等）」と「Media（chart/table/visual）」の2軸で再定義し、`utils/usage_tags.py`・テンプレ AI・layout_ai スコアリングの語彙を統一する。テンプレ抽出／Stage3 双方で新語彙に対応する改修を行う。
-    - ドキュメント／コード修正方針: Canonical セットとシノニムを拡張し、`CardLayoutRecommender`・`mapping` の加点ロジックを更新。テンプレ AI ポリシー／プロンプトを新語彙へ差し替え、診断・ログの出力内容も調整する。必要に応じて Stage3 スコアリング設計資料を更新。
-    - 確認・共有方法: ToDo を段階更新し、設計変更は `docs/design` / `docs/requirements` に反映。PR で差分説明と影響まとめを共有。
-    - 想定影響ファイル: `src/pptx_generator/utils/usage_tags.py`, `src/pptx_generator/template_ai/*`, `src/pptx_generator/draft_recommender.py`, `src/pptx_generator/pipeline/mapping.py`, `config/template_ai_policies.json`, 関連ドキュメント。
-    - リスク: 語彙変更による Stage3 推薦結果の変動、既存テンプレートとの互換性、AI プロンプトの再チューニング。段階的にフィードバックを取りながら調整する。
-    - テスト方針: ユニットテストで新 Canonical タグの正規化・加点ロジックを検証し、テンプレ抽出・Stage3 推薦の統合テストを追加。代表テンプレートで `uv run pptx template` と `uv run pptx compose` を実行し、生成物の差異を確認する。
-    - ロールバック方法: 新語彙関連のコミットをリバートし、旧 Canonical セットとテンプレ AI ポリシーへ戻す。
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
