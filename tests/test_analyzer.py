@@ -387,3 +387,17 @@ def test_analyzer_outputs_structure_snapshot(tmp_path) -> None:
     assert slide_entry["slide_id"] == "slide-structure"
     assert slide_entry["layout"] == "Title and Content"
     assert "placeholders" in slide_entry
+    placeholder_paragraphs = [
+        entry
+        for entry in slide_entry["placeholders"]
+        if entry.get("paragraphs")
+    ]
+    assert placeholder_paragraphs, "プレースホルダーに段落情報が含まれていません"
+    paragraph_texts = [
+        paragraph["text"]
+        for entry in placeholder_paragraphs
+        for paragraph in entry["paragraphs"]
+        if paragraph["text"]
+    ]
+    assert paragraph_texts, "段落テキストが空です"
+    assert "アンカー検証" in paragraph_texts

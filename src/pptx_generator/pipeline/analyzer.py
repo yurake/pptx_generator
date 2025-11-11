@@ -433,6 +433,16 @@ class SimpleAnalyzerStep:
                 "top_in": shape.top_in,
                 "width_in": shape.width_in,
                 "height_in": shape.height_in,
+                "paragraphs": [
+                    {
+                        "index": paragraph.paragraph_index,
+                        "text": paragraph.text,
+                        "level": paragraph.level,
+                        "font_size_pt": paragraph.font_size_pt,
+                        "color_hex": paragraph.color_hex,
+                    }
+                    for paragraph in shape.paragraphs
+                ],
             }
             if shape.is_placeholder or shape.placeholder_type is not None:
                 placeholders.append(
