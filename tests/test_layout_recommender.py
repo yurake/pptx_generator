@@ -61,13 +61,18 @@ def test_recommend_returns_ai_boost_when_enabled() -> None:
     )
 
     assert result.candidates, "候補が生成されるべき"
+    assert len(result.candidates) == 1, "AI応答がある場合はトップ候補のみ返却されるべき"
     best_candidate, best_detail = result.candidates[0]
     assert best_candidate.layout_id in {"Title", "Content"}
     assert best_detail.ai_recommendation >= 0.0
     assert isinstance(result.ai_scores, dict)
+    assert len(result.ai_scores) <= 1
     if result.ai_response is not None:
         assert result.ai_response.model
         assert isinstance(result.ai_response.recommended, list)
+        assert len(result.ai_response.recommended) == 1
+        recommended_layout_id, _ = result.ai_response.recommended[0]
+        assert best_candidate.layout_id == recommended_layout_id
 
 
 def test_recommend_without_ai_keeps_ai_score_zero() -> None:

@@ -28,6 +28,13 @@ from .utils.usage_tags import normalize_usage_tag_value
 logger = logging.getLogger(__name__)
 
 
+_SINGLE_RESPONSE_INSTRUCTION = (
+    "\n\n# 応答ルール\n"
+    "候補の中から最も適した layout_id を1件だけ選び、score と理由を含む JSON を返してください。"
+    "他の候補については記述しないでください。"
+)
+
+
 @dataclass(slots=True)
 class LayoutProfile:
     """layouts.jsonl の 1 レコードを抽象化したもの。"""
@@ -98,6 +105,7 @@ class CardLayoutRecommender:
 
         tags = self._extract_slide_tags(slide)
         evaluated: list[tuple[LayoutProfile, float, DraftLayoutScoreDetail]] = []
+        layout_results: dict[str, tuple[float, DraftLayoutScoreDetail]] = {}
 
         for profile in layouts:
             score, detail = self._heuristic_score(profile, slide, tags, analyzer_summary)
@@ -123,14 +131,50 @@ class CardLayoutRecommender:
 
             detail = clamp_score_detail(detail)
             score = max(0.0, min(1.0, score))
+            layout_results[layout_id] = (score, detail)
             if score <= 0.0:
                 continue
 
             candidate = DraftLayoutCandidate(layout_id=layout_id, score=round(score, 3))
             results.append((candidate, detail))
 
+        # すべてのレイアウトが非推奨の場合も layout_results に保存する
+        for profile, score, detail in evaluated:
+            layout_results.setdefault(profile.layout_id, (max(0.0, min(1.0, score)), detail))
+
         results.sort(key=lambda item: item[0].score, reverse=True)
-        return RecommendationResult(results[: self._config.max_candidates], ai_scores, ai_response)
+        limited = results[: self._config.max_candidates]
+
+        if ai_response is not None and ai_scores:
+            preferred_layout_id: str | None = None
+            if ai_response.recommended:
+                preferred_layout_id = ai_response.recommended[0][0]
+            if preferred_layout_id is None and ai_scores:
+                preferred_layout_id = max(ai_scores, key=ai_scores.get)
+
+            if preferred_layout_id:
+                selected_entry: tuple[DraftLayoutCandidate, DraftLayoutScoreDetail] | None = next(
+                    (item for item in limited if item[0].layout_id == preferred_layout_id),
+                    None,
+                )
+                if selected_entry is None:
+                    stored = layout_results.get(preferred_layout_id)
+                    if stored is not None:
+                        stored_score, stored_detail = stored
+                        stored_detail.ai_recommendation = round(ai_scores.get(preferred_layout_id, 0.0), 3)
+                        stored_detail = clamp_score_detail(stored_detail)
+                        final_score = stored_score
+                        if final_score <= 0.0:
+                            final_score = max(0.1, ai_scores.get(preferred_layout_id, 1.0))
+                        candidate = DraftLayoutCandidate(
+                            layout_id=preferred_layout_id,
+                            score=round(max(0.0, min(1.0, final_score)), 3),
+                        )
+                        selected_entry = (candidate, stored_detail)
+                if selected_entry is not None:
+                    limited = [selected_entry]
+
+        return RecommendationResult(limited, ai_scores, ai_response)
 
     # ------------------------------------------------------------------ #
     # internal helpers
@@ -223,6 +267,8 @@ class CardLayoutRecommender:
             logger.warning("layout AI prompt resolution failed: %s", exc)
             return {}, None
 
+        prompt = f"{prompt.rstrip()}{_SINGLE_RESPONSE_INSTRUCTION}"
+
         card_payload = {
             "slide_id": slide.id,
             "intent": slide.intent,
@@ -254,6 +300,13 @@ class CardLayoutRecommender:
         except Exception as exc:  # noqa: BLE001
             logger.warning("layout AI recommend failed: %s", exc)
             return {}, None
+
+        if response.recommended:
+            top_layout_id, top_score = response.recommended[0]
+            response.recommended = [(top_layout_id, top_score)]
+            if response.reasons:
+                reason = response.reasons.get(top_layout_id)
+                response.reasons = {top_layout_id: reason} if reason is not None else {}
 
         scores: dict[str, float] = {}
         weight = max(0.0, min(1.0, self._config.ai_weight))
