@@ -20,20 +20,20 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 設計・実装方針の確定
   - メモ: LOG_LEVEL を基点とした統一ログ制御と OPENAI_LOG 廃止方針を CLI へ反映する設計で合意
 - [x] ドキュメント更新（要件・設計）
-  - メモ: CLI 設計ガイドへ LOG_LEVEL の利用方法と OPENAI_LOG 廃止を追記
-  - [ ] docs/requirements 配下
+  - メモ: 要件面は `docs/requirements/cli/logging.md` で既に LOG_LEVEL に対応していたため追記不要と判断。設計ガイドも最新内容を反映済み。
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: `_determine_log_level` で環境変数と CLI フラグを統合解釈し、OpenAI ロガーにもレベルを適用
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_logging.py` を実行し、新規テスト3件が成功
-- [ ] ドキュメント更新
-  - メモ: 追加の README/Runbook 反映は未実施
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+- [x] ドキュメント更新
+  - メモ: Roadmap・Runbook・README・AGENTS を確認し、ログレベル仕様が現行実装と整合していることを確認。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
