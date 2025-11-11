@@ -28,16 +28,15 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_cheatsheet_flow.py tests/test_cli_integration.py::test_static_mode_pipeline` を実行し、静的・動的双方のフローが成功することを確認。
 - [x] ドキュメント更新
-  - メモ: CLI ガイドと requirements/design スキーマを更新し、`template_spec_path` 参照とバッチログ仕様を反映。ロードマップの記載は変更不要のため未更新。
-  - [ ] docs/roadmap 配下
+  - メモ: CLI ガイドと requirements/design スキーマの修正を確認済み。Roadmap・Runbook・README/AGENTS は現状記載で静的モード概要をカバーしており、追記不要と判断。
+  - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
 
 ## メモ
-- 計画方針を確定次第、承認メッセージ ID とあわせて記録する
