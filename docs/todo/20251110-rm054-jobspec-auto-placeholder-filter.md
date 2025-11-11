@@ -20,20 +20,20 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 設計・実装方針の確定
   - メモ: jobspec へ `auto_draw` 付与＋Blueprint から除外する設計を採用、レンダラー側でフラグを解釈する前提に調整
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/design/schema/stage-01-template-preparation.md` に `auto_draw` の扱いを追記済み
-  - [ ] docs/requirements 配下
+  - メモ: 要件面はテンプレ抽出仕様 (`docs/requirements/stages/stage-01-template-pipeline.md`) と整合していることを確認し、追加更新不要と判断。設計ドキュメントは `auto_draw` 追記済み。
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: TemplateExtractor と SpecLoader を改修し、Blueprint/JobSpec 両方で `auto_draw` を処理。renderer 対応は未着手のため別工程で管理する。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_template_extractor.py tests/test_spec_loader.py` を実施し、新挙動を確認
-- [ ] ドキュメント更新
-  - メモ: README/Runbook 連携は未実施（必要に応じて追記予定）
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+- [x] ドキュメント更新
+  - メモ: Roadmap・Runbook・README・AGENTS を確認し、`auto_draw` 追加後も整合しているため追記不要と判断。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
