@@ -9,7 +9,7 @@
 | レイヤ | コンポーネント | 概要 |
 | --- | --- | --- |
 | CLI | `pptx prepare` | Brief ソースを読み込み、BriefCard 生成・評価・監査ログ出力を実行 |
-| サービス層 | `BriefAIOrchestrator` | ポリシーに基づいてカードを生成し、AI ログと統計を返す |
+| サービス層 | `BriefAIOrchestrator` + `ContentAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
 | モデル層 | `BriefDocument` / `BriefCard` | Pydantic モデルで JSON スキーマを表現 |
 | ストレージ | Brief Store | `.pptx/prepare/prepare_card.json` など成果物一式を保存 |
 
@@ -42,7 +42,7 @@
   - `audit_log.json`
 
 ## ログと監査
-- `brief_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`llm_stub` 等）、トークン消費量を記録。
+- `brief_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`body_lines_truncated` など）、トークン消費量を記録。
 - `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、工程3での差分検出に利用。
 - `audit_log.json`: 生成時刻・ポリシー ID・成果物のパスをまとめる。今後ハッシュ値を追加し改ざん検知を強化する。
 

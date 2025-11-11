@@ -3,10 +3,11 @@
   "cards": [
     {
       "card_id": "intro",
-      "chapter": "イントロダクション",
+      "chapter": "intro 現状と課題",
       "message": "intro 現状と課題",
       "narrative": [
-        "intro 現状と課題"
+        "カバースライド \"intro 現状と課題\" のリード文を1行で生成してください。",
+        "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run"
       ],
       "supporting_points": [
         {
@@ -17,13 +18,18 @@
         }
       ],
       "story": {
-        "phase": "introduction"
+        "phase": "introduction",
+        "goal": "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。"
       },
       "intent_tags": [
         "introduction"
       ],
       "status": "draft",
-      "autofix_applied": []
+      "autofix_applied": [],
+      "meta": {
+        "updated_at": "2025-01-01T00:00:00Z"
+      },
+      "layout_mode": "dynamic"
     }
   ],
   "story_context": {

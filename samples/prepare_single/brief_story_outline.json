@@ -27,27 +27,6 @@
       "cards": [
         "intro"
       ]
-    },
-    {
-      "id": "solution 解決策",
-      "title": "solution 解決策",
-      "cards": [
-        "solution"
-      ]
-    },
-    {
-      "id": "impact 期待効果",
-      "title": "impact 期待効果",
-      "cards": [
-        "impact"
-      ]
-    },
-    {
-      "id": "next 次のアクション",
-      "title": "next 次のアクション",
-      "cards": [
-        "next"
-      ]
     }
   ],
   "narrative_theme": null,

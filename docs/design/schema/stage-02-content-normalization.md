@@ -57,7 +57,7 @@
 ]
 ```
 
-- `warnings`: 生成時の注意事項。`llm_stub` / `token_limit` / `safety_blocked` などを想定。
+- `warnings`: 生成時の注意事項。`token_limit` / `body_line_length_truncated` / `safety_blocked` などを想定。
 - `tokens`: プロバイダーが返すトークン使用量。mock モードでは 0。
 
 ## ai_generation_meta.json

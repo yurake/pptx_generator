@@ -3,10 +3,11 @@
   "cards": [
     {
       "card_id": "intro",
-      "chapter": "イントロダクション",
+      "chapter": "intro 現状と課題",
       "message": "intro 現状と課題",
       "narrative": [
-        "intro 現状と課題"
+        "カバースライド \"intro 現状と課題\" のリード文を1行で生成してください。",
+        "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run"
       ],
       "supporting_points": [
         {
@@ -17,20 +18,26 @@
         }
       ],
       "story": {
-        "phase": "introduction"
+        "phase": "introduction",
+        "goal": "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。"
       },
       "intent_tags": [
         "introduction"
       ],
       "status": "draft",
-      "autofix_applied": []
+      "autofix_applied": [],
+      "meta": {
+        "updated_at": "2025-01-01T00:00:00Z"
+      },
+      "layout_mode": "dynamic"
     },
     {
       "card_id": "solution",
-      "chapter": "課題整理",
+      "chapter": "solution 解決策",
       "message": "solution 解決策",
       "narrative": [
-        "solution 解決策"
+        "スライド \"solution 解決策\" の要約を3行以内で作成してください。読者",
+        "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run"
       ],
       "supporting_points": [
         {
@@ -41,20 +48,26 @@
         }
       ],
       "story": {
-        "phase": "problem"
+        "phase": "problem",
+        "goal": "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。"
       },
       "intent_tags": [
         "problem"
       ],
       "status": "draft",
-      "autofix_applied": []
+      "autofix_applied": [],
+      "meta": {
+        "updated_at": "2025-01-01T00:00:00Z"
+      },
+      "layout_mode": "dynamic"
     },
     {
       "card_id": "impact",
-      "chapter": "解決策",
+      "chapter": "impact 期待効果",
       "message": "impact 期待効果",
       "narrative": [
-        "impact 期待効果"
+        "次の情報をもとにスライド \"impact 期待効果\" の本文候補を箇条書きで3点",
+        "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run"
       ],
       "supporting_points": [
         {
@@ -65,20 +78,26 @@
         }
       ],
       "story": {
-        "phase": "solution"
+        "phase": "solution",
+        "goal": "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。"
       },
       "intent_tags": [
         "solution"
       ],
       "status": "draft",
-      "autofix_applied": []
+      "autofix_applied": [],
+      "meta": {
+        "updated_at": "2025-01-01T00:00:00Z"
+      },
+      "layout_mode": "dynamic"
     },
     {
       "card_id": "next",
-      "chapter": "期待効果",
+      "chapter": "next 次のアクション",
       "message": "next 次のアクション",
       "narrative": [
-        "next 次のアクション"
+        "次の情報をもとにスライド \"next 次のアクション\" の本文候補を箇条書きで3",
+        "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run"
       ],
       "supporting_points": [
         {
@@ -89,13 +108,18 @@
         }
       ],
       "story": {
-        "phase": "impact"
+        "phase": "impact",
+        "goal": "テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を BriefCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。"
       },
       "intent_tags": [
         "impact"
       ],
       "status": "draft",
-      "autofix_applied": []
+      "autofix_applied": [],
+      "meta": {
+        "updated_at": "2025-01-01T00:00:00Z"
+      },
+      "layout_mode": "dynamic"
     }
   ],
   "story_context": {

@@ -1,6 +1,6 @@
 {
   "brief_id": "sample_import_content_summary",
-  "generated_at": "2025-11-04T10:50:09.367322Z",
+  "generated_at": "2025-01-01T00:00:00Z",
   "policy_id": "brief-default",
   "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
   "cards": [
@@ -10,13 +10,15 @@
         "introduction"
       ],
       "story_phase": "introduction",
-      "content_hash": "c028dc3a020d6678a61492227b4fff4a4c4764f545552fc7269309926d2d6a5d",
-      "body_lines": 1
+      "content_hash": "a5993d10b52d710a7179889c0075d42a2703c7de767713b4b1e563615a48d460",
+      "body_lines": 2
     }
   ],
   "statistics": {
     "cards_total": 1,
     "approved": 0,
     "returned": 0
-  }
+  },
+  "mode": "dynamic",
+  "slot_coverage": {}
 }

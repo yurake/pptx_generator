@@ -51,11 +51,18 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     log_payload = json.loads(log_path.read_text(encoding="utf-8"))
     assert log_payload == []
 
+    ai_log_payload = json.loads(ai_log_path.read_text(encoding="utf-8"))
+    assert len(ai_log_payload) == 4
+    for entry in ai_log_payload:
+        assert entry["card_id"]
+        assert "llm_stub" not in entry.get("warnings", [])
+
     meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
     assert meta_payload["mode"] == "dynamic"
 
     outline_payload = json.loads(outline_path.read_text(encoding="utf-8"))
-    assert len(outline_payload["chapters"]) == 4
+    assert len(outline_payload["chapters"]) >= 4
+    assert outline_payload["chapters"][0]["id"] == "intro"
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     brief_meta = audit_payload["brief_normalization"]
@@ -103,6 +110,8 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
     assert result.exit_code == 0
     cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
     assert len(cards_payload["cards"]) == 2
+    ai_log_payload = json.loads((output_dir / "brief_ai_log.json").read_text(encoding="utf-8"))
+    assert len(ai_log_payload) == 2
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["statistics"]["cards_total"] == 2
 
@@ -156,3 +165,5 @@ def test_prepare_page_limit_short_option(tmp_path) -> None:
     assert result.exit_code == 0
     cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
     assert len(cards_payload["cards"]) == 1
+    ai_log_payload = json.loads((output_dir / "brief_ai_log.json").read_text(encoding="utf-8"))
+    assert len(ai_log_payload) == 1

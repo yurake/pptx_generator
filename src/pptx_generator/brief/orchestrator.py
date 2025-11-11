@@ -4,22 +4,40 @@ import hashlib
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
 
-from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
+from ..content_ai.orchestrator import ContentAIOrchestrator, ContentAIOrchestrationError
+from ..content_ai.policy import load_policy_set as load_content_ai_policy_set
+from ..models import (
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+    TemplateBlueprint,
+    TemplateBlueprintSlide,
+    TemplateBlueprintSlot,
+)
 from .models import (
     BriefAIRecord,
     BriefCard,
+    BriefCardMeta,
     BriefDocument,
     BriefGenerationMeta,
     BriefStatusType,
     BriefStoryContext,
     BriefStoryInfo,
+    BriefSupportingPoint,
 )
 from .policy import BriefPolicy, BriefPolicyError, BriefPolicySet
 from .source import BriefSourceChapter, BriefSourceDocument
 
 logger = logging.getLogger(__name__)
+
+CONTENT_AI_POLICY_PATH = Path("config/content_ai_policies.json")
+DEFAULT_PROMPT_ID = "brief.default"
 
 
 class BriefAIOrchestrationError(RuntimeError):
@@ -29,8 +47,17 @@ class BriefAIOrchestrationError(RuntimeError):
 class BriefAIOrchestrator:
     """BriefCard 生成オーケストレーター。"""
 
-    def __init__(self, policy_set: BriefPolicySet) -> None:
+    def __init__(
+        self,
+        policy_set: BriefPolicySet,
+        *,
+        content_policy_path: Path | None = None,
+        content_orchestrator: ContentAIOrchestrator | None = None,
+    ) -> None:
         self._policy_set = policy_set
+        policy_path = content_policy_path or CONTENT_AI_POLICY_PATH
+        self._content_policy_set = load_content_ai_policy_set(policy_path)
+        self._content_ai = content_orchestrator or ContentAIOrchestrator(self._content_policy_set)
 
     def generate_document(
         self,
@@ -56,13 +83,30 @@ class BriefAIOrchestrator:
             if blueprint is None:
                 raise BriefAIOrchestrationError("static モードには Blueprint が必要です")
             cards, slot_summary = self._build_cards_static(
-                source,
-                policy,
-                blueprint,
+                source=source,
+                policy=policy,
+                blueprint=blueprint,
                 page_limit=page_limit,
+                all_cards_status=all_cards_status,
             )
+            ai_records: list[BriefAIRecord] = [
+                BriefAIRecord(
+                    card_id="batch",
+                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                    model="mock-local",
+                    response_digest=f"cards={len(cards)} mode=static",
+                    warnings=["blueprint_stub"],
+                    tokens={},
+                    batch_card_ids=[card.card_id for card in cards],
+                )
+            ]
         else:
-            cards = self._build_cards(source, policy, page_limit)
+            cards, ai_records = self._build_cards_dynamic(
+                source=source,
+                policy=policy,
+                page_limit=page_limit,
+                all_cards_status=all_cards_status,
+            )
             slot_summary = None
 
         if all_cards_status is not None:
@@ -82,42 +126,146 @@ class BriefAIOrchestrator:
             blueprint_hash=blueprint_ref.get("hash") if blueprint_ref else None,
             slot_summary=slot_summary,
         )
-        batch_record = BriefAIRecord(
-            card_id="batch",
-            prompt_template=policy.prompt_template_id or "brief.batch",
-            response_digest=f"cards={len(cards)} mode={mode}",
-            warnings=["llm_stub"],
-            tokens={"prompt": 0, "completion": 0, "total": 0},
-            batch_card_ids=[card.card_id for card in cards],
-        )
-        return document, meta, [batch_record]
+        return document, meta, ai_records
 
-    def _build_cards(
+    def _build_cards_dynamic(
         self,
+        *,
         source: BriefSourceDocument,
         policy: BriefPolicy,
         page_limit: int | None,
-    ) -> list[BriefCard]:
-        cards: list[BriefCard] = []
-        chapters = source.chapters[: page_limit] if page_limit is not None else source.chapters
+        all_cards_status: BriefStatusType | None,
+    ) -> tuple[list[BriefCard], list[BriefAIRecord]]:
+        chapters = source.chapters[: page_limit] if page_limit is not None else list(source.chapters)
         if not chapters:
             logger.warning("Brief source に章がありません。ダミーカードを生成します。")
             dummy = self._build_dummy_card(policy, index=0)
-            cards.append(dummy)
-            return cards
+            return [dummy], []
 
-        for index, chapter in enumerate(chapters):
-            card = self._build_card_from_chapter(chapter, policy, index)
+        job_spec = self._build_jobspec_from_brief(source, chapters, policy)
+        try:
+            content_document, _, logs = self._content_ai.generate_document(
+                job_spec,
+                policy_id=None,
+                reference_text=source.meta.objective,
+                slide_limit=page_limit,
+            )
+        except ContentAIOrchestrationError as exc:
+            raise BriefAIOrchestrationError(f"AI 生成に失敗しました: {exc}") from exc
+
+        now = datetime.now(timezone.utc)
+        cards: list[BriefCard] = []
+        ai_records: list[BriefAIRecord] = []
+
+        for index, (chapter, content_slide, log_entry) in enumerate(
+            zip(chapters, content_document.slides, logs, strict=False)
+        ):
+            card_id = chapter.id or f"chapter-{index}"
+            story_phase = chapter.story_hint or policy.resolve_story_phase(index)
+            message = content_slide.elements.title or chapter.message or chapter.title
+            narrative = list(content_slide.elements.body or [])
+            if not narrative and chapter.details:
+                narrative = list(chapter.details)
+            supporting_points: list[BriefSupportingPoint] = (
+                [item.to_brief_supporting_point() for item in chapter.supporting_points]
+                if chapter.supporting_points
+                else [BriefSupportingPoint(statement=line) for line in narrative]
+            )
+            card = BriefCard(
+                card_id=card_id,
+                chapter=chapter.title,
+                message=message,
+                narrative=narrative,
+                supporting_points=supporting_points,
+                story=BriefStoryInfo(
+                    phase=story_phase,
+                    goal=source.meta.objective,
+                ),
+                intent_tags=chapter.intent_tags or [content_slide.intent],
+                status=all_cards_status or "draft",
+                meta=BriefCardMeta(updated_at=now),
+            )
             cards.append(card)
-        return cards
+            ai_records.append(
+                BriefAIRecord(
+                    card_id=card_id,
+                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                    model=log_entry.get("model", "mock-local"),
+                    prompt_fragment=(log_entry.get("prompt") or "")[:200],
+                    response_digest=(log_entry.get("response_text") or "")[:200],
+                    warnings=log_entry.get("warnings") or [],
+                    tokens=log_entry.get("tokens") or {},
+                )
+            )
+
+        return cards, ai_records
+
+    def _build_jobspec_from_brief(
+        self,
+        source: BriefSourceDocument,
+        chapters: list[BriefSourceChapter],
+        policy: BriefPolicy,
+    ) -> JobSpec:
+        meta = JobMeta(
+            schema_version="brief-1.0",
+            title=source.meta.title,
+            client=source.meta.client,
+            author=None,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            theme="brief",
+            locale=source.meta.locale or "ja-JP",
+        )
+        auth = JobAuth(created_by="brief-ai")
+        slides: list[Slide] = []
+        for index, chapter in enumerate(chapters):
+            layout = self._resolve_layout_for_chapter(chapter, index)
+            bullets: list[SlideBulletGroup] = []
+            if chapter.details:
+                bullet_items = [
+                    SlideBullet(
+                        id=f"{chapter.id}-detail-{idx}",
+                        text=line[:200],
+                        level=0,
+                    )
+                    for idx, line in enumerate(chapter.details, start=1)
+                    if line.strip()
+                ]
+                if bullet_items:
+                    bullets.append(SlideBulletGroup(anchor=None, items=bullet_items))
+            slides.append(
+                Slide(
+                    id=chapter.id or f"chapter-{index}",
+                    layout=layout,
+                    title=chapter.message or chapter.title,
+                    subtitle=None,
+                    notes="\n".join(chapter.details) if chapter.details else None,
+                    bullets=bullets,
+                )
+            )
+        return JobSpec(meta=meta, auth=auth, slides=slides)
+
+    @staticmethod
+    def _resolve_layout_for_chapter(chapter: BriefSourceChapter, index: int) -> str:
+        mapping = {
+            "introduction": "Title",
+            "problem": "One Column Detail",
+            "solution": "Two Column Detail",
+            "impact": "Three List",
+            "next": "Two Rows Detail",
+        }
+        if chapter.story_hint and chapter.story_hint in mapping:
+            return mapping[chapter.story_hint]
+        fallback = ["Title", "One Column Detail", "Two Column Detail", "Two Rows Detail"]
+        return fallback[index % len(fallback)]
 
     def _build_cards_static(
         self,
+        *,
         source: BriefSourceDocument,
         policy: BriefPolicy,
         blueprint: TemplateBlueprint,
-        *,
         page_limit: int | None,
+        all_cards_status: BriefStatusType | None,
     ) -> tuple[list[BriefCard], dict[str, int]]:
         if page_limit is not None:
             raise BriefAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
@@ -141,14 +289,12 @@ class BriefAIOrchestrator:
         chapter_assignments: dict[int, BriefSourceChapter] = {}
         chapter_iter_index = 0
 
-        # 必須 slot へ優先的に割り当て
         for entry in required_entries:
             if chapter_iter_index >= len(chapters):
                 break
             chapter_assignments[entry[0]] = chapters[chapter_iter_index]
             chapter_iter_index += 1
 
-        # 残った章を任意 slot へ割り当て
         for entry in optional_entries:
             if chapter_iter_index >= len(chapters):
                 break
@@ -174,6 +320,8 @@ class BriefAIOrchestrator:
             else:
                 if chapter is not None:
                     optional_used += 1
+            if all_cards_status is not None:
+                card.status = all_cards_status
             cards.append(card)
 
         slot_summary = {
@@ -236,7 +384,7 @@ class BriefAIOrchestrator:
             intent_tags = chapter.intent_tags or slot.intent_tags or []
             slot_fulfilled = True
         else:
-            chapter_title = policy.resolve_chapter_title(order, slide.layout or slot.slot_id)
+            chapter_title = policy.resolve_story_phase(order)
             message = f"{slide.layout} - {slot.anchor}" if slide.layout else slot.slot_id
             narrative = []
             supporting_points = []
@@ -249,8 +397,8 @@ class BriefAIOrchestrator:
             "anchor": slot.anchor,
             "content_type": slot.content_type,
             "intent_tags": slot.intent_tags,
+            "fulfilled": slot_fulfilled,
         }
-        blueprint_slot_meta["fulfilled"] = slot_fulfilled
 
         return BriefCard(
             card_id=card_id,
@@ -321,7 +469,7 @@ class BriefAIOrchestrator:
         )
 
     def _build_card_meta(self, card: BriefCard) -> dict[str, Any]:
-        meta = {
+        payload = {
             "card_id": card.card_id,
             "intent_tags": card.intent_tags,
             "story_phase": card.story.phase,
@@ -329,7 +477,7 @@ class BriefAIOrchestrator:
             "body_lines": len(card.narrative),
         }
         if card.slot_id:
-            meta.update(
+            payload.update(
                 {
                     "slide_id": card.slide_id,
                     "slot_id": card.slot_id,
@@ -337,7 +485,7 @@ class BriefAIOrchestrator:
                     "slot_fulfilled": card.slot_fulfilled,
                 }
             )
-        return meta
+        return payload
 
     @staticmethod
     def _hash_card(card: BriefCard) -> str:

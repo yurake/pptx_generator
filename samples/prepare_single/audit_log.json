@@ -1,17 +1,18 @@
 {
   "brief_normalization": {
-    "generated_at": "2025-11-04T10:50:09.367322+00:00",
+    "generated_at": "2025-01-01T00:00:00+00:00",
     "policy_id": "brief-default",
     "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
+    "mode": "dynamic",
     "outputs": {
-      "prepare_card": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/prepare_card.json",
-      "brief_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_log.json",
-      "brief_ai_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_ai_log.json",
-      "ai_generation_meta": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/ai_generation_meta.json",
-      "brief_story_outline": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_story_outline.json"
+      "prepare_card": "samples/prepare_single/prepare_card.json",
+      "brief_log": "samples/prepare_single/brief_log.json",
+      "brief_ai_log": "samples/prepare_single/brief_ai_log.json",
+      "ai_generation_meta": "samples/prepare_single/ai_generation_meta.json",
+      "brief_story_outline": "samples/prepare_single/brief_story_outline.json"
     },
     "statistics": {
-      "cards_total": 4,
+      "cards_total": 1,
       "approved": 0,
       "returned": 0
     }

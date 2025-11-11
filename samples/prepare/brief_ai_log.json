@@ -3,60 +3,52 @@
     "card_id": "intro",
     "prompt_template": "brief.default",
     "model": "mock-local",
-    "response_digest": "intro 現状と課題",
+    "prompt_fragment": "カバースライド \"intro 現状と課題\" のリード文を1行で生成してください。案件名: intro-outline はじめに。",
+    "response_digest": "{\"title\": \"intro 現状と課題\", \"body\": [\"カバースライド \\\"intro 現状と課題\\\" のリード文を1行で生成してください。\", \"テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run\"], \"note\": \"提案書ドラフト標準 ポリシーを使用して自動生成しました。\", \"intent\": \"cover\"}",
     "warnings": [
-      "llm_stub"
+      "body_line_length_truncated",
+      "body_line_length_truncated"
     ],
-    "tokens": {
-      "prompt": 0,
-      "completion": 0,
-      "total": 0
-    },
-    "generated_at": "2025-11-04T10:50:09.367822Z"
+    "tokens": {},
+    "generated_at": "2025-01-01T00:00:00Z"
   },
   {
     "card_id": "solution",
     "prompt_template": "brief.default",
     "model": "mock-local",
-    "response_digest": "solution 解決策",
+    "prompt_fragment": "スライド \"solution 解決策\" の要約を3行以内で作成してください。読者が最初に理解すべきポイントを強調してください。",
+    "response_digest": "{\"title\": \"solution 解決策\", \"body\": [\"スライド \\\"solution 解決策\\\" の要約を3行以内で作成してください。読者\", \"テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run\"], \"note\": \"提案書ドラフト標準 ポリシーを使用して自動生成しました。\", \"intent\": \"summary\"}",
     "warnings": [
-      "llm_stub"
+      "body_line_length_truncated",
+      "body_line_length_truncated"
     ],
-    "tokens": {
-      "prompt": 0,
-      "completion": 0,
-      "total": 0
-    },
-    "generated_at": "2025-11-04T10:50:09.367829Z"
+    "tokens": {},
+    "generated_at": "2025-01-01T00:00:00Z"
   },
   {
     "card_id": "impact",
     "prompt_template": "brief.default",
     "model": "mock-local",
-    "response_digest": "impact 期待効果",
+    "prompt_fragment": "次の情報をもとにスライド \"impact 期待効果\" の本文候補を箇条書きで3点まとめてください。案件名: intro-outline はじめに / クライアント: 。",
+    "response_digest": "{\"title\": \"impact 期待効果\", \"body\": [\"次の情報をもとにスライド \\\"impact 期待効果\\\" の本文候補を箇条書きで3点\", \"テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run\"], \"note\": \"提案書ドラフト標準 ポリシーを使用して自動生成しました。\", \"intent\": \"detail\"}",
     "warnings": [
-      "llm_stub"
+      "body_line_length_truncated",
+      "body_line_length_truncated"
     ],
-    "tokens": {
-      "prompt": 0,
-      "completion": 0,
-      "total": 0
-    },
-    "generated_at": "2025-11-04T10:50:09.367832Z"
+    "tokens": {},
+    "generated_at": "2025-01-01T00:00:00Z"
   },
   {
     "card_id": "next",
     "prompt_template": "brief.default",
     "model": "mock-local",
-    "response_digest": "next 次のアクション",
+    "prompt_fragment": "次の情報をもとにスライド \"next 次のアクション\" の本文候補を箇条書きで3点まとめてください。案件名: intro-outline はじめに / クライアント: 。",
+    "response_digest": "{\"title\": \"next 次のアクション\", \"body\": [\"次の情報をもとにスライド \\\"next 次のアクション\\\" の本文候補を箇条書きで3\", \"テスト用の簡易ブリーフ入力です。このテキストを工程2 CLI の `uv run\"], \"note\": \"提案書ドラフト標準 ポリシーを使用して自動生成しました。\", \"intent\": \"proposal\"}",
     "warnings": [
-      "llm_stub"
+      "body_line_length_truncated",
+      "body_line_length_truncated"
     ],
-    "tokens": {
-      "prompt": 0,
-      "completion": 0,
-      "total": 0
-    },
-    "generated_at": "2025-11-04T10:50:09.367833Z"
+    "tokens": {},
+    "generated_at": "2025-01-01T00:00:00Z"
   }
 ]
