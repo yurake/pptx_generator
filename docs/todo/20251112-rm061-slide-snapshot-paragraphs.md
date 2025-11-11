@@ -1,7 +1,7 @@
 ---
 目的: Analyzer の構造スナップショットに図形段落テキストを含め、実スライドのオブジェクト情報を把握できるようにする
 関連ブランチ: feat/rm061-usage-tags-governance
-関連Issue: 未作成
+関連Issue: #287
 roadmap_item: RM-061 usage_tags ガバナンス強化
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
