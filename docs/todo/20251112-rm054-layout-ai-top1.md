@@ -1,7 +1,7 @@
 ---
 目的: 工程3のレイアウトAI応答で得られるトップ候補を即採用できるようにし、従来のスコア合成処理を省略する
 関連ブランチ: feat/rm054-static-blueprint-plan
-関連Issue: 未作成
+関連Issue: #286
 roadmap_item: RM-054 静的テンプレ構成統合
 ---
 
