@@ -312,7 +312,7 @@ class TemplateExtractionResult:
     template_spec_path: Path
     branding_path: Path
     jobspec_path: Path
-    validation_result: LayoutValidationResult
+    validation_result: LayoutValidationResult | None
     output_dir: Path
 
 
@@ -336,6 +336,7 @@ def _run_template_extraction(
     template_ai_policy: Path | None,
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
+    skip_validation: bool = False,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -396,31 +397,33 @@ def _run_template_extraction(
     branding_path.write_text(branding_text, encoding="utf-8")
     logger.info("Saved branding payload to %s", branding_path.resolve())
 
-    logger.info("Starting layout validation for %s", template_path)
-    validation_options = LayoutValidationOptions(
-        template_path=template_path,
-        output_dir=output_dir,
-        template_ai_policy_path=ai_policy_path,
-        template_ai_policy_id=ai_policy_id,
-        disable_template_ai=effective_disable,
-    )
-    validation_suite = LayoutValidationSuite(validation_options)
-    validation_result = validation_suite.run()
-    logger.info(
-        "Layout validation finished: warnings=%d errors=%d",
-        validation_result.warnings_count,
-        validation_result.errors_count,
-    )
+    validation_result: LayoutValidationResult | None = None
+    if not skip_validation:
+        logger.info("Starting layout validation for %s", template_path)
+        validation_options = LayoutValidationOptions(
+            template_path=template_path,
+            output_dir=output_dir,
+            template_ai_policy_path=ai_policy_path,
+            template_ai_policy_id=ai_policy_id,
+            disable_template_ai=effective_disable,
+        )
+        validation_suite = LayoutValidationSuite(validation_options)
+        validation_result = validation_suite.run()
+        logger.info(
+            "Layout validation finished: warnings=%d errors=%d",
+            validation_result.warnings_count,
+            validation_result.errors_count,
+        )
 
-    layouts_relative: str | None = None
-    try:
-        layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
-    except ValueError:
-        layouts_relative = str(validation_result.layouts_path)
+        layouts_relative: str | None = None
+        try:
+            layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
+        except ValueError:
+            layouts_relative = str(validation_result.layouts_path)
 
-    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
-        update={"layouts_path": layouts_relative}
-    )
+        jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
+            update={"layouts_path": layouts_relative}
+        )
 
     jobspec_path = output_dir / "jobspec.json"
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
@@ -452,14 +455,17 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
     click.echo(f"抽出された図形・アンカー数: {total_anchors}")
     click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
 
-    click.echo(f"Layouts: {validation_result.layouts_path}")
-    click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
-    if validation_result.diff_report_path is not None:
-        click.echo(f"Diff: {validation_result.diff_report_path}")
-    click.echo(
-        "検出結果: warnings=%d, errors=%d"
-        % (validation_result.warnings_count, validation_result.errors_count)
-    )
+    if validation_result is not None:
+        click.echo(f"Layouts: {validation_result.layouts_path}")
+        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
+        if validation_result.diff_report_path is not None:
+            click.echo(f"Diff: {validation_result.diff_report_path}")
+        click.echo(
+            "検出結果: warnings=%d, errors=%d"
+            % (validation_result.warnings_count, validation_result.errors_count)
+        )
+    else:
+        click.echo("検証をスキップしました (--force)")
 
     if template_spec.warnings:
         click.echo(f"警告: {len(template_spec.warnings)} 件")
@@ -2326,6 +2332,13 @@ def mapping(  # noqa: PLR0913
     default=False,
     help="生成AIによる usage_tags 推定を無効化する",
 )
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="レイアウト検証をスキップして強制的にテンプレ工程を継続する（緊急時のみ使用）",
+)
 def template(  # noqa: PLR0913
     template_path: Path,
     output: Path,
@@ -2344,6 +2357,7 @@ def template(  # noqa: PLR0913
     template_ai_policy: Path | None,
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
+    force: bool,
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
     _log_current_llm_provider("template")
@@ -2357,6 +2371,7 @@ def template(  # noqa: PLR0913
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,
+            skip_validation=force,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2372,9 +2387,15 @@ def template(  # noqa: PLR0913
     _echo_template_extraction_result(extraction_result)
 
     validation_result = extraction_result.validation_result
-    if validation_result.errors_count > 0:
+    if validation_result is not None and validation_result.errors_count > 0:
         click.echo(
             "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=6)
+    if validation_result is None and not force:
+        click.echo(
+            "レイアウト検証を実施できませんでした。--force を使用しない場合は出力を確認してください。",
             err=True,
         )
         raise click.exceptions.Exit(code=6)
@@ -2515,7 +2536,7 @@ def tpl_extract(
     else:
         _echo_template_extraction_result(extraction_result)
         validation_result = extraction_result.validation_result
-        if validation_result.errors_count > 0:
+        if validation_result is not None and validation_result.errors_count > 0:
             click.echo(
                 "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
                 err=True,
