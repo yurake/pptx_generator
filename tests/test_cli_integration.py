@@ -166,6 +166,32 @@ def test_cli_template_with_release(tmp_path: Path) -> None:
     assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in result.output
 
 
+def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+
+    def _fail_run(self):  # noqa: D401
+        raise AssertionError("validation should be skipped when --force is specified")
+
+    monkeypatch.setattr(LayoutValidationSuite, "run", _fail_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(SAMPLE_TEMPLATE),
+            "--output",
+            str(extract_dir),
+            "--force",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (extract_dir / "template_spec.json").exists()
+    assert "検証をスキップしました" in result.output
+
+
 def _prepare_generate_ready(
     runner: CliRunner,
     spec_path: Path,
