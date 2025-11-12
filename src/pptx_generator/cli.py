@@ -15,6 +15,8 @@ from typing import Any, Optional
 import click
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
+from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 
 from .branding_extractor import (BrandingExtractionError,
                                  extract_branding_config)
@@ -39,11 +41,12 @@ from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, PipelineStep,
                        PolisherError, PolisherOptions, PolisherStep,
-                       RefinerOptions, RenderingAuditOptions,
-                       RenderingAuditStep, RenderingOptions,
-                       SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
+                      RefinerOptions, RenderingAuditOptions,
+                      RenderingAuditStep, RenderingOptions,
+                      SimpleAnalyzerStep, SimpleRefinerStep,
+                      SimpleRendererStep, SpecValidatorStep,
+                      TemplateExtractor, TemplateExtractorOptions)
+from .pipeline.analyzer import SlideSnapshot
 from .spec_loader import load_jobspec_from_path
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
@@ -314,6 +317,7 @@ class TemplateExtractionResult:
     jobspec_path: Path
     validation_result: LayoutValidationResult | None
     output_dir: Path
+    slide_snapshot_path: Path | None
 
 
 @dataclass(slots=True)
@@ -337,6 +341,7 @@ def _run_template_extraction(
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
     skip_validation: bool = False,
+    emit_slide_snapshot: bool = False,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -429,6 +434,13 @@ def _run_template_extraction(
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
     logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
 
+    slide_snapshot_path: Path | None = None
+    if emit_slide_snapshot:
+        slide_snapshot_path = _generate_slide_snapshot(
+            template_path=template_path,
+            output_dir=output_dir,
+        )
+
     return TemplateExtractionResult(
         template_spec=template_spec,
         jobspec_scaffold=jobspec_scaffold,
@@ -437,7 +449,95 @@ def _run_template_extraction(
         jobspec_path=jobspec_path,
         validation_result=validation_result,
         output_dir=output_dir,
+        slide_snapshot_path=slide_snapshot_path,
     )
+
+
+def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path | None:
+    logger.info("Generating slide snapshot for %s", template_path)
+    try:
+        presentation = Presentation(template_path)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("スライドスナップショットの生成に失敗しました: %s", exc)
+        return None
+
+    slides_payload: list[dict[str, Any]] = []
+    for index, slide in enumerate(presentation.slides):
+        snapshot = SlideSnapshot.from_slide(slide, index)
+        slides_payload.append(_serialize_slide_snapshot(slide, snapshot))
+
+    if not slides_payload:
+        logger.info("スライドが存在しないためスナップショットを出力しません: %s", template_path)
+        return None
+
+    payload = {
+        "template_path": str(template_path),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "slides": slides_payload,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / "slide_snapshot.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info("Saved slide snapshot to %s", path.resolve())
+    return path
+
+
+def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
+    layout_name = getattr(getattr(slide, "slide_layout", None), "name", None)
+    slide_identifier = getattr(slide, "slide_id", None)
+
+    shapes_payload: list[dict[str, Any]] = []
+    for shape in snapshot.shapes:
+        paragraphs = [
+            {
+                "index": paragraph.paragraph_index,
+                "text": paragraph.text,
+                "level": paragraph.level,
+                "font_size_pt": paragraph.font_size_pt,
+                "color_hex": paragraph.color_hex,
+            }
+            for paragraph in shape.paragraphs
+        ]
+        shapes_payload.append(
+            {
+                "shape_id": shape.shape_id,
+                "name": shape.name or "",
+                "shape_type": _shape_type_name(shape.shape_type),
+                "left_in": shape.left_in,
+                "top_in": shape.top_in,
+                "width_in": shape.width_in,
+                "height_in": shape.height_in,
+                "is_placeholder": shape.is_placeholder,
+                "placeholder_type": _placeholder_type_name(shape.placeholder_type),
+                "paragraphs": paragraphs,
+            }
+        )
+
+    return {
+        "index": snapshot.index,
+        "slide_id": slide_identifier,
+        "layout": layout_name,
+        "shapes": shapes_payload,
+    }
+
+
+def _shape_type_name(shape_type: int | None) -> str:
+    if shape_type is None:
+        return "unknown"
+    try:
+        return MSO_SHAPE_TYPE(shape_type).name
+    except ValueError:
+        return str(shape_type)
+
+
+def _placeholder_type_name(placeholder_type: int | None) -> str | None:
+    if placeholder_type is None:
+        return None
+    try:
+        return PP_PLACEHOLDER(placeholder_type).name
+    except ValueError:
+        return str(placeholder_type)
 
 
 def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
@@ -466,6 +566,9 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
         )
     else:
         click.echo("検証をスキップしました (--force)")
+
+    if result.slide_snapshot_path is not None:
+        click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")
 
     if template_spec.warnings:
         click.echo(f"警告: {len(template_spec.warnings)} 件")
@@ -2333,6 +2436,12 @@ def mapping(  # noqa: PLR0913
     help="生成AIによる usage_tags 推定を無効化する",
 )
 @click.option(
+    "--slide",
+    is_flag=True,
+    default=False,
+    help="実スライドの図形・段落情報を slide_snapshot.json として出力する",
+)
+@click.option(
     "--force",
     "-f",
     is_flag=True,
@@ -2357,6 +2466,7 @@ def template(  # noqa: PLR0913
     template_ai_policy: Path | None,
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
+    slide: bool,
     force: bool,
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
@@ -2372,6 +2482,7 @@ def template(  # noqa: PLR0913
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,
             skip_validation=force,
+            emit_slide_snapshot=slide,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
