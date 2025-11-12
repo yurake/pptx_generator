@@ -45,6 +45,18 @@ def _collect_paragraph_texts(slide) -> list[str]:
     return texts
 
 
+def _create_template_with_slide(path: Path) -> None:
+    presentation = Presentation()
+    slide_layout = presentation.slide_layouts[0]
+    slide = presentation.slides.add_slide(slide_layout)
+    if slide.shapes.title:
+        slide.shapes.title.text = "Snapshot Title"
+    body_placeholder = slide.placeholders[1] if len(slide.placeholders) > 1 else None
+    if body_placeholder is not None and getattr(body_placeholder, "text_frame", None):
+        body_placeholder.text = "Snapshot Body"
+    presentation.save(path)
+
+
 def _prepare_brief_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
     brief_dir = temp_dir / "prepare"
     result = runner.invoke(
@@ -169,6 +181,8 @@ def test_cli_template_with_release(tmp_path: Path) -> None:
 def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> None:
     runner = CliRunner()
     extract_dir = tmp_path / "extract"
+    template_path = tmp_path / "template_with_slide.pptx"
+    _create_template_with_slide(template_path)
 
     def _fail_run(self):  # noqa: D401
         raise AssertionError("validation should be skipped when --force is specified")
@@ -179,9 +193,10 @@ def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> Non
         app,
         [
             "template",
-            str(SAMPLE_TEMPLATE),
+            str(template_path),
             "--output",
             str(extract_dir),
+            "--slide",
             "--force",
         ],
         catch_exceptions=False,
@@ -190,6 +205,43 @@ def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> Non
     assert result.exit_code == 0, result.output
     assert (extract_dir / "template_spec.json").exists()
     assert "検証をスキップしました" in result.output
+    snapshot_path = extract_dir / "slide_snapshot.json"
+    assert snapshot_path.exists(), "--slide 指定時にスナップショットが出力されていません"
+
+
+def test_cli_template_emits_slide_snapshot(tmp_path: Path) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+    template_path = tmp_path / "template_with_slide.pptx"
+    _create_template_with_slide(template_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(template_path),
+            "--output",
+            str(extract_dir),
+            "--slide",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    snapshot_path = extract_dir / "slide_snapshot.json"
+    assert snapshot_path.exists(), result.output
+
+    payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert payload["slides"], "スライドスナップショットが空です"
+    first_slide = payload["slides"][0]
+    assert "shapes" in first_slide and first_slide["shapes"], "図形情報が存在しません"
+    paragraph_texts = [
+        paragraph["text"]
+        for shape in first_slide["shapes"]
+        for paragraph in shape.get("paragraphs", [])
+        if paragraph.get("text")
+    ]
+    assert paragraph_texts, "段落テキストが取得できていません"
 
 
 def _prepare_generate_ready(
