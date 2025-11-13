@@ -26,6 +26,7 @@
 - `docs/todo/`: ToDo 管理。テンプレートに沿った更新ルールは `docs/todo/README.md` を参照。
 - `config/`: 章テンプレ辞書（`config/chapter_templates/`）や差戻し理由テンプレ（`config/return_reasons.json`）など、CLI で参照する設定を配置。更新時は対応する requirements/design/runbook へ根拠を記録する。
   - `config/usage_tags.json` を改訂する場合は Template AI / layout AI の語彙整合を確認し、`docs/requirements/stages/stage-01-template-pipeline.md` と `docs/design/stages/stage-01-template-pipeline.md` の記述を更新する。環境変数で `mock` 以外を利用する手順を README と runbook に反映すること。
+- `assets/`: ロゴ・図版など共有資産の保管場所。更新フローと注意事項は `assets/README.md` を参照し、機微情報が混入していないかを必ず確認する。
 
 ## 更新手順
 1. 追加・改訂する資料のカテゴリを決め、該当ディレクトリに Markdown ファイルを作成・編集する。
