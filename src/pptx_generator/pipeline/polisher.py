@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from pptx import Presentation
+from pptx.util import Inches, Pt
+
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -59,6 +62,9 @@ class PolisherStep:
             msg = f"PPTX ファイルが存在しません: {pptx_path}"
             raise PolisherError(msg)
 
+        # AI生成フッタ付与処理
+        footer_result = self._add_ai_footer_if_needed(pptx_path, context)
+
         command = self._build_command(pptx_path)
         cwd = str(self.options.working_dir) if self.options.working_dir else None
 
@@ -76,8 +82,10 @@ class PolisherStep:
         except subprocess.TimeoutExpired as exc:  # pragma: no cover - 異常系
             raise PolisherError("Polisher の実行がタイムアウトしました") from exc
         except subprocess.CalledProcessError as exc:  # pragma: no cover - 異常系
-            stdout = exc.stdout.decode("utf-8", errors="replace") if exc.stdout else ""
-            stderr = exc.stderr.decode("utf-8", errors="replace") if exc.stderr else ""
+            stdout = exc.stdout.decode(
+                "utf-8", errors="replace") if exc.stdout else ""
+            stderr = exc.stderr.decode(
+                "utf-8", errors="replace") if exc.stderr else ""
             msg = (
                 f"Polisher の実行に失敗しました (exit={exc.returncode}).\n"
                 f"stdout:\n{stdout}\n"
@@ -93,10 +101,13 @@ class PolisherStep:
             "command": command,
             "elapsed_sec": elapsed,
             "returncode": completed.returncode,
+            "ai_footer": footer_result,
         }
 
-        stdout_text = completed.stdout.decode("utf-8", errors="replace") if completed.stdout else ""
-        stderr_text = completed.stderr.decode("utf-8", errors="replace") if completed.stderr else ""
+        stdout_text = completed.stdout.decode(
+            "utf-8", errors="replace") if completed.stdout else ""
+        stderr_text = completed.stderr.decode(
+            "utf-8", errors="replace") if completed.stderr else ""
 
         if stdout_text:
             metadata["stdout"] = stdout_text
@@ -118,7 +129,8 @@ class PolisherStep:
     def _resolve_executable(self) -> list[str]:
         candidate = self.options.executable
         if candidate is None:
-            env_value = os.environ.get("POLISHER_EXECUTABLE") or os.environ.get("POLISHER_PATH")
+            env_value = os.environ.get(
+                "POLISHER_EXECUTABLE") or os.environ.get("POLISHER_PATH")
             if env_value:
                 candidate = Path(env_value)
         if candidate is None:
@@ -179,3 +191,135 @@ class PolisherStep:
         if isinstance(data, dict):
             return data
         return None
+
+    def _add_ai_footer_if_needed(
+        self, pptx_path: Path, context: PipelineContext
+    ) -> dict[str, Any]:
+        """AI生成コンテンツにフッタを付与する。
+
+        Args:
+            pptx_path: PPTX ファイルのパス
+            context: パイプラインコンテキスト
+
+        Returns:
+            フッタ付与結果の辞書
+        """
+        result: dict[str, Any] = {
+            "enabled": False,
+            "slides_modified": 0,
+            "error": None,
+        }
+
+        # 設定ファイル確認
+        if not self.options.rules_path or not Path(self.options.rules_path).exists():
+            logger.debug("ルール設定ファイルが存在しないため、AIフッタ付与をスキップします")
+            return result
+
+        try:
+            with Path(self.options.rules_path).open(encoding="utf-8") as f:
+                rules = json.load(f)
+
+            footer_config = rules.get("ai_footer", {})
+            if not footer_config.get("enabled", False):
+                logger.debug("AIフッタ付与が無効化されています")
+                return result
+
+            result["enabled"] = True
+
+            # AI生成メタデータ確認
+            workdir = context.workdir
+            meta_path = workdir / "ai_generation_meta.json"
+            if not meta_path.exists():
+                logger.debug("AI生成メタデータが存在しないため、フッタ付与をスキップします")
+                return result
+
+            with meta_path.open(encoding="utf-8") as f:
+                ai_meta = json.load(f)
+
+            # AI生成スライドIDを抽出
+            ai_slide_ids = set()
+            for card in ai_meta.get("cards", []):
+                card_id = card.get("card_id")
+                if card_id:
+                    ai_slide_ids.add(card_id)
+
+            if not ai_slide_ids:
+                logger.debug("AI生成スライドが見つかりませんでした")
+                return result
+
+            # PPTXファイルを開いてフッタを追加
+            prs = Presentation(str(pptx_path))
+
+            footer_text = footer_config.get("text", "※本ページはAI生成コンテンツを含みます")
+            font_size_pt = footer_config.get("font_size_pt", 8.0)
+            color = footer_config.get("color", "#666666")
+            margin_in = footer_config.get("margin_in", 0.25)
+
+            slides_modified = 0
+            for slide in prs.slides:
+                # スライドIDをノート等から取得できないため、
+                # 仮実装として全スライドにフッタを付与
+                # (実際の実装では、slide.name や context から slide_id をマッピング)
+                self._add_footer_to_slide(
+                    slide, footer_text, font_size_pt, color, margin_in, prs
+                )
+                slides_modified += 1
+
+            # 変更を保存
+            prs.save(str(pptx_path))
+            result["slides_modified"] = slides_modified
+            logger.info(f"AIフッタを {slides_modified} スライドに追加しました")
+
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"AIフッタ付与中にエラーが発生しました: {e}")
+            result["error"] = str(e)
+
+        return result
+
+    @staticmethod
+    def _add_footer_to_slide(
+        slide: Any,
+        text: str,
+        font_size_pt: float,
+        color: str,
+        margin_in: float,
+        prs: Any,
+    ) -> None:
+        """スライドにフッタテキストボックスを追加する。
+
+        Args:
+            slide: スライドオブジェクト
+            text: フッタテキスト
+            font_size_pt: フォントサイズ（ポイント）
+            color: テキスト色（16進数）
+            margin_in: 余白（インチ）
+            prs: プレゼンテーションオブジェクト
+        """
+        # スライドサイズを取得
+        slide_width = prs.slide_width
+        slide_height = prs.slide_height
+
+        # テキストボックスのサイズと位置を計算
+        textbox_width = Inches(3.0)
+        textbox_height = Inches(0.3)
+        left = slide_width - textbox_width - Inches(margin_in)
+        top = slide_height - textbox_height - Inches(margin_in)
+
+        # テキストボックスを追加
+        textbox = slide.shapes.add_textbox(
+            left, top, textbox_width, textbox_height)
+        text_frame = textbox.text_frame
+        text_frame.text = text
+
+        # フォント設定
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(font_size_pt)
+
+        # 色設定（16進数をRGBに変換）
+        if color.startswith("#"):
+            color_hex = color[1:]
+            r = int(color_hex[0:2], 16)
+            g = int(color_hex[2:4], 16)
+            b = int(color_hex[4:6], 16)
+            from pptx.dml.color import RGBColor
+            paragraph.font.color.rgb = RGBColor(r, g, b)
