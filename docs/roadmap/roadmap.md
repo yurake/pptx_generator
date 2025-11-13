@@ -63,7 +63,7 @@ flowchart TB
         direction TB
         ST4_ANCHOR(( ))
         RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(完了)"]
-        RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(未着手)"]
+        RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(完了)"]
     end
 
     style GOV_ANCHOR fill:transparent,stroke:transparent
@@ -662,7 +662,7 @@ flowchart TB
 - 参照ドキュメント: 作成予定
 - 参照 ToDo: 作成予定
 - 関連Issue: [#271](https://github.com/yurake/pptx_generator/issues/271)
-- 状況: 未着手（2025-11-05 追加）
+- 状況: 完了（2025-11-13 更新）
 - 期待成果: PPTX/ PDF 双方での文言表示統一、ブランド別テンプレとの整合確認、生成プロセスへの設定パラメータ追加方針整理。
 - 次アクション: 文言挿入位置とテンプレ依存ルールの要件定義を行い、CLI オプションと既存レンダリングテストへの反映手順を策定する。
 
