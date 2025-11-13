@@ -14,7 +14,7 @@ from .policy import LayoutAIPolicy, LayoutAIPolicyError
 logger = logging.getLogger(__name__)
 
 _LAYOUT_LLM_LOGGER = logging.getLogger("pptx_generator.layout_ai.llm")
-DEFAULT_MAX_TOKENS = 512
+DEFAULT_MAX_TOKENS = 32000
 
 
 @dataclass(slots=True)
@@ -54,24 +54,23 @@ class LayoutAIResponseFormatError(RuntimeError):
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
     provider_env = os.getenv("PPTX_LLM_PROVIDER")
-    base_provider = policy.provider.strip().lower() if policy.provider else "mock"
-    provider = provider_env.strip().lower() if provider_env else base_provider
+    provider = provider_env.strip().lower() if provider_env else "mock"
     logger.info(
         "layout AI provider resolved: env=%s policy=%s -> %s",
         provider_env or "",
-        base_provider,
+        "env-default",
         provider,
     )
     if provider in {"mock", ""}:
         return MockLayoutAIClient()
     if provider in {"openai", "openai-api"}:
-        return OpenAIChatLayoutClient.from_env(policy)
+        return OpenAIChatLayoutClient.from_env()
     if provider in {"azure", "azure-openai"}:
-        return AzureOpenAIChatLayoutClient.from_env(policy)
+        return AzureOpenAIChatLayoutClient.from_env()
     if provider in {"claude", "anthropic"}:
-        return AnthropicClaudeLayoutClient.from_env(policy)
+        return AnthropicClaudeLayoutClient.from_env()
     if provider in {"aws-claude", "bedrock"}:
-        return AwsClaudeLayoutClient.from_env(policy)
+        return AwsClaudeLayoutClient.from_env()
     raise LayoutAIClientConfigurationError(f"未知のレイアウトAIプロバイダが指定されました: {provider}")
 
 
@@ -87,13 +86,13 @@ class MockLayoutAIClient:
             weights.append((layout_id, score))
         reasons = {layout: "mock-recommended" for layout, _ in weights}
         payload = {
-            "model": request.policy.model,
+            "model": "mock-layout",
             "recommended": [{"layout_id": layout, "score": score} for layout, score in weights],
             "reasons": reasons,
         }
         raw_text = json.dumps(payload, ensure_ascii=False)
         return LayoutAIResponse(
-            model=request.policy.model,
+            model="mock-layout",
             recommended=weights,
             reasons=reasons,
             raw_text=raw_text,
@@ -103,14 +102,15 @@ class MockLayoutAIClient:
 class OpenAIChatLayoutClient:
     """OpenAI Chat completions を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, temperature: float, max_tokens: int) -> None:
+    def __init__(self, client, *, model: str, temperature: float, max_tokens: int, fallback_model: str | None = None) -> None:
         self._client = client
         self._model = model
+        self._fallback_model = fallback_model
         self._temperature = temperature
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: LayoutAIPolicy) -> "OpenAIChatLayoutClient":
+    def from_env(cls) -> "OpenAIChatLayoutClient":
         try:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover
@@ -122,13 +122,12 @@ class OpenAIChatLayoutClient:
             raise LayoutAIClientConfigurationError("OPENAI_API_KEY が設定されていません")
 
         base_url = os.getenv("OPENAI_BASE_URL")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(policy.max_tokens or DEFAULT_MAX_TOKENS)))
+        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
+        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        model_name = policy.model or os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        if model_name in {"mock", "mock-local", "mock-layout"}:
-            model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
+        model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+        fallback_model = os.getenv("OPENAI_FALLBACK_MODEL")
+        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens, fallback_model=fallback_model)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
@@ -147,10 +146,10 @@ class OpenAIChatLayoutClient:
 
         candidate_models: list[str] = []
         for value in (
-            request.policy.model,
             os.getenv("OPENAI_MODEL"),
             self._model,
             os.getenv("OPENAI_FALLBACK_MODEL"),
+            self._fallback_model,
             "gpt-4o-mini",
             "gpt-4o-mini-2024-07-18",
         ):
@@ -280,7 +279,7 @@ class AzureOpenAIChatLayoutClient:
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: LayoutAIPolicy) -> "AzureOpenAIChatLayoutClient":
+    def from_env(cls) -> "AzureOpenAIChatLayoutClient":
         try:
             from openai import AzureOpenAI
         except ImportError as exc:  # pragma: no cover - optional dependency
@@ -289,16 +288,14 @@ class AzureOpenAIChatLayoutClient:
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = policy.model or os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if deployment in {"mock", "mock-local", "mock-layout", None}:
-            deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
         if not endpoint or not api_key or not deployment:
             raise LayoutAIClientConfigurationError(
                 "AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT を設定してください"
             )
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(policy.max_tokens or DEFAULT_MAX_TOKENS)))
+        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.0"))
+        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         endpoint = endpoint.rstrip("/")
         lowered = endpoint.lower()
         for suffix in ("/openai/responses", "/openai"):
@@ -317,9 +314,7 @@ class AzureOpenAIChatLayoutClient:
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
-        request_model = request.policy.model or self._deployment
-        if request_model in {"mock", "mock-local", "mock-layout"}:
-            request_model = self._deployment
+        request_model = self._deployment
         kwargs: dict[str, object] = {
             "model": request_model,
             "input": messages,
@@ -364,13 +359,14 @@ class AzureOpenAIChatLayoutClient:
 class AnthropicClaudeLayoutClient:
     """Anthropic Claude API を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int, fallback_model: str | None = None) -> None:
         self._client = client
         self._model = model
+        self._fallback_model = fallback_model
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: LayoutAIPolicy) -> "AnthropicClaudeLayoutClient":
+    def from_env(cls) -> "AnthropicClaudeLayoutClient":
         try:
             import anthropic
         except ImportError as exc:  # pragma: no cover - optional dependency
@@ -380,12 +376,11 @@ class AnthropicClaudeLayoutClient:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise LayoutAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
-        model_id = policy.model or os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        if model_id in {"mock", "mock-local", "mock-layout"}:
-            model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or DEFAULT_MAX_TOKENS)))
+        model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
+        fallback_model = os.getenv("ANTHROPIC_FALLBACK_MODEL")
+        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = anthropic.Anthropic(api_key=api_key)
-        return cls(client, model=model_id, max_tokens=max_tokens)
+        return cls(client, model=model_id, max_tokens=max_tokens, fallback_model=fallback_model)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         messages = [
@@ -401,10 +396,10 @@ class AnthropicClaudeLayoutClient:
         ]
         candidate_models: list[str] = []
         for value in (
-            request.policy.model,
             os.getenv("ANTHROPIC_MODEL"),
             self._model,
             os.getenv("ANTHROPIC_FALLBACK_MODEL"),
+            self._fallback_model,
             "claude-3-haiku-20240307",
         ):
             if not value:
@@ -415,7 +410,7 @@ class AnthropicClaudeLayoutClient:
             if normalized not in candidate_models:
                 candidate_models.append(normalized)
 
-        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", str(request.policy.temperature or 0.0)))
+        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
         last_error: Exception | None = None
         for candidate in candidate_models:
             try:
@@ -465,7 +460,7 @@ class AwsClaudeLayoutClient:
         self._inference_profile_arn = inference_profile_arn
 
     @classmethod
-    def from_env(cls, policy: LayoutAIPolicy) -> "AwsClaudeLayoutClient":
+    def from_env(cls) -> "AwsClaudeLayoutClient":
         try:
             import boto3
             from botocore.exceptions import NoCredentialsError
@@ -473,9 +468,7 @@ class AwsClaudeLayoutClient:
             msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
             raise LayoutAIClientConfigurationError(msg) from exc
 
-        model_id = policy.model or os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
-        if model_id in {"mock", "mock-local", "mock-layout"}:
-            model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+        model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
         inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
         region = os.getenv("AWS_REGION")
         profile = os.getenv("AWS_PROFILE")
@@ -502,14 +495,14 @@ class AwsClaudeLayoutClient:
                 "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
             ) from exc
 
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(policy.max_tokens or DEFAULT_MAX_TOKENS)))
+        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         return cls(runtime_client, model_id=model_id, max_tokens=max_tokens, inference_profile_arn=inference_profile_arn)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", str(request.policy.temperature or 0.0))),
+            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.0")),
             "system": _build_system_prompt(request),
             "messages": [
                 {
@@ -523,9 +516,7 @@ class AwsClaudeLayoutClient:
                 }
             ],
         }
-        model_id = request.policy.model or self._model_id
-        if model_id in {"mock", "mock-local", "mock-layout"}:
-            model_id = self._model_id
+        model_id = self._model_id
         invoke_kwargs: dict[str, object] = {
             "modelId": model_id,
             "body": json.dumps(payload),
