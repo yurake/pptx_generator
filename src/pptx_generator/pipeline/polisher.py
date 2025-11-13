@@ -45,6 +45,15 @@ class PolisherStep:
         self.options = options or PolisherOptions()
 
     def run(self, context: PipelineContext) -> None:
+        pptx_reference = context.require_artifact("pptx_path")
+        pptx_path = Path(str(pptx_reference))
+        if not pptx_path.exists():  # pragma: no cover - 異常系
+            msg = f"PPTX ファイルが存在しません: {pptx_path}"
+            raise PolisherError(msg)
+
+        # AI生成フッタ付与処理（Polisher有効/無効に関わらず実行）
+        footer_result = self._add_ai_footer_if_needed(pptx_path, context)
+
         if not self.options.enabled:
             logger.debug("Polisher は無効化されています")
             context.add_artifact(
@@ -52,18 +61,10 @@ class PolisherStep:
                 {
                     "status": "disabled",
                     "enabled": False,
+                    "ai_footer": footer_result,
                 },
             )
             return
-
-        pptx_reference = context.require_artifact("pptx_path")
-        pptx_path = Path(str(pptx_reference))
-        if not pptx_path.exists():  # pragma: no cover - 異常系
-            msg = f"PPTX ファイルが存在しません: {pptx_path}"
-            raise PolisherError(msg)
-
-        # AI生成フッタ付与処理
-        footer_result = self._add_ai_footer_if_needed(pptx_path, context)
 
         command = self._build_command(pptx_path)
         cwd = str(self.options.working_dir) if self.options.working_dir else None
