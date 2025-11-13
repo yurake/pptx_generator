@@ -55,7 +55,7 @@ flowchart TB
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM054["RM-054<br/>静的テンプレ構成統合<br/>(未着手)"]
         RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
-        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(進行中)"]
+        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(完了)"]
         RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
     end
 
@@ -742,8 +742,8 @@ flowchart TB
 - 対象工程: 1（テンプレ）→3（マッピング）
 - ゴール: Stage1 で usage_tags を生成 AI に統一し、Stage3 推薦でも同じ canonical 語彙を参照してレイアウト意図と `intent`/`type_hint` の整合を高める。
 - 参照ドキュメント: [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
-- 参照 ToDo: [docs/todo/20251109-rm061-usage-tags-governance.md](../todo/20251109-rm061-usage-tags-governance.md)
-- 状況: 進行中（2025-11-10 更新）
+- 参照 ToDo: [docs/todo/archive/20251109-rm061-usage-tags-governance.md](../todo/archive/20251109-rm061-usage-tags-governance.md)
+- 状況: 完了（2025-11-13 更新）
 - 期待成果:
   - テンプレ抽出コマンドで Template AI を既定起動し、`config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
   - `diagnostics.json.template_ai` と CLI ログで推論状況・未知語・フォールバックを可視化し、監査できるようにする。
