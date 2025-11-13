@@ -2,5 +2,13 @@
   "min_font_size_pt": 18.0,
   "default_font_color": "#333333",
   "default_font_name": null,
-  "normalize_paragraph_spacing": false
+  "normalize_paragraph_spacing": false,
+  "ai_footer": {
+    "enabled": true,
+    "text": "※本ページはAI生成コンテンツを含みます",
+    "font_size_pt": 8.0,
+    "color": "#666666",
+    "position": "bottom_right",
+    "margin_in": 0.25
+  }
 }
