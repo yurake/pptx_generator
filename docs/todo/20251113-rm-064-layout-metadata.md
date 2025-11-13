@@ -1,7 +1,7 @@
 ---
 目的: レイアウト候補メタ情報を拡充し、LLM スコアリングの精度と説明性を高める
 関連ブランチ: feat/rm-064-layout-metadata
-関連Issue: 未作成
+関連Issue: #292
 roadmap_item: RM-064 レイアウト候補メタ情報拡充
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
   - メモ: 
