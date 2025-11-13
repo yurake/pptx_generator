@@ -8,19 +8,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from pptx_generator.cli import app
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.models import JobSpec, Slide, TemplateRelease, TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec
+from pptx_generator.cli import app
+from pptx_generator.layout_validation import (LayoutValidationResult,
+                                              LayoutValidationSuite)
+from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
+                                   TemplateReleaseGoldenRun,
+                                   TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
-from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 BRIEF_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -79,7 +82,8 @@ def _brief_args(paths: dict[str, Path]) -> list[str]:
 
 def _create_matching_jobspec(root: Path, brief_paths: dict[str, Path], *, filename: str = "matching_jobspec.json") -> Path:
     base_spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
-    cards_payload = json.loads(brief_paths["cards"].read_text(encoding="utf-8"))
+    cards_payload = json.loads(
+        brief_paths["cards"].read_text(encoding="utf-8"))
     cards = cards_payload.get("cards", [])
 
     slides: list[Slide] = []
@@ -260,13 +264,15 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     assert mapping_info is not None
     assert mapping_info.get("generate_ready_path") == str(generate_ready_path)
 
-    cards_payload = json.loads(brief_paths["cards"].read_text(encoding="utf-8"))
+    cards_payload = json.loads(
+        brief_paths["cards"].read_text(encoding="utf-8"))
     cards = cards_payload["cards"]
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(cards) == len(spec.slides)
     for card, slide in zip(cards, presentation.slides, strict=False):
-        expected_title = (card.get("message") or card.get("chapter") or card.get("card_id") or "").strip()
+        expected_title = (card.get("message") or card.get(
+            "chapter") or card.get("card_id") or "").strip()
         if not expected_title:
             continue
         title_shape = slide.shapes.title
@@ -303,7 +309,8 @@ def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
     cards_payload = json.loads(cards_path.read_text(encoding="utf-8"))
     assert len(cards_payload["cards"]) >= 1
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
-    assert audit_payload["brief_normalization"]["statistics"]["cards_total"] == len(cards_payload["cards"])
+    assert audit_payload["brief_normalization"]["statistics"]["cards_total"] == len(
+        cards_payload["cards"])
 
 
 def test_cli_mapping_then_gen(tmp_path: Path) -> None:
@@ -334,7 +341,8 @@ def test_cli_mapping_then_gen(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     artifacts = audit_payload.get("artifacts", {})
     assert artifacts.get("generate_ready") == str(ready_path)
 
@@ -414,7 +422,8 @@ def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
     payload = json.loads(ready_path.read_text(encoding="utf-8"))
     payload["meta"].pop("template_path", None)
     stripped_ready = mapping_dir / "generate_ready_no_template.json"
-    stripped_ready.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    stripped_ready.write_text(json.dumps(
+        payload, ensure_ascii=False), encoding="utf-8")
 
     result = runner.invoke(
         app,
@@ -500,7 +509,8 @@ def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "success"
@@ -584,7 +594,8 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
@@ -595,7 +606,8 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-polisher"
     rules_path = tmp_path / "polisher-rules.json"
-    rules_path.write_text(json.dumps({"min_font_size_pt": 18.0}), encoding="utf-8")
+    rules_path.write_text(json.dumps(
+        {"min_font_size_pt": 18.0}), encoding="utf-8")
 
     script_path = tmp_path / "polisher_stub.py"
     script_path.write_text(
@@ -656,7 +668,8 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "success"
@@ -710,7 +723,8 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "file"
@@ -732,7 +746,8 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
         brief_paths=brief_paths,
     )
 
-    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (_ for _ in ()).throw(BrandingExtractionError("boom")))
+    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (
+        _ for _ in ()).throw(BrandingExtractionError("boom")))
 
     result = runner.invoke(
         app,
@@ -746,7 +761,8 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     source_info = branding_info.get("source", {})
@@ -792,3 +808,113 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
             catch_exceptions=False,
         )
         assert result.exit_code == 0
+
+
+def test_cli_gen_with_ai_footer(tmp_path: Path) -> None:
+    """AI フッタ付与機能のエンドツーエンド統合テスト。"""
+    mapping_dir = tmp_path / "mapping"
+    draft_dir = tmp_path / "draft"
+    output_dir = tmp_path / "gen-ai-footer"
+    rules_path = tmp_path / "polisher-rules.json"
+
+    # AIフッタ有効化ルールを作成
+    rules_path.write_text(
+        json.dumps({
+            "min_font_size_pt": 18.0,
+            "ai_footer": {
+                "enabled": True,
+                "text": "※本ページはAI生成コンテンツを含みます",
+                "font_size_pt": 8.0,
+                "color": "#666666",
+                "position": "bottom_right",
+                "margin_in": 0.25
+            }
+        }),
+        encoding="utf-8"
+    )
+
+    # Polisher スタブスクリプトを作成
+    script_path = tmp_path / "polisher_stub.py"
+    script_path.write_text(
+        "\n".join([
+            "import argparse",
+            "import json",
+            "from pathlib import Path",
+            "",
+            "parser = argparse.ArgumentParser()",
+            "parser.add_argument('--input', required=True)",
+            "parser.add_argument('--rules', required=True)",
+            "args = parser.parse_args()",
+            "path = Path(args.input)",
+            "path.read_bytes()",
+            "Path(args.rules).touch(exist_ok=True)",
+            "print(json.dumps({'stub': 'ok'}))",
+        ]),
+        encoding="utf-8"
+    )
+
+    runner = CliRunner()
+    brief_paths = _prepare_brief_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, brief_paths)
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        draft_dir=draft_dir,
+        brief_paths=brief_paths,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+            "--polisher",
+            "--polisher-path",
+            sys.executable,
+            "--polisher-arg",
+            str(script_path),
+            "--polisher-arg",
+            "--input",
+            "--polisher-arg",
+            "{pptx}",
+            "--polisher-arg",
+            "--rules",
+            "--polisher-arg",
+            "{rules}",
+            "--polisher-rules",
+            str(rules_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+    # 監査ログの確認
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    polisher_meta = audit_payload.get("polisher")
+    assert polisher_meta is not None
+    assert polisher_meta.get("status") == "success"
+
+    # AIフッタ付与結果の確認
+    ai_footer_result = polisher_meta.get("ai_footer")
+    assert ai_footer_result is not None
+    assert ai_footer_result.get("enabled") is True
+    assert ai_footer_result.get("slides_modified") > 0
+    assert ai_footer_result.get("error") is None
+
+    # PPTXファイルを開いてフッタが追加されていることを確認
+    pptx_path = output_dir / "proposal.pptx"
+    assert pptx_path.exists()
+
+    prs = Presentation(pptx_path)
+    assert len(prs.slides) > 0
+
+    # 最初のスライドにフッタテキストボックスが含まれていることを確認
+    first_slide = prs.slides[0]
+    slide_texts = _collect_paragraph_texts(first_slide)
+    # フッタ文言がスライドのどこかに含まれていることを確認
+    assert any("AI生成コンテンツ" in text for text in slide_texts)
