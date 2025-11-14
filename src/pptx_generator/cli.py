@@ -15,6 +15,8 @@ from typing import Any, Optional
 import click
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
+from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 
 from .branding_extractor import (BrandingExtractionError,
                                  extract_branding_config)
@@ -39,11 +41,12 @@ from .pipeline import (AnalyzerOptions, BriefNormalizationError,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, PipelineStep,
                        PolisherError, PolisherOptions, PolisherStep,
-                       RefinerOptions, RenderingAuditOptions,
-                       RenderingAuditStep, RenderingOptions,
-                       SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
+                      RefinerOptions, RenderingAuditOptions,
+                      RenderingAuditStep, RenderingOptions,
+                      SimpleAnalyzerStep, SimpleRefinerStep,
+                      SimpleRendererStep, SpecValidatorStep,
+                      TemplateExtractor, TemplateExtractorOptions)
+from .pipeline.analyzer import SlideSnapshot
 from .spec_loader import load_jobspec_from_path
 from .pipeline.draft_structuring import DraftStructuringError
 from .review_engine import AnalyzerReviewEngineAdapter
@@ -312,8 +315,9 @@ class TemplateExtractionResult:
     template_spec_path: Path
     branding_path: Path
     jobspec_path: Path
-    validation_result: LayoutValidationResult
+    validation_result: LayoutValidationResult | None
     output_dir: Path
+    slide_snapshot_path: Path | None
 
 
 @dataclass(slots=True)
@@ -333,6 +337,11 @@ def _run_template_extraction(
     layout: str | None,
     anchor: str | None,
     output_format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
+    skip_validation: bool = False,
+    emit_slide_snapshot: bool = False,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -344,6 +353,22 @@ def _run_template_extraction(
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    ai_policy_path = template_ai_policy
+    if ai_policy_path is None and not disable_template_ai:
+        env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
+        if env_policy:
+            ai_policy_path = Path(env_policy)
+        else:
+            default_policy = Path("config/template_ai_policies.json")
+            if default_policy.exists():
+                ai_policy_path = default_policy
+    ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
+    if ai_policy_path is not None:
+        ai_policy_path = Path(ai_policy_path)
+    effective_disable = disable_template_ai or ai_policy_path is None or not ai_policy_path.exists()
+    if effective_disable:
+        ai_policy_path = None
 
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
@@ -377,32 +402,44 @@ def _run_template_extraction(
     branding_path.write_text(branding_text, encoding="utf-8")
     logger.info("Saved branding payload to %s", branding_path.resolve())
 
-    logger.info("Starting layout validation for %s", template_path)
-    validation_options = LayoutValidationOptions(
-        template_path=template_path,
-        output_dir=output_dir,
-    )
-    validation_suite = LayoutValidationSuite(validation_options)
-    validation_result = validation_suite.run()
-    logger.info(
-        "Layout validation finished: warnings=%d errors=%d",
-        validation_result.warnings_count,
-        validation_result.errors_count,
-    )
+    validation_result: LayoutValidationResult | None = None
+    if not skip_validation:
+        logger.info("Starting layout validation for %s", template_path)
+        validation_options = LayoutValidationOptions(
+            template_path=template_path,
+            output_dir=output_dir,
+            template_ai_policy_path=ai_policy_path,
+            template_ai_policy_id=ai_policy_id,
+            disable_template_ai=effective_disable,
+        )
+        validation_suite = LayoutValidationSuite(validation_options)
+        validation_result = validation_suite.run()
+        logger.info(
+            "Layout validation finished: warnings=%d errors=%d",
+            validation_result.warnings_count,
+            validation_result.errors_count,
+        )
 
-    layouts_relative: str | None = None
-    try:
-        layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
-    except ValueError:
-        layouts_relative = str(validation_result.layouts_path)
+        layouts_relative: str | None = None
+        try:
+            layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
+        except ValueError:
+            layouts_relative = str(validation_result.layouts_path)
 
-    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
-        update={"layouts_path": layouts_relative}
-    )
+        jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
+            update={"layouts_path": layouts_relative}
+        )
 
     jobspec_path = output_dir / "jobspec.json"
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
     logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
+
+    slide_snapshot_path: Path | None = None
+    if emit_slide_snapshot:
+        slide_snapshot_path = _generate_slide_snapshot(
+            template_path=template_path,
+            output_dir=output_dir,
+        )
 
     return TemplateExtractionResult(
         template_spec=template_spec,
@@ -412,7 +449,95 @@ def _run_template_extraction(
         jobspec_path=jobspec_path,
         validation_result=validation_result,
         output_dir=output_dir,
+        slide_snapshot_path=slide_snapshot_path,
     )
+
+
+def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path | None:
+    logger.info("Generating slide snapshot for %s", template_path)
+    try:
+        presentation = Presentation(template_path)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("スライドスナップショットの生成に失敗しました: %s", exc)
+        return None
+
+    slides_payload: list[dict[str, Any]] = []
+    for index, slide in enumerate(presentation.slides):
+        snapshot = SlideSnapshot.from_slide(slide, index)
+        slides_payload.append(_serialize_slide_snapshot(slide, snapshot))
+
+    if not slides_payload:
+        logger.info("スライドが存在しないためスナップショットを出力しません: %s", template_path)
+        return None
+
+    payload = {
+        "template_path": str(template_path),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "slides": slides_payload,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / "slide_snapshot.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info("Saved slide snapshot to %s", path.resolve())
+    return path
+
+
+def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
+    layout_name = getattr(getattr(slide, "slide_layout", None), "name", None)
+    slide_identifier = getattr(slide, "slide_id", None)
+
+    shapes_payload: list[dict[str, Any]] = []
+    for shape in snapshot.shapes:
+        paragraphs = [
+            {
+                "index": paragraph.paragraph_index,
+                "text": paragraph.text,
+                "level": paragraph.level,
+                "font_size_pt": paragraph.font_size_pt,
+                "color_hex": paragraph.color_hex,
+            }
+            for paragraph in shape.paragraphs
+        ]
+        shapes_payload.append(
+            {
+                "shape_id": shape.shape_id,
+                "name": shape.name or "",
+                "shape_type": _shape_type_name(shape.shape_type),
+                "left_in": shape.left_in,
+                "top_in": shape.top_in,
+                "width_in": shape.width_in,
+                "height_in": shape.height_in,
+                "is_placeholder": shape.is_placeholder,
+                "placeholder_type": _placeholder_type_name(shape.placeholder_type),
+                "paragraphs": paragraphs,
+            }
+        )
+
+    return {
+        "index": snapshot.index,
+        "slide_id": slide_identifier,
+        "layout": layout_name,
+        "shapes": shapes_payload,
+    }
+
+
+def _shape_type_name(shape_type: int | None) -> str:
+    if shape_type is None:
+        return "unknown"
+    try:
+        return MSO_SHAPE_TYPE(shape_type).name
+    except ValueError:
+        return str(shape_type)
+
+
+def _placeholder_type_name(placeholder_type: int | None) -> str | None:
+    if placeholder_type is None:
+        return None
+    try:
+        return PP_PLACEHOLDER(placeholder_type).name
+    except ValueError:
+        return str(placeholder_type)
 
 
 def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
@@ -430,14 +555,20 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
     click.echo(f"抽出された図形・アンカー数: {total_anchors}")
     click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
 
-    click.echo(f"Layouts: {validation_result.layouts_path}")
-    click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
-    if validation_result.diff_report_path is not None:
-        click.echo(f"Diff: {validation_result.diff_report_path}")
-    click.echo(
-        "検出結果: warnings=%d, errors=%d"
-        % (validation_result.warnings_count, validation_result.errors_count)
-    )
+    if validation_result is not None:
+        click.echo(f"Layouts: {validation_result.layouts_path}")
+        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
+        if validation_result.diff_report_path is not None:
+            click.echo(f"Diff: {validation_result.diff_report_path}")
+        click.echo(
+            "検出結果: warnings=%d, errors=%d"
+            % (validation_result.warnings_count, validation_result.errors_count)
+        )
+    else:
+        click.echo("検証をスキップしました (--force)")
+
+    if result.slide_snapshot_path is not None:
+        click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")
 
     if template_spec.warnings:
         click.echo(f"警告: {len(template_spec.warnings)} 件")
@@ -2286,6 +2417,37 @@ def mapping(  # noqa: PLR0913
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
+@click.option(
+    "--slide",
+    is_flag=True,
+    default=False,
+    help="実スライドの図形・段落情報を slide_snapshot.json として出力する",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="レイアウト検証をスキップして強制的にテンプレ工程を継続する（緊急時のみ使用）",
+)
 def template(  # noqa: PLR0913
     template_path: Path,
     output: Path,
@@ -2301,6 +2463,11 @@ def template(  # noqa: PLR0913
     reviewed_by: str | None,
     baseline_release: Path | None,
     golden_specs: tuple[Path, ...],
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
+    slide: bool,
+    force: bool,
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
     _log_current_llm_provider("template")
@@ -2311,6 +2478,11 @@ def template(  # noqa: PLR0913
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
+            skip_validation=force,
+            emit_slide_snapshot=slide,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2326,9 +2498,15 @@ def template(  # noqa: PLR0913
     _echo_template_extraction_result(extraction_result)
 
     validation_result = extraction_result.validation_result
-    if validation_result.errors_count > 0:
+    if validation_result is not None and validation_result.errors_count > 0:
         click.echo(
             "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=6)
+    if validation_result is None and not force:
+        click.echo(
+            "レイアウト検証を実施できませんでした。--force を使用しない場合は出力を確認してください。",
             err=True,
         )
         raise click.exceptions.Exit(code=6)
@@ -2414,12 +2592,33 @@ def template(  # noqa: PLR0913
     show_default=True,
     help="テンプレート仕様とブランド設定を保存するディレクトリ",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
 def tpl_extract(
     template_path: Path,
     output_dir: Path,
     layout: Optional[str],
     anchor: Optional[str],
     format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
@@ -2429,6 +2628,9 @@ def tpl_extract(
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2445,7 +2647,7 @@ def tpl_extract(
     else:
         _echo_template_extraction_result(extraction_result)
         validation_result = extraction_result.validation_result
-        if validation_result.errors_count > 0:
+        if validation_result is not None and validation_result.errors_count > 0:
             click.echo(
                 "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
                 err=True,

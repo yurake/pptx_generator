@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import unicodedata
@@ -15,11 +16,16 @@ from typing import Any, Iterable
 from ..models import LayoutInfo, ShapeInfo, TemplateSpec
 from ..utils.usage_tags import normalize_usage_tags_with_unknown
 from ..pipeline.template_extractor import TemplateExtractor, TemplateExtractorOptions
+from ..template_ai import TemplateAIOptions, TemplateAIResult, TemplateAIService
+from ..template_ai.client import TemplateAIClientConfigurationError
+from ..template_ai.policy import TemplateAIPolicyError
 from .schema import (
     DIAGNOSTICS_VALIDATOR,
     DIFF_REPORT_VALIDATOR,
     LAYOUT_RECORD_VALIDATOR,
 )
+
+logger = logging.getLogger(__name__)
 
 EMU_PER_INCH = 914400
 SUITE_VERSION = "1.0.0"
@@ -58,6 +64,9 @@ class LayoutValidationOptions:
     template_id: str | None = None
     baseline_path: Path | None = None
     analyzer_snapshot_path: Path | None = None
+    template_ai_policy_path: Path | None = Path("config/template_ai_policies.json")
+    template_ai_policy_id: str | None = None
+    disable_template_ai: bool = False
 
 
 @dataclass(slots=True)
@@ -81,483 +90,337 @@ class LayoutValidationSuite:
 
     def __init__(self, options: LayoutValidationOptions) -> None:
         self.options = options
+        self._template_ai_service: TemplateAIService | None = None
+        self._template_ai_stats = {
+            "invoked": 0,
+            "success": 0,
+            "fallback": 0,
+            "failed": 0,
+        }
+        self._template_ai_layouts: list[dict[str, str | list[str] | None]] = []
+        self._initialize_template_ai()
 
-    def run(self) -> LayoutValidationResult:
-        """検証を実行し成果物を生成する。"""
-
-        if not self.options.template_path.exists():
-            msg = f"テンプレートファイルが存在しません: {self.options.template_path}"
-            raise LayoutValidationError(msg)
-
-        start = perf_counter()
-        extractor = TemplateExtractor(
-            TemplateExtractorOptions(template_path=self.options.template_path)
-        )
-        template_spec = extractor.extract()
-        template_id = self.options.template_id or self._derive_template_id(
-            self.options.template_path
-        )
-
-        records, warnings, errors = self._build_layout_records(template_spec, template_id)
-
-        analyzer_snapshot_issues: list[dict[str, Any]] = []
-        if self.options.analyzer_snapshot_path is not None:
-            snapshot_warnings, snapshot_errors, snapshot_issues = (
-                self._compare_with_analyzer_snapshot(records, template_id)
+    def _initialize_template_ai(self) -> None:
+        if self.options.disable_template_ai:
+            logger.info("template AI is disabled by option")
+            return
+        policy_path = self.options.template_ai_policy_path
+        if policy_path is None or not policy_path.exists():
+            return
+        try:
+            service = TemplateAIService(
+                TemplateAIOptions(
+                    policy_path=policy_path,
+                    policy_id=self.options.template_ai_policy_id,
+                )
             )
-            warnings.extend(snapshot_warnings)
-            errors.extend(snapshot_errors)
-            analyzer_snapshot_issues.extend(snapshot_issues)
+        except (TemplateAIPolicyError, TemplateAIClientConfigurationError) as exc:
+            logger.warning("テンプレートAIの初期化に失敗しました: %s", exc)
+            return
+        self._template_ai_service = service
 
-        extraction_time_ms = int((perf_counter() - start) * 1000)
-        diagnostics = {
+    def _invoke_template_ai(
+        self,
+        *,
+        template_id: str,
+        layout_id: str,
+        layout_name: str,
+        placeholders: list[dict[str, Any]],
+        text_hint: dict[str, Any],
+        media_hint: dict[str, Any],
+        heuristic_usage_tags: list[str],
+    ) -> TemplateAIResult | None:
+        service = self._template_ai_service
+        if service is None:
+            return None
+
+        self._template_ai_stats["invoked"] += 1
+        started = perf_counter()
+        try:
+            result = service.classify_layout(
+                template_id=template_id,
+                layout_id=layout_id,
+                layout_name=layout_name,
+                placeholders=placeholders,
+                text_hint=text_hint,
+                media_hint=media_hint,
+                heuristic_usage_tags=heuristic_usage_tags,
+            )
+        finally:
+            elapsed = perf_counter() - started
+            should_log = elapsed > 0.5 or logger.isEnabledFor(logging.DEBUG)
+            if should_log:
+                logger.info(
+                    "template AI classify: layout=%s provider=%s elapsed=%.3fs",
+                    layout_id,
+                    result.source if result else "-",
+                    elapsed,
+                )
+
+        if result.success:
+            self._template_ai_stats["success"] += 1
+        elif result.source == "static":
+            self._template_ai_stats["fallback"] += 1
+        else:
+            self._template_ai_stats["failed"] += 1
+        self._template_ai_layouts.append(
+            {
+                "layout_id": layout_id,
+                "layout_name": layout_name,
+                "source": result.source,
+                "reason": result.reason,
+                "usage_tags": list(result.usage_tags or ()),
+                "unknown_tags": list(result.unknown_tags),
+            }
+        )
+        return result
+
+    def _build_layout_records(
+        self,
+        template_spec: TemplateSpec,
+        template_id: str,
+        baseline_spec: TemplateSpec | None = None,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        diagnostics: list[dict[str, Any]] = []
+        warnings: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
+
+        layout_records: list[dict[str, Any]] = []
+        seen_layout_ids: dict[str, int] = {}
+        self._template_ai_stats = {"invoked": 0, "success": 0, "fallback": 0, "failed": 0}
+        self._template_ai_layouts.clear()
+
+        for layout in template_spec.layouts:
+            layout_id = self._resolve_layout_id(layout, seen_layout_ids)
+            record = self._build_layout_record(
+                template_id=template_id,
+                layout=layout,
+                layout_id=layout_id,
+                warnings=warnings,
+                errors=errors,
+            )
+            layout_records.append(record)
+
+        if baseline_spec:
+            diff_report = self._build_diff_report(layout_records, baseline_spec)
+        else:
+            diff_report = None
+
+        diagnostics_path = self.options.output_dir / "diagnostics.json"
+        layouts_path = self.options.output_dir / "layouts.jsonl"
+        diff_report_path = self.options.output_dir / "diff_report.json" if diff_report else None
+
+        self._write_jsonl(layout_records, layouts_path)
+        diagnostics_payload = {
             "template_id": template_id,
+            "version": SUITE_VERSION,
+            "generated_at": template_spec.extracted_at,
+            "records": layout_records,
+            "template_ai": {
+                **self._template_ai_stats,
+                "layouts": self._template_ai_layouts,
+            },
             "warnings": warnings,
             "errors": errors,
-            "stats": {
-                "layouts_total": len(records),
-                "placeholders_total": sum(
-                    len(record["placeholders"]) for record in records
-                ),
-                "extraction_time_ms": extraction_time_ms,
-            },
         }
+        diagnostics_path.write_text(json.dumps(diagnostics_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-        self._validate_records(records)
-        self._validate_diagnostics(diagnostics)
-
-        output_dir = self.options.output_dir
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        layouts_path = output_dir / "layouts.jsonl"
-        diagnostics_path = output_dir / "diagnostics.json"
-        self._write_jsonl(records, layouts_path)
-        diagnostics_path.write_text(
-            json.dumps(diagnostics, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-
-        diff_report_path: Path | None = None
-        diff_report: dict[str, Any] | None = None
-        if self.options.baseline_path is not None:
-            diff_report = self._build_diff_report(
-                records=records,
-                target_template_id=template_id,
-                baseline_path=self.options.baseline_path,
-            )
-            if diff_report is not None:
-                self._validate_diff_report(diff_report)
-                if analyzer_snapshot_issues:
-                    diff_report.setdefault("issues", []).extend(analyzer_snapshot_issues)
-                diff_report_path = output_dir / "diff_report.json"
-                diff_report_path.write_text(
-                    json.dumps(diff_report, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
-        elif analyzer_snapshot_issues:
-            diff_report = {
-                "baseline_template_id": "__analyzer_snapshot__",
-                "target_template_id": template_id,
-                "layouts_added": [],
-                "layouts_removed": [],
-                "placeholders_changed": [],
-                "issues": analyzer_snapshot_issues,
-            }
-            self._validate_diff_report(diff_report)
-            diff_report_path = output_dir / "diff_report.json"
+        if diff_report and diff_report_path:
             diff_report_path.write_text(
                 json.dumps(diff_report, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
 
-        return LayoutValidationResult(
-            layouts_path=layouts_path,
-            diagnostics_path=diagnostics_path,
-            diff_report_path=diff_report_path,
-            record_count=len(records),
-            warnings_count=len(warnings),
-            errors_count=len(errors),
+        return layout_records, warnings, errors
+
+    def _build_layout_record(
+        self,
+        *,
+        template_id: str,
+        layout: LayoutInfo,
+        layout_id: str,
+        warnings: list[dict[str, Any]],
+        errors: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        placeholders = self._map_placeholders(layout.anchors)
+        placeholder_records = self._build_placeholder_records(placeholders, layout)
+
+        text_hint = self._derive_text_hint(placeholder_records)
+        media_hint = self._derive_media_hint(placeholder_records)
+
+        (
+            heuristic_tags,
+            has_title_placeholder,
+            has_body_placeholder,
+            title_from_name,
+        ) = self._derive_usage_tags(layout, placeholder_records)
+
+        ai_result = self._invoke_template_ai(
+            template_id=template_id,
+            layout_id=layout_id,
+            layout_name=layout.name or layout_id,
+            placeholders=placeholder_records,
+            text_hint=text_hint,
+            media_hint=media_hint,
+            heuristic_usage_tags=sorted(heuristic_tags),
         )
 
-    # --- レコード生成とバリデーション -------------------------------------------------
-
-    def _build_layout_records(
-        self, template_spec: TemplateSpec, template_id: str
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-        records: list[dict[str, Any]] = []
-        warnings: list[dict[str, Any]] = []
-        errors: list[dict[str, Any]] = []
-
-        seen_layout_ids: dict[str, int] = {}
-
-        for layout in template_spec.layouts:
-            layout_id = self._resolve_layout_id(layout, seen_layout_ids)
-            if layout.error:
-                errors.append(
-                    {
-                        "code": "layout_extract_error",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": layout.error,
-                    }
-                )
-
-            placeholder_records: list[dict[str, Any]] = []
-            placeholder_names: list[str] = []
-
-            for shape in layout.anchors:
-                if not self._should_include_shape(shape):
-                    continue
-
-                normalised_type = self._normalise_placeholder_type(shape)
-                bbox = self._shape_bbox(shape)
-                style_hint = self._build_style_hint(shape)
-                flags = self._build_flags(shape, normalised_type)
-
-                placeholder_records.append(
-                    {
-                        "name": shape.name,
-                        "type": normalised_type,
-                        "bbox": bbox,
-                        "style_hint": style_hint,
-                        "flags": flags,
-                    }
-                )
-                placeholder_names.append(shape.name)
-
-                if shape.missing_fields:
-                    errors.append(
-                        {
-                            "code": "missing_fields",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                            "detail": ", ".join(shape.missing_fields),
-                        }
-                    )
-                if shape.error:
-                    errors.append(
-                        {
-                            "code": "shape_extract_error",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                            "detail": shape.error,
-                        }
-                    )
-
-                if normalised_type == "unknown":
+        if ai_result and ai_result.success and ai_result.usage_tags:
+            raw_usage_tags = set(ai_result.usage_tags)
+            if ai_result.source == "static":
+                # static フォールバックの場合はヒューリスティックの結果も保持してタグ欠落を防ぐ
+                raw_usage_tags.update(heuristic_tags)
+        else:
+            raw_usage_tags = set(heuristic_tags)
+            if ai_result:
+                if ai_result.error:
                     warnings.append(
                         {
-                            "code": "placeholder_unknown_type",
+                            "code": "usage_tag_ai_error",
                             "layout_id": layout_id,
-                            "name": shape.name,
+                            "name": layout.name,
+                            "detail": ai_result.error,
+                        }
+                    )
+                elif ai_result.source != "static":
+                    warnings.append(
+                        {
+                            "code": "usage_tag_ai_fallback",
+                            "layout_id": layout_id,
+                            "name": layout.name,
+                            "detail": "生成AIが使用できなかったためヒューリスティックへフォールバックしました",
                         }
                     )
 
-            duplicates = [
-                name
-                for name, count in Counter(placeholder_names).items()
-                if count > 1
-            ]
-            for name in duplicates:
-                warnings.append(
-                    {
-                        "code": "duplicate_placeholder",
-                        "layout_id": layout_id,
-                        "name": name,
-                    }
-                )
+        usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
+        usage_tags_set = set(usage_tags_tuple)
 
-            (
-                raw_usage_tags,
-                has_title_placeholder,
-                has_body_placeholder,
-                title_from_name,
-            ) = self._derive_usage_tags(layout, placeholder_records)
+        title_conflict_removed = False
+        if "title" in usage_tags_set and has_body_placeholder and not title_from_name:
+            usage_tags_set.discard("title")
+            title_conflict_removed = True
 
-            usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
-            usage_tags_set = set(usage_tags_tuple)
+        if not usage_tags_set:
+            usage_tags_set.add("generic")
 
-            title_conflict_removed = False
-            if "title" in usage_tags_set and has_body_placeholder and not title_from_name:
-                usage_tags_set.discard("title")
-                title_conflict_removed = True
+        usage_tags = sorted(usage_tags_set)
 
-            if not usage_tags_set:
-                usage_tags_set.add("generic")
-
-            usage_tags = sorted(usage_tags_set)
-
-            if unknown_tags:
-                warnings.append(
-                    {
-                        "code": "usage_tag_unknown",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": ", ".join(sorted(unknown_tags)),
-                    }
-                )
-
-            if title_conflict_removed:
-                detail = "タイトルタグが本文プレースホルダーの存在により除外されました"
-                if not title_from_name:
-                    detail += "（名前ベースの判定外）"
-                warnings.append(
-                    {
-                        "code": "usage_tag_title_suppressed",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": detail,
-                    }
-                )
-            text_hint = self._derive_text_hint(placeholder_records)
-            media_hint = self._derive_media_hint(placeholder_records)
-
-            records.append(
-                {
-                    "template_id": template_id,
-                    "layout_id": layout_id,
-                    "layout_name": layout.name,
-                    "placeholders": placeholder_records,
-                    "usage_tags": usage_tags,
-                    "text_hint": text_hint,
-                    "media_hint": media_hint,
-                    "version": SUITE_VERSION,
-                }
-            )
-
-        for message in template_spec.warnings:
+        if ai_result and ai_result.unknown_tags:
             warnings.append(
                 {
-                    "code": "extractor_warning",
-                    "layout_id": "__template__",
-                    "name": str(self.options.template_path.name),
-                    "detail": message,
+                    "code": "usage_tag_ai_unknown",
+                    "layout_id": layout_id,
+                    "name": layout.name,
+                    "detail": ", ".join(ai_result.unknown_tags),
                 }
             )
 
-        for message in template_spec.errors:
-            errors.append(
-                {
-                    "code": "extractor_error",
-                    "layout_id": "__template__",
-                    "name": str(self.options.template_path.name),
-                    "detail": message,
-                }
-            )
-
-        return records, warnings, errors
-
-    @staticmethod
-    def _should_include_shape(shape: ShapeInfo) -> bool:
-        if shape.is_placeholder:
-            return True
-        if shape.placeholder_type:
-            return True
-        # SlideBullet などの汎用アンカーも保持する
-        if shape.name and shape.name.lower() not in {"rectangle", "textbox"}:
-            return True
-        return False
-
-    def _normalise_placeholder_type(self, shape: ShapeInfo) -> str:
-        key = (shape.placeholder_type or "").upper()
-        if key in PLACEHOLDER_TYPE_ALIASES:
-            return PLACEHOLDER_TYPE_ALIASES[key]
-        # name から推測
-        guessed = self._guess_type_from_name(shape.name)
-        return guessed or "unknown"
-
-    @staticmethod
-    def _guess_type_from_name(name: str | None) -> str | None:
-        if not name:
-            return None
-        lowered = name.casefold()
-        if "title" in lowered:
-            return "title"
-        if "sub" in lowered:
-            return "subtitle"
-        if "note" in lowered:
-            return "notes"
-        if "table" in lowered:
-            return "table"
-        if "chart" in lowered or "graph" in lowered:
-            return "chart"
-        if "image" in lowered or "picture" in lowered or "photo" in lowered:
-            return "image"
-        if "body" in lowered or "content" in lowered:
-            return "body"
-        return None
-
-    @staticmethod
-    def _shape_bbox(shape: ShapeInfo) -> dict[str, int]:
-        return {
-            "x": int(round(shape.left_in * EMU_PER_INCH)),
-            "y": int(round(shape.top_in * EMU_PER_INCH)),
-            "width": int(round(shape.width_in * EMU_PER_INCH)),
-            "height": int(round(shape.height_in * EMU_PER_INCH)),
+        record = {
+            "template_id": template_id,
+            "layout_id": layout_id,
+            "layout_name": layout.name,
+            "placeholders": placeholder_records,
+            "usage_tags": usage_tags,
+            "title_conflict_removed": title_conflict_removed,
+            "unknown_usage_tags": sorted(unknown_tags),
+            "text_hint": text_hint,
+            "media_hint": media_hint,
         }
 
-    @staticmethod
-    def _build_style_hint(shape: ShapeInfo) -> dict[str, Any]:
-        style_hint: dict[str, Any] = {}
-        if shape.text:
-            style_hint["sample_text"] = shape.text[:120]
-        if shape.conflict:
-            style_hint["conflict"] = shape.conflict
-        return style_hint
+        LAYOUT_RECORD_VALIDATOR.validate(record)
 
-    @staticmethod
-    def _build_flags(shape: ShapeInfo, placeholder_type: str) -> list[str]:
-        flags: list[str] = []
-        if placeholder_type == "unknown":
-            flags.append("unknown_type")
-        if shape.conflict:
-            flags.append("anchor_conflict")
-        if shape.missing_fields:
-            flags.append("missing_fields")
-        return flags
+        return record
 
-    def _compare_with_analyzer_snapshot(
-        self, records: list[dict[str, Any]], template_id: str
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-        warnings: list[dict[str, Any]] = []
-        errors: list[dict[str, Any]] = []
-        issues: list[dict[str, Any]] = []
+    def _map_placeholders(self, anchors: Iterable[ShapeInfo]) -> list[dict[str, Any]]:
+        mapped: list[dict[str, Any]] = []
+        for anchor in anchors:
+            if not anchor.is_placeholder:
+                continue
 
-        snapshot_path = self.options.analyzer_snapshot_path
-        if snapshot_path is None:
-            return warnings, errors, issues
+            placeholder_type = PLACEHOLDER_TYPE_ALIASES.get(anchor.placeholder_type, anchor.placeholder_type.casefold())
 
-        try:
-            payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            errors.append(
+            mapped.append(
                 {
-                    "code": "analyzer_snapshot_missing",
-                    "layout_id": "__analyzer__",
-                    "name": snapshot_path.name,
-                    "detail": "Analyzer スナップショットが見つかりません",
+                    "name": anchor.name,
+                    "type": placeholder_type,
+                    "bbox": {
+                        "x": int(anchor.left_in * EMU_PER_INCH),
+                        "y": int(anchor.top_in * EMU_PER_INCH),
+                        "width": int(anchor.width_in * EMU_PER_INCH),
+                        "height": int(anchor.height_in * EMU_PER_INCH),
+                    },
+                    "style_hint": {
+                        "sample_text": anchor.text,
+                    },
+                    "flags": [],
                 }
             )
-            return warnings, errors, issues
-        except json.JSONDecodeError as exc:
-            errors.append(
+
+        return mapped
+
+    def _build_placeholder_records(
+        self,
+        placeholders: Iterable[dict[str, Any]],
+        layout: LayoutInfo,
+    ) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
+        placeholder_names: list[str] = []
+
+        for placeholder in placeholders:
+            placeholder_names.append(placeholder.get("name") or "")
+            normalised_type = (placeholder.get("type") or "").casefold()
+
+            flags: list[str] = []
+            if normalised_type in TEXT_PLACEHOLDER_TYPES:
+                text = (placeholder.get("style_hint") or {}).get("sample_text") or ""
+                if text:
+                    level_count = text.count("\n") + 1
+                    if level_count > 5:
+                        flags.append("overflow")
+                        warnings.append(
+                            {
+                                "code": "placeholder_text_overflow",
+                                "layout_id": layout.identifier or layout.name,
+                                "name": placeholder.get("name"),
+                                "detail": f"{level_count} levels",
+                            }
+                        )
+            records.append(
                 {
-                    "code": "analyzer_snapshot_invalid",
-                    "layout_id": "__analyzer__",
-                    "name": snapshot_path.name,
-                    "detail": f"JSON デコードに失敗しました ({exc})",
+                    "name": placeholder.get("name"),
+                    "type": normalised_type,
+                    "bbox": placeholder.get("bbox"),
+                    "style_hint": placeholder.get("style_hint"),
+                    "flags": flags,
                 }
             )
-            return warnings, errors, issues
 
-        slides = payload.get("slides", [])
-        template_layout_anchors: dict[str, set[str]] = {}
-        layout_name_to_id: dict[str, str] = {}
-        for record in records:
-            layout_name = record["layout_name"]
-            layout_id = record["layout_id"]
-            layout_name_to_id[layout_name] = layout_id
-            anchors = {
-                placeholder["name"]
-                for placeholder in record["placeholders"]
-                if placeholder["name"]
-            }
-            template_layout_anchors[layout_name] = anchors
+        return records
 
-        snapshot_layout_anchors: dict[str, set[str]] = {}
-        anchor_sources: dict[str, dict[str, str]] = {}
+    def _derive_text_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, Any]:
+        body_placeholders = [placeholder for placeholder in placeholders if (placeholder.get("type") or "").casefold() in TEXT_PLACEHOLDER_TYPES]
+        if not body_placeholders:
+            return {"max_chars": 0, "max_lines": 0}
 
-        for slide in slides:
-            layout_name = slide.get("layout")
-            slide_id = slide.get("slide_id", "unknown")
-            placeholders = slide.get("placeholders", [])
-            named_shapes = slide.get("named_shapes", [])
+        max_lines = max(
+            ((placeholder.get("style_hint") or {}).get("sample_text") or "").count("\n") + 1
+            for placeholder in body_placeholders
+        )
+        max_chars = max(len((placeholder.get("style_hint") or {}).get("sample_text") or "") for placeholder in body_placeholders)
 
-            for placeholder in placeholders:
-                name = (placeholder.get("name") or "").strip()
-                if not name:
-                    display_name = placeholder.get("placeholder_type") or "__unnamed__"
-                    warnings.append(
-                        {
-                            "code": "analyzer_placeholder_unnamed",
-                            "layout_id": layout_name or "__unknown__",
-                            "name": display_name,
-                            "detail": f"slide={slide_id}",
-                        }
-                    )
-                    continue
-                snapshot_layout_anchors.setdefault(layout_name, set()).add(name)
-                anchor_sources.setdefault(layout_name, {}).setdefault(name, slide_id)
+        return {"max_chars": max_chars, "max_lines": max_lines}
 
-            for shape in named_shapes:
-                name = (shape.get("name") or "").strip()
-                if not name:
-                    continue
-                snapshot_layout_anchors.setdefault(layout_name, set()).add(name)
-                anchor_sources.setdefault(layout_name, {}).setdefault(name, slide_id)
+    def _derive_media_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, Any]:
+        has_table_placeholder = any((placeholder.get("type") or "").casefold() == "table" for placeholder in placeholders)
+        has_chart_placeholder = any((placeholder.get("type") or "").casefold() == "chart" for placeholder in placeholders)
+        has_image_placeholder = any((placeholder.get("type") or "").casefold() in IMAGE_PLACEHOLDER_TYPES for placeholder in placeholders)
 
-        for layout_name, template_anchors in template_layout_anchors.items():
-            snapshot_anchors = snapshot_layout_anchors.get(layout_name, set())
-            missing = sorted(template_anchors - snapshot_anchors)
-            for anchor in missing:
-                layout_id = layout_name_to_id.get(layout_name)
-                if layout_id is None:
-                    layout_id = layout_name or "__unknown__"
-                entry = {
-                    "code": "analyzer_anchor_missing",
-                    "layout_id": layout_id,
-                    "name": anchor,
-                    "detail": "Analyzer スナップショットに対応するアンカーがありません",
-                }
-                warnings.append(entry)
-                issues.append(
-                    {
-                        "code": "analyzer_anchor_missing",
-                        "layout_id": layout_id,
-                        "detail": entry["detail"],
-                        "anchor": anchor,
-                    }
-                )
+        return {
+            "allow_table": has_table_placeholder,
+            "allow_chart": has_chart_placeholder,
+            "allow_image": has_image_placeholder,
+        }
 
-        for layout_name, snapshot_anchors in snapshot_layout_anchors.items():
-            template_anchors = template_layout_anchors.get(layout_name, set())
-            extra = sorted(snapshot_anchors - template_anchors)
-            for anchor in extra:
-                source_slide = anchor_sources.get(layout_name, {}).get(anchor)
-                detail = f"slide={source_slide}" if source_slide else None
-                layout_id = layout_name_to_id.get(layout_name)
-                if layout_id is None:
-                    layout_id = layout_name or "__unknown__"
-                entry = {
-                    "code": "analyzer_anchor_unexpected",
-                    "layout_id": layout_id,
-                    "name": anchor,
-                }
-                if detail:
-                    entry["detail"] = detail
-                warnings.append(entry)
-                issues.append(
-                    {
-                        "code": "analyzer_anchor_unexpected",
-                        "layout_id": layout_id,
-                        "detail": detail or "",
-                        "anchor": anchor,
-                    }
-                )
-
-            if layout_name not in template_layout_anchors:
-                warnings.append(
-                    {
-                        "code": "analyzer_layout_unknown",
-                        "layout_id": layout_name or "__unknown__",
-                        "name": template_id,
-                        "detail": "テンプレ抽出結果に存在しないレイアウトです",
-                    }
-                )
-
-        return warnings, errors, issues
-
-    @staticmethod
     def _derive_usage_tags(
         layout: LayoutInfo, placeholders: Iterable[dict[str, Any]]
     ) -> tuple[set[str], bool, bool, bool]:
@@ -650,110 +513,59 @@ class LayoutValidationSuite:
 
         return False
 
-    def _derive_text_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, int]:
-        max_chars = 0
-        max_lines = 0
-        for placeholder in placeholders:
-            p_type = placeholder.get("type")
-            if p_type not in TEXT_PLACEHOLDER_TYPES:
-                continue
+    @staticmethod
+    def _derive_text_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, Any]:
+        body_placeholders = [placeholder for placeholder in placeholders if (placeholder.get("type") or "").casefold() in TEXT_PLACEHOLDER_TYPES]
+        if not body_placeholders:
+            return {"max_chars": 0, "max_lines": 0}
 
-            bbox = placeholder["bbox"]
-            width_in = bbox["width"] / EMU_PER_INCH
-            height_in = bbox["height"] / EMU_PER_INCH
-            approx_lines = max(int(height_in / 0.28), 1)
-            approx_chars_per_line = max(int(width_in * 20), 10)
-            max_lines += approx_lines
-            max_chars += approx_lines * approx_chars_per_line
+        max_lines = max(
+            ((placeholder.get("style_hint") or {}).get("sample_text") or "").count("\n") + 1
+            for placeholder in body_placeholders
+        )
+        max_chars = max(len((placeholder.get("style_hint") or {}).get("sample_text") or "") for placeholder in body_placeholders)
 
-        return {
-            "max_chars": max_chars,
-            "max_lines": max_lines,
-        }
+        return {"max_chars": max_chars, "max_lines": max_lines}
 
-    def _derive_media_hint(
-        self, placeholders: Iterable[dict[str, Any]]
-    ) -> dict[str, bool]:
-        allow_table = False
-        allow_chart = False
-        allow_image = False
-
-        for placeholder in placeholders:
-            p_type = placeholder.get("type")
-            if p_type == "table":
-                allow_table = True
-            if p_type == "chart":
-                allow_chart = True
-            if p_type in IMAGE_PLACEHOLDER_TYPES:
-                allow_image = True
+    def _derive_media_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, Any]:
+        has_table_placeholder = any((placeholder.get("type") or "").casefold() == "table" for placeholder in placeholders)
+        has_chart_placeholder = any((placeholder.get("type") or "").casefold() == "chart" for placeholder in placeholders)
+        has_image_placeholder = any((placeholder.get("type") or "").casefold() in IMAGE_PLACEHOLDER_TYPES for placeholder in placeholders)
 
         return {
-            "allow_table": allow_table,
-            "allow_chart": allow_chart,
-            "allow_image": allow_image,
+            "allow_table": has_table_placeholder,
+            "allow_chart": has_chart_placeholder,
+            "allow_image": has_image_placeholder,
         }
-
-    def _validate_records(self, records: list[dict[str, Any]]) -> None:
-        errors: list[str] = []
-        for index, record in enumerate(records):
-            for err in LAYOUT_RECORD_VALIDATOR.iter_errors(record):
-                path = ".".join(str(part) for part in err.path)
-                errors.append(f"record[{index}].{path}: {err.message}")
-        if errors:
-            raise LayoutValidationError("layouts.jsonl のスキーマ検証に失敗しました\n" + "\n".join(errors))
-
-    def _validate_diagnostics(self, diagnostics: dict[str, Any]) -> None:
-        errors = [
-            err.message
-            for err in DIAGNOSTICS_VALIDATOR.iter_errors(diagnostics)
-        ]
-        if errors:
-            raise LayoutValidationError(
-                "diagnostics.json のスキーマ検証に失敗しました\n" + "\n".join(errors)
-            )
-
-    def _validate_diff_report(self, diff_report: dict[str, Any]) -> None:
-        errors = [err.message for err in DIFF_REPORT_VALIDATOR.iter_errors(diff_report)]
-        if errors:
-            raise LayoutValidationError(
-                "diff_report.json のスキーマ検証に失敗しました\n" + "\n".join(errors)
-            )
-
-    # --- 差分出力 ------------------------------------------------------------------
 
     def _build_diff_report(
         self,
-        *,
-        records: list[dict[str, Any]],
-        target_template_id: str,
-        baseline_path: Path,
-    ) -> dict[str, Any] | None:
-        if not baseline_path.exists():
-            raise LayoutValidationError(f"ベースラインが存在しません: {baseline_path}")
+        current_records: list[dict[str, Any]],
+        baseline_spec: TemplateSpec,
+    ) -> dict[str, Any]:
+        baseline_records = [self._build_layout_record(
+            template_id=baseline_spec.template_path,
+            layout=layout,
+            layout_id=layout.identifier or layout.name,
+            warnings=[],
+            errors=[],
+        ) for layout in baseline_spec.layouts]
 
-        baseline_records = self._load_jsonl(baseline_path)
-        if not baseline_records:
-            return {
-                "baseline_template_id": None,
-                "target_template_id": target_template_id,
-                "layouts_added": [record["layout_id"] for record in records],
-                "layouts_removed": [],
-                "placeholders_changed": [],
-                "issues": [],
-            }
-
-        current_map = {record["layout_id"]: record for record in records}
         baseline_map = {record["layout_id"]: record for record in baseline_records}
+        current_map = {record["layout_id"]: record for record in current_records}
 
         layouts_added = sorted(set(current_map) - set(baseline_map))
         layouts_removed = sorted(set(baseline_map) - set(current_map))
 
-        placeholders_changed: list[dict[str, str]] = []
-        issues: list[dict[str, str]] = []
+        placeholders_changed: list[dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
 
-        for layout_id in sorted(set(current_map) & set(baseline_map)):
-            current = current_map[layout_id]
+        for layout_id, current in current_map.items():
+            if layout_id not in baseline_map:
+                continue
+
             baseline = baseline_map[layout_id]
+
             current_placeholders = {
                 placeholder["name"]: placeholder for placeholder in current["placeholders"]
             }
@@ -830,7 +642,7 @@ class LayoutValidationSuite:
 
         return {
             "baseline_template_id": baseline_template_id,
-            "target_template_id": target_template_id,
+            "target_template_id": template_id,
             "layouts_added": layouts_added,
             "layouts_removed": layouts_removed,
             "placeholders_changed": placeholders_changed,

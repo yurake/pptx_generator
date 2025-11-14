@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, Tuple
 
 from .draft_intel import clamp_score_detail, compute_analyzer_support
 from .layout_ai import (
@@ -23,7 +23,11 @@ from .models import (
     DraftLayoutCandidate,
     DraftLayoutScoreDetail,
 )
-from .utils.usage_tags import normalize_usage_tag_value
+from .utils.usage_tags import (
+    CANONICAL_USAGE_TAGS,
+    normalize_usage_tag_value,
+    normalize_usage_tags_with_unknown,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +41,7 @@ class LayoutProfile:
     usage_tags: tuple[str, ...]
     text_hint: dict[str, object]
     media_hint: dict[str, object]
+    placeholder_summary: dict[str, object] = field(default_factory=dict)
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -71,6 +76,10 @@ class RecommendationResult:
     candidates: list[tuple[DraftLayoutCandidate, DraftLayoutScoreDetail]]
     ai_scores: dict[str, float]
     ai_response: LayoutAIResponse | None
+    classified_tags: dict[str, Tuple[str, ...]] = field(default_factory=dict)
+    effective_tags: dict[str, Tuple[str, ...]] = field(default_factory=dict)
+    baseline_tags: dict[str, Tuple[str, ...]] = field(default_factory=dict)
+    ai_unknown_tags: dict[str, Tuple[str, ...]] = field(default_factory=dict)
 
 
 class CardLayoutRecommender:
@@ -96,18 +105,39 @@ class CardLayoutRecommender:
         if not layouts:
             return RecommendationResult([], {}, None)
 
-        tags = self._extract_slide_tags(slide)
+        slide_tags = self._extract_slide_tags(slide)
+        (
+            ai_scores,
+            ai_response,
+            ai_classified_tags,
+            ai_unknown_tags,
+        ) = self._apply_layout_ai(slide, layouts, analyzer_summary, slide_tags)
+
+        baseline_tags = {
+            profile.layout_id: tuple(profile.usage_tags) for profile in layouts
+        }
+        effective_tags: dict[str, tuple[str, ...]] = {}
+        for layout_id, tags in baseline_tags.items():
+            effective_tags[layout_id] = ai_classified_tags.get(layout_id, tags)
+
         evaluated: list[tuple[LayoutProfile, float, DraftLayoutScoreDetail]] = []
 
         for profile in layouts:
-            score, detail = self._heuristic_score(profile, slide, tags, analyzer_summary)
+            override_tags = effective_tags.get(profile.layout_id, profile.usage_tags)
+            score, detail = self._heuristic_score(
+                profile,
+                slide,
+                slide_tags,
+                analyzer_summary,
+                override_tags,
+            )
             evaluated.append((profile, score, detail))
 
-        ai_scores, ai_response = self._apply_layout_ai(slide, evaluated, analyzer_summary)
         results: list[tuple[DraftLayoutCandidate, DraftLayoutScoreDetail]] = []
 
         for profile, score, detail in evaluated:
             layout_id = profile.layout_id
+            override_tags = effective_tags.get(layout_id, profile.usage_tags)
             ai_value = ai_scores.get(layout_id)
             if ai_value is not None:
                 detail.ai_recommendation = round(ai_value, 3)
@@ -117,7 +147,13 @@ class CardLayoutRecommender:
                 and self._config.enable_simulated_ai
                 and self._config.ai_weight > 0
             ):
-                simulated = self._simulate_ai_score(profile, slide, preferred_layout, tags)
+                simulated = self._simulate_ai_score(
+                    profile,
+                    slide,
+                    preferred_layout,
+                    slide_tags,
+                    override_tags,
+                )
                 detail.ai_recommendation = round(simulated, 3)
                 score += simulated
 
@@ -130,7 +166,15 @@ class CardLayoutRecommender:
             results.append((candidate, detail))
 
         results.sort(key=lambda item: item[0].score, reverse=True)
-        return RecommendationResult(results[: self._config.max_candidates], ai_scores, ai_response)
+        return RecommendationResult(
+            results[: self._config.max_candidates],
+            ai_scores,
+            ai_response,
+            classified_tags=ai_classified_tags,
+            effective_tags=effective_tags,
+            baseline_tags=baseline_tags,
+            ai_unknown_tags=ai_unknown_tags,
+        )
 
     # ------------------------------------------------------------------ #
     # internal helpers
@@ -141,11 +185,13 @@ class CardLayoutRecommender:
         slide: ContentSlide,
         tags: set[str],
         analyzer_summary: DraftAnalyzerSummary | None,
+        usage_tags_override: tuple[str, ...] | None = None,
     ) -> tuple[float, DraftLayoutScoreDetail]:
         score = 0.1
         detail = DraftLayoutScoreDetail(content_capacity=0.1)
 
-        usage_tags = set(profile.usage_tags)
+        usage_tags_source = usage_tags_override or profile.usage_tags
+        usage_tags = set(usage_tags_source)
 
         intent_tag = normalize_usage_tag_value(slide.intent)
         if intent_tag and intent_tag in usage_tags:
@@ -202,26 +248,32 @@ class CardLayoutRecommender:
     def _apply_layout_ai(
         self,
         slide: ContentSlide,
-        evaluated: Sequence[tuple[LayoutProfile, float, DraftLayoutScoreDetail]],
+        layouts: Sequence[LayoutProfile],
         analyzer_summary: DraftAnalyzerSummary | None,
-    ) -> tuple[dict[str, float], LayoutAIResponse | None]:
+        slide_tags: set[str],
+    ) -> tuple[
+        dict[str, float],
+        LayoutAIResponse | None,
+        dict[str, tuple[str, ...]],
+        dict[str, tuple[str, ...]],
+    ]:
         if not self._config.enable_ai or self._config.ai_weight <= 0:
-            return {}, None
+            return {}, None, {}, {}
 
         bundle = self._ensure_layout_ai()
         if bundle is None:
-            return {}, None
+            return {}, None, {}, {}
         policy, client = bundle
 
-        candidate_ids = [profile.layout_id for profile, _, _ in evaluated]
+        candidate_ids = [profile.layout_id for profile in layouts]
         if not candidate_ids:
-            return {}, None
+            return {}, None, {}, {}
 
         try:
             prompt = policy.resolve_prompt()
         except LayoutAIPolicyError as exc:
             logger.warning("layout AI prompt resolution failed: %s", exc)
-            return {}, None
+            return {}, None, {}, {}
 
         card_payload = {
             "slide_id": slide.id,
@@ -231,13 +283,18 @@ class CardLayoutRecommender:
             "body": slide.elements.body,
             "note": slide.elements.note,
             "analyzer": analyzer_summary.model_dump(mode="json") if analyzer_summary else None,
+            "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
+            "slide_tag_hints": sorted(tag for tag in slide_tags if tag),
         }
+
+        layout_metadata = self._build_layout_metadata(layouts)
 
         request = LayoutAIRequest(
             prompt=prompt,
             policy=policy,
             card_payload=card_payload,
             layout_candidates=candidate_ids,
+            layout_metadata=layout_metadata,
         )
 
         try:
@@ -250,10 +307,10 @@ class CardLayoutRecommender:
             response = client.recommend(request)
         except LayoutAIClientConfigurationError as exc:
             logger.info("layout AI recommend skipped: %s", exc)
-            return {}, None
+            return {}, None, {}, {}
         except Exception as exc:  # noqa: BLE001
             logger.warning("layout AI recommend failed: %s", exc)
-            return {}, None
+            return {}, None, {}, {}
 
         scores: dict[str, float] = {}
         weight = max(0.0, min(1.0, self._config.ai_weight))
@@ -264,14 +321,54 @@ class CardLayoutRecommender:
             if normalized <= 0.0:
                 continue
             scores[layout_id] = round(normalized, 3)
+
+        ai_classified: dict[str, tuple[str, ...]] = {}
+        ai_unknown: dict[str, tuple[str, ...]] = {}
+        classifications = getattr(response, "classifications", {}) or {}
+        for layout_id, raw_tags in classifications.items():
+            if not raw_tags:
+                continue
+            normalized, unknown = normalize_usage_tags_with_unknown(raw_tags)
+            if normalized:
+                ai_classified[layout_id] = normalized
+            if unknown:
+                ai_unknown[layout_id] = tuple(sorted(unknown))
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
-                "layout AI response summary: slide_id=%s model=%s used_layouts=%s",
+                "layout AI response summary: slide_id=%s model=%s used_layouts=%s classifications=%s",
                 slide.id,
                 response.model,
                 list(scores.keys()),
+                ai_classified,
             )
-        return scores, response
+        return scores, response, ai_classified, ai_unknown
+
+    @staticmethod
+    def _build_layout_metadata(
+        layouts: Sequence[LayoutProfile],
+    ) -> dict[str, dict[str, object]]:
+        metadata: dict[str, dict[str, object]] = {}
+        for profile in layouts:
+            entry: dict[str, object] = {
+                "layout_name": profile.layout_name,
+                "usage_tags_rule": list(profile.usage_tags),
+                "text_hint": profile.text_hint,
+                "media_hint": profile.media_hint,
+            }
+            if profile.placeholder_summary:
+                summary = profile.placeholder_summary
+                counts = summary.get("counts")
+                if counts:
+                    entry["placeholder_counts"] = counts
+                details = summary.get("details")
+                if details:
+                    entry["placeholders"] = details
+                extras = summary.get("attributes")
+                if extras:
+                    entry["placeholder_attributes"] = extras
+            metadata[profile.layout_id] = entry
+        return metadata
 
     def _ensure_layout_ai(self) -> tuple[LayoutAIPolicy, LayoutAIClient] | None:
         path = self._config.policy_path
@@ -300,6 +397,7 @@ class CardLayoutRecommender:
         slide: ContentSlide,
         preferred_layout: str,
         tags: set[str],
+        usage_tags_override: tuple[str, ...] | None = None,
     ) -> float:
         """LLM連携前提のスコアを簡易シミュレーションする。"""
         boost = 0.0
@@ -312,7 +410,8 @@ class CardLayoutRecommender:
         elif slide.ai_review and slide.ai_review.grade == "B":
             boost += self._config.ai_weight * 0.1
 
-        usage_tags = set(profile.usage_tags)
+        usage_tags_source = usage_tags_override or profile.usage_tags
+        usage_tags = set(usage_tags_source)
         if tags and usage_tags:
             overlap = tags & usage_tags
             if overlap:

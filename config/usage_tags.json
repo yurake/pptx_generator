@@ -1,0 +1,76 @@
+{
+  "intent_tags": [
+    {
+      "tag": "title",
+      "description": "表紙やタイトル専用のレイアウト。最低限のテキストと視覚要素のみで構成される。"
+    },
+    {
+      "tag": "agenda",
+      "description": "章構成や議題を一覧表示するレイアウト。目次スライドを想定。"
+    },
+    {
+      "tag": "overview",
+      "description": "全体像や要約を提示するレイアウト。エグゼクティブサマリーやハイライトページを想定。"
+    },
+    {
+      "tag": "content",
+      "description": "汎用的な本文ページで、テキストや図を柔軟に配置できるレイアウト。"
+    },
+    {
+      "tag": "section_break",
+      "description": "章区切りやセクション開始を示すレイアウト。章タイトルと簡単な補足情報を含む。"
+    },
+    {
+      "tag": "closing",
+      "description": "クロージングやまとめのレイアウト。感謝のメッセージや呼びかけを想定。"
+    },
+    {
+      "tag": "summary",
+      "description": "要点を箇条書きでまとめるレイアウト。結論や主要メッセージを短く整理。"
+    },
+    {
+      "tag": "next_steps",
+      "description": "次のアクションやスケジュールを提示するレイアウト。ロードマップやタスクを想定。"
+    },
+    {
+      "tag": "call_to_action",
+      "description": "提案の承認や連絡先など、読者に具体的な行動を促すレイアウト。"
+    }
+  ],
+  "media_tags": [
+    {
+      "tag": "chart",
+      "description": "グラフやチャートの配置を想定したレイアウト。"
+    },
+    {
+      "tag": "table",
+      "description": "テーブルや表形式のデータ配置を想定したレイアウト。"
+    },
+    {
+      "tag": "visual",
+      "description": "画像や図版を中心に配置するレイアウト。"
+    }
+  ],
+  "fallback_tag": {
+    "tag": "generic",
+    "description": "用途が特定できない場合のフォールバックタグ。"
+  },
+  "static_rules": [
+    {
+      "layout_name_pattern": ".*Title.*",
+      "tags": ["title"]
+    },
+    {
+      "layout_name_pattern": ".*Agenda.*",
+      "tags": ["agenda"]
+    },
+    {
+      "layout_name_pattern": ".*executive.*summary.*",
+      "tags": ["overview", "content"]
+    },
+    {
+      "layout_name_pattern": null,
+      "tags": ["content"]
+    }
+  ]
+}

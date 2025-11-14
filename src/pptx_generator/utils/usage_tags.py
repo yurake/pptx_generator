@@ -2,21 +2,66 @@
 
 from __future__ import annotations
 
+import json
 from collections import OrderedDict
+from pathlib import Path
 from typing import Iterable, Tuple
 
-CANONICAL_USAGE_TAGS: frozenset[str] = frozenset(
-    {
-        "agenda",
-        "chart",
-        "content",
-        "overview",
-        "table",
-        "title",
-        "visual",
-        "generic",
-    }
-)
+_CONFIG_PATH = Path("config/usage_tags.json")
+_CONFIG_DATA: dict[str, object] | None = None
+
+
+def _load_config() -> dict[str, object]:
+    global _CONFIG_DATA
+    if _CONFIG_DATA is None:
+        if not _CONFIG_PATH.exists():
+            raise FileNotFoundError(f"usage_tags config not found: {_CONFIG_PATH}")
+        _CONFIG_DATA = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+    return _CONFIG_DATA
+
+
+def get_usage_tag_config() -> dict[str, object]:
+    """Return the usage tag configuration dictionary."""
+    config = _load_config()
+    return json.loads(json.dumps(config))
+
+
+def _extract_tag_list(entries: list[object]) -> list[str]:
+    tags: list[str] = []
+    for entry in entries:
+        if isinstance(entry, str):
+            value = entry.strip().casefold()
+            if value:
+                tags.append(value)
+        elif isinstance(entry, dict):
+            tag_value = entry.get("tag")
+            if isinstance(tag_value, str):
+                value = tag_value.strip().casefold()
+                if value:
+                    tags.append(value)
+    return tags
+
+
+def _build_canonical_tags() -> frozenset[str]:
+    config = _load_config()
+    intent_tags = _extract_tag_list(config.get("intent_tags") or [])
+    media_tags = _extract_tag_list(config.get("media_tags") or [])
+    fallback = config.get("fallback_tag")
+    tags = set(intent_tags) | set(media_tags)
+    if isinstance(fallback, str):
+        value = fallback.strip().casefold()
+        if value:
+            tags.add(value)
+    elif isinstance(fallback, dict):
+        tag_value = fallback.get("tag")
+        if isinstance(tag_value, str):
+            value = tag_value.strip().casefold()
+            if value:
+                tags.add(value)
+    return frozenset(tags)
+
+
+CANONICAL_USAGE_TAGS: frozenset[str] = _build_canonical_tags()
 
 _SYNONYM_MAP: dict[str, str] = {
     "body": "content",
@@ -27,6 +72,8 @@ _SYNONYM_MAP: dict[str, str] = {
     "cover": "title",
     "front": "title",
     "summary": "overview",
+    "kpi": "content",
+    "metric": "content",
 }
 
 
@@ -82,4 +129,5 @@ __all__ = [
     "normalize_usage_tag_value",
     "normalize_usage_tags",
     "normalize_usage_tags_with_unknown",
+    "get_usage_tag_config",
 ]
