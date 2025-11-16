@@ -17,28 +17,27 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
     - テスト方針: `pytest tests/test_cli_integration.py` を実行。force 指定時に LayoutValidation 呼び出しがスキップされることをモンキーパッチで検証。
     - ロールバック方法: 追加した `force` フラグと関連分岐を削除し、既存実装に戻す。
     - 承認メッセージ ID／リンク: ユーザー「ok」メッセージ
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
-- [ ] 実装
+- [x] 設計・実装方針の確定
+  - メモ: CLI の force フラグで LayoutValidation をスキップする運用を承認済み。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 外部仕様は README で案内済みのため追加変更不要と判断。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `--force` オプション追加と検証スキップ処理、出力メッセージ調整。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_integration.py`
-- [ ] ドキュメント更新
-  - メモ: 
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: README で force オプションの利用注意を追記済み。その他ドキュメントは現行内容と整合しているため更新不要。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #290 にまとめて反映済み。
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次アクション条件をここに記載する。

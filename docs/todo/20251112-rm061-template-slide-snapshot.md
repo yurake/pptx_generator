@@ -17,27 +17,27 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
     - テスト方針: `pytest tests/test_cli_integration.py`。`--slide` 指定時にスナップショットが生成され、段落テキストが記録されることを確認。
     - ロールバック方法: `--slide` オプションと関連コードを削除。
     - 承認メッセージ ID／リンク: 現メッセージ
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針の確定
+  - メモ: `pptx template --slide` でスライド情報を抽出する構成を Plan 承認時に確定済み。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: JSON 出力の追加のみで既存要件に変更がないため追加ドキュメントは不要。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `--slide` オプション追加と slide_snapshot.json 出力ロジックを実装。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_integration.py`
-- [ ] ドキュメント更新
-  - メモ: 
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: README と notes でスライド抽出手順を確認し追加更新不要と判断。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #290 にて対応済み。
 
 ## メモ
 - 計画のみで完了する場合は、判断者・判断日と次アクション条件をここに記載する。

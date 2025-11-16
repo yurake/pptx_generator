@@ -17,27 +17,27 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
     - テスト方針: `pytest tests/test_analyzer.py` を実行し、スナップショットの段落出力を確認。
     - ロールバック方法: `_export_snapshot_slide` から `paragraphs` のシリアライズを削除すれば従来挙動へ戻せる。
     - 承認メッセージ ID／リンク: ユーザー「resume」メッセージ
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針の確定
+  - メモ: Analyzer スナップショットの段落出力追加のみを対象とし、既存インターフェースを維持する方針で合意済み。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 外部仕様への影響が無いため追加ドキュメントは不要（内部仕様は Plan で共有済み）。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: スナップショット出力に段落配列を追加し、テストで段落を検証できるよう更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_analyzer.py`
-- [ ] ドキュメント更新
-  - メモ: 
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: 本タスクは Analyzer 内部出力のみの変更のため、既存ドキュメントとの差異なしを確認（追加更新不要）。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #290 にて一括反映済み。
 
 ## メモ
 - 計画のみで完了する場合は、判断者・判断日と次アクション条件をここに記載する。
