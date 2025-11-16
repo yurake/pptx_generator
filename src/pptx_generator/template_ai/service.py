@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -62,10 +61,9 @@ class TemplateAIService:
             raise TemplateAIPolicyError(str(exc)) from exc
 
         try:
-            self._client: TemplateAIClient = create_template_ai_client(self._policy)
+            self._client, self._provider = create_template_ai_client(self._policy)
         except TemplateAIClientConfigurationError as exc:
             raise TemplateAIClientConfigurationError(str(exc)) from exc
-        self._provider = (os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER") or "mock").strip().lower()
 
     def classify_layout(
         self,
