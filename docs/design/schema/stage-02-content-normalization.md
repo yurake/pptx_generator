@@ -14,33 +14,62 @@
 ```jsonc
 {
   "brief_id": "sample_import_content_summary",
+  "meta": {
+    "locale": "ja-JP"
+  },
   "cards": [
     {
-      "card_id": "intro",
-      "chapter": "イントロダクション",
-      "message": "intro 現状と課題",
-      "narrative": [
-        "intro 現状と課題"
-      ],
-      "supporting_points": [
-        {"statement": "営業リードタイムが平均 12 日で業界平均より 1.5 倍長い。"}
-      ],
-      "story": {"phase": "introduction"},
-      "intent_tags": ["introduction"],
-      "status": "draft",
-      "autofix_applied": []
+      "card_id": "introduction-launch",
+      "order": 1,
+      "role": {
+        "story_phase": "introduction",
+        "intent_tags": ["kickoff"]
+      },
+      "content": {
+        "title": "現状と課題の整理",
+        "headline": "ブランド統一とAI×HITLの協調で提案書量産を実現する",
+        // headline: このページで最も伝えたい結論を短く明示する
+        "body": [
+          { "type": "paragraph", "text": "社内提案書の制作負荷は高く、手戻り率も20%に達している。" },
+          { "type": "bullet", "text": "ブランド統一とAI協調で制作時間を10日→3日に短縮する" },
+          {
+            "type": "table",
+            "headers": ["指標", "現状"],
+            "rows": [
+              ["手戻り率", "20%"],
+              ["制作時間", "平均10日"]
+            ]
+          },
+          {
+            "type": "media",
+            "ref": "s3://assets/overview.png",
+            "description": "現状課題のヒートマップ"
+          }
+        ],
+        "notes": [
+          {
+            "type": "rationale",
+            "text": "ノート欄に掲載。AIが本文をこう組み立てた理由や背景情報を説明し、閲覧者に伝えるかは利用者が判断する。"
+          }
+        ]
+      }
     }
   ]
 }
 ```
 
 ### フィールド補足
-- `card_id`: 工程3で参照するユニーク ID。
-- `chapter`: 章タイトル。`brief_story_outline.json` の `chapters[].title` と整合させる。
-- `story.phase`: ストーリーライン分類（`introduction` / `problem` / `solution` / `impact` など）。
-- `intent_tags`: マッピング時の layout_hint / intent 推定に利用するタグ。
-- `status`: `draft` / `approved` / `returned`。初期値は `draft`。
-- `autofix_applied`: 生成 AI が提案した AutoFix の適用履歴。
+- `brief_id`: ブリーフ成果物を一意に識別する ID。
+- `meta`: 全カード共通のメタ情報（例: `locale` / `generated_at`）。任意。
+- `card_id`: 後続工程で参照するユニークなスラグ。人間が識別しやすい文字列を推奨。
+- `order`: カードの並び順。`card_id` とは独立して管理する。
+- `role.story_phase`: ストーリーライン分類（`introduction` / `problem` / `solution` / `impact` / `next` など）。
+- `role.intent_tags`: レイアウト選定や意図推定に利用するタグ。
+- `content.title`: スライドタイトル。
+- `content.headline`: そのページで最も伝えたい結論を 1 行で記述する。
+- `content.body`: 本文ブロックの配列。`type` に応じ `text`、`headers` / `rows`、`ref` / `description` などを持つ。ブロック種別は柔軟に拡張可能。
+- `content.body`: 本文ブロックの配列。`type` に応じ `text`、`headers` / `rows`、`ref` / `description` などを持つ。ブロック種別は柔軟に拡張可能。
+- `content.notes`: PowerPoint のノート欄へそのまま記載する補足情報。本文をどう構成したか、閲覧者へ伝える際の注意点などを生成 AI が記述し、ユーザーが提示するかどうかを判断する。
 
 ## brief_ai_log.json
 ```jsonc

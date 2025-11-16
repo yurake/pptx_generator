@@ -11,7 +11,7 @@
 - （任意）カード生成枚数 (`-p/--page-limit`)。
 
 ## 出力
-- `prepare_card.json`: カード ID・章・本文・意図タグ・ステータス（`draft` / `approved` / `returned`）に加え、静的モード時は `layout_mode` / `slide_id` / `slot_id` / `required` / `slot_fulfilled` / `blueprint_slot`（`anchor`・`content_type`・`intent_tags`・`fulfilled`）を付与する。
+- `prepare_card.json`: テンプレート非依存のスライド下書き。各カードは `card_id` / `order` / `role.story_phase` / `role.intent_tags` と、`content` セクション（`title`・`headline`・`body`・`notes`）で構成する。`body` は `type` 付きのブロック（例: `paragraph` / `bullet` / `table` / `media`）配列とし、PowerPoint の本文に出力すべき情報を網羅する。`notes` は PowerPoint のノート欄に転記する補足情報として利用する。
 - `brief_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
 - `brief_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
 - 動的モードでは呼び出しを 1 回に集約し、`brief_ai_log.json` にはバッチ単位のレコードを出力する。
@@ -24,13 +24,12 @@
 2. `BriefAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `-p/--page-limit` が指定されていない限りポリシーまたは LLM 任せ。
 3. 生成結果を Pydantic モデルで検証し、`prepare_card.json` と関連ログファイルを出力する。
 4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
-5. 工程3 `pptx compose` が `--brief-cards` / `--brief-log` / `--brief-meta` オプションで成果物を参照し、章構成とマッピングを実行する。
+5. 工程3 `pptx compose` が `--brief-cards` / `--brief-log` / `--brief-meta` オプションで成果物を参照し、章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
 
 ## 監査・品質要件
 - 生成 AI が警告を返した場合は `brief_ai_log.json.warnings` に記録し、CLI 標準出力にも WARN を表示する。
 - `ai_generation_meta.json.statistics.cards_total` と `prepare_card.json.cards.length` が一致すること。
 - `ai_generation_meta.json.mode` と `audit_log.json.brief_normalization.mode` が一致し、後工程で参照できるように保持すること。
-- 生成カードの `status` 初期値は `draft`。HITL 承認後に `approved` / `returned` を設定して `brief_log.json` へ記録する。
 - 入力ブリーフのハッシュ (`input_hash`) は `audit_log.json` と `ai_generation_meta.json` の両方で整合させる。
 
 ## CLI 要件
