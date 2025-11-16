@@ -349,6 +349,16 @@ class LayoutValidationSuite:
                 style_hint = self._build_style_hint(shape)
                 flags = self._build_flags(shape, normalised_type)
 
+                if bbox["x"] < 0 or bbox["y"] < 0:
+                    warnings.append(
+                        {
+                            "code": "placeholder_negative_origin",
+                            "layout_id": layout_id,
+                            "name": shape.name,
+                            "detail": f"x={bbox['x']} y={bbox['y']}",
+                        }
+                    )
+
                 placeholder_records.append(
                     {
                         "name": shape.name,
