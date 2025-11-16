@@ -97,9 +97,10 @@ def _read_config_text() -> str | None:
     except (ModuleNotFoundError, FileNotFoundError, AttributeError):  # pragma: no cover - optional path
         pass
 
-    repo_path = Path(__file__).resolve().parents[2] / "config" / "usage_tags.json"
-    if repo_path.is_file():
-        return repo_path.read_text(encoding="utf-8")
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "config" / "usage_tags.json"
+        if candidate.is_file():
+            return candidate.read_text(encoding="utf-8")
 
     return None
 
