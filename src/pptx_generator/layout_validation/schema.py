@@ -33,8 +33,8 @@ LAYOUT_RECORD_SCHEMA: dict[str, object] = {
                         "type": "object",
                         "required": ["x", "y", "width", "height"],
                         "properties": {
-                            "x": {"type": "integer", "minimum": 0},
-                            "y": {"type": "integer", "minimum": 0},
+                            "x": {"type": "integer"},
+                            "y": {"type": "integer"},
                             "width": {"type": "integer", "minimum": 0},
                             "height": {"type": "integer", "minimum": 0},
                         },

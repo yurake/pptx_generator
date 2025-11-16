@@ -44,12 +44,16 @@ class TemplateAIClientConfigurationError(RuntimeError):
     """テンプレート AI クライアントの設定エラー。"""
 
 
-def create_template_ai_client(policy: TemplateAIPolicy) -> TemplateAIClient:
-    """ポリシー設定から適切なクライアントを生成する。"""
+def create_template_ai_client(policy: TemplateAIPolicy) -> tuple[TemplateAIClient, str]:
+    """ポリシー設定から適切なクライアントを生成し、利用プロバイダ名を返す。"""
 
     provider_env = os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER")
-    base_provider = policy.provider.strip().lower() if policy.provider else "mock"
-    provider = provider_env.strip().lower() if provider_env else base_provider
+    base_provider = (policy.provider or "mock").strip().lower()
+    if provider_env and provider_env.strip():
+        provider = provider_env.strip().lower()
+    else:
+        provider = base_provider or "mock"
+    provider = provider or "mock"
     logger.info(
         "template AI provider resolved: env=%s policy=%s -> %s",
         provider_env or "",
@@ -57,9 +61,9 @@ def create_template_ai_client(policy: TemplateAIPolicy) -> TemplateAIClient:
         provider,
     )
     if provider in {"mock", ""}:
-        return MockTemplateAIClient()
+        return MockTemplateAIClient(), "mock"
     if provider in {"openai", "openai-api"}:
-        return OpenAITemplateAIClient.from_env(policy)
+        return OpenAITemplateAIClient.from_env(policy), "openai"
     raise TemplateAIClientConfigurationError(
         f"テンプレートAIプロバイダ '{provider}' には対応していません"
     )
