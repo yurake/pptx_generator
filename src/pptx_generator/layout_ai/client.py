@@ -7,7 +7,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 import re
-from typing import Iterable, Protocol
+from typing import Iterable, Protocol, Tuple
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 
@@ -25,6 +25,7 @@ class LayoutAIRequest:
     policy: LayoutAIPolicy
     card_payload: dict[str, object]
     layout_candidates: list[str]
+    layout_metadata: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -34,6 +35,7 @@ class LayoutAIResponse:
     model: str
     recommended: list[tuple[str, float]] = field(default_factory=list)
     reasons: dict[str, str] = field(default_factory=dict)
+    classifications: dict[str, Tuple[str, ...]] = field(default_factory=dict)
     raw_text: str | None = None
 
 
@@ -86,16 +88,27 @@ class MockLayoutAIClient:
             score = min(1.0, round(base + bonus, 3))
             weights.append((layout_id, score))
         reasons = {layout: "mock-recommended" for layout, _ in weights}
+        classifications: dict[str, Tuple[str, ...]] = {}
+        metadata = request.layout_metadata or {}
+        for layout_id in request.layout_candidates:
+            entry = metadata.get(layout_id, {})
+            tags = entry.get("usage_tags_rule") or entry.get("usage_tags")
+            if isinstance(tags, (list, tuple)):
+                canonical = tuple(str(tag) for tag in tags if str(tag))
+                if canonical:
+                    classifications[layout_id] = canonical
         payload = {
             "model": request.policy.model,
             "recommended": [{"layout_id": layout, "score": score} for layout, score in weights],
             "reasons": reasons,
+            "classifications": {key: list(value) for key, value in classifications.items()},
         }
         raw_text = json.dumps(payload, ensure_ascii=False)
         return LayoutAIResponse(
             model=request.policy.model,
             recommended=weights,
             reasons=reasons,
+            classifications=classifications,
             raw_text=raw_text,
         )
 
@@ -558,9 +571,15 @@ def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
 
     recommended_map: dict[str, float] = {}
     reasons_map: dict[str, str] = {}
+    classifications_map: dict[str, Tuple[str, ...]] = {}
     order: list[str] = []
 
-    def register(layout_id: str, score: float | None, reason: object | None) -> None:
+    def register(
+        layout_id: str,
+        score: float | None,
+        reason: object | None,
+        tags: Iterable[str] | None,
+    ) -> None:
         if layout_id not in order:
             order.append(layout_id)
         if score is not None:
@@ -571,20 +590,39 @@ def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
                 pass
         if layout_id not in reasons_map and reason is not None:
             reasons_map[layout_id] = _stringify_reason(reason)
+        if layout_id not in classifications_map:
+            tag_candidates: list[str] = []
+            if tags:
+                tag_candidates.extend(tags)
+            tag_candidates.extend(_extract_tags_from_reason(reason))
+            deduped = _deduplicate_tags(tag_candidates)
+            if deduped:
+                classifications_map[layout_id] = deduped
 
-    for layout_id, score, reason in _iter_layout_candidates(data):
+    for layout_id, score, reason, tags in _iter_layout_candidates(data):
         if not layout_id:
             continue
-        register(layout_id, score, reason)
+        register(layout_id, score, reason, tags)
 
     fallback_choice = data.get("recommended_layout") or data.get("best_layout")
     if isinstance(fallback_choice, str):
-        register(fallback_choice, recommended_map.get(fallback_choice, 1.0), None)
+        register(fallback_choice, recommended_map.get(fallback_choice, 1.0), None, None)
 
     direct_reasons = data.get("reasons")
     if isinstance(direct_reasons, dict):
         for key, value in direct_reasons.items():
             reasons_map[str(key)] = _stringify_reason(value)
+            if str(key) not in classifications_map:
+                deduped = _deduplicate_tags(_coerce_tag_candidates(value))
+                if deduped:
+                    classifications_map[str(key)] = deduped
+
+    direct_classifications = data.get("classifications")
+    if isinstance(direct_classifications, dict):
+        for key, value in direct_classifications.items():
+            deduped = _deduplicate_tags(_coerce_tag_candidates(value))
+            if deduped:
+                classifications_map[str(key)] = deduped
 
     entries: list[tuple[str, float]] = []
     for layout_id in order:
@@ -595,6 +633,7 @@ def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
         model=model,
         recommended=entries,
         reasons=reasons_map,
+        classifications=classifications_map,
         raw_text=text,
     )
 
@@ -609,7 +648,9 @@ def _extract_json_object(text: str) -> dict[str, object]:
         return json.loads(match.group(0))
 
 
-def _iter_layout_candidates(data: dict[str, object]) -> Iterable[tuple[str | None, float | None, object | None]]:
+def _iter_layout_candidates(
+    data: dict[str, object],
+) -> Iterable[tuple[str | None, float | None, object | None, list[str]]]:
     buckets: list[object] = []
     for key in (
         "recommended",
@@ -630,7 +671,8 @@ def _iter_layout_candidates(data: dict[str, object]) -> Iterable[tuple[str | Non
             layout_id = _coerce_layout_id(item)
             score = _coerce_layout_score(item)
             reason = _extract_reason(item)
-            yield layout_id, score, reason
+            tags = _extract_tags_from_item(item)
+            yield layout_id, score, reason, tags
 
 
 def _coerce_layout_id(item: dict[str, object]) -> str | None:
@@ -675,6 +717,53 @@ def _extract_reason(item: dict[str, object]) -> object | None:
     return None
 
 
+def _extract_tags_from_item(item: dict[str, object]) -> list[str]:
+    for key in ("tags", "usage_tags", "classification", "classifications"):
+        if key in item:
+            tags = _coerce_tag_candidates(item[key])
+            if tags:
+                return tags
+    return []
+
+
+def _coerce_tag_candidates(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        parts = [part.strip() for part in re.split(r"[,\s/]+", value) if part.strip()]
+        return parts
+    if isinstance(value, dict):
+        collected: list[str] = []
+        for key in ("tags", "usage_tags", "tag", "label", "name", "classification"):
+            if key in value:
+                collected.extend(_coerce_tag_candidates(value[key]))
+        return collected
+    if isinstance(value, (list, tuple, set)):
+        collected: list[str] = []
+        for item in value:
+            collected.extend(_coerce_tag_candidates(item))
+        return collected
+    return []
+
+
+def _deduplicate_tags(tags: Iterable[str]) -> Tuple[str, ...]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for tag in tags:
+        normalized = str(tag).strip().casefold()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ordered.append(normalized)
+    return tuple(ordered)
+
+
+def _extract_tags_from_reason(reason: object) -> list[str]:
+    if reason is None:
+        return []
+    return _coerce_tag_candidates(reason)
+
+
 def _stringify_reason(value: object) -> str:
     if value is None:
         return ""
@@ -696,8 +785,9 @@ def _build_system_prompt(request: LayoutAIRequest) -> str:
         "あなたは B2B プレゼン資料のレイアウト推薦エージェントです。"
         "入力される JSON 情報を解析し、最も適したレイアウトを高精度に提案してください。"
         "応答は JSON オブジェクトのみで返し、次のスキーマを厳守してください: "
-        '{"recommended":[{"layout_id":"<候補ID>","score":0.0}],"reasons":{"<候補ID>":"根拠"}}.'
-        "recommended 以外のキーやコードフェンス、説明文は含めず、score は 0〜1 の範囲で数値にしてください。"
+        '{"recommended":[{"layout_id":"<候補ID>","score":0.0,"tags":["title"]}],"reasons":{"<候補ID>":"根拠"}}.'
+        "tags には入力で指定された allowed_tags の語彙を使用し、score は 0〜1 の範囲で数値にしてください。"
+        "recommended 以外のキーやコードフェンス、説明文は含めてはいけません。"
     )
 
 
@@ -707,4 +797,6 @@ def _build_user_prompt(request: LayoutAIRequest) -> str:
         "candidate_layouts": request.layout_candidates,
         "instruction": request.prompt,
     }
+    if request.layout_metadata:
+        payload["layout_metadata"] = request.layout_metadata
     return json.dumps(payload, ensure_ascii=False)

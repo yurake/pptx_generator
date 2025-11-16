@@ -64,6 +64,8 @@
 - `.pptx` テンプレートからレイアウト構造を抽出する CLI (`extract-template`) を提供し、工程 2 を支援すること。
 - 抽出結果には `layout_id`, `placeholders`, `text_hint`, `usage_tags`, `media_hint` を含め、工程 3〜5 が参照できること。
 - 抽出処理はテンプレ依存カタログ (`jobspec.json`) を同時生成し、レイアウトごとのアンカーや推奨用途を後工程が共有できるようにすること。
+- usage_tags の推定は生成 AI（Template AI）を標準で起動し、`config/usage_tags.json` に定義した canonical タグと説明文をプロンプトへ渡して整合性を維持すること。`PPTX_TEMPLATE_LLM_PROVIDER=mock` の場合のみ静的ルールで完結できるようフォールバックを維持すること。
+- LLM 応答は `pptx_generator.template_ai.llm` ログへ残し、`-v` / `--debug` 指定時に推定タグ・未知語・プロバイダ情報を確認できること。
 
 ### 4.10 テンプレ運用サポート
 - テンプレ版ごとの差分を自動検出し、互換レポートを生成して通知できること。
