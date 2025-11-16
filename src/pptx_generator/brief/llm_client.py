@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import logging
 import os
 from dataclasses import dataclass
@@ -56,33 +57,61 @@ class MockBriefLLMClient:
             payload = json.loads(json_block[start : end + 1])
         except (ValueError, json.JSONDecodeError):
             payload = {}
-        chapters = payload.get("chapters") or []
-        if not isinstance(chapters, list) or not chapters:
-            chapters = [{"title": "イントロダクション"}]
+        constraints = payload.get("constraints") or {}
+        max_chapters = constraints.get("max_chapters")
+        if isinstance(max_chapters, int) and max_chapters > 0:
+            chapter_count = max_chapters
+        else:
+            chapter_count = 4
 
+        raw_context = payload.get("raw_context") or {}
+        text_source = raw_context.get("content") or ""
+        lines = [line.strip() for line in text_source.splitlines() if line.strip()]
+        bullets = [line[2:].strip() for line in lines if line.startswith("- ") and line[2:].strip()]
+        if not bullets:
+            bullets = lines
+        if not bullets:
+            bullets = [f"セクション {idx + 1}" for idx in range(chapter_count)]
+
+        # 保証: bullets が chapter_count 以上になるよう補完
+        while len(bullets) < chapter_count:
+            bullets.append(bullets[-1])
+
+        story_framework = [
+            "introduction",
+            "problem",
+            "solution",
+            "impact",
+            "next",
+        ]
+
+        chunk_size = max(1, math.ceil(len(bullets) / chapter_count))
         result_chapters: list[dict[str, Any]] = []
-        for idx, chapter in enumerate(chapters):
-            title = str(chapter.get("title") or f"Chapter {idx+1}")
-            narrative = chapter.get("details") or []
-            if not isinstance(narrative, list):
-                narrative = [str(narrative)]
-            intent_tags = chapter.get("intent_tags") or []
-            if not isinstance(intent_tags, list):
-                intent_tags = [str(intent_tags)]
-            story_phase = "introduction"
-            if intent_tags:
-                story_phase = str(intent_tags[0]).lower()
+        for idx in range(chapter_count):
+            start_index = idx * chunk_size
+            segment = bullets[start_index : start_index + chunk_size]
+            if not segment:
+                segment = [bullets[min(idx, len(bullets) - 1)]]
+
+            story_phase = story_framework[idx % len(story_framework)].lower()
+            card_id = f"{story_phase}-{idx + 1}"
+
+            title = segment[0][:40] if segment[0] else f"Chapter {idx + 1}"
+            narrative = [entry[:40] for entry in segment]
+            supporting_points = [{"statement": entry[:40]} for entry in segment]
+
             result_chapters.append(
                 {
-                    "title": title,
-                    "card_id": f"card-{idx+1}",
+                    "title": title or f"Chapter {idx + 1}",
+                    "card_id": card_id,
                     "story_phase": story_phase,
-                    "intent_tags": intent_tags or [story_phase],
-                    "message": chapter.get("message") or title,
-                    "narrative": [str(line)[:40] for line in narrative[:6]] or [title],
-                    "supporting_points": [{"statement": str(line)[:40]} for line in narrative[:3]],
+                    "intent_tags": [story_phase],
+                    "message": title or f"Chapter {idx + 1}",
+                    "body": narrative,
+                    "supporting_points": supporting_points,
                 }
             )
+
         text = json.dumps({"chapters": result_chapters}, ensure_ascii=False)
         return BriefLLMResult(text=text, model="mock-local", warnings=[], tokens={})
 

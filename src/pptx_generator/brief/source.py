@@ -60,6 +60,7 @@ class BriefSourceDocument(BaseModel):
 
     meta: BriefSourceMeta
     chapters: list[BriefSourceChapter] = Field(default_factory=list)
+    raw_text: str | None = None
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "BriefSourceDocument":
@@ -151,4 +152,4 @@ class BriefSourceDocument(BaseModel):
             brief_id=brief_id,
             objective="\n".join(intro_lines) or None,
         )
-        return cls(meta=meta, chapters=normalized_chapters)
+        return cls(meta=meta, chapters=normalized_chapters, raw_text=text)

@@ -22,31 +22,31 @@
       "cards": []
     },
     {
-      "id": "intro 現状と課題",
-      "title": "intro 現状と課題",
+      "id": "このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で",
+      "title": "このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で",
       "cards": [
-        "intro"
+        "introduction-1"
       ]
     },
     {
-      "id": "solution 解決策",
-      "title": "solution 解決策",
+      "id": "AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ",
+      "title": "AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ",
       "cards": [
-        "solution"
+        "problem-2"
       ]
     },
     {
-      "id": "impact 期待効果",
-      "title": "impact 期待効果",
+      "id": "CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L",
+      "title": "CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L",
       "cards": [
-        "impact"
+        "solution-3"
       ]
     },
     {
-      "id": "next 次のアクション",
-      "title": "next 次のアクション",
+      "id": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保",
+      "title": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保",
       "cards": [
-        "next"
+        "impact-4"
       ]
     }
   ],

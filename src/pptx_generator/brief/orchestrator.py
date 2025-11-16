@@ -94,6 +94,10 @@ class BriefAIOrchestrator:
         story_context = self._build_story_context(source, policy)
         brief_id = source.meta.brief_id or f"brief-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
         document = BriefDocument(brief_id=brief_id, cards=cards, story_context=story_context)
+        constraints: dict[str, Any] | None = None
+        if normalized_mode == "dynamic" and page_limit is not None:
+            constraints = {"max_chapters": page_limit}
+
         meta = BriefGenerationMeta.from_document(
             document=document,
             policy_id=policy.id,
@@ -103,6 +107,7 @@ class BriefAIOrchestrator:
             blueprint_path=blueprint_ref.get("path") if blueprint_ref else None,
             blueprint_hash=blueprint_ref.get("hash") if blueprint_ref else None,
             slot_summary=slot_summary,
+            constraints=constraints,
         )
         return document, meta, ai_records
 
@@ -114,7 +119,7 @@ class BriefAIOrchestrator:
         page_limit: int | None,
         all_cards_status: BriefStatusType | None,
     ) -> tuple[list[BriefCard], list[BriefAIRecord]]:
-        payload = self._build_prompt_payload(source, page_limit=page_limit)
+        payload = self._build_dynamic_prompt_payload(source, policy=policy, page_limit=page_limit)
         prompt = build_brief_prompt(payload)
         try:
             llm_result = self._llm_client.generate(prompt, model_hint=None)
@@ -160,55 +165,53 @@ class BriefAIOrchestrator:
 
         return cards, ai_records
 
-    def _build_prompt_payload(
+    def _build_dynamic_prompt_payload(
         self,
         source: BriefSourceDocument,
         *,
+        policy: BriefPolicy,
         page_limit: int | None,
     ) -> dict[str, Any]:
-        chapters = source.chapters[: page_limit] if page_limit is not None else list(source.chapters)
-        chapter_payloads: list[dict[str, Any]] = []
-        for chapter in chapters:
-            supporting_points_payload: list[dict[str, Any]] = []
-            for item in getattr(chapter, "supporting_points", []) or []:
-                evidence_obj = getattr(item, "evidence", None)
-                if evidence_obj is None:
-                    evidence_type = getattr(item, "evidence_type", None)
-                    evidence_value = getattr(item, "evidence_value", None)
-                    if evidence_type and evidence_value:
-                        evidence_obj = BriefEvidence(type=evidence_type, value=evidence_value)
+        raw_text = source.raw_text
+        if not raw_text:
+            raw_text = self._compose_raw_text(source)
 
-                evidence_payload = None
-                if evidence_obj is not None:
-                    evidence_payload = {
-                        "type": evidence_obj.type,
-                        "value": evidence_obj.value,
-                    }
+        existing_outline = [chapter.model_dump(mode="json") for chapter in source.chapters]
+        constraints: dict[str, Any] = {}
+        if page_limit is not None:
+            constraints["max_chapters"] = page_limit
 
-                supporting_points_payload.append(
-                    {
-                        "statement": getattr(item, "statement", ""),
-                        "evidence": evidence_payload,
-                    }
-                )
-
-            chapter_payloads.append(
-                {
-                    "title": chapter.title,
-                    "message": chapter.message,
-                    "details": chapter.details,
-                    "supporting_points": supporting_points_payload,
-                    "intent_tags": chapter.intent_tags,
-                }
-            )
-        return {
-            "meta": {
-                "title": source.meta.title,
-                "client": source.meta.client,
-                "objective": source.meta.objective,
-            },
-            "chapters": chapter_payloads,
+        payload: dict[str, Any] = {
+            "raw_context": {
+                "format": "markdown",
+                "content": raw_text,
+            }
         }
+
+        if existing_outline:
+            payload.setdefault("hints", {})["existing_outline"] = existing_outline
+        if constraints:
+            payload["constraints"] = constraints
+
+        return payload
+
+    def _compose_raw_text(self, source: BriefSourceDocument) -> str:
+        lines: list[str] = []
+        if source.meta.objective:
+            lines.append(source.meta.objective)
+        for chapter in source.chapters:
+            if chapter.title:
+                lines.append(f"## {chapter.title}")
+            if chapter.message:
+                lines.append(chapter.message)
+            for detail in chapter.details:
+                if detail:
+                    lines.append(detail)
+            for item in chapter.supporting_points:
+                statement = getattr(item, "statement", None)
+                if statement:
+                    lines.append(f"- {statement}")
+        return "\n".join(lines).strip()
 
     def _parse_llm_output(self, result: BriefLLMResult) -> dict[str, Any]:
         text = result.text.strip()
@@ -247,11 +250,13 @@ class BriefAIOrchestrator:
 
         message = str(entry.get("message") or title)
 
-        narrative_raw = entry.get("narrative")
-        if isinstance(narrative_raw, list):
-            narrative_candidates = [str(item).strip() for item in narrative_raw if str(item).strip()]
-        elif isinstance(narrative_raw, str):
-            narrative_candidates = [narrative_raw.strip()]
+        body_raw = entry.get("body")
+        if body_raw is None:
+            body_raw = entry.get("narrative")
+        if isinstance(body_raw, list):
+            narrative_candidates = [str(item).strip() for item in body_raw if str(item).strip()]
+        elif isinstance(body_raw, str):
+            narrative_candidates = [body_raw.strip()]
         else:
             narrative_candidates = []
         narrative = self._normalize_narrative(narrative_candidates)
@@ -293,8 +298,11 @@ class BriefAIOrchestrator:
                     if isinstance(evidence_payload, dict):
                         ev_type = evidence_payload.get("type")
                         ev_value = evidence_payload.get("value")
+                        allowed_types = {"url", "source_id", "note"}
                         if isinstance(ev_type, str) and isinstance(ev_value, str):
-                            evidence = BriefEvidence(type=ev_type, value=ev_value)
+                            normalized_type = ev_type.strip().lower()
+                            if normalized_type in allowed_types:
+                                evidence = BriefEvidence(type=normalized_type, value=ev_value)
                     items.append(BriefSupportingPoint(statement=statement, evidence=evidence))
                 elif isinstance(entry, str) and entry.strip():
                     items.append(BriefSupportingPoint(statement=entry.strip()))

@@ -174,6 +174,7 @@ class BriefGenerationMeta(BaseModel):
     blueprint_path: str | None = None
     blueprint_hash: str | None = None
     slot_coverage: dict[str, int] = Field(default_factory=dict)
+    constraints: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def from_document(
@@ -187,6 +188,7 @@ class BriefGenerationMeta(BaseModel):
         blueprint_path: str | None = None,
         blueprint_hash: str | None = None,
         slot_summary: dict[str, int] | None = None,
+        constraints: dict[str, Any] | None = None,
     ) -> "BriefGenerationMeta":
         normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
@@ -215,4 +217,5 @@ class BriefGenerationMeta(BaseModel):
             blueprint_path=blueprint_path,
             blueprint_hash=blueprint_hash,
             slot_coverage=slot_coverage,
+            constraints=constraints or {},
         )

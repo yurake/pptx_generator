@@ -138,7 +138,11 @@ class BriefNormalizationStep:
         self,
         document: BriefDocument,
     ) -> tuple[ContentApprovalDocument, dict[str, Any]]:
-        slides = [self._convert_card_to_slide(card, index) for index, card in enumerate(document.cards, start=1)]
+        phase_counts: dict[str, int] = {}
+        slides = [
+            self._convert_card_to_slide(card, index, phase_counts)
+            for index, card in enumerate(document.cards, start=1)
+        ]
         meta = ContentDocumentMeta(
             tone=document.story_context.tone,
             audience=None,
@@ -152,13 +156,29 @@ class BriefNormalizationStep:
         }
         return content_document, meta_payload
 
-    def _convert_card_to_slide(self, card: BriefCard, index: int) -> ContentSlide:
+    def _convert_card_to_slide(self, card: BriefCard, index: int, phase_counts: dict[str, int]) -> ContentSlide:
         title = card.message[:120] or card.chapter
         body = self._build_body_lines(card)
         elements = ContentElements(title=title, body=body, table_data=None, note=None)
         intent = card.intent_tags[0] if card.intent_tags else card.story.phase
+
+        phase = card.story.phase
+        phase_counts[phase] = phase_counts.get(phase, 0) + 1
+        phase_slug_map = {
+            "introduction": "intro",
+            "problem": "problem",
+            "solution": "solution",
+            "impact": "impact",
+            "next": "next",
+        }
+        base_id = phase_slug_map.get(phase, card.card_id or f"brief-{index:03d}")
+        if phase_counts[phase] > 1:
+            slide_id = f"{base_id}-{phase_counts[phase]}"
+        else:
+            slide_id = base_id
+
         return ContentSlide(
-            id=card.card_id or f"brief-{index:03d}",
+            id=slide_id,
             intent=intent,
             type_hint=card.story.phase,
             elements=elements,

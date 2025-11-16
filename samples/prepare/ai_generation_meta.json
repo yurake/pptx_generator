@@ -1,44 +1,44 @@
 {
   "brief_id": "sample_import_content_summary",
-  "generated_at": "2025-01-01T00:00:00Z",
+  "generated_at": "2025-11-16T13:25:32.575812Z",
   "policy_id": "brief-default",
-  "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
+  "input_hash": "da2280d36bf9cb28e3be580066066d3136ec3de5feb2dbe08fc87783cebd0d0c",
   "cards": [
     {
-      "card_id": "intro",
+      "card_id": "introduction-1",
       "intent_tags": [
         "introduction"
       ],
       "story_phase": "introduction",
-      "content_hash": "deb2e470eb351efa29cb3c7b82f5373304a39bb39cf981b357835ad81b2e0909",
-      "body_lines": 2
+      "content_hash": "5156b606ee775d7c656ea413cfcdfe021abdef26e0b052ba56205d3a9280c908",
+      "body_lines": 3
     },
     {
-      "card_id": "solution",
+      "card_id": "problem-2",
       "intent_tags": [
         "problem"
       ],
       "story_phase": "problem",
-      "content_hash": "0703e61cd9c49568d0961aa49eb378f062950c4170ce5d25a51206a8bb84809b",
-      "body_lines": 2
+      "content_hash": "ef75b24edf835e1c5b68407094d257f8991c4da1b3a70a9177198459926662b0",
+      "body_lines": 3
     },
     {
-      "card_id": "impact",
+      "card_id": "solution-3",
       "intent_tags": [
         "solution"
       ],
       "story_phase": "solution",
-      "content_hash": "8438b55e87e115fac99fec5a11a0f4587da135f7b605ecc0ef9dde000bd8c18a",
-      "body_lines": 2
+      "content_hash": "d75f6a3d561ce9cd1124004441ac95ce932f15f327828b2f7a53568399cc7450",
+      "body_lines": 3
     },
     {
-      "card_id": "next",
+      "card_id": "impact-4",
       "intent_tags": [
         "impact"
       ],
       "story_phase": "impact",
-      "content_hash": "857c1854117b95fa56c13b30e94d7f5a3c7d9ad969de5323fd1cce873df04807",
-      "body_lines": 2
+      "content_hash": "204441ec4e3dc6167a2896678b1530c3e64bbf635300b49a98185921158a6d2f",
+      "body_lines": 1
     }
   ],
   "statistics": {
@@ -47,5 +47,6 @@
     "returned": 0
   },
   "mode": "dynamic",
-  "slot_coverage": {}
+  "slot_coverage": {},
+  "constraints": {}
 }
