@@ -37,7 +37,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] PR 作成
-  - メモ: PR #290 にまとめて反映済み。
+  - メモ: PR #290 https://github.com/yurake/pptx_generator/pull/290（2025-11-16 完了）
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次アクション条件をここに記載する。
