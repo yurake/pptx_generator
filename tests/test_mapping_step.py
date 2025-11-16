@@ -9,7 +9,14 @@ from typing import Iterable
 from pptx_generator.models import JobSpec
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
-from pptx_generator.brief import BriefCard, BriefDocument, BriefStoryContext, BriefStoryInfo
+from pptx_generator.brief import (
+    BriefBodyBlock,
+    BriefCard,
+    BriefCardContent,
+    BriefCardRole,
+    BriefDocument,
+    BriefStoryContext,
+)
 
 
 def _build_spec(body_lines: Iterable[str]) -> JobSpec:
@@ -50,12 +57,16 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
         cards=[
             BriefCard(
                 card_id="s01",
-                chapter="概要",
-                message="概要のポイント",
-                narrative=["最初のポイント", "次のステップ"],
-                supporting_points=[],
-                story=BriefStoryInfo(phase="introduction"),
-                intent_tags=["overview"],
+                order=1,
+                role=BriefCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=BriefCardContent(
+                    title="概要",
+                    headline="概要のポイント",
+                    body=[
+                        BriefBodyBlock(type="paragraph", text="最初のポイント"),
+                        BriefBodyBlock(type="paragraph", text="次のステップ"),
+                    ],
+                ),
             )
         ],
         story_context=BriefStoryContext(chapters=[]),
@@ -111,12 +122,17 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
         cards=[
             BriefCard(
                 card_id="s01",
-                chapter="概要",
-                message="概要のポイント",
-                narrative=["1行目", "2行目", "3行目"],
-                supporting_points=[],
-                story=BriefStoryInfo(phase="introduction"),
-                intent_tags=["overview"],
+                order=1,
+                role=BriefCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=BriefCardContent(
+                    title="概要",
+                    headline="概要のポイント",
+                    body=[
+                        BriefBodyBlock(type="paragraph", text="1行目"),
+                        BriefBodyBlock(type="paragraph", text="2行目"),
+                        BriefBodyBlock(type="paragraph", text="3行目"),
+                    ],
+                ),
             )
         ],
         story_context=BriefStoryContext(chapters=[]),

@@ -7,7 +7,7 @@
 
 ## 入出力
 ### 入力
-- `brief_cards.json`: 工程3 の成果物。`cards[*]` に `card_id`, `chapter`, `message`, `story.phase`, `intent_tags` などを保持。
+- `brief_cards.json`: 工程3 の成果物。`cards[*]` に `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]` などテンプレート非依存の情報を保持。
 - `brief_log.json`, `ai_generation_meta.json`: 生成経緯・HITL 操作のログ。必須ではないが、差戻し理由や AI の使用メタを参照するために読み込む。
 - `jobspec.json`: 工程2 で管理するテンプレ構造データ。`slides[*]` に `layout`, `anchor`（図形名）, `textboxes` / `tables` / `images` 等のプレースホルダ情報を保持。
 - `layouts.jsonl`: レイアウトカテゴリのメタ（用途タグ、テキスト収容量、メディア許容フラグなど）。
@@ -22,7 +22,7 @@
 
 ## プロセス概要
 1. **Brief 読み込み**: `BriefNormalizationStep` が `brief_cards` / `brief_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `brief_document` を格納する。
-2. **カードメタ抽出**: 各カードの `story.phase`, `intent_tags`, `supporting_points` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、証憑数など）。
+2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。
 3. **ジョブスペック参照**: `jobspec.slides[*]` を `layout_id` キーでインデックス化し、アンカー構造やプレースホルダ数を計算する。`layouts.jsonl` が存在する場合は用途タグ・容量ヒントを補完する。
 4. **AI 推薦（カード単位）**:
    - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
@@ -38,7 +38,7 @@
    - CLI で章・スライド単位の承認／差戻し／付録送りを操作すると、`draft_review_log.json` に履歴を記録し、`generate_ready_meta.sections[*].status` を更新する。
    - 差戻し時には `return_reasons.json` からコードを選択し、カードに紐付ける。差戻し後にカードが再割当されると過去ログはバージョンとして保持する。
 7. **generate_ready 出力**:
-   - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `message`, `narrative`, `supporting_points` をアンカー構造に合わせて整形して格納。
+   - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `content.title` / `content.headline` / `content.body` / `content.notes` をアンカー構造に合わせて整形して格納。
    - `meta.sources` には `card_id` を記載し、工程5 以降でトレース可能にする。
    - `generate_ready_meta.json` へは章テンプレ適合率、AI 推薦件数、差戻し統計、Analyzer 指摘要約（severity 別件数）を記録する。
 

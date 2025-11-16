@@ -106,7 +106,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     slides = []
     for index, card in enumerate(cards_payload.get("cards", []), start=1):
         card_id = card.get("card_id") or f"card-{index:03d}"
-        title = card.get("chapter") or card.get("message") or card_id
+        content = card.get("content") or {}
+        title = content.get("title") or content.get("headline") or card_id
         slides.append(
             {
                 "id": card_id,

@@ -87,13 +87,22 @@ def _create_matching_jobspec(root: Path, brief_paths: dict[str, Path], *, filena
     slides: list[Slide] = []
     for index, card in enumerate(cards, start=1):
         card_id = card.get("card_id") or f"card-{index:03d}"
-        title = card.get("chapter") or card.get("message") or card_id
+        content = card.get("content") or {}
+        title = content.get("title") or content.get("headline") or card_id
+        notes = None
+        note_entries = content.get("notes") or []
+        if note_entries:
+            note = note_entries[0]
+            if isinstance(note, dict):
+                notes = note.get("text")
+            elif isinstance(note, str):
+                notes = note
         slides.append(
             Slide(
                 id=card_id,
                 layout="Content" if index > 1 else "Title",
                 title=title[:120],
-                notes=card.get("message"),
+                notes=notes,
             )
         )
 
@@ -268,7 +277,8 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(cards) == len(spec.slides)
     for card, slide in zip(cards, presentation.slides, strict=False):
-        expected_title = (card.get("message") or card.get("chapter") or card.get("card_id") or "").strip()
+        content = card.get("content") or {}
+        expected_title = (content.get("title") or content.get("headline") or card.get("card_id") or "").strip()
         if not expected_title:
             continue
         title_shape = slide.shapes.title

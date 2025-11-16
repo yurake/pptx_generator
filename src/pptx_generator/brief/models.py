@@ -3,80 +3,62 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any, Iterable, Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-BriefEvidenceType = Literal["url", "source_id", "note"]
-BriefStatusType = Literal["draft", "approved", "returned"]
 BriefActionType = Literal["approve", "return", "comment", "autofix", "regenerate"]
 
 
-class BriefEvidence(BaseModel):
-    """支援情報の出典を表す。"""
+class BriefBodyBlock(BaseModel):
+    """本文のブロック定義。"""
 
-    type: BriefEvidenceType
-    value: str
+    type: str
+    text: str | None = None
+    headers: list[str] | None = None
+    rows: list[list[str]] | None = None
+    ref: str | None = None
+    description: str | None = None
+    data: dict[str, Any] | None = None
 
-    @field_validator("value")
+    @field_validator("text")
     @classmethod
-    def validate_value(cls, value: str, info) -> str:
-        if value.strip():
-            return value
-        raise ValueError("evidence value must not be empty")
-
-
-class BriefSupportingPoint(BaseModel):
-    """支援ポイントと出典情報。"""
-
-    statement: str = Field(..., max_length=280)
-    evidence: BriefEvidence | None = None
-
-
-class BriefStoryInfo(BaseModel):
-    """ストーリー軸情報。"""
-
-    phase: Literal["introduction", "problem", "solution", "impact", "next"]
-    goal: str | None = None
-    tension: str | None = None
-    resolution: str | None = None
-
-
-class BriefCardMeta(BaseModel):
-    """カードのメタデータ。"""
-
-    owner: str | None = None
-    updated_at: datetime | None = None
-
-    @field_validator("updated_at", mode="before")
-    @classmethod
-    def normalize_updated_at(cls, value: Any) -> datetime | None:
+    def normalize_text(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        if isinstance(value, datetime):
-            return value
-        return datetime.fromisoformat(str(value))
+        stripped = value.strip()
+        return stripped or None
 
 
-class BriefCard(BaseModel):
-    """テンプレート非依存のブリーフカード。"""
+class BriefNoteEntry(BaseModel):
+    """ノート欄に出力する補足情報。"""
 
-    card_id: str = Field(..., pattern=r"^[a-z0-9\-]+$")
-    chapter: str
-    message: str = Field(..., min_length=1, max_length=200)
-    narrative: list[str] = Field(default_factory=list)
-    supporting_points: list[BriefSupportingPoint] = Field(default_factory=list)
-    story: BriefStoryInfo
+    type: str = "note"
+    text: str
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("note text must not be empty")
+        return stripped
+
+
+class BriefCardContent(BaseModel):
+    """カードの本文構造。"""
+
+    title: str
+    headline: str | None = None  # このページで最も伝えたい結論を短く明示する
+    body: list[BriefBodyBlock] = Field(default_factory=list)
+    notes: list[BriefNoteEntry] = Field(default_factory=list)
+
+
+class BriefCardRole(BaseModel):
+    """カードの役割情報。"""
+
+    story_phase: Literal["introduction", "problem", "solution", "impact", "next"]
     intent_tags: list[str] = Field(default_factory=list)
-    status: BriefStatusType = "draft"
-    autofix_applied: list[str] = Field(default_factory=list)
-    meta: BriefCardMeta | None = None
-    layout_mode: Literal["dynamic", "static"] = "dynamic"
-    slide_id: str | None = None
-    slot_id: str | None = Field(None, pattern=r"^[a-z0-9_\-\.]+$")
-    required: bool | None = None
-    slot_fulfilled: bool | None = None
-    blueprint_slot: dict[str, Any] | None = None
 
     @field_validator("intent_tags", mode="before")
     @classmethod
@@ -86,6 +68,69 @@ class BriefCard(BaseModel):
         if isinstance(value, list):
             return [str(item).strip() for item in value if str(item).strip()]
         return [str(value).strip()]
+
+
+class BriefCard(BaseModel):
+    """テンプレート非依存のブリーフカード。"""
+
+    card_id: str = Field(..., pattern=r"^[a-z0-9][a-z0-9\-]*$")
+    order: int | None = None
+    role: BriefCardRole
+    content: BriefCardContent
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+    # ------------------------------------------------------------------ #
+    # Convenience helpers for downstream pipeline
+    # ------------------------------------------------------------------ #
+    def resolved_intent_tags(self) -> list[str]:
+        intents = [tag for tag in self.role.intent_tags if tag]
+        if not intents:
+            intents = [self.role.story_phase]
+        return intents
+
+    def primary_intent(self) -> str:
+        intents = self.resolved_intent_tags()
+        return intents[0] if intents else self.role.story_phase
+
+    def headline_or_title(self) -> str:
+        return (self.content.headline or self.content.title).strip()
+
+    def iter_body_text(self) -> Iterable[str]:
+        for block in self.content.body:
+            if block.text:
+                text = block.text.strip()
+                if text:
+                    yield text
+            if block.rows:
+                for row in block.rows:
+                    row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
+                    if row_text:
+                        yield row_text
+            if block.description:
+                desc = block.description.strip()
+                if desc:
+                    yield desc
+
+    def notes_text(self) -> list[str]:
+        return [note.text.strip() for note in self.content.notes if note.text.strip()]
+
+    def resolved_chapter_title(self) -> str:
+        source_chapter = (self.meta.get("source_chapter") if isinstance(self.meta, dict) else None) or {}
+        title = source_chapter.get("title")
+        if isinstance(title, str) and title.strip():
+            return title.strip()
+        blueprint = (self.meta.get("blueprint") if isinstance(self.meta, dict) else None) or {}
+        layout = blueprint.get("layout")
+        if isinstance(layout, str) and layout.strip():
+            return layout.strip()
+        return self.content.title
+
+    def blueprint_meta(self) -> dict[str, Any] | None:
+        if isinstance(self.meta, dict):
+            blueprint = self.meta.get("blueprint")
+            if isinstance(blueprint, dict):
+                return blueprint
+        return None
 
 
 class BriefChapterDefinition(BaseModel):
@@ -117,14 +162,6 @@ class BriefDocument(BaseModel):
         payload = self.model_dump(mode="json", exclude_none=True)
         digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(digest.encode("utf-8")).hexdigest()
-
-    def ensure_all_status(self, status: BriefStatusType) -> None:
-        """全カードが指定ステータスであることを検証する。"""
-
-        invalid = [card.card_id for card in self.cards if card.status != status]
-        if invalid:
-            joined = ", ".join(invalid)
-            raise ValueError(f"カードのステータスが一致しません: {joined}")
 
 
 class BriefLogEntry(BaseModel):
@@ -194,8 +231,6 @@ class BriefGenerationMeta(BaseModel):
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
         stats = {
             "cards_total": len(document.cards),
-            "approved": sum(1 for card in document.cards if card.status == "approved"),
-            "returned": sum(1 for card in document.cards if card.status == "returned"),
         }
         slot_coverage = slot_summary or {}
         if slot_summary:

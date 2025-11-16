@@ -223,12 +223,12 @@ class SlideIdAligner:
         card: BriefCard,
         candidates: list[Slide],
     ) -> SlideMatchRequest:
-        summary_lines = []
-        if card.message:
-            summary_lines.append(card.message)
-        summary_lines.extend(card.narrative[:3])
-        summary_lines.extend(point.statement for point in card.supporting_points[:3])
-        card_summary = "\n".join(line.strip() for line in summary_lines if line.strip()) or card.message
+        summary_lines = [card.headline_or_title()]
+        body_iter = card.iter_body_text()
+        for _, text in zip(range(3), body_iter):
+            summary_lines.append(text)
+        summary_lines.extend(card.notes_text()[:3])
+        card_summary = "\n".join(line.strip() for line in summary_lines if line.strip()) or card.headline_or_title()
 
         candidate_entries: list[str] = []
         candidate_models: list[SlideMatchCandidate] = []
@@ -249,9 +249,9 @@ class SlideIdAligner:
         prompt_parts = [
             "# カード情報",
             f"card_id: {card.card_id}",
-            f"chapter: {card.chapter}",
-            f"story_phase: {card.story.phase}",
-            f"intent_tags: {', '.join(card.intent_tags) if card.intent_tags else 'なし'}",
+            f"chapter: {card.resolved_chapter_title()}",
+            f"story_phase: {card.role.story_phase}",
+            f"intent_tags: {', '.join(card.resolved_intent_tags()) if card.resolved_intent_tags() else 'なし'}",
             "summary:",
             card_summary,
             "",
@@ -268,9 +268,9 @@ class SlideIdAligner:
 
         return SlideMatchRequest(
             card_id=card.card_id,
-            card_chapter=card.chapter,
-            card_intent=tuple(card.intent_tags),
-            card_story_phase=card.story.phase,
+            card_chapter=card.resolved_chapter_title(),
+            card_intent=tuple(card.resolved_intent_tags()),
+            card_story_phase=card.role.story_phase,
             card_summary=card_summary,
             prompt=prompt,
             system_prompt=system_prompt,
@@ -294,19 +294,21 @@ class SlideIdAligner:
         if slide.id == card.card_id:
             score += 5.0
         title = (slide.title or "").lower()
-        chapter = card.chapter.lower()
+        chapter = card.resolved_chapter_title().lower()
         if chapter and chapter in title:
             score += 3.0
-        if card.story.phase and card.story.phase.lower() in (slide.layout or "").lower():
+        if card.role.story_phase and card.role.story_phase.lower() in (slide.layout or "").lower():
             score += 1.5
-        if card.intent_tags:
-            for intent in card.intent_tags:
+        intent_tags = card.resolved_intent_tags()
+        if intent_tags:
+            for intent in intent_tags:
                 if intent.lower() in title:
                     score += 1.0
+        source_text = card.headline_or_title().lower()
         if slide.notes:
-            ratio = SequenceMatcher(None, card.message.lower(), slide.notes.lower()).ratio()
+            ratio = SequenceMatcher(None, source_text, slide.notes.lower()).ratio()
             score += ratio * 2.0
         else:
-            ratio = SequenceMatcher(None, card.message.lower(), title).ratio()
+            ratio = SequenceMatcher(None, source_text, title).ratio()
             score += ratio * 2.0
         return score

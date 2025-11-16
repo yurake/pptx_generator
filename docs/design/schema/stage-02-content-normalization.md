@@ -97,14 +97,14 @@
   "policy_id": "brief-default",
   "input_hash": "sha256:...",
   "cards": [
-    {"card_id": "intro", "intent_tags": ["introduction"], "story_phase": "introduction", "content_hash": "sha256:...", "body_lines": 1}
+    {"card_id": "intro", "intent_tags": ["introduction"], "story_phase": "introduction", "content_hash": "sha256:...", "body_blocks": 3, "note_entries": 1}
   ],
-  "statistics": {"cards_total": 4, "approved": 0, "returned": 0}
+  "statistics": {"cards_total": 4}
 }
 ```
 
-- `content_hash`: `cards[].narrative` / `supporting_points` をもとにしたハッシュ。工程3で差分検知に利用。
-- `statistics`: 承認状態ごとの件数集計。
+- `content_hash`: `cards[].content.body` / `cards[].content.notes` をもとにしたハッシュ。工程3で差分検知に利用。
+- `statistics`: カード総数および slot coverage の集計値。承認状態は BriefStore 側で管理する。
 
 ## brief_story_outline.json
 ```jsonc
@@ -136,9 +136,7 @@
       "brief_story_outline": "/path/to/brief_story_outline.json"
     },
     "statistics": {
-      "cards_total": 4,
-      "approved": 0,
-      "returned": 0
+      "cards_total": 4
     }
   }
 }

@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
-from ..brief import BriefCard, BriefSupportingPoint, BriefStoryInfo
+from ..brief import (
+    BriefBodyBlock,
+    BriefCard,
+    BriefCardContent,
+    BriefCardRole,
+    BriefNoteEntry,
+)
+
+BriefStatusType = Literal["draft", "approved", "returned"]
 
 
 class SpecNotFoundError(KeyError):
@@ -58,14 +66,25 @@ def _hash_json(text: str) -> str:
 @dataclass(slots=True)
 class BriefCardState:
     card: BriefCard
+    status: BriefStatusType = "draft"
+    autofix_applied: list[str] = field(default_factory=list)
+    history: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"card": self.card.model_dump(mode="json")}
+        return {
+            "card": self.card.model_dump(mode="json"),
+            "status": self.status,
+            "autofix_applied": list(self.autofix_applied),
+            "history": list(self.history),
+        }
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "BriefCardState":
         card = BriefCard.model_validate(payload["card"])
-        return cls(card=card)
+        status = payload.get("status", "draft")
+        autofix = payload.get("autofix_applied") or []
+        history = payload.get("history") or []
+        return cls(card=card, status=status, autofix_applied=list(autofix), history=list(history))
 
 
 class BriefStore:
@@ -97,12 +116,15 @@ class BriefStore:
         spec_id: str,
         card_id: str,
         *,
-        chapter: str | None,
-        message: str | None,
-        narrative: list[str] | None,
-        supporting_points: list[dict[str, Any]] | None,
-        story: dict[str, Any] | None,
+        role: BriefCardRole | None,
+        content: BriefCardContent | None,
+        meta: dict[str, Any] | None,
+        order: int | None,
         intent_tags: list[str] | None,
+        headline: str | None,
+        notes: list[BriefNoteEntry] | None,
+        body: list[BriefBodyBlock] | None,
+        status: BriefStatusType | None,
         autofix_applied: list[str] | None,
         expected_etag: str,
         actor: str | None,
@@ -114,36 +136,32 @@ class BriefStore:
         card_state = self._get_card_state(state, card_id)
         card = card_state.card
 
-        if chapter is not None:
-            card.chapter = chapter
-        if message is not None:
-            card.message = message
-        if narrative is not None:
-            card.narrative = list(narrative)
-        if supporting_points is not None:
-            card.supporting_points = [
-                BriefSupportingPoint(
-                    statement=item["statement"],
-                    evidence=(
-                        None
-                        if not item.get("evidence_type")
-                        else {"type": item["evidence_type"], "value": item.get("evidence_value")}
-                    ),
-                )
-                for item in supporting_points
-            ]
-        if story is not None:
-            card.story = BriefStoryInfo.model_validate(story)
+        if role is not None:
+            card.role = role
+        if content is not None:
+            card.content = content
+        else:
+            if headline is not None:
+                card.content.headline = headline
+            if notes is not None:
+                card.content.notes = list(notes)
+            if body is not None:
+                card.content.body = list(body)
+        if meta is not None:
+            card.meta = dict(meta)
+        if order is not None:
+            card.order = order
         if intent_tags is not None:
-            card.intent_tags = [tag for tag in intent_tags if tag]
-        if autofix_applied:
-            existing = set(card.autofix_applied)
+            card.role.intent_tags = [tag.strip() for tag in intent_tags if tag and tag.strip()]
+        if status is not None:
+            card_state.status = status
+        if autofix_applied is not None:
+            merged = set(card_state.autofix_applied)
             for patch_id in autofix_applied:
-                if patch_id not in existing:
-                    card.autofix_applied.append(patch_id)
-                    existing.add(patch_id)
+                if patch_id not in merged:
+                    card_state.autofix_applied.append(patch_id)
+                    merged.add(patch_id)
 
-        state["cards"][card_id] = card_state.to_dict()
         state["revision"] += 1
         self._append_log(
             state,
@@ -155,8 +173,11 @@ class BriefStore:
                 "timestamp": _now_iso(),
                 "notes": None,
                 "applied_autofix": autofix_applied,
+                "status": card_state.status,
             },
+            card_state=card_state,
         )
+        state["cards"][card_id] = card_state.to_dict()
         self._write_state(spec_id, state)
         content_hash_raw = json.dumps(card.model_dump(mode="json"), ensure_ascii=False, sort_keys=True)
         return _etag_from_revision(state["revision"]), _hash_json(content_hash_raw)
@@ -176,18 +197,16 @@ class BriefStore:
         self._ensure_revision(state, expected_revision)
 
         card_state = self._get_card_state(state, card_id)
-        if card_state.card.status != "approved":
-            card_state.card.status = "approved"
+        card_state.status = "approved"
         if applied_autofix:
-            existing = set(card_state.card.autofix_applied)
+            existing = set(card_state.autofix_applied)
             for patch_id in applied_autofix:
                 if patch_id not in existing:
-                    card_state.card.autofix_applied.append(patch_id)
+                    card_state.autofix_applied.append(patch_id)
                     existing.add(patch_id)
 
         locked_at = datetime.now(timezone.utc)
 
-        state["cards"][card_id] = card_state.to_dict()
         state["revision"] += 1
         self._append_log(
             state,
@@ -199,10 +218,13 @@ class BriefStore:
                 "timestamp": locked_at.isoformat(),
                 "notes": notes,
                 "applied_autofix": applied_autofix,
+                "status": card_state.status,
             },
+            card_state=card_state,
         )
+        state["cards"][card_id] = card_state.to_dict()
         self._write_state(spec_id, state)
-        return _etag_from_revision(state["revision"]), card_state.card.status, locked_at
+        return _etag_from_revision(state["revision"]), card_state.status, locked_at
 
     def return_card(
         self,
@@ -219,9 +241,8 @@ class BriefStore:
         self._ensure_revision(state, expected_revision)
 
         card_state = self._get_card_state(state, card_id)
-        card_state.card.status = "returned"
+        card_state.status = "returned"
 
-        state["cards"][card_id] = card_state.to_dict()
         state["revision"] += 1
         self._append_log(
             state,
@@ -233,10 +254,13 @@ class BriefStore:
                 "timestamp": _now_iso(),
                 "notes": reason,
                 "applied_autofix": None,
+                "status": card_state.status,
             },
+            card_state=card_state,
         )
+        state["cards"][card_id] = card_state.to_dict()
         self._write_state(spec_id, state)
-        return _etag_from_revision(state["revision"]), card_state.card.status
+        return _etag_from_revision(state["revision"]), card_state.status
 
     def get_card(self, spec_id: str, card_id: str) -> tuple[BriefCardState, str]:
         state = self._load_state(spec_id)
@@ -301,9 +325,17 @@ class BriefStore:
         if revision != expected:
             raise RevisionMismatchError(f"ETag が一致しません: expected={expected}, actual={revision}")
 
-    def _append_log(self, state: dict[str, Any], entry: dict[str, Any]) -> None:
+    def _append_log(
+        self,
+        state: dict[str, Any],
+        entry: dict[str, Any],
+        *,
+        card_state: BriefCardState | None = None,
+    ) -> None:
         logs: list[dict[str, Any]] = state.setdefault("logs", [])
         logs.append(entry)
+        if card_state is not None:
+            card_state.history.append(entry)
 
     def _iter_spec_ids(self) -> Iterator[str]:
         for path in self._base_dir.glob("*.json"):

@@ -10,7 +10,14 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
-from pptx_generator.brief import BriefCard, BriefDocument, BriefStoryContext, BriefStoryInfo
+from pptx_generator.brief import (
+    BriefBodyBlock,
+    BriefCard,
+    BriefCardContent,
+    BriefCardRole,
+    BriefDocument,
+    BriefStoryContext,
+)
 from pptx_generator.models import (
     FontSpec,
     JobAuth,
@@ -178,12 +185,13 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
         cards=[
             BriefCard(
                 card_id="slide-1",
-                chapter="概要",
-                message="最初のポイント",
-                narrative=["最初のポイント"],
-                supporting_points=[],
-                story=BriefStoryInfo(phase="introduction"),
-                intent_tags=["intro"],
+                order=1,
+                role=BriefCardRole(story_phase="introduction", intent_tags=["intro"]),
+                content=BriefCardContent(
+                    title="概要",
+                    headline="最初のポイント",
+                    body=[BriefBodyBlock(type="paragraph", text="最初のポイント")],
+                ),
             )
         ],
         story_context=BriefStoryContext(chapters=[]),

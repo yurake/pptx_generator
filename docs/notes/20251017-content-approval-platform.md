@@ -12,7 +12,7 @@
 - **Audit Logger**: `audit_log.json` の `brief_normalization` セクションを生成し、入力ハッシュや成果物パス、承認統計を保持する。
 
 ## データモデル概要
-- `BriefCard`: `card_id`, `chapter`, `message`, `narrative[]`, `supporting_points[]`, `story.phase`, `story.goal`, `intent_tags[]`, `status`, `autofix_applied[]`, `meta`.
+- `BriefCard`: `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]`, `meta`（Blueprint 参照や生成時刻などを格納）。
 - `BriefStoryContext`: 章テンプレ、ブランドトーン、必須メッセージ。CLI と API で共有。
 - `BriefLogEntry`: `card_id`, `version`, `action`, `actor`, `timestamp`, `notes`, `applied_autofix[]`, `diff_snapshot`.
 - `BriefAIRecord`: プロンプトテンプレ ID、モデル、トークン統計、レスポンスダイジェストを保持。

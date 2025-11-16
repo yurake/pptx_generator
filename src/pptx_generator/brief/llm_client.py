@@ -77,13 +77,7 @@ class MockBriefLLMClient:
         while len(bullets) < chapter_count:
             bullets.append(bullets[-1])
 
-        story_framework = [
-            "introduction",
-            "problem",
-            "solution",
-            "impact",
-            "next",
-        ]
+        story_framework = ["introduction", "problem", "solution", "impact", "next"]
 
         chunk_size = max(1, math.ceil(len(bullets) / chapter_count))
         result_chapters: list[dict[str, Any]] = []
@@ -96,9 +90,22 @@ class MockBriefLLMClient:
             story_phase = story_framework[idx % len(story_framework)].lower()
             card_id = f"{story_phase}-{idx + 1}"
 
-            title = segment[0][:40] if segment[0] else f"Chapter {idx + 1}"
-            narrative = [entry[:40] for entry in segment]
-            supporting_points = [{"statement": entry[:40]} for entry in segment]
+            title = segment[0][:60] if segment[0] else f"Chapter {idx + 1}"
+            narrative = [entry[:80] for entry in segment]
+            body_blocks = [
+                {
+                    "type": "paragraph",
+                    "text": entry,
+                }
+                for entry in narrative
+            ]
+            notes = [
+                {
+                    "type": "rationale",
+                    "text": entry,
+                }
+                for entry in narrative
+            ]
 
             result_chapters.append(
                 {
@@ -106,9 +113,9 @@ class MockBriefLLMClient:
                     "card_id": card_id,
                     "story_phase": story_phase,
                     "intent_tags": [story_phase],
-                    "message": title or f"Chapter {idx + 1}",
-                    "body": narrative,
-                    "supporting_points": supporting_points,
+                    "headline": title or f"Chapter {idx + 1}",
+                    "body": body_blocks,
+                    "notes": notes,
                 }
             )
 

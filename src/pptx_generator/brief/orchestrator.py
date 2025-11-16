@@ -5,26 +5,24 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Literal
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
 from .llm_client import BriefLLMClient, BriefLLMConfigurationError, BriefLLMResult, create_brief_llm_client
 from .models import (
     BriefAIRecord,
+    BriefBodyBlock,
     BriefCard,
-    BriefCardMeta,
+    BriefCardContent,
+    BriefCardRole,
     BriefDocument,
     BriefGenerationMeta,
-    BriefStatusType,
+    BriefNoteEntry,
     BriefStoryContext,
-    BriefStoryInfo,
-    BriefEvidence,
-    BriefSupportingPoint,
 )
 from .policy import BriefPolicy, BriefPolicyError, BriefPolicySet
 from .prompts import build_brief_prompt
-from .source import BriefSourceChapter, BriefSourceDocument
+from .source import BriefSourceChapter, BriefSourceDocument, BriefSourceSupportingPoint
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +52,6 @@ class BriefAIOrchestrator:
         *,
         policy_id: str | None = None,
         page_limit: int | None = None,
-        all_cards_status: BriefStatusType | None = None,
         mode: Literal["dynamic", "static"] = "dynamic",
         blueprint: TemplateBlueprint | None = None,
         blueprint_ref: dict[str, str] | None = None,
@@ -76,20 +73,14 @@ class BriefAIOrchestrator:
                 policy=policy,
                 blueprint=blueprint,
                 page_limit=page_limit,
-                all_cards_status=all_cards_status,
             )
         else:
             cards, ai_records = self._build_cards_dynamic(
                 source=source,
                 policy=policy,
                 page_limit=page_limit,
-                all_cards_status=all_cards_status,
             )
             slot_summary = None
-
-        if all_cards_status is not None:
-            for card in cards:
-                card.status = all_cards_status
 
         story_context = self._build_story_context(source, policy)
         brief_id = source.meta.brief_id or f"brief-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
@@ -117,7 +108,6 @@ class BriefAIOrchestrator:
         source: BriefSourceDocument,
         policy: BriefPolicy,
         page_limit: int | None,
-        all_cards_status: BriefStatusType | None,
     ) -> tuple[list[BriefCard], list[BriefAIRecord]]:
         payload = self._build_dynamic_prompt_payload(source, policy=policy, page_limit=page_limit)
         prompt = build_brief_prompt(payload)
@@ -145,9 +135,7 @@ class BriefAIOrchestrator:
                 entry,
                 index=index,
                 policy=policy,
-                objective=source.meta.objective,
                 generated_at=now,
-                default_status=all_cards_status or "draft",
             )
             cards.append(card)
 
@@ -229,9 +217,7 @@ class BriefAIOrchestrator:
         *,
         index: int,
         policy: BriefPolicy,
-        objective: str | None,
         generated_at: datetime,
-        default_status: BriefStatusType,
     ) -> BriefCard:
         title = str(entry.get("title") or f"Chapter {index + 1}")
         card_id = str(entry.get("card_id") or self._slugify(title) or f"chapter-{index + 1}")
@@ -248,84 +234,114 @@ class BriefAIOrchestrator:
         if not intent_tags:
             intent_tags = [story_phase]
 
-        message = str(entry.get("message") or title)
+        headline = str(entry.get("headline") or entry.get("message") or title)
 
-        body_raw = entry.get("body")
-        if body_raw is None:
-            body_raw = entry.get("narrative")
-        if isinstance(body_raw, list):
-            narrative_candidates = [str(item).strip() for item in body_raw if str(item).strip()]
-        elif isinstance(body_raw, str):
-            narrative_candidates = [body_raw.strip()]
-        else:
-            narrative_candidates = []
-        narrative = self._normalize_narrative(narrative_candidates)
+        body_blocks = self._build_body_blocks(entry.get("body") or entry.get("narrative"))
+        notes = self._build_note_entries(entry)
 
-        supporting_raw = entry.get("supporting_points") or []
-        supporting_points = self._build_supporting_points(supporting_raw, narrative)
-
-        story = BriefStoryInfo(
-            phase=story_phase,
-            goal=objective,
-        )
+        role = BriefCardRole(story_phase=story_phase, intent_tags=intent_tags)
+        content = BriefCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
 
         return BriefCard(
             card_id=card_id,
-            chapter=title,
-            message=message,
-            narrative=narrative,
-            supporting_points=supporting_points,
-            story=story,
-            intent_tags=intent_tags,
-            status=default_status,
-            meta=BriefCardMeta(updated_at=generated_at),
+            order=index + 1,
+            role=role,
+            content=content,
+            meta={"generated_at": generated_at.isoformat()},
         )
 
-    def _build_supporting_points(
-        self,
-        payload: Any,
-        narrative: list[str],
-    ) -> list[BriefSupportingPoint]:
-        items: list[BriefSupportingPoint] = []
+    def _build_body_blocks(self, payload: Any) -> list[BriefBodyBlock]:
+        blocks: list[BriefBodyBlock] = []
         if isinstance(payload, list):
-            for entry in payload:
-                if isinstance(entry, dict):
-                    statement = str(entry.get("statement") or "").strip()
-                    if not statement:
-                        continue
-                    evidence_payload = entry.get("evidence")
-                    evidence = None
-                    if isinstance(evidence_payload, dict):
-                        ev_type = evidence_payload.get("type")
-                        ev_value = evidence_payload.get("value")
-                        allowed_types = {"url", "source_id", "note"}
-                        if isinstance(ev_type, str) and isinstance(ev_value, str):
-                            normalized_type = ev_type.strip().lower()
-                            if normalized_type in allowed_types:
-                                evidence = BriefEvidence(type=normalized_type, value=ev_value)
-                    items.append(BriefSupportingPoint(statement=statement, evidence=evidence))
-                elif isinstance(entry, str) and entry.strip():
-                    items.append(BriefSupportingPoint(statement=entry.strip()))
-        if not items:
-            items = [BriefSupportingPoint(statement=line) for line in narrative]
-        return items[: len(narrative) or len(items)]
+            for item in payload:
+                if isinstance(item, dict):
+                    block_type = str(item.get("type") or "paragraph").strip() or "paragraph"
+                    block = BriefBodyBlock(
+                        type=block_type,
+                        text=item.get("text"),
+                        headers=item.get("headers"),
+                        rows=item.get("rows"),
+                        ref=item.get("ref"),
+                        description=item.get("description"),
+                        data=item.get("data"),
+                    )
+                    blocks.append(block)
+                elif isinstance(item, str) and item.strip():
+                    blocks.append(BriefBodyBlock(type="paragraph", text=item.strip()))
+        elif isinstance(payload, dict):
+            block_type = str(payload.get("type") or "paragraph").strip() or "paragraph"
+            blocks.append(
+                BriefBodyBlock(
+                    type=block_type,
+                    text=payload.get("text"),
+                    headers=payload.get("headers"),
+                    rows=payload.get("rows"),
+                    ref=payload.get("ref"),
+                    description=payload.get("description"),
+                    data=payload.get("data"),
+                )
+            )
+        elif isinstance(payload, str) and payload.strip():
+            blocks.append(BriefBodyBlock(type="paragraph", text=payload.strip()))
 
-    def _normalize_narrative(self, candidates: list[str]) -> list[str]:
-        max_lines = 6
-        max_chars = 40
-        normalized: list[str] = []
-        for text in candidates:
-            if len(normalized) >= max_lines:
-                break
-            stripped = text.strip()
-            if not stripped:
+        if not blocks:
+            blocks.append(BriefBodyBlock(type="placeholder", text="内容を確認中"))
+        return blocks
+
+    def _build_note_entries(self, entry: dict[str, Any]) -> list[BriefNoteEntry]:
+        notes: list[BriefNoteEntry] = []
+        notes_payload = entry.get("notes")
+        if isinstance(notes_payload, list):
+            for item in notes_payload:
+                if isinstance(item, dict):
+                    text = str(item.get("text") or "").strip()
+                    if not text:
+                        continue
+                    note_type = str(item.get("type") or "note").strip() or "note"
+                    notes.append(BriefNoteEntry(type=note_type, text=text))
+                elif isinstance(item, str) and item.strip():
+                    notes.append(BriefNoteEntry(text=item.strip()))
+        elif isinstance(notes_payload, str) and notes_payload.strip():
+            notes.append(BriefNoteEntry(text=notes_payload.strip()))
+
+        # 旧スキーマ互換: supporting_points をノートへ変換
+        if not notes:
+            supporting = entry.get("supporting_points")
+            if isinstance(supporting, list):
+                for item in supporting:
+                    if isinstance(item, dict):
+                        statement = str(item.get("statement") or "").strip()
+                    else:
+                        statement = str(item or "").strip()
+                    if statement:
+                        notes.append(BriefNoteEntry(type="rationale", text=statement))
+
+        return notes
+
+    def _build_chapter_body_blocks(self, chapter: BriefSourceChapter) -> list[BriefBodyBlock]:
+        blocks: list[BriefBodyBlock] = []
+        for detail in chapter.details:
+            text = (detail or "").strip()
+            if not text:
                 continue
-            if len(stripped) > max_chars:
-                stripped = stripped[: max_chars]
-            normalized.append(stripped)
-        if not normalized:
-            normalized.append("内容を確認中")
-        return normalized
+            blocks.append(BriefBodyBlock(type="paragraph", text=text))
+        if not blocks and chapter.message:
+            blocks.append(BriefBodyBlock(type="paragraph", text=chapter.message))
+        if not blocks:
+            blocks.append(BriefBodyBlock(type="placeholder", text="内容を確認中"))
+        return blocks
+
+    def _build_chapter_notes(self, supporting_points: list[BriefSourceSupportingPoint]) -> list[BriefNoteEntry]:
+        notes: list[BriefNoteEntry] = []
+        for supporting in supporting_points:
+            statement = (supporting.statement or "").strip()
+            if not statement:
+                continue
+            evidence = ""
+            if supporting.evidence_type and supporting.evidence_value:
+                evidence = f" ({supporting.evidence_type}: {supporting.evidence_value})"
+            notes.append(BriefNoteEntry(type="rationale", text=f"{statement}{evidence}"))
+        return notes
 
     def _build_cards_static(
         self,
@@ -334,7 +350,6 @@ class BriefAIOrchestrator:
         policy: BriefPolicy,
         blueprint: TemplateBlueprint,
         page_limit: int | None,
-        all_cards_status: BriefStatusType | None,
     ) -> tuple[list[BriefCard], dict[str, int], list[BriefAIRecord]]:
         if page_limit is not None:
             raise BriefAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
@@ -383,15 +398,16 @@ class BriefAIOrchestrator:
                 chapter=chapter,
                 policy=policy,
             )
+            cards.append(card)
+
+            blueprint_meta = card.meta.get("blueprint") if isinstance(card.meta, dict) else None
+            fulfilled = bool(blueprint_meta.get("fulfilled")) if isinstance(blueprint_meta, dict) else False
             if slot.required:
-                if chapter is not None:
+                if fulfilled:
                     required_fulfilled += 1
             else:
-                if chapter is not None:
+                if fulfilled:
                     optional_used += 1
-            if all_cards_status is not None:
-                card.status = all_cards_status
-            cards.append(card)
 
         slot_summary = {
             "required_total": len(required_entries),
@@ -411,32 +427,6 @@ class BriefAIOrchestrator:
         ]
         return cards, slot_summary, ai_records
 
-    def _build_card_from_chapter(
-        self,
-        chapter: BriefSourceChapter,
-        policy: BriefPolicy,
-        index: int,
-    ) -> BriefCard:
-        story_phase = policy.resolve_story_phase(index)
-        chapter_title = policy.resolve_chapter_title(index, chapter.title)
-        supporting_points = [item.to_brief_supporting_point() for item in chapter.supporting_points]
-        narrative = chapter.details or []
-        if not narrative and chapter.message:
-            narrative = [chapter.message]
-        story = BriefStoryInfo(
-            phase=story_phase, goal=None, tension=None, resolution=None
-        )
-        return BriefCard(
-            card_id=f"{chapter.id}",
-            chapter=chapter_title,
-            message=chapter.message or chapter.title,
-            narrative=narrative,
-            supporting_points=supporting_points,
-            story=story,
-            intent_tags=chapter.intent_tags,
-            status="draft",
-        )
-
     def _build_card_from_blueprint_slot(
         self,
         *,
@@ -447,47 +437,62 @@ class BriefAIOrchestrator:
         policy: BriefPolicy,
     ) -> BriefCard:
         story_phase = policy.resolve_story_phase(order)
+        intent_tags: list[str]
         if chapter is not None:
-            chapter_title = policy.resolve_chapter_title(order, chapter.title or slide.layout)
-            message = chapter.message or chapter.title or chapter.id
-            narrative = list(chapter.details) if chapter.details else []
-            if not narrative and chapter.message:
-                narrative = [chapter.message]
-            supporting_points = [item.to_brief_supporting_point() for item in chapter.supporting_points]
             intent_tags = chapter.intent_tags or slot.intent_tags or []
-            slot_fulfilled = True
+            title = policy.resolve_chapter_title(order, chapter.title or slide.layout)
+            headline = chapter.message or chapter.title or chapter.id
+            body_blocks = self._build_chapter_body_blocks(chapter)
+            notes = self._build_chapter_notes(chapter.supporting_points)
+            meta_source = {
+                "id": chapter.id,
+                "title": chapter.title,
+            }
+            fulfilled = True
         else:
-            chapter_title = policy.resolve_chapter_title(order, slide.layout or slot.slot_id)
-            message = f"{slide.layout} - {slot.anchor}" if slide.layout else slot.slot_id
-            narrative = []
-            supporting_points = []
-            intent_tags = slot.intent_tags or []
-            slot_fulfilled = False
+            intent_tags = slot.intent_tags or [story_phase]
+            title = policy.resolve_chapter_title(order, slide.layout or slot.slot_id)
+            headline = f"{slide.layout} - {slot.anchor}" if slide.layout else slot.slot_id
+            body_blocks = [
+                BriefBodyBlock(
+                    type="placeholder",
+                    text=f"Slot {slot.slot_id} に対応する章がまだ割り当てられていません",
+                )
+            ]
+            notes = []
+            meta_source = None
+            fulfilled = False
 
-        story = BriefStoryInfo(phase=story_phase, goal=None, tension=None, resolution=None)
-        card_id = self._normalize_slot_card_id(slot.slot_id)
-        blueprint_slot_meta: dict[str, Any] = {
+        if not intent_tags:
+            intent_tags = [story_phase]
+
+        role = BriefCardRole(story_phase=story_phase, intent_tags=intent_tags)
+        content = BriefCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
+
+        blueprint_meta = {
+            "slide_id": slide.slide_id,
+            "layout": slide.layout,
+            "slot_id": slot.slot_id,
             "anchor": slot.anchor,
             "content_type": slot.content_type,
+            "required": slot.required,
+            "fulfilled": fulfilled,
             "intent_tags": slot.intent_tags,
-            "fulfilled": slot_fulfilled,
         }
 
+        meta: dict[str, Any] = {
+            "mode": "static",
+            "blueprint": blueprint_meta,
+        }
+        if meta_source:
+            meta["source_chapter"] = meta_source
+
         return BriefCard(
-            card_id=card_id,
-            chapter=chapter_title,
-            message=message,
-            narrative=narrative,
-            supporting_points=supporting_points,
-            story=story,
-            intent_tags=intent_tags,
-            status="draft",
-            layout_mode="static",
-            slide_id=slide.slide_id,
-            slot_id=slot.slot_id,
-            required=slot.required,
-            slot_fulfilled=slot_fulfilled,
-            blueprint_slot=blueprint_slot_meta,
+            card_id=self._normalize_slot_card_id(slot.slot_id),
+            order=order + 1,
+            role=role,
+            content=content,
+            meta=meta,
         )
 
     @staticmethod
@@ -499,19 +504,20 @@ class BriefAIOrchestrator:
         return result or "slot"
 
     def _build_dummy_card(self, policy: BriefPolicy, index: int) -> BriefCard:
-        chapter_title = policy.resolve_story_phase(index)
         story_phase = policy.resolve_story_phase(index)
-        story = BriefStoryInfo(phase=story_phase, goal="ブリーフの骨子を示す")
-        return BriefCard(
-            card_id="intro-01",
-            chapter=chapter_title,
-            message="自動生成されたブリーフカード（ダミー）",
-            narrative=["入力ブリーフが空だったため、ダミーカードを生成しました。"],
-            supporting_points=[],
-            story=story,
-            intent_tags=[story_phase],
-            status="draft",
+        role = BriefCardRole(story_phase=story_phase, intent_tags=[story_phase])
+        content = BriefCardContent(
+            title=policy.resolve_story_phase(index),
+            headline="自動生成されたブリーフカード（ダミー）",
+            body=[
+                BriefBodyBlock(
+                    type="paragraph",
+                    text="入力ブリーフが空だったため、ダミーカードを生成しました。",
+                )
+            ],
+            notes=[BriefNoteEntry(type="note", text="原稿が空だったために生成されたダミーです")],
         )
+        return BriefCard(card_id="intro-01", order=index + 1, role=role, content=content, meta={})
 
     def _build_story_context(self, source: BriefSourceDocument, policy: BriefPolicy) -> BriefStoryContext:
         chapters = []
@@ -544,18 +550,20 @@ class BriefAIOrchestrator:
     def _build_card_meta(self, card: BriefCard) -> dict[str, Any]:
         payload = {
             "card_id": card.card_id,
-            "intent_tags": card.intent_tags,
-            "story_phase": card.story.phase,
+            "intent_tags": card.role.intent_tags,
+            "story_phase": card.role.story_phase,
             "content_hash": self._hash_card(card),
-            "body_lines": len(card.narrative),
+            "body_blocks": len(card.content.body),
+            "note_entries": len(card.content.notes),
         }
-        if card.slot_id:
+        blueprint_meta = card.meta.get("blueprint") if isinstance(card.meta, dict) else None
+        if isinstance(blueprint_meta, dict):
             payload.update(
                 {
-                    "slide_id": card.slide_id,
-                    "slot_id": card.slot_id,
-                    "required": card.required,
-                    "slot_fulfilled": card.slot_fulfilled,
+                    "slide_id": blueprint_meta.get("slide_id"),
+                    "slot_id": blueprint_meta.get("slot_id"),
+                    "required": blueprint_meta.get("required"),
+                    "slot_fulfilled": blueprint_meta.get("fulfilled"),
                 }
             )
         return payload

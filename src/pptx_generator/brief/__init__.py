@@ -1,8 +1,17 @@
 """Brief 正規化モジュールの公開インターフェース。"""
 
-from .models import (BriefAIRecord, BriefCard, BriefDocument,
-                     BriefGenerationMeta, BriefLogEntry, BriefStoryContext,
-                     BriefStoryInfo, BriefSupportingPoint)
+from .models import (
+    BriefAIRecord,
+    BriefBodyBlock,
+    BriefCard,
+    BriefCardContent,
+    BriefCardRole,
+    BriefDocument,
+    BriefGenerationMeta,
+    BriefLogEntry,
+    BriefNoteEntry,
+    BriefStoryContext,
+)
 from .orchestrator import BriefAIOrchestrator, BriefAIOrchestrationError
 from .policy import (
     BriefPolicy,
@@ -16,12 +25,14 @@ __all__ = [
     "BriefAIRecord",
     "BriefAIOrchestrator",
     "BriefAIOrchestrationError",
+    "BriefBodyBlock",
     "BriefCard",
+    "BriefCardContent",
+    "BriefCardRole",
     "BriefDocument",
     "BriefGenerationMeta",
     "BriefLogEntry",
-    "BriefStoryInfo",
-    "BriefSupportingPoint",
+    "BriefNoteEntry",
     "BriefPolicy",
     "BriefPolicyError",
     "BriefPolicySet",

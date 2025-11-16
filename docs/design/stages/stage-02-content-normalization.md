@@ -15,7 +15,7 @@
 
 ## データモデル
 - `BriefDocument`: `brief_id`, `cards[]`, `meta`。
-- `BriefCard`: `card_id`, `chapter`, `message`, `narrative`, `supporting_points`, `story.phase`, `intent_tags`, `status`, `autofix_applied`。
+- `BriefCard`: `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]`, `meta`。
 - `BriefGenerationMeta`: `policy_id`, `generated_at`, `input_hash`, `cards[]`, `statistics`。
 - `BriefAuditLog`: 生成時刻・成果物パス・統計値をまとめた監査メタ。
 

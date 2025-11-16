@@ -19,7 +19,7 @@
 
 ## 方向性メモ
 - `pptx prepare` を「ブリーフビルダー」モードへ再定義し、テンプレ非依存の入力（`--brief-source` など）を受け付ける案。ポリシーは既定値固定で扱う。
-- 新しい `BriefCard` モデル（`chapter`, `message`, `narrative`, `supporting_points[]`, `evidence_links[]`, `status` など）を `ContentSlide` から派生または置き換え、`story.phase` / `story.goal` を必須化する。
+- 新しい `BriefCard` モデルは `role.story_phase` / `role.intent_tags` と `content.title` / `content.headline` / `content.body[]` / `content.notes[]` を中核に据え、テンプレート依存要素（layout, status, supporting_points 等）を排除して抽象カードとして定義する。
 - HITL ログは `card_id` と `version`（ETag 相当）を持たせ、差戻し・再生成履歴を保持。AI 生成ログもカード単位で参照できるよう `ai_generation_meta.json` を再設計する。
 - 後工程（RM-047）に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。
 - スキーマ更新時は `docs/design/schema/stage-03-content-normalization.md` と `docs/requirements/stages/stage-03-content-normalization.md` を同時更新し、`samples/` 配下に BriefCard 前提のサンプル（例: `samples/prepare/prepare_card.sample.jsonc`）を追加する。

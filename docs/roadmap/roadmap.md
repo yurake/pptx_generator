@@ -751,16 +751,16 @@ flowchart TB
 - 次アクション: 抽出ルールの改修案とバリデーション仕様、AI 正規化フローの実装範囲を整理し、Plan 承認へ進める。
 
 <a id="rm-062"></a>
-### RM-062 pptx prepare 承認モード整備
+-### RM-062 pptx prepare 承認モード整備
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `pptx prepare --approved` オプションの仕様をドキュメントへ反映し、承認モードで生成される成果物の取り扱いを運用手順と整合させる。
+- ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は BriefStore / brief_log 側で管理する方針へ更新する。
 - 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-10 追加）
 - 期待成果:
-  - CLI リファレンスおよびクイックスタートに `--approved` 指定時の挙動と成果物差分を追記し、HITL 承認フローとの整合を明文化する。
-  - 承認モード利用時の監査ログ記録と後工程での扱い方を `docs/runbooks/story-outline-ops.md` など運用ドキュメントへ反映する。
-  - 既存テスト（`test_prepare_sets_cards_approved_when_flag_enabled`）のカバレッジ説明を記載し、追加で必要な監査メタ検証の方針を整理する。
+  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / BriefStore のワークフローで扱うことを明記する。
+  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は brief_log / brief_store を通じて行う手順へ更新する。
+  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、BriefStore/API テストで承認フローを担保する旨を整理する。
 - 依存: RM-046（生成AIブリーフ構成自動化）
 
 <a id="rm-063"></a>

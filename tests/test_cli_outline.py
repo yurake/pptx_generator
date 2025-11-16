@@ -61,14 +61,21 @@ def brief_cards(tmp_path: Path) -> Path:
             "cards": [
                 {
                     "card_id": "s01",
-                    "chapter": "Overview",
-                    "message": "Overview summary",
-                    "narrative": ["Line 1", "Line 2"],
-                    "supporting_points": [],
-                    "story": {"phase": "introduction", "goal": None, "tension": None, "resolution": None},
-                    "intent_tags": ["overview"],
-                    "status": "draft",
-                    "autofix_applied": [],
+                    "order": 1,
+                    "role": {
+                        "story_phase": "introduction",
+                        "intent_tags": ["overview"],
+                    },
+                    "content": {
+                        "title": "Overview",
+                        "headline": "Overview summary",
+                        "body": [
+                            {"type": "paragraph", "text": "Line 1"},
+                            {"type": "paragraph", "text": "Line 2"},
+                        ],
+                        "notes": [],
+                    },
+                    "meta": {},
                 }
             ],
             "story_context": {"chapters": []},
@@ -95,7 +102,7 @@ def brief_meta(tmp_path: Path) -> Path:
             "policy_id": "brief-default",
             "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
             "cards": [],
-            "statistics": {"cards_total": 1, "approved": 0, "returned": 0},
+            "statistics": {"cards_total": 1},
         },
     )
     return meta_path
@@ -163,14 +170,20 @@ def test_compose_resolves_paths_from_jobspec_meta(
             "cards": [
                 {
                     "card_id": "intro",
-                    "chapter": "Intro",
-                    "message": "Intro message",
-                    "narrative": ["Line 1"],
-                    "supporting_points": [],
-                    "story": {"phase": "introduction"},
-                    "intent_tags": ["intro"],
-                    "status": "approved",
-                    "autofix_applied": [],
+                    "order": 1,
+                    "role": {
+                        "story_phase": "introduction",
+                        "intent_tags": ["intro"],
+                    },
+                    "content": {
+                        "title": "Intro",
+                        "headline": "Intro message",
+                        "body": [
+                            {"type": "paragraph", "text": "Line 1"},
+                        ],
+                        "notes": [],
+                    },
+                    "meta": {},
                 }
             ],
             "story_context": {"chapters": []},
@@ -187,7 +200,7 @@ def test_compose_resolves_paths_from_jobspec_meta(
             "policy_id": "brief-default",
             "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
             "cards": [],
-            "statistics": {"cards_total": 1, "approved": 1, "returned": 0},
+            "statistics": {"cards_total": 1},
         },
     )
 
@@ -286,14 +299,20 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
             "cards": [
                 {
                     "card_id": "intro",
-                    "chapter": "Intro",
-                    "message": "Intro message",
-                    "narrative": ["Line 1"],
-                    "supporting_points": [],
-                    "story": {"phase": "introduction"},
-                    "intent_tags": ["intro"],
-                    "status": "approved",
-                    "autofix_applied": [],
+                    "order": 1,
+                    "role": {
+                        "story_phase": "introduction",
+                        "intent_tags": ["intro"],
+                    },
+                    "content": {
+                        "title": "Intro",
+                        "headline": "Intro message",
+                        "body": [
+                            {"type": "paragraph", "text": "Line 1"},
+                        ],
+                        "notes": [],
+                    },
+                    "meta": {},
                 }
             ],
             "story_context": {"chapters": []},

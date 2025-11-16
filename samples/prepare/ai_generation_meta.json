@@ -10,8 +10,9 @@
         "introduction"
       ],
       "story_phase": "introduction",
-      "content_hash": "5156b606ee775d7c656ea413cfcdfe021abdef26e0b052ba56205d3a9280c908",
-      "body_lines": 3
+      "content_hash": "b711e6eb833c24a85aaf21ae9b269df4f0ff089daa3bda0b2aededfc69623281",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
       "card_id": "problem-2",
@@ -19,8 +20,9 @@
         "problem"
       ],
       "story_phase": "problem",
-      "content_hash": "ef75b24edf835e1c5b68407094d257f8991c4da1b3a70a9177198459926662b0",
-      "body_lines": 3
+      "content_hash": "8dfdf555299fd906dbad0ca4f2df571911f10ea5d1635cb7c4e7cfab163faa25",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
       "card_id": "solution-3",
@@ -28,8 +30,9 @@
         "solution"
       ],
       "story_phase": "solution",
-      "content_hash": "d75f6a3d561ce9cd1124004441ac95ce932f15f327828b2f7a53568399cc7450",
-      "body_lines": 3
+      "content_hash": "1588d21cd842145aa98da8a03632310b77ecb577419da2537012c50bf072c215",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
       "card_id": "impact-4",
@@ -37,14 +40,13 @@
         "impact"
       ],
       "story_phase": "impact",
-      "content_hash": "204441ec4e3dc6167a2896678b1530c3e64bbf635300b49a98185921158a6d2f",
-      "body_lines": 1
+      "content_hash": "e322b4b8b498b3bc6cc73f4262f28027c3497d267d07548fc6e2a87016ef1fab",
+      "body_blocks": 1,
+      "note_entries": 1
     }
   ],
   "statistics": {
-    "cards_total": 4,
-    "approved": 0,
-    "returned": 0
+    "cards_total": 4
   },
   "mode": "dynamic",
   "slot_coverage": {},

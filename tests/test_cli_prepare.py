@@ -46,8 +46,9 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     card_count = len(cards_payload["cards"])
     assert card_count >= 1
     first_card = cards_payload["cards"][0]
-    assert first_card["status"] == "draft"
-    assert first_card["story"]["phase"] in {"introduction", "problem", "solution", "impact", "next"}
+    assert first_card["role"]["story_phase"] in {"introduction", "problem", "solution", "impact", "next"}
+    assert first_card["content"]["title"]
+    assert isinstance(first_card["content"].get("body", []), list)
 
     log_payload = json.loads(log_path.read_text(encoding="utf-8"))
     assert log_payload == []
@@ -118,35 +119,6 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["statistics"]["cards_total"] == card_count
     assert meta_payload.get("constraints", {}).get("max_chapters") == 2
-
-
-def test_prepare_sets_cards_approved_when_flag_enabled(tmp_path) -> None:
-    output_dir = tmp_path / "approved"
-    runner = CliRunner()
-
-    result = runner.invoke(
-        app,
-        [
-            "prepare",
-            str(SAMPLE_BRIEF),
-            "--mode",
-            "dynamic",
-            "--output",
-            str(output_dir),
-            "--approved",
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-
-    cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
-    assert {card["status"] for card in cards_payload["cards"]} == {"approved"}
-
-    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
-    assert meta_payload["statistics"]["approved"] == len(cards_payload["cards"])
-
-
 def test_prepare_page_limit_short_option(tmp_path) -> None:
     output_dir = tmp_path / "short"
     runner = CliRunner()

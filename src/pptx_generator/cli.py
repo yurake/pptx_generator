@@ -768,14 +768,31 @@ def _dump_json(path: Path, payload: object) -> None:
 
 def _build_brief_story_outline(document: BriefDocument) -> dict[str, Any]:
     chapter_cards: dict[str, list[str]] = {}
+
+    def resolve_bucket(card: BriefCard) -> str:
+        if isinstance(card.meta, dict):
+            source_chapter = card.meta.get("source_chapter")
+            if isinstance(source_chapter, dict):
+                source_id = source_chapter.get("id")
+                source_title = source_chapter.get("title")
+                if isinstance(source_id, str) and source_id.strip():
+                    return source_id.strip()
+                if isinstance(source_title, str) and source_title.strip():
+                    return source_title.strip()
+        blueprint = card.blueprint_meta()
+        if blueprint and blueprint.get("slide_id"):
+            return str(blueprint.get("slide_id"))
+        return card.role.story_phase
+
     for card in document.cards:
-        chapter_cards.setdefault(card.chapter, []).append(card.card_id)
+        bucket = resolve_bucket(card)
+        chapter_cards.setdefault(bucket, []).append(card.card_id)
 
     chapters_payload: list[dict[str, Any]] = []
     for chapter in document.story_context.chapters:
-        cards = chapter_cards.pop(chapter.title, [])
+        cards = chapter_cards.pop(chapter.id, [])
         if not cards:
-            cards = chapter_cards.pop(chapter.id, [])
+            cards = chapter_cards.pop(chapter.title, [])
         chapters_payload.append(
             {
                 "id": chapter.id,
@@ -1728,19 +1745,12 @@ def gen(  # noqa: PLR0913
     default=None,
     help="生成するカード枚数の上限",
 )
-@click.option(
-    "--approved",
-    is_flag=True,
-    default=False,
-    help="生成する全カードのステータスを approved に設定する",
-)
 def prepare(
     brief_path: Path,
     output_dir: Path,
     jobspec: Path | None,
     mode: str,
     page_limit: int | None,
-    approved: bool,
 ) -> None:
     """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
@@ -1845,7 +1855,6 @@ def prepare(
             source,
             policy_id=None,
             page_limit=page_limit,
-            all_cards_status="approved" if approved else None,
             mode=normalized_mode,  # type: ignore[arg-type]
             blueprint=blueprint_spec.blueprint if blueprint_spec else None,
             blueprint_ref=blueprint_ref,

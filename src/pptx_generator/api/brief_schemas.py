@@ -1,62 +1,32 @@
-"""Pydantic models for the brief approval API."""
+"""Schematics for BriefCard approval API."""
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
+from ..brief import (
+    BriefBodyBlock,
+    BriefCard,
+    BriefCardContent,
+    BriefCardRole,
+    BriefNoteEntry,
+)
 
-BriefEvidenceType = Literal["url", "source_id", "note"]
-
-
-class BriefStoryPayload(BaseModel):
-    phase: str
-    goal: str | None = None
-    tension: str | None = None
-    resolution: str | None = None
-
-
-class BriefSupportingPointPayload(BaseModel):
-    statement: str
-    evidence_type: BriefEvidenceType | None = None
-    evidence_value: str | None = None
-
-    @field_validator("statement")
-    @classmethod
-    def ensure_statement(cls, value: str) -> str:
-        if not value.strip():
-            msg = "supporting_points[].statement は空白のみではいけません"
-            raise ValueError(msg)
-        return value
+BriefStatusType = Literal["draft", "approved", "returned"]
 
 
-class BriefCardPayload(BaseModel):
-    chapter: str
-    message: str
-    narrative: list[str] = Field(default_factory=list)
-    supporting_points: list[BriefSupportingPointPayload] = Field(default_factory=list)
-    story: BriefStoryPayload
-    intent_tags: list[str] = Field(default_factory=list)
+class BriefCardCreatePayload(BaseModel):
+    card: BriefCard
+    status: BriefStatusType = "draft"
     autofix_applied: list[str] = Field(default_factory=list)
-
-
-class BriefCardCreate(BriefCardPayload):
-    card_id: str
 
 
 class CreateBriefCardsRequest(BaseModel):
     spec_id: str = Field(..., min_length=1)
-    cards: list[BriefCardCreate] = Field(default_factory=list)
-
-    @field_validator("cards")
-    @classmethod
-    def ensure_cards_not_empty(cls, cards: list[BriefCardCreate]) -> list[BriefCardCreate]:
-        if not cards:
-            msg = "cards には 1 件以上のカードを指定してください"
-            raise ValueError(msg)
-        return cards
+    cards: list[BriefCardCreatePayload] = Field(default_factory=list)
 
 
 class CreateBriefCardsResponse(BaseModel):
@@ -65,12 +35,15 @@ class CreateBriefCardsResponse(BaseModel):
 
 
 class BriefCardUpdate(BaseModel):
-    chapter: str | None = None
-    message: str | None = None
-    narrative: list[str] | None = None
-    supporting_points: list[BriefSupportingPointPayload] | None = None
-    story: BriefStoryPayload | None = None
+    role: BriefCardRole | None = None
+    content: BriefCardContent | None = None
+    meta: dict[str, Any] | None = None
+    order: int | None = None
     intent_tags: list[str] | None = None
+    headline: str | None = None
+    notes: list[BriefNoteEntry] | None = None
+    body: list[BriefBodyBlock] | None = None
+    status: BriefStatusType | None = None
     autofix_applied: list[str] | None = None
 
 
@@ -86,7 +59,7 @@ class BriefCardApproveRequest(BaseModel):
 
 class BriefCardApproveResponse(BaseModel):
     revision: str
-    status: str
+    status: BriefStatusType
     locked_at: datetime
 
 
@@ -97,7 +70,7 @@ class BriefCardReturnRequest(BaseModel):
 
 class BriefCardReturnResponse(BaseModel):
     revision: str
-    status: str
+    status: BriefStatusType
 
 
 class BriefCardHistoryEntry(BaseModel):
@@ -110,14 +83,8 @@ class BriefCardHistoryEntry(BaseModel):
 
 class BriefCardResponse(BaseModel):
     spec_id: str
-    card_id: str
-    chapter: str
-    message: str
-    narrative: list[str]
-    supporting_points: list[BriefSupportingPointPayload]
-    story: BriefStoryPayload
-    intent_tags: list[str]
-    status: str
+    card: BriefCard
+    status: BriefStatusType
     autofix_applied: list[str]
     revision: str
     history: list[BriefCardHistoryEntry] = Field(default_factory=list)

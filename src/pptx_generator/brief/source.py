@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from .models import BriefEvidence, BriefEvidenceType, BriefSupportingPoint
+BriefEvidenceType = Literal["url", "source_id", "note"]
 
 
 class BriefSourceMeta(BaseModel):
@@ -26,12 +26,6 @@ class BriefSourceSupportingPoint(BaseModel):
     statement: str
     evidence_type: BriefEvidenceType | None = None
     evidence_value: str | None = None
-
-    def to_brief_supporting_point(self) -> BriefSupportingPoint:
-        evidence: BriefEvidence | None = None
-        if self.evidence_type and self.evidence_value:
-            evidence = BriefEvidence(type=self.evidence_type, value=self.evidence_value)
-        return BriefSupportingPoint(statement=self.statement, evidence=evidence)
 
 
 class BriefSourceChapter(BaseModel):

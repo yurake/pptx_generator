@@ -55,6 +55,23 @@ from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 logger = logging.getLogger(__name__)
 
 
+def _card_slot_id(card: BriefCard) -> str | None:
+    blueprint = card.blueprint_meta()
+    if not blueprint:
+        return None
+    slot_id = blueprint.get("slot_id")
+    return str(slot_id) if slot_id else None
+
+
+def _card_slot_fulfilled(card: BriefCard | None) -> bool:
+    if card is None:
+        return False
+    blueprint = card.blueprint_meta()
+    if not blueprint:
+        return False
+    return bool(blueprint.get("fulfilled"))
+
+
 @dataclass(slots=True)
 class DraftStructuringOptions:
     """ドラフト構成ステップの設定。"""
@@ -954,7 +971,11 @@ class DraftStructuringStep:
     ) -> StaticArtifacts:
         blueprint: TemplateBlueprint = template_spec.blueprint  # type: ignore[assignment]
 
-        cards_by_slot = {card.slot_id: card for card in brief_document.cards if card.slot_id}
+        cards_by_slot: dict[str, BriefCard] = {}
+        for card in brief_document.cards:
+            slot_id = _card_slot_id(card)
+            if slot_id:
+                cards_by_slot[slot_id] = card
         spec_lookup = {slide.id: slide for slide in spec.slides}
 
         total_slots = 0
@@ -971,10 +992,10 @@ class DraftStructuringStep:
                 card = cards_by_slot.get(slot.slot_id)
                 if slot.required:
                     required_total += 1
-                    if card is not None and card.slot_fulfilled:
+                    if _card_slot_fulfilled(card):
                         required_fulfilled += 1
                 else:
-                    if card is not None and card.slot_fulfilled:
+                    if _card_slot_fulfilled(card):
                         optional_used += 1
                     else:
                         unused_slots.append(slot.slot_id)
@@ -991,7 +1012,11 @@ class DraftStructuringStep:
             "optional_used": optional_used,
         }
 
-        orphan_cards = [card.slot_id for card in brief_document.cards if card.slot_id and card.slot_id not in blueprint_slot_ids]
+        orphan_cards = []
+        for card in brief_document.cards:
+            slot_id = _card_slot_id(card)
+            if slot_id and slot_id not in blueprint_slot_ids:
+                orphan_cards.append(slot_id)
 
         section = DraftSection(name="Static Template", order=1, status="draft", slides=[])
         draft_sections = [section]
@@ -1022,7 +1047,7 @@ class DraftStructuringStep:
 
             for slot in blueprint_slide.slots:
                 card = cards_by_slot.get(slot.slot_id)
-                fulfilled = bool(card and card.slot_fulfilled)
+                fulfilled = _card_slot_fulfilled(card)
                 slot_records.append(
                     {
                         "slot_id": slot.slot_id,
@@ -1168,13 +1193,10 @@ class DraftStructuringStep:
 
     @staticmethod
     def _card_to_lines(card: BriefCard) -> list[str]:
-        lines: list[str] = []
-        if card.narrative:
-            lines.extend(card.narrative)
-        elif card.message:
-            lines.append(card.message)
-        if card.supporting_points:
-            lines.extend(point.statement for point in card.supporting_points)
+        lines = list(card.iter_body_text())
+        if not lines:
+            lines.append(card.headline_or_title())
+        lines.extend(card.notes_text())
         return [line for line in lines if line]
 
     @staticmethod
@@ -1189,18 +1211,22 @@ class DraftStructuringStep:
             return
         anchor_lower = anchor.lower()
         if anchor_lower in {"title", "main message"}:
-            if card.message:
-                elements["title"] = card.message
+            headline = card.headline_or_title()
+            if headline:
+                elements["title"] = headline
             return
         if "subtitle" in anchor_lower:
-            if card.message:
-                elements["subtitle"] = card.message
+            headline = card.headline_or_title()
+            if headline:
+                elements["subtitle"] = headline
             return
         if anchor_lower in {"body", "content"}:
             if lines:
                 elements["body"] = lines
-            elif card.message:
-                elements["body"] = [card.message]
+            else:
+                headline = card.headline_or_title()
+                if headline:
+                    elements["body"] = [headline]
             return
         if lines:
             elements[anchor] = lines

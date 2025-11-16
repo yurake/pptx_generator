@@ -157,34 +157,33 @@ class BriefNormalizationStep:
         return content_document, meta_payload
 
     def _convert_card_to_slide(self, card: BriefCard, index: int, phase_counts: dict[str, int]) -> ContentSlide:
-        title = card.message[:120] or card.chapter
+        title = (card.content.title or card.headline_or_title())[:120]
         body = self._build_body_lines(card)
-        elements = ContentElements(title=title, body=body, table_data=None, note=None)
-        intent = card.intent_tags[0] if card.intent_tags else card.story.phase
+        notes_text = card.notes_text()
+        elements = ContentElements(
+            title=title,
+            body=body,
+            table_data=None,
+            note="\n".join(notes_text) if notes_text else None,
+        )
+        intent = card.primary_intent()
 
-        phase = card.story.phase
+        phase = card.role.story_phase
         phase_counts[phase] = phase_counts.get(phase, 0) + 1
-        phase_slug_map = {
-            "introduction": "intro",
-            "problem": "problem",
-            "solution": "solution",
-            "impact": "impact",
-            "next": "next",
-        }
-        base_id = phase_slug_map.get(phase, card.card_id or f"brief-{index:03d}")
-        if phase_counts[phase] > 1:
-            slide_id = f"{base_id}-{phase_counts[phase]}"
+        blueprint_meta = card.blueprint_meta()
+        if blueprint_meta and blueprint_meta.get("slot_id"):
+            slide_id = str(blueprint_meta.get("slot_id"))
         else:
-            slide_id = base_id
+            slide_id = card.card_id or f"brief-{index:03d}"
 
         return ContentSlide(
             id=slide_id,
             intent=intent,
-            type_hint=card.story.phase,
+            type_hint=card.role.story_phase,
             elements=elements,
             status="draft",
             ai_review=None,
-            applied_autofix=card.autofix_applied,
+            applied_autofix=[],
         )
 
     def _build_body_lines(self, card: BriefCard) -> list[str]:
@@ -194,21 +193,17 @@ class BriefNormalizationStep:
             text = text.strip()
             if not text:
                 return
-            chunks = [text[i : i + 40] for i in range(0, len(text), 40)]
-            for chunk in chunks:
+            for i in range(0, len(text), 40):
                 if len(lines) >= 6:
                     return
-                lines.append(chunk)
+                lines.append(text[i : i + 40])
 
-        for paragraph in card.narrative:
-            append_text(paragraph)
+        for body_text in card.iter_body_text():
+            append_text(body_text)
             if len(lines) >= 6:
                 break
-        if len(lines) < 6 and card.supporting_points:
-            for point in card.supporting_points:
-                append_text(point.statement)
-                if len(lines) >= 6:
-                    break
+
         if not lines:
-            append_text(card.message)
+            append_text(card.headline_or_title())
+
         return lines[:6]
