@@ -107,9 +107,17 @@ def _discover_template_ai_policy() -> Path | None:
     try:
         resource = importlib_resources.files("pptx_generator").joinpath("config/template_ai_policies.json")
         if resource.is_file():
-            with importlib_resources.as_file(resource) as resource_path:
-                logger.info("Detected default template AI policy (package resource): %s", resource_path)
-                return resource_path.resolve()
+            try:
+                text = resource.read_text(encoding="utf-8")
+            except FileNotFoundError:
+                text = None
+            if text is not None:
+                cache_dir = Path(".pptx/cache")
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                cache_path = cache_dir / "template_ai_policies.json"
+                cache_path.write_text(text, encoding="utf-8")
+                logger.info("Detected default template AI policy (package resource cached to %s)", cache_path)
+                return cache_path.resolve()
     except (ModuleNotFoundError, FileNotFoundError):
         pass
 
