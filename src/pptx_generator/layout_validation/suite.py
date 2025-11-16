@@ -569,6 +569,8 @@ class LayoutValidationSuite:
         if "body" in lowered or "content" in lowered:
             return "body"
         return None
+
+    @staticmethod
     def _shape_bbox(shape: ShapeInfo) -> dict[str, int]:
         return {
             "x": int(round(shape.left_in * EMU_PER_INCH)),
@@ -824,7 +826,7 @@ class LayoutValidationSuite:
         # Japanese keywords（casefold では変わらないためそのまま検索）
         if "タイトル" in name and "コンテンツ" not in name:
             return True
-        if "表紙"に name:
+        if "表紙" in name:
             return True
         if "セクション" in name and ("タイトル" in name or "表紙" in name):
             return True

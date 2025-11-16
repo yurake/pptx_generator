@@ -3,20 +3,122 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 from collections import OrderedDict
+from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Iterable, Tuple
 
-_CONFIG_PATH = Path("config/usage_tags.json")
+logger = logging.getLogger(__name__)
+
 _CONFIG_DATA: dict[str, object] | None = None
+
+DEFAULT_USAGE_TAG_CONFIG: dict[str, object] = {
+    "intent_tags": [
+        {
+            "tag": "title",
+            "description": "表紙やタイトル専用のレイアウト。最低限のテキストと視覚要素のみで構成される。",
+        },
+        {
+            "tag": "agenda",
+            "description": "章構成や議題を一覧表示するレイアウト。目次スライドを想定。",
+        },
+        {
+            "tag": "overview",
+            "description": "全体像や要約を提示するレイアウト。エグゼクティブサマリーやハイライトページを想定。",
+        },
+        {
+            "tag": "content",
+            "description": "汎用的な本文ページで、テキストや図を柔軟に配置できるレイアウト。",
+        },
+        {
+            "tag": "section_break",
+            "description": "章区切りやセクション開始を示すレイアウト。章タイトルと簡単な補足情報を含む。",
+        },
+        {
+            "tag": "closing",
+            "description": "クロージングやまとめのレイアウト。感謝のメッセージや呼びかけを想定。",
+        },
+        {
+            "tag": "summary",
+            "description": "要点を箇条書きでまとめるレイアウト。結論や主要メッセージを短く整理。",
+        },
+        {
+            "tag": "next_steps",
+            "description": "次のアクションやスケジュールを提示するレイアウト。ロードマップやタスクを想定。",
+        },
+        {
+            "tag": "call_to_action",
+            "description": "提案の承認や連絡先など、読者に具体的な行動を促すレイアウト。",
+        },
+    ],
+    "media_tags": [
+        {
+            "tag": "chart",
+            "description": "グラフやチャートの配置を想定したレイアウト。",
+        },
+        {
+            "tag": "table",
+            "description": "テーブルや表形式のデータ配置を想定したレイアウト。",
+        },
+        {
+            "tag": "visual",
+            "description": "画像や図版を中心に配置するレイアウト。",
+        },
+    ],
+    "fallback_tag": {
+        "tag": "generic",
+        "description": "用途が特定できない場合のフォールバックタグ。",
+    },
+    "static_rules": [
+        {"layout_name_pattern": ".*Title.*", "tags": ["title"]},
+        {"layout_name_pattern": ".*Agenda.*", "tags": ["agenda"]},
+        {
+            "layout_name_pattern": ".*executive.*summary.*",
+            "tags": ["overview", "content"],
+        },
+        {"layout_name_pattern": None, "tags": ["content"]},
+    ],
+}
+
+
+def _read_config_text() -> str | None:
+    env_path = os.getenv("PPTX_GENERATOR_USAGE_TAGS")
+    if env_path:
+        path = Path(env_path)
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+
+    try:
+        resource = importlib_resources.files("pptx_generator").joinpath("config/usage_tags.json")
+        if resource.is_file():
+            return resource.read_text(encoding="utf-8")
+    except (ModuleNotFoundError, FileNotFoundError, AttributeError):  # pragma: no cover - optional path
+        pass
+
+    repo_path = Path(__file__).resolve().parents[2] / "config" / "usage_tags.json"
+    if repo_path.is_file():
+        return repo_path.read_text(encoding="utf-8")
+
+    return None
 
 
 def _load_config() -> dict[str, object]:
     global _CONFIG_DATA
-    if _CONFIG_DATA is None:
-        if not _CONFIG_PATH.exists():
-            raise FileNotFoundError(f"usage_tags config not found: {_CONFIG_PATH}")
-        _CONFIG_DATA = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+    if _CONFIG_DATA is not None:
+        return _CONFIG_DATA
+
+    raw_text = _read_config_text()
+    if raw_text is not None:
+        try:
+            _CONFIG_DATA = json.loads(raw_text)
+            return _CONFIG_DATA
+        except json.JSONDecodeError as exc:
+            logger.warning("usage_tags config JSON decode failed: %s", exc)
+
+    logger.warning("usage_tags config not found, falling back to default definition")
+    _CONFIG_DATA = DEFAULT_USAGE_TAG_CONFIG
     return _CONFIG_DATA
 
 
