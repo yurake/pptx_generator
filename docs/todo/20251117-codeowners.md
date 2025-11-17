@@ -19,23 +19,23 @@ roadmap_item: RM-000 ガバナンス整備
     - 承認メッセージ ID／リンク: (このチャットでのユーザー承認「ok」)
 - [x] 設計・実装方針の確定
   - メモ: CODEOWNERS を単一エントリで管理し、`*` へ @yurake を割り当てる方針で確定。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 今回の対応では要件・設計ドキュメントの追記は不要と判断し、確認のみ実施。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `.github/CODEOWNERS` を新規作成し、全ファイルに @yurake を設定。
 - [x] テスト・検証
   - メモ: 設定ファイルのみのため自動テストは未実施。GitHub 上で CODEOWNERS のレビュー要求が出ることをもって確認する。
 - [x] ドキュメント更新
   - メモ: `docs/notes/20251117-codeowners.md` に対応内容を記録。その他カテゴリは今回対象外。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: 
+  - メモ: #295 を関連 Issue として設定済み。
 - [ ] PR 作成
   - メモ: 
 
