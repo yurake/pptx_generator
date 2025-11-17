@@ -18,9 +18,9 @@ from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import (BrandingExtractionError,
                                  extract_branding_config)
-from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
-                    BriefDocument, BriefPolicyError, BriefSourceDocument,
-                    load_brief_policy_set)
+from .prepare import (BriefAIOrchestrationError, BriefAIOrchestrator,
+                      BriefDocument, BriefPolicyError, BriefSourceDocument,
+                      load_brief_policy_set)
 from .draft_intel import load_return_reasons
 from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
