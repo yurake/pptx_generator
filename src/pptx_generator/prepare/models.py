@@ -101,6 +101,16 @@ class PrepareCard(BaseModel):
                 text = block.text.strip()
                 if text:
                     yield text
+            if block.data:
+                items = block.data.get("items")
+                if isinstance(items, list):
+                    for item in items:
+                        if isinstance(item, str) and item.strip():
+                            yield item.strip()
+                        elif isinstance(item, dict):
+                            line = str(item.get("text") or "").strip()
+                            if line:
+                                yield line
             if block.rows:
                 for row in block.rows:
                     row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())

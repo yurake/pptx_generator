@@ -191,6 +191,10 @@ class DraftStructuringStep:
             elif self.options.structure_pattern:
                 template = find_template_by_structure(self.options.chapter_templates_dir, self.options.structure_pattern)
         recommender = self._resolve_recommender()
+        prepare_meta = context.artifacts.get("prepare_generation_meta")
+        if not isinstance(prepare_meta, PrepareGenerationMeta) or prepare_meta.mode not in {"dynamic", "static"}:
+            raise DraftStructuringError("prepare_generation_meta が不正、または mode が未設定です")
+
         draft, mapping_logs, ai_summary = self._build_document(
             spec=context.spec,
             document=document,
@@ -198,6 +202,7 @@ class DraftStructuringStep:
             analyzer_map=analyzer_map,
             chapter_template=template,
             recommender=recommender,
+            prepare_meta=prepare_meta,
         )
 
         output_dir = self.options.output_dir or context.workdir
@@ -328,9 +333,8 @@ class DraftStructuringStep:
         analyzer_map: dict[str, DraftAnalyzerSummary],
         chapter_template: ChapterTemplate | None,
         recommender: CardLayoutRecommender,
+        prepare_meta: PrepareGenerationMeta | None,
     ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
-        slides_by_id = {slide.id: slide for slide in document.slides}
-
         sections: list[DraftSection] = []
         section_map: dict[str, DraftSection] = {}
         mapping_logs: list[dict[str, Any]] = []
@@ -341,11 +345,12 @@ class DraftStructuringStep:
             "models": {},
         }
 
-        for index, spec_slide in enumerate(spec.slides, start=1):
-            content_slide = slides_by_id.get(spec_slide.id)
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+        dynamic_prepare = prepare_meta.mode == "dynamic"
+
+        def process_slide(content_slide: ContentSlide | None, spec_slide: Slide | None) -> None:
             if content_slide is None:
-                logger.debug("content_approved に存在しないスライドをスキップ: %s", spec_slide.id)
-                continue
+                return
 
             section_key, section_name = self._resolve_section(content_slide, spec_slide)
             section = section_map.get(section_key)
@@ -360,9 +365,14 @@ class DraftStructuringStep:
 
             card_order = len(section.slides) + 1
             analyzer_summary = analyzer_map.get(content_slide.id)
+            preferred_layout = (
+                spec_slide.layout
+                if spec_slide is not None and getattr(spec_slide, "layout", None)
+                else content_slide.type_hint
+            ) or "Content"
             recommendation, card = self._build_card(
                 content_slide,
-                spec_slide.layout,
+                preferred_layout,
                 layouts,
                 order=card_order,
                 analyzer_summary=analyzer_summary,
@@ -389,6 +399,12 @@ class DraftStructuringStep:
                 and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
             ):
                 ai_summary["simulated"] += 1
+                if logger.isEnabledFor(logging.INFO):
+                    logger.info(
+                        "layout AI simulated: slide_id=%s preferred=%s",
+                        content_slide.id,
+                        preferred_layout,
+                    )
 
             candidate_logs: list[dict[str, Any]] = []
             for candidate, detail in recommendation.candidates:
@@ -422,31 +438,26 @@ class DraftStructuringStep:
                         recommendation.ai_response.recommended,
                         recommendation.ai_response.reasons,
                     )
-            elif (
-                self.options.enable_ai_recommender
-                and self.options.enable_ai_simulation
-                and self.options.ai_weight > 0
-                and not ai_scores
-                and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
-            ):
-                ai_summary["simulated"] += 1
-                if logger.isEnabledFor(logging.INFO):
-                    logger.info(
-                        "layout AI simulated: slide_id=%s preferred=%s",
-                        content_slide.id,
-                        spec_slide.layout,
-                    )
 
             mapping_logs.append(
                 {
                     "slide_id": content_slide.id,
-                    "preferred_layout": spec_slide.layout,
+                    "preferred_layout": preferred_layout,
                     "selected_layout": selected_layout,
                     "ai_recommendation_used": ai_used,
                     "candidates": candidate_logs,
                     "ai_response": ai_response_payload,
                 }
             )
+
+        if dynamic_prepare:
+            for content_slide in document.slides:
+                spec_slide = spec_lookup.get(content_slide.id)
+                process_slide(content_slide, spec_slide)
+        else:
+            slides_by_id = {slide.id: slide for slide in document.slides}
+            for spec_slide in spec.slides:
+                process_slide(slides_by_id.get(spec_slide.id), spec_slide)
 
         meta = DraftMeta(
             target_length=self.options.target_length or sum(len(section.slides) for section in sections),
@@ -484,7 +495,7 @@ class DraftStructuringStep:
             )
         return draft_document, mapping_logs, ai_summary
 
-    def _resolve_section(self, content_slide: ContentSlide, spec_slide) -> tuple[str, str]:
+    def _resolve_section(self, content_slide: ContentSlide, spec_slide: Slide | None) -> tuple[str, str]:
         story = getattr(content_slide, "story", None)
         if story:
             chapter_id = story.get("chapter_id") if isinstance(story, dict) else story.chapter_id
@@ -496,7 +507,9 @@ class DraftStructuringStep:
 
         if content_slide.intent:
             return content_slide.intent, content_slide.intent
-        return spec_slide.layout, spec_slide.layout
+        if spec_slide is not None and getattr(spec_slide, "layout", None):
+            return spec_slide.layout, spec_slide.layout
+        return content_slide.id, content_slide.id
 
     def _build_card(
         self,

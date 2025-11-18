@@ -188,22 +188,55 @@ class PrepareNormalizationStep:
 
     def _build_body_lines(self, card: PrepareCard) -> list[str]:
         lines: list[str] = []
+        max_lines = 6
 
         def append_text(text: str) -> None:
             text = text.strip()
             if not text:
                 return
-            for i in range(0, len(text), 40):
-                if len(lines) >= 6:
-                    return
-                lines.append(text[i : i + 40])
+            idx = 0
+            while idx < len(text) and len(lines) < max_lines:
+                lines.append(text[idx : idx + 40])
+                idx += 40
 
-        for body_text in card.iter_body_text():
-            append_text(body_text)
-            if len(lines) >= 6:
+        for block in card.content.body:
+            if len(lines) >= max_lines:
                 break
 
-        if not lines:
-            append_text(card.headline_or_title())
+            text = (block.text or "").strip()
+            if text:
+                for line in text.splitlines():
+                    append_text(line)
+                    if len(lines) >= max_lines:
+                        break
+                if len(lines) >= max_lines:
+                    break
 
-        return lines[:6]
+            items: list[str] = []
+            if block.data:
+                raw_items = block.data.get("items")
+                if isinstance(raw_items, list):
+                    for value in raw_items:
+                        if isinstance(value, str) and value.strip():
+                            items.append(value.strip())
+                        elif isinstance(value, dict):
+                            line = str(value.get("text") or "").strip()
+                            if line:
+                                items.append(line)
+            for item in items:
+                if len(lines) >= max_lines:
+                    break
+                for line in item.splitlines():
+                    append_text(f"- {line}")
+                    if len(lines) >= max_lines:
+                        break
+
+        if not lines:
+            headline = card.headline_or_title().strip()
+            if headline:
+                for line in headline.splitlines():
+                    append_text(line)
+                    if len(lines) >= max_lines:
+                        break
+
+        return lines
