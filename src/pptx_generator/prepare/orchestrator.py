@@ -5,7 +5,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
 from .llm_client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
@@ -82,7 +82,7 @@ class PrepareAIOrchestrator:
             )
             slot_summary = None
 
-        story_context = self._build_story_context(source, policy)
+        story_context = self._build_story_context(cards=cards, source=source, policy=policy)
         prepare_id = source.meta.prepare_id or f"prepare-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
         document = PrepareDocument(prepare_id=prepare_id, cards=cards, story_context=story_context)
         constraints: dict[str, Any] | None = None
@@ -256,31 +256,77 @@ class PrepareAIOrchestrator:
             for item in payload:
                 if isinstance(item, dict):
                     block_type = str(item.get("type") or "paragraph").strip() or "paragraph"
+                    text = item.get("text")
+                    headers = item.get("headers")
+                    rows = item.get("rows")
+                    ref = item.get("ref")
+                    description = item.get("description")
+                    data = item.get("data")
+                    items = item.get("items")
+                    bullet_lines: list[str] = []
+                    if isinstance(items, list):
+                        for value in items:
+                            if isinstance(value, str) and value.strip():
+                                bullet_lines.append(value.strip())
+                            elif isinstance(value, dict):
+                                line = str(value.get("text") or "").strip()
+                                if line:
+                                    bullet_lines.append(line)
+                    if block_type == "bullets" and bullet_lines and not text:
+                        text = "\n".join(f"- {line}" for line in bullet_lines)
+
+                    has_content = any(
+                        [
+                            isinstance(text, str) and text.strip(),
+                            isinstance(headers, list) and any(str(h).strip() for h in headers),
+                            isinstance(rows, list) and any(row for row in rows),
+                            isinstance(description, str) and description.strip(),
+                            isinstance(data, dict) and data,
+                        ]
+                    )
+                    if not has_content:
+                        continue
                     block = PrepareBodyBlock(
                         type=block_type,
-                        text=item.get("text"),
-                        headers=item.get("headers"),
-                        rows=item.get("rows"),
-                        ref=item.get("ref"),
-                        description=item.get("description"),
-                        data=item.get("data"),
+                        text=text,
+                        headers=headers,
+                        rows=rows,
+                        ref=ref,
+                        description=description,
+                        data=data,
                     )
                     blocks.append(block)
                 elif isinstance(item, str) and item.strip():
                     blocks.append(PrepareBodyBlock(type="paragraph", text=item.strip()))
         elif isinstance(payload, dict):
             block_type = str(payload.get("type") or "paragraph").strip() or "paragraph"
-            blocks.append(
-                PrepareBodyBlock(
-                    type=block_type,
-                    text=payload.get("text"),
-                    headers=payload.get("headers"),
-                    rows=payload.get("rows"),
-                    ref=payload.get("ref"),
-                    description=payload.get("description"),
-                    data=payload.get("data"),
-                )
+            text = payload.get("text")
+            headers = payload.get("headers")
+            rows = payload.get("rows")
+            ref = payload.get("ref")
+            description = payload.get("description")
+            data = payload.get("data")
+            has_content = any(
+                [
+                    isinstance(text, str) and text.strip(),
+                    isinstance(headers, list) and any(str(h).strip() for h in headers),
+                    isinstance(rows, list) and any(row for row in rows),
+                    isinstance(description, str) and description.strip(),
+                    isinstance(data, dict) and data,
+                ]
             )
+            if has_content:
+                blocks.append(
+                    PrepareBodyBlock(
+                        type=block_type,
+                        text=text,
+                        headers=headers,
+                        rows=rows,
+                        ref=ref,
+                        description=description,
+                        data=data,
+                    )
+                )
         elif isinstance(payload, str) and payload.strip():
             blocks.append(PrepareBodyBlock(type="paragraph", text=payload.strip()))
 
@@ -519,15 +565,35 @@ class PrepareAIOrchestrator:
         )
         return PrepareCard(card_id="intro-01", order=index + 1, role=role, content=content, meta={})
 
-    def _build_story_context(self, source: PrepareSourceDocument, policy: PreparePolicy) -> PrepareStoryContext:
-        chapters = []
-        if policy.chapters:
+    def _build_story_context(
+        self,
+        *,
+        cards: Sequence[PrepareCard],
+        source: PrepareSourceDocument,
+        policy: PreparePolicy,
+    ) -> PrepareStoryContext:
+        chapters: list[dict[str, Any]] = []
+
+        if cards:
+            seen: set[str] = set()
+            for card in cards:
+                if card.card_id in seen:
+                    continue
+                seen.add(card.card_id)
+                chapters.append(
+                    {
+                        "id": card.card_id,
+                        "title": card.content.title,
+                        "description": card.content.headline,
+                    }
+                )
+        elif policy.chapters:
             for chapter in policy.chapters:
                 chapters.append(
                     {
                         "id": chapter.id,
                         "title": chapter.title,
-                        "description": None,
+                        "description": chapter.description,
                     }
                 )
         elif source.chapters:
@@ -536,13 +602,16 @@ class PrepareAIOrchestrator:
                     {
                         "id": chapter.id,
                         "title": chapter.title,
-                        "description": None,
+                        "description": chapter.message,
                     }
                 )
+
+        tone = getattr(source.meta, "objective", None)
+
         return PrepareStoryContext.model_validate(
             {
                 "chapters": chapters,
-                "tone": None,
+                "tone": tone,
                 "must_have_messages": [],
             }
         )
