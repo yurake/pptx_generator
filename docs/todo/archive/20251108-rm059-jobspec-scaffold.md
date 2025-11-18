@@ -26,7 +26,7 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
 - [x] 実装
   - メモ: `spec_loader.load_jobspec_from_path` を追加し、CLI `_load_jobspec` 経由で JobSpecScaffold→JobSpec 変換を適用。`tests/test_spec_loader.py` を新設。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/test_spec_loader.py`、`uv run pptx compose samples/extract/jobspec.json --template samples/templates/templates.pptx --brief-cards samples/prepare/prepare_card.json` を実行。
+  - メモ: `uv run --extra dev pytest tests/test_spec_loader.py`、`uv run pptx compose samples/extract/jobspec.json --template samples/templates/templates.pptx --prepare-cards samples/prepare/prepare_card.json` を実行。
 - [x] ドキュメント更新
   - メモ: `docs/roadmap/roadmap.md` で RM-057 ステータスを更新し、`docs/notes/20251105-jobspec-scaffold-validation.md` に実装内容を記録。
   - [x] docs/roadmap 配下

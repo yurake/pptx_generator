@@ -52,12 +52,12 @@ def sample_spec(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def brief_cards(tmp_path: Path) -> Path:
+def prepare_cards(tmp_path: Path) -> Path:
     cards_path = tmp_path / "prepare_card.json"
     _write_json(
         cards_path,
         {
-            "brief_id": "brief-test",
+            "prepare_id": "prepare-test",
             "cards": [
                 {
                     "card_id": "s01",
@@ -85,21 +85,21 @@ def brief_cards(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def brief_log(tmp_path: Path) -> Path:
-    log_path = tmp_path / "brief_log.json"
+def prepare_log(tmp_path: Path) -> Path:
+    log_path = tmp_path / "prepare_log.json"
     _write_json(log_path, [])
     return log_path
 
 
 @pytest.fixture()
-def brief_meta(tmp_path: Path) -> Path:
+def prepare_meta(tmp_path: Path) -> Path:
     meta_path = tmp_path / "ai_generation_meta.json"
     _write_json(
         meta_path,
         {
-            "brief_id": "brief-test",
+            "prepare_id": "prepare-test",
             "generated_at": "2025-11-02T00:00:00Z",
-            "policy_id": "brief-default",
+            "policy_id": "prepare-default",
             "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
             "cards": [],
             "statistics": {"cards_total": 1},
@@ -160,13 +160,13 @@ def test_compose_resolves_paths_from_jobspec_meta(
     template_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(template_src, template_dst)
 
-    brief_dir = tmp_path / "prepare"
-    brief_dir.mkdir(parents=True, exist_ok=True)
-    cards_path = brief_dir / "prepare_card.json"
+    prepare_dir = tmp_path / "prepare"
+    prepare_dir.mkdir(parents=True, exist_ok=True)
+    cards_path = prepare_dir / "prepare_card.json"
     _write_json(
         cards_path,
         {
-            "brief_id": "brief-1",
+            "prepare_id": "prepare-1",
             "cards": [
                 {
                     "card_id": "intro",
@@ -189,15 +189,15 @@ def test_compose_resolves_paths_from_jobspec_meta(
             "story_context": {"chapters": []},
         },
     )
-    brief_log_path = brief_dir / "brief_log.json"
-    _write_json(brief_log_path, [])
-    brief_meta_path = brief_dir / "ai_generation_meta.json"
+    prepare_log_path = prepare_dir / "prepare_log.json"
+    _write_json(prepare_log_path, [])
+    prepare_meta_path = prepare_dir / "ai_generation_meta.json"
     _write_json(
-        brief_meta_path,
+        prepare_meta_path,
         {
-            "brief_id": "brief-1",
+            "prepare_id": "prepare-1",
             "generated_at": "2025-11-02T00:00:00Z",
-            "policy_id": "brief-default",
+            "policy_id": "prepare-default",
             "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
             "cards": [],
             "statistics": {"cards_total": 1},
@@ -226,12 +226,12 @@ def test_compose_resolves_paths_from_jobspec_meta(
         [
             "compose",
             str(spec_path),
-            "--brief-cards",
+            "--prepare-cards",
             str(cards_path),
-            "--brief-log",
-            str(brief_log_path),
-            "--brief-meta",
-            str(brief_meta_path),
+            "--prepare-log",
+            str(prepare_log_path),
+            "--prepare-meta",
+            str(prepare_meta_path),
             "--draft-output",
             str(draft_dir),
             "--output",
@@ -295,7 +295,7 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
     _write_json(
         cards_path,
         {
-            "brief_id": "brief-1",
+            "prepare_id": "prepare-1",
             "cards": [
                 {
                     "card_id": "intro",
@@ -319,6 +319,33 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
         },
     )
 
+    prepare_log_path = tmp_path / "prepare_log.json"
+    _write_json(prepare_log_path, [])
+    prepare_meta_path = tmp_path / "ai_generation_meta.json"
+    _write_json(
+        prepare_meta_path,
+        {
+            "prepare_id": "prepare-1",
+            "generated_at": "2025-11-18T00:00:00Z",
+            "policy_id": "prepare-default",
+            "input_hash": "sha256:dummy",
+            "cards": [
+                {
+                    "card_id": "intro",
+                    "story_phase": "introduction",
+                    "intent_tags": ["intro"],
+                    "content_hash": "sha256:dummy",
+                    "body_blocks": 1,
+                    "note_entries": 0,
+                }
+            ],
+            "statistics": {"cards_total": 1},
+            "mode": "dynamic",
+            "slot_coverage": {},
+            "constraints": {},
+        },
+    )
+
     output_dir = tmp_path / "compose"
     draft_dir = tmp_path / "draft"
 
@@ -327,8 +354,12 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
         [
             "mapping",
             str(spec_path),
-            "--brief-cards",
+            "--prepare-cards",
             str(cards_path),
+            "--prepare-log",
+            str(prepare_log_path),
+            "--prepare-meta",
+            str(prepare_meta_path),
             "--output",
             str(output_dir),
             "--draft-output",
@@ -343,9 +374,9 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
 def test_outline_with_layout_reasons(
     runner: CliRunner,
     sample_spec: Path,
-    brief_cards: Path,
-    brief_log: Path,
-    brief_meta: Path,
+    prepare_cards: Path,
+    prepare_log: Path,
+    prepare_meta: Path,
     layouts_file: Path,
     tmp_path: Path,
 ) -> None:
@@ -362,12 +393,12 @@ def test_outline_with_layout_reasons(
             "--chapter-template",
             "bp-report-2025",
             "--show-layout-reasons",
-            "--brief-cards",
-            str(brief_cards),
-            "--brief-log",
-            str(brief_log),
-            "--brief-meta",
-            str(brief_meta),
+            "--prepare-cards",
+            str(prepare_cards),
+            "--prepare-log",
+            str(prepare_log),
+            "--prepare-meta",
+            str(prepare_meta),
         ],
     )
 

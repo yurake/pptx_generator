@@ -9,13 +9,13 @@ from typing import Iterable
 from pptx_generator.models import JobSpec
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
-from pptx_generator.brief import (
-    BriefBodyBlock,
-    BriefCard,
-    BriefCardContent,
-    BriefCardRole,
-    BriefDocument,
-    BriefStoryContext,
+from pptx_generator.prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
+    PrepareStoryContext,
 )
 
 
@@ -52,26 +52,26 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     context = PipelineContext(spec=spec, workdir=tmp_path)
     template_path = tmp_path / "template.pptx"
     template_path.write_bytes(b"")
-    brief_doc = BriefDocument(
-        brief_id="brief-test",
+    prepare_doc = PrepareDocument(
+        prepare_id="prepare-test",
         cards=[
-            BriefCard(
+            PrepareCard(
                 card_id="s01",
                 order=1,
-                role=BriefCardRole(story_phase="introduction", intent_tags=["overview"]),
-                content=BriefCardContent(
+                role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=PrepareCardContent(
                     title="概要",
                     headline="概要のポイント",
                     body=[
-                        BriefBodyBlock(type="paragraph", text="最初のポイント"),
-                        BriefBodyBlock(type="paragraph", text="次のステップ"),
+                        PrepareBodyBlock(type="paragraph", text="最初のポイント"),
+                        PrepareBodyBlock(type="paragraph", text="次のステップ"),
                     ],
                 ),
             )
         ],
-        story_context=BriefStoryContext(chapters=[]),
+        story_context=PrepareStoryContext(chapters=[]),
     )
-    context.add_artifact("brief_document", brief_doc)
+    context.add_artifact("prepare_document", prepare_doc)
 
     step = MappingStep(
         MappingOptions(
@@ -117,27 +117,27 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     context = PipelineContext(spec=spec, workdir=tmp_path)
     template_path = tmp_path / "template.pptx"
     template_path.write_bytes(b"")
-    brief_doc = BriefDocument(
-        brief_id="brief-test",
+    prepare_doc = PrepareDocument(
+        prepare_id="prepare-test",
         cards=[
-            BriefCard(
+            PrepareCard(
                 card_id="s01",
                 order=1,
-                role=BriefCardRole(story_phase="introduction", intent_tags=["overview"]),
-                content=BriefCardContent(
+                role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=PrepareCardContent(
                     title="概要",
                     headline="概要のポイント",
                     body=[
-                        BriefBodyBlock(type="paragraph", text="1行目"),
-                        BriefBodyBlock(type="paragraph", text="2行目"),
-                        BriefBodyBlock(type="paragraph", text="3行目"),
+                        PrepareBodyBlock(type="paragraph", text="1行目"),
+                        PrepareBodyBlock(type="paragraph", text="2行目"),
+                        PrepareBodyBlock(type="paragraph", text="3行目"),
                     ],
                 ),
             )
         ],
-        story_context=BriefStoryContext(chapters=[]),
+        story_context=PrepareStoryContext(chapters=[]),
     )
-    context.add_artifact("brief_document", brief_doc)
+    context.add_artifact("prepare_document", prepare_doc)
 
     layouts_path = tmp_path / "layouts.jsonl"
     layouts_path.write_text(

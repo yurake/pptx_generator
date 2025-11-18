@@ -9,11 +9,11 @@
 
 ### CLI 実装の挙動
 - `src/pptx_generator/cli.py:1540` 付近の `mapping` コマンド実装を確認。
-  - `mapping` は `spec_path`（工程0/3で使用する jobspec）、`--brief-cards`、`--draft-output` などを受け取り、`_run_mapping_pipeline` を呼び出す。
-  - `_run_mapping_pipeline` 内で `BriefNormalizationStep` → `DraftStructuringStep` → `MappingStep` を順に実行しており、工程4の処理（ドラフト構成）を再度実行する構造になっている。
+  - `mapping` は `spec_path`（工程0/3で使用する jobspec）、`--prepare-cards`、`--draft-output` などを受け取り、`_run_mapping_pipeline` を呼び出す。
+  - `_run_mapping_pipeline` 内で `PrepareNormalizationStep` → `DraftStructuringStep` → `MappingStep` を順に実行しており、工程4の処理（ドラフト構成）を再度実行する構造になっている。
   - `--draft-output` で指定したディレクトリに `draft_draft.json` / `draft_approved.json` を再生成して上書きする。
   - `--layouts` を指定しない場合はスコアを既定値で補う（ログメッセージで確認）。
-- `DraftStructuringStep`（`src/pptx_generator/pipeline/draft_structuring.py`）は `BriefNormalizationStep` が `PipelineContext` に積む `brief_document` と `layouts.jsonl` を前提にドラフトを再構築する。既存の `draft_approved.json` を直接読み直すロジックはない。
+- `DraftStructuringStep`（`src/pptx_generator/pipeline/draft_structuring.py`）は `PrepareNormalizationStep` が `PipelineContext` に積む `prepare_document` と `layouts.jsonl` を前提にドラフトを再構築する。既存の `draft_approved.json` を直接読み直すロジックはない。
 - `MappingStep` 側も `draft_approved.json` を入力として受け取る API は用意されておらず、`PipelineContext` 上の `draft_document` アーティファクトを参照する。
 
 ### README との不整合

@@ -1,19 +1,19 @@
 # コンテンツ準備スキーマ
 
-工程2（コンテンツ準備）で生成される Brief 成果物の JSON 仕様を定義する。
+工程2（コンテンツ準備）で生成される Prepare 成果物の JSON 仕様を定義する。
 
 ## ファイル
-- `prepare_card.json`: BriefCard コレクション。工程3のドラフト構築・マッピングの基礎データ。
-- `brief_log.json`: ブリーフ承認イベントの監査ログ（初期状態は空配列）。
-- `brief_ai_log.json`: 生成 AI との対話ログとワーニング情報。
+- `prepare_card.json`: PrepareCard コレクション。工程3のドラフト構築・マッピングの基礎データ。
+- `prepare_log.json`: プレペア承認イベントの監査ログ（初期状態は空配列）。
+- `prepare_ai_log.json`: 生成 AI との対話ログとワーニング情報。
 - `ai_generation_meta.json`: ポリシー ID、生成統計、入力ハッシュなどのメタ情報。
-- `brief_story_outline.json`: 章構成とカード ID の対応表。
+- `prepare_story_outline.json`: 章構成とカード ID の対応表。
 - `audit_log.json`: 工程2全体の監査メタ。成果物パスと統計をまとめる。
 
 ## prepare_card.json
 ```jsonc
 {
-  "brief_id": "sample_import_content_summary",
+  "prepare_id": "sample_import_content_summary",
   "meta": {
     "locale": "ja-JP"
   },
@@ -59,7 +59,7 @@
 ```
 
 ### フィールド補足
-- `brief_id`: ブリーフ成果物を一意に識別する ID。
+- `prepare_id`: プレペア成果物を一意に識別する ID。
 - `meta`: 全カード共通のメタ情報（例: `locale` / `generated_at`）。任意。
 - `card_id`: 後続工程で参照するユニークなスラグ。人間が識別しやすい文字列を推奨。
 - `order`: カードの並び順。`card_id` とは独立して管理する。
@@ -71,12 +71,12 @@
 - `content.body`: 本文ブロックの配列。`type` に応じ `text`、`headers` / `rows`、`ref` / `description` などを持つ。ブロック種別は柔軟に拡張可能。
 - `content.notes`: PowerPoint のノート欄へそのまま記載する補足情報。本文をどう構成したか、閲覧者へ伝える際の注意点などを生成 AI が記述し、ユーザーが提示するかどうかを判断する。
 
-## brief_ai_log.json
+## prepare_ai_log.json
 ```jsonc
 [
   {
     "card_id": "intro",
-    "prompt_template": "brief.default",
+    "prompt_template": "prepare.default",
     "model": "gpt-4o-mini",
     "response_digest": "intro 現状と課題",
     "warnings": ["token_limit"],
@@ -92,9 +92,9 @@
 ## ai_generation_meta.json
 ```jsonc
 {
-  "brief_id": "sample_import_content_summary",
+  "prepare_id": "sample_import_content_summary",
   "generated_at": "2025-11-02T15:04:21.325659Z",
-  "policy_id": "brief-default",
+  "policy_id": "prepare-default",
   "input_hash": "sha256:...",
   "cards": [
     {"card_id": "intro", "intent_tags": ["introduction"], "story_phase": "introduction", "content_hash": "sha256:...", "body_blocks": 3, "note_entries": 1}
@@ -104,12 +104,12 @@
 ```
 
 - `content_hash`: `cards[].content.body` / `cards[].content.notes` をもとにしたハッシュ。工程3で差分検知に利用。
-- `statistics`: カード総数および slot coverage の集計値。承認状態は BriefStore 側で管理する。
+- `statistics`: カード総数および slot coverage の集計値。承認状態は PrepareStore 側で管理する。
 
-## brief_story_outline.json
+## prepare_story_outline.json
 ```jsonc
 {
-  "brief_id": "sample_import_content_summary",
+  "prepare_id": "sample_import_content_summary",
   "chapters": [
     {"id": "intro", "title": "イントロダクション", "cards": ["intro"]}
   ],
@@ -124,16 +124,16 @@
 ## audit_log.json
 ```jsonc
 {
-  "brief_normalization": {
+  "prepare_normalization": {
     "generated_at": "2025-11-02T15:04:21.325659+00:00",
-    "policy_id": "brief-default",
+    "policy_id": "prepare-default",
     "input_hash": "sha256:...",
     "outputs": {
       "prepare_card": "/path/to/prepare_card.json",
-      "brief_log": "/path/to/brief_log.json",
-      "brief_ai_log": "/path/to/brief_ai_log.json",
+      "prepare_log": "/path/to/prepare_log.json",
+      "prepare_ai_log": "/path/to/prepare_ai_log.json",
       "ai_generation_meta": "/path/to/ai_generation_meta.json",
-      "brief_story_outline": "/path/to/brief_story_outline.json"
+      "prepare_story_outline": "/path/to/prepare_story_outline.json"
     },
     "statistics": {
       "cards_total": 4
@@ -146,13 +146,13 @@
 
 ## バリデーション
 - `prepare_card.json` の `cards[].card_id` は一意であること。
-- `brief_story_outline.json` の `chapters[].cards` が `prepare_card.json` に収載されていること。
+- `prepare_story_outline.json` の `chapters[].cards` が `prepare_card.json` に収載されていること。
 - `ai_generation_meta.json` の `cards[].card_id` が `prepare_card.json` と一致すること。
 - `audit_log.json` の `outputs` パスは実際に生成された成果物を指すこと。
 
 ## サンプル
 - `samples/prepare/prepare_card.json`
-- `samples/prepare/brief_ai_log.json`
+- `samples/prepare/prepare_ai_log.json`
 - `samples/prepare/ai_generation_meta.json`
-- `samples/prepare/brief_story_outline.json`
+- `samples/prepare/prepare_story_outline.json`
 - `samples/prepare/audit_log.json`

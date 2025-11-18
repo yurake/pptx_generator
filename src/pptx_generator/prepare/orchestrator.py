@@ -8,58 +8,58 @@ from datetime import datetime, timezone
 from typing import Any, Literal
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
-from .llm_client import BriefLLMClient, BriefLLMConfigurationError, BriefLLMResult, create_brief_llm_client
+from .llm_client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
 from .models import (
-    BriefAIRecord,
-    BriefBodyBlock,
-    BriefCard,
-    BriefCardContent,
-    BriefCardRole,
-    BriefDocument,
-    BriefGenerationMeta,
-    BriefNoteEntry,
-    BriefStoryContext,
+    PrepareAIRecord,
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
+    PrepareGenerationMeta,
+    PrepareNoteEntry,
+    PrepareStoryContext,
 )
-from .policy import BriefPolicy, BriefPolicyError, BriefPolicySet
-from .prompts import build_brief_prompt
-from .source import BriefSourceChapter, BriefSourceDocument, BriefSourceSupportingPoint
+from .policy import PreparePolicy, PreparePolicyError, PreparePolicySet
+from .prompts import build_prepare_prompt
+from .source import PrepareSourceChapter, PrepareSourceDocument, PrepareSourceSupportingPoint
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PROMPT_ID = "brief.default"
+DEFAULT_PROMPT_ID = "prepare.default"
 ALLOWED_STORY_PHASES = {"introduction", "problem", "solution", "impact", "next"}
 
 
-class BriefAIOrchestrationError(RuntimeError):
-    """ブリーフ生成フローの例外。"""
+class PrepareAIOrchestrationError(RuntimeError):
+    """プレペア生成フローの例外。"""
 
 
-class BriefAIOrchestrator:
-    """BriefCard 生成オーケストレーター。"""
+class PrepareAIOrchestrator:
+    """PrepareCard 生成オーケストレーター。"""
 
     def __init__(
         self,
-        policy_set: BriefPolicySet,
+        policy_set: PreparePolicySet,
         *,
-        llm_client: BriefLLMClient | None = None,
+        llm_client: PrepareLLMClient | None = None,
     ) -> None:
         self._policy_set = policy_set
-        self._llm_client = llm_client or create_brief_llm_client()
+        self._llm_client = llm_client or create_prepare_llm_client()
 
     def generate_document(
         self,
-        source: BriefSourceDocument,
+        source: PrepareSourceDocument,
         *,
         policy_id: str | None = None,
         page_limit: int | None = None,
         mode: Literal["dynamic", "static"] = "dynamic",
         blueprint: TemplateBlueprint | None = None,
         blueprint_ref: dict[str, str] | None = None,
-    ) -> tuple[BriefDocument, BriefGenerationMeta, list[BriefAIRecord]]:
+    ) -> tuple[PrepareDocument, PrepareGenerationMeta, list[PrepareAIRecord]]:
         try:
             policy = self._policy_set.get_policy(policy_id)
-        except BriefPolicyError as exc:
-            raise BriefAIOrchestrationError(str(exc)) from exc
+        except PreparePolicyError as exc:
+            raise PrepareAIOrchestrationError(str(exc)) from exc
 
         normalized_mode = (mode or "dynamic").lower()
         if normalized_mode not in {"dynamic", "static"}:
@@ -67,7 +67,7 @@ class BriefAIOrchestrator:
 
         if normalized_mode == "static":
             if blueprint is None:
-                raise BriefAIOrchestrationError("static モードには Blueprint が必要です")
+                raise PrepareAIOrchestrationError("static モードには Blueprint が必要です")
             cards, slot_summary, ai_records = self._build_cards_static(
                 source=source,
                 policy=policy,
@@ -83,13 +83,13 @@ class BriefAIOrchestrator:
             slot_summary = None
 
         story_context = self._build_story_context(source, policy)
-        brief_id = source.meta.brief_id or f"brief-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
-        document = BriefDocument(brief_id=brief_id, cards=cards, story_context=story_context)
+        prepare_id = source.meta.prepare_id or f"prepare-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+        document = PrepareDocument(prepare_id=prepare_id, cards=cards, story_context=story_context)
         constraints: dict[str, Any] | None = None
         if normalized_mode == "dynamic" and page_limit is not None:
             constraints = {"max_chapters": page_limit}
 
-        meta = BriefGenerationMeta.from_document(
+        meta = PrepareGenerationMeta.from_document(
             document=document,
             policy_id=policy.id,
             source_payload=source.model_dump(mode="json"),
@@ -105,30 +105,30 @@ class BriefAIOrchestrator:
     def _build_cards_dynamic(
         self,
         *,
-        source: BriefSourceDocument,
-        policy: BriefPolicy,
+        source: PrepareSourceDocument,
+        policy: PreparePolicy,
         page_limit: int | None,
-    ) -> tuple[list[BriefCard], list[BriefAIRecord]]:
+    ) -> tuple[list[PrepareCard], list[PrepareAIRecord]]:
         payload = self._build_dynamic_prompt_payload(source, policy=policy, page_limit=page_limit)
-        prompt = build_brief_prompt(payload)
+        prompt = build_prepare_prompt(payload)
         try:
             llm_result = self._llm_client.generate(prompt, model_hint=None)
-        except BriefLLMConfigurationError as exc:
-            raise BriefAIOrchestrationError(str(exc)) from exc
+        except PrepareLLMConfigurationError as exc:
+            raise PrepareAIOrchestrationError(str(exc)) from exc
         except Exception as exc:  # noqa: BLE001
-            raise BriefAIOrchestrationError(f"LLM 呼び出しに失敗しました: {exc}") from exc
+            raise PrepareAIOrchestrationError(f"LLM 呼び出しに失敗しました: {exc}") from exc
 
         data = self._parse_llm_output(llm_result)
         chapters_payload = data.get("chapters")
         if not isinstance(chapters_payload, list) or not chapters_payload:
-            raise BriefAIOrchestrationError("LLM 応答に 'chapters' 配列が含まれていません")
+            raise PrepareAIOrchestrationError("LLM 応答に 'chapters' 配列が含まれていません")
 
         if page_limit is not None:
             chapters_payload = chapters_payload[:page_limit]
 
         now = datetime.now(timezone.utc)
-        cards: list[BriefCard] = []
-        ai_records: list[BriefAIRecord] = []
+        cards: list[PrepareCard] = []
+        ai_records: list[PrepareAIRecord] = []
 
         for index, entry in enumerate(chapters_payload):
             card = self._build_card_from_llm_entry(
@@ -140,7 +140,7 @@ class BriefAIOrchestrator:
             cards.append(card)
 
             ai_records.append(
-                BriefAIRecord(
+                PrepareAIRecord(
                     card_id=card.card_id,
                     prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
                     model=llm_result.model,
@@ -155,9 +155,9 @@ class BriefAIOrchestrator:
 
     def _build_dynamic_prompt_payload(
         self,
-        source: BriefSourceDocument,
+        source: PrepareSourceDocument,
         *,
-        policy: BriefPolicy,
+        policy: PreparePolicy,
         page_limit: int | None,
     ) -> dict[str, Any]:
         raw_text = source.raw_text
@@ -183,7 +183,7 @@ class BriefAIOrchestrator:
 
         return payload
 
-    def _compose_raw_text(self, source: BriefSourceDocument) -> str:
+    def _compose_raw_text(self, source: PrepareSourceDocument) -> str:
         lines: list[str] = []
         if source.meta.objective:
             lines.append(source.meta.objective)
@@ -201,24 +201,24 @@ class BriefAIOrchestrator:
                     lines.append(f"- {statement}")
         return "\n".join(lines).strip()
 
-    def _parse_llm_output(self, result: BriefLLMResult) -> dict[str, Any]:
+    def _parse_llm_output(self, result: PrepareLLMResult) -> dict[str, Any]:
         text = result.text.strip()
         if not text:
-            raise BriefAIOrchestrationError("LLM 応答が空でした")
+            raise PrepareAIOrchestrationError("LLM 応答が空でした")
         try:
             return json.loads(text)
         except json.JSONDecodeError as exc:
             logger.warning("LLM 応答の JSON 解析に失敗: %s", exc)
-            raise BriefAIOrchestrationError("LLM 応答を JSON として解析できませんでした") from exc
+            raise PrepareAIOrchestrationError("LLM 応答を JSON として解析できませんでした") from exc
 
     def _build_card_from_llm_entry(
         self,
         entry: dict[str, Any],
         *,
         index: int,
-        policy: BriefPolicy,
+        policy: PreparePolicy,
         generated_at: datetime,
-    ) -> BriefCard:
+    ) -> PrepareCard:
         title = str(entry.get("title") or f"Chapter {index + 1}")
         card_id = str(entry.get("card_id") or self._slugify(title) or f"chapter-{index + 1}")
 
@@ -239,10 +239,10 @@ class BriefAIOrchestrator:
         body_blocks = self._build_body_blocks(entry.get("body") or entry.get("narrative"))
         notes = self._build_note_entries(entry)
 
-        role = BriefCardRole(story_phase=story_phase, intent_tags=intent_tags)
-        content = BriefCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
+        role = PrepareCardRole(story_phase=story_phase, intent_tags=intent_tags)
+        content = PrepareCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
 
-        return BriefCard(
+        return PrepareCard(
             card_id=card_id,
             order=index + 1,
             role=role,
@@ -250,13 +250,13 @@ class BriefAIOrchestrator:
             meta={"generated_at": generated_at.isoformat()},
         )
 
-    def _build_body_blocks(self, payload: Any) -> list[BriefBodyBlock]:
-        blocks: list[BriefBodyBlock] = []
+    def _build_body_blocks(self, payload: Any) -> list[PrepareBodyBlock]:
+        blocks: list[PrepareBodyBlock] = []
         if isinstance(payload, list):
             for item in payload:
                 if isinstance(item, dict):
                     block_type = str(item.get("type") or "paragraph").strip() or "paragraph"
-                    block = BriefBodyBlock(
+                    block = PrepareBodyBlock(
                         type=block_type,
                         text=item.get("text"),
                         headers=item.get("headers"),
@@ -267,11 +267,11 @@ class BriefAIOrchestrator:
                     )
                     blocks.append(block)
                 elif isinstance(item, str) and item.strip():
-                    blocks.append(BriefBodyBlock(type="paragraph", text=item.strip()))
+                    blocks.append(PrepareBodyBlock(type="paragraph", text=item.strip()))
         elif isinstance(payload, dict):
             block_type = str(payload.get("type") or "paragraph").strip() or "paragraph"
             blocks.append(
-                BriefBodyBlock(
+                PrepareBodyBlock(
                     type=block_type,
                     text=payload.get("text"),
                     headers=payload.get("headers"),
@@ -282,14 +282,14 @@ class BriefAIOrchestrator:
                 )
             )
         elif isinstance(payload, str) and payload.strip():
-            blocks.append(BriefBodyBlock(type="paragraph", text=payload.strip()))
+            blocks.append(PrepareBodyBlock(type="paragraph", text=payload.strip()))
 
         if not blocks:
-            blocks.append(BriefBodyBlock(type="placeholder", text="内容を確認中"))
+            blocks.append(PrepareBodyBlock(type="placeholder", text="内容を確認中"))
         return blocks
 
-    def _build_note_entries(self, entry: dict[str, Any]) -> list[BriefNoteEntry]:
-        notes: list[BriefNoteEntry] = []
+    def _build_note_entries(self, entry: dict[str, Any]) -> list[PrepareNoteEntry]:
+        notes: list[PrepareNoteEntry] = []
         notes_payload = entry.get("notes")
         if isinstance(notes_payload, list):
             for item in notes_payload:
@@ -298,11 +298,11 @@ class BriefAIOrchestrator:
                     if not text:
                         continue
                     note_type = str(item.get("type") or "note").strip() or "note"
-                    notes.append(BriefNoteEntry(type=note_type, text=text))
+                    notes.append(PrepareNoteEntry(type=note_type, text=text))
                 elif isinstance(item, str) and item.strip():
-                    notes.append(BriefNoteEntry(text=item.strip()))
+                    notes.append(PrepareNoteEntry(text=item.strip()))
         elif isinstance(notes_payload, str) and notes_payload.strip():
-            notes.append(BriefNoteEntry(text=notes_payload.strip()))
+            notes.append(PrepareNoteEntry(text=notes_payload.strip()))
 
         # 旧スキーマ互換: supporting_points をノートへ変換
         if not notes:
@@ -314,25 +314,25 @@ class BriefAIOrchestrator:
                     else:
                         statement = str(item or "").strip()
                     if statement:
-                        notes.append(BriefNoteEntry(type="rationale", text=statement))
+                        notes.append(PrepareNoteEntry(type="rationale", text=statement))
 
         return notes
 
-    def _build_chapter_body_blocks(self, chapter: BriefSourceChapter) -> list[BriefBodyBlock]:
-        blocks: list[BriefBodyBlock] = []
+    def _build_chapter_body_blocks(self, chapter: PrepareSourceChapter) -> list[PrepareBodyBlock]:
+        blocks: list[PrepareBodyBlock] = []
         for detail in chapter.details:
             text = (detail or "").strip()
             if not text:
                 continue
-            blocks.append(BriefBodyBlock(type="paragraph", text=text))
+            blocks.append(PrepareBodyBlock(type="paragraph", text=text))
         if not blocks and chapter.message:
-            blocks.append(BriefBodyBlock(type="paragraph", text=chapter.message))
+            blocks.append(PrepareBodyBlock(type="paragraph", text=chapter.message))
         if not blocks:
-            blocks.append(BriefBodyBlock(type="placeholder", text="内容を確認中"))
+            blocks.append(PrepareBodyBlock(type="placeholder", text="内容を確認中"))
         return blocks
 
-    def _build_chapter_notes(self, supporting_points: list[BriefSourceSupportingPoint]) -> list[BriefNoteEntry]:
-        notes: list[BriefNoteEntry] = []
+    def _build_chapter_notes(self, supporting_points: list[PrepareSourceSupportingPoint]) -> list[PrepareNoteEntry]:
+        notes: list[PrepareNoteEntry] = []
         for supporting in supporting_points:
             statement = (supporting.statement or "").strip()
             if not statement:
@@ -340,19 +340,19 @@ class BriefAIOrchestrator:
             evidence = ""
             if supporting.evidence_type and supporting.evidence_value:
                 evidence = f" ({supporting.evidence_type}: {supporting.evidence_value})"
-            notes.append(BriefNoteEntry(type="rationale", text=f"{statement}{evidence}"))
+            notes.append(PrepareNoteEntry(type="rationale", text=f"{statement}{evidence}"))
         return notes
 
     def _build_cards_static(
         self,
         *,
-        source: BriefSourceDocument,
-        policy: BriefPolicy,
+        source: PrepareSourceDocument,
+        policy: PreparePolicy,
         blueprint: TemplateBlueprint,
         page_limit: int | None,
-    ) -> tuple[list[BriefCard], dict[str, int], list[BriefAIRecord]]:
+    ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord]]:
         if page_limit is not None:
-            raise BriefAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
+            raise PrepareAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
 
         slot_entries: list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]] = []
         for slide_index, blueprint_slide in enumerate(blueprint.slides):
@@ -368,9 +368,9 @@ class BriefAIOrchestrator:
                 "Blueprint の必須 slot 数を満たす章が不足しています: "
                 f"required={len(required_entries)} actual={len(chapters)}"
             )
-            raise BriefAIOrchestrationError(msg)
+            raise PrepareAIOrchestrationError(msg)
 
-        chapter_assignments: dict[int, BriefSourceChapter] = {}
+        chapter_assignments: dict[int, PrepareSourceChapter] = {}
         chapter_iter_index = 0
 
         for entry in required_entries:
@@ -385,7 +385,7 @@ class BriefAIOrchestrator:
             chapter_assignments[entry[0]] = chapters[chapter_iter_index]
             chapter_iter_index += 1
 
-        cards: list[BriefCard] = []
+        cards: list[PrepareCard] = []
         required_fulfilled = 0
         optional_used = 0
 
@@ -416,7 +416,7 @@ class BriefAIOrchestrator:
             "optional_used": optional_used,
         }
         ai_records = [
-            BriefAIRecord(
+            PrepareAIRecord(
                 card_id="batch",
                 prompt_template=DEFAULT_PROMPT_ID,
                 model="mock-local",
@@ -433,9 +433,9 @@ class BriefAIOrchestrator:
         order: int,
         slide: TemplateBlueprintSlide,
         slot: TemplateBlueprintSlot,
-        chapter: BriefSourceChapter | None,
-        policy: BriefPolicy,
-    ) -> BriefCard:
+        chapter: PrepareSourceChapter | None,
+        policy: PreparePolicy,
+    ) -> PrepareCard:
         story_phase = policy.resolve_story_phase(order)
         intent_tags: list[str]
         if chapter is not None:
@@ -454,7 +454,7 @@ class BriefAIOrchestrator:
             title = policy.resolve_chapter_title(order, slide.layout or slot.slot_id)
             headline = f"{slide.layout} - {slot.anchor}" if slide.layout else slot.slot_id
             body_blocks = [
-                BriefBodyBlock(
+                PrepareBodyBlock(
                     type="placeholder",
                     text=f"Slot {slot.slot_id} に対応する章がまだ割り当てられていません",
                 )
@@ -466,8 +466,8 @@ class BriefAIOrchestrator:
         if not intent_tags:
             intent_tags = [story_phase]
 
-        role = BriefCardRole(story_phase=story_phase, intent_tags=intent_tags)
-        content = BriefCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
+        role = PrepareCardRole(story_phase=story_phase, intent_tags=intent_tags)
+        content = PrepareCardContent(title=title, headline=headline, body=body_blocks, notes=notes)
 
         blueprint_meta = {
             "slide_id": slide.slide_id,
@@ -487,7 +487,7 @@ class BriefAIOrchestrator:
         if meta_source:
             meta["source_chapter"] = meta_source
 
-        return BriefCard(
+        return PrepareCard(
             card_id=self._normalize_slot_card_id(slot.slot_id),
             order=order + 1,
             role=role,
@@ -503,23 +503,23 @@ class BriefAIOrchestrator:
         result = "".join(filtered)
         return result or "slot"
 
-    def _build_dummy_card(self, policy: BriefPolicy, index: int) -> BriefCard:
+    def _build_dummy_card(self, policy: PreparePolicy, index: int) -> PrepareCard:
         story_phase = policy.resolve_story_phase(index)
-        role = BriefCardRole(story_phase=story_phase, intent_tags=[story_phase])
-        content = BriefCardContent(
+        role = PrepareCardRole(story_phase=story_phase, intent_tags=[story_phase])
+        content = PrepareCardContent(
             title=policy.resolve_story_phase(index),
-            headline="自動生成されたブリーフカード（ダミー）",
+            headline="自動生成されたプレペアカード（ダミー）",
             body=[
-                BriefBodyBlock(
+                PrepareBodyBlock(
                     type="paragraph",
-                    text="入力ブリーフが空だったため、ダミーカードを生成しました。",
+                    text="入力プレペアが空だったため、ダミーカードを生成しました。",
                 )
             ],
-            notes=[BriefNoteEntry(type="note", text="原稿が空だったために生成されたダミーです")],
+            notes=[PrepareNoteEntry(type="note", text="原稿が空だったために生成されたダミーです")],
         )
-        return BriefCard(card_id="intro-01", order=index + 1, role=role, content=content, meta={})
+        return PrepareCard(card_id="intro-01", order=index + 1, role=role, content=content, meta={})
 
-    def _build_story_context(self, source: BriefSourceDocument, policy: BriefPolicy) -> BriefStoryContext:
+    def _build_story_context(self, source: PrepareSourceDocument, policy: PreparePolicy) -> PrepareStoryContext:
         chapters = []
         if policy.chapters:
             for chapter in policy.chapters:
@@ -539,7 +539,7 @@ class BriefAIOrchestrator:
                         "description": None,
                     }
                 )
-        return BriefStoryContext.model_validate(
+        return PrepareStoryContext.model_validate(
             {
                 "chapters": chapters,
                 "tone": None,
@@ -547,7 +547,7 @@ class BriefAIOrchestrator:
             }
         )
 
-    def _build_card_meta(self, card: BriefCard) -> dict[str, Any]:
+    def _build_card_meta(self, card: PrepareCard) -> dict[str, Any]:
         payload = {
             "card_id": card.card_id,
             "intent_tags": card.role.intent_tags,
@@ -569,7 +569,7 @@ class BriefAIOrchestrator:
         return payload
 
     @staticmethod
-    def _hash_card(card: BriefCard) -> str:
+    def _hash_card(card: PrepareCard) -> str:
         payload = card.model_dump(mode="json", exclude_none=True)
         digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(digest.encode("utf-8")).hexdigest()

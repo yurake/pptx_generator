@@ -40,7 +40,7 @@
 ## 3. サンプル JSON / アセット拡張方針
 
 - `sample_jobspec.json` は 50 ページ構成まで拡張し、カテゴリ別レイアウトを網羅する（旧 `sample_spec_extended.json` 案を統合）。
-- `sample_prepare_card.json` / `sample_brief_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
+- `sample_prepare_card.json` / `sample_prepare_log.json` に対応するカード・イベントを追加し、intent/type カバレッジを拡張。
 - `sample_template_layouts.jsonl` を全レイアウト追加後の `layout-validate` 出力を基準に更新し、用途タグ・ヒントを網羅。
 - 追加レイアウトに必要なダミー画像・アイコンは `samples/assets/` に SVG/PNG 形式で配置。
 

@@ -1,15 +1,15 @@
 {
-  "brief_normalization": {
+  "prepare_normalization": {
     "generated_at": "2025-01-01T00:00:00+00:00",
-    "policy_id": "brief-default",
+    "policy_id": "prepare-default",
     "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
     "mode": "dynamic",
     "outputs": {
       "prepare_card": "samples/prepare_single/prepare_card.json",
-      "brief_log": "samples/prepare_single/brief_log.json",
-      "brief_ai_log": "samples/prepare_single/brief_ai_log.json",
+      "prepare_log": "samples/prepare_single/prepare_log.json",
+      "prepare_ai_log": "samples/prepare_single/prepare_ai_log.json",
       "ai_generation_meta": "samples/prepare_single/ai_generation_meta.json",
-      "brief_story_outline": "samples/prepare_single/brief_story_outline.json"
+      "prepare_story_outline": "samples/prepare_single/prepare_story_outline.json"
     },
     "statistics": {
       "cards_total": 1,

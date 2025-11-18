@@ -10,13 +10,13 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
-from pptx_generator.brief import (
-    BriefBodyBlock,
-    BriefCard,
-    BriefCardContent,
-    BriefCardRole,
-    BriefDocument,
-    BriefStoryContext,
+from pptx_generator.prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
+    PrepareStoryContext,
 )
 from pptx_generator.models import (
     FontSpec,
@@ -180,23 +180,23 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
     )
 
     mapping_context = PipelineContext(spec=spec, workdir=tmp_path)
-    brief_doc = BriefDocument(
-        brief_id="brief-test",
+    prepare_doc = PrepareDocument(
+        prepare_id="prepare-test",
         cards=[
-            BriefCard(
+            PrepareCard(
                 card_id="slide-1",
                 order=1,
-                role=BriefCardRole(story_phase="introduction", intent_tags=["intro"]),
-                content=BriefCardContent(
+                role=PrepareCardRole(story_phase="introduction", intent_tags=["intro"]),
+                content=PrepareCardContent(
                     title="概要",
                     headline="最初のポイント",
-                    body=[BriefBodyBlock(type="paragraph", text="最初のポイント")],
+                    body=[PrepareBodyBlock(type="paragraph", text="最初のポイント")],
                 ),
             )
         ],
-        story_context=BriefStoryContext(chapters=[]),
+        story_context=PrepareStoryContext(chapters=[]),
     )
-    mapping_context.add_artifact("brief_document", brief_doc)
+    mapping_context.add_artifact("prepare_document", prepare_doc)
     mapping_step = MappingStep(MappingOptions(output_dir=tmp_path))
     mapping_step.run(mapping_context)
 

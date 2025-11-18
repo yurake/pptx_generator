@@ -7,35 +7,35 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-BriefEvidenceType = Literal["url", "source_id", "note"]
+PrepareEvidenceType = Literal["url", "source_id", "note"]
 
 
-class BriefSourceMeta(BaseModel):
-    """ブリーフ入力のメタ情報。"""
+class PrepareSourceMeta(BaseModel):
+    """プレペア入力のメタ情報。"""
 
     title: str
-    brief_id: str | None = None
+    prepare_id: str | None = None
     client: str | None = None
     objective: str | None = None
     locale: str | None = "ja-JP"
 
 
-class BriefSourceSupportingPoint(BaseModel):
+class PrepareSourceSupportingPoint(BaseModel):
     """入力定義の支援ポイント。"""
 
     statement: str
-    evidence_type: BriefEvidenceType | None = None
+    evidence_type: PrepareEvidenceType | None = None
     evidence_value: str | None = None
 
 
-class BriefSourceChapter(BaseModel):
+class PrepareSourceChapter(BaseModel):
     """入力定義の章情報。"""
 
     id: str = Field(..., pattern=r"^[a-z0-9\\-]+$")
     title: str
     message: str | None = None
     details: list[str] = Field(default_factory=list)
-    supporting_points: list[BriefSourceSupportingPoint] = Field(default_factory=list)
+    supporting_points: list[PrepareSourceSupportingPoint] = Field(default_factory=list)
     story_hint: str | None = None
     intent_tags: list[str] = Field(default_factory=list)
 
@@ -49,32 +49,32 @@ class BriefSourceChapter(BaseModel):
         return [str(value).strip()]
 
 
-class BriefSourceDocument(BaseModel):
-    """ブリーフ入力ドキュメント。"""
+class PrepareSourceDocument(BaseModel):
+    """プレペア入力ドキュメント。"""
 
-    meta: BriefSourceMeta
-    chapters: list[BriefSourceChapter] = Field(default_factory=list)
+    meta: PrepareSourceMeta
+    chapters: list[PrepareSourceChapter] = Field(default_factory=list)
     raw_text: str | None = None
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> "BriefSourceDocument":
+    def from_payload(cls, payload: dict[str, Any]) -> "PrepareSourceDocument":
         return cls.model_validate(payload)
 
     @classmethod
-    def parse_file(cls, path: str | Path) -> "BriefSourceDocument":
+    def parse_file(cls, path: str | Path) -> "PrepareSourceDocument":
         path = Path(path)
         text = path.read_text(encoding="utf-8")
         if path.suffix.lower() in {".json", ".jsonc"}:
             payload = json.loads(text)
             return cls.from_payload(payload)
-        return cls._from_markdown(text, brief_id=path.stem)
+        return cls._from_markdown(text, prepare_id=path.stem)
 
     @classmethod
-    def _from_markdown(cls, text: str, *, brief_id: str | None = None) -> "BriefSourceDocument":
+    def _from_markdown(cls, text: str, *, prepare_id: str | None = None) -> "PrepareSourceDocument":
         lines = text.splitlines()
         title: str | None = None
         intro_lines: list[str] = []
-        chapters: list[BriefSourceChapter] = []
+        chapters: list[PrepareSourceChapter] = []
 
         current_title: str | None = None
         current_narrative: list[str] = []
@@ -87,10 +87,10 @@ class BriefSourceDocument(BaseModel):
             chapter_id = re.sub(r"[^a-z0-9]+", "-", current_title.lower()).strip("-") or "chapter"
             message = current_narrative[0] if current_narrative else current_title
             supporting_points = [
-                BriefSourceSupportingPoint(statement=item) for item in current_supporting if item
+                PrepareSourceSupportingPoint(statement=item) for item in current_supporting if item
             ]
             chapters.append(
-                BriefSourceChapter(
+                PrepareSourceChapter(
                     id=chapter_id,
                     title=current_title,
                     message=message,
@@ -127,7 +127,7 @@ class BriefSourceDocument(BaseModel):
         finalize_current()
 
         story_phases = ["introduction", "problem", "solution", "impact", "next"]
-        normalized_chapters: list[BriefSourceChapter] = []
+        normalized_chapters: list[PrepareSourceChapter] = []
         for index, chapter in enumerate(chapters):
             intent = chapter.intent_tags or []
             if not intent and index < len(story_phases):
@@ -141,9 +141,9 @@ class BriefSourceDocument(BaseModel):
                 )
             )
 
-        meta = BriefSourceMeta(
-            title=title or (brief_id or "Brief"),
-            brief_id=brief_id,
+        meta = PrepareSourceMeta(
+            title=title or (prepare_id or "Prepare"),
+            prepare_id=prepare_id,
             objective="\n".join(intro_lines) or None,
         )
         return cls(meta=meta, chapters=normalized_chapters, raw_text=text)

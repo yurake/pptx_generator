@@ -1,16 +1,16 @@
-"""Prompt templates for brief generation."""
+"""Prompt templates for prepare generation."""
 
 from __future__ import annotations
 
-BRIEF_GENERATION_PROMPT = """
-あなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する BriefCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。
+PREPARE_GENERATION_PROMPT = """
+あなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する PrepareCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。
 
 # 入力
-{brief_payload}
+{prepare_payload}
 
 # 出力フォーマット
 JSON オブジェクトで返してください。トップレベルキーは chapters です。
-- chapters: BriefCard の配列。各要素は 1 スライド分の情報を表し、次のフィールドを含めてください。
+- chapters: PrepareCard の配列。各要素は 1 スライド分の情報を表し、次のフィールドを含めてください。
   - card_id: スライド固有のスラグ ID（英数字とハイフンのみ）。story_phase と同じ文字列は避け、再生成時に安定する命名にしてください。
   - title: スライドタイトル。閲覧者にとって意味のある自然な文にしてください。
   - headline: そのページで最も伝えたい結論を 1 行で表現してください。
@@ -28,9 +28,9 @@ JSON オブジェクトで返してください。トップレベルキーは ch
 """
 
 
-def build_brief_prompt(payload: dict[str, object]) -> str:
-    """Render the brief generation prompt with the given payload."""
+def build_prepare_prompt(payload: dict[str, object]) -> str:
+    """Render the prepare generation prompt with the given payload."""
     import json
 
     serialized = json.dumps(payload, ensure_ascii=False, indent=2)
-    return BRIEF_GENERATION_PROMPT.replace("{brief_payload}", serialized, 1)
+    return PREPARE_GENERATION_PROMPT.replace("{prepare_payload}", serialized, 1)

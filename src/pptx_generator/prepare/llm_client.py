@@ -1,4 +1,4 @@
-"""LLM client for brief generation."""
+"""LLM client for prepare generation."""
 
 from __future__ import annotations
 
@@ -14,40 +14,40 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
-class BriefLLMResult:
+class PrepareLLMResult:
     text: str
     model: str
     warnings: list[str]
     tokens: dict[str, int]
 
 
-class BriefLLMClient(Protocol):
-    """Interface for brief generation LLM client."""
+class PrepareLLMClient(Protocol):
+    """Interface for prepare generation LLM client."""
 
-    def generate(self, prompt: str, *, model_hint: str | None = None) -> BriefLLMResult:
-        """Generate a brief JSON string from the given prompt."""
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
+        """Generate a prepare JSON string from the given prompt."""
 
 
-class BriefLLMConfigurationError(RuntimeError):
+class PrepareLLMConfigurationError(RuntimeError):
     """Raised when the client cannot be configured."""
 
 
-def create_brief_llm_client() -> BriefLLMClient:
+def create_prepare_llm_client() -> PrepareLLMClient:
     provider = os.getenv("PPTX_LLM_PROVIDER", "mock").strip().lower()
-    logger.info("Brief LLM provider resolved: %s", provider)
+    logger.info("Prepare LLM provider resolved: %s", provider)
     if provider in {"", "mock", "mock-local"}:
-        return MockBriefLLMClient()
+        return MockPrepareLLMClient()
     if provider in {"openai", "openai-api"}:
-        return OpenAIBriefLLMClient.from_env()
+        return OpenAIPrepareLLMClient.from_env()
     if provider in {"azure-openai", "azure"}:
-        return AzureOpenAIBriefLLMClient.from_env()
-    raise BriefLLMConfigurationError(f"未知の LLM プロバイダーです: {provider}")
+        return AzureOpenAIPrepareLLMClient.from_env()
+    raise PrepareLLMConfigurationError(f"未知の LLM プロバイダーです: {provider}")
 
 
-class MockBriefLLMClient:
+class MockPrepareLLMClient:
     """Deterministic mock implementation."""
 
-    def generate(self, prompt: str, *, model_hint: str | None = None) -> BriefLLMResult:
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         try:
             marker_start = prompt.index("# 入力")
             marker_end = prompt.index("# 出力", marker_start)
@@ -120,11 +120,11 @@ class MockBriefLLMClient:
             )
 
         text = json.dumps({"chapters": result_chapters}, ensure_ascii=False)
-        return BriefLLMResult(text=text, model="mock-local", warnings=[], tokens={})
+        return PrepareLLMResult(text=text, model="mock-local", warnings=[], tokens={})
 
 
 @dataclass
-class OpenAIBriefLLMClient:
+class OpenAIPrepareLLMClient:
     """OpenAI Chat Completions based client."""
 
     client: any
@@ -133,16 +133,16 @@ class OpenAIBriefLLMClient:
     max_tokens: int
 
     @classmethod
-    def from_env(cls) -> "OpenAIBriefLLMClient":
+    def from_env(cls) -> "OpenAIPrepareLLMClient":
         try:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover
             msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise BriefLLMConfigurationError(msg) from exc
+            raise PrepareLLMConfigurationError(msg) from exc
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise BriefLLMConfigurationError("OPENAI_API_KEY が設定されていません")
+            raise PrepareLLMConfigurationError("OPENAI_API_KEY が設定されていません")
         base_url = os.getenv("OPENAI_BASE_URL")
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
@@ -150,7 +150,7 @@ class OpenAIBriefLLMClient:
         max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", "32000"))
         return cls(client=client, model=model, temperature=temperature, max_tokens=max_tokens)
 
-    def generate(self, prompt: str, *, model_hint: str | None = None) -> BriefLLMResult:
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.model
         messages = [
             {"role": "system", "content": "You are a helpful assistant that returns JSON only."},
@@ -177,11 +177,11 @@ class OpenAIBriefLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
-        return BriefLLMResult(text=str(content or ""), model=target_model, warnings=[], tokens=tokens)
+        return PrepareLLMResult(text=str(content or ""), model=target_model, warnings=[], tokens=tokens)
 
 
 @dataclass
-class AzureOpenAIBriefLLMClient:
+class AzureOpenAIPrepareLLMClient:
     """Azure OpenAI chat client wrapper."""
 
     client: any
@@ -191,18 +191,18 @@ class AzureOpenAIBriefLLMClient:
     max_tokens: int
 
     @classmethod
-    def from_env(cls) -> "AzureOpenAIBriefLLMClient":
+    def from_env(cls) -> "AzureOpenAIPrepareLLMClient":
         try:
             from openai import AzureOpenAI
         except ImportError as exc:  # pragma: no cover
             msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise BriefLLMConfigurationError(msg) from exc
+            raise PrepareLLMConfigurationError(msg) from exc
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
         deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
         if not all([endpoint, api_key, deployment]):
-            raise BriefLLMConfigurationError(
+            raise PrepareLLMConfigurationError(
                 "AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY / AZURE_OPENAI_DEPLOYMENT を設定してください"
             )
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
@@ -221,7 +221,7 @@ class AzureOpenAIBriefLLMClient:
         )
         return cls(client=client, deployment=deployment, api_version=api_version, temperature=temperature, max_tokens=max_tokens)
 
-    def generate(self, prompt: str, *, model_hint: str | None = None) -> BriefLLMResult:
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.deployment
         messages = [
             {
@@ -271,4 +271,4 @@ class AzureOpenAIBriefLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
-        return BriefLLMResult(text="".join(texts), model=self.deployment, warnings=[], tokens=tokens)
+        return PrepareLLMResult(text="".join(texts), model=self.deployment, warnings=[], tokens=tokens)

@@ -137,5 +137,5 @@
 - [docs/design/schema/stage-04-draft-structuring.md](../schema/stage-04-draft-structuring.md)
 - サンプル: [docs/design/schema/samples/draft_approved.jsonc](../schema/samples/draft_approved.jsonc)
 
-- CLI: `uv run pptx outline spec.json --brief-cards .pptx/prepare/prepare_card.json --show-layout-reasons --chapter-template bp-report-2025`
-- CLI: `uv run pptx outline spec.json --brief-cards .pptx/prepare/prepare_card.json --brief-log .pptx/prepare/brief_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`
+- CLI: `uv run pptx outline spec.json --prepare-cards .pptx/prepare/prepare_card.json --show-layout-reasons --chapter-template bp-report-2025`
+- CLI: `uv run pptx outline spec.json --prepare-cards .pptx/prepare/prepare_card.json --prepare-log .pptx/prepare/prepare_log.json --layouts layouts.jsonl --chapter-template bp-report-2025 --show-layout-reasons`

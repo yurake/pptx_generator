@@ -1,7 +1,7 @@
 {
-  "brief_id": "sample_import_content_summary",
+  "prepare_id": "sample_import_content_summary",
   "generated_at": "2025-11-16T13:25:32.575812Z",
-  "policy_id": "brief-default",
+  "policy_id": "prepare-default",
   "input_hash": "da2280d36bf9cb28e3be580066066d3136ec3de5feb2dbe08fc87783cebd0d0c",
   "cards": [
     {

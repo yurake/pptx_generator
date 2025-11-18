@@ -93,7 +93,7 @@ uv run pptx template samples/templates/templates.pptx
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 
 ### 工程2: コンテンツ準備 (HITL)
-ブリーフ入力（Markdown / JSON など）を BriefCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
+プレペア入力（Markdown / JSON など）を PrepareCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
 
 #### `pptx prepare`
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
@@ -102,7 +102,7 @@ uv run pptx template samples/templates/templates.pptx
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
-| `<brief.txt>` | ブリーフ入力ファイル | ✅ | ✅ | - |
+| `<prepare_source.txt>` | プレペア入力ファイル | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
 | `--mode <dynamic\|static>` | 生成モードを指定する | ✅ |  | - |
 | `--jobspec <path>` | `jobspec.json` を指定（template_spec_path を参照） | 静的モードで ✅ |  | `.pptx/extract/jobspec.json` を探索 |
@@ -116,30 +116,30 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 ```
 
 生成物（例）:
-- `prepare_card.json`: BriefCard 配列（静的モード時は `slide_id` / `slot_id` / `required` / `layout_mode` を含む）
-- `brief_log.json`: 承認・差戻しイベントログ（初回は空配列）
-- `brief_ai_log.json`: 生成 AI との対話ログ
+- `prepare_card.json`: PrepareCard 配列（静的モード時は `slide_id` / `slot_id` / `required` / `layout_mode` を含む）
+- `prepare_log.json`: 承認・差戻しイベントログ（初回は空配列）
+- `prepare_ai_log.json`: 生成 AI との対話ログ
 - `ai_generation_meta.json`: 生成統計・入力ハッシュ・モード情報・Blueprint 参照
-- `brief_story_outline.json`: 章構成とカード紐付け
+- `prepare_story_outline.json`: 章構成とカード紐付け
 - `audit_log.json`: 工程2の監査メタ情報（静的モード時は slot 充足率・Blueprint パスを記録）
 ### 工程3: マッピング (HITL + 自動)
-章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Brief 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
+章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Prepare 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
 - 工程3全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
-- `--brief-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照し、存在すれば指定を省略できる。
+- `--prepare-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照し、存在すれば指定を省略できる（`--prepare-*` は互換エイリアス）。
 - `jobspec.meta.template_path`・`jobspec.meta.layouts_path` が設定されていれば、それぞれ `--template`・`--layouts` を省略できる。省略時は jobspec と同一ディレクトリ → カレントディレクトリの順に相対パスを解決する。
 - ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--template <path>` | ブランド抽出に利用するテンプレート |  |  | jobspec.meta.template_path を解決 |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--draft-output <dir>` | ドラフト成果物の保存先 |  |  | `.pptx/draft` |
-| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
+| `--prepare-log <path>` | 工程2の `prepare_log.json` |  |  | `.pptx/prepare/prepare_log.json` |
+| `--prepare-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
 | `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  |  | `draft_review_log.json` |
@@ -155,12 +155,12 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 
 #### 補助: `pptx outline`
 - HITL 作業（章構成確認）だけを個別に実行したい場合に利用し、`generate_ready.json` と関連メタ／ログを再生成する。
-- `--brief-*` オプションは `compose` と共通。差戻し対応や一部章のみ更新したいケースで活用する。
+- `--prepare-*` オプションは `compose` と共通。差戻し対応や一部章のみ更新したいケースで活用する。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
@@ -169,8 +169,8 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--return-reasons-path <path>` | 差戻し理由テンプレート辞書のパス |  |  | `config/return_reasons.json` |
 | `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
-| `--brief-log <path>` | 工程2の `brief_log.json` |  |  | `.pptx/prepare/brief_log.json` |
-| `--brief-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
+| `--prepare-log <path>` | 工程2の `prepare_log.json` |  |  | `.pptx/prepare/prepare_log.json` |
+| `--prepare-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 
 #### 補助: `pptx mapping`
 - 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
@@ -178,7 +178,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--brief-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--template <path>` | generate_ready.json に埋め込むテンプレートファイル |  |  | jobspec.meta.template_path を解決 |
 | `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
@@ -248,7 +248,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 ## 生成物とログの設計メモ
-- `prepare_card.json` / `brief_log.json` / `brief_ai_log.json` / `ai_generation_meta.json` / `brief_story_outline.json`: 工程2で生成される Brief 成果物。
+- `prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` / `prepare_story_outline.json`: 工程2で生成される Prepare 成果物。
 - `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
 - `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。

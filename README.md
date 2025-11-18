@@ -36,9 +36,9 @@ flowchart TD
   S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Brief["**資料データ (brief_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
-  S2 --> BriefCards["**ドラフト(prepare_card.json)**"]:::file
-  BriefCards --> S3
+  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
+  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  PrepareCards --> S3
 
   %% ======= Stage 3 =======
   S3["**工程 3 マッピング**"]:::stage
@@ -113,32 +113,32 @@ flowchart TD
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
 ### 工程 2: コンテンツ準備
-- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
+- プレペア入力（Markdown / JSON）を `PrepareCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
-- `.pptx/prepare/` 配下に `prepare_card.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
+- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json`などを出力します。
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
     --output .pptx/prepare
   ```
-  - 主な生成物: `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
-  - 既存の承認済み Brief を再利用する場合は `--brief-cards`, `--brief-log`, `--brief-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
+  - 主な生成物: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`
+  - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards`, `--prepare-log`, `--prepare-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
 
 ### 工程 3: マッピング (HITL + 自動)
 - 章構成承認とレイアウト割付を同一工程で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
 - 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（ドラフトは `.pptx/draft/`、マッピング成果物は `.pptx/compose/`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
-    --brief-cards .pptx/prepare/prepare_card.json \
-    --brief-log .pptx/prepare/brief_log.json \
-    --brief-meta .pptx/prepare/ai_generation_meta.json \
+    --prepare-cards .pptx/prepare/prepare_card.json \
+    --prepare-log .pptx/prepare/prepare_log.json \
+    --prepare-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
     --output .pptx/compose \
     --layouts .pptx/extract/layouts.jsonl \
     --template samples/templates/templates.pptx
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
-- JobSpec と BriefCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
+- JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
 ### 工程 4: PPTX レンダリング

@@ -6,7 +6,7 @@
 
 ## 入力
 - `draft_approved.json`: 章構成、スライド順、`layout_hint`。
-- `prepare_card.json`: 章・メッセージ・意図タグを含むブリーフカード。
+- `prepare_card.json`: 章・メッセージ・意図タグを含むプレペアカード。
 - `layouts.jsonl`, `diagnostics.json`: レイアウト構造と警告情報。
 
 ## 出力
@@ -45,4 +45,4 @@
 - Analyzer は工程6で走査した結果を再度 `mapping_log.json` に書き戻し、フォールバック履歴と合わせて可観測性を確保する。
 - `layouts.jsonl` が未指定の場合はドラフト情報を自動補完し、スコアリングはヒューリスティックに実行する。
 - 生成物は `generate_ready.json`、`mapping_log.json`、必要に応じて `fallback_report.json` を CLI 出力ディレクトリ直下へ保存する。
-- CLI では `uv run pptx mapping <spec.json> --brief-cards .pptx/prepare/prepare_card.json --brief-log .pptx/prepare/brief_log.json` が工程5の基本パス。HITL とまとめて再実行する場合は `pptx compose` を利用し、レンダリングは工程3で得た `generate_ready.json` を入力に `pptx gen` で実行する。
+- CLI では `uv run pptx mapping <spec.json> --prepare-cards .pptx/prepare/prepare_card.json --prepare-log .pptx/prepare/prepare_log.json` が工程5の基本パス。HITL とまとめて再実行する場合は `pptx compose` を利用し、レンダリングは工程3で得た `generate_ready.json` を入力に `pptx gen` で実行する（旧 `--prepare-*` は互換エイリアス）。

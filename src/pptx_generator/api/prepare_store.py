@@ -1,4 +1,4 @@
-"""ファイルベースのブリーフ承認ストア。"""
+"""ファイルベースの Prepare 承認ストア。"""
 
 from __future__ import annotations
 
@@ -9,15 +9,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Literal
 
-from ..brief import (
-    BriefBodyBlock,
-    BriefCard,
-    BriefCardContent,
-    BriefCardRole,
-    BriefNoteEntry,
+from ..prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareNoteEntry,
 )
 
-BriefStatusType = Literal["draft", "approved", "returned"]
+PrepareStatusType = Literal["draft", "approved", "returned"]
 
 
 class SpecNotFoundError(KeyError):
@@ -41,13 +41,13 @@ def _now_iso() -> str:
 
 
 def _etag_from_revision(revision: int) -> str:
-    return f'W/"brief-{revision}"'
+    return f'W/"prepare-{revision}"'
 
 
 def _parse_etag(etag: str) -> int:
     if not etag:
         raise RevisionMismatchError("ETag が指定されていません")
-    prefix = 'W/"brief-'
+    prefix = 'W/"prepare-'
     if not etag.startswith(prefix) or not etag.endswith('"'):
         raise RevisionMismatchError(f"ETag の形式が正しくありません: {etag}")
     value = etag[len(prefix) : -1]
@@ -64,9 +64,9 @@ def _hash_json(text: str) -> str:
 
 
 @dataclass(slots=True)
-class BriefCardState:
-    card: BriefCard
-    status: BriefStatusType = "draft"
+class PrepareCardState:
+    card: PrepareCard
+    status: PrepareStatusType = "draft"
     autofix_applied: list[str] = field(default_factory=list)
     history: list[dict[str, Any]] = field(default_factory=list)
 
@@ -79,26 +79,26 @@ class BriefCardState:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "BriefCardState":
-        card = BriefCard.model_validate(payload["card"])
+    def from_dict(cls, payload: dict[str, Any]) -> "PrepareCardState":
+        card = PrepareCard.model_validate(payload["card"])
         status = payload.get("status", "draft")
         autofix = payload.get("autofix_applied") or []
         history = payload.get("history") or []
         return cls(card=card, status=status, autofix_applied=list(autofix), history=list(history))
 
 
-class BriefStore:
+class PrepareStore:
     """シンプルなファイルベースのストア。"""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        env_dir = os.environ.get("BRIEF_STORE_DIR")
+        env_dir = os.environ.get("PREPARE_STORE_DIR")
         self._base_dir = base_dir or Path(env_dir or ".pptx/prepare/store")
         self._base_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------ #
     # 公開 API
     # ------------------------------------------------------------------ #
-    def create_cards(self, spec_id: str, cards: list[BriefCardState]) -> str:
+    def create_cards(self, spec_id: str, cards: list[PrepareCardState]) -> str:
         state_path = self._spec_path(spec_id)
         if state_path.exists():
             raise SpecAlreadyExistsError(f"spec '{spec_id}' は既に存在します")
@@ -116,15 +116,15 @@ class BriefStore:
         spec_id: str,
         card_id: str,
         *,
-        role: BriefCardRole | None,
-        content: BriefCardContent | None,
+        role: PrepareCardRole | None,
+        content: PrepareCardContent | None,
         meta: dict[str, Any] | None,
         order: int | None,
         intent_tags: list[str] | None,
         headline: str | None,
-        notes: list[BriefNoteEntry] | None,
-        body: list[BriefBodyBlock] | None,
-        status: BriefStatusType | None,
+        notes: list[PrepareNoteEntry] | None,
+        body: list[PrepareBodyBlock] | None,
+        status: PrepareStatusType | None,
         autofix_applied: list[str] | None,
         expected_etag: str,
         actor: str | None,
@@ -262,7 +262,7 @@ class BriefStore:
         self._write_state(spec_id, state)
         return _etag_from_revision(state["revision"]), card_state.status
 
-    def get_card(self, spec_id: str, card_id: str) -> tuple[BriefCardState, str]:
+    def get_card(self, spec_id: str, card_id: str) -> tuple[PrepareCardState, str]:
         state = self._load_state(spec_id)
         card_state = self._get_card_state(state, card_id)
         etag = _etag_from_revision(state["revision"])
@@ -313,12 +313,12 @@ class BriefStore:
         text = path.read_text(encoding="utf-8")
         return json.loads(text)
 
-    def _get_card_state(self, state: dict[str, Any], card_id: str) -> BriefCardState:
+    def _get_card_state(self, state: dict[str, Any], card_id: str) -> PrepareCardState:
         cards = state.get("cards") or {}
         payload = cards.get(card_id)
         if payload is None:
             raise CardNotFoundError(card_id)
-        return BriefCardState.from_dict(payload)
+        return PrepareCardState.from_dict(payload)
 
     def _ensure_revision(self, state: dict[str, Any], expected: int) -> None:
         revision = int(state.get("revision", 0))
@@ -330,7 +330,7 @@ class BriefStore:
         state: dict[str, Any],
         entry: dict[str, Any],
         *,
-        card_state: BriefCardState | None = None,
+        card_state: PrepareCardState | None = None,
     ) -> None:
         logs: list[dict[str, Any]] = state.setdefault("logs", [])
         logs.append(entry)
@@ -340,3 +340,8 @@ class BriefStore:
     def _iter_spec_ids(self) -> Iterator[str]:
         for path in self._base_dir.glob("*.json"):
             yield path.stem
+
+
+# Backwards compatibility aliases
+PrepareStatusType = PrepareStatusType
+PrepareStore = PrepareStore

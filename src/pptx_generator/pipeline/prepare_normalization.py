@@ -1,4 +1,4 @@
-"""工程3 ブリーフ成果物を読み込むステップ。"""
+"""工程3 プレペア成果物を読み込むステップ。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..brief import BriefCard, BriefDocument, BriefGenerationMeta, BriefLogEntry
+from ..prepare import PrepareCard, PrepareDocument, PrepareGenerationMeta, PrepareLogEntry
 from ..models import (
     ContentApprovalDocument,
     ContentDocumentMeta,
@@ -20,13 +20,13 @@ from .base import PipelineContext, PipelineStep
 logger = logging.getLogger(__name__)
 
 
-class BriefNormalizationError(RuntimeError):
-    """ブリーフ成果物の読み込み失敗を表す。"""
+class PrepareNormalizationError(RuntimeError):
+    """プレペア成果物の読み込み失敗を表す。"""
 
 
 @dataclass(slots=True)
-class BriefNormalizationOptions:
-    """ブリーフ成果物読込の設定。"""
+class PrepareNormalizationOptions:
+    """プレペア成果物読込の設定。"""
 
     cards_path: Path | None = None
     log_path: Path | None = None
@@ -34,34 +34,34 @@ class BriefNormalizationOptions:
     require_document: bool = False
 
 
-class BriefNormalizationStep:
-    """BriefCard 成果物を読み込むパイプラインステップ。"""
+class PrepareNormalizationStep:
+    """PrepareCard 成果物を読み込むパイプラインステップ。"""
 
-    name = "brief_normalization"
+    name = "prepare_normalization"
 
-    def __init__(self, options: BriefNormalizationOptions | None = None) -> None:
-        self.options = options or BriefNormalizationOptions()
+    def __init__(self, options: PrepareNormalizationOptions | None = None) -> None:
+        self.options = options or PrepareNormalizationOptions()
 
     def run(self, context: PipelineContext) -> None:
         document = self._load_document(self.options.cards_path)
         if document is None:
             if self.options.require_document:
-                msg = "ブリーフカードファイルが指定されていません"
-                raise BriefNormalizationError(msg)
-            logger.info("brief_cards が指定されていないため brief_normalization をスキップします")
+                msg = "プレペアカードファイルが指定されていません"
+                raise PrepareNormalizationError(msg)
+            logger.info("prepare_cards が指定されていないため prepare_normalization をスキップします")
             return
 
-        context.add_artifact("brief_document", document)
+        context.add_artifact("prepare_document", document)
         if self.options.cards_path:
-            context.add_artifact("brief_document_path", str(self.options.cards_path.resolve()))
+            context.add_artifact("prepare_document_path", str(self.options.cards_path.resolve()))
 
         logs = self._load_logs(self.options.log_path)
         if logs is not None:
-            context.add_artifact("brief_log", logs)
+            context.add_artifact("prepare_log", logs)
 
         meta = self._load_generation_meta(self.options.ai_meta_path)
         if meta is not None:
-            context.add_artifact("brief_generation_meta", meta)
+            context.add_artifact("prepare_generation_meta", meta)
 
         # 互換用: ContentApprovalDocument を生成して既存ステップへ渡す
         compatibility_document, compatibility_meta = self._build_compatibility_content(document)
@@ -71,72 +71,72 @@ class BriefNormalizationStep:
     # ------------------------------------------------------------------ #
     # private helpers
     # ------------------------------------------------------------------ #
-    def _load_document(self, path: Path | None) -> BriefDocument | None:
+    def _load_document(self, path: Path | None) -> PrepareDocument | None:
         if path is None:
             return None
         try:
             text = path.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
             msg = f"prepare_card.json を読み込めません: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
         try:
             payload = json.loads(text)
         except json.JSONDecodeError as exc:
             msg = f"prepare_card.json の解析に失敗しました: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
         try:
-            return BriefDocument.model_validate(payload)
+            return PrepareDocument.model_validate(payload)
         except ValueError as exc:
             msg = f"prepare_card.json の検証に失敗しました: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
 
-    def _load_logs(self, path: Path | None) -> list[BriefLogEntry] | None:
+    def _load_logs(self, path: Path | None) -> list[PrepareLogEntry] | None:
         if path is None:
             return None
         try:
             text = path.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
-            msg = f"brief_log.json を読み込めません: {path}"
-            raise BriefNormalizationError(msg) from exc
+            msg = f"prepare_log.json を読み込めません: {path}"
+            raise PrepareNormalizationError(msg) from exc
         try:
             payload = json.loads(text)
         except json.JSONDecodeError as exc:
-            msg = f"brief_log.json の解析に失敗しました: {path}"
-            raise BriefNormalizationError(msg) from exc
+            msg = f"prepare_log.json の解析に失敗しました: {path}"
+            raise PrepareNormalizationError(msg) from exc
         if not isinstance(payload, list):
-            msg = "brief_log.json は配列形式である必要があります"
-            raise BriefNormalizationError(msg)
-        entries: list[BriefLogEntry] = []
+            msg = "prepare_log.json は配列形式である必要があります"
+            raise PrepareNormalizationError(msg)
+        entries: list[PrepareLogEntry] = []
         for index, item in enumerate(payload):
             try:
-                entries.append(BriefLogEntry.model_validate(item))
+                entries.append(PrepareLogEntry.model_validate(item))
             except ValueError as exc:
-                msg = f"brief_log.json の検証に失敗しました: index={index}"
-                raise BriefNormalizationError(msg) from exc
+                msg = f"prepare_log.json の検証に失敗しました: index={index}"
+                raise PrepareNormalizationError(msg) from exc
         return entries
 
-    def _load_generation_meta(self, path: Path | None) -> BriefGenerationMeta | None:
+    def _load_generation_meta(self, path: Path | None) -> PrepareGenerationMeta | None:
         if path is None:
             return None
         try:
             text = path.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
             msg = f"ai_generation_meta.json を読み込めません: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
         try:
             payload = json.loads(text)
         except json.JSONDecodeError as exc:
             msg = f"ai_generation_meta.json の解析に失敗しました: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
         try:
-            return BriefGenerationMeta.model_validate(payload)
+            return PrepareGenerationMeta.model_validate(payload)
         except ValueError as exc:
             msg = f"ai_generation_meta.json の検証に失敗しました: {path}"
-            raise BriefNormalizationError(msg) from exc
+            raise PrepareNormalizationError(msg) from exc
 
     def _build_compatibility_content(
         self,
-        document: BriefDocument,
+        document: PrepareDocument,
     ) -> tuple[ContentApprovalDocument, dict[str, Any]]:
         phase_counts: dict[str, int] = {}
         slides = [
@@ -146,17 +146,17 @@ class BriefNormalizationStep:
         meta = ContentDocumentMeta(
             tone=document.story_context.tone,
             audience=None,
-            summary=f"{document.brief_id} のブリーフカード（互換生成）"[:120],
+            summary=f"{document.prepare_id} のプレペアカード（互換生成）"[:120],
         )
         content_document = ContentApprovalDocument(slides=slides, meta=meta)
         meta_payload = {
-            "brief_id": document.brief_id,
+            "prepare_id": document.prepare_id,
             "cards": [card.card_id for card in document.cards],
             "hash": document.compute_content_hash(),
         }
         return content_document, meta_payload
 
-    def _convert_card_to_slide(self, card: BriefCard, index: int, phase_counts: dict[str, int]) -> ContentSlide:
+    def _convert_card_to_slide(self, card: PrepareCard, index: int, phase_counts: dict[str, int]) -> ContentSlide:
         title = (card.content.title or card.headline_or_title())[:120]
         body = self._build_body_lines(card)
         notes_text = card.notes_text()
@@ -174,7 +174,7 @@ class BriefNormalizationStep:
         if blueprint_meta and blueprint_meta.get("slot_id"):
             slide_id = str(blueprint_meta.get("slot_id"))
         else:
-            slide_id = card.card_id or f"brief-{index:03d}"
+            slide_id = card.card_id or f"prepare-{index:03d}"
 
         return ContentSlide(
             id=slide_id,
@@ -186,7 +186,7 @@ class BriefNormalizationStep:
             applied_autofix=[],
         )
 
-    def _build_body_lines(self, card: BriefCard) -> list[str]:
+    def _build_body_lines(self, card: PrepareCard) -> list[str]:
         lines: list[str] = []
 
         def append_text(text: str) -> None:

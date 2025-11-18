@@ -1,9 +1,9 @@
 [
   {
     "card_id": "introduction-1",
-    "prompt_template": "brief.default",
+    "prompt_template": "prepare.default",
     "model": "mock-local",
-    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する BriefCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
+    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する PrepareCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
     "response_digest": "{\"title\": \"このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で\", \"card_id\": \"introduction-1\", \"story_phase\": \"introduction\", \"intent_tags\": [\"introduction\"], \"message\": \"このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で\"",
     "warnings": [],
     "tokens": {},
@@ -11,9 +11,9 @@
   },
   {
     "card_id": "problem-2",
-    "prompt_template": "brief.default",
+    "prompt_template": "prepare.default",
     "model": "mock-local",
-    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する BriefCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
+    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する PrepareCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
     "response_digest": "{\"title\": \"AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ\", \"card_id\": \"problem-2\", \"story_phase\": \"problem\", \"intent_tags\": [\"problem\"], \"message\": \"AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ\", \"body\": [\"Ana",
     "warnings": [],
     "tokens": {},
@@ -21,9 +21,9 @@
   },
   {
     "card_id": "solution-3",
-    "prompt_template": "brief.default",
+    "prompt_template": "prepare.default",
     "model": "mock-local",
-    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する BriefCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
+    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する PrepareCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
     "response_digest": "{\"title\": \"CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L\", \"card_id\": \"solution-3\", \"story_phase\": \"solution\", \"intent_tags\": [\"solution\"], \"message\": \"CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L\", \"body\": [\"",
     "warnings": [],
     "tokens": {},
@@ -31,9 +31,9 @@
   },
   {
     "card_id": "impact-4",
-    "prompt_template": "brief.default",
+    "prompt_template": "prepare.default",
     "model": "mock-local",
-    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する BriefCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
+    "prompt_fragment": "\nあなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) を読み取り、PowerPoint の 1 スライドに相当する PrepareCard を章ごとに生成してください。章数や順序は原稿の内容に基づき自由に決めて構いません。\n\n# 入力\n{\n  \"raw_context\": {\n    \"format\": \"markdown\",\n    \"content\": ",
     "response_digest": "{\"title\": \"将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保\", \"card_id\": \"impact-4\", \"story_phase\": \"impact\", \"intent_tags\": [\"impact\"], \"message\": \"将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保\", \"body\": [\"将来的にはレ",
     "warnings": [],
     "tokens": {},

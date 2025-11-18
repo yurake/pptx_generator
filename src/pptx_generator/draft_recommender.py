@@ -81,7 +81,7 @@ class RecommendationResult:
 
 
 class CardLayoutRecommender:
-    """Brief カードとテンプレ情報からレイアウト候補を算出する。"""
+    """Prepare カードとテンプレ情報からレイアウト候補を算出する。"""
 
     def __init__(self, config: CardLayoutRecommenderConfig | None = None) -> None:
         self._config = config or CardLayoutRecommenderConfig()

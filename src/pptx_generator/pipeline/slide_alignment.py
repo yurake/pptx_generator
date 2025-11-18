@@ -1,4 +1,4 @@
-"""BriefCard と JobSpec の ID 整合を担うユーティリティ。"""
+"""PrepareCard と JobSpec の ID 整合を担うユーティリティ。"""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Iterable, Literal
 
-from ..brief.models import BriefCard, BriefDocument
+from ..prepare.models import PrepareCard, PrepareDocument
 from ..content_ai import (LLMClient, SlideMatchCandidate,
                           SlideMatchRequest, SlideMatchResponse,
                           create_llm_client)
@@ -46,7 +46,7 @@ class SlideIdAlignerOptions:
 
 
 class SlideIdAligner:
-    """BriefCard ↔ JobSpec の ID 整合を担当するクラス。"""
+    """PrepareCard ↔ JobSpec の ID 整合を担当するクラス。"""
 
     def __init__(
         self,
@@ -61,21 +61,21 @@ class SlideIdAligner:
         self,
         *,
         spec: JobSpec,
-        brief_document: BriefDocument | None,
+        prepare_document: PrepareDocument | None,
         content_document: ContentApprovalDocument,
     ) -> SlideAlignmentResult:
-        if brief_document is None or not brief_document.cards:
-            logger.info("SlideIdAligner: brief_document が無いため整合処理をスキップします")
+        if prepare_document is None or not prepare_document.cards:
+            logger.info("SlideIdAligner: prepare_document が無いため整合処理をスキップします")
             return SlideAlignmentResult(
                 document=content_document,
                 records=[],
                 meta={
                     "status": "skipped",
-                    "reason": "brief_document_absent",
+                    "reason": "prepare_document_absent",
                 },
             )
 
-        card_map = {card.card_id: card for card in brief_document.cards}
+        card_map = {card.card_id: card for card in prepare_document.cards}
         candidate_slides = list(spec.slides)
         if not candidate_slides:
             logger.warning("SlideIdAligner: JobSpec にスライドが存在しません")
@@ -95,7 +95,7 @@ class SlideIdAligner:
             original_id = slide.id
             card = card_map.get(original_id)
             if card is None:
-                logger.debug("SlideIdAligner: card_id=%s が brief_document に見つかりません", original_id)
+                logger.debug("SlideIdAligner: card_id=%s が prepare_document に見つかりません", original_id)
                 records.append(
                     SlideAlignmentRecord(
                         card_id=original_id,
@@ -220,7 +220,7 @@ class SlideIdAligner:
 
     def _build_match_request(
         self,
-        card: BriefCard,
+        card: PrepareCard,
         candidates: list[Slide],
     ) -> SlideMatchRequest:
         summary_lines = [card.headline_or_title()]
@@ -277,7 +277,7 @@ class SlideIdAligner:
             candidates=candidate_models,
         )
 
-    def _select_candidates(self, card: BriefCard, candidates: Iterable[Slide]) -> list[Slide]:
+    def _select_candidates(self, card: PrepareCard, candidates: Iterable[Slide]) -> list[Slide]:
         scored: list[tuple[float, Slide]] = []
         for slide in candidates:
             score = self._heuristic_score(card, slide)
@@ -289,7 +289,7 @@ class SlideIdAligner:
         return limited
 
     @staticmethod
-    def _heuristic_score(card: BriefCard, slide: Slide) -> float:
+    def _heuristic_score(card: PrepareCard, slide: Slide) -> float:
         score = 0.0
         if slide.id == card.card_id:
             score += 5.0

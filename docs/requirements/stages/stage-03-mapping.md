@@ -1,14 +1,14 @@
 # 工程3 マッピング (HITL + 自動) 要件詳細
 
 ## 概要
-- Brief 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
+- Prepare 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
 - HITL が章構成・差戻しを操作でき、フォールバックや Analyzer 結果を含む監査ログを `draft_review_log.json`・`draft_mapping_log.json` に残す。
 - CLI (`pptx compose` / `pptx outline`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`, `template_spec.json`。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
-- Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。
+- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
@@ -34,7 +34,7 @@
    - 承認完了後に章順・スライド順・付録情報を `generate_ready.json` に保存し、章ステータスを `generate_ready_meta.sections[*].status` へ反映。
 
 3. **レイアウト割付（自動）**
-  - BriefCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
+  - PrepareCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
   - スコア上位候補から割付を試み、収容不可の場合は `shrink_text` → `split_slide` → `appendix` の順でフォールバック。
   - フォールバック結果と理由を `draft_mapping_log.json.fallback` と `fallback_report.json` に記録する。
   - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
@@ -52,7 +52,7 @@
 
 ## CLI 要件
 - `pptx compose`
-  - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
+  - `--prepare-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--generate-ready-filename` / `--generate-ready-meta` / `--review-log-filename` / `--mapping-log-filename` で成果物ファイル名を制御する。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
   - テンプレ抽出成果物（JobSpecScaffold）を渡された場合は不足フィールド補完と textboxes 変換を行い、`pptx compose` の入力要件を満たす `JobSpec` へ整形する。
@@ -80,4 +80,4 @@
 - Layout Hint Engine の ML 化と学習データパイプライン。
 - 章テンプレート適合率のダッシュボード表示と KPI 化。
 - Analyzer 指摘に応じた自動フォールバック戦略の改善。
-- BriefCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
+- PrepareCard と章テンプレの双方向同期（差分検出・再マッピングルール）。

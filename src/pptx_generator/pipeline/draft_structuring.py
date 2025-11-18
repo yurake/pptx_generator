@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from ..brief.models import BriefCard, BriefDocument, BriefGenerationMeta
+from ..prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ..models import (
     ContentApprovalDocument,
     ContentSlide,
@@ -55,7 +55,7 @@ from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 logger = logging.getLogger(__name__)
 
 
-def _card_slot_id(card: BriefCard) -> str | None:
+def _card_slot_id(card: PrepareCard) -> str | None:
     blueprint = card.blueprint_meta()
     if not blueprint:
         return None
@@ -63,7 +63,7 @@ def _card_slot_id(card: BriefCard) -> str | None:
     return str(slot_id) if slot_id else None
 
 
-def _card_slot_fulfilled(card: BriefCard | None) -> bool:
+def _card_slot_fulfilled(card: PrepareCard | None) -> bool:
     if card is None:
         return False
     blueprint = card.blueprint_meta()
@@ -143,12 +143,12 @@ class DraftStructuringStep:
             raise DraftStructuringError(msg)
         document = artifact
 
-        brief_generation_meta = context.artifacts.get("brief_generation_meta")
-        if isinstance(brief_generation_meta, BriefGenerationMeta) and (brief_generation_meta.mode or "dynamic") == "static":
+        prepare_generation_meta = context.artifacts.get("prepare_generation_meta")
+        if isinstance(prepare_generation_meta, PrepareGenerationMeta) and (prepare_generation_meta.mode or "dynamic") == "static":
             self._run_static_mode(
                 context=context,
                 content_document=document,
-                brief_meta=brief_generation_meta,
+                prepare_meta=prepare_generation_meta,
             )
             return
 
@@ -161,10 +161,10 @@ class DraftStructuringStep:
                     max_candidates=self.options.slide_alignment_max_candidates,
                 )
             )
-            brief_document = context.artifacts.get("brief_document")
+            prepare_document = context.artifacts.get("prepare_document")
             alignment = aligner.align(
                 spec=context.spec,
-                brief_document=brief_document if isinstance(brief_document, BriefDocument) else None,
+                prepare_document=prepare_document if isinstance(prepare_document, PrepareDocument) else None,
                 content_document=document,
             )
             document = alignment.document
@@ -858,11 +858,11 @@ class DraftStructuringStep:
         *,
         context: PipelineContext,
         content_document: ContentApprovalDocument,
-        brief_meta: BriefGenerationMeta,
+        prepare_meta: PrepareGenerationMeta,
     ) -> None:
-        brief_document = context.artifacts.get("brief_document")
-        if not isinstance(brief_document, BriefDocument):
-            msg = "static モードでは brief_document が必要です"
+        prepare_document = context.artifacts.get("prepare_document")
+        if not isinstance(prepare_document, PrepareDocument):
+            msg = "static モードでは prepare_document が必要です"
             raise DraftStructuringError(msg)
 
         spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
@@ -878,7 +878,7 @@ class DraftStructuringStep:
             template_spec_candidate = candidate
 
         if template_spec_candidate is None:
-            blueprint_path_str = brief_meta.blueprint_path
+            blueprint_path_str = prepare_meta.blueprint_path
             if blueprint_path_str:
                 candidate = Path(blueprint_path_str)
                 if not candidate.is_absolute():
@@ -898,9 +898,9 @@ class DraftStructuringStep:
             msg = "template_spec が static Blueprint を含んでいません"
             raise DraftStructuringError(msg)
 
-        if brief_meta.blueprint_hash:
+        if prepare_meta.blueprint_hash:
             computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
-            if brief_meta.blueprint_hash != computed_hash:
+            if prepare_meta.blueprint_hash != computed_hash:
                 msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
                 raise DraftStructuringError(msg)
 
@@ -908,10 +908,10 @@ class DraftStructuringStep:
 
         artifacts = self._build_static_artifacts(
             spec=context.spec,
-            brief_document=brief_document,
+            prepare_document=prepare_document,
             content_document=content_document,
             template_spec=template_spec,
-            brief_meta=brief_meta,
+            prepare_meta=prepare_meta,
         )
 
         output_dir = self.options.output_dir or context.workdir
@@ -964,15 +964,15 @@ class DraftStructuringStep:
         self,
         *,
         spec: JobSpec,
-        brief_document: BriefDocument,
+        prepare_document: PrepareDocument,
         content_document: ContentApprovalDocument,
         template_spec: TemplateSpec,
-        brief_meta: BriefGenerationMeta,
+        prepare_meta: PrepareGenerationMeta,
     ) -> StaticArtifacts:
         blueprint: TemplateBlueprint = template_spec.blueprint  # type: ignore[assignment]
 
-        cards_by_slot: dict[str, BriefCard] = {}
-        for card in brief_document.cards:
+        cards_by_slot: dict[str, PrepareCard] = {}
+        for card in prepare_document.cards:
             slot_id = _card_slot_id(card)
             if slot_id:
                 cards_by_slot[slot_id] = card
@@ -1013,7 +1013,7 @@ class DraftStructuringStep:
         }
 
         orphan_cards = []
-        for card in brief_document.cards:
+        for card in prepare_document.cards:
             slot_id = _card_slot_id(card)
             if slot_id and slot_id not in blueprint_slot_ids:
                 orphan_cards.append(slot_id)
@@ -1109,8 +1109,8 @@ class DraftStructuringStep:
                 job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
                 job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
                 layout_mode="static",
-                blueprint_path=brief_meta.blueprint_path,
-                blueprint_hash=brief_meta.blueprint_hash,
+                blueprint_path=prepare_meta.blueprint_path,
+                blueprint_hash=prepare_meta.blueprint_hash,
                 slot_summary=slot_summary,
             ),
         )
@@ -1127,7 +1127,7 @@ class DraftStructuringStep:
         )
         draft = DraftDocument(sections=draft_sections, meta=draft_meta)
 
-        blueprint_path_value = brief_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
+        blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
 
         mapping_log = {
             "mode": "static",
@@ -1192,7 +1192,7 @@ class DraftStructuringStep:
             return None
 
     @staticmethod
-    def _card_to_lines(card: BriefCard) -> list[str]:
+    def _card_to_lines(card: PrepareCard) -> list[str]:
         lines = list(card.iter_body_text())
         if not lines:
             lines.append(card.headline_or_title())
@@ -1203,7 +1203,7 @@ class DraftStructuringStep:
     def _assign_slot_to_elements(
         elements: dict[str, Any],
         slot: TemplateBlueprintSlot,
-        card: BriefCard,
+        card: PrepareCard,
         lines: list[str],
     ) -> None:
         anchor = slot.anchor or slot.slot_id

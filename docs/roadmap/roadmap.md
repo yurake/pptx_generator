@@ -54,7 +54,7 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM054["RM-054<br/>静的テンプレ構成統合<br/>(未着手)"]
-        RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
+        RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
     end
@@ -551,7 +551,7 @@ flowchart TB
 - 参照 ToDo: [docs/todo/archive/20251102-rm044-spec-scaffold.md](../todo/archive/20251102-rm044-spec-scaffold.md)
 - 状況: 完了（2025-11-02 更新）
 - 達成成果: `tpl-extract` パイプラインで `jobspec.json`（spec scaffold）を自動生成し、`samples/extract/` への成果物提供と CLI ドキュメント更新を完了。工程3 以降で雛形を参照できるようにした。
-- 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
+- 次アクション: プレペア非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
 
 <a id="rm-045"></a>
 ### RM-045 テンプレ抽出検証ラッパー整備
@@ -564,20 +564,20 @@ flowchart TB
 - 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
 
 <a id="rm-046"></a>
-### RM-046 生成AIブリーフ構成自動化
+### RM-046 生成AIプレペア構成自動化
 - 対象工程: 3（コンテンツ準備）
-- ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
+- ゴール: 案件側の生情報から生成AIがプレペア（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 完了（2025-11-03 更新）
-- 期待成果: 生成AIモードの `pptx prepare` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
+- 期待成果: 生成AIモードの `pptx prepare` 仕様、プレペア入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
-- 補足 (2025-11-08): 現状の `pptx prepare` では `brief_log.json` に承認／差戻し履歴が反映されず空配列のまま出力されるため、ログ保存フローの実装課題を本テーマで追跡します。
+- 補足 (2025-11-08): 現状の `pptx prepare` では `prepare_log.json` に承認／差戻し履歴が反映されず空配列のまま出力されるため、ログ保存フローの実装課題を本テーマで追跡します。
 
 <a id="rm-047"></a>
 ### RM-047 テンプレ統合構成生成AI連携
 - 対象工程: 4（ドラフト構成設計）
-- ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
+- ゴール: 工程3の `prepare_card.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
 - 状況: 完了（2025-11-09 更新）
@@ -669,7 +669,7 @@ flowchart TB
 <a id="rm-056"></a>
 ### RM-056 多形式インポートCLI統合
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用ブリーフを自動生成できるようにする。
+- ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用プレペアを自動生成できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-05 追加）
@@ -697,17 +697,17 @@ flowchart TB
 - 次アクション: JobSpec スキーマ拡張やテンプレ抽出仕様変更が発生した際に差分検証を実施し、変換ロジックのアップデート方針を定期レビューする。
 
 <a id="rm-058"></a>
-### RM-058 ブリーフポリシー内製化
+### RM-058 プレペアポリシー内製化
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `config/brief_policies/default.json` への依存を解消し、ブリーフ骨子の定義をコードまたは他工程の成果物に統合する。
-- 参照ドキュメント: [docs/notes/20251105-brief-policy-removal.md](../notes/20251105-brief-policy-removal.md)
+- ゴール: `config/prepare_policies/default.json` への依存を解消し、プレペア骨子の定義をコードまたは他工程の成果物に統合する。
+- 参照ドキュメント: [docs/notes/20251105-prepare-policy-removal.md](../notes/20251105-prepare-policy-removal.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-05 追加）
 - 期待成果:
-  - `BriefAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
+  - `PrepareAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
   - CLI `prepare` と関連ドキュメント（README、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-02-content-normalization.md`）の仕様を更新する。
   - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
-- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIブリーフ構成自動化）、テンプレ Blueprint 設計。
+- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIプレペア構成自動化）、テンプレ Blueprint 設計。
 - 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
 
 <a id="rm-059"></a>
@@ -726,7 +726,7 @@ flowchart TB
 <a id="rm-060"></a>
 ### RM-060 Stage3 ID 整合性強制
 - 対象工程: 3（マッピング）
-- ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
+- ゴール: PrepareCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
 - 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/archive/20251108-rm060-id-alignment.md](../todo/archive/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
 - 状況: 完了（2025-11-09 更新）
@@ -734,7 +734,7 @@ flowchart TB
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
   - ログやエラーメッセージで欠損カード ID や参照ファイルを特定でき、運用チームが迅速に復旧できる。
   - Slide ID Aligner が AI による整合候補と信頼度を算出し、`content_approved` を補正することでカード枚数と JobSpec のスライドを同期させる。
-  - generate_ready のスライド数が BriefCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
+  - generate_ready のスライド数が PrepareCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
 - 次アクション: Slide ID アライメントの閾値チューニングとログ出力の監査項目を整理し、残る CLI メッセージ調整・運用ドキュメントの細部を確定する。
 
 <a id="rm-061"></a>
@@ -753,15 +753,15 @@ flowchart TB
 <a id="rm-062"></a>
 -### RM-062 pptx prepare 承認モード整備
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は BriefStore / brief_log 側で管理する方針へ更新する。
+- ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
 - 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-10 追加）
 - 期待成果:
-  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / BriefStore のワークフローで扱うことを明記する。
-  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は brief_log / brief_store を通じて行う手順へ更新する。
-  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、BriefStore/API テストで承認フローを担保する旨を整理する。
-- 依存: RM-046（生成AIブリーフ構成自動化）
+  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / PrepareStore のワークフローで扱うことを明記する。
+  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は prepare_log / prepare_store を通じて行う手順へ更新する。
+  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、PrepareStore/API テストで承認フローを担保する旨を整理する。
+- 依存: RM-046（生成AIプレペア構成自動化）
 
 <a id="rm-063"></a>
 ### RM-063 assets 運用ガイド整備

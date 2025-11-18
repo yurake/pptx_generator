@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from pptx_generator.brief.llm_client import AzureOpenAIBriefLLMClient
+from pptx_generator.prepare.llm_client import AzureOpenAIPrepareLLMClient
 
 
 class DummyResponses:
@@ -21,7 +21,7 @@ class DummyResponses:
 
 def test_azure_llm_client_uses_input_payload_for_responses_api():
     responses = DummyResponses('{"chapters": []}')
-    client = AzureOpenAIBriefLLMClient(
+    client = AzureOpenAIPrepareLLMClient(
         client=SimpleNamespace(responses=responses),
         deployment="gpt-4o-mini",
         api_version="2024-02-15-preview",
@@ -57,7 +57,7 @@ def test_azure_llm_client_from_env_trims_endpoint(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "dummy-deployment")
     monkeypatch.setenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
 
-    client = AzureOpenAIBriefLLMClient.from_env()
+    client = AzureOpenAIPrepareLLMClient.from_env()
 
-    assert isinstance(client, AzureOpenAIBriefLLMClient)
+    assert isinstance(client, AzureOpenAIPrepareLLMClient)
     assert captured_endpoint["value"] == "https://example.openai.azure.com"

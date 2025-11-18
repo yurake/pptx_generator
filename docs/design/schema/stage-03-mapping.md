@@ -50,8 +50,8 @@
 
 ### フィールド補足
 - `elements`: テンプレ側のアンカー名をキーにした構造。Renderer が直接利用する。
-- `meta.sources`: 元コンテンツ（BriefCard）の `card_id` リスト。
-- `meta.content_hash`: Brief 成果物から計算したハッシュ。差分検知に利用。
+- `meta.sources`: 元コンテンツ（PrepareCard）の `card_id` リスト。
+- `meta.content_hash`: Prepare 成果物から計算したハッシュ。差分検知に利用。
 - `meta.fallback`: `none` / `shrink_text` / `split_slide` / `appendix` など。重大フォールバックは `fallback_report.json` と併用。
 
 ## mapping_log.json
@@ -120,4 +120,4 @@
 ## バリデーション
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
-- `meta.content_hash` が Brief 成果物のハッシュと一致すること（任意検証）。
+- `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。

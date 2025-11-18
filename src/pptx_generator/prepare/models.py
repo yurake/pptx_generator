@@ -7,10 +7,10 @@ from typing import Any, Iterable, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-BriefActionType = Literal["approve", "return", "comment", "autofix", "regenerate"]
+PrepareActionType = Literal["approve", "return", "comment", "autofix", "regenerate"]
 
 
-class BriefBodyBlock(BaseModel):
+class PrepareBodyBlock(BaseModel):
     """本文のブロック定義。"""
 
     type: str
@@ -30,7 +30,7 @@ class BriefBodyBlock(BaseModel):
         return stripped or None
 
 
-class BriefNoteEntry(BaseModel):
+class PrepareNoteEntry(BaseModel):
     """ノート欄に出力する補足情報。"""
 
     type: str = "note"
@@ -45,16 +45,16 @@ class BriefNoteEntry(BaseModel):
         return stripped
 
 
-class BriefCardContent(BaseModel):
+class PrepareCardContent(BaseModel):
     """カードの本文構造。"""
 
     title: str
     headline: str | None = None  # このページで最も伝えたい結論を短く明示する
-    body: list[BriefBodyBlock] = Field(default_factory=list)
-    notes: list[BriefNoteEntry] = Field(default_factory=list)
+    body: list[PrepareBodyBlock] = Field(default_factory=list)
+    notes: list[PrepareNoteEntry] = Field(default_factory=list)
 
 
-class BriefCardRole(BaseModel):
+class PrepareCardRole(BaseModel):
     """カードの役割情報。"""
 
     story_phase: Literal["introduction", "problem", "solution", "impact", "next"]
@@ -70,13 +70,13 @@ class BriefCardRole(BaseModel):
         return [str(value).strip()]
 
 
-class BriefCard(BaseModel):
-    """テンプレート非依存のブリーフカード。"""
+class PrepareCard(BaseModel):
+    """テンプレート非依存のプレペアカード。"""
 
     card_id: str = Field(..., pattern=r"^[a-z0-9][a-z0-9\-]*$")
     order: int | None = None
-    role: BriefCardRole
-    content: BriefCardContent
+    role: PrepareCardRole
+    content: PrepareCardContent
     meta: dict[str, Any] = Field(default_factory=dict)
 
     # ------------------------------------------------------------------ #
@@ -133,7 +133,7 @@ class BriefCard(BaseModel):
         return None
 
 
-class BriefChapterDefinition(BaseModel):
+class PrepareChapterDefinition(BaseModel):
     """ストーリー章定義。"""
 
     id: str = Field(..., pattern=r"^[a-z0-9\-]+$")
@@ -141,20 +141,20 @@ class BriefChapterDefinition(BaseModel):
     description: str | None = None
 
 
-class BriefStoryContext(BaseModel):
-    """ブリーフ全体の文脈情報。"""
+class PrepareStoryContext(BaseModel):
+    """プレペア全体の文脈情報。"""
 
-    chapters: list[BriefChapterDefinition] = Field(default_factory=list)
+    chapters: list[PrepareChapterDefinition] = Field(default_factory=list)
     tone: str | None = None
     must_have_messages: list[str] = Field(default_factory=list)
 
 
-class BriefDocument(BaseModel):
-    """ブリーフカード集合と文脈。"""
+class PrepareDocument(BaseModel):
+    """プレペアカード集合と文脈。"""
 
-    brief_id: str
-    cards: list[BriefCard] = Field(default_factory=list)
-    story_context: BriefStoryContext = Field(default_factory=BriefStoryContext)
+    prepare_id: str
+    cards: list[PrepareCard] = Field(default_factory=list)
+    story_context: PrepareStoryContext = Field(default_factory=PrepareStoryContext)
 
     def compute_content_hash(self) -> str:
         """成果物全体のハッシュ値を返す。"""
@@ -164,12 +164,12 @@ class BriefDocument(BaseModel):
         return hashlib.sha256(digest.encode("utf-8")).hexdigest()
 
 
-class BriefLogEntry(BaseModel):
+class PrepareLogEntry(BaseModel):
     """HITL アクションログ。"""
 
     card_id: str
     version: int
-    action: BriefActionType
+    action: PrepareActionType
     actor: str | None = None
     timestamp: datetime
     notes: str | None = None
@@ -184,7 +184,7 @@ class BriefLogEntry(BaseModel):
         return datetime.fromisoformat(str(value))
 
 
-class BriefAIRecord(BaseModel):
+class PrepareAIRecord(BaseModel):
     """生成 AI 呼び出しログ。"""
 
     card_id: str
@@ -198,10 +198,10 @@ class BriefAIRecord(BaseModel):
     batch_card_ids: list[str] | None = None
 
 
-class BriefGenerationMeta(BaseModel):
+class PrepareGenerationMeta(BaseModel):
     """生成メタデータ。"""
 
-    brief_id: str
+    prepare_id: str
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     policy_id: str
     input_hash: str
@@ -217,7 +217,7 @@ class BriefGenerationMeta(BaseModel):
     def from_document(
         cls,
         *,
-        document: BriefDocument,
+        document: PrepareDocument,
         policy_id: str,
         source_payload: dict[str, Any],
         cards_meta: list[dict[str, Any]],
@@ -226,7 +226,7 @@ class BriefGenerationMeta(BaseModel):
         blueprint_hash: str | None = None,
         slot_summary: dict[str, int] | None = None,
         constraints: dict[str, Any] | None = None,
-    ) -> "BriefGenerationMeta":
+    ) -> "PrepareGenerationMeta":
         normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
         stats = {
@@ -243,7 +243,7 @@ class BriefGenerationMeta(BaseModel):
                 }
             )
         return cls(
-            brief_id=document.brief_id,
+            prepare_id=document.prepare_id,
             policy_id=policy_id,
             input_hash=hash_value,
             cards=cards_meta,
