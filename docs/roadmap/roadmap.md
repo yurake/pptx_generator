@@ -57,6 +57,7 @@ flowchart TB
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
+        RM067["RM-067<br/>ContentElements 制約見直し<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -79,6 +80,7 @@ flowchart TB
     RM064 --> RM065
     RM062 --> RM066
     RM054 --> RM058
+    RM054 --> RM067
 ```
 
 ## 個別状況
@@ -751,17 +753,18 @@ flowchart TB
 - 次アクション: 抽出ルールの改修案とバリデーション仕様、AI 正規化フローの実装範囲を整理し、Plan 承認へ進める。
 
 <a id="rm-062"></a>
--### RM-062 pptx prepare 承認モード整備
+### RM-062 pptx prepare 承認モード整備
 - 対象工程: 2（コンテンツ準備）
 - ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
 - 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-10 追加）
 - 期待成果:
-  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / PrepareStore のワークフローで扱うことを明記する。
-  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は prepare_log / prepare_store を通じて行う手順へ更新する。
-  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、PrepareStore/API テストで承認フローを担保する旨を整理する。
+-  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / PrepareStore のワークフローで扱うことを明記する。
+-  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は prepare_log / prepare_store を通じて行う手順へ更新する。
+-  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、PrepareStore/API テストで承認フローを担保する旨を整理する。
 - 依存: RM-046（生成AIプレペア構成自動化）
+
 
 <a id="rm-063"></a>
 ### RM-063 assets 運用ガイド整備
@@ -819,3 +822,16 @@ flowchart TB
 - CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
 - `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
 - 専用 UI（Content Board / Storyboard）の実装および操作ログ整備。現フェーズは API／CLI ベースで運用し、UI は後続で再評価する。
+
+<a id="rm-067"></a>
+### RM-067 ContentElements 制約見直し
+- 対象工程: 3・4（ドラフト構成 / PPTX 生成）
+- ゴール: `ContentElements.body` の 6 行 / 40 文字制限を撤廃し、prepare / compose 段階では全文保持しつつ、レンダリング工程でレイアウトごとのトリミング方針へ移行する。
+- 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-17 追加）
+- 期待成果:
+-  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする。
+-  - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
+-  - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
+- 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。

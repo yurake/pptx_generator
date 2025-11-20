@@ -29,7 +29,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_outline.py tests/test_mapping_step.py tests/test_slide_alignment.py tests/test_analyzer.py` を実行し、主要ケースの回帰確認済み。
 - [ ] ドキュメント更新
   - メモ:
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
@@ -40,6 +40,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ:
 
 ## メモ
+- 2025-11-17: ContentElements 制約見直しを新規 RM (RM-067) としてロードマップへ追加。compose/gen の責務分離タスクを別途追跡する。
 - 2025-11-16: ユーザーと `prepare_card.json` の目的と必須要素をゼロベースで擦り合わせ。以下のような確認事項・方針を共有。
   - 目的: テンプレート非依存のスライド下書きを記録し、compose 以降が柔軟に扱える構造へ刷新する。
   - 必須要素の洗い出し: 1) 識別子（card_id, order）、2) 役割情報（story_phase, intent_tags）、3) コンテンツ本体（title, headline, body, notes）、4) 必要に応じたメタ情報。
