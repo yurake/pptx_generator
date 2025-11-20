@@ -8,7 +8,7 @@
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`, `template_spec.json`。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
-- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。
+- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし工程3を停止する。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
@@ -40,15 +40,20 @@
   - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
   - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする。slot 未充足時は `DraftStructuringError` を送出し、差戻し理由を `static_slot_checks` に格納する。
 
-4. **Analyzer 連携**
+4. **カード順序とモードエラーハンドリング**
+  - Dynamic フローは `prepare_card.json.cards[*].order` をそのまま `generate_ready.slides[*]` の順序へ反映する。HITL が順序を調整した場合もこの値を更新して引き渡すこと。
+  - Static フローはテンプレ Blueprint / JobSpec の順序を優先し、カード側の `order` は補助情報として扱う。未使用 slot がある場合は `static_slot_checks.unused_slots` に記録する。
+  - `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または欠落している場合は `DraftStructuringError` を送出する。CLI では exit code 6 を返し、モード不整合を修正後に再実行する。
+
+5. **Analyzer 連携**
    - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度に応じて候補スコアを補正する。
    - Analyzer 指摘サマリは `generate_ready_meta.sections[*].analyzer_summary` と `draft_mapping_log.json.analyzer` に保存する。
 
-5. **監査・再現性**
-  - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
-  - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
-  - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
-  - Stage2 から引き継いだ `mode` を監査ログへ残し、静的・動的それぞれのフォールバック指標を切り替えられるようにする。
+6. **監査・再現性**
+   - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
+   - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
+   - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
+   - Stage2 から引き継いだ `mode` を監査ログへ残し、静的・動的それぞれのフォールバック指標を切り替えられるようにする。
 
 ## CLI 要件
 - `pptx compose`
@@ -81,3 +86,4 @@
 - 章テンプレート適合率のダッシュボード表示と KPI 化。
 - Analyzer 指摘に応じた自動フォールバック戦略の改善。
 - PrepareCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
+- `ContentElements.body` の 6 行 / 40 文字制約を撤廃し、prepare/compose 段階では全文を維持したままレンダリング工程でトリミングする新方針（RM-067）を検討。

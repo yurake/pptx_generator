@@ -49,10 +49,12 @@
 ```
 
 ### フィールド補足
+- `slides` の順序は `dynamic` モード時に `prepare_card.json.cards[*].order` をそのまま引き継ぐ。`static` モードではテンプレ Blueprint / JobSpec の順序を優先する。
 - `elements`: テンプレ側のアンカー名をキーにした構造。Renderer が直接利用する。
 - `meta.sources`: 元コンテンツ（PrepareCard）の `card_id` リスト。
 - `meta.content_hash`: Prepare 成果物から計算したハッシュ。差分検知に利用。
 - `meta.fallback`: `none` / `shrink_text` / `split_slide` / `appendix` など。重大フォールバックは `fallback_report.json` と併用。
+- `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または null の場合は仕様外としてエラーで停止する。CLI は exit code 6 を返却する実装とする。
 
 ## mapping_log.json
 ```jsonc
@@ -121,3 +123,4 @@
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。
+- `ContentElements.body` は現状 6 行 / 40 文字制限があるが、RM-067 で制約緩和とレンダリング工程へのトリミング移行を検討中。

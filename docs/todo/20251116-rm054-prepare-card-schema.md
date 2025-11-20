@@ -5,8 +5,8 @@
 roadmap_item: RM-054 静的テンプレ構成統合
 ---
 
-- [ ] ブランチ作成と初期コミット
-  - メモ: 既存ブランチ feat/rm054-static-blueprint-plan 上で継続作業
+- [x] ブランチ作成と初期コミット
+  - メモ: 既存ブランチ feat/rm054-static-blueprint-plan 上で継続作業（追加作業なし）
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan（2025-11-16）
     - 対象整理（スコープ、対象ファイル、前提）: prepare_card.json の構造そのものを見直し、テンプレート非依存なスライド下書きとして再定義する。関連する読み込み処理（PrepareNormalizationStepなど）とサンプルも整合させる。
@@ -27,13 +27,13 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: ドメイン層〜CLI まで新スキーマへリファクタリングし、API ストアとパイプライン互換層を更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_outline.py tests/test_mapping_step.py tests/test_slide_alignment.py tests/test_analyzer.py` を実行し、主要ケースの回帰確認済み。
-- [ ] ドキュメント更新
-  - メモ:
+- [x] ドキュメント更新
+  - メモ: 2025-11-17 時点で roadmap / requirements / design / runbook / README を新挙動（Dynamic 順序、モード必須、RM-067）へ整合。
   - [x] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ:
 - [ ] PR 作成

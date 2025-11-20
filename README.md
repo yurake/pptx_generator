@@ -117,6 +117,7 @@ flowchart TD
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
 - `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json`などを出力します。
+- Dynamic モードでは `prepare_card.json.cards[*].order` の昇順で `pptx compose` / `pptx outline` がスライドを生成し、HITL の並び替えをそのまま反映します。Static モードはテンプレ Blueprint / JobSpec の順序を優先し、`ai_generation_meta.mode` が未設定・未知値の場合はエラーになります。
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
     --output .pptx/prepare
