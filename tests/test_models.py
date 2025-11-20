@@ -10,6 +10,7 @@ from pptx_generator.models import (AIReviewResult, AutoFixProposal,
                                    ContentSlide, ContentTableData, JobAuth,
                                    JobMeta, JobSpec, JsonPatchOperation, Slide,
                                    SlideChart, SlideTable, TableStyle)
+from pptx_generator.prepare import PrepareCardContent
 
 
 def test_job_spec_accepts_tables_and_charts() -> None:
@@ -68,6 +69,21 @@ def test_content_elements_body_constraints() -> None:
         ContentElements(title="NG", body=["a" * 41])
     with pytest.raises(ValueError):
         ContentElements(title="NG", body=["a"] * 7)
+
+
+def test_prepare_card_content_requires_single_heading() -> None:
+    with pytest.raises(ValueError):
+        PrepareCardContent(title=None, headline=None)
+    with pytest.raises(ValueError):
+        PrepareCardContent(title="タイトル", headline="ヘッドライン")
+
+    title_content = PrepareCardContent(title="タイトル")
+    assert title_content.title == "タイトル"
+    assert title_content.headline is None
+
+    headline_content = PrepareCardContent(headline="ヘッドライン")
+    assert headline_content.title is None
+    assert headline_content.headline == "ヘッドライン"
 
 
 def test_json_patch_operation_requires_absolute_path() -> None:

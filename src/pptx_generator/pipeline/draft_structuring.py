@@ -763,6 +763,9 @@ class DraftStructuringStep:
         if title:
             elements["title"] = title
 
+        if content_slide.elements.subtitle:
+            elements["subtitle"] = content_slide.elements.subtitle
+
         if content_slide.elements.body:
             elements["body"] = list(content_slide.elements.body)
         elif "body" in base:
@@ -1229,9 +1232,9 @@ class DraftStructuringStep:
                 elements["title"] = headline
             return
         if "subtitle" in anchor_lower:
-            headline = card.headline_or_title()
-            if headline:
-                elements["subtitle"] = headline
+            subtitle = card.subtitle_or_chapter() or card.headline_or_title()
+            if subtitle:
+                elements["subtitle"] = subtitle
             return
         if anchor_lower in {"body", "content"}:
             if lines:

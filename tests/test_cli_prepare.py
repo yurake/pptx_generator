@@ -48,6 +48,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     first_card = cards_payload["cards"][0]
     assert first_card["role"]["story_phase"] in {"introduction", "problem", "solution", "impact", "next"}
     assert first_card["content"]["title"]
+    assert first_card["content"].get("headline") is None
     assert isinstance(first_card["content"].get("body", []), list)
 
     log_payload = json.loads(log_path.read_text(encoding="utf-8"))
@@ -62,6 +63,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
     assert meta_payload["mode"] == "dynamic"
     assert meta_payload["statistics"]["cards_total"] == card_count
+    assert meta_payload.get("constraints", {}).get("include_title_page") is True
 
     outline_payload = json.loads(outline_path.read_text(encoding="utf-8"))
     assert outline_payload["chapters"]
@@ -114,6 +116,9 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
     cards_payload = json.loads((output_dir / "prepare_card.json").read_text(encoding="utf-8"))
     card_count = len(cards_payload["cards"])
     assert card_count >= 1
+    first_card = cards_payload["cards"][0]
+    assert first_card["content"].get("title") is None
+    assert first_card["content"].get("headline")
     ai_log_payload = json.loads((output_dir / "prepare_ai_log.json").read_text(encoding="utf-8"))
     assert len(ai_log_payload) == card_count
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))

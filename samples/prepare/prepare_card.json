@@ -11,7 +11,6 @@
         ]
       },
       "content": {
-        "title": "このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で",
         "headline": "このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で",
         "body": [
           {
@@ -40,7 +39,8 @@
             "type": "rationale",
             "text": "LLMアウトライン→Validator→承認→マッピング→レンダリング→Poli"
           }
-        ]
+        ],
+        "subtitle": "このプロジェクトは社内提案書の量産を目指し、ブランド統一とAI＋HITLの協調で"
       },
       "meta": {
         "updated_at": "2025-11-16T13:25:32.575032Z"
@@ -56,7 +56,6 @@
         ]
       },
       "content": {
-        "title": "AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ",
         "headline": "AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ",
         "body": [
           {
@@ -85,7 +84,8 @@
             "type": "rationale",
             "text": "ロードマップはRMテーマで構成され、テンプレ監査、コンテンツ承認基盤、ハイブリッ"
           }
-        ]
+        ],
+        "subtitle": "AnalyzerとRefiner、Polisherを連携させ、余白・フォント・コ"
       },
       "meta": {
         "updated_at": "2025-11-16T13:25:32.575032Z"
@@ -101,7 +101,6 @@
         ]
       },
       "content": {
-        "title": "CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L",
         "headline": "CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L",
         "body": [
           {
@@ -130,7 +129,8 @@
             "type": "rationale",
             "text": "セキュリティとガバナンス面ではブランド設定や案件データを守りながら環境変数管理や"
           }
-        ]
+        ],
+        "subtitle": "CLIと`uv`の統一エントリーポイント、Python3.12・.NET 8・L"
       },
       "meta": {
         "updated_at": "2025-11-16T13:25:32.575032Z"
@@ -146,7 +146,6 @@
         ]
       },
       "content": {
-        "title": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保",
         "headline": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保",
         "body": [
           {
@@ -159,7 +158,8 @@
             "type": "rationale",
             "text": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保"
           }
-        ]
+        ],
+        "subtitle": "将来的にはレイアウト生成AIや情報ギャップインテリジェンス、ライブ共同編集など保"
       },
       "meta": {
         "updated_at": "2025-11-16T13:25:32.575032Z"

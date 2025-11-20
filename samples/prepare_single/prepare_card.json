@@ -11,7 +11,6 @@
         ]
       },
       "content": {
-        "title": "intro 現状と課題",
         "headline": "テスト用の簡易プレペア入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を PrepareCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。",
         "body": [
           {
@@ -32,7 +31,8 @@
             "type": "note",
             "text": "KPI 可視化が属人化し、意思決定が遅延している。"
           }
-        ]
+        ],
+        "subtitle": "intro 現状と課題"
       },
       "meta": {
         "updated_at": "2025-01-01T00:00:00Z",

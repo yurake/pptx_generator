@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Iterable, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 PrepareActionType = Literal["approve", "return", "comment", "autofix", "regenerate"]
 
@@ -48,10 +48,28 @@ class PrepareNoteEntry(BaseModel):
 class PrepareCardContent(BaseModel):
     """カードの本文構造。"""
 
-    title: str
+    title: str | None = None
     headline: str | None = None  # このページで最も伝えたい結論を短く明示する
+    subtitle: str | None = None
     body: list[PrepareBodyBlock] = Field(default_factory=list)
     notes: list[PrepareNoteEntry] = Field(default_factory=list)
+
+    @field_validator("title", "headline", "subtitle", mode="before")
+    @classmethod
+    def normalize_heading(cls, value: Any) -> str | None:  # noqa: ANN401
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
+
+    @model_validator(mode="after")
+    def ensure_single_primary_heading(self) -> "PrepareCardContent":
+        has_title = bool(self.title)
+        has_headline = bool(self.headline)
+        if has_title == has_headline:
+            msg = "title と headline はどちらか一方のみ指定してください"
+            raise ValueError(msg)
+        return self
 
 
 class PrepareCardRole(BaseModel):
@@ -93,7 +111,18 @@ class PrepareCard(BaseModel):
         return intents[0] if intents else self.role.story_phase
 
     def headline_or_title(self) -> str:
-        return (self.content.headline or self.content.title).strip()
+        value = self.content.headline or self.content.title
+        return value.strip() if value else ""
+
+    def subtitle_or_chapter(self) -> str | None:
+        subtitle = self.content.subtitle
+        if subtitle and subtitle.strip():
+            return subtitle.strip()
+        source_chapter = (self.meta.get("source_chapter") if isinstance(self.meta, dict) else None) or {}
+        chapter_title = source_chapter.get("title")
+        if isinstance(chapter_title, str) and chapter_title.strip():
+            return chapter_title.strip()
+        return None
 
     def iter_body_text(self) -> Iterable[str]:
         for block in self.content.body:
@@ -133,7 +162,7 @@ class PrepareCard(BaseModel):
         layout = blueprint.get("layout")
         if isinstance(layout, str) and layout.strip():
             return layout.strip()
-        return self.content.title
+        return self.content.title or self.content.headline or ""
 
     def blueprint_meta(self) -> dict[str, Any] | None:
         if isinstance(self.meta, dict):

@@ -27,8 +27,7 @@
       },
       "content": {
         "title": "現状と課題の整理",
-        "headline": "ブランド統一とAI×HITLの協調で提案書量産を実現する",
-        // headline: このページで最も伝えたい結論を短く明示する
+        "subtitle": "ブランド統一とAI×HITL",
         "body": [
           { "type": "paragraph", "text": "社内提案書の制作負荷は高く、手戻り率も20%に達している。" },
           { "type": "bullet", "text": "ブランド統一とAI協調で制作時間を10日→3日に短縮する" },
@@ -58,6 +57,8 @@
 }
 ```
 
+通常スライドでは `content.headline` のみを設定し、`content.title` は未使用とする。章単位のまとまりを示したい場合は `content.subtitle` に章名を設定する。
+
 ### フィールド補足
 - `prepare_id`: プレペア成果物を一意に識別する ID。
 - `meta`: 全カード共通のメタ情報（例: `locale` / `generated_at`）。任意。
@@ -65,9 +66,9 @@
 - `order`: カードの並び順。`card_id` とは独立して管理する。
 - `role.story_phase`: ストーリーライン分類（`introduction` / `problem` / `solution` / `impact` / `next` など）。
 - `role.intent_tags`: レイアウト選定や意図推定に利用するタグ。
-- `content.title`: スライドタイトル。
-- `content.headline`: そのページで最も伝えたい結論を 1 行で記述する。
-- `content.body`: 本文ブロックの配列。`type` に応じ `text`、`headers` / `rows`、`ref` / `description` などを持つ。ブロック種別は柔軟に拡張可能。
+- `content.title`: タイトルスライド専用の見出し。存在する場合は `content.headline` を同時に設定してはいけない。
+- `content.headline`: 通常スライドのメインメッセージ。`title` と排他で、1 行の短い結論を記述する。
+- `content.subtitle`: 章名・まとまりを示す補助テキスト。`title`/`headline` のどちらとも併用可能。
 - `content.body`: 本文ブロックの配列。`type` に応じ `text`、`headers` / `rows`、`ref` / `description` などを持つ。ブロック種別は柔軟に拡張可能。
 - `content.notes`: PowerPoint のノート欄へそのまま記載する補足情報。本文をどう構成したか、閲覧者へ伝える際の注意点などを生成 AI が記述し、ユーザーが提示するかどうかを判断する。
 

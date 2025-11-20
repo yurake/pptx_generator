@@ -60,8 +60,7 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
                 order=1,
                 role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
                 content=PrepareCardContent(
-                    title="概要",
-                    headline="概要のポイント",
+                    headline="概要",
                     body=[
                         PrepareBodyBlock(type="paragraph", text="最初のポイント"),
                         PrepareBodyBlock(type="paragraph", text="次のステップ"),
@@ -125,8 +124,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
                 order=1,
                 role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
                 content=PrepareCardContent(
-                    title="概要",
-                    headline="概要のポイント",
+                    headline="概要",
                     body=[
                         PrepareBodyBlock(type="paragraph", text="1行目"),
                         PrepareBodyBlock(type="paragraph", text="2行目"),

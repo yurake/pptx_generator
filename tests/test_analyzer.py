@@ -188,8 +188,7 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
                 order=1,
                 role=PrepareCardRole(story_phase="introduction", intent_tags=["intro"]),
                 content=PrepareCardContent(
-                    title="概要",
-                    headline="最初のポイント",
+                    headline="概要",
                     body=[PrepareBodyBlock(type="paragraph", text="最初のポイント")],
                 ),
             )

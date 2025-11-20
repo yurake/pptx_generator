@@ -44,8 +44,7 @@ def _build_prepare_document() -> PrepareDocument:
                 order=1,
                 role=PrepareCardRole(story_phase="introduction", intent_tags=["introduction"]),
                 content=PrepareCardContent(
-                    title="イントロダクション",
-                    headline="現状と課題の共有",
+                    headline="イントロダクション",
                     body=[PrepareBodyBlock(type="paragraph", text="イントロの詳細")],
                 ),
             ),
@@ -54,7 +53,6 @@ def _build_prepare_document() -> PrepareDocument:
                 order=2,
                 role=PrepareCardRole(story_phase="solution", intent_tags=["solution"]),
                 content=PrepareCardContent(
-                    title="解決策",
                     headline="解決策の要点",
                     body=[PrepareBodyBlock(type="paragraph", text="提案内容")],
                 ),
@@ -64,7 +62,6 @@ def _build_prepare_document() -> PrepareDocument:
                 order=3,
                 role=PrepareCardRole(story_phase="solution", intent_tags=["solution"]),
                 content=PrepareCardContent(
-                    title="解決策",
                     headline="孤立スライド",
                     body=[PrepareBodyBlock(type="paragraph", text="孤立カード")],
                 ),

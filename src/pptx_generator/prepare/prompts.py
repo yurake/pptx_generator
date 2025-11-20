@@ -12,8 +12,8 @@ PREPARE_GENERATION_PROMPT = """
 JSON オブジェクトで返してください。トップレベルキーは chapters です。
 - chapters: PrepareCard の配列。各要素は 1 スライド分の情報を表し、次のフィールドを含めてください。
   - card_id: スライド固有のスラグ ID（英数字とハイフンのみ）。story_phase と同じ文字列は避け、再生成時に安定する命名にしてください。
-  - title: スライドタイトル。閲覧者にとって意味のある自然な文にしてください。
-  - headline: そのページで最も伝えたい結論を 1 行で表現してください。
+  - title/headline: どちらか一方のみ使用します。通常スライドは `headline` を 1 行で記述し `title` は null にしてください。`options.include_title_page` が true の場合のみ先頭カードにデッキ全体の `title` を設定し、`headline` は null にします。
+  - subtitle: 任意。章名やサブカテゴリを表す短いテキストを入れてください。章タイトルがあればここへ記載します。
   - story_phase: slide の役割を表す値。introduction / problem / solution / impact / next など、文脈に適したフェーズ名を入れてください。
   - intent_tags: 章の意図を表す配列。空の場合は story_phase を含めてください。
   - body: 本文ブロックの配列。各ブロックは {"type": "paragraph"|"bullets"|"table"|..., "text": "...", "headers": [...], "rows": [[...]], "ref": "...", "description": "...", "data": {...}} のような構造を取り、必要な項目のみ出力してください。段落は 80 文字以内で簡潔にまとめてください。特殊スライドは type を "agenda" などに変えて表現しても構いません。
@@ -21,6 +21,7 @@ JSON オブジェクトで返してください。トップレベルキーは ch
 
 - # 制約
 - constraints.max_chapters が指定されている場合、出力する chapters 配列の要素数がその値を超えないようにする。
+- options.include_title_page が true の場合は、先頭カードをタイトルページとして `title` のみ設定し、それ以外のカードは `headline` のみを設定する。false の場合は全カード `headline` のみとし、タイトルページを作成しない。
 - story_phase / intent_tags は文脈に沿った値を選び、カードごとの役割が分かるようにする。
 - headline はカード全体の結論を短く明示し、body には具体的な論点やデータを盛り込む。
 - notes には本文では語りきれない補足、根拠、リスクなどを記述し、表に出さない前提情報をまとめる。

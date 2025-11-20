@@ -291,9 +291,18 @@ class ContentTableData(BaseModel):
 
 class ContentElements(BaseModel):
     title: str = Field(..., max_length=120)
+    subtitle: str | None = Field(default=None, max_length=120)
     body: list[str] = Field(default_factory=list)
     table_data: ContentTableData | None = None
     note: str | None = None
+
+    @field_validator("subtitle", mode="before")
+    @classmethod
+    def normalize_optional_subtitle(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
 
     @field_validator("body")
     @classmethod
