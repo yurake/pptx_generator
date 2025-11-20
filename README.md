@@ -23,6 +23,10 @@ PowerPoint テンプレートと資料データ（プレーンテキストや PD
 | 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
 | 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録（デフォルト出力先は `.pptx/gen/`） |
 
+モード別の処理フローは Dynamic（従来の可変スライド指向）と Static（Blueprint 指向）の 2 系統を用意しています。
+
+#### Dynamic モード
+
 ```mermaid
 flowchart TD
   %% ======= Styles =======
@@ -57,6 +61,46 @@ flowchart TD
     A2["**システム生成ファイル**"]:::file
     A3["**ユーザー準備ファイル**"]:::userfile
     A4["**最終成果物**"]:::final
+  end
+```
+
+#### Static モード
+
+```mermaid
+flowchart TD
+  %% ======= Styles =======
+  classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
+  classDef file fill:#f3f4f6,stroke:#4b5563,stroke-width:1px,color:#111827,font-weight:bold;
+  classDef userfile fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b,font-weight:bold;
+  classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
+
+  %% ======= Stage 1 =======
+  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**工程 1 テンプレ**"]:::stage
+  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+
+  %% ======= Stage 2 =======
+  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**工程 2 コンテンツ準備 (slot 生成)**"]:::stage
+  SpecStatic --> S2Static
+  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  PrepareCardsStatic --> S3Static
+
+  %% ======= Stage 3 =======
+  S3Static["**工程 3 マッピング (Blueprint 検証)**"]:::stage
+  SpecStatic --> S3Static
+  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+
+  %% ======= Stage 4 =======
+  ReadyStatic --> S4Static["**工程 4 PPTX生成**"]:::stage
+  S4Static --> PPTXStatic["**proposal.pptx**"]:::final
+  S4Static --> PDFStatic["**proposal.pdf**"]:::final
+
+  %% ======= Legend =======
+  subgraph LegendStatic[凡例]
+    direction LR
+    B1["**工程（自動/HITL）**"]:::stage
+    B2["**テンプレ仕様 / 構造ファイル**"]:::file
+    B3["**ユーザー準備ファイル**"]:::userfile
+    B4["**最終成果物**"]:::final
   end
 ```
 
