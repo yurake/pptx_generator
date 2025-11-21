@@ -218,10 +218,21 @@ class DraftStructuringStep:
         self._write_log(log_path, [])
         self._write_json(mapping_log_path, mapping_logs)
 
+        template_path_value: Path | None = None
+        spec_template_path = getattr(context.spec.meta, "template_path", None)
+        if spec_template_path:
+            candidate = Path(spec_template_path)
+            if not candidate.is_absolute() and self.options.spec_source_path is not None:
+                candidate = (self.options.spec_source_path.parent / candidate).resolve()
+            elif not candidate.is_absolute():
+                candidate = candidate.resolve()
+            template_path_value = candidate
+
         generate_ready = self._build_generate_ready_document(
             spec=context.spec,
             draft=draft,
             content_document=document,
+            template_path=template_path_value,
         )
         ready_path = output_dir / self.options.generate_ready_filename
         self._write_json(ready_path, generate_ready.model_dump(mode="json"))
@@ -572,6 +583,7 @@ class DraftStructuringStep:
         spec: JobSpec,
         draft: DraftDocument,
         content_document: ContentApprovalDocument | None,
+        template_path: Path | None = None,
     ) -> GenerateReadyDocument:
         section_lookup: dict[str, str] = {}
         cards_in_order: list[DraftSlideCard] = []
@@ -623,12 +635,14 @@ class DraftStructuringStep:
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             meta = GenerateReadyMeta(
                 template_version=draft.meta.template_id,
-                template_path=None,
+                template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
                 content_hash=content_hash,
                 generated_at=timestamp,
                 job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
                 job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
             )
+            if meta.template_path is None and getattr(spec.meta, "template_path", None):
+                meta.template_path = getattr(spec.meta, "template_path", None)
             return GenerateReadyDocument(slides=slides, meta=meta)
 
         for index, card in enumerate(cards_in_order, start=1):
@@ -676,12 +690,14 @@ class DraftStructuringStep:
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         meta = GenerateReadyMeta(
             template_version=draft.meta.template_id,
-            template_path=None,
+            template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
             content_hash=content_hash,
             generated_at=timestamp,
             job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
             job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
         )
+        if meta.template_path is None and getattr(spec.meta, "template_path", None):
+            meta.template_path = getattr(spec.meta, "template_path", None)
         return GenerateReadyDocument(slides=slides, meta=meta)
 
     def _build_generate_ready_meta_payload(
@@ -1243,6 +1259,8 @@ class DraftStructuringStep:
                 headline = card.headline_or_title()
                 if headline:
                     elements["body"] = [headline]
+            return
+        if slot.content_type not in {"text"}:
             return
         if lines:
             elements[anchor] = lines
