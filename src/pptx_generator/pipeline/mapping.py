@@ -490,6 +490,10 @@ class MappingStep:
             elements: dict[str, Any] = {
                 "title": content_slide.elements.title,
             }
+            if content_slide.elements.subtitle:
+                elements["subtitle"] = content_slide.elements.subtitle
+            elif "subtitle" in base:
+                elements["subtitle"] = base["subtitle"]
             if content_slide.elements.body:
                 elements["body"] = list(content_slide.elements.body)
             elif "body" in base:

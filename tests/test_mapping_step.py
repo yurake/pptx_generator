@@ -6,7 +6,13 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from pptx_generator.models import JobSpec
+from pptx_generator.models import (
+    ContentApprovalDocument,
+    ContentDocumentMeta,
+    ContentElements,
+    ContentSlide,
+    JobSpec,
+)
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
 from pptx_generator.prepare import (
@@ -61,6 +67,7 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
                 role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
                 content=PrepareCardContent(
                     headline="概要",
+                    subtitle="サブタイトル",
                     body=[
                         PrepareBodyBlock(type="paragraph", text="最初のポイント"),
                         PrepareBodyBlock(type="paragraph", text="次のステップ"),
@@ -71,6 +78,26 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
         story_context=PrepareStoryContext(chapters=[]),
     )
     context.add_artifact("prepare_document", prepare_doc)
+
+    content_document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(
+                id="s01",
+                intent="overview",
+                type_hint="introduction",
+                elements=ContentElements(
+                    title="概要",
+                    subtitle="サブタイトル",
+                    body=["最初のポイント", "次のステップ"],
+                    table_data=None,
+                    note=None,
+                ),
+                status="approved",
+            )
+        ],
+        meta=ContentDocumentMeta(tone=None),
+    )
+    context.add_artifact("content_approved", content_document)
 
     step = MappingStep(
         MappingOptions(
@@ -91,6 +118,7 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
 
     assert slide["layout_id"] == "layout_basic"
     assert slide["elements"]["title"] == "概要"
+    assert slide["elements"]["subtitle"] == "サブタイトル"
     assert slide["elements"]["body"] == ["最初のポイント", "次のステップ"]
     assert slide["meta"]["page_no"] == 1
     assert slide["meta"]["fallback"] == "none"

@@ -41,3 +41,4 @@ roadmap_item: RM-054 静的テンプレ構成統合
 
 ## メモ
 - 2025-11-21: 工程2 の prepare LLM プロンプトを dynamic/static で分離し、static モードは Blueprint slot 単位の軽量プロンプト（chapters 要素数 1 固定）を使用するように変更。dynamic は従来どおり 1 回の LLM 呼び出しで複数カードを生成する構成を維持しつつ、両モード間の条件分岐をプロンプトから排除してトークン削減を図った。
+- 2025-11-21: dynamic モードで subtitle が `generate_ready` / PPTX に反映されない問題を修正。`ContentSlide` の subtitle を優先し、`elements.subtitle` が存在しない場合でも mapping で保持されるよう調整。ユニットテストを更新し、subtitle が generate_ready まで伝播することを確認。
