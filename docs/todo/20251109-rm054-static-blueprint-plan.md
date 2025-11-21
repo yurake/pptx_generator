@@ -40,3 +40,4 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: 
 
 ## メモ
+- 2025-11-21: 工程2 の prepare LLM プロンプトを dynamic/static で分離し、static モードは Blueprint slot 単位の軽量プロンプト（chapters 要素数 1 固定）を使用するように変更。dynamic は従来どおり 1 回の LLM 呼び出しで複数カードを生成する構成を維持しつつ、両モード間の条件分岐をプロンプトから排除してトークン削減を図った。

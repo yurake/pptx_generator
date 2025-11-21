@@ -21,7 +21,7 @@ from .models import (
     PrepareStoryContext,
 )
 from .policy import PreparePolicy, PreparePolicyError, PreparePolicySet
-from .prompts import build_prepare_prompt
+from .prompts import build_prepare_prompt_dynamic, build_prepare_prompt_static
 from .source import PrepareSourceChapter, PrepareSourceDocument, PrepareSourceSupportingPoint
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class PrepareAIOrchestrator:
             page_limit=page_limit,
             include_title_page=include_title_page,
         )
-        prompt = build_prepare_prompt(payload)
+        prompt = build_prepare_prompt_dynamic(payload)
         try:
             llm_result = self._llm_client.generate(prompt, model_hint=None)
         except PrepareLLMConfigurationError as exc:
@@ -510,25 +510,131 @@ class PrepareAIOrchestrator:
         required_fulfilled = 0
         optional_used = 0
 
+        ai_records: list[PrepareAIRecord] = []
+        now = datetime.now(timezone.utc)
+
         for order, blueprint_slide, slot in slot_entries:
             chapter = chapter_assignments.get(order)
-            card = self._build_card_from_blueprint_slot(
-                order=order,
-                slide=blueprint_slide,
-                slot=slot,
-                chapter=chapter,
+
+            # slot / 章単位のコンテキストを組み立てる
+            if chapter is not None:
+                body_blocks = self._build_chapter_body_blocks(chapter)
+                notes = self._build_chapter_notes(chapter.supporting_points)
+                text_lines: list[str] = []
+                if chapter.title:
+                    text_lines.append(chapter.title)
+                if chapter.message:
+                    text_lines.append(chapter.message)
+                for block in body_blocks:
+                    if isinstance(block.text, str) and block.text.strip():
+                        text_lines.append(block.text.strip())
+                for note in notes:
+                    if isinstance(note.text, str) and note.text.strip():
+                        text_lines.append(note.text.strip())
+                raw_text = "\n".join(text_lines) or (chapter.title or "")
+            else:
+                # 対応する章が無い slot は Blueprint 情報のみをコンテキストとする
+                parts: list[str] = []
+                if blueprint_slide.layout:
+                    parts.append(blueprint_slide.layout)
+                if slot.anchor:
+                    parts.append(slot.anchor)
+                parts.append(slot.slot_id)
+                raw_text = " / ".join(parts)
+
+            payload: dict[str, Any] = {
+                "raw_context": {
+                    "format": "markdown",
+                    "content": raw_text,
+                },
+                "hints": {
+                    "slot": {
+                        "slide_id": blueprint_slide.slide_id,
+                        "slot_id": slot.slot_id,
+                        "anchor": slot.anchor,
+                        "content_type": slot.content_type,
+                        "required": slot.required,
+                        "intent_tags": slot.intent_tags,
+                    }
+                },
+            }
+            if chapter is not None:
+                payload["hints"]["chapter"] = {  # type: ignore[index]
+                    "id": chapter.id,
+                    "title": chapter.title,
+                }
+
+            prompt = build_prepare_prompt_static(payload)
+            try:
+                llm_result = self._llm_client.generate(prompt, model_hint=None)
+            except PrepareLLMConfigurationError as exc:
+                raise PrepareAIOrchestrationError(str(exc)) from exc
+            except Exception as exc:  # noqa: BLE001
+                raise PrepareAIOrchestrationError(f"LLM 呼び出しに失敗しました: {exc}") from exc
+
+            data = self._parse_llm_output(llm_result)
+            chapters_payload = data.get("chapters")
+            if not isinstance(chapters_payload, list) or not chapters_payload:
+                raise PrepareAIOrchestrationError("LLM 応答に 'chapters' 配列が含まれていません")
+
+            entry = chapters_payload[0]
+            # index は slot 全体の順序を利用する
+            card = self._build_card_from_llm_entry(
+                entry,
+                index=order,
                 policy=policy,
+                generated_at=now,
+                is_title_card=False,
+                default_title=chapter.title if chapter is not None else blueprint_slide.layout,
             )
+
+            # Blueprint 情報で上書きし、slot 単位のカードとして扱う
+            blueprint_meta = {
+                "slide_id": blueprint_slide.slide_id,
+                "layout": blueprint_slide.layout,
+                "slot_id": slot.slot_id,
+                "anchor": slot.anchor,
+                "content_type": slot.content_type,
+                "required": slot.required,
+                "fulfilled": chapter is not None,
+                "intent_tags": slot.intent_tags,
+            }
+
+            meta: dict[str, Any] = {}
+            if isinstance(card.meta, dict):
+                meta.update(card.meta)
+            meta.update(
+                {
+                    "mode": "static",
+                    "blueprint": blueprint_meta,
+                }
+            )
+            if chapter is not None:
+                meta["source_chapter"] = {"id": chapter.id, "title": chapter.title}
+
+            card.card_id = self._normalize_slot_card_id(slot.slot_id)
+            card.order = order + 1
+            card.meta = meta
             cards.append(card)
 
-            blueprint_meta = card.meta.get("blueprint") if isinstance(card.meta, dict) else None
-            fulfilled = bool(blueprint_meta.get("fulfilled")) if isinstance(blueprint_meta, dict) else False
             if slot.required:
-                if fulfilled:
+                if blueprint_meta["fulfilled"]:
                     required_fulfilled += 1
             else:
-                if fulfilled:
+                if blueprint_meta["fulfilled"]:
                     optional_used += 1
+
+            ai_records.append(
+                PrepareAIRecord(
+                    card_id=card.card_id,
+                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                    model=llm_result.model,
+                    prompt_fragment=prompt[:200],
+                    response_digest=json.dumps(entry, ensure_ascii=False)[:200],
+                    warnings=list(llm_result.warnings),
+                    tokens=llm_result.tokens,
+                )
+            )
 
         slot_summary = {
             "required_total": len(required_entries),
@@ -536,16 +642,6 @@ class PrepareAIOrchestrator:
             "optional_total": len(optional_entries),
             "optional_used": optional_used,
         }
-        ai_records = [
-            PrepareAIRecord(
-                card_id="batch",
-                prompt_template=DEFAULT_PROMPT_ID,
-                model="mock-local",
-                response_digest=f"cards={len(cards)} mode=static",
-                warnings=["blueprint_stub"],
-                tokens={},
-            )
-        ]
         return cards, slot_summary, ai_records
 
     def _build_card_from_blueprint_slot(
