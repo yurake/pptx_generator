@@ -485,11 +485,11 @@ class PrepareAIOrchestrator:
 
         chapters = list(source.chapters)
         if len(chapters) < len(required_entries):
-            msg = (
-                "Blueprint の必須 slot 数を満たす章が不足しています: "
-                f"required={len(required_entries)} actual={len(chapters)}"
+            logger.warning(
+                "Blueprint の必須 slot 数 (%d) に対し、入力章数が不足しています (%d)。不足分は原稿全体から補完します。",
+                len(required_entries),
+                len(chapters),
             )
-            raise PrepareAIOrchestrationError(msg)
 
         chapter_assignments: dict[int, PrepareSourceChapter] = {}
         chapter_iter_index = 0
@@ -512,11 +512,14 @@ class PrepareAIOrchestrator:
 
         ai_records: list[PrepareAIRecord] = []
         now = datetime.now(timezone.utc)
+        base_context = source.raw_text or self._compose_raw_text(source)
+        base_context = base_context.strip() if isinstance(base_context, str) else ""
 
         for order, blueprint_slide, slot in slot_entries:
             chapter = chapter_assignments.get(order)
 
             # slot / 章単位のコンテキストを組み立てる
+            card_context_lines: list[str] = []
             if chapter is not None:
                 body_blocks = self._build_chapter_body_blocks(chapter)
                 notes = self._build_chapter_notes(chapter.supporting_points)
@@ -531,16 +534,27 @@ class PrepareAIOrchestrator:
                 for note in notes:
                     if isinstance(note.text, str) and note.text.strip():
                         text_lines.append(note.text.strip())
+                card_context_lines.extend(text_lines)
                 raw_text = "\n".join(text_lines) or (chapter.title or "")
             else:
-                # 対応する章が無い slot は Blueprint 情報のみをコンテキストとする
-                parts: list[str] = []
+                # 対応する章が無い場合は原稿全体を利用する
+                if base_context:
+                    raw_text = base_context
+                else:
+                    parts: list[str] = []
+                    if blueprint_slide.layout:
+                        parts.append(blueprint_slide.layout)
+                    if slot.anchor:
+                        parts.append(slot.anchor)
+                    parts.append(slot.slot_id)
+                    raw_text = " / ".join(parts)
+                card_context_lines.append(raw_text)
+
+            if chapter is not None:
                 if blueprint_slide.layout:
-                    parts.append(blueprint_slide.layout)
+                    card_context_lines.append(blueprint_slide.layout)
                 if slot.anchor:
-                    parts.append(slot.anchor)
-                parts.append(slot.slot_id)
-                raw_text = " / ".join(parts)
+                    card_context_lines.append(slot.anchor)
 
             payload: dict[str, Any] = {
                 "raw_context": {
@@ -596,7 +610,7 @@ class PrepareAIOrchestrator:
                 "anchor": slot.anchor,
                 "content_type": slot.content_type,
                 "required": slot.required,
-                "fulfilled": chapter is not None,
+                "fulfilled": True,
                 "intent_tags": slot.intent_tags,
             }
 
@@ -617,11 +631,17 @@ class PrepareAIOrchestrator:
             card.meta = meta
             cards.append(card)
 
+            has_content = bool(
+                card.content.title
+                or card.content.headline
+                or (card.content.subtitle and card.content.subtitle.strip())
+                or card.content.body
+            )
             if slot.required:
-                if blueprint_meta["fulfilled"]:
+                if has_content:
                     required_fulfilled += 1
             else:
-                if blueprint_meta["fulfilled"]:
+                if has_content:
                     optional_used += 1
 
             ai_records.append(

@@ -1236,37 +1236,74 @@ def _pass_through_static_generate_ready(
     if not isinstance(generate_ready, GenerateReadyDocument):
         raise RuntimeError("static モードの成果物に generate_ready が存在しません")
 
-    ready_dest = output_dir / mapping_options.generate_ready_filename
-    ready_src_value = artifacts.get("generate_ready_path")
-    ready_src = Path(ready_src_value) if isinstance(ready_src_value, str) else None
-    if ready_src and ready_src.exists() and ready_src.resolve() != ready_dest.resolve():
-        shutil.copy2(ready_src, ready_dest)
+    template_path = None
+    if mapping_options.template_path is not None:
+        template_path = str(mapping_options.template_path)
+    elif isinstance(spec.meta, JobMeta) and spec.meta.template_path:
+        template_path = spec.meta.template_path
     else:
-        ready_dest.write_text(
-            json.dumps(
-                generate_ready.model_dump(mode="json", exclude_none=True),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
+        raw_meta = getattr(spec, "meta", None)
+        if isinstance(raw_meta, dict):
+            template_path = raw_meta.get("template_path")
+    if template_path:
+        updated_job_meta = None
+        if generate_ready.meta.job_meta:
+            job_meta = generate_ready.meta.job_meta
+            if not job_meta.template_path:
+                updated_job_meta = job_meta.model_copy(update={"template_path": template_path})
+            else:
+                updated_job_meta = job_meta
+        meta_updates = {"template_path": template_path}
+        if updated_job_meta is not None:
+            meta_updates["job_meta"] = updated_job_meta
+        generate_ready = generate_ready.model_copy(
+            update={"meta": generate_ready.meta.model_copy(update=meta_updates)}
         )
+        artifacts["generate_ready"] = generate_ready
+        logger.debug("static pass-through: template_path set to %s", template_path)
+
+    ready_dest = output_dir / mapping_options.generate_ready_filename
+    ready_dest.parent.mkdir(parents=True, exist_ok=True)
+    ready_dest.write_text(
+        json.dumps(
+            generate_ready.model_dump(mode="json", exclude_none=True),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     context.add_artifact("generate_ready", generate_ready)
     context.add_artifact("generate_ready_path", str(ready_dest))
 
     meta_dest = output_dir / DEFAULT_GENERATE_READY_META_FILENAME
     meta_src_value = artifacts.get("generate_ready_meta_path")
-    meta_src = Path(meta_src_value) if isinstance(meta_src_value, str) else None
-    if meta_src and meta_src.exists() and meta_src.resolve() != meta_dest.resolve():
-        shutil.copy2(meta_src, meta_dest)
+    meta_dest.parent.mkdir(parents=True, exist_ok=True)
+    meta_payload: dict[str, object] | None = None
+    if isinstance(meta_src_value, str):
+        meta_src = Path(meta_src_value)
+        if meta_src.exists():
+            try:
+                meta_payload = json.loads(meta_src.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                meta_payload = None
+    if meta_payload is None:
+        meta_payload = {
+            "mode": generate_ready.meta.layout_mode,
+            "slot_summary": generate_ready.meta.slot_summary or {},
+            "generate_ready_generated_at": generate_ready.meta.generated_at,
+            "template_path": generate_ready.meta.template_path,
+            "blueprint_path": generate_ready.meta.blueprint_path,
+            "blueprint_hash": generate_ready.meta.blueprint_hash,
+        }
     else:
-        meta_dest.write_text(
-            json.dumps(
-                generate_ready.meta.model_dump(mode="json", exclude_none=True),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+        if template_path:
+            meta_payload["template_path"] = template_path
+        if "mode" not in meta_payload and generate_ready.meta.layout_mode:
+            meta_payload["mode"] = generate_ready.meta.layout_mode
+        if generate_ready.meta.slot_summary:
+            meta_payload.setdefault("slot_summary", generate_ready.meta.slot_summary)
+        meta_payload.setdefault("generate_ready_generated_at", generate_ready.meta.generated_at)
+    meta_dest.write_text(json.dumps(meta_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     context.add_artifact("generate_ready_meta_path", str(meta_dest))
 
     mapping_log_dest = output_dir / mapping_options.mapping_log_filename
@@ -1790,8 +1827,8 @@ def prepare(
             )
             raise click.exceptions.Exit(code=2)
         try:
-            spec_for_static = JobSpec.parse_file(resolved_jobspec)
-        except (FileNotFoundError, ValidationError) as exc:
+            spec_for_static = load_jobspec_from_path(resolved_jobspec)
+        except (FileNotFoundError, ValidationError, SpecValidationError) as exc:
             click.echo(f"jobspec.json の読み込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=2) from exc
 

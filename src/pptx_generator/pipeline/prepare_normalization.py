@@ -90,6 +90,7 @@ class PrepareNormalizationStep:
         except json.JSONDecodeError as exc:
             msg = f"prepare_card.json の解析に失敗しました: {path}"
             raise PrepareNormalizationError(msg) from exc
+        payload = self._normalize_prepare_payload(payload)
         try:
             return PrepareDocument.model_validate(payload)
         except ValueError as exc:
@@ -120,6 +121,23 @@ class PrepareNormalizationStep:
                 msg = f"prepare_log.json の検証に失敗しました: index={index}"
                 raise PrepareNormalizationError(msg) from exc
         return entries
+
+    @staticmethod
+    def _normalize_prepare_payload(payload: dict[str, Any]) -> dict[str, Any]:
+        """旧スキーマとの互換性維持のため、タイトル項目を調整する。"""
+
+        cards = payload.get("cards")
+        if isinstance(cards, list):
+            for card in cards:
+                content = card.get("content")
+                if not isinstance(content, dict):
+                    continue
+                title = content.get("title")
+                headline = content.get("headline")
+                if title and headline:
+                    # 旧スキーマでは title+headline の両方が入るケースがあり、headline を優先して title を落とす
+                    content.pop("title", None)
+        return payload
 
     def _load_generation_meta(self, path: Path | None) -> PrepareGenerationMeta | None:
         if path is None:

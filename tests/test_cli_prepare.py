@@ -6,6 +6,11 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from pptx_generator.cli import app
+from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
+from pptx_generator.prepare.llm_client import MockPrepareLLMClient
+from pptx_generator.prepare.orchestrator import PrepareAIOrchestrator
+from pptx_generator.prepare.policy import load_prepare_policy_set
+from pptx_generator.prepare.source import PrepareSourceDocument, PrepareSourceMeta
 
 
 SAMPLE_PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -151,3 +156,56 @@ def test_prepare_page_limit_short_option(tmp_path) -> None:
     assert len(ai_log_payload) == card_count
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload.get("constraints", {}).get("max_chapters") == 1
+
+
+def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
+    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
+
+    source = PrepareSourceDocument(
+        meta=PrepareSourceMeta(title="静的テンプレ検証", prepare_id="static-fallback"),
+        chapters=[],
+        raw_text="A. 静的テンプレの概要\nB. 主なポイント\nC. まとめ",
+    )
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="blueprint-01",
+                layout="StaticLayout",
+                required=True,
+                intent_tags=["overview"],
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="blueprint-01.title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        intent_tags=["headline"],
+                    ),
+                    TemplateBlueprintSlot(
+                        slot_id="blueprint-01.body",
+                        anchor="Body",
+                        content_type="text",
+                        required=False,
+                        intent_tags=["details"],
+                    ),
+                ],
+            )
+        ]
+    )
+
+    policy = policy_set.get_policy(None)
+    cards, slot_summary, ai_records = orchestrator._build_cards_static(
+        source=source,
+        policy=policy,
+        blueprint=blueprint,
+        page_limit=None,
+    )
+
+    assert len(cards) == 2
+    assert slot_summary["required_total"] == 1
+    assert slot_summary["required_fulfilled"] == 1
+    assert cards[0].meta["blueprint"]["fulfilled"] is True
+    # fallback経路でも LLM 呼び出しが slot 数分行われる
+    assert len(ai_records) == 2
