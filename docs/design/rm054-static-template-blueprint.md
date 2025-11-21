@@ -44,6 +44,7 @@
 ## 工程2（`pptx prepare`）連携
 - CLI は `--mode` を必須化し、`static` 選択時は `jobspec.meta.template_spec_path` を参照する（必要に応じて `--jobspec` で明示指定）。
 - Blueprint の slot を順番に巡回し、slot ごとにカードを生成。必要に応じて AI プロンプトに `slot_id` / `anchor` / `intent_tags` を付加する。
+- LLM 呼び出しはスライド単位で行い、同一スライド内の `slot_specs` をまとめて 1 回のプロンプトに渡す。応答に含まれない slot があってもカードは必ず生成し、`blueprint.fulfilled=False` かつ `slot_summary` の集計にも反映する（required slot は未充足に計上）。
 - 生成カードには以下の追加メタを付与する。
   - `slide_id`: Blueprint スライドと一致させる。
   - `slot_id`: Blueprint slot と一致させる。
@@ -52,6 +53,8 @@
   - `blueprint_slot`: Blueprint 情報をそのまま埋め込み、後工程で参照できるようにする。
 - 必須 slot へカードが生成できなかった場合は exit code 6 を返し、`slot_validation.errors` を標準エラーへ出力する。
 - `ai_generation_meta.json` に `blueprint_path`（絶対パス）と `blueprint_hash`（SHA256）、`slot_coverage`（必須/任意の充足統計）を記録する。
+- `PrepareCard.notes` はスライドのノート欄（PowerPoint Notes）へ集約し、slot 側には書き込まない。Blueprint 上で `note` アンカーが定義されている場合もノート欄へリダイレクトする。
+- `content_type=table` の slot には本文の行を単一カラムのテーブルとして落とし込み、テンプレート内のテーブルプレースホルダーへ差し込む。対応する構造化データが無い場合でも最低限の行を生成する。
 
 ## 工程3（`draft_structuring` / `mapping`）連携
 - `ai_generation_meta.mode` と `ai_generation_meta.blueprint_path` を受け取り、静的モード時は以下の分岐を行う。

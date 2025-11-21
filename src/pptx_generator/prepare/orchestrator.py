@@ -515,68 +515,64 @@ class PrepareAIOrchestrator:
         base_context = source.raw_text or self._compose_raw_text(source)
         base_context = base_context.strip() if isinstance(base_context, str) else ""
 
-        for order, blueprint_slide, slot in slot_entries:
-            chapter = chapter_assignments.get(order)
+        entries_by_slide: dict[str, list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]]] = {}
+        for entry in slot_entries:
+            slide_id = entry[1].slide_id
+            entries_by_slide.setdefault(slide_id, []).append(entry)
 
-            # slot / 章単位のコンテキストを組み立てる
-            card_context_lines: list[str] = []
-            if chapter is not None:
-                body_blocks = self._build_chapter_body_blocks(chapter)
-                notes = self._build_chapter_notes(chapter.supporting_points)
-                text_lines: list[str] = []
-                if chapter.title:
-                    text_lines.append(chapter.title)
-                if chapter.message:
-                    text_lines.append(chapter.message)
-                for block in body_blocks:
-                    if isinstance(block.text, str) and block.text.strip():
-                        text_lines.append(block.text.strip())
-                for note in notes:
-                    if isinstance(note.text, str) and note.text.strip():
-                        text_lines.append(note.text.strip())
-                card_context_lines.extend(text_lines)
-                raw_text = "\n".join(text_lines) or (chapter.title or "")
-            else:
-                # 対応する章が無い場合は原稿全体を利用する
-                if base_context:
-                    raw_text = base_context
-                else:
-                    parts: list[str] = []
-                    if blueprint_slide.layout:
-                        parts.append(blueprint_slide.layout)
-                    if slot.anchor:
-                        parts.append(slot.anchor)
-                    parts.append(slot.slot_id)
-                    raw_text = " / ".join(parts)
-                card_context_lines.append(raw_text)
+        for blueprint_slide in blueprint.slides:
+            slide_entries = entries_by_slide.get(blueprint_slide.slide_id, [])
+            if not slide_entries:
+                continue
 
-            if chapter is not None:
-                if blueprint_slide.layout:
-                    card_context_lines.append(blueprint_slide.layout)
-                if slot.anchor:
-                    card_context_lines.append(slot.anchor)
+            slot_specs_payload: list[dict[str, Any]] = []
+            for order, _, slot in slide_entries:
+                chapter = chapter_assignments.get(order)
+                context_lines: list[str] = []
+                if chapter is not None:
+                    body_blocks = self._build_chapter_body_blocks(chapter)
+                    notes = self._build_chapter_notes(chapter.supporting_points)
+                    if chapter.title:
+                        context_lines.append(chapter.title)
+                    if chapter.message:
+                        context_lines.append(chapter.message)
+                    context_lines.extend(
+                        block.text.strip()
+                        for block in body_blocks
+                        if isinstance(block.text, str) and block.text.strip()
+                    )
+                    context_lines.extend(
+                        note.text.strip()
+                        for note in notes
+                        if isinstance(note.text, str) and note.text.strip()
+                    )
+                context_text = "\n".join(context_lines).strip()
+                if not context_text:
+                    context_text = base_context or f"{blueprint_slide.layout} / {slot.anchor}"
+                slot_specs_payload.append(
+                    {
+                        "slot_id": slot.slot_id,
+                        "anchor": slot.anchor,
+                        "required": slot.required,
+                        "intent_tags": slot.intent_tags,
+                        "content_type": slot.content_type,
+                        "context": context_text,
+                    }
+                )
 
             payload: dict[str, Any] = {
                 "raw_context": {
                     "format": "markdown",
-                    "content": raw_text,
+                    "content": base_context,
                 },
-                "hints": {
-                    "slot": {
-                        "slide_id": blueprint_slide.slide_id,
-                        "slot_id": slot.slot_id,
-                        "anchor": slot.anchor,
-                        "content_type": slot.content_type,
-                        "required": slot.required,
-                        "intent_tags": slot.intent_tags,
-                    }
+                "blueprint_slide": {
+                    "slide_id": blueprint_slide.slide_id,
+                    "layout": blueprint_slide.layout,
+                    "required": blueprint_slide.required,
+                    "intent_tags": blueprint_slide.intent_tags,
                 },
+                "slot_specs": slot_specs_payload,
             }
-            if chapter is not None:
-                payload["hints"]["chapter"] = {  # type: ignore[index]
-                    "id": chapter.id,
-                    "title": chapter.title,
-                }
 
             prompt = build_prepare_prompt_static(payload)
             try:
@@ -587,74 +583,102 @@ class PrepareAIOrchestrator:
                 raise PrepareAIOrchestrationError(f"LLM 呼び出しに失敗しました: {exc}") from exc
 
             data = self._parse_llm_output(llm_result)
-            chapters_payload = data.get("chapters")
-            if not isinstance(chapters_payload, list) or not chapters_payload:
-                raise PrepareAIOrchestrationError("LLM 応答に 'chapters' 配列が含まれていません")
-
-            entry = chapters_payload[0]
-            # index は slot 全体の順序を利用する
-            card = self._build_card_from_llm_entry(
-                entry,
-                index=order,
-                policy=policy,
-                generated_at=now,
-                is_title_card=False,
-                default_title=chapter.title if chapter is not None else blueprint_slide.layout,
-            )
-
-            # Blueprint 情報で上書きし、slot 単位のカードとして扱う
-            blueprint_meta = {
-                "slide_id": blueprint_slide.slide_id,
-                "layout": blueprint_slide.layout,
-                "slot_id": slot.slot_id,
-                "anchor": slot.anchor,
-                "content_type": slot.content_type,
-                "required": slot.required,
-                "fulfilled": True,
-                "intent_tags": slot.intent_tags,
+            slots_payload = data.get("slots")
+            if not isinstance(slots_payload, list):
+                raise PrepareAIOrchestrationError("LLM 応答に 'slots' 配列が含まれていません")
+            slot_output_lookup = {
+                str(item.get("slot_id")): item
+                for item in slots_payload
+                if isinstance(item, dict) and item.get("slot_id")
             }
 
-            meta: dict[str, Any] = {}
-            if isinstance(card.meta, dict):
-                meta.update(card.meta)
-            meta.update(
-                {
-                    "mode": "static",
-                    "blueprint": blueprint_meta,
+            generated_card_ids: list[str] = []
+            for order, _, slot in slide_entries:
+                chapter = chapter_assignments.get(order)
+                slot_output = slot_output_lookup.get(slot.slot_id)
+                slot_has_response = slot.slot_id in slot_output_lookup
+                slot_entry_payload = slot_output if isinstance(slot_output, dict) else {}
+
+                entry = {
+                    "card_id": slot.slot_id,
+                    "story_phase": policy.resolve_story_phase(order),
+                    "intent_tags": slot.intent_tags or [policy.resolve_story_phase(order)],
+                    "title": slot_entry_payload.get("title"),
+                    "headline": slot_entry_payload.get("headline"),
+                    "subtitle": slot_entry_payload.get("subtitle"),
+                    "body": slot_entry_payload.get("body") or [],
+                    "notes": slot_entry_payload.get("notes") or [],
                 }
-            )
-            if chapter is not None:
-                meta["source_chapter"] = {"id": chapter.id, "title": chapter.title}
+                entry["card_id"] = self._normalize_slot_card_id(slot.slot_id)
 
-            card.card_id = self._normalize_slot_card_id(slot.slot_id)
-            card.order = order + 1
-            card.meta = meta
-            cards.append(card)
-
-            has_content = bool(
-                card.content.title
-                or card.content.headline
-                or (card.content.subtitle and card.content.subtitle.strip())
-                or card.content.body
-            )
-            if slot.required:
-                if has_content:
-                    required_fulfilled += 1
-            else:
-                if has_content:
-                    optional_used += 1
-
-            ai_records.append(
-                PrepareAIRecord(
-                    card_id=card.card_id,
-                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
-                    model=llm_result.model,
-                    prompt_fragment=prompt[:200],
-                    response_digest=json.dumps(entry, ensure_ascii=False)[:200],
-                    warnings=list(llm_result.warnings),
-                    tokens=llm_result.tokens,
+                card = self._build_card_from_llm_entry(
+                    entry,
+                    index=order,
+                    policy=policy,
+                    generated_at=now,
+                    is_title_card=False,
+                    default_title=chapter.title if chapter is not None else blueprint_slide.layout,
                 )
-            )
+
+                blueprint_meta = {
+                    "slide_id": blueprint_slide.slide_id,
+                    "layout": blueprint_slide.layout,
+                    "slot_id": slot.slot_id,
+                    "anchor": slot.anchor,
+                    "content_type": slot.content_type,
+                    "required": slot.required,
+                    "fulfilled": False,
+                    "intent_tags": slot.intent_tags,
+                }
+
+                meta: dict[str, Any] = {}
+                if isinstance(card.meta, dict):
+                    meta.update(card.meta)
+                meta.update(
+                    {
+                        "mode": "static",
+                        "blueprint": blueprint_meta,
+                    }
+                )
+                if chapter is not None:
+                    meta["source_chapter"] = {"id": chapter.id, "title": chapter.title}
+
+                card.card_id = entry["card_id"]
+                card.order = order + 1
+                card.meta = meta
+
+                has_visible_content = bool(
+                    card.content.title
+                    or card.content.headline
+                    or (card.content.subtitle and card.content.subtitle.strip())
+                    or card.content.body
+                )
+                has_content = slot_has_response and has_visible_content
+                card.meta["blueprint"]["fulfilled"] = has_content  # type: ignore[index]
+
+                cards.append(card)
+                generated_card_ids.append(card.card_id)
+
+                if slot.required:
+                    if has_content:
+                        required_fulfilled += 1
+                else:
+                    if has_content:
+                        optional_used += 1
+
+            if generated_card_ids:
+                ai_records.append(
+                    PrepareAIRecord(
+                        card_id=blueprint_slide.slide_id,
+                        batch_card_ids=generated_card_ids,
+                        prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                        model=llm_result.model,
+                        prompt_fragment=prompt[:200],
+                        response_digest=json.dumps(slots_payload, ensure_ascii=False)[:200],
+                        warnings=list(llm_result.warnings),
+                        tokens=llm_result.tokens,
+                    )
+                )
 
         slot_summary = {
             "required_total": len(required_entries),

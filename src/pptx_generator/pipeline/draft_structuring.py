@@ -1077,6 +1077,8 @@ class DraftStructuringStep:
             elements: dict[str, Any] = {}
             slot_records: list[dict[str, Any]] = []
 
+            slide_note_lines: list[str] = []
+
             for slot in blueprint_slide.slots:
                 card = cards_by_slot.get(slot.slot_id)
                 fulfilled = _card_slot_fulfilled(card)
@@ -1091,8 +1093,13 @@ class DraftStructuringStep:
                 )
                 if card is None:
                     continue
+                card_notes = card.notes_text()
+                if card_notes:
+                    slide_note_lines.extend(card_notes)
                 lines = self._card_to_lines(card)
                 self._assign_slot_to_elements(elements, slot, card, lines)
+
+            self._merge_slide_notes(elements, slide_note_lines)
 
             sources: list[str] = []
             if spec_slide is not None:
@@ -1227,8 +1234,9 @@ class DraftStructuringStep:
     def _card_to_lines(card: PrepareCard) -> list[str]:
         lines = list(card.iter_body_text())
         if not lines:
-            lines.append(card.headline_or_title())
-        lines.extend(card.notes_text())
+            headline = card.headline_or_title()
+            if headline:
+                lines.append(headline)
         return [line for line in lines if line]
 
     @staticmethod
@@ -1260,7 +1268,25 @@ class DraftStructuringStep:
                 if headline:
                     elements["body"] = [headline]
             return
-        if slot.content_type not in {"text"}:
+        content_type = (slot.content_type or "text").lower()
+        if content_type == "table":
+            if lines:
+                elements[anchor] = {
+                    "headers": ["項目"],
+                    "rows": [[line] for line in lines],
+                }
+            return
+        if content_type not in {"text"}:
             return
         if lines:
             elements[anchor] = lines
+
+    @staticmethod
+    def _merge_slide_notes(elements: dict[str, Any], note_lines: list[str]) -> None:
+        if not note_lines:
+            return
+        aggregated_notes = "\n".join(note_lines)
+        existing_note = elements.get("note")
+        if isinstance(existing_note, str) and existing_note.strip():
+            aggregated_notes = f"{existing_note.rstrip()}\n{aggregated_notes}"
+        elements["note"] = aggregated_notes

@@ -57,69 +57,93 @@ class MockPrepareLLMClient:
             payload = json.loads(json_block[start : end + 1])
         except (ValueError, json.JSONDecodeError):
             payload = {}
-        constraints = payload.get("constraints") or {}
-        max_chapters = constraints.get("max_chapters")
-        if isinstance(max_chapters, int) and max_chapters > 0:
-            chapter_count = max_chapters
+        slot_specs = payload.get("slot_specs")
+        if isinstance(slot_specs, list) and slot_specs:
+            slots_result: list[dict[str, Any]] = []
+            for spec in slot_specs:
+                slot_id = str(spec.get("slot_id"))
+                context = spec.get("context") or ""
+                lines = [line.strip() for line in str(context).splitlines() if line.strip()]
+                base_line = lines[0] if lines else slot_id.replace(".", " ").title()
+                slots_result.append(
+                    {
+                        "slot_id": slot_id,
+                        "headline": base_line[:60],
+                        "subtitle": None,
+                        "body": [
+                            {
+                                "type": "paragraph",
+                                "text": base_line[:80],
+                            }
+                        ],
+                        "notes": [],
+                    }
+                )
+            text = json.dumps({"slots": slots_result}, ensure_ascii=False)
         else:
-            chapter_count = 4
+            constraints = payload.get("constraints") or {}
+            max_chapters = constraints.get("max_chapters")
+            if isinstance(max_chapters, int) and max_chapters > 0:
+                chapter_count = max_chapters
+            else:
+                chapter_count = 4
 
-        raw_context = payload.get("raw_context") or {}
-        text_source = raw_context.get("content") or ""
-        lines = [line.strip() for line in text_source.splitlines() if line.strip()]
-        bullets = [line[2:].strip() for line in lines if line.startswith("- ") and line[2:].strip()]
-        if not bullets:
-            bullets = lines
-        if not bullets:
-            bullets = [f"セクション {idx + 1}" for idx in range(chapter_count)]
+            raw_context = payload.get("raw_context") or {}
+            text_source = raw_context.get("content") or ""
+            lines = [line.strip() for line in text_source.splitlines() if line.strip()]
+            bullets = [line[2:].strip() for line in lines if line.startswith("- ") and line[2:].strip()]
+            if not bullets:
+                bullets = lines
+            if not bullets:
+                bullets = [f"セクション {idx + 1}" for idx in range(chapter_count)]
 
-        # 保証: bullets が chapter_count 以上になるよう補完
-        while len(bullets) < chapter_count:
-            bullets.append(bullets[-1])
+            # 保証: bullets が chapter_count 以上になるよう補完
+            while len(bullets) < chapter_count:
+                bullets.append(bullets[-1])
 
-        story_framework = ["introduction", "problem", "solution", "impact", "next"]
+            story_framework = ["introduction", "problem", "solution", "impact", "next"]
 
-        chunk_size = max(1, math.ceil(len(bullets) / chapter_count))
-        result_chapters: list[dict[str, Any]] = []
-        for idx in range(chapter_count):
-            start_index = idx * chunk_size
-            segment = bullets[start_index : start_index + chunk_size]
-            if not segment:
-                segment = [bullets[min(idx, len(bullets) - 1)]]
+            chunk_size = max(1, math.ceil(len(bullets) / chapter_count))
+            result_chapters: list[dict[str, Any]] = []
+            for idx in range(chapter_count):
+                start_index = idx * chunk_size
+                segment = bullets[start_index : start_index + chunk_size]
+                if not segment:
+                    segment = [bullets[min(idx, len(bullets) - 1)]]
 
-            story_phase = story_framework[idx % len(story_framework)].lower()
-            card_id = f"{story_phase}-{idx + 1}"
+                story_phase = story_framework[idx % len(story_framework)].lower()
+                card_id = f"{story_phase}-{idx + 1}"
 
-            title = segment[0][:60] if segment[0] else f"Chapter {idx + 1}"
-            narrative = [entry[:80] for entry in segment]
-            body_blocks = [
-                {
-                    "type": "paragraph",
-                    "text": entry,
-                }
-                for entry in narrative
-            ]
-            notes = [
-                {
-                    "type": "rationale",
-                    "text": entry,
-                }
-                for entry in narrative
-            ]
+                title = segment[0][:60] if segment[0] else f"Chapter {idx + 1}"
+                narrative = [entry[:80] for entry in segment]
+                body_blocks = [
+                    {
+                        "type": "paragraph",
+                        "text": entry,
+                    }
+                    for entry in narrative
+                ]
+                notes = [
+                    {
+                        "type": "rationale",
+                        "text": entry,
+                    }
+                    for entry in narrative
+                ]
 
-            result_chapters.append(
-                {
-                    "title": title or f"Chapter {idx + 1}",
-                    "card_id": card_id,
-                    "story_phase": story_phase,
-                    "intent_tags": [story_phase],
-                    "headline": title or f"Chapter {idx + 1}",
-                    "body": body_blocks,
-                    "notes": notes,
-                }
-            )
+                result_chapters.append(
+                    {
+                        "title": title or f"Chapter {idx + 1}",
+                        "card_id": card_id,
+                        "story_phase": story_phase,
+                        "intent_tags": [story_phase],
+                        "headline": title or f"Chapter {idx + 1}",
+                        "body": body_blocks,
+                        "notes": notes,
+                    }
+                )
 
-        text = json.dumps({"chapters": result_chapters}, ensure_ascii=False)
+            text = json.dumps({"chapters": result_chapters}, ensure_ascii=False)
         return PrepareLLMResult(text=text, model="mock-local", warnings=[], tokens={})
 
 

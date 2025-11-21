@@ -7,10 +7,18 @@ from click.testing import CliRunner
 
 from pptx_generator.cli import app
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
-from pptx_generator.prepare.llm_client import MockPrepareLLMClient
+from pptx_generator.prepare.llm_client import MockPrepareLLMClient, PrepareLLMResult
 from pptx_generator.prepare.orchestrator import PrepareAIOrchestrator
 from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument, PrepareSourceMeta
+from pptx_generator.prepare.models import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareNoteEntry,
+)
+from pptx_generator.pipeline.draft_structuring import DraftStructuringStep
 
 
 SAMPLE_PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -208,4 +216,139 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
     assert slot_summary["required_fulfilled"] == 1
     assert cards[0].meta["blueprint"]["fulfilled"] is True
     # fallback経路でも LLM 呼び出しが slot 数分行われる
-    assert len(ai_records) == 2
+    assert len(ai_records) == 1
+    assert ai_records[0].batch_card_ids == ["blueprint-01-title", "blueprint-01-body"]
+
+
+class SlotDroppingPrepareMock(MockPrepareLLMClient):
+    """Mock that omits the last slot from the response."""
+
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:  # noqa: D401
+        result = super().generate(prompt, model_hint=model_hint)
+        payload = json.loads(result.text)
+        slots = payload.get("slots") or []
+        if isinstance(slots, list) and slots:
+            slots = slots[:-1]
+        text = json.dumps({"slots": slots}, ensure_ascii=False)
+        return PrepareLLMResult(text=text, model=result.model, warnings=result.warnings, tokens=result.tokens)
+
+
+def test_prepare_static_slot_missing_response(monkeypatch) -> None:
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
+    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=SlotDroppingPrepareMock())
+
+    source = PrepareSourceDocument(
+        meta=PrepareSourceMeta(title="Slot 欠損", prepare_id="slot-missing"),
+        chapters=[],
+        raw_text="A. 要約のみ",
+    )
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="bp-slot",
+                layout="StaticLayout",
+                required=True,
+                intent_tags=["overview"],
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="bp-slot.title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        intent_tags=["headline"],
+                    ),
+                    TemplateBlueprintSlot(
+                        slot_id="bp-slot.body",
+                        anchor="Body",
+                        content_type="text",
+                        required=False,
+                        intent_tags=["details"],
+                    ),
+                ],
+            )
+        ]
+    )
+
+    policy = policy_set.get_policy(None)
+    cards, slot_summary, _ = orchestrator._build_cards_static(
+        source=source,
+        policy=policy,
+        blueprint=blueprint,
+        page_limit=None,
+    )
+
+    assert len(cards) == 2
+    assert cards[1].meta["blueprint"]["fulfilled"] is False
+    assert slot_summary["optional_total"] == 1
+    assert slot_summary["optional_used"] == 0
+
+
+def _build_prepare_card(
+    *,
+    card_id: str,
+    headline: str,
+    body_lines: list[str],
+    notes: list[str] | None = None,
+) -> PrepareCard:
+    body_blocks = [PrepareBodyBlock(type="paragraph", text=line) for line in body_lines]
+    note_entries = [PrepareNoteEntry(type="note", text=text) for text in (notes or [])]
+    content = PrepareCardContent(headline=headline, body=body_blocks, notes=note_entries)
+    return PrepareCard(
+        card_id=card_id,
+        order=1,
+        role=PrepareCardRole(story_phase="introduction", intent_tags=["body"]),
+        content=content,
+        meta={"blueprint": {"slot_id": card_id}},
+    )
+
+
+def test_draft_structuring_routes_notes_to_slide_notes() -> None:
+    step = DraftStructuringStep()
+    slot = TemplateBlueprintSlot(
+        slot_id="system_layout-01.slot09",
+        anchor="Date_dept",
+        content_type="text",
+        required=True,
+        intent_tags=["body"],
+    )
+    card = _build_prepare_card(
+        card_id="systemlayout-01-slot09",
+        headline="Date",
+        body_lines=["2025-11 | 提案自動化プラットフォーム（R&D）"],
+        notes=["日付は作成月、部門はプロジェクトの性格に合わせて調整可。"],
+    )
+    elements: dict[str, object] = {}
+    lines = step._card_to_lines(card)
+    step._assign_slot_to_elements(elements, slot, card, lines)
+
+    assert elements["Date_dept"] == ["2025-11 | 提案自動化プラットフォーム（R&D）"]
+    assert "note" not in elements
+
+    step._merge_slide_notes(elements, card.notes_text())
+    assert "note" in elements
+    assert "日付は作成月" in elements["note"]
+    assert "2025-11" not in elements["note"]
+
+
+def test_draft_structuring_builds_table_payload_for_table_slots() -> None:
+    step = DraftStructuringStep()
+    slot = TemplateBlueprintSlot(
+        slot_id="system_layout-01.slot05",
+        anchor="Items",
+        content_type="table",
+        required=True,
+        intent_tags=[],
+    )
+    card = _build_prepare_card(
+        card_id="systemlayout-01-slot05",
+        headline="Items",
+        body_lines=["品質基準を可視化", "承認プロセスを共通化"],
+    )
+    elements: dict[str, object] = {}
+    lines = step._card_to_lines(card)
+    step._assign_slot_to_elements(elements, slot, card, lines)
+
+    table_payload = elements["Items"]
+    assert table_payload["headers"] == ["項目"]
+    assert table_payload["rows"] == [["品質基準を可視化"], ["承認プロセスを共通化"]]

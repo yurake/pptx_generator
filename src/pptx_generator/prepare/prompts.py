@@ -30,26 +30,24 @@ JSON オブジェクトで返してください。トップレベルキーは ch
 
 
 PREPARE_STATIC_PROMPT = """
-あなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) と Blueprint の slot 情報 (hints.slot) を読み取り、指定された 1 つの slot に差し込むための 1 スライド分の PrepareCard を生成してください。
+あなたは B2B 提案資料用の構成アシスタントです。提供される原稿 (raw_context) と Blueprint のスライド情報 (blueprint_slide) および slot 一覧 (slot_specs) を読み取り、スライド全体のコンテンツを 1 度で設計してください。出力は JSON オブジェクトで、各 slot ごとの差し込み内容を `slots` 配列にまとめてください。
 
 # 入力
 {prepare_payload}
 
 # 出力フォーマット
-JSON オブジェクトで返してください。トップレベルキーは chapters です。
-- chapters: 要素数 1 の配列とし、その 1 要素が対象 slot 用のスライドを表します。
-  - card_id: スライド固有のスラグ ID（英数字とハイフンのみ）。必ず安定した ID を生成してください。
-  - title/headline: どちらか一方のみ使用します。通常は `headline` を 1 行で記述し `title` は null にしてください。
-  - subtitle: 任意。章名や slot の役割を補足する短いテキストを入れてください。
-  - story_phase: slide の役割を表す値。introduction / problem / solution / impact / next など、文脈に適したフェーズ名を入れてください。
-  - intent_tags: 意図を表す配列。空の場合は story_phase を含めてください。hints.slot.intent_tags が与えられている場合はそれを優先し、足りない場合のみ story_phase を補います。
-  - body: 本文ブロックの配列。各ブロックは {"type": "paragraph"|"bullets"|"table"|..., "text": "..."} のような構造を取り、slot に差し込みやすい短いテキストを中心に構成してください。
-  - notes: ノート欄向けの補足配列。slot の意図や前提、読み上げる際のポイントなどを記述してください。空配列でも構いません。
+JSON オブジェクトで返してください。トップレベルキーは `slots` です。
+- slots: `slot_specs[*].slot_id` と一致するオブジェクトの配列。各要素は次のフィールドを含みます。
+  - slot_id: 必須。入力の slot_specs[*].slot_id と一致させる。
+  - title: 任意。タイトルが要求される slot の場合のみ設定する。通常は null。
+  - headline: 任意。スライドの結論を 1 行でまとめる。title を併用する場合は headline を null にする。
+  - subtitle: 任意。補助的な短いテキスト。
+  - body: 本文ブロックの配列。各ブロックは {"type": "paragraph"|"bullets"|"table"|..., "text": "..."} のような構造で、slot に差し込みやすい形で構成する。
+  - notes: ノート欄向けの補足配列。各要素は {"type": "note"|"rationale"|"risk"|..., "text": "..."} 形式。空配列でも可。
 
 # 制約
-- 常に chapters の要素数は 1 とし、複数スライドを生成しないこと。
-- hints.slot には Blueprint の slot 情報（slide_id, slot_id, anchor, content_type, required, intent_tags など）が含まれます。anchor や content_type に適した表現形式を選び、required=true の場合はプレゼンの骨格となる重要情報を優先してまとめてください。
-- raw_context には対応する章のテキストや要約が含まれます。この内容を踏まえて、slot に収まるような簡潔な見出しと本文を生成してください。
+- slot_specs[*] には slot ごとの anchor / required / intent_tags / content_type / context が含まれます。context を踏まえつつ、required=true の場合は必ず意味のあるテキストを生成してください。content_type が text 以外（image 等）の場合は文字情報を出力せず空のままにしてください。
+- 同一スライド内での整合性を保つため、headline や body のトーンは raw_context の要約と一致させること。
 - JSON 以外のテキストや説明文は出力に含めないでください。
 """
 

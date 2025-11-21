@@ -42,3 +42,5 @@ roadmap_item: RM-054 静的テンプレ構成統合
 ## メモ
 - 2025-11-21: 工程2 の prepare LLM プロンプトを dynamic/static で分離し、static モードは Blueprint slot 単位の軽量プロンプト（chapters 要素数 1 固定）を使用するように変更。dynamic は従来どおり 1 回の LLM 呼び出しで複数カードを生成する構成を維持しつつ、両モード間の条件分岐をプロンプトから排除してトークン削減を図った。
 - 2025-11-21: dynamic モードで subtitle が `generate_ready` / PPTX に反映されない問題を修正。`ContentSlide` の subtitle を優先し、`elements.subtitle` が存在しない場合でも mapping で保持されるよう調整。ユニットテストを更新し、subtitle が generate_ready まで伝播することを確認。
+- 2025-11-22: `_build_cards_static` をスライド単位プロンプト仕様に合わせて仕上げ、slot 応答欠損時でもカード生成・`fulfilled=False` 設定・slot 集計反映が行われるように調整。`docs/design/rm054-static-template-blueprint.md` にも仕様追記済み。
+- 2025-11-22: 静的モード向けに `test_prepare_static_slot_missing_response` を追加し、`uv run --extra dev pytest tests/test_cli_prepare.py::test_prepare_static_fallback_without_chapters tests/test_cli_prepare.py::test_prepare_static_slot_missing_response` / `uv run --extra dev pytest` を実行して全テスト 176 件の成功を確認。
