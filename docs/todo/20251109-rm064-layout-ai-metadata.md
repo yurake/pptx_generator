@@ -46,6 +46,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] LLM プロンプトへ Canonical usage tags の説明を組み込み、Stage1 の prompt 方針と差異がないか確認する。
 - [ ] 用途タグ体系の再設計（Plan）
   - メモ: Stage1/Stage3 共通で利用する canonical usage tags を「Intent」と「Media」の2軸で再定義し、`utils/usage_tags.py`・テンプレ AI・layout_ai スコアリングを統一する。
+  - メモ: `docs/notes/20251122-usage-tag-taxonomy-plan.md` に現状整理と再設計方針（Intent/Media 二軸・Synonym 整備・運用フロー）をまとめた。
   - [ ] 対象整理: `src/pptx_generator/utils/usage_tags.py`, `template_ai`, `layout_ai`, `draft_recommender`, `pipeline/mapping.py`, `config/template_ai_policies.json`。
   - [ ] 設計方針: シノニム拡張とタグ説明の更新、AI プロンプト差し替え、診断ログの出力調整を含む整合計画を策定する。
   - [ ] テスト戦略: 正規化ユニットテスト、テンプレ抽出と compose の統合テスト、Stage3 推薦スコアへの影響確認を計画する。
