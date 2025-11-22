@@ -106,7 +106,7 @@ class SimpleRendererStep:
         return Presentation()
 
     def _render_slides(self, presentation: Presentation, spec: JobSpec) -> None:
-        for slide_spec in spec.slides:
+        for page_number, slide_spec in enumerate(spec.slides, start=1):
             layout = self._resolve_layout(presentation, slide_spec)
             slide = presentation.slides.add_slide(layout)
             self._apply_title(slide, slide_spec)
@@ -117,6 +117,7 @@ class SimpleRendererStep:
             self._apply_images(slide, slide_spec)
             self._apply_charts(slide, slide_spec)
             self._apply_notes(slide, slide_spec)
+            self._apply_auto_draw(slide, slide_spec, page_number)
 
     def _resolve_layout(self, presentation: Presentation, slide_spec: Slide):
         for layout in presentation.slide_layouts:
@@ -264,6 +265,35 @@ class SimpleRendererStep:
             paragraph.text = line
             self._apply_brand_font(paragraph, self._branding.body_font)
             paragraph.level = 0
+
+    def _apply_auto_draw(self, slide, slide_spec: Slide, page_number: int) -> None:
+        if not slide_spec.auto_draw_boxes:
+            return
+
+        for anchor, position in slide_spec.auto_draw_boxes.items():
+            left = int(Inches(position.left_in))
+            top = int(Inches(position.top_in))
+            width = int(Inches(position.width_in))
+            height = int(Inches(position.height_in))
+
+            try:
+                existing = self._find_shape_by_name(slide, anchor)
+            except Exception:  # noqa: BLE001
+                existing = None
+            if existing is not None:
+                continue
+
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            try:
+                textbox.name = anchor
+            except ValueError:
+                logger.debug("自動描画アンカー '%s' の命名に失敗", anchor, exc_info=True)
+            text_frame = textbox.text_frame
+            text_frame.clear()
+            paragraph = text_frame.paragraphs[0]
+            paragraph.text = str(page_number)
+            paragraph.alignment = PP_ALIGN.RIGHT
+            self._apply_brand_font(paragraph, self._branding.body_font)
 
     def _apply_textboxes(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.textboxes:

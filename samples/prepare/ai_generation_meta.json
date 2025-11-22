@@ -1,49 +1,54 @@
 {
-  "brief_id": "sample_import_content_summary",
-  "generated_at": "2025-11-04T10:50:09.367322Z",
-  "policy_id": "brief-default",
-  "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
+  "prepare_id": "sample_import_content_summary",
+  "generated_at": "2025-11-16T13:25:32.575812Z",
+  "policy_id": "prepare-default",
+  "input_hash": "da2280d36bf9cb28e3be580066066d3136ec3de5feb2dbe08fc87783cebd0d0c",
   "cards": [
     {
-      "card_id": "intro",
+      "card_id": "introduction-1",
       "intent_tags": [
         "introduction"
       ],
       "story_phase": "introduction",
-      "content_hash": "c028dc3a020d6678a61492227b4fff4a4c4764f545552fc7269309926d2d6a5d",
-      "body_lines": 1
+      "content_hash": "b711e6eb833c24a85aaf21ae9b269df4f0ff089daa3bda0b2aededfc69623281",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
-      "card_id": "solution",
+      "card_id": "problem-2",
       "intent_tags": [
         "problem"
       ],
       "story_phase": "problem",
-      "content_hash": "c959cd7b44796104e78675e502f3d2766cfde82b2c3eb911699dfaca03fad01f",
-      "body_lines": 1
+      "content_hash": "8dfdf555299fd906dbad0ca4f2df571911f10ea5d1635cb7c4e7cfab163faa25",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
-      "card_id": "impact",
+      "card_id": "solution-3",
       "intent_tags": [
         "solution"
       ],
       "story_phase": "solution",
-      "content_hash": "ff46ef6d882acb45e38141f3a7a2336050ce7b9fc2dda9e1bb764b5c415fcf7f",
-      "body_lines": 1
+      "content_hash": "1588d21cd842145aa98da8a03632310b77ecb577419da2537012c50bf072c215",
+      "body_blocks": 3,
+      "note_entries": 3
     },
     {
-      "card_id": "next",
+      "card_id": "impact-4",
       "intent_tags": [
         "impact"
       ],
       "story_phase": "impact",
-      "content_hash": "ec428858216b6f8eb05c54a85c0aa0a9ca9acb10181d74f42827d69b08eafb8b",
-      "body_lines": 1
+      "content_hash": "e322b4b8b498b3bc6cc73f4262f28027c3497d267d07548fc6e2a87016ef1fab",
+      "body_blocks": 1,
+      "note_entries": 1
     }
   ],
   "statistics": {
-    "cards_total": 4,
-    "approved": 0,
-    "returned": 0
-  }
+    "cards_total": 4
+  },
+  "mode": "dynamic",
+  "slot_coverage": {},
+  "constraints": {}
 }

@@ -7,23 +7,20 @@ import json
 import logging
 import os
 import shutil
-from importlib import resources as importlib_resources
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
+from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional
 
 import click
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import (BrandingExtractionError,
                                  extract_branding_config)
-from .brief import (BriefAIOrchestrationError, BriefAIOrchestrator,
-                    BriefDocument, BriefPolicyError, BriefSourceDocument,
-                    load_brief_policy_set)
 from .draft_intel import load_return_reasons
 from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
@@ -33,25 +30,27 @@ from .models import (ContentApprovalDocument, DraftDocument,
                      SpecValidationError, TemplateRelease,
                      TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
                      TemplateReleaseReport, TemplateSpec)
-from .pipeline import (AnalyzerOptions, BriefNormalizationError,
-                       BriefNormalizationOptions, BriefNormalizationStep,
-                       ContentApprovalOptions, ContentApprovalStep,
-                       DraftStructuringOptions, DraftStructuringStep,
-                       MappingOptions, MappingStep,
+from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
+                       ContentApprovalStep, DraftStructuringOptions,
+                       DraftStructuringStep, MappingOptions, MappingStep,
                        MonitoringIntegrationOptions, MonitoringIntegrationStep,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, PipelineStep,
                        PolisherError, PolisherOptions, PolisherStep,
-                      RefinerOptions, RenderingAuditOptions,
-                      RenderingAuditStep, RenderingOptions,
-                      SimpleAnalyzerStep, SimpleRefinerStep,
-                      SimpleRendererStep, SpecValidatorStep,
-                      TemplateExtractor, TemplateExtractorOptions)
+                       PrepareNormalizationError, PrepareNormalizationOptions,
+                       PrepareNormalizationStep, RefinerOptions,
+                       RenderingAuditOptions, RenderingAuditStep,
+                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
+                       SimpleRendererStep, SpecValidatorStep,
+                       TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.analyzer import SlideSnapshot
-from .spec_loader import load_jobspec_from_path
 from .pipeline.draft_structuring import DraftStructuringError
+from .prepare import (PrepareAIOrchestrationError, PrepareAIOrchestrator,
+                      PrepareDocument, PreparePolicyError,
+                      PrepareSourceDocument, load_prepare_policy_set)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import BrandingConfig, RulesConfig
+from .spec_loader import load_jobspec_from_path
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 
@@ -59,10 +58,22 @@ DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
-DEFAULT_BRIEF_POLICY_PATH = Path("config/brief_policies/default.json")
+DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
+DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 
 logger = logging.getLogger(__name__)
+
+_LOG_LEVEL_ALIASES = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "warn": logging.WARNING,
+    "error": logging.ERROR,
+    "err": logging.ERROR,
+    "fatal": logging.CRITICAL,
+    "critical": logging.CRITICAL,
+}
 
 
 @dataclass(slots=True)
@@ -90,6 +101,54 @@ DEFAULT_DRAFT_META_FILENAME = "draft_meta.json"
 load_dotenv()
 
 
+def _parse_log_level(value: str | None) -> int | None:
+    if value is None:
+        return None
+    candidate = value.strip()
+    if not candidate:
+        return None
+    lowered = candidate.lower()
+    if lowered in _LOG_LEVEL_ALIASES:
+        return _LOG_LEVEL_ALIASES[lowered]
+    try:
+        numeric_level = int(candidate)
+    except ValueError:
+        return None
+    return numeric_level
+
+
+def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int, str]]]:
+    """CLI 全体のログレベルを決定する。"""
+    deferred_logs: list[tuple[int, str]] = []
+
+    if debug:
+        return logging.DEBUG, deferred_logs
+    if verbose:
+        return logging.INFO, deferred_logs
+
+    env_level = os.getenv("LOG_LEVEL")
+    parsed_level = _parse_log_level(env_level)
+    if env_level:
+        if parsed_level is not None:
+            return parsed_level, deferred_logs
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                f"LOG_LEVEL='{env_level}' を解釈できません。WARNING レベルにフォールバックします。",
+            )
+        )
+
+    if os.getenv("OPENAI_LOG"):
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                "OPENAI_LOG 環境変数は廃止されました。LOG_LEVEL を利用してください。",
+            )
+        )
+
+    return logging.WARNING, deferred_logs
+
+
 def _discover_template_ai_policy() -> Path | None:
     """Return the default template AI policy path if available."""
 
@@ -105,7 +164,9 @@ def _discover_template_ai_policy() -> Path | None:
         return cwd_candidate.resolve()
 
     try:
-        resource = importlib_resources.files("pptx_generator").joinpath("config/template_ai_policies.json")
+        resource = importlib_resources.files("pptx_generator").joinpath(
+            "config/template_ai_policies.json"
+        )
         if resource.is_file():
             try:
                 text = resource.read_text(encoding="utf-8")
@@ -116,7 +177,10 @@ def _discover_template_ai_policy() -> Path | None:
                 cache_dir.mkdir(parents=True, exist_ok=True)
                 cache_path = cache_dir / "template_ai_policies.json"
                 cache_path.write_text(text, encoding="utf-8")
-                logger.info("Detected default template AI policy (package resource cached to %s)", cache_path)
+                logger.info(
+                    "Detected default template AI policy (package resource cached to %s)",
+                    cache_path,
+                )
                 return cache_path.resolve()
     except (ModuleNotFoundError, FileNotFoundError):
         pass
@@ -198,9 +262,16 @@ def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
 @click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
 def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
-    level = logging.DEBUG if debug else logging.INFO if verbose else logging.WARNING
+    level, deferred_logs = _determine_log_level(verbose, debug)
     logging.basicConfig(
-        level=level, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        force=True,
+    )
+    logging.getLogger("openai").setLevel(level)
+    cli_logger = logging.getLogger("pptx_generator.cli")
+    for message_level, message in deferred_logs:
+        cli_logger.log(message_level, message)
     _configure_llm_logger()
     _configure_file_logging()
 
@@ -381,6 +452,7 @@ def _run_template_extraction(
     template_ai_policy: Path | None,
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
+    layout_mode: str,
     skip_validation: bool = False,
     emit_slide_snapshot: bool = False,
 ) -> TemplateExtractionResult:
@@ -391,6 +463,7 @@ def _run_template_extraction(
         layout_filter=layout,
         anchor_filter=anchor,
         format=fmt,
+        layout_mode=layout_mode,
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -419,7 +492,7 @@ def _run_template_extraction(
 
         spec_path = output_dir / "template_spec.yaml"
         spec_content = yaml.dump(
-            template_spec.model_dump(),
+            template_spec.model_dump(mode="json", exclude_none=True),
             allow_unicode=True,
             default_flow_style=False,
             indent=2,
@@ -427,7 +500,7 @@ def _run_template_extraction(
     else:
         spec_path = output_dir / "template_spec.json"
         spec_content = json.dumps(
-            template_spec.model_dump(),
+            template_spec.model_dump(mode="json", exclude_none=True),
             indent=2,
             ensure_ascii=False,
         )
@@ -459,15 +532,29 @@ def _run_template_extraction(
             validation_result.errors_count,
         )
 
-        layouts_relative: str | None = None
         try:
-            layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
+            layouts_relative = str(
+                validation_result.layouts_path.relative_to(output_dir)
+            )
         except ValueError:
             layouts_relative = str(validation_result.layouts_path)
+    else:
+        validation_result = None
+        layouts_relative = None
 
-        jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
-            update={"layouts_path": layouts_relative}
-        )
+    template_spec_relative: str | None = None
+    try:
+        template_spec_relative = str(spec_path.relative_to(output_dir))
+    except ValueError:
+        template_spec_relative = str(spec_path)
+
+    meta_update: dict[str, str | None] = {
+        "template_spec_path": template_spec_relative,
+    }
+    if layouts_relative is not None:
+        meta_update["layouts_path"] = layouts_relative
+
+    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(update=meta_update)
 
     jobspec_path = output_dir / "jobspec.json"
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
@@ -517,7 +604,8 @@ def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path |
 
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "slide_snapshot.json"
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(payload, ensure_ascii=False,
+                    indent=2), encoding="utf-8")
     logger.info("Saved slide snapshot to %s", path.resolve())
     return path
 
@@ -588,6 +676,9 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
     click.echo(f"ブランド設定を出力しました: {result.branding_path}")
     click.echo(f"ジョブスペック雛形を出力しました: {result.jobspec_path}")
     click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
+    click.echo(f"Layout Mode: {template_spec.layout_mode}")
+    if template_spec.blueprint:
+        click.echo(f"Blueprint Slides: {len(template_spec.blueprint.slides)}")
 
     total_anchors = sum(len(layout.anchors)
                         for layout in template_spec.layouts)
@@ -631,11 +722,12 @@ def _run_template_release(
     reviewed_by: str | None,
     baseline_release: Path | None,
     golden_specs: tuple[Path, ...],
+    layout_mode: str,
 ) -> TemplateReleaseExecutionResult:
     resolved_template_id = _resolve_template_id(template_id, brand, version)
 
     extractor = TemplateExtractor(
-        TemplateExtractorOptions(template_path=template_path))
+        TemplateExtractorOptions(template_path=template_path, layout_mode=layout_mode))
     spec = extractor.extract()
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -854,16 +946,33 @@ def _dump_json(path: Path, payload: object) -> None:
     logger.info("Saved JSON to %s", path.resolve())
 
 
-def _build_brief_story_outline(document: BriefDocument) -> dict[str, Any]:
+def _build_prepare_story_outline(document: PrepareDocument) -> dict[str, Any]:
     chapter_cards: dict[str, list[str]] = {}
+
+    def resolve_bucket(card: PrepareCard) -> str:
+        if isinstance(card.meta, dict):
+            source_chapter = card.meta.get("source_chapter")
+            if isinstance(source_chapter, dict):
+                source_id = source_chapter.get("id")
+                source_title = source_chapter.get("title")
+                if isinstance(source_id, str) and source_id.strip():
+                    return source_id.strip()
+                if isinstance(source_title, str) and source_title.strip():
+                    return source_title.strip()
+        blueprint = card.blueprint_meta()
+        if blueprint and blueprint.get("slide_id"):
+            return str(blueprint.get("slide_id"))
+        return card.role.story_phase
+
     for card in document.cards:
-        chapter_cards.setdefault(card.chapter, []).append(card.card_id)
+        bucket = resolve_bucket(card)
+        chapter_cards.setdefault(bucket, []).append(card.card_id)
 
     chapters_payload: list[dict[str, Any]] = []
     for chapter in document.story_context.chapters:
-        cards = chapter_cards.pop(chapter.title, [])
+        cards = chapter_cards.pop(chapter.id, [])
         if not cards:
-            cards = chapter_cards.pop(chapter.id, [])
+            cards = chapter_cards.pop(chapter.title, [])
         chapters_payload.append(
             {
                 "id": chapter.id,
@@ -876,7 +985,7 @@ def _build_brief_story_outline(document: BriefDocument) -> dict[str, Any]:
         chapters_payload.append({"id": title, "title": title, "cards": cards})
 
     return {
-        "brief_id": document.brief_id,
+        "prepare_id": document.prepare_id,
         "chapters": chapters_payload,
         "narrative_theme": None,
         "summary": None,
@@ -973,22 +1082,33 @@ def _run_draft_pipeline(
     *,
     spec: JobSpec,
     output_dir: Path,
-    brief_cards: Path | None,
-    brief_log: Path | None,
-    brief_meta: Path | None,
-    require_brief: bool,
+    prepare_cards: Path | None,
+    prepare_log: Path | None,
+    prepare_meta: Path | None,
+    require_prepare: bool,
     draft_options: DraftStructuringOptions,
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if prepare_cards is not None:
+        resolved_cards = prepare_cards if prepare_cards.is_absolute() else (
+            Path.cwd() / prepare_cards
+        )
+        resolved_cards = resolved_cards.resolve()
+        try:
+            display_path = resolved_cards.relative_to(Path.cwd())
+        except ValueError:
+            display_path = resolved_cards
+        logger.info("prepare_card.json を読み込みます: %s", display_path)
+
     steps: list[PipelineStep] = []
     steps.append(
-        BriefNormalizationStep(
-            BriefNormalizationOptions(
-                cards_path=brief_cards,
-                log_path=brief_log,
-                ai_meta_path=brief_meta,
-                require_document=require_brief,
+        PrepareNormalizationStep(
+            PrepareNormalizationOptions(
+                cards_path=prepare_cards,
+                log_path=prepare_log,
+                ai_meta_path=prepare_meta,
+                require_document=require_prepare,
             )
         )
     )
@@ -1094,10 +1214,10 @@ def _execute_outline(
     chapter_templates_dir: Path | None,
     chapter_template: str | None,
     analysis_summary_path: Path | None,
-    brief_cards: Path | None,
-    brief_log: Path | None,
-    brief_meta: Path | None,
-    require_brief: bool,
+    prepare_cards: Path | None,
+    prepare_log: Path | None,
+    prepare_meta: Path | None,
+    require_prepare: bool,
 ) -> OutlineResult:
     draft_options = DraftStructuringOptions(
         layouts_path=layouts,
@@ -1114,10 +1234,10 @@ def _execute_outline(
     context = _run_draft_pipeline(
         spec=spec,
         output_dir=output_dir,
-        brief_cards=brief_cards,
-        brief_log=brief_log,
-        brief_meta=brief_meta,
-        require_brief=require_brief,
+        prepare_cards=prepare_cards,
+        prepare_log=prepare_log,
+        prepare_meta=prepare_meta,
+        require_prepare=require_prepare,
         draft_options=draft_options,
     )
 
@@ -1192,10 +1312,10 @@ def _run_mapping_pipeline(
     rules_config: RulesConfig,
     refiner_options: RefinerOptions,
     branding_artifact: dict[str, object],
-    brief_cards: Path | None,
-    brief_log: Path | None,
-    brief_meta: Path | None,
-    require_brief: bool,
+    prepare_cards: Path | None,
+    prepare_log: Path | None,
+    prepare_meta: Path | None,
+    require_prepare: bool,
     layouts: Optional[Path],
     draft_output: Path,
     template: Optional[Path],
@@ -1209,14 +1329,20 @@ def _run_mapping_pipeline(
     output_dir.mkdir(parents=True, exist_ok=True)
     draft_output.mkdir(parents=True, exist_ok=True)
 
+    mapping_options = MappingOptions(
+        layouts_path=layouts,
+        output_dir=output_dir,
+        template_path=template,
+    )
+
     if draft_context is None:
         draft_context = _run_draft_pipeline(
             spec=spec,
             output_dir=draft_output,
-            brief_cards=brief_cards,
-            brief_log=brief_log,
-            brief_meta=brief_meta,
-            require_brief=require_brief,
+            prepare_cards=prepare_cards,
+            prepare_log=prepare_log,
+            prepare_meta=prepare_meta,
+            require_prepare=require_prepare,
             draft_options=draft_options
             or DraftStructuringOptions(
                 layouts_path=layouts,
@@ -1232,6 +1358,15 @@ def _run_mapping_pipeline(
                 draft_output,
             )
 
+    draft_generate_ready = draft_context.artifacts.get("generate_ready")
+    if isinstance(draft_generate_ready, GenerateReadyDocument) and draft_generate_ready.meta.layout_mode == "static":
+        return _pass_through_static_generate_ready(
+            spec=spec,
+            draft_context=draft_context,
+            output_dir=output_dir,
+            mapping_options=mapping_options,
+        )
+
     context = PipelineContext(
         spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
     context.add_artifact("branding", branding_artifact)
@@ -1243,13 +1378,7 @@ def _run_mapping_pipeline(
         forbidden_words=rules_config.forbidden_words,
     )
     refiner = SimpleRefinerStep(refiner_options)
-    mapping = MappingStep(
-        MappingOptions(
-            layouts_path=layouts,
-            output_dir=output_dir,
-            template_path=template,
-        )
-    )
+    mapping = MappingStep(mapping_options)
 
     PipelineRunner([spec_validator, refiner, mapping]).execute(context)
 
@@ -1262,11 +1391,138 @@ def _run_mapping_pipeline(
                 if destination.resolve() != source_path.resolve():
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(source_path, destination)
-                context.add_artifact("generate_ready_meta_path", str(destination))
+                context.add_artifact(
+                    "generate_ready_meta_path", str(destination))
         except OSError as exc:  # noqa: PERF203 - unexpected copy failure should bubble up later
             raise RuntimeError(
                 f"generate_ready_meta.json のコピーに失敗しました: {exc}"
             ) from exc
+
+    return context
+
+
+def _pass_through_static_generate_ready(
+    *,
+    spec: JobSpec,
+    draft_context: PipelineContext,
+    output_dir: Path,
+    mapping_options: MappingOptions,
+) -> PipelineContext:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    artifacts = dict(draft_context.artifacts)
+    context = PipelineContext(
+        spec=spec, workdir=output_dir, artifacts=artifacts)
+
+    generate_ready = artifacts.get("generate_ready")
+    if not isinstance(generate_ready, GenerateReadyDocument):
+        raise RuntimeError("static モードの成果物に generate_ready が存在しません")
+
+    template_path = None
+    if mapping_options.template_path is not None:
+        template_path = str(mapping_options.template_path)
+    elif isinstance(spec.meta, JobMeta) and spec.meta.template_path:
+        template_path = spec.meta.template_path
+    else:
+        raw_meta = getattr(spec, "meta", None)
+        if isinstance(raw_meta, dict):
+            template_path = raw_meta.get("template_path")
+    if template_path:
+        updated_job_meta = None
+        if generate_ready.meta.job_meta:
+            job_meta = generate_ready.meta.job_meta
+            if not job_meta.template_path:
+                updated_job_meta = job_meta.model_copy(
+                    update={"template_path": template_path})
+            else:
+                updated_job_meta = job_meta
+        meta_updates = {"template_path": template_path}
+        if updated_job_meta is not None:
+            meta_updates["job_meta"] = updated_job_meta
+        generate_ready = generate_ready.model_copy(
+            update={"meta": generate_ready.meta.model_copy(
+                update=meta_updates)}
+        )
+        artifacts["generate_ready"] = generate_ready
+        logger.debug(
+            "static pass-through: template_path set to %s", template_path)
+
+    ready_dest = output_dir / mapping_options.generate_ready_filename
+    ready_dest.parent.mkdir(parents=True, exist_ok=True)
+    ready_dest.write_text(
+        json.dumps(
+            generate_ready.model_dump(mode="json", exclude_none=True),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    context.add_artifact("generate_ready", generate_ready)
+    context.add_artifact("generate_ready_path", str(ready_dest))
+
+    meta_dest = output_dir / DEFAULT_GENERATE_READY_META_FILENAME
+    meta_src_value = artifacts.get("generate_ready_meta_path")
+    meta_dest.parent.mkdir(parents=True, exist_ok=True)
+    meta_payload: dict[str, object] | None = None
+    if isinstance(meta_src_value, str):
+        meta_src = Path(meta_src_value)
+        if meta_src.exists():
+            try:
+                meta_payload = json.loads(meta_src.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                meta_payload = None
+    if meta_payload is None:
+        meta_payload = {
+            "mode": generate_ready.meta.layout_mode,
+            "slot_summary": generate_ready.meta.slot_summary or {},
+            "generate_ready_generated_at": generate_ready.meta.generated_at,
+            "template_path": generate_ready.meta.template_path,
+            "blueprint_path": generate_ready.meta.blueprint_path,
+            "blueprint_hash": generate_ready.meta.blueprint_hash,
+        }
+    else:
+        if template_path:
+            meta_payload["template_path"] = template_path
+        if "mode" not in meta_payload and generate_ready.meta.layout_mode:
+            meta_payload["mode"] = generate_ready.meta.layout_mode
+        if generate_ready.meta.slot_summary:
+            meta_payload.setdefault(
+                "slot_summary", generate_ready.meta.slot_summary)
+        meta_payload.setdefault(
+            "generate_ready_generated_at", generate_ready.meta.generated_at)
+    meta_dest.write_text(json.dumps(
+        meta_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    context.add_artifact("generate_ready_meta_path", str(meta_dest))
+
+    mapping_log_dest = output_dir / mapping_options.mapping_log_filename
+    draft_mapping_log_path = artifacts.get("draft_mapping_log_path")
+    mapping_src = Path(draft_mapping_log_path) if isinstance(
+        draft_mapping_log_path, str) else None
+    if mapping_src and mapping_src.exists() and mapping_src.resolve() != mapping_log_dest.resolve():
+        shutil.copy2(mapping_src, mapping_log_dest)
+    elif mapping_src and mapping_src.exists():
+        # same path, nothing to copy
+        pass
+    else:
+        mapping_log_dest.write_text(
+            json.dumps(
+                artifacts.get("draft_mapping_log", {}),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    context.add_artifact("mapping_log_path", str(mapping_log_dest))
+
+    mapping_meta = {
+        "mode": "static",
+        "slot_summary": generate_ready.meta.slot_summary or {},
+        "generate_ready_generated_at": generate_ready.meta.generated_at,
+        "template_path": generate_ready.meta.template_path,
+        "blueprint_path": generate_ready.meta.blueprint_path,
+        "blueprint_hash": generate_ready.meta.blueprint_hash,
+    }
+    context.add_artifact("mapping_meta", mapping_meta)
 
     return context
 
@@ -1349,7 +1605,8 @@ def _echo_mapping_outputs(context: PipelineContext) -> None:
     generate_ready_path = context.artifacts.get("generate_ready_path")
     if generate_ready_path is not None:
         click.echo(f"Generate Ready: {generate_ready_path}")
-    generate_ready_meta_path = context.artifacts.get("generate_ready_meta_path")
+    generate_ready_meta_path = context.artifacts.get(
+        "generate_ready_meta_path")
     if generate_ready_meta_path is not None:
         click.echo(f"Generate Ready Meta: {generate_ready_meta_path}")
     mapping_log_path = context.artifacts.get("mapping_log_path")
@@ -1682,7 +1939,7 @@ def gen(  # noqa: PLR0913
 
 @app.command("prepare")
 @click.argument(
-    "brief_path",
+    "prepare_path",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
 )
@@ -1696,6 +1953,19 @@ def gen(  # noqa: PLR0913
     help="コンテンツ準備成果物を保存するディレクトリ",
 )
 @click.option(
+    "--mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    required=True,
+    help="カード生成モード。static は Blueprint を利用する",
+)
+@click.option(
+    "--jobspec",
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
+    default=None,
+    help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
+)
+@click.option(
     "-p",
     "--page-limit",
     "--card-limit",
@@ -1703,54 +1973,135 @@ def gen(  # noqa: PLR0913
     default=None,
     help="生成するカード枚数の上限",
 )
-@click.option(
-    "--approved",
-    is_flag=True,
-    default=False,
-    help="生成する全カードのステータスを approved に設定する",
-)
 def prepare(
-    brief_path: Path,
+    prepare_path: Path,
     output_dir: Path,
+    jobspec: Path | None,
+    mode: str,
     page_limit: int | None,
-    approved: bool,
 ) -> None:
     """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
     try:
-        source = BriefSourceDocument.parse_file(brief_path)
+        source = PrepareSourceDocument.parse_file(prepare_path)
     except FileNotFoundError as exc:
-        click.echo(f"ブリーフ入力ファイルが見つかりません: {exc}", err=True)
+        click.echo(f"プレペア入力ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=2) from exc
     except (json.JSONDecodeError, ValidationError) as exc:
-        click.echo(f"ブリーフ入力の解析に失敗しました: {exc}", err=True)
+        click.echo(f"プレペア入力の解析に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=2) from exc
 
-    policy_path = DEFAULT_BRIEF_POLICY_PATH
+    policy_path = DEFAULT_PREPARE_POLICY_PATH
     try:
-        policy_set = load_brief_policy_set(policy_path)
-    except BriefPolicyError as exc:
-        click.echo(f"ブリーフポリシーの読み込みに失敗しました: {exc}", err=True)
+        policy_set = load_prepare_policy_set(policy_path)
+    except PreparePolicyError as exc:
+        click.echo(f"プレペアポリシーの読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
 
-    orchestrator = BriefAIOrchestrator(policy_set)
+    blueprint_spec: TemplateSpec | None = None
+    blueprint_ref: dict[str, str] | None = None
+    template_spec_path: Path | None = None
+    jobspec_path: Path | None = jobspec
+    normalized_mode = mode.lower()
+    if normalized_mode not in {"dynamic", "static"}:
+        raise click.exceptions.BadParameter(
+            "--mode には dynamic か static を指定してください")
+
+    if normalized_mode == "static":
+        if page_limit is not None:
+            click.echo("static モードでは --page-limit を利用できません", err=True)
+            raise click.exceptions.Exit(code=2)
+        resolved_jobspec = jobspec_path or DEFAULT_JOBSPEC_PATH
+        if not resolved_jobspec.exists():
+            click.echo(
+                "static モードでは --jobspec で jobspec.json のパスを指定するか、.pptx/extract/jobspec.json を用意してください",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
+        try:
+            spec_for_static = load_jobspec_from_path(resolved_jobspec)
+        except (FileNotFoundError, ValidationError, SpecValidationError) as exc:
+            click.echo(f"jobspec.json の読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+
+        template_spec_ref = getattr(
+            spec_for_static.meta, "template_spec_path", None)
+        if not template_spec_ref:
+            click.echo(
+                "jobspec.meta.template_spec_path が設定されていません。テンプレ抽出を再実行してください",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
+
+        template_spec_path = Path(template_spec_ref)
+        if not template_spec_path.is_absolute():
+            template_spec_path = (
+                resolved_jobspec.parent / template_spec_path).resolve()
+
+        if not template_spec_path.exists():
+            click.echo(
+                f"template_spec.json が見つかりません: {template_spec_path}",
+                err=True,
+            )
+            raise click.exceptions.Exit(code=2)
+
+        try:
+            template_spec_text = template_spec_path.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            click.echo(f"template_spec の読み込みに失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+        try:
+            if template_spec_path.suffix.lower() in {".yaml", ".yml"}:
+                import yaml
+
+                payload = yaml.safe_load(template_spec_text)
+                blueprint_spec = TemplateSpec.model_validate(payload)
+            else:
+                blueprint_spec = TemplateSpec.model_validate_json(
+                    template_spec_text)
+        except ValueError as exc:
+            click.echo(f"template_spec の検証に失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+        if blueprint_spec.layout_mode != "static":
+            click.echo("template_spec の layout_mode が static ではありません", err=True)
+            raise click.exceptions.Exit(code=2)
+        if blueprint_spec.blueprint is None:
+            click.echo("template_spec に blueprint が含まれていません", err=True)
+            raise click.exceptions.Exit(code=2)
+
+        blueprint_hash = hashlib.sha256(
+            json.dumps(
+                blueprint_spec.blueprint.model_dump(mode="json"),
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+        blueprint_ref = {
+            "path": str(template_spec_path),
+            "hash": f"sha256:{blueprint_hash}",
+        }
+
+    orchestrator = PrepareAIOrchestrator(policy_set)
     try:
         document, meta, ai_logs = orchestrator.generate_document(
             source,
             policy_id=None,
             page_limit=page_limit,
-            all_cards_status="approved" if approved else None,
+            mode=normalized_mode,  # type: ignore[arg-type]
+            blueprint=blueprint_spec.blueprint if blueprint_spec else None,
+            blueprint_ref=blueprint_ref,
         )
-    except BriefAIOrchestrationError as exc:
-        click.echo(f"ブリーフカードの生成に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
+    except PrepareAIOrchestrationError as exc:
+        click.echo(f"プレペアカードの生成に失敗しました: {exc}", err=True)
+        exit_code = 6 if normalized_mode == "static" else 4
+        raise click.exceptions.Exit(code=exit_code) from exc
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cards_path = output_dir / "prepare_card.json"
-    log_path = output_dir / "brief_log.json"
-    ai_log_path = output_dir / "brief_ai_log.json"
+    log_path = output_dir / "prepare_log.json"
+    ai_log_path = output_dir / "prepare_ai_log.json"
     meta_path = output_dir / "ai_generation_meta.json"
-    story_outline_path = output_dir / "brief_story_outline.json"
+    story_outline_path = output_dir / "prepare_story_outline.json"
     audit_path = output_dir / "audit_log.json"
 
     _dump_json(cards_path, document.model_dump(mode="json", exclude_none=True))
@@ -1761,30 +2112,38 @@ def prepare(
          for record in ai_logs],
     )
     _dump_json(meta_path, meta.model_dump(mode="json", exclude_none=True))
-    _dump_json(story_outline_path, _build_brief_story_outline(document))
+    _dump_json(story_outline_path, _build_prepare_story_outline(document))
 
     audit_payload = {
-        "brief_normalization": {
+        "prepare_normalization": {
             "generated_at": meta.generated_at.isoformat(),
             "policy_id": meta.policy_id,
             "input_hash": meta.input_hash,
+            "mode": meta.mode,
             "outputs": {
                 "prepare_card": str(cards_path.resolve()),
-                "brief_log": str(log_path.resolve()),
-                "brief_ai_log": str(ai_log_path.resolve()),
+                "prepare_log": str(log_path.resolve()),
+                "prepare_ai_log": str(ai_log_path.resolve()),
                 "ai_generation_meta": str(meta_path.resolve()),
-                "brief_story_outline": str(story_outline_path.resolve()),
+                "prepare_story_outline": str(story_outline_path.resolve()),
             },
             "statistics": meta.statistics,
         }
     }
+    if template_spec_path is not None:
+        audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(
+            template_spec_path)
+    if blueprint_ref:
+        audit_payload["prepare_normalization"]["blueprint"] = blueprint_ref
+    if meta.slot_coverage:
+        audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
     _dump_json(audit_path, audit_payload)
 
     click.echo(f"Prepare Card: {cards_path}")
-    click.echo(f"Brief Log: {log_path}")
-    click.echo(f"Brief AI Log: {ai_log_path}")
+    click.echo(f"Prepare Log: {log_path}")
+    click.echo(f"Prepare AI Log: {ai_log_path}")
     click.echo(f"AI Generation Meta: {meta_path}")
-    click.echo(f"Brief Story Outline: {story_outline_path}")
+    click.echo(f"Prepare Story Outline: {story_outline_path}")
     click.echo(f"Audit Log: {audit_path}")
 
 
@@ -1870,7 +2229,7 @@ def prepare(
     help="layout_hint 候補のスコア内訳を表示する",
 )
 @click.option(
-    "--brief-cards",
+    "--prepare-cards",
     type=click.Path(exists=False, dir_okay=False,
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
@@ -1878,14 +2237,14 @@ def prepare(
     help="工程2の prepare_card.json",
 )
 @click.option(
-    "--brief-log",
+    "--prepare-log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
     show_default=True,
-    help="工程2の brief_log.json（任意）",
+    help="工程2の prepare_log.json（任意）",
 )
 @click.option(
-    "--brief-meta",
+    "--prepare-meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
@@ -1904,9 +2263,9 @@ def outline(
     return_reasons_path: Path,
     return_reasons: bool,
     show_layout_reasons: bool,
-    brief_cards: Path,
-    brief_log: Path,
-    brief_meta: Path,
+    prepare_cards: Path,
+    prepare_log: Path,
+    prepare_meta: Path,
 ) -> None:
     """工程4 ドラフト構成（アウトライン）を生成する。"""
 
@@ -1943,13 +2302,13 @@ def outline(
             chapter_templates_dir=templates_dir,
             chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
-            brief_cards=brief_cards,
-            brief_log=brief_log if brief_log.exists() else None,
-            brief_meta=brief_meta if brief_meta.exists() else None,
-            require_brief=True,
+            prepare_cards=prepare_cards,
+            prepare_log=prepare_log if prepare_log.exists() else None,
+            prepare_meta=prepare_meta if prepare_meta.exists() else None,
+            require_prepare=True,
         )
-    except BriefNormalizationError as exc:
-        click.echo(f"ブリーフ成果物の読み込みに失敗しました: {exc}", err=True)
+    except PrepareNormalizationError as exc:
+        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except DraftStructuringError as exc:
         click.echo(f"ドラフト構成の生成に失敗しました: {exc}", err=True)
@@ -2063,7 +2422,8 @@ def outline(
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
-    "--brief-cards",
+    "--prepare-cards",
+    "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
@@ -2071,14 +2431,16 @@ def outline(
     help="工程2の prepare_card.json",
 )
 @click.option(
-    "--brief-log",
+    "--prepare-log",
+    "prepare_log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
     show_default=True,
-    help="工程2の brief_log.json（任意）",
+    help="工程2の prepare_log.json（任意）",
 )
 @click.option(
-    "--brief-meta",
+    "--prepare-meta",
+    "prepare_meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
@@ -2099,9 +2461,9 @@ def compose(  # noqa: PLR0913
     rules: Path,
     template: Optional[Path],
     branding: Optional[Path],
-    brief_cards: Path,
-    brief_log: Path,
-    brief_meta: Path,
+    prepare_cards: Path,
+    prepare_log: Path,
+    prepare_meta: Path,
 ) -> None:
     """工程4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
@@ -2144,13 +2506,13 @@ def compose(  # noqa: PLR0913
             chapter_templates_dir=templates_dir,
             chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
-            brief_cards=brief_cards,
-            brief_log=brief_log if brief_log.exists() else None,
-            brief_meta=brief_meta if brief_meta.exists() else None,
-            require_brief=True,
+            prepare_cards=prepare_cards,
+            prepare_log=prepare_log if prepare_log.exists() else None,
+            prepare_meta=prepare_meta if prepare_meta.exists() else None,
+            require_prepare=True,
         )
-    except BriefNormalizationError as exc:
-        click.echo(f"ブリーフ成果物の読み込みに失敗しました: {exc}", err=True)
+    except PrepareNormalizationError as exc:
+        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except DraftStructuringError as exc:
         click.echo(f"ドラフト構成の生成に失敗しました: {exc}", err=True)
@@ -2179,10 +2541,10 @@ def compose(  # noqa: PLR0913
             rules_config=rules_config,
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
-            brief_cards=brief_cards,
-            brief_log=brief_log if brief_log.exists() else None,
-            brief_meta=brief_meta if brief_meta.exists() else None,
-            require_brief=True,
+            prepare_cards=prepare_cards,
+            prepare_log=prepare_log if prepare_log.exists() else None,
+            prepare_meta=prepare_meta if prepare_meta.exists() else None,
+            require_prepare=True,
             layouts=resolved_layouts,
             draft_output=draft_output,
             template=resolved_template,
@@ -2205,8 +2567,8 @@ def compose(  # noqa: PLR0913
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
-    except BriefNormalizationError as exc:
-        click.echo(f"ブリーフ成果物の読み込みに失敗しました: {exc}", err=True)
+    except PrepareNormalizationError as exc:
+        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
         logging.exception("compose 実行中にマッピング工程でエラーが発生しました")
@@ -2269,7 +2631,8 @@ def compose(  # noqa: PLR0913
     help="ブランド設定ファイル（任意）",
 )
 @click.option(
-    "--brief-cards",
+    "--prepare-cards",
+    "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
@@ -2277,14 +2640,16 @@ def compose(  # noqa: PLR0913
     help="工程2の prepare_card.json",
 )
 @click.option(
-    "--brief-log",
+    "--prepare-log",
+    "prepare_log",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "brief_log.json",
+    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
     show_default=True,
-    help="工程2の brief_log.json（任意）",
+    help="工程2の prepare_log.json（任意）",
 )
 @click.option(
-    "--brief-meta",
+    "--prepare-meta",
+    "prepare_meta",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
     show_default=True,
@@ -2298,9 +2663,9 @@ def mapping(  # noqa: PLR0913
     draft_output: Path,
     template: Optional[Path],
     branding: Optional[Path],
-    brief_cards: Path,
-    brief_log: Path,
-    brief_meta: Path,
+    prepare_cards: Path,
+    prepare_log: Path,
+    prepare_meta: Path,
 ) -> None:
     """工程5 マッピングを実行し generate_ready.json を生成する。"""
     try:
@@ -2343,10 +2708,10 @@ def mapping(  # noqa: PLR0913
             rules_config=rules_config,
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
-            brief_cards=brief_cards,
-            brief_log=brief_log if brief_log.exists() else None,
-            brief_meta=brief_meta if brief_meta.exists() else None,
-            require_brief=True,
+            prepare_cards=prepare_cards,
+            prepare_log=prepare_log if prepare_log.exists() else None,
+            prepare_meta=prepare_meta if prepare_meta.exists() else None,
+            require_prepare=True,
             layouts=resolved_layouts,
             draft_output=draft_output,
             template=resolved_template,
@@ -2357,8 +2722,8 @@ def mapping(  # noqa: PLR0913
     except SpecValidationError as exc:
         _echo_errors("業務ルール検証に失敗しました", exc.errors)
         raise click.exceptions.Exit(code=3) from exc
-    except BriefNormalizationError as exc:
-        click.echo(f"ブリーフ成果物の読み込みに失敗しました: {exc}", err=True)
+    except PrepareNormalizationError as exc:
+        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
         logging.exception("マッピング実行中にエラーが発生しました")
@@ -2398,6 +2763,13 @@ def mapping(  # noqa: PLR0913
     type=str,
     default=None,
     help="抽出対象アンカー名のフィルタ（前方一致）",
+)
+@click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
 )
 @click.option(
     "--with-release",
@@ -2493,6 +2865,7 @@ def template(  # noqa: PLR0913
     format: str,
     layout: str | None,
     anchor: str | None,
+    layout_mode: str,
     with_release: bool,
     brand: str | None,
     version: str | None,
@@ -2520,6 +2893,7 @@ def template(  # noqa: PLR0913
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,
+            layout_mode=layout_mode,
             skip_validation=force,
             emit_slide_snapshot=slide,
         )
@@ -2576,6 +2950,7 @@ def template(  # noqa: PLR0913
             reviewed_by=reviewed_by,
             baseline_release=baseline_release,
             golden_specs=golden_specs,
+            layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2623,6 +2998,13 @@ def template(  # noqa: PLR0913
     help="出力形式",
 )
 @click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
+)
+@click.option(
     "--output",
     "-o",
     "output_dir",
@@ -2655,6 +3037,7 @@ def tpl_extract(
     layout: Optional[str],
     anchor: Optional[str],
     format: str,
+    layout_mode: str,
     template_ai_policy: Path | None,
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
@@ -2670,6 +3053,7 @@ def tpl_extract(
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,
+            layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2826,6 +3210,13 @@ def layout_validate(
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
+@click.option(
+    "--layout-mode",
+    type=click.Choice(["dynamic", "static"], case_sensitive=False),
+    default="dynamic",
+    show_default=True,
+    help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
+)
 def tpl_release(
     template_path: Path,
     brand: str,
@@ -2836,6 +3227,7 @@ def tpl_release(
     reviewed_by: Optional[str],
     baseline_release: Optional[Path],
     golden_specs: tuple[Path, ...],
+    layout_mode: str,
 ) -> None:
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
@@ -2850,6 +3242,7 @@ def tpl_release(
             reviewed_by=reviewed_by,
             baseline_release=baseline_release,
             golden_specs=golden_specs,
+            layout_mode=layout_mode,
         )
     except click.exceptions.Exit:
         raise

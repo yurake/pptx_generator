@@ -11,7 +11,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_BRIEF_SOURCE = Path(
+SAMPLE_PREPARE_SOURCE = Path(
     "samples/contents/sample_import_content_summary.txt")
 
 
@@ -84,7 +84,9 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         app,
         [
             "prepare",
-            str(SAMPLE_BRIEF_SOURCE),
+            str(SAMPLE_PREPARE_SOURCE),
+            "--mode",
+            "dynamic",
             "--output",
             str(content_output),
         ],
@@ -93,18 +95,19 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     assert content_cmd.exit_code == 0
 
-    brief_cards_path = content_output / "prepare_card.json"
-    brief_log_path = content_output / "brief_log.json"
-    brief_meta_path = content_output / "ai_generation_meta.json"
-    assert brief_cards_path.exists()
-    assert brief_log_path.exists()
-    assert brief_meta_path.exists()
+    prepare_cards_path = content_output / "prepare_card.json"
+    prepare_log_path = content_output / "prepare_log.json"
+    prepare_meta_path = content_output / "ai_generation_meta.json"
+    assert prepare_cards_path.exists()
+    assert prepare_log_path.exists()
+    assert prepare_meta_path.exists()
 
-    cards_payload = json.loads(brief_cards_path.read_text(encoding="utf-8"))
+    cards_payload = json.loads(prepare_cards_path.read_text(encoding="utf-8"))
     slides = []
     for index, card in enumerate(cards_payload.get("cards", []), start=1):
         card_id = card.get("card_id") or f"card-{index:03d}"
-        title = card.get("chapter") or card.get("message") or card_id
+        content = card.get("content") or {}
+        title = (content.get("title") or content.get("headline") or card_id)[:25]
         slides.append(
             {
                 "id": card_id,
@@ -148,12 +151,12 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
             str(compose_output_root / "gen"),
             "--layouts",
             str(layouts_path),
-            "--brief-cards",
-            str(brief_cards_path),
-            "--brief-log",
-            str(brief_log_path),
-            "--brief-meta",
-            str(brief_meta_path),
+            "--prepare-cards",
+            str(prepare_cards_path),
+            "--prepare-log",
+            str(prepare_log_path),
+            "--prepare-meta",
+            str(prepare_meta_path),
             "--template",
             str(SAMPLE_TEMPLATE),
         ],

@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.pipeline import (BriefNormalizationOptions,
-                                      BriefNormalizationStep,
+from pptx_generator.pipeline import (PrepareNormalizationOptions,
+                                      PrepareNormalizationStep,
                                       DraftStructuringError,
                                       DraftStructuringOptions,
                                       DraftStructuringStep)
@@ -16,7 +16,16 @@ from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.draft_structuring import SlideIdAligner
 from pptx_generator.pipeline.slide_alignment import (SlideAlignmentRecord,
                                                      SlideAlignmentResult)
-from pptx_generator.models import JobSpec
+from pptx_generator.models import JobSpec, Slide
+from pptx_generator.prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
+    PrepareNoteEntry,
+    PrepareStoryContext,
+)
 
 
 @pytest.fixture()
@@ -24,7 +33,7 @@ def sample_spec() -> JobSpec:
     payload = {
         "meta": {
             "schema_version": "1.1",
-            "title": "Brief Sample Spec",
+            "title": "Prepare Sample Spec",
             "client": "Internal QA",
             "author": "テスト自動化チーム",
             "created_at": "2025-11-02",
@@ -33,22 +42,22 @@ def sample_spec() -> JobSpec:
         },
         "auth": {"created_by": "codex"},
         "slides": [
-            {"id": "intro", "layout": "Title", "title": "イントロダクション"},
-            {"id": "solution", "layout": "Content", "title": "解決策"},
-            {"id": "impact", "layout": "Content", "title": "期待効果"},
-            {"id": "next", "layout": "Content", "title": "次のアクション"},
+            {"id": "introduction-1", "layout": "Title", "title": "イントロダクション"},
+            {"id": "problem-2", "layout": "Content", "title": "課題"},
+            {"id": "solution-3", "layout": "Content", "title": "解決策"},
+            {"id": "impact-4", "layout": "Content", "title": "期待効果"},
         ],
     }
     return JobSpec.model_validate(payload)
 
 
 @pytest.fixture()
-def brief_paths() -> dict[str, Path]:
-    brief_dir = Path("samples/prepare")
+def prepare_paths() -> dict[str, Path]:
+    prepare_dir = Path("samples/prepare")
     return {
-        "cards": brief_dir / "prepare_card.json",
-        "log": brief_dir / "brief_log.json",
-        "meta": brief_dir / "ai_generation_meta.json",
+        "cards": prepare_dir / "prepare_card.json",
+        "log": prepare_dir / "prepare_log.json",
+        "meta": prepare_dir / "ai_generation_meta.json",
     }
 
 
@@ -56,7 +65,7 @@ def test_draft_structuring_generates_documents(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     sample_spec: JobSpec,
-    brief_paths: dict[str, Path],
+    prepare_paths: dict[str, Path],
 ) -> None:
     monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
 
@@ -64,7 +73,7 @@ def test_draft_structuring_generates_documents(
         self: SlideIdAligner,
         *,
         spec: JobSpec,
-        brief_document,
+        prepare_document,
         content_document,
     ) -> SlideAlignmentResult:
         records = [
@@ -120,15 +129,15 @@ def test_draft_structuring_generates_documents(
 
     context = PipelineContext(spec=sample_spec, workdir=tmp_path)
 
-    brief_step = BriefNormalizationStep(
-        BriefNormalizationOptions(
-            cards_path=brief_paths["cards"],
-            log_path=brief_paths["log"],
-            ai_meta_path=brief_paths["meta"],
+    prepare_step = PrepareNormalizationStep(
+        PrepareNormalizationOptions(
+            cards_path=prepare_paths["cards"],
+            log_path=prepare_paths["log"],
+            ai_meta_path=prepare_paths["meta"],
             require_document=True,
         )
     )
-    brief_step.run(context)
+    prepare_step.run(context)
 
     step = DraftStructuringStep(
         DraftStructuringOptions(
@@ -167,11 +176,24 @@ def test_draft_structuring_generates_documents(
     assert alignment_meta["applied"] >= 1
 
 
+def test_convert_slide_elements_omits_auto_draw_anchor() -> None:
+    slide = Slide(
+        id="intro",
+        layout="Title",
+        title="イントロ",
+        auto_draw_anchors=["Num"],
+    )
+
+    elements = DraftStructuringStep._convert_slide_elements(slide)
+
+    assert "Num" not in elements
+
+
 def test_draft_structuring_fails_when_slide_id_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     sample_spec: JobSpec,
-    brief_paths: dict[str, Path],
+    prepare_paths: dict[str, Path],
 ) -> None:
     monkeypatch.setenv("DRAFT_STORE_DIR", str(tmp_path / "store"))
 
@@ -179,7 +201,7 @@ def test_draft_structuring_fails_when_slide_id_missing(
         self: SlideIdAligner,
         *,
         spec: JobSpec,
-        brief_document,
+        prepare_document,
         content_document,
     ) -> SlideAlignmentResult:
         records = [
@@ -221,15 +243,15 @@ def test_draft_structuring_fails_when_slide_id_missing(
 
     context = PipelineContext(spec=sample_spec, workdir=tmp_path)
 
-    brief_step = BriefNormalizationStep(
-        BriefNormalizationOptions(
-            cards_path=brief_paths["cards"],
-            log_path=brief_paths["log"],
-            ai_meta_path=brief_paths["meta"],
+    prepare_step = PrepareNormalizationStep(
+        PrepareNormalizationOptions(
+            cards_path=prepare_paths["cards"],
+            log_path=prepare_paths["log"],
+            ai_meta_path=prepare_paths["meta"],
             require_document=True,
         )
     )
-    brief_step.run(context)
+    prepare_step.run(context)
 
     step = DraftStructuringStep(
         DraftStructuringOptions(
@@ -246,3 +268,48 @@ def test_draft_structuring_fails_when_slide_id_missing(
     assert alignment_meta is not None
     assert alignment_meta["pending"] >= 1
     assert alignment_meta["jobspec_unassigned"] >= 1
+
+
+def test_prepare_normalization_preserves_subtitle(tmp_path: Path, sample_spec: JobSpec) -> None:
+    card_with_subtitle = PrepareCard(
+        card_id="introduction-1",
+        order=1,
+        role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+        content=PrepareCardContent(
+            headline="Kickoff Message",
+            subtitle="Executive Summary",
+            body=[PrepareBodyBlock(type="paragraph", text="最初のサマリーです。")],
+            notes=[PrepareNoteEntry(text="補足メモ")],
+        ),
+        meta={"source_chapter": {"id": "intro", "title": "イントロダクション"}},
+    )
+    card_with_chapter_meta = PrepareCard(
+        card_id="problem-1",
+        order=2,
+        role=PrepareCardRole(story_phase="problem", intent_tags=["details"]),
+        content=PrepareCardContent(
+            headline="顧客課題の整理",
+            body=[PrepareBodyBlock(type="paragraph", text="主要課題を列挙します。")],
+        ),
+        meta={"source_chapter": {"id": "problem", "title": "現状の課題"}},
+    )
+    document = PrepareDocument(
+        prepare_id="todo-content-elements",
+        cards=[card_with_subtitle, card_with_chapter_meta],
+        story_context=PrepareStoryContext(),
+    )
+    cards_path = tmp_path / "prepare_card.json"
+    cards_path.write_text(
+        json.dumps(document.model_dump(mode="json"), ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    context = PipelineContext(spec=sample_spec, workdir=tmp_path)
+    step = PrepareNormalizationStep(
+        PrepareNormalizationOptions(cards_path=cards_path, require_document=True)
+    )
+    step.run(context)
+
+    content_document = context.artifacts["content_approved"]
+    assert content_document.slides[0].elements.subtitle == "Executive Summary"
+    assert content_document.slides[1].elements.subtitle == "現状の課題"

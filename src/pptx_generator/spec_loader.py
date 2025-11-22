@@ -62,6 +62,11 @@ def _convert_meta(scaffold: JobSpecScaffold) -> JobMeta:
         title=title,
         created_at=created_at,
         locale="ja-JP",
+        template_path=str(template_path),
+        template_id=scaffold.meta.template_id,
+        layout_count=scaffold.meta.layout_count,
+        layouts_path=scaffold.meta.layouts_path,
+        template_spec_path=scaffold.meta.template_spec_path,
     )
 
 
@@ -76,10 +81,22 @@ def _convert_slide(scaffold_slide: JobSpecScaffoldSlide) -> Slide:
     subtitle: str | None = None
     textboxes: list[SlideTextbox] = []
     notes_entries: list[str] = []
+    auto_draw_anchors: list[str] = []
+    auto_draw_boxes: dict[str, TextboxPosition] = {}
 
     counters = defaultdict(int)
 
     for placeholder in scaffold_slide.placeholders:
+        if placeholder.auto_draw:
+            if placeholder.anchor:
+                auto_draw_anchors.append(placeholder.anchor)
+                auto_draw_boxes[placeholder.anchor] = TextboxPosition(
+                    left_in=placeholder.bounds.left_in,
+                    top_in=placeholder.bounds.top_in,
+                    width_in=placeholder.bounds.width_in,
+                    height_in=placeholder.bounds.height_in,
+                )
+            continue
         placeholder_type = (placeholder.placeholder_type or "").upper()
         if placeholder.kind == "text":
             title, subtitle, textboxes = _apply_text_placeholder(
@@ -102,6 +119,8 @@ def _convert_slide(scaffold_slide: JobSpecScaffoldSlide) -> Slide:
         subtitle=subtitle,
         notes=notes,
         textboxes=textboxes,
+        auto_draw_anchors=auto_draw_anchors,
+        auto_draw_boxes=auto_draw_boxes,
     )
 
 
@@ -147,6 +166,8 @@ def _format_placeholder_note(placeholder: JobSpecScaffoldPlaceholder) -> str:
     kind = placeholder.kind
     placeholder_type = placeholder.placeholder_type or ""
     sample = placeholder.sample_text or ""
+    if placeholder.auto_draw:
+        return f"[{anchor}] kind={kind} type={placeholder_type} auto_draw=true"
     return f"[{anchor}] kind={kind} type={placeholder_type} sample={sample}"
 
 

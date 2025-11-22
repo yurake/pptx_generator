@@ -21,7 +21,7 @@ _LLM_LOGGER = logging.getLogger("pptx_generator.content_ai.llm")
 MAX_BODY_LINES = 6
 MAX_BODY_LENGTH = 40
 MAX_TITLE_LENGTH = 120
-DEFAULT_MAX_TOKENS = 1024
+DEFAULT_MAX_TOKENS = 32000
 
 
 class LLMClientConfigurationError(RuntimeError):

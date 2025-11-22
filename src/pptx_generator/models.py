@@ -157,6 +157,8 @@ class Slide(BaseModel):
     tables: list[SlideTable] = Field(default_factory=list)
     charts: list[SlideChart] = Field(default_factory=list)
     textboxes: list[SlideTextbox] = Field(default_factory=list)
+    auto_draw_anchors: list[str] = Field(default_factory=list)
+    auto_draw_boxes: dict[str, TextboxPosition] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -184,6 +186,7 @@ class JobMeta(BaseModel):
     layouts_path: str | None = None
     template_path: str | None = None
     template_id: str | None = None
+    template_spec_path: str | None = None
 
 
 class JobAuth(BaseModel):
@@ -228,6 +231,7 @@ class JobSpecScaffoldPlaceholder(BaseModel):
     bounds: JobSpecScaffoldBounds
     sample_text: str | None = None
     notes: list[str] = Field(default_factory=list)
+    auto_draw: bool = False
 
 
 class JobSpecScaffoldSlide(BaseModel):
@@ -248,6 +252,7 @@ class JobSpecScaffoldMeta(BaseModel):
     generated_at: str
     layout_count: int
     layouts_path: str | None = None
+    template_spec_path: str | None = None
 
 
 class JobSpecScaffold(BaseModel):
@@ -286,9 +291,18 @@ class ContentTableData(BaseModel):
 
 class ContentElements(BaseModel):
     title: str = Field(..., max_length=120)
+    subtitle: str | None = Field(default=None, max_length=120)
     body: list[str] = Field(default_factory=list)
     table_data: ContentTableData | None = None
     note: str | None = None
+
+    @field_validator("subtitle", mode="before")
+    @classmethod
+    def normalize_optional_subtitle(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
 
     @field_validator("body")
     @classmethod
@@ -533,6 +547,10 @@ class MappingSlideMeta(BaseModel):
     page_no: int | None = None
     sources: list[str] = Field(default_factory=list)
     fallback: str = "none"
+    layout_mode: Literal["dynamic", "static"] | None = None
+    blueprint_slide_id: str | None = None
+    blueprint_slots: list[dict[str, Any]] | None = None
+    auto_draw: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class GenerateReadySlide(BaseModel):
@@ -549,6 +567,10 @@ class GenerateReadyMeta(BaseModel):
     generated_at: str
     job_meta: JobMeta | None = None
     job_auth: JobAuth | None = None
+    layout_mode: Literal["dynamic", "static"] = "dynamic"
+    blueprint_path: str | None = None
+    blueprint_hash: str | None = None
+    slot_summary: dict[str, int] | None = None
 
 
 class GenerateReadyDocument(BaseModel):
@@ -664,6 +686,34 @@ class LayoutInfo(BaseModel):
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
 
 
+class TemplateBlueprintSlot(BaseModel):
+    """Blueprint 上の slot 情報。"""
+
+    slot_id: str = Field(..., description="Blueprint 上の一意な slot ID")
+    anchor: str = Field(..., description="紐付け先のアンカー名")
+    content_type: Literal["text", "image", "table", "chart", "shape", "other"] = Field(
+        ..., description="slot に期待するコンテンツ種別"
+    )
+    required: bool = Field(True, description="必須 slot かどうか")
+    intent_tags: list[str] = Field(default_factory=list, description="意図タグ（プロンプト補助用）")
+
+
+class TemplateBlueprintSlide(BaseModel):
+    """Blueprint 上のスライド情報。"""
+
+    slide_id: str = Field(..., description="Blueprint 上のスライド ID")
+    layout: str = Field(..., description="利用するレイアウト名")
+    required: bool = Field(True, description="必須スライドかどうか")
+    intent_tags: list[str] = Field(default_factory=list, description="スライド意図タグ")
+    slots: list[TemplateBlueprintSlot] = Field(default_factory=list, description="slot 一覧")
+
+
+class TemplateBlueprint(BaseModel):
+    """テンプレートの Blueprint 定義。"""
+
+    slides: list[TemplateBlueprintSlide] = Field(default_factory=list, description="Blueprint スライド一覧")
+
+
 class TemplateSpec(BaseModel):
     """テンプレート仕様全体を表現するモデル。"""
 
@@ -672,6 +722,12 @@ class TemplateSpec(BaseModel):
     layouts: list[LayoutInfo] = Field(default_factory=list, description="レイアウト一覧")
     warnings: list[str] = Field(default_factory=list, description="警告メッセージ")
     errors: list[str] = Field(default_factory=list, description="エラーメッセージ")
+    layout_mode: Literal["dynamic", "static"] = Field(
+        "dynamic", description="テンプレートの運用モード"
+    )
+    blueprint: TemplateBlueprint | None = Field(
+        None, description="静的テンプレート向け Blueprint 定義"
+    )
 
 
 # テンプレートリリース管理用モデル

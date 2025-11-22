@@ -1,14 +1,15 @@
 {
-  "brief_normalization": {
-    "generated_at": "2025-11-04T10:50:09.367322+00:00",
-    "policy_id": "brief-default",
-    "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
+  "prepare_normalization": {
+    "generated_at": "2025-11-16T13:25:32.575812+00:00",
+    "policy_id": "prepare-default",
+    "input_hash": "da2280d36bf9cb28e3be580066066d3136ec3de5feb2dbe08fc87783cebd0d0c",
+    "mode": "dynamic",
     "outputs": {
-      "prepare_card": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/prepare_card.json",
-      "brief_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_log.json",
-      "brief_ai_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_ai_log.json",
-      "ai_generation_meta": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/ai_generation_meta.json",
-      "brief_story_outline": "/Users/yurak/git/pptx_generator_sub1/.pptx/prepare/brief_story_outline.json"
+      "prepare_card": "/Users/yurak/git/pptx_generator/.pptx/prepare/prepare_card.json",
+      "prepare_log": "/Users/yurak/git/pptx_generator/.pptx/prepare/prepare_log.json",
+      "prepare_ai_log": "/Users/yurak/git/pptx_generator/.pptx/prepare/prepare_ai_log.json",
+      "ai_generation_meta": "/Users/yurak/git/pptx_generator/.pptx/prepare/ai_generation_meta.json",
+      "prepare_story_outline": "/Users/yurak/git/pptx_generator/.pptx/prepare/prepare_story_outline.json"
     },
     "statistics": {
       "cards_total": 4,

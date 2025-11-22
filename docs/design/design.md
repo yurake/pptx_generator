@@ -38,9 +38,9 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
    テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備**（HITL）  
-   ブリーフ入力（Markdown / JSON など）を BriefCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`brief_log.json`・`brief_ai_log.json`・`ai_generation_meta.json`・`brief_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
+  プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  
-  Brief 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
+  Prepare 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
 4. **PPTX レンダリング**（自動）  
   `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
 
@@ -49,8 +49,8 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
-| コンテンツ準備 | ブリーフ入力（Markdown / JSON） | `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json` | BriefCard 生成、AI レビュー結果・監査メタを保存 |
-| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
+| コンテンツ準備 | プレペア入力（Markdown / JSON） | `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json` | PrepareCard 生成、AI レビュー結果・監査メタを保存 |
+| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
 | レンダリング | `generate_ready.json`, `template.pptx`, `branding.json` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | 軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
 
 ### 3.2 工程別設計ドキュメント
@@ -73,12 +73,12 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S1 出 / S3 入 / S4 入 |
 | layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S1 出 / S3 入 |
 | diagnostics.json / diff_report.json | 任意 | 抽出/検証時の診断および差分レポート。 | S1 出 |
-| prepare_card.json | 必須（工程2出口） | BriefCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |
-| brief_log.json | 任意 | ブリーフレビュー／承認ログ。 | S2 出 / S3 入 |
-| brief_ai_log.json | 任意 | 生成AIとのやり取りログ。 | S2 出 / S3 入 |
+| prepare_card.json | 必須（工程2出口） | PrepareCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |
+| prepare_log.json | 任意 | プレペアレビュー／承認ログ。 | S2 出 / S3 入 |
+| prepare_ai_log.json | 任意 | 生成AIとのやり取りログ。 | S2 出 / S3 入 |
 | ai_generation_meta.json | 任意 | 生成カード枚数やハッシュなどの統計情報。 | S2 出 / S3 入 |
-| brief_story_outline.json | 任意 | 章構成とカード紐付け。 | S2 出 / S3 入 |
-| brief/audit_log.json | 任意 | コンテンツ工程の監査ログ。 | S2 出 |
+| prepare_story_outline.json | 任意 | 章構成とカード紐付け。 | S2 出 / S3 入 |
+| prepare/audit_log.json | 任意 | コンテンツ工程の監査ログ。 | S2 出 |
 | generate_ready.json | 必須 | レイアウト割付済みの描画直前仕様。 | S3 出 / S4 入 |
 | generate_ready_meta.json | 必須 | 章テンプレ適合率、承認統計、Analyzer サマリ。 | S3 出 |
 | draft_review_log.json | 任意 | HITL 承認・差戻しの操作履歴。 | S3 出 |

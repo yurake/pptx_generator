@@ -1,32 +1,31 @@
 {
-  "brief_id": "sample_import_content_summary",
+  "prepare_id": "sample_import_content_summary",
   "chapters": [
     {
       "id": "intro",
       "title": "イントロダクション",
-      "cards": [
-        "intro"
-      ]
+      "cards": []
     },
     {
       "id": "problem",
       "title": "課題整理",
-      "cards": [
-        "solution"
-      ]
+      "cards": []
     },
     {
       "id": "solution",
       "title": "解決策",
-      "cards": [
-        "impact"
-      ]
+      "cards": []
     },
     {
       "id": "impact",
       "title": "期待効果",
+      "cards": []
+    },
+    {
+      "id": "intro 現状と課題",
+      "title": "intro 現状と課題",
       "cards": [
-        "next"
+        "intro"
       ]
     }
   ],

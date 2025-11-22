@@ -2,9 +2,9 @@
 
 from .analyzer import AnalyzerOptions, SimpleAnalyzerStep
 from .base import PipelineContext, PipelineRunner, PipelineStep
-from .brief_normalization import (BriefNormalizationError,
-                                  BriefNormalizationOptions,
-                                  BriefNormalizationStep)
+from .prepare_normalization import (PrepareNormalizationError,
+                                    PrepareNormalizationOptions,
+                                    PrepareNormalizationStep)
 from .content_approval import (ContentApprovalError, ContentApprovalOptions,
                                ContentApprovalStep)
 from .draft_structuring import (
@@ -24,9 +24,9 @@ from .validator import SpecValidatorStep
 
 __all__ = [
     "AnalyzerOptions",
-    "BriefNormalizationError",
-    "BriefNormalizationOptions",
-    "BriefNormalizationStep",
+    "PrepareNormalizationError",
+    "PrepareNormalizationOptions",
+    "PrepareNormalizationStep",
     "ContentApprovalError",
     "ContentApprovalOptions",
     "ContentApprovalStep",

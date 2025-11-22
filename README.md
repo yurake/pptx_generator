@@ -23,6 +23,10 @@ PowerPoint テンプレートと資料データ（プレーンテキストや PD
 | 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
 | 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録（デフォルト出力先は `.pptx/gen/`） |
 
+モード別の処理フローは Dynamic（従来の可変スライド指向）と Static（Blueprint 指向）の 2 系統を用意しています。
+
+#### Dynamic モード
+
 ```mermaid
 flowchart TD
   %% ======= Styles =======
@@ -36,9 +40,9 @@ flowchart TD
   S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Brief["**資料データ (brief_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
-  S2 --> BriefCards["**ドラフト(prepare_card.json)**"]:::file
-  BriefCards --> S3
+  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
+  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  PrepareCards --> S3
 
   %% ======= Stage 3 =======
   S3["**工程 3 マッピング**"]:::stage
@@ -57,6 +61,46 @@ flowchart TD
     A2["**システム生成ファイル**"]:::file
     A3["**ユーザー準備ファイル**"]:::userfile
     A4["**最終成果物**"]:::final
+  end
+```
+
+#### Static モード
+
+```mermaid
+flowchart TD
+  %% ======= Styles =======
+  classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
+  classDef file fill:#f3f4f6,stroke:#4b5563,stroke-width:1px,color:#111827,font-weight:bold;
+  classDef userfile fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b,font-weight:bold;
+  classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
+
+  %% ======= Stage 1 =======
+  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**工程 1 テンプレ**"]:::stage
+  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+
+  %% ======= Stage 2 =======
+  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**工程 2 コンテンツ準備 (slot 生成)**"]:::stage
+  SpecStatic --> S2Static
+  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  PrepareCardsStatic --> S3Static
+
+  %% ======= Stage 3 =======
+  S3Static["**工程 3 マッピング (Blueprint 検証)**"]:::stage
+  SpecStatic --> S3Static
+  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+
+  %% ======= Stage 4 =======
+  ReadyStatic --> S4Static["**工程 4 PPTX生成**"]:::stage
+  S4Static --> PPTXStatic["**proposal.pptx**"]:::final
+  S4Static --> PDFStatic["**proposal.pdf**"]:::final
+
+  %% ======= Legend =======
+  subgraph LegendStatic[凡例]
+    direction LR
+    B1["**工程（自動/HITL）**"]:::stage
+    B2["**テンプレ仕様 / 構造ファイル**"]:::file
+    B3["**ユーザー準備ファイル**"]:::userfile
+    B4["**最終成果物**"]:::final
   end
 ```
 
@@ -113,32 +157,33 @@ flowchart TD
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
 ### 工程 2: コンテンツ準備
-- ブリーフ入力（Markdown / JSON）を `BriefCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
+- プレペア入力（Markdown / JSON）を `PrepareCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
-- `.pptx/prepare/` 配下に `prepare_card.json`、`brief_log.json`、`brief_ai_log.json`などを出力します。
+- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json`などを出力します。
+- Dynamic モードでは `prepare_card.json.cards[*].order` の昇順で `pptx compose` / `pptx outline` がスライドを生成し、HITL の並び替えをそのまま反映します。Static モードはテンプレ Blueprint / JobSpec の順序を優先し、`ai_generation_meta.mode` が未設定・未知値の場合はエラーになります。
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
     --output .pptx/prepare
   ```
-  - 主な生成物: `prepare_card.json`, `brief_log.json`, `brief_ai_log.json`, `ai_generation_meta.json`, `brief_story_outline.json`, `audit_log.json`
-  - 既存の承認済み Brief を再利用する場合は `--brief-cards`, `--brief-log`, `--brief-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
+  - 主な生成物: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`
+  - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards`, `--prepare-log`, `--prepare-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
 
 ### 工程 3: マッピング (HITL + 自動)
 - 章構成承認とレイアウト割付を同一工程で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
 - 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（ドラフトは `.pptx/draft/`、マッピング成果物は `.pptx/compose/`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
-    --brief-cards .pptx/prepare/prepare_card.json \
-    --brief-log .pptx/prepare/brief_log.json \
-    --brief-meta .pptx/prepare/ai_generation_meta.json \
+    --prepare-cards .pptx/prepare/prepare_card.json \
+    --prepare-log .pptx/prepare/prepare_log.json \
+    --prepare-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
     --output .pptx/compose \
     --layouts .pptx/extract/layouts.jsonl \
     --template samples/templates/templates.pptx
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
-- JobSpec と BriefCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
+- JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
 ### 工程 4: PPTX レンダリング

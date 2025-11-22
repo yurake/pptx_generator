@@ -1,14 +1,14 @@
 # RM-047 工程4ドラフト構成設計リニューアル設計書
 
 ## 背景と目的
-- 工程3で確定した `brief_cards.json`（テンプレ依存を排したブリーフカード集合）と、工程2で抽出した `jobspec.json`（テンプレ構造とプレースホルダ情報）を統合し、工程5が期待する `generate_ready.json` を工程4で生成する。
+- 工程3で確定した `prepare_card.json`（テンプレ依存を排したプレペアカード集合）と、工程2で抽出した `jobspec.json`（テンプレ構造とプレースホルダ情報）を統合し、工程5が期待する `generate_ready.json` を工程4で生成する。
 - 既存の `draft_draft.json` / `draft_approved.json` / `rendering_ready.json` を前提としたフローを廃止し、工程4→5 の受け渡しを `generate_ready` 基盤へ全面移行する。
 - 生成AIがカード単位でスライド割当提案を行い、HITL による承認・差戻し操作と連携できる構造へ再設計する。
 
 ## 入出力
 ### 入力
-- `brief_cards.json`: 工程3 の成果物。`cards[*]` に `card_id`, `chapter`, `message`, `story.phase`, `intent_tags` などを保持。
-- `brief_log.json`, `ai_generation_meta.json`: 生成経緯・HITL 操作のログ。必須ではないが、差戻し理由や AI の使用メタを参照するために読み込む。
+- `prepare_card.json`: 工程3 の成果物。`cards[*]` に `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]` などテンプレート非依存の情報を保持。
+- `prepare_log.json`, `ai_generation_meta.json`: 生成経緯・HITL 操作のログ。必須ではないが、差戻し理由や AI の使用メタを参照するために読み込む。
 - `jobspec.json`: 工程2 で管理するテンプレ構造データ。`slides[*]` に `layout`, `anchor`（図形名）, `textboxes` / `tables` / `images` 等のプレースホルダ情報を保持。
 - `layouts.jsonl`: レイアウトカテゴリのメタ（用途タグ、テキスト収容量、メディア許容フラグなど）。
 - `analysis_summary.json`（任意）: 工程6（Analyzer）の結果。重大度別件数やレイアウト整合性をカード割当時に参照する。
@@ -21,8 +21,8 @@
 - `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
-1. **Brief 読み込み**: `BriefNormalizationStep` が `brief_cards` / `brief_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `brief_document` を格納する。
-2. **カードメタ抽出**: 各カードの `story.phase`, `intent_tags`, `supporting_points` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、証憑数など）。
+1. **Prepare 読み込み**: `PrepareNormalizationStep` が `prepare_cards` / `prepare_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `prepare_document` を格納する。
+2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。
 3. **ジョブスペック参照**: `jobspec.slides[*]` を `layout_id` キーでインデックス化し、アンカー構造やプレースホルダ数を計算する。`layouts.jsonl` が存在する場合は用途タグ・容量ヒントを補完する。
 4. **AI 推薦（カード単位）**:
    - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
@@ -38,16 +38,16 @@
    - CLI で章・スライド単位の承認／差戻し／付録送りを操作すると、`draft_review_log.json` に履歴を記録し、`generate_ready_meta.sections[*].status` を更新する。
    - 差戻し時には `return_reasons.json` からコードを選択し、カードに紐付ける。差戻し後にカードが再割当されると過去ログはバージョンとして保持する。
 7. **generate_ready 出力**:
-   - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `message`, `narrative`, `supporting_points` をアンカー構造に合わせて整形して格納。
+   - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `content.title` / `content.headline` / `content.body` / `content.notes` をアンカー構造に合わせて整形して格納。
    - `meta.sources` には `card_id` を記載し、工程5 以降でトレース可能にする。
    - `generate_ready_meta.json` へは章テンプレ適合率、AI 推薦件数、差戻し統計、Analyzer 指摘要約（severity 別件数）を記録する。
 
 ## 主要コンポーネント
 | コンポーネント | 役割 | 備考 |
 | --- | --- | --- |
-| `BriefNormalizationStep` | Brief 成果物の読み込み。`PipelineContext` に `brief_document` を格納し、互換の `content_approved` を生成（工程5 互換用途）。 | RM-047 では `content_approved` 互換出力を段階的に縮退させる。 |
+| `PrepareNormalizationStep` | Prepare 成果物の読み込み。`PipelineContext` に `prepare_document` を格納し、互換の `content_approved` を生成（工程5 互換用途）。 | RM-047 では `content_approved` 互換出力を段階的に縮退させる。 |
 | `CardLayoutRecommender`（新規） | カード単位でテンプレ候補をスコアリング。AI 推薦＋ヒューリスティックのハイブリッド。 | 生成AIの利用有無は設定で切り替え可能。 |
-| `DraftStructuringStep`（刷新） | `brief_document` と `jobspec` を突合し、`DraftAllocationResult` を生成。章テンプレ適合、付録候補判定を実施。 | 出力は `generate_ready` 専用アーティファクトへ転送。 |
+| `DraftStructuringStep`（刷新） | `prepare_document` と `jobspec` を突合し、`DraftAllocationResult` を生成。章テンプレ適合、付録候補判定を実施。 | 出力は `generate_ready` 専用アーティファクトへ転送。 |
 | `GenerateReadyBuilder`（新規） | 割当結果から `GenerateReadyDocument` とメタ情報を構築。 | CLI から直接利用。 |
 | `draft_review_log.json` | HITL 操作ログ。`action` は `approve`/`return`/`appendix`/`hint` 等。 | Approval-First Policy と整合する。 |
 
@@ -158,7 +158,7 @@
 ## CLI / API 更新点
 - `uv run pptx outline` の引数を刷新し、最低限以下を必須とする。
   - `jobspec`（旧 `spec_path`）: 工程2 の `jobspec.json`。
-  - `--brief-cards`: 工程3 の `brief_cards.json`。
+  - `--prepare-cards`: 工程3 の `prepare_card.json`。
   - `--output`: 出力ディレクトリ。既定 `.pptx/draft`。
   - `--generate-ready-filename`: 既定 `generate_ready.json`。
 - 廃止予定のオプション: `--draft-filename`, `--approved-filename`, `--meta-filename` など `draft_*` 系。互換目的の出力は生成しない。

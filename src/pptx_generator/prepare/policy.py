@@ -6,12 +6,12 @@ from pathlib import Path
 from typing import Any
 
 
-class BriefPolicyError(RuntimeError):
-    """ブリーフポリシー定義の読み込みエラー。"""
+class PreparePolicyError(RuntimeError):
+    """プレペアポリシー定義の読み込みエラー。"""
 
 
 @dataclass(slots=True)
-class BriefPolicyChapter:
+class PreparePolicyChapter:
     """ポリシーが定める章の定義。"""
 
     id: str
@@ -20,14 +20,14 @@ class BriefPolicyChapter:
 
 
 @dataclass(slots=True)
-class BriefPolicy:
-    """BriefCard 生成時に参照するポリシー。"""
+class PreparePolicy:
+    """PrepareCard 生成時に参照するポリシー。"""
 
     id: str
     name: str
     story_framework: list[str]
     prompt_template_id: str | None = None
-    chapters: list[BriefPolicyChapter] = None
+    chapters: list[PreparePolicyChapter] = None
 
     def resolve_story_phase(self, index: int) -> str:
         if self.chapters and 0 <= index < len(self.chapters):
@@ -46,45 +46,45 @@ class BriefPolicy:
 
 
 @dataclass(slots=True)
-class BriefPolicySet:
+class PreparePolicySet:
     default_policy_id: str
-    policies: dict[str, BriefPolicy]
+    policies: dict[str, PreparePolicy]
 
-    def get_policy(self, policy_id: str | None) -> BriefPolicy:
+    def get_policy(self, policy_id: str | None) -> PreparePolicy:
         target = policy_id or self.default_policy_id
         if target not in self.policies:
-            raise BriefPolicyError(f"ポリシー ID '{target}' が見つかりません。")
+            raise PreparePolicyError(f"ポリシー ID '{target}' が見つかりません。")
         return self.policies[target]
 
 
-def load_brief_policy_set(path: Path | str) -> BriefPolicySet:
+def load_prepare_policy_set(path: Path | str) -> PreparePolicySet:
     policy_path = Path(path)
     if not policy_path.exists():
-        raise BriefPolicyError(f"ポリシーファイルが見つかりません: {policy_path}")
+        raise PreparePolicyError(f"ポリシーファイルが見つかりません: {policy_path}")
     raw_text = policy_path.read_text(encoding="utf-8")
     try:
         payload = json.loads(raw_text)
     except json.JSONDecodeError as exc:
-        raise BriefPolicyError(f"ポリシーファイルの解析に失敗しました: {policy_path}") from exc
+        raise PreparePolicyError(f"ポリシーファイルの解析に失敗しました: {policy_path}") from exc
     default_id = payload.get("default_policy_id")
     if not default_id:
-        raise BriefPolicyError("default_policy_id が定義されていません。")
-    policies: dict[str, BriefPolicy] = {}
+        raise PreparePolicyError("default_policy_id が定義されていません。")
+    policies: dict[str, PreparePolicy] = {}
     for item in payload.get("policies", []):
         try:
             policy = _build_policy(item)
         except KeyError as exc:
-            raise BriefPolicyError(f"ポリシー定義に必須項目がありません: {item}") from exc
+            raise PreparePolicyError(f"ポリシー定義に必須項目がありません: {item}") from exc
         policies[policy.id] = policy
     if default_id not in policies:
-        raise BriefPolicyError(f"default_policy_id '{default_id}' は policies に含まれていません。")
-    return BriefPolicySet(default_policy_id=default_id, policies=policies)
+        raise PreparePolicyError(f"default_policy_id '{default_id}' は policies に含まれていません。")
+    return PreparePolicySet(default_policy_id=default_id, policies=policies)
 
 
-def _build_policy(payload: dict[str, Any]) -> BriefPolicy:
+def _build_policy(payload: dict[str, Any]) -> PreparePolicy:
     chapters_payload = payload.get("chapters") or []
     chapters = [
-        BriefPolicyChapter(
+        PreparePolicyChapter(
             id=str(item.get("id")),
             title=str(item.get("title")),
             story_phase=item.get("story_phase"),
@@ -98,7 +98,7 @@ def _build_policy(payload: dict[str, Any]) -> BriefPolicy:
         "solution",
         "impact",
     ]
-    return BriefPolicy(
+    return PreparePolicy(
         id=str(payload["id"]),
         name=str(payload.get("name") or payload["id"]),
         story_framework=[str(s).lower() for s in framework],
