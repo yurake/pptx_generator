@@ -990,7 +990,20 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         },
         "auth": {"created_by": "tester"},
         "slides": [
-            {"id": "title-01", "layout": "Title", "title": "Intro"},
+            {
+                "id": "title-01",
+                "layout": "Title",
+                "title": "Intro",
+                "auto_draw_anchors": ["Num"],
+                "auto_draw_boxes": {
+                    "Num": {
+                        "left_in": 9.4,
+                        "top_in": 6.9,
+                        "width_in": 1.0,
+                        "height_in": 0.4,
+                    }
+                },
+            },
             {"id": "section_covor_left-01",
                 "layout": "Section Covor Left", "title": "Overview"},
         ],
@@ -1052,6 +1065,9 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     assert ready_payload["meta"]["layout_mode"] == "static"
     first_slot = ready_payload["slides"][0]["meta"]["blueprint_slots"][0]
     assert first_slot["fulfilled"] is True
+    first_auto_draw = ready_payload["slides"][0]["meta"]["auto_draw"][0]
+    assert first_auto_draw["anchor"] == "Num"
+    assert first_auto_draw["left_in"] == pytest.approx(9.4, rel=1e-3)
 
     mapping_log_payload = json.loads(
         (mapping_dir / "mapping_log.json").read_text(encoding="utf-8"))
