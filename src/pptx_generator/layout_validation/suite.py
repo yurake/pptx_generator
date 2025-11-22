@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import unicodedata
@@ -15,6 +16,9 @@ from typing import Any, Iterable
 from ..models import LayoutInfo, ShapeInfo, TemplateSpec
 from ..utils.usage_tags import normalize_usage_tags_with_unknown
 from ..pipeline.template_extractor import TemplateExtractor, TemplateExtractorOptions
+from ..template_ai import TemplateAIOptions, TemplateAIResult, TemplateAIService
+from ..template_ai.client import TemplateAIClientConfigurationError
+from ..template_ai.policy import TemplateAIPolicyError
 from .schema import (
     DIAGNOSTICS_VALIDATOR,
     DIFF_REPORT_VALIDATOR,
@@ -23,6 +27,8 @@ from .schema import (
 
 EMU_PER_INCH = 914400
 SUITE_VERSION = "1.0.0"
+
+logger = logging.getLogger(__name__)
 
 
 PLACEHOLDER_TYPE_ALIASES: dict[str, str] = {
@@ -58,6 +64,9 @@ class LayoutValidationOptions:
     template_id: str | None = None
     baseline_path: Path | None = None
     analyzer_snapshot_path: Path | None = None
+    template_ai_policy_path: Path | None = None
+    template_ai_policy_id: str | None = None
+    disable_template_ai: bool = False
 
 
 @dataclass(slots=True)
@@ -81,6 +90,113 @@ class LayoutValidationSuite:
 
     def __init__(self, options: LayoutValidationOptions) -> None:
         self.options = options
+        self._template_ai_service: TemplateAIService | None = None
+        self._template_ai_stats = {
+            "invoked": 0,
+            "success": 0,
+            "fallback": 0,
+            "failed": 0,
+        }
+        self._template_ai_layouts: list[dict[str, Any]] = []
+        self._initialize_template_ai()
+
+    def _initialize_template_ai(self) -> None:
+        if self.options.disable_template_ai:
+            logger.info("template AI is disabled by option")
+            return
+        policy_path = self.options.template_ai_policy_path
+        if policy_path is None:
+            return
+        try:
+            service = TemplateAIService(
+                TemplateAIOptions(
+                    policy_path=policy_path,
+                    policy_id=self.options.template_ai_policy_id,
+                )
+            )
+        except (TemplateAIPolicyError, TemplateAIClientConfigurationError) as exc:
+            logger.warning("テンプレートAIの初期化に失敗しました: %s", exc)
+            return
+        self._template_ai_service = service
+
+    def _invoke_template_ai(
+        self,
+        *,
+        template_id: str,
+        layout_id: str,
+        layout_name: str,
+        placeholders: list[dict[str, Any]],
+        text_hint: dict[str, Any],
+        media_hint: dict[str, Any],
+        heuristic_usage_tags: list[str],
+    ) -> TemplateAIResult | None:
+        service = self._template_ai_service
+        if service is None:
+            return None
+
+        self._template_ai_stats = {key: self._template_ai_stats.get(key, 0) for key in ("invoked", "success", "fallback", "failed")}
+        self._template_ai_stats["invoked"] += 1
+        started = perf_counter()
+        result: TemplateAIResult | None = None
+        try:
+            result = service.classify_layout(
+                template_id=template_id,
+                layout_id=layout_id,
+                layout_name=layout_name,
+                placeholders=placeholders,
+                text_hint=text_hint,
+                media_hint=media_hint,
+                heuristic_usage_tags=heuristic_usage_tags,
+            )
+        except TemplateAIClientConfigurationError as exc:
+            logger.warning("template AI classify failed: %s", exc)
+            self._template_ai_stats["failed"] += 1
+            self._template_ai_layouts.append(
+                {
+                    "layout_id": layout_id,
+                    "layout_name": layout_name,
+                    "source": "error",
+                    "reason": None,
+                    "tags": [],
+                    "unknown_tags": [],
+                    "error": str(exc),
+                }
+            )
+            return None
+        finally:
+            elapsed = perf_counter() - started
+            if logger.isEnabledFor(logging.DEBUG) or elapsed > 0.5:
+                source = getattr(result, "source", "-") if result else "-"
+                logger.info(
+                    "template AI classify: layout=%s provider=%s elapsed=%.3fs",
+                    layout_id,
+                    source,
+                    elapsed,
+                )
+
+        if result is None:
+            return None
+
+        if result.success:
+            self._template_ai_stats["success"] += 1
+        elif result.source == "static":
+            self._template_ai_stats["fallback"] += 1
+        else:
+            self._template_ai_stats["failed"] += 1
+
+        self._template_ai_layouts.append(
+            {
+                "layout_id": layout_id,
+                "layout_name": layout_name,
+                "source": result.source,
+                "reason": result.reason,
+                "tags": list(result.usage_tags or ()),
+                "unknown_tags": list(result.unknown_tags),
+                "error": result.error,
+            }
+        )
+
+        return result
 
     def run(self) -> LayoutValidationResult:
         """検証を実行し成果物を生成する。"""
@@ -88,6 +204,14 @@ class LayoutValidationSuite:
         if not self.options.template_path.exists():
             msg = f"テンプレートファイルが存在しません: {self.options.template_path}"
             raise LayoutValidationError(msg)
+
+        self._template_ai_stats = {
+            "invoked": 0,
+            "success": 0,
+            "fallback": 0,
+            "failed": 0,
+        }
+        self._template_ai_layouts = []
 
         start = perf_counter()
         extractor = TemplateExtractor(
@@ -110,17 +234,28 @@ class LayoutValidationSuite:
             analyzer_snapshot_issues.extend(snapshot_issues)
 
         extraction_time_ms = int((perf_counter() - start) * 1000)
+        stats = {
+            "layouts_total": len(records),
+            "placeholders_total": sum(
+                len(record["placeholders"]) for record in records
+            ),
+            "extraction_time_ms": extraction_time_ms,
+        }
+        stats.update(
+            {
+                "template_ai_invoked": self._template_ai_stats.get("invoked", 0),
+                "template_ai_success": self._template_ai_stats.get("success", 0),
+                "template_ai_fallback": self._template_ai_stats.get("fallback", 0),
+                "template_ai_failed": self._template_ai_stats.get("failed", 0),
+            }
+        )
+
         diagnostics = {
             "template_id": template_id,
             "warnings": warnings,
             "errors": errors,
-            "stats": {
-                "layouts_total": len(records),
-                "placeholders_total": sum(
-                    len(record["placeholders"]) for record in records
-                ),
-                "extraction_time_ms": extraction_time_ms,
-            },
+            "stats": stats,
+            "template_ai": self._template_ai_layouts,
         }
 
         self._validate_records(records)
@@ -214,6 +349,16 @@ class LayoutValidationSuite:
                 style_hint = self._build_style_hint(shape)
                 flags = self._build_flags(shape, normalised_type)
 
+                if bbox["x"] < 0 or bbox["y"] < 0:
+                    warnings.append(
+                        {
+                            "code": "placeholder_negative_origin",
+                            "layout_id": layout_id,
+                            "name": shape.name,
+                            "detail": f"x={bbox['x']} y={bbox['y']}",
+                        }
+                    )
+
                 placeholder_records.append(
                     {
                         "name": shape.name,
@@ -267,12 +412,52 @@ class LayoutValidationSuite:
                     }
                 )
 
+            text_hint = self._derive_text_hint(placeholder_records)
+            media_hint = self._derive_media_hint(placeholder_records)
+
             (
-                raw_usage_tags,
+                heuristic_tags,
                 has_title_placeholder,
                 has_body_placeholder,
                 title_from_name,
             ) = self._derive_usage_tags(layout, placeholder_records)
+
+            raw_usage_tags = set(heuristic_tags)
+
+            ai_result = self._invoke_template_ai(
+                template_id=template_id,
+                layout_id=layout_id,
+                layout_name=layout.name or layout_id,
+                placeholders=placeholder_records,
+                text_hint=text_hint,
+                media_hint=media_hint,
+                heuristic_usage_tags=sorted(heuristic_tags),
+            )
+
+            if ai_result and ai_result.success and ai_result.usage_tags:
+                raw_usage_tags = set(ai_result.usage_tags)
+                if ai_result.source == "static":
+                    raw_usage_tags.update(heuristic_tags)
+            else:
+                if ai_result:
+                    if ai_result.error:
+                        warnings.append(
+                            {
+                                "code": "usage_tag_ai_error",
+                                "layout_id": layout_id,
+                                "name": layout.name,
+                                "detail": ai_result.error,
+                            }
+                        )
+                    elif ai_result.source != "static":
+                        warnings.append(
+                            {
+                                "code": "usage_tag_ai_fallback",
+                                "layout_id": layout_id,
+                                "name": layout.name,
+                                "detail": "生成AIが使用できなかったためヒューリスティックへフォールバックしました",
+                            }
+                        )
 
             usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
             usage_tags_set = set(usage_tags_tuple)
@@ -287,7 +472,17 @@ class LayoutValidationSuite:
 
             usage_tags = sorted(usage_tags_set)
 
-            if unknown_tags:
+            if ai_result and ai_result.success:
+                if ai_result.unknown_tags:
+                    warnings.append(
+                        {
+                            "code": "usage_tag_ai_unknown",
+                            "layout_id": layout_id,
+                            "name": layout.name,
+                            "detail": ", ".join(ai_result.unknown_tags),
+                        }
+                    )
+            elif unknown_tags:
                 warnings.append(
                     {
                         "code": "usage_tag_unknown",
@@ -309,8 +504,6 @@ class LayoutValidationSuite:
                         "detail": detail,
                     }
                 )
-            text_hint = self._derive_text_hint(placeholder_records)
-            media_hint = self._derive_media_hint(placeholder_records)
 
             records.append(
                 {

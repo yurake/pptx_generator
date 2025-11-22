@@ -9,11 +9,14 @@ import os
 import shutil
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
+from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional
 
 import click
 from dotenv import load_dotenv
+from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import (BrandingExtractionError,
@@ -378,8 +381,9 @@ class TemplateExtractionResult:
     template_spec_path: Path
     branding_path: Path
     jobspec_path: Path
-    validation_result: LayoutValidationResult
+    validation_result: LayoutValidationResult | None
     output_dir: Path
+    slide_snapshot_path: Path | None
 
 
 @dataclass(slots=True)
@@ -413,6 +417,22 @@ def _run_template_extraction(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    ai_policy_path = template_ai_policy
+    if ai_policy_path is None and not disable_template_ai:
+        env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
+        if env_policy:
+            ai_policy_path = Path(env_policy)
+        else:
+            ai_policy_path = _discover_template_ai_policy()
+    ai_policy_id = template_ai_policy_id or os.getenv(
+        "PPTX_TEMPLATE_AI_POLICY_ID")
+    effective_disable = disable_template_ai or ai_policy_path is None
+    if effective_disable:
+        ai_policy_path = None
+        if not disable_template_ai:
+            logger.info(
+                "Template AI validation disabled: no policy file available")
+
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
     jobspec_scaffold = extractor.build_jobspec_scaffold(template_spec)
@@ -445,24 +465,30 @@ def _run_template_extraction(
     branding_path.write_text(branding_text, encoding="utf-8")
     logger.info("Saved branding payload to %s", branding_path.resolve())
 
-    logger.info("Starting layout validation for %s", template_path)
-    validation_options = LayoutValidationOptions(
-        template_path=template_path,
-        output_dir=output_dir,
-    )
-    validation_suite = LayoutValidationSuite(validation_options)
-    validation_result = validation_suite.run()
-    logger.info(
-        "Layout validation finished: warnings=%d errors=%d",
-        validation_result.warnings_count,
-        validation_result.errors_count,
-    )
+    validation_result: LayoutValidationResult | None = None
+    if not skip_validation:
+        logger.info("Starting layout validation for %s", template_path)
+        validation_options = LayoutValidationOptions(
+            template_path=template_path,
+            output_dir=output_dir,
+            template_ai_policy_path=ai_policy_path,
+            template_ai_policy_id=ai_policy_id,
+            disable_template_ai=effective_disable,
+        )
+        validation_suite = LayoutValidationSuite(validation_options)
+        validation_result = validation_suite.run()
+        logger.info(
+            "Layout validation finished: warnings=%d errors=%d",
+            validation_result.warnings_count,
+            validation_result.errors_count,
+        )
 
-    layouts_relative: str | None = None
-    try:
-        layouts_relative = str(validation_result.layouts_path.relative_to(output_dir))
-    except ValueError:
-        layouts_relative = str(validation_result.layouts_path)
+        layouts_relative: str | None = None
+        try:
+            layouts_relative = str(
+                validation_result.layouts_path.relative_to(output_dir))
+        except ValueError:
+            layouts_relative = str(validation_result.layouts_path)
 
     template_spec_relative: str | None = None
     try:
@@ -481,6 +507,13 @@ def _run_template_extraction(
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
     logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
 
+    slide_snapshot_path: Path | None = None
+    if emit_slide_snapshot:
+        slide_snapshot_path = _generate_slide_snapshot(
+            template_path=template_path,
+            output_dir=output_dir,
+        )
+
     return TemplateExtractionResult(
         template_spec=template_spec,
         jobspec_scaffold=jobspec_scaffold,
@@ -489,7 +522,96 @@ def _run_template_extraction(
         jobspec_path=jobspec_path,
         validation_result=validation_result,
         output_dir=output_dir,
+        slide_snapshot_path=slide_snapshot_path,
     )
+
+
+def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path | None:
+    logger.info("Generating slide snapshot for %s", template_path)
+    try:
+        presentation = Presentation(template_path)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("スライドスナップショットの生成に失敗しました: %s", exc)
+        return None
+
+    slides_payload: list[dict[str, Any]] = []
+    for index, slide in enumerate(presentation.slides):
+        snapshot = SlideSnapshot.from_slide(slide, index)
+        slides_payload.append(_serialize_slide_snapshot(slide, snapshot))
+
+    if not slides_payload:
+        logger.info("スライドが存在しないためスナップショットを出力しません: %s", template_path)
+        return None
+
+    payload = {
+        "template_path": str(template_path),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "slides": slides_payload,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / "slide_snapshot.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False,
+                    indent=2), encoding="utf-8")
+    logger.info("Saved slide snapshot to %s", path.resolve())
+    return path
+
+
+def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
+    layout_name = getattr(getattr(slide, "slide_layout", None), "name", None)
+    slide_identifier = getattr(slide, "slide_id", None)
+
+    shapes_payload: list[dict[str, Any]] = []
+    for shape in snapshot.shapes:
+        paragraphs = [
+            {
+                "index": paragraph.paragraph_index,
+                "text": paragraph.text,
+                "level": paragraph.level,
+                "font_size_pt": paragraph.font_size_pt,
+                "color_hex": paragraph.color_hex,
+            }
+            for paragraph in shape.paragraphs
+        ]
+        shapes_payload.append(
+            {
+                "shape_id": shape.shape_id,
+                "name": shape.name or "",
+                "shape_type": _shape_type_name(shape.shape_type),
+                "left_in": shape.left_in,
+                "top_in": shape.top_in,
+                "width_in": shape.width_in,
+                "height_in": shape.height_in,
+                "is_placeholder": shape.is_placeholder,
+                "placeholder_type": _placeholder_type_name(shape.placeholder_type),
+                "paragraphs": paragraphs,
+            }
+        )
+
+    return {
+        "index": snapshot.index,
+        "slide_id": slide_identifier,
+        "layout": layout_name,
+        "shapes": shapes_payload,
+    }
+
+
+def _shape_type_name(shape_type: int | None) -> str:
+    if shape_type is None:
+        return "unknown"
+    try:
+        return MSO_SHAPE_TYPE(shape_type).name
+    except ValueError:
+        return str(shape_type)
+
+
+def _placeholder_type_name(placeholder_type: int | None) -> str | None:
+    if placeholder_type is None:
+        return None
+    try:
+        return PP_PLACEHOLDER(placeholder_type).name
+    except ValueError:
+        return str(placeholder_type)
 
 
 def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
@@ -510,14 +632,20 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
     click.echo(f"抽出された図形・アンカー数: {total_anchors}")
     click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
 
-    click.echo(f"Layouts: {validation_result.layouts_path}")
-    click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
-    if validation_result.diff_report_path is not None:
-        click.echo(f"Diff: {validation_result.diff_report_path}")
-    click.echo(
-        "検出結果: warnings=%d, errors=%d"
-        % (validation_result.warnings_count, validation_result.errors_count)
-    )
+    if validation_result is not None:
+        click.echo(f"Layouts: {validation_result.layouts_path}")
+        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
+        if validation_result.diff_report_path is not None:
+            click.echo(f"Diff: {validation_result.diff_report_path}")
+        click.echo(
+            "検出結果: warnings=%d, errors=%d"
+            % (validation_result.warnings_count, validation_result.errors_count)
+        )
+    else:
+        click.echo("検証をスキップしました (--force)")
+
+    if result.slide_snapshot_path is not None:
+        click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")
 
     if template_spec.warnings:
         click.echo(f"警告: {len(template_spec.warnings)} 件")
@@ -1210,7 +1338,8 @@ def _run_mapping_pipeline(
                 if destination.resolve() != source_path.resolve():
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(source_path, destination)
-                context.add_artifact("generate_ready_meta_path", str(destination))
+                context.add_artifact(
+                    "generate_ready_meta_path", str(destination))
         except OSError as exc:  # noqa: PERF203 - unexpected copy failure should bubble up later
             raise RuntimeError(
                 f"generate_ready_meta.json のコピーに失敗しました: {exc}"
@@ -1229,7 +1358,8 @@ def _pass_through_static_generate_ready(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     artifacts = dict(draft_context.artifacts)
-    context = PipelineContext(spec=spec, workdir=output_dir, artifacts=artifacts)
+    context = PipelineContext(
+        spec=spec, workdir=output_dir, artifacts=artifacts)
 
     generate_ready = artifacts.get("generate_ready")
     if not isinstance(generate_ready, GenerateReadyDocument):
@@ -1249,17 +1379,20 @@ def _pass_through_static_generate_ready(
         if generate_ready.meta.job_meta:
             job_meta = generate_ready.meta.job_meta
             if not job_meta.template_path:
-                updated_job_meta = job_meta.model_copy(update={"template_path": template_path})
+                updated_job_meta = job_meta.model_copy(
+                    update={"template_path": template_path})
             else:
                 updated_job_meta = job_meta
         meta_updates = {"template_path": template_path}
         if updated_job_meta is not None:
             meta_updates["job_meta"] = updated_job_meta
         generate_ready = generate_ready.model_copy(
-            update={"meta": generate_ready.meta.model_copy(update=meta_updates)}
+            update={"meta": generate_ready.meta.model_copy(
+                update=meta_updates)}
         )
         artifacts["generate_ready"] = generate_ready
-        logger.debug("static pass-through: template_path set to %s", template_path)
+        logger.debug(
+            "static pass-through: template_path set to %s", template_path)
 
     ready_dest = output_dir / mapping_options.generate_ready_filename
     ready_dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1300,14 +1433,18 @@ def _pass_through_static_generate_ready(
         if "mode" not in meta_payload and generate_ready.meta.layout_mode:
             meta_payload["mode"] = generate_ready.meta.layout_mode
         if generate_ready.meta.slot_summary:
-            meta_payload.setdefault("slot_summary", generate_ready.meta.slot_summary)
-        meta_payload.setdefault("generate_ready_generated_at", generate_ready.meta.generated_at)
-    meta_dest.write_text(json.dumps(meta_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            meta_payload.setdefault(
+                "slot_summary", generate_ready.meta.slot_summary)
+        meta_payload.setdefault(
+            "generate_ready_generated_at", generate_ready.meta.generated_at)
+    meta_dest.write_text(json.dumps(
+        meta_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     context.add_artifact("generate_ready_meta_path", str(meta_dest))
 
     mapping_log_dest = output_dir / mapping_options.mapping_log_filename
     draft_mapping_log_path = artifacts.get("draft_mapping_log_path")
-    mapping_src = Path(draft_mapping_log_path) if isinstance(draft_mapping_log_path, str) else None
+    mapping_src = Path(draft_mapping_log_path) if isinstance(
+        draft_mapping_log_path, str) else None
     if mapping_src and mapping_src.exists() and mapping_src.resolve() != mapping_log_dest.resolve():
         shutil.copy2(mapping_src, mapping_log_dest)
     elif mapping_src and mapping_src.exists():
@@ -1415,7 +1552,8 @@ def _echo_mapping_outputs(context: PipelineContext) -> None:
     generate_ready_path = context.artifacts.get("generate_ready_path")
     if generate_ready_path is not None:
         click.echo(f"Generate Ready: {generate_ready_path}")
-    generate_ready_meta_path = context.artifacts.get("generate_ready_meta_path")
+    generate_ready_meta_path = context.artifacts.get(
+        "generate_ready_meta_path")
     if generate_ready_meta_path is not None:
         click.echo(f"Generate Ready Meta: {generate_ready_meta_path}")
     mapping_log_path = context.artifacts.get("mapping_log_path")
@@ -1769,7 +1907,8 @@ def gen(  # noqa: PLR0913
 )
 @click.option(
     "--jobspec",
-    type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, dir_okay=False,
+                    readable=True, path_type=Path),
     default=None,
     help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
 )
@@ -1812,7 +1951,8 @@ def prepare(
     jobspec_path: Path | None = jobspec
     normalized_mode = mode.lower()
     if normalized_mode not in {"dynamic", "static"}:
-        raise click.exceptions.BadParameter("--mode には dynamic か static を指定してください")
+        raise click.exceptions.BadParameter(
+            "--mode には dynamic か static を指定してください")
 
     if normalized_mode == "static":
         if page_limit is not None:
@@ -1831,7 +1971,8 @@ def prepare(
             click.echo(f"jobspec.json の読み込みに失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=2) from exc
 
-        template_spec_ref = getattr(spec_for_static.meta, "template_spec_path", None)
+        template_spec_ref = getattr(
+            spec_for_static.meta, "template_spec_path", None)
         if not template_spec_ref:
             click.echo(
                 "jobspec.meta.template_spec_path が設定されていません。テンプレ抽出を再実行してください",
@@ -1841,7 +1982,8 @@ def prepare(
 
         template_spec_path = Path(template_spec_ref)
         if not template_spec_path.is_absolute():
-            template_spec_path = (resolved_jobspec.parent / template_spec_path).resolve()
+            template_spec_path = (
+                resolved_jobspec.parent / template_spec_path).resolve()
 
         if not template_spec_path.exists():
             click.echo(
@@ -1862,7 +2004,8 @@ def prepare(
                 payload = yaml.safe_load(template_spec_text)
                 blueprint_spec = TemplateSpec.model_validate(payload)
             else:
-                blueprint_spec = TemplateSpec.model_validate_json(template_spec_text)
+                blueprint_spec = TemplateSpec.model_validate_json(
+                    template_spec_text)
         except ValueError as exc:
             click.echo(f"template_spec の検証に失敗しました: {exc}", err=True)
             raise click.exceptions.Exit(code=2) from exc
@@ -1935,7 +2078,8 @@ def prepare(
         }
     }
     if template_spec_path is not None:
-        audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(template_spec_path)
+        audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(
+            template_spec_path)
     if blueprint_ref:
         audit_payload["prepare_normalization"]["blueprint"] = blueprint_ref
     if meta.slot_coverage:
@@ -2631,6 +2775,37 @@ def mapping(  # noqa: PLR0913
     multiple=True,
     help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
+@click.option(
+    "--slide",
+    is_flag=True,
+    default=False,
+    help="実スライドの図形・段落情報を slide_snapshot.json として出力する",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="レイアウト検証をスキップして強制的にテンプレ工程を継続する（緊急時のみ使用）",
+)
 def template(  # noqa: PLR0913
     template_path: Path,
     output: Path,
@@ -2647,6 +2822,11 @@ def template(  # noqa: PLR0913
     reviewed_by: str | None,
     baseline_release: Path | None,
     golden_specs: tuple[Path, ...],
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
+    slide: bool,
+    force: bool,
 ) -> None:
     """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
     _log_current_llm_provider("template")
@@ -2673,9 +2853,15 @@ def template(  # noqa: PLR0913
     _echo_template_extraction_result(extraction_result)
 
     validation_result = extraction_result.validation_result
-    if validation_result.errors_count > 0:
+    if validation_result is not None and validation_result.errors_count > 0:
         click.echo(
             "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
+            err=True,
+        )
+        raise click.exceptions.Exit(code=6)
+    if validation_result is None and not force:
+        click.echo(
+            "レイアウト検証を実施できませんでした。--force を使用しない場合は出力を確認してください。",
             err=True,
         )
         raise click.exceptions.Exit(code=6)
@@ -2769,6 +2955,24 @@ def template(  # noqa: PLR0913
     show_default=True,
     help="テンプレート仕様とブランド設定を保存するディレクトリ",
 )
+@click.option(
+    "--template-ai-policy",
+    type=click.Path(dir_okay=False, readable=True, path_type=Path),
+    default=None,
+    help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
+)
+@click.option(
+    "--template-ai-policy-id",
+    type=str,
+    default=None,
+    help="テンプレート AI ポリシーセット内の利用対象 ID",
+)
+@click.option(
+    "--disable-template-ai",
+    is_flag=True,
+    default=False,
+    help="生成AIによる usage_tags 推定を無効化する",
+)
 def tpl_extract(
     template_path: Path,
     output_dir: Path,
@@ -2802,7 +3006,7 @@ def tpl_extract(
     else:
         _echo_template_extraction_result(extraction_result)
         validation_result = extraction_result.validation_result
-        if validation_result.errors_count > 0:
+        if validation_result is not None and validation_result.errors_count > 0:
             click.echo(
                 "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
                 err=True,

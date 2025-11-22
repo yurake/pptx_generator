@@ -18,7 +18,7 @@
   - `template_spec.json`（または `template_spec.yaml`）
   - `jobspec.json`
   - `branding.json`
-  - `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）
+  - `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）。`diagnostics.json.template_ai` に LLM 応答の要約を出力し、usage_tags は Template AI が `config/usage_tags.json` の canonical 語彙へ正規化した結果を `layouts.jsonl` に記録する。
 - `.pptx/release/` 内の成果物（`--with-release` 指定時）
   - `template_release.json`
   - `release_report.json`

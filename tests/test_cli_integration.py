@@ -8,19 +8,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
 from pptx_generator.branding_extractor import BrandingExtractionError
-from pptx_generator.models import JobSpec, Slide, TemplateRelease, TemplateReleaseGoldenRun, TemplateReleaseReport, TemplateSpec
+from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
+from pptx_generator.layout_validation import (LayoutValidationResult,
+                                              LayoutValidationSuite)
+from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
+                                   TemplateReleaseGoldenRun,
+                                   TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
-from pptx_generator.layout_validation import LayoutValidationResult, LayoutValidationSuite
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -81,14 +84,16 @@ def _prepare_args(paths: dict[str, Path]) -> list[str]:
 
 def _create_matching_jobspec(root: Path, prepare_paths: dict[str, Path], *, filename: str = "matching_jobspec.json") -> Path:
     base_spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
-    cards_payload = json.loads(prepare_paths["cards"].read_text(encoding="utf-8"))
+    cards_payload = json.loads(
+        prepare_paths["cards"].read_text(encoding="utf-8"))
     cards = cards_payload.get("cards", [])
 
     slides: list[Slide] = []
     for index, card in enumerate(cards, start=1):
         card_id = card.get("card_id") or f"card-{index:03d}"
         content = card.get("content") or {}
-        title = (content.get("title") or content.get("headline") or card_id)[:25]
+        title = (content.get("title") or content.get(
+            "headline") or card_id)[:25]
         notes = None
         note_entries = content.get("notes") or []
         if note_entries:
@@ -175,6 +180,73 @@ def test_cli_template_with_release(tmp_path: Path) -> None:
     assert (release_dir / "template_release.json").exists()
     assert (release_dir / "release_report.json").exists()
     assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in result.output
+
+
+def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+    template_path = tmp_path / "template_with_slide.pptx"
+    _create_template_with_slide(template_path)
+
+    def _fail_run(self):  # noqa: D401
+        raise AssertionError(
+            "validation should be skipped when --force is specified")
+
+    monkeypatch.setattr(LayoutValidationSuite, "run", _fail_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(template_path),
+            "--output",
+            str(extract_dir),
+            "--slide",
+            "--force",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (extract_dir / "template_spec.json").exists()
+    assert "検証をスキップしました" in result.output
+    snapshot_path = extract_dir / "slide_snapshot.json"
+    assert snapshot_path.exists(), "--slide 指定時にスナップショットが出力されていません"
+
+
+def test_cli_template_emits_slide_snapshot(tmp_path: Path) -> None:
+    runner = CliRunner()
+    extract_dir = tmp_path / "extract"
+    template_path = tmp_path / "template_with_slide.pptx"
+    _create_template_with_slide(template_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(template_path),
+            "--output",
+            str(extract_dir),
+            "--slide",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    snapshot_path = extract_dir / "slide_snapshot.json"
+    assert snapshot_path.exists(), result.output
+
+    payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert payload["slides"], "スライドスナップショットが空です"
+    first_slide = payload["slides"][0]
+    assert "shapes" in first_slide and first_slide["shapes"], "図形情報が存在しません"
+    paragraph_texts = [
+        paragraph["text"]
+        for shape in first_slide["shapes"]
+        for paragraph in shape.get("paragraphs", [])
+        if paragraph.get("text")
+    ]
+    assert paragraph_texts, "段落テキストが取得できていません"
 
 
 def _prepare_generate_ready(
@@ -271,14 +343,16 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     assert mapping_info is not None
     assert mapping_info.get("generate_ready_path") == str(generate_ready_path)
 
-    cards_payload = json.loads(prepare_paths["cards"].read_text(encoding="utf-8"))
+    cards_payload = json.loads(
+        prepare_paths["cards"].read_text(encoding="utf-8"))
     cards = cards_payload["cards"]
 
     presentation = Presentation(pptx_path)
     assert len(presentation.slides) == len(cards) == len(spec.slides)
     for card, slide in zip(cards, presentation.slides, strict=False):
         content = card.get("content") or {}
-        expected_title = (content.get("title") or content.get("headline") or card.get("card_id") or "").strip()
+        expected_title = (content.get("title") or content.get(
+            "headline") or card.get("card_id") or "").strip()
         if not expected_title:
             continue
         title_shape = slide.shapes.title
@@ -317,7 +391,8 @@ def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
     cards_payload = json.loads(cards_path.read_text(encoding="utf-8"))
     assert len(cards_payload["cards"]) >= 1
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
-    assert audit_payload["prepare_normalization"]["statistics"]["cards_total"] == len(cards_payload["cards"])
+    assert audit_payload["prepare_normalization"]["statistics"]["cards_total"] == len(
+        cards_payload["cards"])
 
 
 def test_cli_mapping_then_gen(tmp_path: Path) -> None:
@@ -348,7 +423,8 @@ def test_cli_mapping_then_gen(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     artifacts = audit_payload.get("artifacts", {})
     assert artifacts.get("generate_ready") == str(ready_path)
 
@@ -428,7 +504,8 @@ def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
     payload = json.loads(ready_path.read_text(encoding="utf-8"))
     payload["meta"].pop("template_path", None)
     stripped_ready = mapping_dir / "generate_ready_no_template.json"
-    stripped_ready.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    stripped_ready.write_text(json.dumps(
+        payload, ensure_ascii=False), encoding="utf-8")
 
     result = runner.invoke(
         app,
@@ -514,7 +591,8 @@ def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "success"
@@ -598,7 +676,8 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
@@ -609,7 +688,8 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-polisher"
     rules_path = tmp_path / "polisher-rules.json"
-    rules_path.write_text(json.dumps({"min_font_size_pt": 18.0}), encoding="utf-8")
+    rules_path.write_text(json.dumps(
+        {"min_font_size_pt": 18.0}), encoding="utf-8")
 
     script_path = tmp_path / "polisher_stub.py"
     script_path.write_text(
@@ -670,7 +750,8 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     polisher_meta = audit_payload.get("polisher")
     assert polisher_meta is not None
     assert polisher_meta.get("status") == "success"
@@ -724,7 +805,8 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "file"
@@ -746,7 +828,8 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
         prepare_paths=prepare_paths,
     )
 
-    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (_ for _ in ()).throw(BrandingExtractionError("boom")))
+    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (
+        _ for _ in ()).throw(BrandingExtractionError("boom")))
 
     result = runner.invoke(
         app,
@@ -760,7 +843,8 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     )
 
     assert result.exit_code == 0
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     source_info = branding_info.get("source", {})
@@ -855,7 +939,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         },
     }
     blueprint_path = tmp_path / "static_template_spec.json"
-    blueprint_path.write_text(json.dumps(blueprint_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    blueprint_path.write_text(json.dumps(
+        blueprint_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     prepare_payload = {
         "meta": {"prepare_id": "static-prepare", "title": "Static Prepare"},
@@ -879,7 +964,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         ],
     }
     prepare_path = tmp_path / "prepare_static.json"
-    prepare_path.write_text(json.dumps(prepare_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    prepare_path.write_text(json.dumps(
+        prepare_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     jobspec_payload = {
         "meta": {
@@ -893,11 +979,13 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         "auth": {"created_by": "tester"},
         "slides": [
             {"id": "title-01", "layout": "Title", "title": "Intro"},
-            {"id": "section_covor_left-01", "layout": "Section Covor Left", "title": "Overview"},
+            {"id": "section_covor_left-01",
+                "layout": "Section Covor Left", "title": "Overview"},
         ],
     }
     jobspec_path = tmp_path / "jobspec_static.json"
-    jobspec_path.write_text(json.dumps(jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    jobspec_path.write_text(json.dumps(
+        jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     prepare_dir = tmp_path / "prepare_static"
     result = runner.invoke(
@@ -916,7 +1004,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
 
-    meta_payload = json.loads((prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    meta_payload = json.loads(
+        (prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["mode"] == "static"
     assert meta_payload["slot_coverage"]["required_total"] == 2
 
@@ -946,16 +1035,20 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
 
-    ready_payload = json.loads((mapping_dir / "generate_ready.json").read_text(encoding="utf-8"))
+    ready_payload = json.loads(
+        (mapping_dir / "generate_ready.json").read_text(encoding="utf-8"))
     assert ready_payload["meta"]["layout_mode"] == "static"
     first_slot = ready_payload["slides"][0]["meta"]["blueprint_slots"][0]
     assert first_slot["fulfilled"] is True
 
-    mapping_log_payload = json.loads((mapping_dir / "mapping_log.json").read_text(encoding="utf-8"))
+    mapping_log_payload = json.loads(
+        (mapping_dir / "mapping_log.json").read_text(encoding="utf-8"))
     assert mapping_log_payload["mode"] == "static"
     assert mapping_log_payload["static_slot_checks"]["unused_slots"] == []
     assert mapping_log_payload["slot_summary"]["required_total"] == 2
 
-    generate_ready_meta_payload = json.loads((mapping_dir / DEFAULT_GENERATE_READY_META_FILENAME).read_text(encoding="utf-8"))
+    generate_ready_meta_payload = json.loads(
+        (mapping_dir / DEFAULT_GENERATE_READY_META_FILENAME).read_text(encoding="utf-8"))
     assert generate_ready_meta_payload["mode"] == "static"
-    assert Path(generate_ready_meta_payload["blueprint_path"]).resolve() == blueprint_path.resolve()
+    assert Path(generate_ready_meta_payload["blueprint_path"]).resolve(
+    ) == blueprint_path.resolve()
