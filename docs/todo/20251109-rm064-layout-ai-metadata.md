@@ -41,8 +41,9 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] README.md / AGENTS.md
 - [ ] layout_ai policy の拡張検討
   - メモ: 既存 policy JSON の構造と prompt 設計を見直し、メタデータ活用方針を整理する。
-  - [ ] usage_tags 記述を `config/usage_tags.json` の説明と連携させ、Stage1/Stage3 で共通語彙を参照する設計をまとめる。
-  - [ ] LLM プロンプトへ Canonical usage tags の説明を組み込み、Stage1 の prompt 方針と差異がないか確認する。
+  - メモ: `docs/notes/20251122-layout-ai-policy-review.md` に現状整理と拡張案（usage tags 連携・prompt 追加項目・スキーマ拡張方針）を記録。
+  - [x] usage_tags 記述を `config/usage_tags.json` の説明と連携させ、Stage1/Stage3 で共通語彙を参照する設計をまとめる。
+  - [x] LLM プロンプトへ Canonical usage tags の説明を組み込み、Stage1 の prompt 方針と差異がないか確認する。
 - [ ] 用途タグ体系の再設計（Plan）
   - メモ: Stage1/Stage3 共通で利用する canonical usage tags を「Intent」と「Media」の2軸で再定義し、`utils/usage_tags.py`・テンプレ AI・layout_ai スコアリングを統一する。
   - [ ] 対象整理: `src/pptx_generator/utils/usage_tags.py`, `template_ai`, `layout_ai`, `draft_recommender`, `pipeline/mapping.py`, `config/template_ai_policies.json`。

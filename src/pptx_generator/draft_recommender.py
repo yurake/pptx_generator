@@ -14,7 +14,8 @@ from .layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
 from .layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
 from .models import (ContentSlide, DraftAnalyzerSummary, DraftLayoutCandidate,
                      DraftLayoutScoreDetail)
-from .utils.usage_tags import (CANONICAL_USAGE_TAGS, normalize_usage_tag_value,
+from .utils.usage_tags import (CANONICAL_USAGE_TAGS, get_usage_tag_config,
+                               normalize_usage_tag_value,
                                normalize_usage_tags_with_unknown)
 
 logger = logging.getLogger(__name__)
@@ -328,6 +329,11 @@ class CardLayoutRecommender:
             "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
             "slide_tag_hints": sorted(tag for tag in slide_tags if tag),
         }
+        allowed_details = _get_allowed_tag_details()
+        card_payload["allowed_tags_detail"] = {
+            tag: allowed_details.get(tag, "")
+            for tag in card_payload["allowed_tags"]
+        }
         if slide.source is not None:
             card_payload["source"] = slide.source.model_dump(mode="json")
 
@@ -521,3 +527,43 @@ class CardLayoutRecommender:
             token.append(ch)
         if token:
             yield "".join(token)
+_ALLOWED_TAG_DETAILS: dict[str, str] | None = None
+
+
+def _get_allowed_tag_details() -> dict[str, str]:
+    global _ALLOWED_TAG_DETAILS
+    if _ALLOWED_TAG_DETAILS is not None:
+        return _ALLOWED_TAG_DETAILS
+
+    config = get_usage_tag_config()
+    details: dict[str, str] = {}
+
+    def _register(entry: object) -> None:
+        if entry is None:
+            return
+        tag_value: str | None = None
+        description: str = ""
+        if isinstance(entry, str):
+            tag_value = entry.strip()
+        elif isinstance(entry, dict):
+            raw_tag = entry.get("tag")
+            if isinstance(raw_tag, str):
+                tag_value = raw_tag.strip()
+            raw_desc = entry.get("description")
+            if isinstance(raw_desc, str):
+                description = raw_desc.strip()
+        if not tag_value:
+            return
+        canonical = normalize_usage_tag_value(tag_value) or tag_value.casefold()
+        if canonical and canonical not in details:
+            details[canonical] = description
+
+    for section in ("intent_tags", "media_tags"):
+        entries = config.get(section) or []
+        if isinstance(entries, list):
+            for item in entries:
+                _register(item)
+    _register(config.get("fallback_tag"))
+
+    _ALLOWED_TAG_DETAILS = details
+    return details

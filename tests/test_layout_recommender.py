@@ -177,6 +177,9 @@ def test_ai_classification_overrides_usage_tags(monkeypatch: pytest.MonkeyPatch)
     class FakeClient:
         def recommend(self, request) -> LayoutAIResponse:
             assert request.card_payload.get("source", {}).get("card_id") == "card-1"
+            detail = request.card_payload.get("allowed_tags_detail")
+            assert detail is not None
+            assert detail.get("content")
             return LayoutAIResponse(
                 model="mock-layout",
                 recommended=[("Content", 0.9)],
