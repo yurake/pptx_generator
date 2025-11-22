@@ -205,7 +205,15 @@ class CardLayoutRecommender:
                 if selected_entry is not None:
                     limited = [selected_entry]
 
-        return RecommendationResult(limited, ai_scores, ai_response)
+        return RecommendationResult(
+            limited,
+            ai_scores,
+            ai_response,
+            classified_tags=ai_classified_tags,
+            effective_tags=effective_tags,
+            baseline_tags=baseline_tags,
+            ai_unknown_tags=ai_unknown_tags,
+        )
 
     # ------------------------------------------------------------------ #
     # internal helpers

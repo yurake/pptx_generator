@@ -43,6 +43,7 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
                        SimpleRendererStep, SpecValidatorStep,
                        TemplateExtractor, TemplateExtractorOptions)
+from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
 from .prepare import (PrepareAIOrchestrationError, PrepareAIOrchestrator,
                       PrepareDocument, PreparePolicyError,
@@ -146,6 +147,51 @@ def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[in
         )
 
     return logging.WARNING, deferred_logs
+
+
+def _discover_template_ai_policy() -> Path | None:
+    """Return the default template AI policy path if available."""
+
+    env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
+    if env_policy:
+        candidate = Path(env_policy)
+        if candidate.is_file():
+            return candidate.resolve()
+
+    cwd_candidate = Path.cwd() / "config" / "template_ai_policies.json"
+    if cwd_candidate.exists():
+        logger.info("Detected default template AI policy: %s", cwd_candidate)
+        return cwd_candidate.resolve()
+
+    try:
+        resource = importlib_resources.files("pptx_generator").joinpath(
+            "config/template_ai_policies.json"
+        )
+        if resource.is_file():
+            try:
+                text = resource.read_text(encoding="utf-8")
+            except FileNotFoundError:
+                text = None
+            if text is not None:
+                cache_dir = Path(".pptx/cache")
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                cache_path = cache_dir / "template_ai_policies.json"
+                cache_path.write_text(text, encoding="utf-8")
+                logger.info(
+                    "Detected default template AI policy (package resource cached to %s)",
+                    cache_path,
+                )
+                return cache_path.resolve()
+    except (ModuleNotFoundError, FileNotFoundError):
+        pass
+
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "config" / "template_ai_policies.json"
+        if candidate.exists():
+            logger.info("Detected default template AI policy: %s", candidate)
+            return candidate.resolve()
+
+    return None
 
 
 def _configure_llm_logger() -> None:
@@ -403,7 +449,12 @@ def _run_template_extraction(
     layout: str | None,
     anchor: str | None,
     output_format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
     layout_mode: str,
+    skip_validation: bool = False,
+    emit_slide_snapshot: bool = False,
 ) -> TemplateExtractionResult:
     fmt = output_format.lower()
     extractor_options = TemplateExtractorOptions(
@@ -424,14 +475,12 @@ def _run_template_extraction(
             ai_policy_path = Path(env_policy)
         else:
             ai_policy_path = _discover_template_ai_policy()
-    ai_policy_id = template_ai_policy_id or os.getenv(
-        "PPTX_TEMPLATE_AI_POLICY_ID")
+    ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
     effective_disable = disable_template_ai or ai_policy_path is None
     if effective_disable:
         ai_policy_path = None
         if not disable_template_ai:
-            logger.info(
-                "Template AI validation disabled: no policy file available")
+            logger.info("Template AI validation disabled: no policy file available")
 
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
@@ -483,12 +532,15 @@ def _run_template_extraction(
             validation_result.errors_count,
         )
 
-        layouts_relative: str | None = None
         try:
             layouts_relative = str(
-                validation_result.layouts_path.relative_to(output_dir))
+                validation_result.layouts_path.relative_to(output_dir)
+            )
         except ValueError:
             layouts_relative = str(validation_result.layouts_path)
+    else:
+        validation_result = None
+        layouts_relative = None
 
     template_spec_relative: str | None = None
     try:
@@ -496,12 +548,13 @@ def _run_template_extraction(
     except ValueError:
         template_spec_relative = str(spec_path)
 
-    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(
-        update={
-            "layouts_path": layouts_relative,
-            "template_spec_path": template_spec_relative,
-        }
-    )
+    meta_update: dict[str, str | None] = {
+        "template_spec_path": template_spec_relative,
+    }
+    if layouts_relative is not None:
+        meta_update["layouts_path"] = layouts_relative
+
+    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(update=meta_update)
 
     jobspec_path = output_dir / "jobspec.json"
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
@@ -2837,7 +2890,12 @@ def template(  # noqa: PLR0913
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
             layout_mode=layout_mode,
+            skip_validation=force,
+            emit_slide_snapshot=slide,
         )
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
@@ -2980,6 +3038,9 @@ def tpl_extract(
     anchor: Optional[str],
     format: str,
     layout_mode: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
     try:
@@ -2989,6 +3050,9 @@ def tpl_extract(
             layout=layout,
             anchor=anchor,
             output_format=format,
+            template_ai_policy=template_ai_policy,
+            template_ai_policy_id=template_ai_policy_id,
+            disable_template_ai=disable_template_ai,
             layout_mode=layout_mode,
         )
     except FileNotFoundError as exc:

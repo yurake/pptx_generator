@@ -48,6 +48,18 @@ def _collect_paragraph_texts(slide) -> list[str]:
     return texts
 
 
+def _create_template_with_slide(path: Path) -> None:
+    presentation = Presentation()
+    slide_layout = presentation.slide_layouts[0]
+    slide = presentation.slides.add_slide(slide_layout)
+    if slide.shapes.title:
+        slide.shapes.title.text = "Snapshot Title"
+    body_placeholder = slide.placeholders[1] if len(slide.placeholders) > 1 else None
+    if body_placeholder is not None and getattr(body_placeholder, "text_frame", None):
+        body_placeholder.text = "Snapshot Body"
+    presentation.save(path)
+
+
 def _prepare_inputs(runner: CliRunner, temp_dir: Path) -> dict[str, Path]:
     prepare_dir = temp_dir / "prepare"
     result = runner.invoke(
