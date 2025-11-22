@@ -87,24 +87,24 @@ def split_roadmap_item(roadmap_item: str) -> Tuple[str, str]:
 
 
 def mark_mermaid_task_complete(content: str, item_code: str) -> Tuple[str, bool]:
-    """Mark the corresponding Mermaid node as 完了."""
+    """Mermaid の該当ノードを削除し、完了テーマを図から除外する。"""
     mermaid_id = item_code.replace("-", "")
-    pattern = re.compile(
-        rf'({mermaid_id}\["{re.escape(item_code)}<br/>.*?<br/>)\(([^)]*?)\)("])'
-    )
-
+    lines = content.splitlines()
     updated = False
-
-    def repl(match: re.Match[str]) -> str:
-        nonlocal updated
-        current_status = match.group(2)
-        if current_status == "完了":
-            return match.group(0)
-        updated = True
-        return f'{match.group(1)}(完了){match.group(3)}'
-
-    updated_content = pattern.sub(repl, content, count=1)
-    return updated_content, updated
+    filtered_lines = []
+    for line in lines:
+        if mermaid_id in line:
+            updated = True
+            continue
+        filtered_lines.append(line)
+    if not updated:
+        return content, False
+    # Preserve trailing newline if 元のコンテンツが改行で終わっていた場合のみ追加する
+    trailing_newline = content.endswith("\n")
+    new_content = "\n".join(filtered_lines)
+    if trailing_newline:
+        new_content += "\n"
+    return new_content, True
 
 
 def update_roadmap(

@@ -34,6 +34,11 @@ def _sample_roadmap_content(todo_filename: str) -> str:
 ## アクティブテーマ
 - テーマごとに `RM-xxx` 番号を付与し、ToDo フロントマターの `roadmap_item` と一致させる。
 
+```mermaid
+flowchart TB
+    RM002["RM-002<br/>サンプルテーマ<br/>(進行中)"]
+```
+
 <a id="rm-001"></a>
 ### RM-001 別テーマ
 - ゴール: dummy
@@ -150,6 +155,9 @@ roadmap_item: RM-002 サンプルテーマ
         dry_run=False,
     )
     assert updated
+    roadmap_content = roadmap_path.read_text(encoding="utf-8")
+    assert 'RM002["' not in roadmap_content
+    assert "### RM-002 サンプルテーマ" in roadmap_content
 
 
 def test_main_skips_archived_path(monkeypatch, capsys, tmp_path):

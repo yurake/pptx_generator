@@ -15,6 +15,7 @@ TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
 RELATED_ISSUE_TASK_RE = re.compile(
     r"^(\s*-\s*\[)( |x|X)(\]\s*関連Issue 行の更新\b.*)$"
 )
+ROADMAP_ITEM_CODE_RE = re.compile(r"(RM-\d{3})")
 
 
 def read_text(path: str) -> str:
@@ -121,9 +122,21 @@ def get_issue(owner: str, repo: str, token: str, number: int) -> Optional[dict]:
 def extract_front_matter_fields(content: str) -> Dict[str, str]:
     m = FRONT_MATTER_RE.match(content)
     fields: Dict[str, str] = {}
-    if not m:
-        return fields
-    body = m.group(1)
+    if m:
+        body = m.group(1)
+    else:
+        # fallback for front matter without leading '---'
+        lines = []
+        for line in content.splitlines():
+            if line.strip() == "---":
+                if lines:
+                    break
+                else:
+                    continue
+            if ":" not in line:
+                break
+            lines.append(line)
+        body = "\n".join(lines)
     for line in body.splitlines():
         if ":" in line:
             k, v = line.split(":", 1)
@@ -201,6 +214,29 @@ def build_issue_body(rel_path: str, fields: Dict[str, str], tasks: str, notes: s
     lines.append("")
     lines.append(f"<!-- todo-path: {rel_path} -->")
     return "\n".join(lines).strip() + "\n"
+
+
+def extract_roadmap_code(fields: Dict[str, str]) -> Optional[str]:
+    value = fields.get("roadmap_item")
+    if not value:
+        return None
+    match = ROADMAP_ITEM_CODE_RE.search(value)
+    return match.group(1) if match else None
+
+
+def build_issue_title(fields: Dict[str, str], rel_path: str) -> str:
+    roadmap_code = extract_roadmap_code(fields)
+    title_parts: List[str] = []
+    purpose = fields.get("目的", "")
+    if roadmap_code and (not purpose or roadmap_code not in purpose):
+        title_parts.append(roadmap_code)
+    if purpose:
+        title_parts.append(purpose)
+    elif roadmap_code:
+        title_parts.append(roadmap_code)
+    if title_parts:
+        return " / ".join(title_parts)
+    return rel_path
 
 
 def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bool]:
@@ -395,7 +431,7 @@ def main():
         content = read_text(path)
         fields = extract_front_matter_fields(content)
         tasks_section, notes_section = extract_tasks_and_notes(content)
-        issue_title = f"ToDo: {fields['目的']}" if fields.get("目的") else f"ToDo: {rel}"
+        issue_title = build_issue_title(fields, rel)
         body = build_issue_body(rel, fields, tasks_section, notes_section)
 
         issue_number_hint = parse_issue_number(fields.get("関連Issue"))
