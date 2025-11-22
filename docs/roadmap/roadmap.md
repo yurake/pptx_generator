@@ -30,7 +30,7 @@ flowchart TB
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
-        RM063["RM-063<br/>assets 運用ガイド整備<br/>(完了)"]
+        RM069["RM-069<br/>開発プロセス運用ルール見直し<br/>(進行中)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -53,7 +53,6 @@ flowchart TB
         ST3_ANCHOR(( ))
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM054["RM-054<br/>静的テンプレ構成統合<br/>(完了)"]
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
@@ -63,7 +62,6 @@ flowchart TB
     subgraph ST4["Stage 4: PPTX生成"]
         direction TB
         ST4_ANCHOR(( ))
-        RM049["RM-049<br/>pptx gen<br/>スコープ最適化<br/>(完了)"]
         RM055["RM-055<br/>AI生成文言<br/>フッタ自動付与<br/>(未着手)"]
     end
 
@@ -79,8 +77,6 @@ flowchart TB
     RM061 --> RM064
     RM064 --> RM065
     RM062 --> RM066
-    RM054 --> RM058
-    RM054 --> RM067
 ```
 
 ## 個別状況
@@ -844,3 +840,18 @@ flowchart TB
 -  - Runbook の記述フォーマットを「前提 / 入力 / 手順 / 失敗時 / 関連資料」で統一し、必要に応じてテンプレート化する。
 -  - ToDo テンプレートおよび運用ガイドに、設計・実装方針メモと参照資料リンクの記載ルールを追加する。
 - 次アクション: ポリシー文書草案の作成とレビュー、README / AGENTS のドラフト更新方針を決定し、順次反映するための ToDo を作成する。
+
+<a id="rm-069"></a>
+### RM-069 開発プロセス運用ルール見直し
+- ゴール: Approval-First Development Policy に基づく ToDo／ロードマップ／ブランチ運用を統一し、循環参照や記録漏れを防止する。
+- 対象領域: Cross-Stage / Governance（ToDo 運用、ロードマップ保守、自動化スクリプト）
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md), [docs/todo/template.md](../todo/template.md), [docs/roadmap/roadmap.md](./roadmap.md)
+- 参照 ToDo: [docs/todo/20251122-dev-process-guidance.md](../todo/20251122-dev-process-guidance.md)
+- 状況: 進行中（2025-11-22 更新）
+- 期待成果:
+  - ToDo 作成時に既存 `RM-xxx` を必須とするルールと lint 検証を導入し、ロードマップとの整合性を常に確保する。
+  - ブランチ命名を `prefix/rmxxx-slug` 形式へ統一し、テンプレート・ガイド・自動チェックを整備する。
+  - `RM-000` を活用したロードマップ追加プロセスを明文化し、循環参照を排除する。
+  - ToDo 目的欄・Issue 連携での RM 表示を標準化し、起票・レビュー時にテーマが即座に識別できるようにする。
+  - Mermaid 図から完了テーマを除外し、`todo-auto-complete` 等の自動化で完了時の扱いを一貫させる。
+- 関連テーマ: RM-002（エージェント運用ガイド整備）、RM-059（Mermaid 図自動レンダリング）
