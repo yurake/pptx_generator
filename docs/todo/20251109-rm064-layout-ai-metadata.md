@@ -56,6 +56,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
 - [ ] CLI / ログ / テスト整備
   - メモ: 新しいメタデータを利用する CLI オプションやログ項目を定義し、必要な統合テスト追加を検討する。
   - [ ] Canonical usage tags の共通利用を確認する CLI 統合テストを設計し、`scripts/` / `tests/` に追加する案をまとめる。
+  - [ ] Layout AI / CLI ログで usage tag 説明を表示するオプションを追加する（usage_tags v2.0 反映）。
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] PR 作成
