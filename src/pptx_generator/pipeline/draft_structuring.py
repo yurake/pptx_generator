@@ -1196,11 +1196,25 @@ class DraftStructuringStep:
             else:
                 sources.append(blueprint_slide.slide_id)
 
+            auto_draw_payload: list[dict[str, Any]] = []
+            if spec_slide is not None and spec_slide.auto_draw_boxes:
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
+
             slide_meta = MappingSlideMeta(
                 section="Static Template",
                 page_no=page_no,
                 sources=sources,
                 fallback="none",
+                auto_draw=auto_draw_payload,
                 layout_mode="static",
                 blueprint_slide_id=blueprint_slide.slide_id,
                 blueprint_slots=slot_records,
@@ -1221,6 +1235,7 @@ class DraftStructuringStep:
                     "slide_id": blueprint_slide.slide_id,
                     "layout": layout_id,
                     "slots": slot_records,
+                    "auto_draw": auto_draw_payload,
                 }
             )
 
