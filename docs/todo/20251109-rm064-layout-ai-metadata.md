@@ -1,5 +1,4 @@
----
-目的: layout_ai 応答へテンプレ構造メタ情報を渡し、AI 推薦とスコアリングの整合性を高める
+目的: RM-064 レイアウト候補メタ情報拡充 — layout_ai 応答へテンプレ構造メタ情報を渡し、AI 推薦とスコアリングの整合性を高める
 関連ブランチ: feat/rm064-layout-ai-metadata
 関連Issue: #281
 roadmap_item: RM-064 レイアウト候補メタ情報拡充
@@ -19,6 +18,12 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
     - 承認メッセージ ID／リンク: チャットログ（2025-11-09 Plan 承認）
 - [x] 設計・実装方針の確定
   - メモ: AI から受け取るタグを canonical 語彙へ正規化し、未知語はフォールバックとして既存 `usage_tags` を利用する二段構えで進める。レイアウトメタデータ（プレースホルダー要約・text/media ヒント）を `LayoutAIRequest` に添付し、分類根拠を `mapping_log` に記録する設計を採用。
+- [x] 設計・実装方針メモの共有
+  - メモ: 2025-11-22 `docs/notes/20251122-layout-ai-policy-review.md` と `docs/notes/20251122-usage-tag-taxonomy-plan.md` に設計メモを整理し、ユーザー共有済み。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/requirements/stages/stage-03-mapping.md`・`docs/design/schema/stage-02-template-structure-extraction.md` ほか関連設計文書にメタデータ連携方針を反映。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] RM-054 取り込み後の設計・実装改修（最優先）
   - メモ: `RM-054 静的テンプレ構成統合プランニング` の成果をマージした上で、Stage3 のレイアウトメタ情報設計と layout_ai policy を再検討し、実装をアップデートする。
   - [x] RM-054 ブランチ（もしくは `main` 反映済み差分）を取り込み、Stage1/Stage3 間のインターフェース変更点を棚卸しする。
@@ -62,6 +67,8 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [ ] Layout AI / CLI ログで usage tag 説明を表示するオプションを追加する（usage_tags v2.0 反映）。
 - [x] 関連Issue 行の更新
   - メモ: 
+- [ ] チェックリスト整合確認
+  - メモ: PR 対応時に最終確認する。
 - [ ] PR 作成
   - メモ: 
 
