@@ -17,23 +17,23 @@ roadmap_item: RM-054 静的テンプレ構成統合プランニング
     - テスト方針: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_integration.py::test_prepare_dynamic` 等で prepare/draft フローを検証。必要に応じ CLI 手動実行で `.pptx/prepare/prepare_card.json` と `.pptx/compose/generate_ready.json` の挙動を確認。
     - ロールバック方法: 変更は機能単位でコミットし、問題発生時は該当コミットを revert する。スキーマ互換性問題が顕在化した場合は旧モデル定義へ戻す。
     - 承認メッセージ ID／リンク: （本スレッドの Plan 承認メッセージ）
-- [ ] 設計・実装方針の確定
-  - メモ: 2025-11-22 現在、subtitle の扱いとタイトルページ制御の最終仕様が未確定のため着手保留。RM-054 の静的 Blueprint 実装レビュー完了後（目安: 2025-11-25）に再検討する。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: スキーマ案が固まり次第、Stage-02 要件／設計を更新する。現時点では仕様整理待ちのため未着手。
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: 依存する設計が固まっていないため未着手。content elements のスキーマ変更と compose/draft の更新をまとめて行う予定。
-- [ ] テスト・検証
-  - メモ: 実装完了後に `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_integration.py::test_prepare_dynamic` を想定。現状はテスト対象が無く未実施。
-- [ ] ドキュメント更新
-  - メモ: 実装フェーズ後に roadmap／requirements／design／runbook／README を横断確認する。現時点では着手前。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 設計・実装方針の確定
+  - メモ: 2025-11-22 Subtitle は `PrepareCard.subtitle` または `source_chapter.title` を最優先で利用し、Title/Headline XOR の既存仕様を維持する方針で確定。ContentElements の本文制約撤廃は RM-067 に委譲する。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `docs/requirements/stages/stage-02-content-normalization.md` 記載が現行仕様と一致していることを再確認し、追加更新不要を確認。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
+- [x] 実装
+  - メモ: `PrepareNormalizationStep` で `card.subtitle_or_chapter()` を反映し、ContentElements への subtitle 伝播を保証。関連テストを追加。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_draft_structuring_step.py::test_prepare_normalization_preserves_subtitle` を実行し、subtitle 伝播が成功することを確認。
+- [x] ドキュメント更新
+  - メモ: 仕様差分が無いことを確認し、ToDo へ結果を記録（他ドキュメント更新は不要）。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成

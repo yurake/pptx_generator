@@ -8,13 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..prepare import (
-    PrepareCard,
-    PrepareChapterDefinition,
-    PrepareDocument,
-    PrepareGenerationMeta,
-    PrepareLogEntry,
-)
+from ..prepare import PrepareCard, PrepareDocument, PrepareGenerationMeta, PrepareLogEntry
 from ..models import (
     ContentApprovalDocument,
     ContentDocumentMeta,
@@ -163,9 +157,8 @@ class PrepareNormalizationStep:
         document: PrepareDocument,
     ) -> tuple[ContentApprovalDocument, dict[str, Any]]:
         phase_counts: dict[str, int] = {}
-        chapter_lookup = {chapter.id: chapter for chapter in document.story_context.chapters}
         slides = [
-            self._convert_card_to_slide(card, index, phase_counts, chapter_lookup)
+            self._convert_card_to_slide(card, index, phase_counts)
             for index, card in enumerate(document.cards, start=1)
         ]
         meta = ContentDocumentMeta(
@@ -186,13 +179,11 @@ class PrepareNormalizationStep:
         card: PrepareCard,
         index: int,
         phase_counts: dict[str, int],
-        chapter_lookup: dict[str, PrepareChapterDefinition],
     ) -> ContentSlide:
         title = card.headline_or_title()[:120]
         body = self._build_body_lines(card)
         notes_text = card.notes_text()
-        chapter = chapter_lookup.get(card.card_id)
-        subtitle = card.content.subtitle or (chapter.title if chapter else None)
+        subtitle = card.subtitle_or_chapter()
         elements = ContentElements(
             title=title,
             subtitle=subtitle,

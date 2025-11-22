@@ -17,6 +17,15 @@ from pptx_generator.pipeline.draft_structuring import SlideIdAligner
 from pptx_generator.pipeline.slide_alignment import (SlideAlignmentRecord,
                                                      SlideAlignmentResult)
 from pptx_generator.models import JobSpec, Slide
+from pptx_generator.prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
+    PrepareNoteEntry,
+    PrepareStoryContext,
+)
 
 
 @pytest.fixture()
@@ -259,3 +268,48 @@ def test_draft_structuring_fails_when_slide_id_missing(
     assert alignment_meta is not None
     assert alignment_meta["pending"] >= 1
     assert alignment_meta["jobspec_unassigned"] >= 1
+
+
+def test_prepare_normalization_preserves_subtitle(tmp_path: Path, sample_spec: JobSpec) -> None:
+    card_with_subtitle = PrepareCard(
+        card_id="introduction-1",
+        order=1,
+        role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+        content=PrepareCardContent(
+            headline="Kickoff Message",
+            subtitle="Executive Summary",
+            body=[PrepareBodyBlock(type="paragraph", text="最初のサマリーです。")],
+            notes=[PrepareNoteEntry(text="補足メモ")],
+        ),
+        meta={"source_chapter": {"id": "intro", "title": "イントロダクション"}},
+    )
+    card_with_chapter_meta = PrepareCard(
+        card_id="problem-1",
+        order=2,
+        role=PrepareCardRole(story_phase="problem", intent_tags=["details"]),
+        content=PrepareCardContent(
+            headline="顧客課題の整理",
+            body=[PrepareBodyBlock(type="paragraph", text="主要課題を列挙します。")],
+        ),
+        meta={"source_chapter": {"id": "problem", "title": "現状の課題"}},
+    )
+    document = PrepareDocument(
+        prepare_id="todo-content-elements",
+        cards=[card_with_subtitle, card_with_chapter_meta],
+        story_context=PrepareStoryContext(),
+    )
+    cards_path = tmp_path / "prepare_card.json"
+    cards_path.write_text(
+        json.dumps(document.model_dump(mode="json"), ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    context = PipelineContext(spec=sample_spec, workdir=tmp_path)
+    step = PrepareNormalizationStep(
+        PrepareNormalizationOptions(cards_path=cards_path, require_document=True)
+    )
+    step.run(context)
+
+    content_document = context.artifacts["content_approved"]
+    assert content_document.slides[0].elements.subtitle == "Executive Summary"
+    assert content_document.slides[1].elements.subtitle == "現状の課題"
