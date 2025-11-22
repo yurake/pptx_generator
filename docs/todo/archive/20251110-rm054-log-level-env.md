@@ -36,7 +36,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #298 https://github.com/yurake/pptx_generator/pull/298（2025-11-22 完了）
 
 ## メモ

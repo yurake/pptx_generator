@@ -37,7 +37,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] PR 作成
-  - メモ: PR #298 を再構成し、タイトルを `fix: align template extraction flow` に更新。本文へ最新の CLI / layout AI 差分と `uv run --extra dev pytest` 実行結果、Plan 承認メッセージ（本スレッドの ok）を追記した。
+  - メモ: PR #298 https://github.com/yurake/pptx_generator/pull/298（2025-11-22 完了）
 
 ## メモ
 - 2025-11-21: 工程2 の prepare LLM プロンプトを dynamic/static で分離し、static モードは Blueprint slot 単位の軽量プロンプト（chapters 要素数 1 固定）を使用するように変更。dynamic は従来どおり 1 回の LLM 呼び出しで複数カードを生成する構成を維持しつつ、両モード間の条件分岐をプロンプトから排除してトークン削減を図った。
