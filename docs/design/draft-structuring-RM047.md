@@ -22,14 +22,14 @@
 
 ## プロセス概要
 1. **Prepare 読み込み**: `PrepareNormalizationStep` が `prepare_cards` / `prepare_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `prepare_document` を格納する。
-2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。Prepare 正規化時に生成した `ContentSlide.source` を保持し、story_phase / intent_tags / Blueprint 情報を Layout AI へのペイロードとヒューリスティックへ連携する。
+2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。Prepare 正規化時に生成した `ContentSlide.source` を保持し、story_phase / intent_tags / Blueprint 情報を Layout AI へのペイロードへ連携する（ヒューリスティックはフォールバック用途のみ利用）。
 3. **ジョブスペック参照**: `jobspec.slides[*]` を `layout_id` キーでインデックス化し、アンカー構造やプレースホルダ数を計算する。`layouts.jsonl` が存在する場合は用途タグ・容量ヒントを補完する。
 4. **AI 推薦（カード単位）**:
    - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
    - プロンプトにはカード本文、意図タグ、章テンプレ要件、利用可能なテンプレ一覧（用途タグと主要アンカー情報）を含める。
    - LLM プロバイダは `PPTX_LLM_PROVIDER` で切り替える。`openai`（gpt-5-mini → JSON 応答が得られない場合は自動的に gpt-4o-mini 系へフェイルオーバー）、`azure`（Azure OpenAI Responses API）、`anthropic`（Claude 3 系列）、`aws-claude`（Bedrock Claude 3 系列）をサポートし、いずれも JSON オブジェクト形式で `recommended` / `reasons` を返す前提とする。
    - プロバイダ毎の互換性は `scripts/test_layout_providers.sh` で検証できる。`UV_CACHE_DIR` をリポジトリ直下に指定しておけば、初回承認後は同一キャッシュを再利用できる。
-   - 推薦結果は `layout_candidates[]`（`layout_id`, `score`, `reasons[]`）として保持する。AI 応答が得られない場合はヒューリスティック（用途タグ一致、容量適合度、章配列バランス）で補完する。
+   - 推薦結果は `recommended`（トップ候補＋スコア）と `classifications`（canonical usage tags）を受け取り、AI 応答が得られた場合はトップ候補をそのまま採用する（ヒューリスティックはフォールバック用途）。AI 応答が無い場合のみ従来のヒューリスティックで補完する。
 5. **カード→スライド割当**:
    - `jobspec.slides` に未使用スライドがある限り、カード候補のうち `layout_id` が一致するものを選定する。
    - 同一レイアウトが複数カードに割り当たる場合は章テンプレの `required_sections` / `min_slides` 条件を考慮し、付録送り候補を決定する。
@@ -46,7 +46,7 @@
 | コンポーネント | 役割 | 備考 |
 | --- | --- | --- |
 | `PrepareNormalizationStep` | Prepare 成果物の読み込み。`PipelineContext` に `prepare_document` を格納し、互換の `content_approved` を生成（工程5 互換用途）。 | RM-047 では `content_approved` 互換出力を段階的に縮退させる。 |
-| `CardLayoutRecommender`（新規） | カード単位でテンプレ候補をスコアリング。AI 推薦＋ヒューリスティックのハイブリッド。 | 生成AIの利用有無は設定で切り替え可能。 |
+| `CardLayoutRecommender`（新規） | カード単位でテンプレ候補を評価。AI 推薦が成功した場合はトップ候補を採用し、ヒューリスティックはフォールバック用途で維持。 | 生成AIの利用有無は設定で切り替え可能。 |
 | `DraftStructuringStep`（刷新） | `prepare_document` と `jobspec` を突合し、`DraftAllocationResult` を生成。章テンプレ適合、付録候補判定を実施。 | 出力は `generate_ready` 専用アーティファクトへ転送。 |
 | `GenerateReadyBuilder`（新規） | 割当結果から `GenerateReadyDocument` とメタ情報を構築。 | CLI から直接利用。 |
 | `draft_review_log.json` | HITL 操作ログ。`action` は `approve`/`return`/`appendix`/`hint` 等。 | Approval-First Policy と整合する。 |
