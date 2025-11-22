@@ -10,6 +10,9 @@ from typing import Dict, List
 
 TODO_FILENAME_RE = re.compile(r"^[0-9]{8}-[A-Za-z0-9_-]+\.md$")
 CHECKBOX_RE = re.compile(r"^(- \[(?: |x)\] .*)$", re.MULTILINE)
+ROADMAP_ITEM_RE = re.compile(r"^(RM-\d{3})\s+.+$")
+ANCHOR_TEMPLATE = '<a id="{anchor}"></a>'
+BRANCH_RE = re.compile(r"^(feat|fix|chore|docs)/rm\d{3}-[a-z0-9][a-z0-9-]*$")
 
 
 def list_todo_files(todo_dir: Path) -> List[Path]:
@@ -18,6 +21,29 @@ def list_todo_files(todo_dir: Path) -> List[Path]:
         for path in todo_dir.iterdir()
         if path.is_file() and TODO_FILENAME_RE.match(path.name)
     )
+
+
+def parse_front_matter(content: str) -> Dict[str, str]:
+    fields: Dict[str, str] = {}
+    in_front_matter = False
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not in_front_matter:
+            if stripped == "---":
+                in_front_matter = True
+                continue
+            if ":" not in line:
+                break
+            key, value = line.split(":", 1)
+            fields[key.strip()] = value.strip()
+            continue
+        if stripped == "---":
+            break
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        fields[key.strip()] = value.strip()
+    return fields
 
 
 def lint_todo_content(content: str) -> List[str]:
@@ -37,15 +63,44 @@ def lint_todo_content(content: str) -> List[str]:
     return issues
 
 
-def lint_todo_file(path: Path) -> List[str]:
+def validate_roadmap_item(fields: Dict[str, str], roadmap_content: str) -> List[str]:
+    issues: List[str] = []
+    roadmap_item = fields.get("roadmap_item")
+    if not roadmap_item:
+        issues.append("front matter に roadmap_item がありません")
+        return issues
+
+    match = ROADMAP_ITEM_RE.match(roadmap_item)
+    if not match:
+        issues.append(f"roadmap_item が `RM-xxx テーマ名` 形式ではありません: {roadmap_item}")
+        return issues
+
+    item_code = match.group(1)
+    anchor = ANCHOR_TEMPLATE.format(anchor=item_code.lower())
+    if anchor not in roadmap_content:
+        issues.append(f"docs/roadmap/roadmap.md に {item_code} のセクションが見つかりません")
+    return issues
+
+
+def lint_todo_file(path: Path, roadmap_content: str) -> List[str]:
     content = path.read_text(encoding="utf-8")
-    return lint_todo_content(content)
+    issues = lint_todo_content(content)
+    fields = parse_front_matter(content)
+    issues.extend(validate_roadmap_item(fields, roadmap_content))
+    branch = fields.get("関連ブランチ")
+    if branch and branch != "未作成" and not BRANCH_RE.match(branch):
+        issues.append(f"関連ブランチ が `prefix/rmxxx-slug` 形式ではありません: {branch}")
+    return issues
 
 
-def lint_todo_directory(todo_dir: Path) -> Dict[Path, List[str]]:
+def lint_todo_directory(todo_dir: Path, roadmap_path: Path) -> Dict[Path, List[str]]:
     results: Dict[Path, List[str]] = {}
+    if not roadmap_path.exists():
+        print(f"ロードマップファイルが見つかりません: {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+    roadmap_content = roadmap_path.read_text(encoding="utf-8")
     for path in list_todo_files(todo_dir):
-        issues = lint_todo_file(path)
+        issues = lint_todo_file(path, roadmap_content)
         if issues:
             results[path] = issues
     return results
@@ -56,6 +111,9 @@ def main() -> None:
     parser.add_argument(
         "--todo-dir", default="docs/todo", help="チェック対象の ToDo ディレクトリ"
     )
+    parser.add_argument(
+        "--roadmap", default="docs/roadmap/roadmap.md", help="ロードマップファイルのパス"
+    )
     args = parser.parse_args()
 
     todo_dir = Path(args.todo_dir)
@@ -63,7 +121,9 @@ def main() -> None:
         print(f"ToDo ディレクトリが見つかりません: {todo_dir}", file=sys.stderr)
         sys.exit(1)
 
-    results = lint_todo_directory(todo_dir)
+    roadmap_path = Path(args.roadmap)
+
+    results = lint_todo_directory(todo_dir, roadmap_path)
     if results:
         print("ToDo 残存チェックで問題を検出しました:\n")
         for path, issues in results.items():
