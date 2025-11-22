@@ -5,82 +5,108 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from scripts.lint_todo_completion import (
-    lint_todo_content,
-    lint_todo_directory,
-    list_todo_files,
-)
+from scripts.lint_todo_completion import lint_todo_directory
 
 
-def test_lint_todo_content_all_complete() -> None:
-    content = """
+def _write_todo(path: Path, roadmap_item: str) -> None:
+    path.write_text(
+        f"""目的: サンプルタスク
+関連ブランチ: docs/rm999-sample
+関連Issue: 未作成
+roadmap_item: {roadmap_item}
 ---
-meta: test
+- [ ] ブランチ作成と初期コミット
+- [ ] PR 作成
+""",
+        encoding="utf-8",
+    )
+
+
+def test_lint_passes_with_valid_roadmap_item(tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    roadmap_path = docs_dir / "roadmap" / "roadmap.md"
+    roadmap_path.parent.mkdir(parents=True)
+
+    todo_path = todo_dir / "20251122-rm123-valid.md"
+    _write_todo(todo_path, "RM-123 テストテーマ")
+
+    roadmap_path.write_text(
+        """# 開発ロードマップ
+
+<a id="rm-123"></a>
+### RM-123 テストテーマ
+- 状況: 未着手
+""",
+        encoding="utf-8",
+    )
+
+    result = lint_todo_directory(todo_dir, roadmap_path)
+    assert result == {}
+
+
+def test_lint_detects_missing_roadmap_entry(tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    roadmap_path = docs_dir / "roadmap" / "roadmap.md"
+    roadmap_path.parent.mkdir(parents=True)
+
+    todo_path = todo_dir / "20251122-rm321-missing.md"
+    _write_todo(todo_path, "RM-321 不足テーマ")
+
+    roadmap_path.write_text("# 開発ロードマップ\n", encoding="utf-8")
+
+    result = lint_todo_directory(todo_dir, roadmap_path)
+    assert todo_path in result
+    assert any("RM-321" in issue for issue in result[todo_path])
+
+
+def test_lint_detects_invalid_format(tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    roadmap_path = docs_dir / "roadmap" / "roadmap.md"
+    roadmap_path.parent.mkdir(parents=True)
+    roadmap_path.write_text("# 開発ロードマップ\n", encoding="utf-8")
+
+    todo_path = todo_dir / "20251122-rm999-invalid.md"
+    _write_todo(todo_path, "invalid")
+
+    result = lint_todo_directory(todo_dir, roadmap_path)
+    assert todo_path in result
+    assert any("RM-xxx" in issue for issue in result[todo_path])
+
+
+def test_lint_detects_invalid_branch(tmp_path):
+    docs_dir = tmp_path / "docs"
+    todo_dir = docs_dir / "todo"
+    todo_dir.mkdir(parents=True)
+    roadmap_path = docs_dir / "roadmap" / "roadmap.md"
+    roadmap_path.parent.mkdir(parents=True)
+    roadmap_path.write_text(
+        """# 開発ロードマップ
+
+<a id="rm-456"></a>
+""",
+        encoding="utf-8",
+    )
+
+    todo_path = todo_dir / "20251122-rm456-branch.md"
+    todo_path.write_text(
+        """---
+目的: ブランチ検証
+関連ブランチ: feature/missing-rm
+関連Issue: 未作成
+roadmap_item: RM-456 ブランチ検証
 ---
-
-- [x] 作業 A
-- [x] 作業 B
-- [x] PR 作成
-"""
-    issues = lint_todo_content(content)
-    assert issues == ["全チェックが完了しているにも関わらずアーカイブされていません"]
-
-
-def test_lint_todo_content_only_pr_remaining() -> None:
-    content = """
-- [x] 作業 A
+- [ ] ブランチ作成と初期コミット
 - [ ] PR 作成
-"""
-    issues = lint_todo_content(content)
-    assert issues == ["PR 作成以外が完了しており、PR 作成のみ未完です"]
+""",
+        encoding="utf-8",
+    )
 
-
-def test_lint_todo_content_with_open_tasks() -> None:
-    content = """
-- [x] 作業 A
-- [ ] 作業 B
-- [ ] PR 作成
-"""
-    issues = lint_todo_content(content)
-    assert issues == []
-
-
-def test_lint_todo_directory_ignores_non_todo_files(tmp_path: Path) -> None:
-    todo_dir = tmp_path / "docs" / "todo"
-    todo_dir.mkdir(parents=True)
-
-    readme = todo_dir / "README.md"
-    readme.write_text("# guide", encoding="utf-8")
-
-    todo_file = todo_dir / "20250101-sample.md"
-    todo_file.write_text("- [x] すべて実施\n- [x] PR 作成\n", encoding="utf-8")
-
-    files = list_todo_files(todo_dir)
-    assert files == [todo_file]
-
-    results = lint_todo_directory(todo_dir)
-    assert todo_file in results
-    assert results[todo_file] == ["全チェックが完了しているにも関わらずアーカイブされていません"]
-
-
-def test_lint_todo_directory_only_pr_remaining(tmp_path: Path) -> None:
-    todo_dir = tmp_path / "docs" / "todo"
-    todo_dir.mkdir(parents=True)
-
-    todo_file = todo_dir / "20250102-sample.md"
-    todo_file.write_text("- [x] 作業 A\n- [ ] PR 作成\n", encoding="utf-8")
-
-    results = lint_todo_directory(todo_dir)
-    assert todo_file in results
-    assert results[todo_file] == ["PR 作成以外が完了しており、PR 作成のみ未完です"]
-
-
-def test_lint_todo_directory_ok(tmp_path: Path) -> None:
-    todo_dir = tmp_path / "docs" / "todo"
-    todo_dir.mkdir(parents=True)
-
-    todo_file = todo_dir / "20250103-sample.md"
-    todo_file.write_text("- [x] 作業 A\n- [ ] 作業 B\n", encoding="utf-8")
-
-    results = lint_todo_directory(todo_dir)
-    assert results == {}
+    result = lint_todo_directory(todo_dir, roadmap_path)
+    assert todo_path in result
+    assert any("関連ブランチ" in issue for issue in result[todo_path])
