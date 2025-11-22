@@ -39,7 +39,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] layout_ai policy の拡張検討
+- [x] layout_ai policy の拡張検討
   - メモ: 既存 policy JSON の構造と prompt 設計を見直し、メタデータ活用方針を整理する。
   - メモ: `docs/notes/20251122-layout-ai-policy-review.md` に現状整理と拡張案（usage tags 連携・prompt 追加項目・スキーマ拡張方針）を記録。
   - [x] usage_tags 記述を `config/usage_tags.json` の説明と連携させ、Stage1/Stage3 で共通語彙を参照する設計をまとめる。
