@@ -1,6 +1,6 @@
 目的: 開発プロセス運用ルール（ToDo と RM の連携、ブランチ命名、ロードマップ更新手順）の見直しと改善方針の策定、および RM-069 の新規登録準備
 関連ブランチ: docs/rm069-dev-process-guidance
-関連Issue: 未作成
+関連Issue: #299
 roadmap_item: RM-069 開発プロセス運用ルール見直し
 ---
 
@@ -35,7 +35,7 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
