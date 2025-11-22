@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -329,7 +329,18 @@ class DraftStructuringStep:
             placeholder_records = payload.get("placeholders") or []
             if not isinstance(placeholder_records, list):
                 placeholder_records = []
-            placeholder_summary = self._summarize_placeholders(placeholder_records)
+            placeholder_summary = payload.get("placeholder_summary")
+            if not isinstance(placeholder_summary, dict):
+                placeholder_summary = self._summarize_placeholders(placeholder_records)
+            heuristic_info = payload.get("heuristic")
+            if not isinstance(heuristic_info, dict):
+                heuristic_info = {}
+            blueprint_info = payload.get("blueprint")
+            if not isinstance(blueprint_info, dict):
+                blueprint_info = {}
+            meta_info = payload.get("meta")
+            if not isinstance(meta_info, dict):
+                meta_info = {}
 
             record = LayoutProfile(
                 layout_id=layout_id,
@@ -338,6 +349,9 @@ class DraftStructuringStep:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 placeholder_summary=placeholder_summary,
+                heuristic=heuristic_info,
+                blueprint=blueprint_info,
+                meta=meta_info,
             )
             records.append(record)
         return records
@@ -351,6 +365,8 @@ class DraftStructuringStep:
 
         counts: Counter[str] = Counter()
         processed: list[tuple[float, dict[str, Any]]] = []
+        total_area = 0.0
+        type_area: defaultdict[str, float] = defaultdict(float)
 
         for placeholder in placeholders:
             raw_type = placeholder.get("type")
@@ -363,6 +379,8 @@ class DraftStructuringStep:
             width = float(bbox.get("width") or 0.0)
             height = float(bbox.get("height") or 0.0)
             area = max(width, 0.0) * max(height, 0.0)
+            total_area += area
+            type_area[p_type] += area
 
             shape_type = placeholder.get("shape_type")
             shape_type_str = str(shape_type or "").casefold() or None
@@ -383,13 +401,18 @@ class DraftStructuringStep:
                 entry["flags"] = flags_list
             processed.append((area, entry))
 
-        total_area = sum(area for area, _ in processed)
         details: list[dict[str, Any]] = []
         for area, entry in sorted(processed, key=lambda item: item[0], reverse=True)[:8]:
             ratio = round(area / total_area, 3) if total_area > 0 else None
             entry = dict(entry)
             entry["area_ratio"] = ratio
             details.append(entry)
+
+        area_ratio = {
+            key: round(value / total_area, 3)
+            for key, value in type_area.items()
+            if total_area > 0
+        }
 
         attributes = {
             "total": sum(counts.values()),
@@ -407,6 +430,7 @@ class DraftStructuringStep:
 
         return {
             "counts": {key: counts[key] for key in sorted(counts)},
+            "area_ratio": area_ratio,
             "details": details,
             "attributes": attributes,
         }
@@ -434,6 +458,8 @@ class DraftStructuringStep:
 
         spec_lookup = {slide.id: slide for slide in spec.slides}
         dynamic_prepare = prepare_meta.mode == "dynamic"
+
+        layout_lookup = {profile.layout_id: profile for profile in layouts}
 
         def process_slide(content_slide: ContentSlide | None, spec_slide: Slide | None) -> None:
             if content_slide is None:
@@ -496,24 +522,33 @@ class DraftStructuringStep:
             candidate_logs: list[dict[str, Any]] = []
             for candidate, detail in recommendation.candidates:
                 layout_id = candidate.layout_id
-                candidate_logs.append(
-                    {
-                        "layout_id": layout_id,
-                        "score": candidate.score,
-                        "ai_score": ai_scores.get(layout_id, 0.0),
-                        "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
-                        "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
-                        "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
-                        "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
-                        "detail": {
-                            "uses_tag": detail.uses_tag,
-                            "content_capacity": detail.content_capacity,
-                            "diversity": detail.diversity,
-                            "analyzer_support": detail.analyzer_support,
-                            "ai_recommendation": detail.ai_recommendation,
-                        },
-                    }
-                )
+                candidate_entry: dict[str, Any] = {
+                    "layout_id": layout_id,
+                    "score": candidate.score,
+                    "ai_score": ai_scores.get(layout_id, 0.0),
+                    "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
+                    "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
+                    "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
+                    "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
+                    "detail": {
+                        "uses_tag": detail.uses_tag,
+                        "content_capacity": detail.content_capacity,
+                        "diversity": detail.diversity,
+                        "analyzer_support": detail.analyzer_support,
+                        "ai_recommendation": detail.ai_recommendation,
+                    },
+                }
+                profile = layout_lookup.get(layout_id)
+                if profile:
+                    if profile.placeholder_summary:
+                        candidate_entry["placeholder_summary"] = profile.placeholder_summary
+                    if profile.heuristic:
+                        candidate_entry["heuristic"] = profile.heuristic
+                    if profile.blueprint:
+                        candidate_entry["blueprint"] = profile.blueprint
+                    if profile.meta:
+                        candidate_entry["meta"] = profile.meta
+                candidate_logs.append(candidate_entry)
 
             source_payload = (
                 content_slide.source.model_dump(mode="json")
@@ -545,17 +580,22 @@ class DraftStructuringStep:
                         recommendation.ai_response.classifications,
                     )
 
-            mapping_logs.append(
-                {
-                    "slide_id": content_slide.id,
-                    "preferred_layout": preferred_layout,
-                    "selected_layout": selected_layout,
-                    "ai_recommendation_used": ai_used,
-                    "candidates": candidate_logs,
-                    "ai_response": ai_response_payload,
-                    "source": source_payload,
-                }
-            )
+            selected_profile = layout_lookup.get(selected_layout)
+            mapping_entry: dict[str, Any] = {
+                "slide_id": content_slide.id,
+                "preferred_layout": preferred_layout,
+                "selected_layout": selected_layout,
+                "ai_recommendation_used": ai_used,
+                "candidates": candidate_logs,
+                "ai_response": ai_response_payload,
+                "source": source_payload,
+            }
+            if selected_profile:
+                if selected_profile.meta and selected_profile.meta.get("heuristic_reason"):
+                    mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
+                if selected_profile.blueprint:
+                    mapping_entry["selected_blueprint"] = selected_profile.blueprint
+            mapping_logs.append(mapping_entry)
 
         if dynamic_prepare:
             for content_slide in document.slides:

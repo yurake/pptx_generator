@@ -1,10 +1,232 @@
 {
   "template_id": "templates",
-  "warnings": [],
+  "warnings": [
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "title",
+      "name": "Title",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "section_covor_left",
+      "name": "Section Covor Left",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "section_covor_center",
+      "name": "Section Covor Center",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "agenda",
+      "name": "Agenda",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "one_column_detail",
+      "name": "One Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "one_column_detail",
+      "name": "One Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "two_rows_detail",
+      "name": "Two Rows Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "two_rows_detail",
+      "name": "Two Rows Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "two_column_detail",
+      "name": "Two Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "two_column_detail",
+      "name": "Two Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "left_highlight_detail",
+      "name": "Left Highlight Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "left_highlight_detail",
+      "name": "Left Highlight Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "right_highlight_detail",
+      "name": "Right Highlight Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "right_highlight_detail",
+      "name": "Right Highlight Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "three_rows_detail",
+      "name": "Three Rows Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "three_rows_detail",
+      "name": "Three Rows Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "four_rows_detail",
+      "name": "Four Rows Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "four_rows_detail",
+      "name": "Four Rows Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "executive_summary",
+      "name": "Executive Summary",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "executive_summary",
+      "name": "Executive Summary",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "three_column_detail",
+      "name": "Three Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "three_column_detail",
+      "name": "Three Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "four_column_detail",
+      "name": "Four Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "four_column_detail",
+      "name": "Four Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "six_column_detail",
+      "name": "Six Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "six_column_detail",
+      "name": "Six Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "nine_column_detail",
+      "name": "Nine Column Detail",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "nine_column_detail",
+      "name": "Nine Column Detail",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "three_list",
+      "name": "Three List",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "four_list",
+      "name": "Four List",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "five_list",
+      "name": "Five List",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "two_flow",
+      "name": "Two Flow",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "three_flow",
+      "name": "Three Flow",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "1_two_flow",
+      "name": "1_Two Flow",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_unknown",
+      "layout_id": "closing",
+      "name": "Closing",
+      "detail": "footer"
+    },
+    {
+      "code": "usage_tag_title_suppressed",
+      "layout_id": "closing",
+      "name": "Closing",
+      "detail": "タイトルタグが本文プレースホルダーの存在により除外されました（名前ベースの判定外）"
+    }
+  ],
   "errors": [],
   "stats": {
     "layouts_total": 24,
-    "placeholders_total": 157,
-    "extraction_time_ms": 38
-  }
+    "placeholders_total": 158,
+    "extraction_time_ms": 42,
+    "template_ai_invoked": 0,
+    "template_ai_success": 0,
+    "template_ai_fallback": 0,
+    "template_ai_failed": 0
+  },
+  "template_ai": []
 }

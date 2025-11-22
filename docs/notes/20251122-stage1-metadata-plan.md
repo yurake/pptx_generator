@@ -53,3 +53,24 @@
 4. Stage3 側（`draft_recommender.py` / `pipeline/draft_structuring.py`）で新メタを参照し、ログ/診断に活用する。  
 5. Stage2 静的モードで Blueprint 追加メタを利用できるよう確認し、必要に応じて `prepare` オーケストレーターへ反映。  
 6. テストとドキュメントを更新し、ToDo の実装タスクに反映する。
+7. Stage1 → Stage3 メタデータ受け渡し仕様のドラフトを `docs/design/stages/stage1-stage3-metadata-interface.md` に集約し、設計レビューのベースラインとする。
+
+## 6. layouts.jsonl スキーマ更新計画
+1. **仕様整理**
+   - `docs/design/stages/stage1-stage3-metadata-interface.md` を基準に、追加フィールド（`placeholder_summary.counts/area_ratio`、`blueprint.slots[*]`、`meta.heuristic_reason`）ごとの必須／任意条件を明文化する。
+   - JSON Schema 変更案を `docs/design/schema/stage-02-template-structure-extraction.md` に反映し、`SUITE_VERSION` を 1.1.0 に引き上げる草案を作成。
+2. **実装タスク分解**
+   - Stage1 (`TemplateExtractor`)：Blueprint slot 情報を `LayoutInfo` → `TemplateBlueprint` → `layout_validation` へ伝搬させる。
+   - Stage2 (`LayoutValidationSuite`)：  
+     - `placeholder_summary` 集約に面積比算出を追加。  
+     - `meta.heuristic_reason` をヒューリスティック診断時に付与。  
+     - JSON Lines エンコーダを更新し、空値は出力しないよう制御。
+   - Stage3 (`draft_structuring.py`, `draft_recommender.py`)：新フィールド読み込みとログ整備、既存テストの期待値更新。
+3. **テスト計画**
+   - `tests/test_layout_validation_suite.py`：新フィールド出力と schema 検証のケースを追加。  
+   - `tests/test_draft_structuring_step.py`：Blueprint slot 連携と `placeholder_summary` フォールバックの挙動を確認。  
+   - CLI 統合テスト：`uv run pptx tpl-extract` → `pptx prepare --mode static` の静的フローで新フィールドが利用されることを検証。
+4. **移行と互換性**
+   - 既存 `layouts.jsonl` を読み込む場合は新フィールド欠損を許容するガードを Stage3 に追加。  
+   - Schema バージョンを比較し、旧版（1.0.x）の場合は警告ログのみ出力。  
+   - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントを段階的に更新。

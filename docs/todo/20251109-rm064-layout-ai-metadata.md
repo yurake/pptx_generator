@@ -54,6 +54,8 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `pptx template` でのプレースホルダー要約や AI 連携可否を洗い出し、Stage3 と連携するための差分をまとめる。
   - メモ: `docs/notes/20251122-stage1-metadata-plan.md` に現状・課題・拡張候補を整理済み。
   - [ ] Stage1 で付与する usage_tags とメタデータを Stage3 に引き渡すインターフェース案を作成する。
+    - メモ: 2025-11-23 `docs/design/stages/stage1-stage3-metadata-interface.md` にドラフト案を追加し、レビュー用ベースラインとした。
+    - メモ: 2025-11-23 LayoutValidationSuite / DraftStructuringStep / CardLayoutRecommender を更新し、`placeholder_summary`・Blueprint・`meta.heuristic_reason` を流通させる実装と pytest 188 件を完了。
 - [ ] CLI / ログ / テスト整備
   - メモ: 新しいメタデータを利用する CLI オプションやログ項目を定義し、必要な統合テスト追加を検討する。
   - [ ] Canonical usage tags の共通利用を確認する CLI 統合テストを設計し、`scripts/` / `tests/` に追加する案をまとめる。

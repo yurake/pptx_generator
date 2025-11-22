@@ -115,9 +115,54 @@ def layouts_file(tmp_path: Path) -> Path:
         json.dumps(
             {
                 "layout_id": "overview__one_col",
+                "layout_name": "Overview One Column",
                 "usage_tags": ["overview"],
-                "text_hint": {"max_lines": 5},
-                "media_hint": {"allow_table": True},
+                "text_hint": {"max_chars": 800, "max_lines": 5},
+                "media_hint": {"allow_table": True, "allow_chart": False, "allow_image": True},
+                "placeholders": [
+                    {
+                        "name": "Title",
+                        "type": "title",
+                        "bbox": {"x": 0, "y": 0, "width": 1000, "height": 300},
+                        "shape_type": "LayoutPlaceholder",
+                        "flags": [],
+                    },
+                    {
+                        "name": "Body",
+                        "type": "body",
+                        "bbox": {"x": 0, "y": 400, "width": 1000, "height": 600},
+                        "shape_type": "LayoutPlaceholder",
+                        "flags": [],
+                    },
+                ],
+                "placeholder_summary": {
+                    "counts": {"body": 1, "title": 1},
+                    "area_ratio": {"title": 0.333, "body": 0.667},
+                    "details": [
+                        {"name": "Body", "type": "body", "area_ratio": 0.667},
+                        {"name": "Title", "type": "title", "area_ratio": 0.333},
+                    ],
+                    "attributes": {
+                        "total": 2,
+                        "has_title": True,
+                        "has_body": True,
+                        "has_table": False,
+                        "has_chart": False,
+                        "has_visual": False,
+                    },
+                },
+                "heuristic": {
+                    "tags": ["content"],
+                    "reasons": ["placeholder:type=body"],
+                    "has_title_placeholder": True,
+                    "has_body_placeholder": True,
+                    "title_from_name": False,
+                },
+                "static_rules": [],
+                "meta": {
+                    "heuristic_reason": "placeholder:type=body; template_ai:fallback"
+                },
+                "version": "1.1.0",
             }
         )
         + "\n",
@@ -427,3 +472,5 @@ def test_outline_with_layout_reasons(
     assert mapping_log_path.exists()
     mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_log and "candidates" in mapping_log[0]
+    assert "heuristic_reason" in mapping_log[0]
+    assert mapping_log[0]["candidates"][0].get("placeholder_summary") is not None

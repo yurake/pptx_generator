@@ -5,6 +5,7 @@
 ## 目的
 - 承認済みコンテンツを章立て・ページ順へ並べ、`layout_hint` を確定する。
 - 付録送りや統合といった構成操作を Draft API / CLI で提供し、承認ログを監査可能にする。
+- Stage1/Stage2 からのレイアウトメタデータ受け渡し仕様は [stage1-stage3-metadata-interface.md](./stage1-stage3-metadata-interface.md) に整理している。最新の用途タグ・Blueprint 連携方針を確認しながら工程4（旧仕様）を参照すること。
 
 ## コンポーネント構成
 | コンポーネント | 概要 | 技術 |

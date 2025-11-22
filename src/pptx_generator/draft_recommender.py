@@ -38,6 +38,9 @@ class LayoutProfile:
     text_hint: dict[str, object]
     media_hint: dict[str, object]
     placeholder_summary: dict[str, object] = field(default_factory=dict)
+    heuristic: dict[str, object] = field(default_factory=dict)
+    blueprint: dict[str, object] = field(default_factory=dict)
+    meta: dict[str, object] = field(default_factory=dict)
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -419,12 +422,21 @@ class CardLayoutRecommender:
                 counts = summary.get("counts")
                 if counts:
                     entry["placeholder_counts"] = counts
+                area_ratio = summary.get("area_ratio")
+                if area_ratio:
+                    entry["placeholder_area_ratio"] = area_ratio
                 details = summary.get("details")
                 if details:
                     entry["placeholders"] = details
                 extras = summary.get("attributes")
                 if extras:
                     entry["placeholder_attributes"] = extras
+            if profile.heuristic:
+                entry["heuristic"] = profile.heuristic
+            if profile.blueprint:
+                entry["blueprint"] = profile.blueprint
+            if profile.meta:
+                entry["meta"] = profile.meta
             metadata[profile.layout_id] = entry
         return metadata
 
