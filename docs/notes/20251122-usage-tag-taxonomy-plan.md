@@ -52,3 +52,47 @@
 3. Stage1/Stage3 プロンプトへ反映するテンプレート提案（既存 policy テンプレートとの統合）を作成。  
 4. ログ・診断出力の改善案（タグ説明表示、Unknown タグ集計）を検討。  
 5. 上記を踏まえ、実装タスクを ToDo の該当項目（用途タグ体系の再設計）に反映し、必要なサブタスクを起票する。
+
+---
+
+## 対象整理
+
+| 領域 | ファイル / コンポーネント | 目的 / 影響 |
+| --- | --- | --- |
+| 共通設定 | `config/usage_tags.json` | Intent / Media 二軸の再定義、説明・同義語・廃止タグ管理。バージョン付与を検討。 |
+| 共通ユーティリティ | `src/pptx_generator/utils/usage_tags.py` | 新スキーマ対応・Synonym map の外部化・正規化ロジック更新。 |
+| Stage1 テンプレ抽出 | `src/pptx_generator/template_ai/*`, `config/template_ai_policies.json` | AI プロンプトに新しい Intent/Media 語彙を渡し、Template AI が canonical タグを返せるようにする。 |
+| Stage1 Prepare | `src/pptx_generator/prepare/*` | `PrepareCard` の intent_tags / role を新体系へ合わせる（必要に応じ Blueprint モードを調整）。 |
+| Stage3 レコメンド | `src/pptx_generator/draft_recommender.py`, `layout_ai/client.py`, `pipeline/mapping.py` | Layout AI・ヒューリスティック・マッピングログで Intent/Media を区別し、説明文を表示できるようにする。 |
+| テスト | `tests/test_utils_usage_tags.py`, `tests/test_layout_recommender.py`, `tests/test_template_ai.py` など | 新タグ体系の正規化・AI 応答の整合性検証。 |
+| ドキュメント | `docs/notes/20251109-usage-tags-scoring.md`, `docs/policies/config-and-templates.md` | タグ体系・更新手順を追記し、運用の基準を統一。 |
+
+## 設計方針（詳細）
+
+1. **JSON スキーマ拡張**  
+   - `intent_categories` / `media_categories` といったトップレベルで Intent / Media を明示。  
+   - タグごとに `synonyms`, `examples`, `deprecated`, `replacement` を保持。  
+   - static_rules を `layout_rules.intent` / `layout_rules.media` へ分割し、テンプレ抽出時に活用。
+2. **ユーティリティ更新**  
+   - `_SYNONYM_MAP` を廃止し、新スキーマから読み込むようリファクタ。  
+   - Intent / Media を返すヘルパー（例: `normalize_intent_tags`, `normalize_media_tags`）を追加し、Stage1/Stage3 が明示的に呼ぶ。  
+   - Fallback と deprecated tags をログに記録し、CI で検出可能にする。
+3. **プロンプト整合**  
+   - Template AI / Layout AI の policy テンプレートに Intent / Media のリストと説明文を埋め込み、共通語彙を共有。  
+   - Stage3 の `allowed_tags_detail` を Intent / Media で構造化し、LLM が用途と表現の両軸を理解できるようにする。
+4. **診断とログ**  
+   - `diagnostics.json` に Intent / Media 別のタグ分布、Unknown/Deprecated の検出結果を追加。  
+   - CLI ログ（outline, compose）に `--show-tag-description` オプションを設け、タグ説明を確認できるようにする案を検討。
+
+## テスト戦略（詳細）
+
+1. **ユニットテスト**  
+   - `tests/test_utils_usage_tags.py`: 新スキーマでの正規化（Intent / Media / Synonym / Deprecated）を網羅。  
+   - `tests/test_template_ai.py`: Template AI が新体系で canonical タグを返すことを確認。  
+   - `tests/test_layout_recommender.py`: Layout AI に渡す `allowed_tags_detail` が Intent / Media を区別して提示されるか検証。
+2. **統合テスト**  
+   - `tests/test_cli_integration.py`: `pptx template` → `pptx compose` → `pptx gen` フローでタグ体系変更後も成功することを確認。  
+   - `tests/test_cli_prepare.py`: Blueprint / Dynamic モードそれぞれで意図タグが期待通りになるか確認。
+3. **リグレッションチェック**  
+   - `uv run pptx tpl-extract` の出力（`layouts.jsonl`）に追加メタが不要なことを確認。  
+   - `diagnostics.json` / `draft_mapping_log.json` にタグ説明が反映される場合のスナップショットテストを検討。
