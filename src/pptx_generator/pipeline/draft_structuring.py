@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from ..brief.models import BriefDocument
+from ..prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ..models import (
     ContentApprovalDocument,
     ContentSlide,
@@ -20,6 +20,7 @@ from ..models import (
     DraftMeta,
     DraftSection,
     DraftSlideCard,
+    DraftLayoutCandidate,
     GenerateReadyDocument,
     GenerateReadyMeta,
     GenerateReadySlide,
@@ -27,7 +28,11 @@ from ..models import (
     JobMeta,
     JobSpec,
     MappingSlideMeta,
+    TemplateBlueprint,
+    TemplateBlueprintSlide,
+    TemplateBlueprintSlot,
     Slide,
+    TemplateSpec,
 )
 from ..draft_recommender import (
     CardLayoutRecommender,
@@ -49,6 +54,23 @@ from .base import PipelineContext
 from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 
 logger = logging.getLogger(__name__)
+
+
+def _card_slot_id(card: PrepareCard) -> str | None:
+    blueprint = card.blueprint_meta()
+    if not blueprint:
+        return None
+    slot_id = blueprint.get("slot_id")
+    return str(slot_id) if slot_id else None
+
+
+def _card_slot_fulfilled(card: PrepareCard | None) -> bool:
+    if card is None:
+        return False
+    blueprint = card.blueprint_meta()
+    if not blueprint:
+        return False
+    return bool(blueprint.get("fulfilled"))
 
 
 @dataclass(slots=True)
@@ -85,6 +107,15 @@ class DraftStructuringOptions:
     enable_ai_simulation: bool = True
 
 
+@dataclass(slots=True)
+class StaticArtifacts:
+    draft: DraftDocument
+    generate_ready: GenerateReadyDocument
+    mapping_log: dict[str, Any]
+    ai_summary: dict[str, Any]
+    slot_summary: dict[str, int]
+
+
 class DraftStructuringError(RuntimeError):
     """ドラフト構成処理の失敗を表す。"""
 
@@ -113,6 +144,15 @@ class DraftStructuringStep:
             raise DraftStructuringError(msg)
         document = artifact
 
+        prepare_generation_meta = context.artifacts.get("prepare_generation_meta")
+        if isinstance(prepare_generation_meta, PrepareGenerationMeta) and (prepare_generation_meta.mode or "dynamic") == "static":
+            self._run_static_mode(
+                context=context,
+                content_document=document,
+                prepare_meta=prepare_generation_meta,
+            )
+            return
+
         self._alignment_records = None
         alignment_records = []
         if self.options.enable_slide_alignment:
@@ -122,10 +162,10 @@ class DraftStructuringStep:
                     max_candidates=self.options.slide_alignment_max_candidates,
                 )
             )
-            brief_document = context.artifacts.get("brief_document")
+            prepare_document = context.artifacts.get("prepare_document")
             alignment = aligner.align(
                 spec=context.spec,
-                brief_document=brief_document if isinstance(brief_document, BriefDocument) else None,
+                prepare_document=prepare_document if isinstance(prepare_document, PrepareDocument) else None,
                 content_document=document,
             )
             document = alignment.document
@@ -152,6 +192,10 @@ class DraftStructuringStep:
             elif self.options.structure_pattern:
                 template = find_template_by_structure(self.options.chapter_templates_dir, self.options.structure_pattern)
         recommender = self._resolve_recommender()
+        prepare_meta = context.artifacts.get("prepare_generation_meta")
+        if not isinstance(prepare_meta, PrepareGenerationMeta) or prepare_meta.mode not in {"dynamic", "static"}:
+            raise DraftStructuringError("prepare_generation_meta が不正、または mode が未設定です")
+
         draft, mapping_logs, ai_summary = self._build_document(
             spec=context.spec,
             document=document,
@@ -159,6 +203,7 @@ class DraftStructuringStep:
             analyzer_map=analyzer_map,
             chapter_template=template,
             recommender=recommender,
+            prepare_meta=prepare_meta,
         )
 
         output_dir = self.options.output_dir or context.workdir
@@ -174,10 +219,21 @@ class DraftStructuringStep:
         self._write_log(log_path, [])
         self._write_json(mapping_log_path, mapping_logs)
 
+        template_path_value: Path | None = None
+        spec_template_path = getattr(context.spec.meta, "template_path", None)
+        if spec_template_path:
+            candidate = Path(spec_template_path)
+            if not candidate.is_absolute() and self.options.spec_source_path is not None:
+                candidate = (self.options.spec_source_path.parent / candidate).resolve()
+            elif not candidate.is_absolute():
+                candidate = candidate.resolve()
+            template_path_value = candidate
+
         generate_ready = self._build_generate_ready_document(
             spec=context.spec,
             draft=draft,
             content_document=document,
+            template_path=template_path_value,
         )
         ready_path = output_dir / self.options.generate_ready_filename
         self._write_json(ready_path, generate_ready.model_dump(mode="json"))
@@ -364,9 +420,8 @@ class DraftStructuringStep:
         analyzer_map: dict[str, DraftAnalyzerSummary],
         chapter_template: ChapterTemplate | None,
         recommender: CardLayoutRecommender,
+        prepare_meta: PrepareGenerationMeta | None,
     ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
-        slides_by_id = {slide.id: slide for slide in document.slides}
-
         sections: list[DraftSection] = []
         section_map: dict[str, DraftSection] = {}
         mapping_logs: list[dict[str, Any]] = []
@@ -377,11 +432,12 @@ class DraftStructuringStep:
             "models": {},
         }
 
-        for index, spec_slide in enumerate(spec.slides, start=1):
-            content_slide = slides_by_id.get(spec_slide.id)
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+        dynamic_prepare = prepare_meta.mode == "dynamic"
+
+        def process_slide(content_slide: ContentSlide | None, spec_slide: Slide | None) -> None:
             if content_slide is None:
-                logger.debug("content_approved に存在しないスライドをスキップ: %s", spec_slide.id)
-                continue
+                return
 
             section_key, section_name = self._resolve_section(content_slide, spec_slide)
             section = section_map.get(section_key)
@@ -396,9 +452,14 @@ class DraftStructuringStep:
 
             card_order = len(section.slides) + 1
             analyzer_summary = analyzer_map.get(content_slide.id)
+            preferred_layout = (
+                spec_slide.layout
+                if spec_slide is not None and getattr(spec_slide, "layout", None)
+                else content_slide.type_hint
+            ) or "Content"
             recommendation, card = self._build_card(
                 content_slide,
-                spec_slide.layout,
+                preferred_layout,
                 layouts,
                 order=card_order,
                 analyzer_summary=analyzer_summary,
@@ -425,6 +486,12 @@ class DraftStructuringStep:
                 and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
             ):
                 ai_summary["simulated"] += 1
+                if logger.isEnabledFor(logging.INFO):
+                    logger.info(
+                        "layout AI simulated: slide_id=%s preferred=%s",
+                        content_slide.id,
+                        preferred_layout,
+                    )
 
             candidate_logs: list[dict[str, Any]] = []
             for candidate, detail in recommendation.candidates:
@@ -471,31 +538,26 @@ class DraftStructuringStep:
                         recommendation.ai_response.reasons,
                         recommendation.ai_response.classifications,
                     )
-            elif (
-                self.options.enable_ai_recommender
-                and self.options.enable_ai_simulation
-                and self.options.ai_weight > 0
-                and not ai_scores
-                and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
-            ):
-                ai_summary["simulated"] += 1
-                if logger.isEnabledFor(logging.INFO):
-                    logger.info(
-                        "layout AI simulated: slide_id=%s preferred=%s",
-                        content_slide.id,
-                        spec_slide.layout,
-                    )
 
             mapping_logs.append(
                 {
                     "slide_id": content_slide.id,
-                    "preferred_layout": spec_slide.layout,
+                    "preferred_layout": preferred_layout,
                     "selected_layout": selected_layout,
                     "ai_recommendation_used": ai_used,
                     "candidates": candidate_logs,
                     "ai_response": ai_response_payload,
                 }
             )
+
+        if dynamic_prepare:
+            for content_slide in document.slides:
+                spec_slide = spec_lookup.get(content_slide.id)
+                process_slide(content_slide, spec_slide)
+        else:
+            slides_by_id = {slide.id: slide for slide in document.slides}
+            for spec_slide in spec.slides:
+                process_slide(slides_by_id.get(spec_slide.id), spec_slide)
 
         meta = DraftMeta(
             target_length=self.options.target_length or sum(len(section.slides) for section in sections),
@@ -533,7 +595,7 @@ class DraftStructuringStep:
             )
         return draft_document, mapping_logs, ai_summary
 
-    def _resolve_section(self, content_slide: ContentSlide, spec_slide) -> tuple[str, str]:
+    def _resolve_section(self, content_slide: ContentSlide, spec_slide: Slide | None) -> tuple[str, str]:
         story = getattr(content_slide, "story", None)
         if story:
             chapter_id = story.get("chapter_id") if isinstance(story, dict) else story.chapter_id
@@ -545,7 +607,9 @@ class DraftStructuringStep:
 
         if content_slide.intent:
             return content_slide.intent, content_slide.intent
-        return spec_slide.layout, spec_slide.layout
+        if spec_slide is not None and getattr(spec_slide, "layout", None):
+            return spec_slide.layout, spec_slide.layout
+        return content_slide.id, content_slide.id
 
     def _build_card(
         self,
@@ -608,6 +672,7 @@ class DraftStructuringStep:
         spec: JobSpec,
         draft: DraftDocument,
         content_document: ContentApprovalDocument | None,
+        template_path: Path | None = None,
     ) -> GenerateReadyDocument:
         section_lookup: dict[str, str] = {}
         cards_in_order: list[DraftSlideCard] = []
@@ -616,7 +681,7 @@ class DraftStructuringStep:
                 section_lookup[card.ref_id] = section.name
                 cards_in_order.append(card)
 
-        spec_lookup = {slide.id: slide for slide in spec.slides}
+            spec_lookup = {slide.id: slide for slide in spec.slides}
         content_lookup: dict[str, ContentSlide] = {}
         content_hash: str | None = None
         if content_document is not None:
@@ -632,6 +697,16 @@ class DraftStructuringStep:
         if not cards_in_order:
             for index, spec_slide in enumerate(spec.slides, start=1):
                 layout_name = self._layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
                 slides.append(
                     GenerateReadySlide(
                         layout_id=spec_slide.layout,
@@ -642,18 +717,21 @@ class DraftStructuringStep:
                             page_no=index,
                             sources=[spec_slide.id],
                             fallback="none",
+                            auto_draw=auto_draw_payload,
                         ),
                     )
                 )
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             meta = GenerateReadyMeta(
                 template_version=draft.meta.template_id,
-                template_path=None,
+                template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
                 content_hash=content_hash,
                 generated_at=timestamp,
                 job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
                 job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
             )
+            if meta.template_path is None and getattr(spec.meta, "template_path", None):
+                meta.template_path = getattr(spec.meta, "template_path", None)
             return GenerateReadyDocument(slides=slides, meta=meta)
 
         for index, card in enumerate(cards_in_order, start=1):
@@ -671,6 +749,18 @@ class DraftStructuringStep:
                 layout_name = layout_id
             elements = self._merge_slide_elements(spec_slide, content_slide)
             sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
+            auto_draw_payload = []
+            if spec_slide is not None:
+                auto_draw_payload = [
+                    {
+                        "anchor": anchor,
+                        "left_in": box.left_in,
+                        "top_in": box.top_in,
+                        "width_in": box.width_in,
+                        "height_in": box.height_in,
+                    }
+                    for anchor, box in spec_slide.auto_draw_boxes.items()
+                ]
             slides.append(
                 GenerateReadySlide(
                     layout_id=layout_id,
@@ -681,6 +771,7 @@ class DraftStructuringStep:
                         page_no=index,
                         sources=sources,
                         fallback="none",
+                        auto_draw=auto_draw_payload,
                     ),
                 )
             )
@@ -688,12 +779,14 @@ class DraftStructuringStep:
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         meta = GenerateReadyMeta(
             template_version=draft.meta.template_id,
-            template_path=None,
+            template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
             content_hash=content_hash,
             generated_at=timestamp,
             job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
             job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
         )
+        if meta.template_path is None and getattr(spec.meta, "template_path", None):
+            meta.template_path = getattr(spec.meta, "template_path", None)
         return GenerateReadyDocument(slides=slides, meta=meta)
 
     def _build_generate_ready_meta_payload(
@@ -752,6 +845,13 @@ class DraftStructuringStep:
             },
         }
         payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
+        payload["mode"] = generate_ready.meta.layout_mode
+        if generate_ready.meta.slot_summary:
+            payload["slot_summary"] = generate_ready.meta.slot_summary
+        if generate_ready.meta.blueprint_path:
+            payload["blueprint_path"] = generate_ready.meta.blueprint_path
+        if generate_ready.meta.blueprint_hash:
+            payload["blueprint_hash"] = generate_ready.meta.blueprint_hash
         return payload
 
     def _merge_slide_elements(
@@ -767,6 +867,9 @@ class DraftStructuringStep:
         title = content_slide.elements.title
         if title:
             elements["title"] = title
+
+        if content_slide.elements.subtitle:
+            elements["subtitle"] = content_slide.elements.subtitle
 
         if content_slide.elements.body:
             elements["body"] = list(content_slide.elements.body)
@@ -791,6 +894,8 @@ class DraftStructuringStep:
                 if key in {"title", "body", "note", "subtitle"}:
                     continue
                 elements.setdefault(key, value)
+            for anchor in spec_slide.auto_draw_anchors:
+                elements.pop(anchor, None)
 
         return elements
 
@@ -845,6 +950,9 @@ class DraftStructuringStep:
             key = textbox.anchor or f"textbox_{index}"
             elements[key] = {"text": textbox.text}
 
+        for anchor in slide.auto_draw_anchors:
+            elements.pop(anchor, None)
+
         return elements
 
     def _evaluate_chapter_template(
@@ -865,3 +973,409 @@ class DraftStructuringStep:
 
         evaluation.section_scores = normalized_scores
         return evaluation
+
+    def _run_static_mode(
+        self,
+        *,
+        context: PipelineContext,
+        content_document: ContentApprovalDocument,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> None:
+        prepare_document = context.artifacts.get("prepare_document")
+        if not isinstance(prepare_document, PrepareDocument):
+            msg = "static モードでは prepare_document が必要です"
+            raise DraftStructuringError(msg)
+
+        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
+        template_spec_candidate: Path | None = None
+
+        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
+        if template_spec_meta:
+            candidate = Path(template_spec_meta)
+            if not candidate.is_absolute() and spec_source_path is not None:
+                candidate = (spec_source_path.parent / candidate).resolve()
+            elif not candidate.is_absolute():
+                candidate = candidate.resolve()
+            template_spec_candidate = candidate
+
+        if template_spec_candidate is None:
+            blueprint_path_str = prepare_meta.blueprint_path
+            if blueprint_path_str:
+                candidate = Path(blueprint_path_str)
+                if not candidate.is_absolute():
+                    candidate = candidate.resolve()
+                template_spec_candidate = candidate
+
+        if template_spec_candidate is None:
+            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
+            raise DraftStructuringError(msg)
+
+        if not template_spec_candidate.exists():
+            msg = f"template_spec が見つかりません: {template_spec_candidate}"
+            raise DraftStructuringError(msg)
+
+        template_spec = self._load_template_spec(template_spec_candidate)
+        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
+            msg = "template_spec が static Blueprint を含んでいません"
+            raise DraftStructuringError(msg)
+
+        if prepare_meta.blueprint_hash:
+            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
+            if prepare_meta.blueprint_hash != computed_hash:
+                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
+                raise DraftStructuringError(msg)
+
+        self._layout_name_lookup = {layout.name: layout.name for layout in template_spec.layouts}
+
+        artifacts = self._build_static_artifacts(
+            spec=context.spec,
+            prepare_document=prepare_document,
+            content_document=content_document,
+            template_spec=template_spec,
+            prepare_meta=prepare_meta,
+        )
+
+        output_dir = self.options.output_dir or context.workdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        draft_path = output_dir / self.options.draft_filename
+        approved_path = output_dir / self.options.approved_filename
+        log_path = output_dir / self.options.log_filename
+        mapping_log_path = output_dir / self.options.mapping_log_filename
+
+        self._write_document(draft_path, artifacts.draft)
+        self._write_document(approved_path, artifacts.draft)
+        self._write_log(log_path, [])
+        self._write_json(mapping_log_path, artifacts.mapping_log)
+
+        ready_path = output_dir / self.options.generate_ready_filename
+        self._write_json(ready_path, artifacts.generate_ready.model_dump(mode="json", exclude_none=True))
+        context.add_artifact("generate_ready", artifacts.generate_ready)
+        context.add_artifact("generate_ready_path", str(ready_path))
+
+        ready_meta_payload = self._build_generate_ready_meta_payload(
+            draft=artifacts.draft,
+            generate_ready=artifacts.generate_ready,
+            ai_summary=artifacts.ai_summary,
+        )
+        ready_meta_path = output_dir / self.options.generate_ready_meta_filename
+        self._write_json(ready_meta_path, ready_meta_payload)
+        context.add_artifact("generate_ready_meta_path", str(ready_meta_path))
+
+        context.add_artifact("draft_document", artifacts.draft)
+        context.add_artifact("draft_document_path", str(approved_path))
+        context.add_artifact("draft_review_log_path", str(log_path))
+        context.add_artifact("draft_mapping_log_path", str(mapping_log_path))
+
+        spec_id = self._spec_id_from_title(getattr(context.spec.meta, "title", None))
+        context.add_artifact("draft_spec_id", spec_id)
+
+        store = DraftStore()
+        try:
+            store.create_board(spec_id, artifacts.draft)
+        except BoardAlreadyExistsError:
+            store.overwrite_board(spec_id, artifacts.draft)
+
+        logger.info(
+            "Static テンプレート向け Draft ドキュメントを生成しました: slides=%d",
+            sum(len(section.slides) for section in artifacts.draft.sections),
+        )
+
+    def _build_static_artifacts(
+        self,
+        *,
+        spec: JobSpec,
+        prepare_document: PrepareDocument,
+        content_document: ContentApprovalDocument,
+        template_spec: TemplateSpec,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> StaticArtifacts:
+        blueprint: TemplateBlueprint = template_spec.blueprint  # type: ignore[assignment]
+
+        cards_by_slot: dict[str, PrepareCard] = {}
+        for card in prepare_document.cards:
+            slot_id = _card_slot_id(card)
+            if slot_id:
+                cards_by_slot[slot_id] = card
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+
+        total_slots = 0
+        required_total = 0
+        required_fulfilled = 0
+        optional_used = 0
+        unused_slots: list[str] = []
+        blueprint_slot_ids: set[str] = set()
+
+        for blueprint_slide in blueprint.slides:
+            for slot in blueprint_slide.slots:
+                blueprint_slot_ids.add(slot.slot_id)
+                total_slots += 1
+                card = cards_by_slot.get(slot.slot_id)
+                if slot.required:
+                    required_total += 1
+                    if _card_slot_fulfilled(card):
+                        required_fulfilled += 1
+                else:
+                    if _card_slot_fulfilled(card):
+                        optional_used += 1
+                    else:
+                        unused_slots.append(slot.slot_id)
+
+        if required_fulfilled < required_total:
+            missing = required_total - required_fulfilled
+            msg = f"必須 slot に対応するカードが不足しています: missing={missing}"
+            raise DraftStructuringError(msg)
+
+        slot_summary = {
+            "required_total": required_total,
+            "required_fulfilled": required_fulfilled,
+            "optional_total": total_slots - required_total,
+            "optional_used": optional_used,
+        }
+
+        orphan_cards = []
+        for card in prepare_document.cards:
+            slot_id = _card_slot_id(card)
+            if slot_id and slot_id not in blueprint_slot_ids:
+                orphan_cards.append(slot_id)
+
+        section = DraftSection(name="Static Template", order=1, status="draft", slides=[])
+        draft_sections = [section]
+
+        generate_ready_slides: list[GenerateReadySlide] = []
+        mapping_entries: list[dict[str, Any]] = []
+
+        layout_lookup = self._layout_name_lookup
+
+        for page_no, blueprint_slide in enumerate(blueprint.slides, start=1):
+            spec_slide = spec_lookup.get(blueprint_slide.slide_id)
+            layout_id = spec_slide.layout if spec_slide else blueprint_slide.layout
+            layout_name = layout_lookup.get(layout_id, layout_id)
+
+            slide_card = DraftSlideCard(
+                ref_id=spec_slide.id if spec_slide else blueprint_slide.slide_id,
+                order=page_no,
+                layout_hint=layout_id,
+                locked=False,
+                status="draft",
+                layout_candidates=[DraftLayoutCandidate(layout_id=layout_id, score=1.0)],
+                appendix=False,
+            )
+            section.slides.append(slide_card)
+
+            elements: dict[str, Any] = {}
+            slot_records: list[dict[str, Any]] = []
+
+            slide_note_lines: list[str] = []
+
+            for slot in blueprint_slide.slots:
+                card = cards_by_slot.get(slot.slot_id)
+                fulfilled = _card_slot_fulfilled(card)
+                slot_records.append(
+                    {
+                        "slot_id": slot.slot_id,
+                        "anchor": slot.anchor,
+                        "required": slot.required,
+                        "card_id": card.card_id if card else None,
+                        "fulfilled": fulfilled,
+                    }
+                )
+                if card is None:
+                    continue
+                card_notes = card.notes_text()
+                if card_notes:
+                    slide_note_lines.extend(card_notes)
+                lines = self._card_to_lines(card)
+                self._assign_slot_to_elements(elements, slot, card, lines)
+
+            self._merge_slide_notes(elements, slide_note_lines)
+
+            sources: list[str] = []
+            if spec_slide is not None:
+                sources.append(spec_slide.id)
+            else:
+                sources.append(blueprint_slide.slide_id)
+
+            slide_meta = MappingSlideMeta(
+                section="Static Template",
+                page_no=page_no,
+                sources=sources,
+                fallback="none",
+                layout_mode="static",
+                blueprint_slide_id=blueprint_slide.slide_id,
+                blueprint_slots=slot_records,
+            )
+
+            generate_ready_slides.append(
+                GenerateReadySlide(
+                    layout_id=layout_id,
+                    layout_name=layout_name,
+                    elements=elements,
+                    meta=slide_meta,
+                )
+            )
+
+            mapping_entries.append(
+                {
+                    "mode": "static",
+                    "slide_id": blueprint_slide.slide_id,
+                    "layout": layout_id,
+                    "slots": slot_records,
+                }
+            )
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        content_hash = self._compute_content_hash(content_document)
+
+        generate_ready = GenerateReadyDocument(
+            slides=generate_ready_slides,
+            meta=GenerateReadyMeta(
+                template_version=None,
+                template_path=None,
+                content_hash=content_hash,
+                generated_at=timestamp,
+                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+                layout_mode="static",
+                blueprint_path=prepare_meta.blueprint_path,
+                blueprint_hash=prepare_meta.blueprint_hash,
+                slot_summary=slot_summary,
+            ),
+        )
+
+        draft_meta = DraftMeta(
+            target_length=len(blueprint.slides),
+            structure_pattern="static",
+            appendix_limit=self.options.appendix_limit,
+            template_id=template_spec.template_path,
+            template_match_score=1.0,
+            template_mismatch=[],
+            return_reason_stats={},
+            analyzer_summary={},
+        )
+        draft = DraftDocument(sections=draft_sections, meta=draft_meta)
+
+        blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
+
+        mapping_log = {
+            "mode": "static",
+            "slides": mapping_entries,
+            "slot_summary": slot_summary,
+            "static_slot_checks": {
+                "unused_slots": unused_slots,
+                "orphan_cards": orphan_cards,
+            },
+            "blueprint_path": blueprint_path_value,
+        }
+
+        ai_summary = {
+            "mode": "static",
+            "invoked": 0,
+            "used": 0,
+            "simulated": 0,
+            "models": {},
+        }
+
+        return StaticArtifacts(
+            draft=draft,
+            generate_ready=generate_ready,
+            mapping_log=mapping_log,
+            ai_summary=ai_summary,
+            slot_summary=slot_summary,
+        )
+
+    def _load_template_spec(self, path: Path) -> TemplateSpec:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            msg = f"template_spec を読み込めません: {path}"
+            raise DraftStructuringError(msg) from exc
+
+        try:
+            if path.suffix.lower() in {".yaml", ".yml"}:
+                import yaml
+
+                payload = yaml.safe_load(text)
+                return TemplateSpec.model_validate(payload)
+            return TemplateSpec.model_validate_json(text)
+        except ValueError as exc:
+            msg = f"template_spec の解析に失敗しました: {path}"
+            raise DraftStructuringError(msg) from exc
+
+    @staticmethod
+    def _compute_blueprint_hash(blueprint: TemplateBlueprint) -> str:
+        payload = blueprint.model_dump(mode="json")
+        digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+        return f"sha256:{hashlib.sha256(digest.encode('utf-8')).hexdigest()}"
+
+    @staticmethod
+    def _compute_content_hash(document: ContentApprovalDocument | None) -> str | None:
+        if document is None:
+            return None
+        try:
+            payload = document.model_dump(mode="json")
+            digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            return hashlib.sha256(digest.encode("utf-8")).hexdigest()
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _card_to_lines(card: PrepareCard) -> list[str]:
+        lines = list(card.iter_body_text())
+        if not lines:
+            headline = card.headline_or_title()
+            if headline:
+                lines.append(headline)
+        return [line for line in lines if line]
+
+    @staticmethod
+    def _assign_slot_to_elements(
+        elements: dict[str, Any],
+        slot: TemplateBlueprintSlot,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        anchor = slot.anchor or slot.slot_id
+        if not anchor:
+            return
+        anchor_lower = anchor.lower()
+        if anchor_lower in {"title", "main message"}:
+            headline = card.headline_or_title()
+            if headline:
+                elements["title"] = headline
+            return
+        if "subtitle" in anchor_lower:
+            subtitle = card.subtitle_or_chapter() or card.headline_or_title()
+            if subtitle:
+                elements["subtitle"] = subtitle
+            return
+        if anchor_lower in {"body", "content"}:
+            if lines:
+                elements["body"] = lines
+            else:
+                headline = card.headline_or_title()
+                if headline:
+                    elements["body"] = [headline]
+            return
+        content_type = (slot.content_type or "text").lower()
+        if content_type == "table":
+            if lines:
+                elements[anchor] = {
+                    "headers": ["項目"],
+                    "rows": [[line] for line in lines],
+                }
+            return
+        if content_type not in {"text"}:
+            return
+        if lines:
+            elements[anchor] = lines
+
+    @staticmethod
+    def _merge_slide_notes(elements: dict[str, Any], note_lines: list[str]) -> None:
+        if not note_lines:
+            return
+        aggregated_notes = "\n".join(note_lines)
+        existing_note = elements.get("note")
+        if isinstance(existing_note, str) and existing_note.strip():
+            aggregated_notes = f"{existing_note.rstrip()}\n{aggregated_notes}"
+        elements["note"] = aggregated_notes

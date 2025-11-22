@@ -10,9 +10,9 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: `pptx prepare` サブコマンドの `--card-limit` オプションを `-p/--page-limit` に改名し、CLI 引数・オーケストレータ・テスト・ドキュメントの表記を統一する。ブランチは `feat/rm047-draft-structuring` を継続利用し、旧オプションは廃止する。
-    - ドキュメント／コード修正方針: `src/pptx_generator/cli.py` と `src/pptx_generator/brief/orchestrator.py` で引数名称を変更し、関連テストと README / CLI リファレンスほか `--card-limit` 記載ドキュメントを更新する。
+    - ドキュメント／コード修正方針: `src/pptx_generator/cli.py` と `src/pptx_generator/prepare/orchestrator.py` で引数名称を変更し、関連テストと README / CLI リファレンスほか `--card-limit` 記載ドキュメントを更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: 作業後に ToDo を更新し、必要に応じてレビューで共有する。
-    - 想定影響ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/brief/orchestrator.py`, `tests/test_cli_prepare.py`, `README.md`, `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-content-normalization.md` ほか `--card-limit` 記載箇所。
+    - 想定影響ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/orchestrator.py`, `tests/test_cli_prepare.py`, `README.md`, `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-content-normalization.md` ほか `--card-limit` 記載箇所。
     - リスク: 旧オプション指定ジョブが実行時エラーとなる恐れ。名称変更時のテスト漏れや表記揺れによる混乱。
     - テスト方針: `uv run --extra dev pytest tests/test_cli_prepare.py` を実行し、オプション動作を確認する。
     - ロールバック方法: 変更コミットを `git revert` するか、作業ブランチで reset して再実施する。
@@ -24,7 +24,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: `src/pptx_generator/cli.py`, `src/pptx_generator/brief/orchestrator.py`, `tests/test_cli_prepare.py` を `page_limit` 対応へ更新。
+  - メモ: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/orchestrator.py`, `tests/test_cli_prepare.py` を `page_limit` 対応へ更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_prepare.py`
 - [x] ドキュメント更新

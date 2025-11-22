@@ -3,7 +3,7 @@
 ## 構成
 - `json/sample_jobspec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
 - `extract/`: 工程1 `pptx template` の出力サンプル。`template_spec.json` / `jobspec.json` / `branding.json` / `diagnostics.json` / `layouts.jsonl` を保持し、コマンド実行結果と同じファイル名を維持する。
-- `prepare/`: 工程2 `pptx prepare` の成果物（`prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`, `audit_log.json`, `brief_story_outline.json`）。CLI やテストで参照するため最新スキーマへ追従させる。
+- `prepare/`: 工程2 `pptx prepare` の成果物（`prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`, `audit_log.json`, `prepare_story_outline.json`）。CLI やテストで参照するため最新スキーマへ追従させる。
 - `draft/`: 工程3 アウトライン承認の出力 (`draft_draft.json`, `draft_approved.json`, `draft_review_log.json`, `draft_meta.json`) を格納する。
 - `compose/`: 工程3 マッピング結果 (`generate_ready.json`, `mapping_log.json`) を保存する。工程4 の成果物は `gen/` へ移動する。
 - `gen/`: 工程4 `pptx gen` の成果物（`proposal.pptx`, `analysis.json`, `analysis_pre_polisher.json`, `review_engine_analyzer.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`）を格納し、PDF サンプルが生成できた場合は同ディレクトリへ追加する。

@@ -1,5 +1,5 @@
 ---
-目的: Stage3 ドラフト構成で JobSpec と BriefCard のスライド ID 不整合を即時検知し、処理を停止する品質ゲートを導入する
+目的: Stage3 ドラフト構成で JobSpec と PrepareCard のスライド ID 不整合を即時検知し、処理を停止する品質ゲートを導入する
 関連ブランチ: fix/rm060-stage3-id-enforce
 関連Issue: #276
 roadmap_item: RM-060 Stage3 ID 整合性強制
@@ -10,11 +10,11 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
     - Plan:
-      - DraftStructuringStep で JobSpec と BriefCard の ID 不一致を検知したら例外を送出し、処理を停止するよう修正します（既存の `logger.debug` でのスキップは廃止）。
+      - DraftStructuringStep で JobSpec と PrepareCard の ID 不一致を検知したら例外を送出し、処理を停止するよう修正します（既存の `logger.debug` でのスキップは廃止）。
       - 上記仕様を保証するテストを追加し、影響範囲の既存テストが通ることを確認します。
       - 仕様が明文化されているドキュメントを確認し、今回の変更点が分かるよう必要なら更新します。
       - テストは `uv run --extra dev pytest` を予定しています。
-    - 対象整理（スコープ、対象ファイル、前提）: Stage3 DraftStructuringStep の ID 突合処理と関連ログ出力、BriefNormalization から連携される互換 `content_approved` データを前提にする。
+    - 対象整理（スコープ、対象ファイル、前提）: Stage3 DraftStructuringStep の ID 突合処理と関連ログ出力、PrepareNormalization から連携される互換 `content_approved` データを前提にする。
     - ドキュメント／コード修正方針: DraftStructuringStep の ID 確認を例外化し、必要に応じて CLI メッセージとドキュメント（stage-03 requirements など）を更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo メモで進捗共有し、PR 説明で影響範囲とテスト結果を報告する。
     - 想定影響ファイル: `src/pptx_generator/pipeline/draft_structuring.py`, `tests/test_draft_structuring_step.py`, `docs/requirements/stages/stage-03-mapping.md` など関連ドキュメント。

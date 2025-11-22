@@ -1,4 +1,4 @@
-"""BriefCard と JobSpec の ID 整合を担うユーティリティ。"""
+"""PrepareCard と JobSpec の ID 整合を担うユーティリティ。"""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Iterable, Literal
 
-from ..brief.models import BriefCard, BriefDocument
+from ..prepare.models import PrepareCard, PrepareDocument
 from ..content_ai import (LLMClient, SlideMatchCandidate,
                           SlideMatchRequest, SlideMatchResponse,
                           create_llm_client)
@@ -46,7 +46,7 @@ class SlideIdAlignerOptions:
 
 
 class SlideIdAligner:
-    """BriefCard ↔ JobSpec の ID 整合を担当するクラス。"""
+    """PrepareCard ↔ JobSpec の ID 整合を担当するクラス。"""
 
     def __init__(
         self,
@@ -61,21 +61,21 @@ class SlideIdAligner:
         self,
         *,
         spec: JobSpec,
-        brief_document: BriefDocument | None,
+        prepare_document: PrepareDocument | None,
         content_document: ContentApprovalDocument,
     ) -> SlideAlignmentResult:
-        if brief_document is None or not brief_document.cards:
-            logger.info("SlideIdAligner: brief_document が無いため整合処理をスキップします")
+        if prepare_document is None or not prepare_document.cards:
+            logger.info("SlideIdAligner: prepare_document が無いため整合処理をスキップします")
             return SlideAlignmentResult(
                 document=content_document,
                 records=[],
                 meta={
                     "status": "skipped",
-                    "reason": "brief_document_absent",
+                    "reason": "prepare_document_absent",
                 },
             )
 
-        card_map = {card.card_id: card for card in brief_document.cards}
+        card_map = {card.card_id: card for card in prepare_document.cards}
         candidate_slides = list(spec.slides)
         if not candidate_slides:
             logger.warning("SlideIdAligner: JobSpec にスライドが存在しません")
@@ -95,7 +95,7 @@ class SlideIdAligner:
             original_id = slide.id
             card = card_map.get(original_id)
             if card is None:
-                logger.debug("SlideIdAligner: card_id=%s が brief_document に見つかりません", original_id)
+                logger.debug("SlideIdAligner: card_id=%s が prepare_document に見つかりません", original_id)
                 records.append(
                     SlideAlignmentRecord(
                         card_id=original_id,
@@ -126,10 +126,12 @@ class SlideIdAligner:
                 recommended_slide_id = None
                 record.recommended_slide_id = None
 
-            if recommended_slide_id and response.confidence >= self._options.confidence_threshold:
+            if recommended_slide_id:
                 previous_index = slide_assignments.get(recommended_slide_id)
                 if previous_index is None:
                     record.status = "applied"
+                    if response.confidence < self._options.confidence_threshold:
+                        record.reason = (record.reason or "") + " | low_confidence"
                     slide_assignments[recommended_slide_id] = len(records)
                 else:
                     previous_record = records[previous_index]
@@ -138,8 +140,12 @@ class SlideIdAligner:
                         previous_record.status = "pending"
                         previous_record.reason = (previous_record.reason or "") + " | reassigned"
                         record.status = "applied"
+                        if response.confidence < self._options.confidence_threshold:
+                            record.reason = (record.reason or "") + " | low_confidence"
                         slide_assignments[recommended_slide_id] = len(records)
                     else:
+                        if previous_record.confidence < self._options.confidence_threshold:
+                            previous_record.reason = (previous_record.reason or "") + " | low_confidence"
                         record.status = "pending"
                         record.reason = (record.reason or "") + " | lower_than_existing"
                         record.recommended_slide_id = None
@@ -214,15 +220,15 @@ class SlideIdAligner:
 
     def _build_match_request(
         self,
-        card: BriefCard,
+        card: PrepareCard,
         candidates: list[Slide],
     ) -> SlideMatchRequest:
-        summary_lines = []
-        if card.message:
-            summary_lines.append(card.message)
-        summary_lines.extend(card.narrative[:3])
-        summary_lines.extend(point.statement for point in card.supporting_points[:3])
-        card_summary = "\n".join(line.strip() for line in summary_lines if line.strip()) or card.message
+        summary_lines = [card.headline_or_title()]
+        body_iter = card.iter_body_text()
+        for _, text in zip(range(3), body_iter):
+            summary_lines.append(text)
+        summary_lines.extend(card.notes_text()[:3])
+        card_summary = "\n".join(line.strip() for line in summary_lines if line.strip()) or card.headline_or_title()
 
         candidate_entries: list[str] = []
         candidate_models: list[SlideMatchCandidate] = []
@@ -243,9 +249,9 @@ class SlideIdAligner:
         prompt_parts = [
             "# カード情報",
             f"card_id: {card.card_id}",
-            f"chapter: {card.chapter}",
-            f"story_phase: {card.story.phase}",
-            f"intent_tags: {', '.join(card.intent_tags) if card.intent_tags else 'なし'}",
+            f"chapter: {card.resolved_chapter_title()}",
+            f"story_phase: {card.role.story_phase}",
+            f"intent_tags: {', '.join(card.resolved_intent_tags()) if card.resolved_intent_tags() else 'なし'}",
             "summary:",
             card_summary,
             "",
@@ -262,16 +268,16 @@ class SlideIdAligner:
 
         return SlideMatchRequest(
             card_id=card.card_id,
-            card_chapter=card.chapter,
-            card_intent=tuple(card.intent_tags),
-            card_story_phase=card.story.phase,
+            card_chapter=card.resolved_chapter_title(),
+            card_intent=tuple(card.resolved_intent_tags()),
+            card_story_phase=card.role.story_phase,
             card_summary=card_summary,
             prompt=prompt,
             system_prompt=system_prompt,
             candidates=candidate_models,
         )
 
-    def _select_candidates(self, card: BriefCard, candidates: Iterable[Slide]) -> list[Slide]:
+    def _select_candidates(self, card: PrepareCard, candidates: Iterable[Slide]) -> list[Slide]:
         scored: list[tuple[float, Slide]] = []
         for slide in candidates:
             score = self._heuristic_score(card, slide)
@@ -283,24 +289,26 @@ class SlideIdAligner:
         return limited
 
     @staticmethod
-    def _heuristic_score(card: BriefCard, slide: Slide) -> float:
+    def _heuristic_score(card: PrepareCard, slide: Slide) -> float:
         score = 0.0
         if slide.id == card.card_id:
             score += 5.0
         title = (slide.title or "").lower()
-        chapter = card.chapter.lower()
+        chapter = card.resolved_chapter_title().lower()
         if chapter and chapter in title:
             score += 3.0
-        if card.story.phase and card.story.phase.lower() in (slide.layout or "").lower():
+        if card.role.story_phase and card.role.story_phase.lower() in (slide.layout or "").lower():
             score += 1.5
-        if card.intent_tags:
-            for intent in card.intent_tags:
+        intent_tags = card.resolved_intent_tags()
+        if intent_tags:
+            for intent in intent_tags:
                 if intent.lower() in title:
                     score += 1.0
+        source_text = card.headline_or_title().lower()
         if slide.notes:
-            ratio = SequenceMatcher(None, card.message.lower(), slide.notes.lower()).ratio()
+            ratio = SequenceMatcher(None, source_text, slide.notes.lower()).ratio()
             score += ratio * 2.0
         else:
-            ratio = SequenceMatcher(None, card.message.lower(), title).ratio()
+            ratio = SequenceMatcher(None, source_text, title).ratio()
             score += ratio * 2.0
         return score

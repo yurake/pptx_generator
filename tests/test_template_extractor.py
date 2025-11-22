@@ -10,6 +10,7 @@ import pytest
 
 from pptx_generator.models import (JobSpecScaffold, LayoutInfo, ShapeInfo,
                                    TemplateSpec)
+from pptx_generator.spec_loader import convert_scaffold_to_jobspec
 from pptx_generator.pipeline.template_extractor import (
     JOBSPEC_SCHEMA_VERSION,
     SLIDE_BULLET_ANCHORS,
@@ -227,7 +228,26 @@ class TestTemplateExtractorStep:
             missing_fields=[],
             conflict=None,
         )
-        layout = LayoutInfo(name="Title", identifier="0001", anchors=[title_shape, image_shape], error=None)
+        slide_number_shape = ShapeInfo(
+            name="Num",
+            shape_type="LayoutPlaceholder",
+            left_in=9.4,
+            top_in=6.9,
+            width_in=3.5,
+            height_in=0.4,
+            text="‹#›",
+            placeholder_type="SLIDE_NUMBER",
+            is_placeholder=True,
+            error=None,
+            missing_fields=[],
+            conflict=None,
+        )
+        layout = LayoutInfo(
+            name="Title",
+            identifier="0001",
+            anchors=[title_shape, image_shape, slide_number_shape],
+            error=None,
+        )
         template_spec = TemplateSpec(
             template_path=str(options.template_path),
             extracted_at="2025-11-02T00:00:00Z",
@@ -249,6 +269,26 @@ class TestTemplateExtractorStep:
         assert slide.placeholders[0].sample_text == "表紙タイトル"
         assert slide.placeholders[1].kind == "image"
         assert slide.placeholders[1].sample_text is None
+        slide_number_placeholder = next(
+            (placeholder for placeholder in slide.placeholders if placeholder.anchor == "Num"),
+            None,
+        )
+        assert slide_number_placeholder is not None
+        assert slide_number_placeholder.auto_draw is True
+        template_spec.blueprint = step._build_blueprint([layout])
+        slot_anchors = [
+            slot.anchor
+            for blueprint_slide in template_spec.blueprint.slides
+            for slot in blueprint_slide.slots
+        ]
+        assert "Num" not in slot_anchors
+
+        job_spec = convert_scaffold_to_jobspec(jobspec)
+        render_slide = job_spec.slides[0]
+        assert render_slide.auto_draw_anchors == ["Num"]
+        assert "Num" in render_slide.auto_draw_boxes
+        num_box = render_slide.auto_draw_boxes["Num"]
+        assert num_box.left_in == pytest.approx(9.4, rel=1e-3)
 
     def test_slide_bullet_conflict_detection(self):
         """SlideBullet競合検出のテスト。"""

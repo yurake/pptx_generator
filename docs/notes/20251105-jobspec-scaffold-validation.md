@@ -21,7 +21,7 @@
 補足:
 feat/047-draft-structuring での調査結果
 
-- uv run pptx compose samples/extract/jobspec.json --template samples/templates/templates.pptx --brief-cards samples/prepare/prepare_card.json を実行すると、meta.title と auth の欠如、および slides[].sequence / slides[].placeholders の extra_forbidden によりバリデーションが失敗しました（エラーログ抜粋付き、現行ブランチで再現）。
+- uv run pptx compose samples/extract/jobspec.json --template samples/templates/templates.pptx --prepare-cards samples/prepare/prepare_card.json を実行すると、meta.title と auth の欠如、および slides[].sequence / slides[].placeholders の extra_forbidden によりバリデーションが失敗しました（エラーログ抜粋付き、現行ブランチで再現）。
 - JobSpec は meta.title と auth を必須とし、Slide は model_config = ConfigDict(extra="forbid") で未定義プロパティを禁止しているため、抽出直後の JSON をそのまま読み込むと上記エラーになります (src/pptx_generator/models.py:149-201)。
 - テンプレ抽出側の build_jobspec_scaffold はテンプレ設計情報のみに特化した JobSpecScaffold を出力しており、meta.title や auth を付与せず、placeholders 情報を保持したままにしています (src/pptx_generator/pipeline/template_extractor.py:266-316)。
 - samples/extract/jobspec.json も同じスキーマ構造で、meta にテンプレ系フィールドのみが入り、各スライド配下に placeholders が残っているため、現在の pptx compose 入力要件を満たしていません (samples/extract/jobspec.json)。

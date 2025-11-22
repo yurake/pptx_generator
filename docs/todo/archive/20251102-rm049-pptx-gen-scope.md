@@ -143,13 +143,13 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 
 
 - [x] 工程2/3改修の取り込み
-- メモ: origin/main の commit 9a34ddb（工程2/3統合・brief導入）を取り込む。
+- メモ: origin/main の commit 9a34ddb（工程2/3統合・prepare導入）を取り込む。
     - [x] 最新 main の差分を精査し、CLI/パイプライン/テスト/サンプル/ドキュメントの影響を整理する。
-    - [x] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/brief/*`、`pipeline/brief_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
+    - [x] `git merge origin/main` を実行し、`src/pptx_generator/cli.py`、`src/pptx_generator/prepare/*`、`pipeline/prepare_normalization.py`、`tests/test_cli_*`、`README.md` などで発生する競合を解消する。
       - メモ: PR #266 コンフリクトの主因だった `rendering_ready` への名称変更差分を再度 `generate_ready` に統合し、`compose` 追加部分と整合するよう調整。
-    - [x] 工程5専用化で導入した generate_ready フローと、新工程3（brief成果物）が整合するよう CLI・パイプラインを調整する。
+    - [x] 工程5専用化で導入した generate_ready フローと、新工程3（prepare成果物）が整合するよう CLI・パイプラインを調整する。
     - [x] README・設計／要件／runbook を最新仕様へ更新し、必要に応じて `docs/notes` に決定メモを追加する。
-    - [x] `uv run --extra dev pytest`（最低でも CLI/brief 関連テスト）を実行し、`uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf`（既定出力は `.pptx/gen/`）を再確認する。
+    - [x] `uv run --extra dev pytest`（最低でも CLI/prepare 関連テスト）を実行し、`uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf`（既定出力は `.pptx/gen/`）を再確認する。
     - [x] ToDo に結果メモを追記し、必要なら関連 Issue / ロードマップの更新を検討する。
 ## メモ
 **主変更点**
@@ -157,7 +157,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - `src/pptx_generator/pipeline/mapping.py`、`src/pptx_generator/generate_ready.py`: `GenerateReadyDocument.meta.template_path` を埋め込み、`mapping_meta` と監査ログにテンプレート情報を反映。
 - `tests/test_cli_integration.py` / `tests/test_cli_cheatsheet_flow.py` / `tests/test_mapping_step.py`: generate_ready 専用フローに合わせてテンプレート必須化と新エラーハンドリングを検証。
 - README・`docs/design/cli-command-reference.md`・`docs/runbooks/story-outline-ops.md` ほか関連ドキュメントを更新し、`pptx gen` の入力仕様と `--template` 必須化を明記。
-- `docs/notes/20251109-generate-ready-meta.md`: Brief 正規化後も generate_ready メタ方針を維持する旨を追記。
+- `docs/notes/20251109-generate-ready-meta.md`: Prepare 正規化後も generate_ready メタ方針を維持する旨を追記。
 - **テスト**
   - `uv run --extra dev pytest`（143 件成功、2025-11-10 実行）
   - メモ: PR #266 コンフリクト解消後に `uv run --extra dev pytest tests/test_cli_integration.py` を再実行し、generate_ready 前提の CLI フローが緑化することを確認（2025-11-XX）。
@@ -169,12 +169,12 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - 実行テスト: `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_template_basic`。
 
 - **2025-11-04 CLIコンテンツ出力オプション整理**
-  - 工程2の既定出力先を `.pptx/content/` に統一し、`pptx content` の `--output` 省略時に BriefStore と同じパスが選択されるよう CLI／API を調整（ドキュメント・サンプルも更新）。
+  - 工程2の既定出力先を `.pptx/content/` に統一し、`pptx content` の `--output` 省略時に PrepareStore と同じパスが選択されるよう CLI／API を調整（ドキュメント・サンプルも更新）。
   - stage-02/03 要件や runbook のパス記載を刷新し、HITL ログの参照先を新ディレクトリに合わせて確認した。
   - 後続の `pptx prepare` への改称に備えて命名ポリシーを整理済み。
 
 - **2025-11-04 CLI/ドキュメント再命名対応**
-  - 工程2の CLI サブコマンドを `pptx prepare` に統一し、既定出力ディレクトリを `.pptx/prepare/`、成果物名を `prepare_card.json` へ変更。`src/pptx_generator/cli.py` および `BriefStore` 周辺の既定パスを更新。
+  - 工程2の CLI サブコマンドを `pptx prepare` に統一し、既定出力ディレクトリを `.pptx/prepare/`、成果物名を `prepare_card.json` へ変更。`src/pptx_generator/cli.py` および `PrepareStore` 周辺の既定パスを更新。
   - テスト群を新名称に合わせて整理（`tests/test_cli_prepare.py` 追加、統合テストとチートシートテストの参照パス更新）し、サンプル成果物を `prepare_card.json` へ置換。
   - README／design／requirements／runbook／samples の各ドキュメントを「コンテンツ準備」表記に統一し、命名ポリシーを `docs/policies/config-and-templates.md` に追記。
   - 実行テスト: `uv run --extra dev pytest tests/test_cli_prepare.py`, `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_prepare_generates_outputs`, `uv run --extra dev pytest tests/test_cli_cheatsheet_flow.py`。

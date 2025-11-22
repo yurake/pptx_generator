@@ -1,23 +1,23 @@
 # 工程3 マッピング (HITL + 自動) 要件詳細
 
 ## 概要
-- Brief 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
+- Prepare 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
 - HITL が章構成・差戻しを操作でき、フォールバックや Analyzer 結果を含む監査ログを `draft_review_log.json`・`draft_mapping_log.json` に残す。
 - CLI (`pptx compose` / `pptx outline`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
 ## 入力
-- Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`。
+- Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`, `template_spec.json`。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
-- Stage2: `prepare_card.json`, `brief_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。
+- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし工程3を停止する。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
 
 ## 出力
-- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持し、スライド数は `prepare_card.json.cards` と一致する。
-- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。
+- `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持し、スライド数は `prepare_card.json.cards` と一致する。静的モードでは Blueprint slot を `meta.blueprint_slot` に記録し、`elements` は slot ベースに構成する。
+- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。静的モードでは `layout_mode=static`、`blueprint_path`、`blueprint_hash`、`slot_summary`（必須/任意 slot カバレッジ）を保持する。
 - `draft_review_log.json`: 承認・差戻し履歴。`action`, `actor`, `timestamp`, `reason_code` を必須とする。
-- `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完履歴、Analyzer 情報を記録する。
+- `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完履歴、Analyzer 情報を記録する。静的モードでは `mode=static` とし、スロット配列を反映した `slides[*].slots` と `static_slot_checks.unused_slots` / `static_slot_checks.orphan_cards` を出力する。
 - `fallback_report.json`: 重大フォールバック（例: 章統合、付録送り）を詳細化した任意ファイル。
 
 ## 機能要件
@@ -34,25 +34,30 @@
    - 承認完了後に章順・スライド順・付録情報を `generate_ready.json` に保存し、章ステータスを `generate_ready_meta.sections[*].status` へ反映。
 
 3. **レイアウト割付（自動）**
-  - BriefCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
+  - PrepareCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
   - スコア上位候補から割付を試み、収容不可の場合は `shrink_text` → `split_slide` → `appendix` の順でフォールバック。
   - フォールバック結果と理由を `draft_mapping_log.json.fallback` と `fallback_report.json` に記録する。
   - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
-  - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする（RM-054 計画）。
+  - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする。slot 未充足時は `DraftStructuringError` を送出し、差戻し理由を `static_slot_checks` に格納する。
 
-4. **Analyzer 連携**
+4. **カード順序とモードエラーハンドリング**
+  - Dynamic フローは `prepare_card.json.cards[*].order` をそのまま `generate_ready.slides[*]` の順序へ反映する。HITL が順序を調整した場合もこの値を更新して引き渡すこと。
+  - Static フローはテンプレ Blueprint / JobSpec の順序を優先し、カード側の `order` は補助情報として扱う。未使用 slot がある場合は `static_slot_checks.unused_slots` に記録する。
+  - `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または欠落している場合は `DraftStructuringError` を送出する。CLI では exit code 6 を返し、モード不整合を修正後に再実行する。
+
+5. **Analyzer 連携**
    - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度に応じて候補スコアを補正する。
    - Analyzer 指摘サマリは `generate_ready_meta.sections[*].analyzer_summary` と `draft_mapping_log.json.analyzer` に保存する。
 
-5. **監査・再現性**
-  - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
-  - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
-  - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
-  - Stage2 から引き継いだ `mode` を監査ログへ残し、静的・動的それぞれのフォールバック指標を切り替えられるようにする。
+6. **監査・再現性**
+   - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
+   - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
+   - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
+   - Stage2 から引き継いだ `mode` を監査ログへ残し、静的・動的それぞれのフォールバック指標を切り替えられるようにする。
 
 ## CLI 要件
 - `pptx compose`
-  - `--brief-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
+  - `--prepare-*` オプションが未指定でも `.pptx/prepare/` の既定ファイルを自動参照する。
   - `--generate-ready-filename` / `--generate-ready-meta` / `--review-log-filename` / `--mapping-log-filename` で成果物ファイル名を制御する。
   - 失敗時は exit code 2（スキーマ検証エラー）、4（ファイル読み込みエラー）、6（マッピング不可）を返す。
   - テンプレ抽出成果物（JobSpecScaffold）を渡された場合は不足フィールド補完と textboxes 変換を行い、`pptx compose` の入力要件を満たす `JobSpec` へ整形する。
@@ -66,8 +71,19 @@
 - `draft_mapping_log.json` の `warnings` と `analyzer.issue_count` が監視対象（PagerDuty 等）へ連携可能な形式である。
 - フォールバック発生時は `fallback_report.json` に詳細が記録され、HITL が差戻し判断を下せる。
 
+## 静的モード固有要件
+- Blueprint の `slides` は `generate_ready.slides[*].meta.blueprint_slide_id` と同期させる。
+- `prepare_card.json.cards[*].slot_id` と Blueprint `slots[*].slot_id` を 1:1 で対応させ、未使用 slot は `draft_mapping_log.json.static_slot_checks.unused_slots` に列挙する。
+- `generate_ready_meta.statistics` に `static_required_total` / `static_required_fulfilled` / `static_optional_used` を追加し、工程2の統計値と一致させる。
+- `generate_ready_meta.layout_mode` と `ai_generation_meta.mode` は必ず一致させ、監査ログで静的モードの実行を追跡できるようにする。
+- 静的モード時の exit code 6 は Blueprint の必須 slot 未充足または `slot_id` 重複検知を表す。CLI は詳細を標準エラーに出力する。
+- `generate_ready.slides[*].meta.blueprint_slots[*].fulfilled` を監査し、slot 充足状況を `draft_mapping_log.json` と同期させる。
+- `draft_mapping_log.json.static_slot_checks.orphan_cards` に Blueprint へ取り込めなかったカードを記録し、CI で差分検証できるようにする。
+- jobspec 側に `template_spec_path` が存在することを前提とし、静的モードではそれを参照して Blueprint を取得する。
+
 ## 将来計画 / 未解決事項
 - Layout Hint Engine の ML 化と学習データパイプライン。
 - 章テンプレート適合率のダッシュボード表示と KPI 化。
 - Analyzer 指摘に応じた自動フォールバック戦略の改善。
-- BriefCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
+- PrepareCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
+- `ContentElements.body` の 6 行 / 40 文字制約を撤廃し、prepare/compose 段階では全文を維持したままレンダリング工程でトリミングする新方針（RM-067）を検討。

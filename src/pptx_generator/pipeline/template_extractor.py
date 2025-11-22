@@ -10,7 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from pptx import Presentation
 from pptx.shapes.base import BaseShape
@@ -19,7 +19,8 @@ from pptx.shapes.placeholder import PlaceholderPicture, SlidePlaceholder
 from ..models import (JobSpecScaffold, JobSpecScaffoldBounds,
                       JobSpecScaffoldMeta, JobSpecScaffoldPlaceholder,
                       JobSpecScaffoldSlide, LayoutInfo, ShapeInfo,
-                      TemplateSpec)
+                      TemplateBlueprint, TemplateBlueprintSlide,
+                      TemplateBlueprintSlot, TemplateSpec)
 from .base import PipelineContext, PipelineStep
 
 logger = logging.getLogger(__name__)
@@ -29,16 +30,26 @@ SLIDE_BULLET_ANCHORS = {"bullets", "bullet_list", "content", "body"}
 JOBSPEC_SCHEMA_VERSION = "0.1"
 MAX_SAMPLE_TEXT_LENGTH = 200
 
+# PowerPoint 側で自動描画されるプレースホルダー種別
+AUTO_DRAW_PLACEHOLDER_TYPES = {
+    "SLIDE_NUMBER",
+    "DATE",
+    "DATETIME",
+    "FOOTER",
+    "HEADER",
+}
+
 
 @dataclass
 class TemplateExtractorOptions:
     """TemplateExtractor の設定オプション。"""
-    
+
     template_path: Path
     output_path: Optional[Path] = None
     layout_filter: Optional[str] = None
     anchor_filter: Optional[str] = None
     format: str = "json"  # json または yaml
+    layout_mode: str = "dynamic"
 
 
 class TemplateExtractorStep:
@@ -76,12 +87,12 @@ class TemplateExtractorStep:
         """テンプレートファイルから仕様を抽出する。"""
         if not self.options.template_path.exists():
             raise FileNotFoundError(f"テンプレートファイルが見つかりません: {self.options.template_path}")
-        
+
         try:
             presentation = Presentation(self.options.template_path)
         except Exception as exc:
             raise RuntimeError(f"テンプレートファイルの読み込みに失敗しました: {exc}") from exc
-        
+
         layouts = []
         warnings = []
         errors = []
@@ -103,12 +114,21 @@ class TemplateExtractorStep:
                 logger.warning(error_msg)
                 errors.append(error_msg)
         
+        blueprint = None
+        layout_mode = (self.options.layout_mode or "dynamic").lower()
+        if layout_mode not in {"dynamic", "static"}:
+            layout_mode = "dynamic"
+        if layout_mode == "static":
+            blueprint = self._build_blueprint(layouts)
+
         return TemplateSpec(
             template_path=str(self.options.template_path),
             extracted_at=datetime.now(timezone.utc).isoformat(),
             layouts=layouts,
             warnings=warnings,
             errors=errors,
+            layout_mode=layout_mode,  # type: ignore[arg-type]
+            blueprint=blueprint,
         )
     
     def _extract_layout_info(self, slide_layout) -> LayoutInfo:
@@ -255,10 +275,14 @@ class TemplateExtractorStep:
         """テンプレート仕様をファイルに保存する。"""
         if self.options.format == "yaml":
             import yaml
-            data = template_spec.model_dump()
+            data = template_spec.model_dump(mode="json", exclude_none=True)
             content = yaml.dump(data, allow_unicode=True, default_flow_style=False, indent=2)
         else:
-            content = json.dumps(template_spec.model_dump(), indent=2, ensure_ascii=False)
+            content = json.dumps(
+                template_spec.model_dump(mode="json", exclude_none=True),
+                indent=2,
+                ensure_ascii=False,
+            )
 
         output_path.write_text(content, encoding="utf-8")
         logger.info("テンプレート仕様を保存: %s", output_path)
@@ -286,6 +310,9 @@ class TemplateExtractorStep:
             placeholders: list[JobSpecScaffoldPlaceholder] = []
             for index, anchor in enumerate(layout.anchors, start=1):
                 anchor_name = anchor.name or f"shape_{index:02d}"
+                placeholder_type = (anchor.placeholder_type or "").upper()
+                is_auto_draw = placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES
+
                 bounds = JobSpecScaffoldBounds(
                     left_in=anchor.left_in,
                     top_in=anchor.top_in,
@@ -301,6 +328,7 @@ class TemplateExtractorStep:
                     bounds=bounds,
                     sample_text=self._sanitize_sample_text(anchor.text),
                     notes=self._collect_placeholder_notes(anchor),
+                    auto_draw=is_auto_draw,
                 )
                 placeholders.append(placeholder)
 
@@ -314,6 +342,49 @@ class TemplateExtractorStep:
             )
 
         return JobSpecScaffold(meta=meta, slides=slides)
+
+    def _build_blueprint(self, layouts: list[LayoutInfo]) -> TemplateBlueprint:
+        slides: list[TemplateBlueprintSlide] = []
+
+        for index, layout in enumerate(layouts, start=1):
+            slide_id = self._resolve_slide_id(layout, index)
+            slot_sequence = 1
+            slots: list[TemplateBlueprintSlot] = []
+            for anchor in layout.anchors:
+                placeholder_type = (anchor.placeholder_type or "").upper()
+                if placeholder_type in AUTO_DRAW_PLACEHOLDER_TYPES:
+                    logger.debug(
+                        "Blueprint から自動描画プレースホルダーを除外: slide=%s anchor=%s type=%s",
+                        slide_id,
+                        anchor.name,
+                        placeholder_type,
+                    )
+                    continue
+                content_type = self._infer_placeholder_kind(anchor)
+                slot_id = f"{slide_id}.slot{slot_sequence:02d}"
+                slot_sequence += 1
+                required = self._is_required_slot(anchor)
+                slots.append(
+                    TemplateBlueprintSlot(
+                        slot_id=slot_id,
+                        anchor=anchor.name,
+                        content_type=content_type,
+                        required=required,
+                        intent_tags=self._derive_slot_intent_tags(anchor, layout.name),
+                    )
+                )
+
+            slides.append(
+                TemplateBlueprintSlide(
+                    slide_id=slide_id,
+                    layout=layout.name,
+                    required=True,
+                    intent_tags=self._derive_layout_intent_tags(layout.name),
+                    slots=slots,
+                )
+            )
+
+        return TemplateBlueprint(slides=slides)
 
     def _save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
         """ジョブスペック雛形をファイルに保存する。"""
@@ -334,7 +405,9 @@ class TemplateExtractorStep:
         suffix = f"{sequence:02d}"
         return f"{base}-{suffix}"
 
-    def _infer_placeholder_kind(self, shape: ShapeInfo) -> str:
+    def _infer_placeholder_kind(
+        self, shape: ShapeInfo
+    ) -> Literal["text", "image", "table", "chart", "shape", "other"]:
         placeholder_type = (shape.placeholder_type or "").upper()
         if placeholder_type in {"TITLE", "CENTER_TITLE", "SUBTITLE", "BODY", "CONTENT", "TEXT"}:
             return "text"
@@ -355,6 +428,44 @@ class TemplateExtractorStep:
         if shape.text:
             return "text"
         return "other"
+
+    def _is_required_slot(self, shape: ShapeInfo) -> bool:
+        placeholder_type = (shape.placeholder_type or "").upper()
+        if placeholder_type in {"TITLE", "CENTER_TITLE", "BODY"}:
+            return True
+        if placeholder_type in {"SUBTITLE", "CONTENT"}:
+            return False
+        shape_type = (shape.shape_type or "").lower()
+        if "picture" in shape_type or "image" in shape_type:
+            return False
+        if "chart" in shape_type or "table" in shape_type:
+            return False
+        return True
+
+    @staticmethod
+    def _derive_slot_intent_tags(shape: ShapeInfo, layout_name: str | None) -> list[str]:
+        del layout_name  # 現状は形状からの推測に限定
+        placeholder_type = (shape.placeholder_type or "").upper()
+        if placeholder_type in {"TITLE", "CENTER_TITLE"}:
+            return ["headline"]
+        if placeholder_type in {"SUBTITLE"}:
+            return ["subheadline"]
+        if placeholder_type in {"BODY", "CONTENT", "TEXT"}:
+            return ["body"]
+        return []
+
+    @staticmethod
+    def _derive_layout_intent_tags(layout_name: str | None) -> list[str]:
+        name = (layout_name or "").lower()
+        if "title" in name or "cover" in name:
+            return ["opening"]
+        if "closing" in name:
+            return ["closing"]
+        if "agenda" in name:
+            return ["agenda"]
+        if "summary" in name:
+            return ["summary"]
+        return []
 
     def _sanitize_sample_text(self, text: str | None) -> str | None:
         if text is None:
