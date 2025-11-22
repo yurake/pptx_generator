@@ -835,3 +835,17 @@ flowchart TB
 -  - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
 -  - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
 - 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。
+
+<a id="rm-068"></a>
+### RM-068 コンテキスト設計ガイド整備
+- 対象領域: README / AGENTS / docs 配下の構造・運用ルール
+- ゴール: コンテキスト設計ポリシー（upfront はサマリのみ、オンデマンド参照、階層管理、必要時注入）を明文化し、ドキュメント群へ段階的に反映する。
+- 参照ドキュメント: [docs/notes/20250214-context-engineering-hand-off.md](../notes/20250214-context-engineering-hand-off.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-02-14 追加）
+- 期待成果:
+-  - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
+-  - トップレベル README / AGENTS にコンテキストパック（目的・入力・出力・制約・参照資料・チェックリスト）の章を追加する。
+-  - Runbook の記述フォーマットを「前提 / 入力 / 手順 / 失敗時 / 関連資料」で統一し、必要に応じてテンプレート化する。
+-  - ToDo テンプレートおよび運用ガイドに、設計・実装方針メモと参照資料リンクの記載ルールを追加する。
+- 次アクション: ポリシー文書草案の作成とレビュー、README / AGENTS のドラフト更新方針を決定し、順次反映するための ToDo を作成する。
