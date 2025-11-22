@@ -138,6 +138,9 @@ class LayoutValidationSuite:
         text_hint: dict[str, Any],
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
+        placeholder_summary: dict[str, Any],
+        blueprint: dict[str, Any] | None,
+        meta: dict[str, Any] | None,
     ) -> TemplateAIResult | None:
         service = self._template_ai_service
         if service is None:
@@ -156,6 +159,9 @@ class LayoutValidationSuite:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 heuristic_usage_tags=heuristic_usage_tags,
+                placeholder_summary=placeholder_summary,
+                blueprint=blueprint,
+                meta=meta,
             )
         except TemplateAIClientConfigurationError as exc:
             logger.warning("template AI classify failed: %s", exc)
@@ -436,6 +442,11 @@ class LayoutValidationSuite:
             title_from_name = heuristic_result.title_from_name
 
             raw_usage_tags = set(heuristic_tags)
+            base_meta_reasons = list(dict.fromkeys(heuristic_result.reasons))
+            meta_payload = (
+                {"heuristic_reason": "; ".join(base_meta_reasons)} if base_meta_reasons else None
+            )
+            blueprint_info = blueprint_lookup.get(layout.name)
 
             ai_result = self._invoke_template_ai(
                 template_id=template_id,
@@ -445,6 +456,9 @@ class LayoutValidationSuite:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 heuristic_usage_tags=sorted(heuristic_tags),
+                placeholder_summary=placeholder_summary,
+                blueprint=blueprint_info,
+                meta=meta_payload,
             )
 
             if ai_result and ai_result.success and ai_result.usage_tags:
@@ -518,7 +532,7 @@ class LayoutValidationSuite:
                     }
                 )
 
-            meta_reasons: list[str] = list(dict.fromkeys(heuristic_result.reasons))
+            meta_reasons: list[str] = base_meta_reasons
             if ai_result is None or not ai_result.success:
                 meta_reasons.append("template_ai:fallback")
             elif ai_result.source == "static":
@@ -543,7 +557,6 @@ class LayoutValidationSuite:
                 "static_rules": static_rules_payload,
                 "version": SUITE_VERSION,
             }
-            blueprint_info = blueprint_lookup.get(layout.name)
             if blueprint_info:
                 record_entry["blueprint"] = blueprint_info
             if meta_reasons:

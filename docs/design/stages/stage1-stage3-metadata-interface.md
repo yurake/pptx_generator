@@ -85,6 +85,13 @@
 4. **診断ログのトレーサビリティ**  
    - `heuristic.reasons` を `mapping_log` の `usage_tag_sources` へ転記し、AI／ヒューリスティックのどちらが採用されたかを可視化する。
 
+### Template AI への入力
+- Stage2 から Template AI へレイアウト分類を依頼する際、以下の追加情報を JSON ペイロードに含める:
+  - `placeholder_summary`: 種別ごとの count / area_ratio / details。
+  - `blueprint`: 静的モード時の参照スロットと意図タグ。
+  - `meta.heuristic_reason`: ヒューリスティック判定理由（AI フォールバック時に追記）。
+- これによりプロンプトからレイアウト構造の容量や Blueprint 前提を説明でき、AI が用途タグを推奨する際の根拠が安定する。
+
 ## 静的モードとの整合
 - `prepare_generation_meta.mode == "static"` の場合、Stage3 は `template_spec.blueprint` を信頼源とする。`layouts.jsonl.blueprint.slots` にも同一の slot 情報を記録し、ID／ハッシュ比較を容易にする。  
 - Blueprint ハッシュの突合手順:

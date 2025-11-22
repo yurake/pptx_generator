@@ -72,6 +72,9 @@ class TemplateAIService:
         text_hint: dict[str, Any],
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
+        placeholder_summary: dict[str, Any] | None = None,
+        blueprint: dict[str, Any] | None = None,
+        meta: dict[str, Any] | None = None,
     ) -> TemplateAIResult:
         """レイアウト単位で usage_tags を推定する。"""
 
@@ -83,6 +86,9 @@ class TemplateAIService:
             text_hint=text_hint,
             media_hint=media_hint,
             heuristic_usage_tags=heuristic_usage_tags,
+            placeholder_summary=placeholder_summary,
+            blueprint=blueprint,
+            meta=meta,
         )
 
         if self._provider in {"mock", ""}:
@@ -200,6 +206,9 @@ class TemplateAIService:
         text_hint: dict[str, Any],
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
+        placeholder_summary: dict[str, Any] | None,
+        blueprint: dict[str, Any] | None,
+        meta: dict[str, Any] | None,
     ) -> dict[str, object]:
         catalog = get_usage_tag_catalog()
         intent_tags = catalog.get("intent") or []
@@ -232,6 +241,12 @@ class TemplateAIService:
             "layout_rules": layout_rules,
             "static_rules": combined_static_rules,
         }
+        if placeholder_summary:
+            payload["placeholder_summary"] = placeholder_summary
+        if blueprint:
+            payload["blueprint"] = blueprint
+        if meta:
+            payload["meta"] = meta
 
         if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
             _TEMPLATE_LLM_LOGGER.debug(
