@@ -90,6 +90,15 @@ def lint_todo_file(path: Path, roadmap_content: str) -> List[str]:
     branch = fields.get("関連ブランチ")
     if branch and branch != "未作成" and not BRANCH_RE.match(branch):
         issues.append(f"関連ブランチ が `prefix/rmxxx-slug` 形式ではありません: {branch}")
+    roadmap_item = fields.get("roadmap_item")
+    if roadmap_item:
+        match = ROADMAP_ITEM_RE.match(roadmap_item)
+        if match:
+            code = match.group(1).lower()
+            normalized = code.replace("-", "")
+            name_lower = path.name.lower()
+            if f"-{normalized}-" not in name_lower:
+                issues.append(f"ファイル名に {normalized} を含めてください（例: YYYYMMDD-{normalized}-slug.md）")
     return issues
 
 

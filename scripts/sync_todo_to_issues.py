@@ -224,6 +224,21 @@ def extract_roadmap_code(fields: Dict[str, str]) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def build_issue_title(fields: Dict[str, str], rel_path: str) -> str:
+    roadmap_code = extract_roadmap_code(fields)
+    title_parts: List[str] = []
+    purpose = fields.get("目的", "")
+    if roadmap_code and (not purpose or roadmap_code not in purpose):
+        title_parts.append(roadmap_code)
+    if purpose:
+        title_parts.append(purpose)
+    elif roadmap_code:
+        title_parts.append(roadmap_code)
+    if title_parts:
+        return " / ".join(title_parts)
+    return rel_path
+
+
 def upsert_related_issue_number_line(content: str, number: int) -> Tuple[str, bool]:
     changed = False
     lines = content.splitlines()
@@ -416,15 +431,7 @@ def main():
         content = read_text(path)
         fields = extract_front_matter_fields(content)
         tasks_section, notes_section = extract_tasks_and_notes(content)
-        roadmap_code = extract_roadmap_code(fields)
-        title_parts: List[str] = []
-        if roadmap_code and (not fields.get("目的") or roadmap_code not in fields["目的"]):
-            title_parts.append(roadmap_code)
-        if fields.get("目的"):
-            title_parts.append(fields["目的"])
-        elif roadmap_code:
-            title_parts.append(roadmap_code)
-        issue_title = f"ToDo: {' / '.join(title_parts) if title_parts else rel}"
+        issue_title = build_issue_title(fields, rel)
         body = build_issue_body(rel, fields, tasks_section, notes_section)
 
         issue_number_hint = parse_issue_number(fields.get("関連Issue"))

@@ -29,7 +29,7 @@ def test_lint_passes_with_valid_roadmap_item(tmp_path):
     roadmap_path = docs_dir / "roadmap" / "roadmap.md"
     roadmap_path.parent.mkdir(parents=True)
 
-    todo_path = todo_dir / "20251122-valid.md"
+    todo_path = todo_dir / "20251122-rm123-valid.md"
     _write_todo(todo_path, "RM-123 テストテーマ")
 
     roadmap_path.write_text(
@@ -53,7 +53,7 @@ def test_lint_detects_missing_roadmap_entry(tmp_path):
     roadmap_path = docs_dir / "roadmap" / "roadmap.md"
     roadmap_path.parent.mkdir(parents=True)
 
-    todo_path = todo_dir / "20251122-missing.md"
+    todo_path = todo_dir / "20251122-rm321-missing.md"
     _write_todo(todo_path, "RM-321 不足テーマ")
 
     roadmap_path.write_text("# 開発ロードマップ\n", encoding="utf-8")
@@ -71,7 +71,7 @@ def test_lint_detects_invalid_format(tmp_path):
     roadmap_path.parent.mkdir(parents=True)
     roadmap_path.write_text("# 開発ロードマップ\n", encoding="utf-8")
 
-    todo_path = todo_dir / "20251122-invalid.md"
+    todo_path = todo_dir / "20251122-rm999-invalid.md"
     _write_todo(todo_path, "invalid")
 
     result = lint_todo_directory(todo_dir, roadmap_path)
@@ -93,7 +93,7 @@ def test_lint_detects_invalid_branch(tmp_path):
         encoding="utf-8",
     )
 
-    todo_path = todo_dir / "20251122-branch.md"
+    todo_path = todo_dir / "20251122-rm456-branch.md"
     todo_path.write_text(
         """---
 目的: ブランチ検証
