@@ -68,7 +68,7 @@ class TemplateExtractorStep:
             template_spec = self.extract_template_spec()
             output_path = self._determine_output_path(context)
             self._save_template_spec(template_spec, output_path)
-            jobspec_scaffold = self.build_jobspec_scaffold(template_spec)
+            jobspec_scaffold = self.build_jobspec_scaffold(template_spec, output_path)
             jobspec_path = self._determine_jobspec_path(output_path)
             self._save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
 
@@ -287,7 +287,9 @@ class TemplateExtractorStep:
         output_path.write_text(content, encoding="utf-8")
         logger.info("テンプレート仕様を保存: %s", output_path)
 
-    def build_jobspec_scaffold(self, template_spec: TemplateSpec) -> JobSpecScaffold:
+    def build_jobspec_scaffold(
+        self, template_spec: TemplateSpec, template_spec_path: Path | None = None
+    ) -> JobSpecScaffold:
         """テンプレート情報からジョブスペック雛形を生成する。"""
         template_path = self.options.template_path
         template_id = self._derive_template_id(template_path)
@@ -297,6 +299,7 @@ class TemplateExtractorStep:
             template_id=template_id,
             generated_at=datetime.now(timezone.utc).isoformat(),
             layout_count=len(template_spec.layouts),
+            template_spec_path=str(template_spec_path) if template_spec_path else None,
         )
 
         counters: defaultdict[str, int] = defaultdict(int)
@@ -519,9 +522,11 @@ class TemplateExtractor:
         """テンプレート抽出を実行してTemplateSpecを返す。"""
         return self.step.extract_template_spec()
 
-    def build_jobspec_scaffold(self, template_spec: TemplateSpec) -> JobSpecScaffold:
+    def build_jobspec_scaffold(
+        self, template_spec: TemplateSpec, template_spec_path: Path | None = None
+    ) -> JobSpecScaffold:
         """テンプレート仕様からジョブスペック雛形を構築する。"""
-        return self.step.build_jobspec_scaffold(template_spec)
+        return self.step.build_jobspec_scaffold(template_spec, template_spec_path)
 
     def save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
         """ジョブスペック雛形を保存する。"""
@@ -530,15 +535,17 @@ class TemplateExtractor:
     def extract_and_save(self, output_path: Optional[Path] = None) -> Path:
         """テンプレート抽出を実行してファイルに保存する。"""
         template_spec = self.extract()
-        jobspec_scaffold = self.build_jobspec_scaffold(template_spec)
-        
-        if output_path is None:
-            if self.options.format == "yaml":
-                output_path = Path("template_spec.yaml")
-            else:
-                output_path = Path("template_spec.json")
 
-        self.step._save_template_spec(template_spec, output_path)
-        jobspec_path = self.step._determine_jobspec_path(output_path)
+        resolved_output = Path(output_path) if output_path is not None else None
+        if resolved_output is None:
+            if self.options.format == "yaml":
+                resolved_output = Path("template_spec.yaml")
+            else:
+                resolved_output = Path("template_spec.json")
+
+        jobspec_scaffold = self.build_jobspec_scaffold(template_spec, resolved_output)
+
+        self.step._save_template_spec(template_spec, resolved_output)
+        jobspec_path = self.step._determine_jobspec_path(resolved_output)
         self.step._save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
-        return output_path
+        return resolved_output

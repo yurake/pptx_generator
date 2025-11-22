@@ -258,6 +258,12 @@ class TestTemplateExtractorStep:
 
         assert isinstance(jobspec, JobSpecScaffold)
         assert jobspec.meta.schema_version == JOBSPEC_SCHEMA_VERSION
+        assert jobspec.meta.template_spec_path is None
+
+        spec_output_path = Path("/tmp/template_spec.json")
+        jobspec_with_path = step.build_jobspec_scaffold(template_spec, spec_output_path)
+
+        assert jobspec_with_path.meta.template_spec_path == str(spec_output_path)
         assert jobspec.meta.layout_count == 1
         assert len(jobspec.slides) == 1
 
@@ -379,6 +385,7 @@ class TestTemplateExtractor:
                 jobspec = JobSpecScaffold.model_validate_json(jobspec_path.read_text(encoding="utf-8"))
                 assert jobspec.meta.template_path == str(temp_template_path)
                 assert jobspec.meta.schema_version == JOBSPEC_SCHEMA_VERSION
+                assert jobspec.meta.template_spec_path == str(output_path)
 
     def test_extract_and_save_yaml(self, temp_template_path):
         """YAML形式での保存テスト。"""
@@ -414,6 +421,7 @@ class TestTemplateExtractor:
                 assert jobspec_path.exists()
                 jobspec = JobSpecScaffold.model_validate_json(jobspec_path.read_text(encoding="utf-8"))
                 assert jobspec.meta.template_path == str(temp_template_path)
+                assert jobspec.meta.template_spec_path == str(output_path)
 
 
 class TestConstants:
