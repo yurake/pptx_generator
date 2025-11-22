@@ -118,7 +118,7 @@
 
 ### フィールド補足
 - `elements` はテンプレ PH 名をキーにした構造。Renderer が直接利用する。
-- `meta.sources`: 元コンテンツ（BriefCard）の `card_id` リスト。
+- `meta.sources`: 元コンテンツ（PrepareCard）の `card_id` リスト。
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。

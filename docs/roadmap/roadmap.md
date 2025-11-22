@@ -53,10 +53,11 @@ flowchart TB
         ST3_ANCHOR(( ))
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM054["RM-054<br/>静的テンプレ構成統合<br/>(未着手)"]
-        RM058["RM-058<br/>ブリーフポリシー<br/>内製化<br/>(未着手)"]
-        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(完了)"]
+        RM054["RM-054<br/>静的テンプレ構成統合<br/>(完了)"]
+        RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
+        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
+        RM067["RM-067<br/>ContentElements 制約見直し<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -79,6 +80,7 @@ flowchart TB
     RM064 --> RM065
     RM062 --> RM066
     RM054 --> RM058
+    RM054 --> RM067
 ```
 
 ## 個別状況
@@ -551,7 +553,7 @@ flowchart TB
 - 参照 ToDo: [docs/todo/archive/20251102-rm044-spec-scaffold.md](../todo/archive/20251102-rm044-spec-scaffold.md)
 - 状況: 完了（2025-11-02 更新）
 - 達成成果: `tpl-extract` パイプラインで `jobspec.json`（spec scaffold）を自動生成し、`samples/extract/` への成果物提供と CLI ドキュメント更新を完了。工程3 以降で雛形を参照できるようにした。
-- 次アクション: ブリーフ非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
+- 次アクション: プレペア非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
 
 <a id="rm-045"></a>
 ### RM-045 テンプレ抽出検証ラッパー整備
@@ -564,20 +566,20 @@ flowchart TB
 - 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
 
 <a id="rm-046"></a>
-### RM-046 生成AIブリーフ構成自動化
+### RM-046 生成AIプレペア構成自動化
 - 対象工程: 3（コンテンツ準備）
-- ゴール: 案件側の生情報から生成AIがブリーフ（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
+- ゴール: 案件側の生情報から生成AIがプレペア（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
 - 状況: 完了（2025-11-03 更新）
-- 期待成果: 生成AIモードの `pptx prepare` 仕様、ブリーフ入力サンプル、HITL 承認ログ維持方針。
+- 期待成果: 生成AIモードの `pptx prepare` 仕様、プレペア入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
-- 補足 (2025-11-08): 現状の `pptx prepare` では `brief_log.json` に承認／差戻し履歴が反映されず空配列のまま出力されるため、ログ保存フローの実装課題を本テーマで追跡します。
+- 補足 (2025-11-08): 現状の `pptx prepare` では `prepare_log.json` に承認／差戻し履歴が反映されず空配列のまま出力されるため、ログ保存フローの実装課題を本テーマで追跡します。
 
 <a id="rm-047"></a>
 ### RM-047 テンプレ統合構成生成AI連携
 - 対象工程: 4（ドラフト構成設計）
-- ゴール: 工程3の `brief_cards.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
+- ゴール: 工程3の `prepare_card.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
 - 状況: 完了（2025-11-09 更新）
@@ -650,10 +652,10 @@ flowchart TB
 ### RM-054 静的テンプレ構成統合プランニング
 - 対象工程: 2〜3（コンテンツ準備 / マッピング）
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
-- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md)
-- 参照 ToDo: [docs/todo/archive/20251105-static-template-mode.md](../todo/archive/20251105-static-template-mode.md)
-- 状況: 未着手（2025-11-06 更新）
-- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理。
+- 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/rm054-static-template-blueprint.md](../design/rm054-static-template-blueprint.md)
+- 参照 ToDo: [docs/todo/archive/20251109-rm054-static-blueprint-plan.md](../todo/archive/20251109-rm054-static-blueprint-plan.md)
+- 状況: 完了（2025-11-22 更新）
+- 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理、Blueprint 運用設計メモ整備。
 
 <a id="rm-055"></a>
 ### RM-055 AI生成文言フッタ自動付与
@@ -669,7 +671,7 @@ flowchart TB
 <a id="rm-056"></a>
 ### RM-056 多形式インポートCLI統合
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用ブリーフを自動生成できるようにする。
+- ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用プレペアを自動生成できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-05 追加）
@@ -697,17 +699,17 @@ flowchart TB
 - 次アクション: JobSpec スキーマ拡張やテンプレ抽出仕様変更が発生した際に差分検証を実施し、変換ロジックのアップデート方針を定期レビューする。
 
 <a id="rm-058"></a>
-### RM-058 ブリーフポリシー内製化
+### RM-058 プレペアポリシー内製化
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `config/brief_policies/default.json` への依存を解消し、ブリーフ骨子の定義をコードまたは他工程の成果物に統合する。
-- 参照ドキュメント: [docs/notes/20251105-brief-policy-removal.md](../notes/20251105-brief-policy-removal.md)
+- ゴール: `config/prepare_policies/default.json` への依存を解消し、プレペア骨子の定義をコードまたは他工程の成果物に統合する。
+- 参照ドキュメント: [docs/notes/20251105-prepare-policy-removal.md](../notes/20251105-prepare-policy-removal.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-05 追加）
 - 期待成果:
-  - `BriefAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
+  - `PrepareAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
   - CLI `prepare` と関連ドキュメント（README、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-02-content-normalization.md`）の仕様を更新する。
   - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
-- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIブリーフ構成自動化）、テンプレ Blueprint 設計。
+- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIプレペア構成自動化）、テンプレ Blueprint 設計。
 - 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
 
 <a id="rm-059"></a>
@@ -726,7 +728,7 @@ flowchart TB
 <a id="rm-060"></a>
 ### RM-060 Stage3 ID 整合性強制
 - 対象工程: 3（マッピング）
-- ゴール: BriefCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
+- ゴール: PrepareCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
 - 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/archive/20251108-rm060-id-alignment.md](../todo/archive/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
 - 状況: 完了（2025-11-09 更新）
@@ -734,7 +736,7 @@ flowchart TB
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
   - ログやエラーメッセージで欠損カード ID や参照ファイルを特定でき、運用チームが迅速に復旧できる。
   - Slide ID Aligner が AI による整合候補と信頼度を算出し、`content_approved` を補正することでカード枚数と JobSpec のスライドを同期させる。
-  - generate_ready のスライド数が BriefCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
+  - generate_ready のスライド数が PrepareCard のカード数と一致し、ドキュメント・テスト・運用手順が更新されている。
 - 次アクション: Slide ID アライメントの閾値チューニングとログ出力の監査項目を整理し、残る CLI メッセージ調整・運用ドキュメントの細部を確定する。
 
 <a id="rm-061"></a>
@@ -753,15 +755,15 @@ flowchart TB
 <a id="rm-062"></a>
 ### RM-062 pptx prepare 承認モード整備
 - 対象工程: 2（コンテンツ準備）
-- ゴール: `pptx prepare --approved` オプションの仕様をドキュメントへ反映し、承認モードで生成される成果物の取り扱いを運用手順と整合させる。
+- ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
 - 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-10 追加）
 - 期待成果:
-  - CLI リファレンスおよびクイックスタートに `--approved` 指定時の挙動と成果物差分を追記し、HITL 承認フローとの整合を明文化する。
-  - 承認モード利用時の監査ログ記録と後工程での扱い方を `docs/runbooks/story-outline-ops.md` など運用ドキュメントへ反映する。
-  - 既存テスト（`test_prepare_sets_cards_approved_when_flag_enabled`）のカバレッジ説明を記載し、追加で必要な監査メタ検証の方針を整理する。
-- 依存: RM-046（生成AIブリーフ構成自動化）
+-  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / PrepareStore のワークフローで扱うことを明記する。
+-  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は prepare_log / prepare_store を通じて行う手順へ更新する。
+-  - テスト計画を更新し、CLI 側ではステータス付与を検証しない旨と、PrepareStore/API テストで承認フローを担保する旨を整理する。
+- 依存: RM-046（生成AIプレペア構成自動化）
 
 <a id="rm-063"></a>
 ### RM-063 assets 運用ガイド整備
@@ -816,7 +818,29 @@ flowchart TB
   - 既存スクリプト・テストへの影響を洗い出し、テンプレ参照の一貫性を検証する。
 - 依存: RM-062（pptx prepare 承認モード整備）、RM-048（工程4+5 統合CLI整備）
 
-- `Service-F Distributor` の通知チャネル整備（Teams / Slack）と監査ログ統合。運用要件（docs/requirements/requirements.md の 5. 出力と配布）で求められる保存先連携・通知を実現し、`docs/notes/20251009-feature-gap-analysis.md` の指摘に基づき対応方針を再整理する。
-- CLI / REST API の認証方式統一（OAuth2 / SAS トークン）とキー管理ドキュメントの追加。
-- `reverse_engineer.py` PoC による既存 PPTX からの spec 逆生成検討。
-- 専用 UI（Content Board / Storyboard）の実装および操作ログ整備。現フェーズは API／CLI ベースで運用し、UI は後続で再評価する。
+<a id="rm-067"></a>
+### RM-067 ContentElements 制約見直し
+- 対象工程: 3・4（ドラフト構成 / PPTX 生成）
+- ゴール: `ContentElements.body` の 6 行 / 40 文字制限を撤廃し、prepare / compose 段階では全文保持しつつ、レンダリング工程でレイアウトごとのトリミング方針へ移行する。
+- 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-17 追加）
+- 期待成果:
+-  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする。
+-  - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
+-  - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
+- 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。
+
+<a id="rm-068"></a>
+### RM-068 コンテキスト設計ガイド整備
+- 対象領域: README / AGENTS / docs 配下の構造・運用ルール
+- ゴール: コンテキスト設計ポリシー（upfront はサマリのみ、オンデマンド参照、階層管理、必要時注入）を明文化し、ドキュメント群へ段階的に反映する。
+- 参照ドキュメント: [docs/notes/20250214-context-engineering-hand-off.md](../notes/20250214-context-engineering-hand-off.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-02-14 追加）
+- 期待成果:
+-  - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
+-  - トップレベル README / AGENTS にコンテキストパック（目的・入力・出力・制約・参照資料・チェックリスト）の章を追加する。
+-  - Runbook の記述フォーマットを「前提 / 入力 / 手順 / 失敗時 / 関連資料」で統一し、必要に応じてテンプレート化する。
+-  - ToDo テンプレートおよび運用ガイドに、設計・実装方針メモと参照資料リンクの記載ルールを追加する。
+- 次アクション: ポリシー文書草案の作成とレビュー、README / AGENTS のドラフト更新方針を決定し、順次反映するための ToDo を作成する。

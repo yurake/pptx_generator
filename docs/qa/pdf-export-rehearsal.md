@@ -13,9 +13,9 @@
     --output .pptx/prepare
 
   uv run pptx compose samples/json/sample_jobspec.json \
-    --brief-cards .pptx/prepare/prepare_card.json \
-    --brief-log .pptx/prepare/brief_log.json \
-    --brief-meta .pptx/prepare/ai_generation_meta.json \
+    --prepare-cards .pptx/prepare/prepare_card.json \
+    --prepare-log .pptx/prepare/prepare_log.json \
+    --prepare-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
     --output .pptx/compose \
     --template samples/templates/templates.pptx

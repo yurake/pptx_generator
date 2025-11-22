@@ -1,0 +1,47 @@
+---
+目的: 工程2 dynamic モードで生成AIを呼び出すよう Prepare オーケストレーションを実装する
+関連ブランチ: feat/rm054-static-blueprint-plan
+関連Issue: #272
+roadmap_item: RM-054 静的テンプレ構成統合
+---
+
+- [x] ブランチ作成と初期コミット
+  - メモ: 既存ブランチ `feat/rm054-static-blueprint-plan` 上で継続作業
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan（2025-11-11）
+    - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/prepare/orchestrator.py` を中心に、章単位で LLM を呼び出す処理へ刷新。新しい LLM クライアント（OpenAI/Azure/Mock 対応）とプロンプト定義を追加し、CLI `prepare` dynamic モードで生成AIを必ず呼び出す。ログ出力 (`prepare_ai_log.json`) とメタ (`ai_generation_meta.json`) をカード単位の記録へ更新。既存 `content_ai` とは別レイヤで管理する。
+    - ドキュメント／コード修正方針: `prepare` モジュール内に LLM クライアント／プロンプトレジストリを追加し、ポリシー (`config/prepare_policies/default.json`) を LLM フィールド対応に拡張。`docs/design/stages/stage-02-content-normalization.md` とサンプル (`samples/prepare/*.json`) を新フォーマットへ更新し、既存の mock ログから `llm_stub` 表記を除去。CLI ユニットテストに LLM モックを注入し、カード枚数分の呼び出しを検証。
+    - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗管理し、完了時にユーザーへ実行ログを提示。必要に応じて `docs/notes/` へ調査メモを追加。
+    - 想定影響ファイル: `src/pptx_generator/prepare/orchestrator.py`, `src/pptx_generator/prepare/llm_client.py`（新規）, `src/pptx_generator/prepare/prompts.py`（新規）, `config/prepare_policies/default.json`, `src/pptx_generator/cli.py`, `docs/design/stages/stage-02-content-normalization.md`, `samples/prepare/*.json`, `tests/test_cli_prepare.py`, `tests/test_prepare_orchestrator.py`（新規予定）。
+    - リスク: LLM エラー時のリトライ／フォールバック未整備、トークン上限設定ミス、既存モック依存のテストの影響。ユーザー環境での API キー未設定時に明示的なエラーメッセージを出す必要あり。
+    - テスト方針: LLM クライアントをモック化した単体テストでカード生成とログ内容を検証し、`uv run --extra dev pytest tests/test_cli_prepare.py` を実行。統合テストでは環境変数 `PPTX_LLM_PROVIDER=mock` を維持しつつ card 限定呼び出しを確認。
+    - ロールバック方法: Prepare オーケストレータ／クライアント差分とポリシー変更を `git revert` で戻す。サンプル・ドキュメントは以前のバージョンへ復元。
+    - 承認メッセージ ID／リンク: ユーザー承認 (2025-11-11, 「わかった、任せる」)
+- [x] 設計・実装方針の確定
+  - メモ: ContentAIOrchestrator を利用したカード単位 LLM 呼び出しで合意
+- [x] ドキュメント更新（要件・設計）
+  - メモ: Stage-02 設計／スキーマ、ノートを LLM 対応へ更新済み。Stage-02 要件も現行仕様と一致することを再確認し、追加更新は不要と判断。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
+- [x] 実装
+  - メモ: PrepareAIOrchestrator を刷新し、AI ログ／メタ／サンプルを更新
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_template_extractor.py tests/test_spec_loader.py tests/test_draft_structuring_step.py tests/test_generate_ready_utils.py tests/test_cli_prepare.py` を実行
+- [x] ドキュメント更新
+  - メモ: Stage-02 要件（`docs/requirements/stages/stage-02-content-normalization.md`）と Roadmap/Runbook/README を確認し、既存記述が LLM 化後の仕様と整合していたため追記不要と判断。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+  - メモ: 
+- [x] PR 作成
+  - メモ: PR #298 https://github.com/yurake/pptx_generator/pull/298（2025-11-22 完了）
+
+## メモ
+- 2025-11-12 Plan更新（ユーザー承認済み）: `supporting_point.evidence` が未定義なカードで Prepare オーケストレーターが落ちないように `src/pptx_generator/prepare/orchestrator.py` にガード処理を追加し、検証として `PPTX_LLM_PROVIDER=mock uv run pptx prepare ... --mode dynamic` を実行する。
+- 2025-11-12 Plan更新（ユーザー承認済み）: Azure OpenAI 応答 API への呼び出しが `messages` 引数で失敗するため、`src/pptx_generator/prepare/llm_client.py` の `AzureOpenAIPrepareLLMClient.generate` を `input` 形式でリクエスト送信する実装へ修正し、`uv run --extra dev pytest tests/test_cli_prepare.py` などを再実行して挙動を確認する。
+- 2025-11-12 Plan更新（ユーザー承認済み）: Azure/OpenAI/Anthropic/AWS 各 LLM クライアントの既定出力トークンを 32,000 に引き上げ、`.env.example` も同値へ更新する。テストは `uv run --extra dev pytest tests/test_prepare_llm_client.py tests/test_cli_prepare.py` で確認。
+- 2025-11-12 Plan更新（ユーザー承認済み）: レイアウトAIポリシーからプロバイダ／モデル／トークン等の設定を除外し、環境変数で統一管理する。 `config/layout_ai_policies.json` のスキーマ調整、および `layout_ai` クライアント群を環境変数ベースへ刷新し、関連テストを更新する。
+- 2025-11-12 Plan更新（ユーザー承認済み）: dynamic モードでは Markdown 見出しに依存せず、LLM が章構成を抽出・生成する方式へ再設計する。プロンプト更新とモック挙動調整を行い、`-p/--page-limit` は LLM 指示のみで扱う。
