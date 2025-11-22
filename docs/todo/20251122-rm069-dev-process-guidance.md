@@ -1,5 +1,5 @@
 ---
-目的: 開発プロセス運用ルール（ToDo と RM の連携、ブランチ命名、ロードマップ更新手順）の見直しと改善方針の策定、および RM-069 の新規登録準備
+目的: RM-069 開発プロセス運用ルール見直し（ToDo と RM の連携、ブランチ命名、ロードマップ更新手順の整理と RM-069 登録準備）
 関連ブランチ: docs/rm069-dev-process-guidance
 関連Issue: #299
 roadmap_item: RM-069 開発プロセス運用ルール見直し
@@ -11,7 +11,7 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
     - 対象整理（スコープ、対象ファイル、前提）: 
-      - 既に作成済みの `docs/todo/20251122-dev-process-guidance.md` と、今後更新対象となる `AGENTS.md` / `docs/policies/task-management.md` / `docs/todo/template.md` / `docs/todo/README.md` / `docs/roadmap/roadmap.md` / `docs/roadmap/` 配下の関連ドキュメント、`scripts/auto_complete_todo.py` や `scripts/lint_todo_completion.py` など自動化スクリプト。  
+      - 既に作成済みの `docs/todo/20251122-rm069-dev-process-guidance.md` と、今後更新対象となる `AGENTS.md` / `docs/policies/task-management.md` / `docs/todo/template.md` / `docs/todo/README.md` / `docs/roadmap/roadmap.md` / `docs/roadmap/` 配下の関連ドキュメント、`scripts/auto_complete_todo.py` や `scripts/lint_todo_completion.py` など自動化スクリプト。  
       - 先行して作ってしまったコミット（`84e02a6` / `4e9e343` / `6ae6482`）は見直し対象とし、承認後の方針に沿うよう必要なら修正・再コミットまたは `git revert` で戻す。
     - ドキュメント／コード修正方針: 
       1. ToDo・ロードマップ・ブランチ命名まわりの運用ルールを整理し、`AGENTS.md` と関連ポリシー文書・テンプレに反映。  
@@ -21,9 +21,9 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
     - 確認・共有方法（レビュー、ToDo 更新など）: 
       - ドキュメント差分はコミット単位で説明可能な状態に整理。  
       - ToDo の「計画策定」欄へ本 Plan を転記。  
-      - 変更内容は最終返信で一覧化し、必要に応じて `docs/todo/20251122-dev-process-guidance.md` のメモにも結果を記録。
+      - 変更内容は最終返信で一覧化し、必要に応じて `docs/todo/20251122-rm069-dev-process-guidance.md` のメモにも結果を記録。
     - 想定影響ファイル: 
-      - `AGENTS.md`、`docs/policies/task-management.md`、`docs/todo/template.md`、`docs/todo/README.md`、`docs/roadmap/roadmap.md`、`scripts/auto_complete_todo.py`、`scripts/lint_todo_completion.py`、関連テスト（`tests/test_auto_complete_todo.py` 等）、`docs/todo/20251122-dev-process-guidance.md` 自身。
+      - `AGENTS.md`、`docs/policies/task-management.md`、`docs/todo/template.md`、`docs/todo/README.md`、`docs/roadmap/roadmap.md`、`scripts/auto_complete_todo.py`、`scripts/lint_todo_completion.py`、関連テスト（`tests/test_auto_complete_todo.py` 等）、`docs/todo/20251122-rm069-dev-process-guidance.md` 自身。
     - リスク: 
       - 自動化スクリプトの想定外変更で ToDo アーカイブ／ロードマップ更新が壊れる恐れ。→ 単体テストやドライランで挙動確認。  
       - Mermaid 図やロードマップ編集ミス。→ 既存記法を踏襲し diff をレビュー。  

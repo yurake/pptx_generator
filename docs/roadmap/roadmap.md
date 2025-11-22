@@ -846,7 +846,7 @@ flowchart TB
 - ゴール: Approval-First Development Policy に基づく ToDo／ロードマップ／ブランチ運用を統一し、循環参照や記録漏れを防止する。
 - 対象領域: Cross-Stage / Governance（ToDo 運用、ロードマップ保守、自動化スクリプト）
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md), [docs/todo/template.md](../todo/template.md), [docs/roadmap/roadmap.md](./roadmap.md)
-- 参照 ToDo: [docs/todo/20251122-dev-process-guidance.md](../todo/20251122-dev-process-guidance.md)
+- 参照 ToDo: [docs/todo/20251122-rm069-dev-process-guidance.md](../todo/20251122-rm069-dev-process-guidance.md)
 - 状況: 進行中（2025-11-22 更新）
 - 期待成果:
   - ToDo 作成時に既存 `RM-xxx` を必須とするルールと lint 検証を導入し、ロードマップとの整合性を常に確保する。
