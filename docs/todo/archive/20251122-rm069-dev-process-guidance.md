@@ -82,8 +82,8 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
     - メモ: ToDo テンプレを RM 付き目的へ更新し、`scripts/sync_todo_to_issues.py` で Issue タイトルへ RM コードを付与。
   - [x] Mermaid 図の完了ノード扱い（削除／移動）のポリシーと自動化修正
     - メモ: `docs/roadmap/roadmap.md` を更新し、`scripts/auto_complete_todo.py` が完了ノードを削除するよう改修。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #300 https://github.com/yurake/pptx_generator/pull/300（2025-11-22 完了）
 
 ## メモ
 - 現状確認と対応方針（全文メモ）

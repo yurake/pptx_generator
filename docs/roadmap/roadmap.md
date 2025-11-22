@@ -30,7 +30,6 @@ flowchart TB
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
-        RM069["RM-069<br/>開発プロセス運用ルール見直し<br/>(進行中)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -846,8 +845,8 @@ flowchart TB
 - ゴール: Approval-First Development Policy に基づく ToDo／ロードマップ／ブランチ運用を統一し、循環参照や記録漏れを防止する。
 - 対象領域: Cross-Stage / Governance（ToDo 運用、ロードマップ保守、自動化スクリプト）
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md), [docs/todo/template.md](../todo/template.md), [docs/roadmap/roadmap.md](./roadmap.md)
-- 参照 ToDo: [docs/todo/20251122-rm069-dev-process-guidance.md](../todo/20251122-rm069-dev-process-guidance.md)
-- 状況: 進行中（2025-11-22 更新）
+- 参照 ToDo: [docs/todo/archive/20251122-rm069-dev-process-guidance.md](../todo/archive/20251122-rm069-dev-process-guidance.md)
+- 状況: 完了（2025-11-22 更新）
 - 期待成果:
   - ToDo 作成時に既存 `RM-xxx` を必須とするルールと lint 検証を導入し、ロードマップとの整合性を常に確保する。
   - ブランチ命名を `prefix/rmxxx-slug` 形式へ統一し、テンプレート・ガイド・自動チェックを整備する。
