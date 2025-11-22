@@ -44,10 +44,12 @@
 - `src/pptx_generator/template_ai/service.py`（LLM ペイロード生成）
 - `docs/design/schema/stage-01-template-preparation.md`（スキーマの更新）
 - テスト: `tests/test_template_ai.py`, `tests/test_layout_validation_template_ai.py`, `tests/test_layout_recommender.py`
+- **Stage2 静的モード**: `src/pptx_generator/prepare/orchestrator.py` と Blueprint 参照ロジック（slot 情報を Stage2 でも利用するため、追加メタがあれば `template_spec.blueprint` から参照できるよう整合を取る）。
 
 ## 5. 次のステップ（実装に向けたタスク）
 1. `layouts.jsonl` 拡張項目のスキーマ草案を作成し、Stage3 での利用可否を確認する。  
 2. TemplateExtractor でプレースホルダー統計・Blueprint slot 情報を抽出し、`template_spec` / `layouts.jsonl` に反映。  
 3. Template AI と Layout AI のペイロード生成コードを更新し、新メタを prompt に含める。  
 4. Stage3 側（`draft_recommender.py` / `pipeline/draft_structuring.py`）で新メタを参照し、ログ/診断に活用する。  
-5. テストとドキュメントを更新し、ToDo の実装タスクに反映する。
+5. Stage2 静的モードで Blueprint 追加メタを利用できるよう確認し、必要に応じて `prepare` オーケストレーターへ反映。  
+6. テストとドキュメントを更新し、ToDo の実装タスクに反映する。
