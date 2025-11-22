@@ -19,7 +19,7 @@
 ## 提案
 ### 1. ポリシー JSON 拡張案
 - `layout_ai_policies.json` に以下のキー追加を検討:
-  - `usage_tag_prompt`: canonical usage tags とその説明をまとめたテンプレート文字列（`usage_tags.json` と連動）。
+  - `usage_tags_template`: canonical usage tags とその説明をまとめたテンプレート文字列（`usage_tags.json` と連動）。
   - `card_context_template`: `ContentSlide.source` や Blueprint 情報を組み込む際のテンプレート（例: `{{primary_intent}}`, `{{story_phase}}`, `{{blueprint_slots}}`）。
   - `layout_metadata_template`: `layout_metadata` 内の usage_tags_rule / text_hint / media_hint を展開するための書式。
 - 既存スキーマとの後方互換を保つため、上記フィールドはオプショナルにし、未設定時は現在の挙動（単純な `prompt_template`）を維持する。
@@ -40,3 +40,9 @@
 1. `layout_ai/policy.py` と `config/layout_ai_policies.json` のスキーマ拡張案を設計し、後方互換条件を整理（新旧併存期間を想定）。
 2. canonical usage tags と policy テンプレートを連携する共通テンプレート（Jinja など）の導入可否を調査（複数ポリシー対応を考慮）。
 3. 上記内容を ToDo（layout_ai policy 拡張検討）のサブタスクに反映し、実装フェーズで必要なテスト（prompt 生成の snapshot など）を洗い出す。
+
+## 実施内容メモ（2025-11-22）
+- `layout_ai/policy.py` に `usage_tags_template` / `card_context_template` / `layout_metadata_template` を追加し、ポリシーごとにメタデータセクションの文面を制御できるようにした。
+- `config/layout_ai_policies.json` にデフォルトテンプレートを追加し、Layout AI へ用途タグ説明・カード文脈・レイアウトメタ情報を明示的に渡す設定を反映。
+- `layout_ai/client.py` の `_build_user_prompt` を拡張し、上記テンプレートに基づいて `usage_tags_prompt` / `card_context_prompt` / `layout_metadata_prompt` を生成。あわせて構造化データ（usage_tags_reference / card_context / layout_metadata）を payload に内包。
+- Stage3 側で追加した `allowed_tags_detail` や `ContentSlide.source` を活用し、LLM が canonical usage tags とカード背景を参照したうえで評価できる状態に更新済み。

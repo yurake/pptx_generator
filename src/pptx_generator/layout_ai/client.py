@@ -782,12 +782,111 @@ def _build_system_prompt(request: LayoutAIRequest) -> str:
     )
 
 
+def _apply_policy_template(template: str, **kwargs: object) -> str:
+    try:
+        return template.format(**kwargs)
+    except (KeyError, IndexError) as exc:  # pragma: no cover - defensive log only
+        logger.debug("layout AI policy template format failed: %s", exc)
+        return template
+
+
+def _build_usage_tags_reference(card_payload: dict[str, object]) -> list[dict[str, str]]:
+    allowed = card_payload.get("allowed_tags") or []
+    details = card_payload.get("allowed_tags_detail") or {}
+    if not isinstance(allowed, list):
+        return []
+    reference: list[dict[str, str]] = []
+    if not isinstance(details, dict):
+        details = {}
+    for tag in allowed:
+        if not isinstance(tag, str):
+            continue
+        entry: dict[str, str] = {"tag": tag}
+        description = details.get(tag)
+        if isinstance(description, str) and description.strip():
+            entry["description"] = description.strip()
+        reference.append(entry)
+    return reference
+
+
+def _format_usage_tags_text(reference: list[dict[str, str]]) -> str:
+    if not reference:
+        return ""
+    lines: list[str] = []
+    for entry in reference:
+        tag = entry.get("tag")
+        if not tag:
+            continue
+        description = entry.get("description", "")
+        if description:
+            lines.append(f"- {tag}: {description}")
+        else:
+            lines.append(f"- {tag}")
+    return "\n".join(lines)
+
+
+def _build_card_context_info(card_payload: dict[str, object]) -> dict[str, object]:
+    context: dict[str, object] = {}
+    for key in ("intent", "type_hint", "note"):
+        value = card_payload.get(key)
+        if value not in (None, "", []):
+            context[key] = value
+
+    source = card_payload.get("source")
+    if isinstance(source, dict) and source:
+        context["source"] = source
+
+    analyzer = card_payload.get("analyzer")
+    if isinstance(analyzer, dict) and analyzer:
+        context["analyzer_summary"] = analyzer
+
+    allowed_tags = card_payload.get("allowed_tags")
+    if isinstance(allowed_tags, list) and allowed_tags:
+        context["allowed_tags"] = allowed_tags
+
+    hints = card_payload.get("slide_tag_hints")
+    if isinstance(hints, list) and hints:
+        context["slide_tag_hints"] = hints
+
+    return context
+
+
 def _build_user_prompt(request: LayoutAIRequest) -> str:
+    usage_tags_reference = _build_usage_tags_reference(request.card_payload)
     payload = {
         "card": request.card_payload,
         "candidate_layouts": request.layout_candidates,
         "instruction": request.prompt,
     }
+    if usage_tags_reference:
+        payload["usage_tags_reference"] = usage_tags_reference
     if request.layout_metadata:
         payload["layout_metadata"] = request.layout_metadata
+
+    usage_tags_text = _format_usage_tags_text(usage_tags_reference)
+    if usage_tags_text and request.policy.usage_tags_template:
+        payload["usage_tags_prompt"] = _apply_policy_template(
+            request.policy.usage_tags_template,
+            usage_tags=usage_tags_text,
+        )
+
+    card_context = _build_card_context_info(request.card_payload)
+    if card_context:
+        payload["card_context"] = card_context
+        card_context_text = json.dumps(card_context, ensure_ascii=False, indent=2)
+        if request.policy.card_context_template:
+            payload["card_context_prompt"] = _apply_policy_template(
+                request.policy.card_context_template,
+                card_context=card_context_text,
+            )
+
+    if request.layout_metadata and request.policy.layout_metadata_template:
+        layout_metadata_text = json.dumps(
+            request.layout_metadata, ensure_ascii=False, indent=2
+        )
+        payload["layout_metadata_prompt"] = _apply_policy_template(
+            request.policy.layout_metadata_template,
+            layout_metadata=layout_metadata_text,
+        )
+
     return json.dumps(payload, ensure_ascii=False)
