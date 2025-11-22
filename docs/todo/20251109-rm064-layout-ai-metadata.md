@@ -19,23 +19,26 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
     - 承認メッセージ ID／リンク: チャットログ（2025-11-09 Plan 承認）
 - [x] 設計・実装方針の確定
   - メモ: AI から受け取るタグを canonical 語彙へ正規化し、未知語はフォールバックとして既存 `usage_tags` を利用する二段構えで進める。レイアウトメタデータ（プレースホルダー要約・text/media ヒント）を `LayoutAIRequest` に添付し、分類根拠を `mapping_log` に記録する設計を採用。
-- [ ] RM-054 取り込み後の設計・実装改修（最優先）
+- [x] RM-054 取り込み後の設計・実装改修（最優先）
   - メモ: `RM-054 静的テンプレ構成統合プランニング` の成果をマージした上で、Stage3 のレイアウトメタ情報設計と layout_ai policy を再検討し、実装をアップデートする。
   - [x] RM-054 ブランチ（もしくは `main` 反映済み差分）を取り込み、Stage1/Stage3 間のインターフェース変更点を棚卸しする。
     - メモ: 2025-11-22 `origin/main` を merge 済み。`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest` を実行し 187 件のテストが成功。
-  - [ ] layout_ai / draft_structuring / mapping ロジックにおけるメタデータ設計を見直し、必要な仕様調整を設計ドキュメントへ反映する。
-  - [ ] 設計変更を踏まえて実装を改修し、回帰テストと新規テストケースを追加する。
-- [ ] 実装
+  - [x] layout_ai / draft_structuring / mapping ロジックにおけるメタデータ設計を見直し、必要な仕様調整を設計ドキュメントへ反映する。
+    - メモ: 2025-11-22 `ContentSlide.source` を導入し、LayoutAIRequest と `draft_mapping_log.json` に PrepareCard メタデータ（card_id / story_phase / intent_tags / blueprint）を連携。`docs/design/schema/stage-03-mapping.md` ほか関連ドキュメントを更新。
+  - [x] 設計変更を踏まえて実装を改修し、回帰テストと新規テストケースを追加する。
+    - メモ: `CardLayoutRecommender` のタグ抽出に `ContentSlide.source` を統合し、`tests/test_layout_recommender.py::test_extract_slide_tags_includes_source_metadata` を追加。`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest` で 188 件通過。
+- [x] 実装
   - メモ: `CardLayoutRecommender` の AI リクエスト拡張、分類結果の正規化とフォールバック、`layout_ai/client.py` のスキーマ／パーサ更新、`draft_structuring` のプレースホルダー要約生成とログ拡張を完了。
-- [ ] テスト・検証
+- [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_layout_recommender.py tests/test_utils_usage_tags.py tests/test_layout_validation_usage_tags.py` を実行し、分類の上書きと正規化の挙動を確認。
-- [ ] ドキュメント更新
+    - 2025-11-22 `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest`（188 件成功）
+- [x] ドキュメント更新
   - メモ: `docs/notes/20251109-usage-tags-scoring.md` に AI 主体の分類フローとフォールバック方針を追記。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [ ] layout_ai policy の拡張検討
   - メモ: 既存 policy JSON の構造と prompt 設計を見直し、メタデータ活用方針を整理する。
   - [ ] usage_tags 記述を `config/usage_tags.json` の説明と連携させ、Stage1/Stage3 で共通語彙を参照する設計をまとめる。

@@ -12,10 +12,19 @@ from pptx_generator.draft_recommender import (
     LayoutProfile,
 )
 from pptx_generator.layout_ai.client import LayoutAIResponse
-from pptx_generator.models import ContentElements, ContentSlide, DraftAnalyzerSummary
+from pptx_generator.models import (ContentElements, ContentSlide,
+                                   ContentSlideSource, DraftAnalyzerSummary)
 
 
-def _sample_slide(intent: str = "overview") -> ContentSlide:
+def _sample_slide(intent: str = "overview", *, with_source: bool = False) -> ContentSlide:
+    source = None
+    if with_source:
+        source = ContentSlideSource(
+            card_id="card-1",
+            order=1,
+            story_phase="introduction",
+            intent_tags=("introduction",),
+        )
     return ContentSlide(
         id="slide-1",
         intent=intent,
@@ -26,6 +35,7 @@ def _sample_slide(intent: str = "overview") -> ContentSlide:
             note=None,
             table_data=None,
         ),
+        source=source,
     )
 
 
@@ -138,7 +148,7 @@ def test_layout_ai_missing_policy_falls_back_to_simulation(tmp_path) -> None:
 
 
 def test_ai_classification_overrides_usage_tags(monkeypatch: pytest.MonkeyPatch) -> None:
-    slide = _sample_slide()
+    slide = _sample_slide(with_source=True)
     layouts = [
         LayoutProfile(
             layout_id="Content",
@@ -166,6 +176,7 @@ def test_ai_classification_overrides_usage_tags(monkeypatch: pytest.MonkeyPatch)
 
     class FakeClient:
         def recommend(self, request) -> LayoutAIResponse:
+            assert request.card_payload.get("source", {}).get("card_id") == "card-1"
             return LayoutAIResponse(
                 model="mock-layout",
                 recommended=[("Content", 0.9)],
@@ -193,3 +204,27 @@ def test_ai_classification_overrides_usage_tags(monkeypatch: pytest.MonkeyPatch)
     assert result.classified_tags["Content"] == ("title", "overview")
     assert result.effective_tags["Content"] == ("title", "overview")
     assert "Content" not in result.ai_unknown_tags
+
+
+def test_extract_slide_tags_includes_source_metadata() -> None:
+    base_slide = _sample_slide(intent="", with_source=True)
+    source = ContentSlideSource(
+        card_id="card-1",
+        order=base_slide.source.order if base_slide.source else None,
+        story_phase="Introduction",
+        intent_tags=("Overview", "Call_To_Action"),
+        blueprint=None,
+    )
+    slide = base_slide.model_copy(
+        update={
+            "intent": "",
+            "type_hint": None,
+            "source": source,
+        }
+    )
+
+    tags = CardLayoutRecommender._extract_slide_tags(slide)
+
+    assert "introduction" in tags
+    assert "overview" in tags
+    assert "call_to_action" in tags

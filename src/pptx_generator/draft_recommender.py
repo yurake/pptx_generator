@@ -328,6 +328,8 @@ class CardLayoutRecommender:
             "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
             "slide_tag_hints": sorted(tag for tag in slide_tags if tag),
         }
+        if slide.source is not None:
+            card_payload["source"] = slide.source.model_dump(mode="json")
 
         layout_metadata = self._build_layout_metadata(layouts)
 
@@ -478,6 +480,20 @@ class CardLayoutRecommender:
         if slide.type_hint:
             canonical_hint = normalize_usage_tag_value(slide.type_hint)
             tags.add(canonical_hint or slide.type_hint.casefold())
+
+        source = slide.source
+        if source is not None:
+            if source.story_phase:
+                raw_phase = source.story_phase.strip()
+                if raw_phase:
+                    canonical_phase = normalize_usage_tag_value(raw_phase)
+                    tags.add(canonical_phase or raw_phase.casefold())
+            for tag_value in source.intent_tags:
+                raw_tag = str(tag_value).strip()
+                if not raw_tag:
+                    continue
+                canonical_tag = normalize_usage_tag_value(raw_tag)
+                tags.add(canonical_tag or raw_tag.casefold())
 
         title = slide.elements.title.lower()
         for token in CardLayoutRecommender._tokenize(title):

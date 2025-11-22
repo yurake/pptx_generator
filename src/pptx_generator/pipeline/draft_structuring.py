@@ -515,6 +515,12 @@ class DraftStructuringStep:
                     }
                 )
 
+            source_payload = (
+                content_slide.source.model_dump(mode="json")
+                if content_slide.source is not None
+                else None
+            )
+
             ai_response_payload: dict[str, Any] | None = None
             if recommendation.ai_response is not None:
                 ai_response_payload = {
@@ -547,6 +553,7 @@ class DraftStructuringStep:
                     "ai_recommendation_used": ai_used,
                     "candidates": candidate_logs,
                     "ai_response": ai_response_payload,
+                    "source": source_payload,
                 }
             )
 

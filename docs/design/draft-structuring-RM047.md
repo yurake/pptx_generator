@@ -17,12 +17,12 @@
 ### 出力
 - `generate_ready.json`: 工程5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
 - `generate_ready_meta.json`: 主に HITL と運用向けのメタ情報。章テンプレ適合率、カード割当結果、Analyzer 指摘要約、AI 推薦の適用件数などを記録。
-- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容（LLM 応答の model / recommended / reasons）とシミュレーション結果、HITL アクションを保持する。
+- `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容（LLM 応答の model / recommended / reasons）とシミュレーション結果、HITL アクション、PrepareCard 由来の `source` 情報（card_id / story_phase / intent_tags / Blueprint）を保持する。
 - `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
 1. **Prepare 読み込み**: `PrepareNormalizationStep` が `prepare_cards` / `prepare_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `prepare_document` を格納する。
-2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。
+2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。Prepare 正規化時に生成した `ContentSlide.source` を保持し、story_phase / intent_tags / Blueprint 情報を Layout AI へのペイロードとヒューリスティックへ連携する。
 3. **ジョブスペック参照**: `jobspec.slides[*]` を `layout_id` キーでインデックス化し、アンカー構造やプレースホルダ数を計算する。`layouts.jsonl` が存在する場合は用途タグ・容量ヒントを補完する。
 4. **AI 推薦（カード単位）**:
    - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。

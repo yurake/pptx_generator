@@ -63,6 +63,12 @@
     {
       "ref_id": "intro",
       "selected_layout": "overview__one_col_v1",
+      "source": {
+        "card_id": "intro",
+        "story_phase": "introduction",
+        "intent_tags": ["introduction"],
+        "blueprint": null
+      },
       "candidates": [
         {"layout_id": "overview__one_col_v1", "score": 0.92},
         {"layout_id": "overview__two_col_v1", "score": 0.78}
@@ -110,6 +116,7 @@
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
+- `source`: PrepareCard のメタデータ。`card_id` や `story_phase`、`intent_tags`、Blueprint 情報（静的モード時）を保持する。
 - `analyzer`: 工程4で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
 
 ## fallback_report.json
