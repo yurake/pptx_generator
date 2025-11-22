@@ -20,8 +20,8 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 設計・実装方針の確定
   - メモ: ContentAIOrchestrator を利用したカード単位 LLM 呼び出しで合意
 - [x] ドキュメント更新（要件・設計）
-  - メモ: Stage-02 設計／スキーマ、ノートを LLM 対応へ更新済み
-  - [ ] docs/requirements 配下
+  - メモ: Stage-02 設計／スキーマ、ノートを LLM 対応へ更新済み。Stage-02 要件も現行仕様と一致することを再確認し、追加更新は不要と判断。
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: PrepareAIOrchestrator を刷新し、AI ログ／メタ／サンプルを更新
