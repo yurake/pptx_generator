@@ -55,7 +55,7 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
   - [x] docs/roadmap 配下
     - メモ: `docs/roadmap/roadmap.md` に RM-069 を追加し、Mermaid 図から完了テーマを除外する構成へ更新。
   - [x] docs/requirements 配下（実装結果との整合再確認）
-    - メモ: 対象要件文書に変更点なし（プロセス改善のみのため更新不要）。
+    - メモ: 対象要件文書に変更点なし（運用ルール更新のみのため更新不要）。
   - [x] docs/design 配下（実装結果との整合再確認）
     - メモ: 設計ドキュメントには差分が発生しないことを確認。
   - [x] docs/runbook 配下
@@ -86,6 +86,7 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
   - メモ: PR #300 https://github.com/yurake/pptx_generator/pull/300（2025-11-22 完了）
 
 ## メモ
+- YAML フロントマター整合を確認し、`---` を先頭に配置済み。
 - 現状確認と対応方針（全文メモ）
   - ToDo と RM の紐付けルール  
     - 現状: `docs/todo/template.md` の例示が `RM-000` のままで、`RM-xxx` が存在するかを ToDo 作成時や lint で検証する仕組みがない。結果として、ロードマップに未登録のテーマでも ToDo が作れてしまう。  
