@@ -46,12 +46,12 @@ roadmap_item: RM-069 開発プロセス運用ルール見直し
     - メモ: 対象機能に要件差分なし（運用ルール更新のみ）。
   - [x] docs/design 配下
     - メモ: 設計仕様への反映不要（プロセス自体の更新に留まる）。
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
+- [x] 実装
+  - メモ: `docs/policies/task-management.md`・`docs/todo/README.md`・`docs/todo/template.md`・`AGENTS.md` などの運用ドキュメント、および `scripts/auto_complete_todo.py` / `scripts/lint_todo_completion.py` / `scripts/sync_todo_to_issues.py` を更新済み（コミット `8357c4c`・`a29eec4`）。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_auto_complete_todo.py tests/test_lint_todo_completion.py` を実行し、Mermaid ノード除外と lint 強化の回帰確認を実施（8 件成功）。
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+- [x] ドキュメント更新
+  - メモ: 対象ドキュメントの更新内容を上記コミットで反映済み。設計・要件への影響がないことを確認し、メモ欄へ記録した。
   - [x] docs/roadmap 配下
     - メモ: `docs/roadmap/roadmap.md` に RM-069 を追加し、Mermaid 図から完了テーマを除外する構成へ更新。
   - [x] docs/requirements 配下（実装結果との整合再確認）
