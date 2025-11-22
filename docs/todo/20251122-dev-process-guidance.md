@@ -1,8 +1,7 @@
----
-目的: 開発プロセス運用ルール（ToDo 作成要件や RM 連携、ブランチ命名、ロードマップ更新手順）の見直しポイントを整理し改善方針を固める
-関連ブランチ: 未作成
+目的: 開発プロセス運用ルール（ToDo と RM の連携、ブランチ命名、ロードマップ更新手順）の見直しと改善方針の策定、および RM-069 の新規登録準備
+関連ブランチ: docs/rm069-dev-process-guidance
 関連Issue: 未作成
-roadmap_item: RM-002 エージェント運用ガイド整備
+roadmap_item: RM-069 開発プロセス運用ルール見直し
 ---
 
 - [ ] ブランチ作成と初期コミット
@@ -42,4 +41,5 @@ roadmap_item: RM-002 エージェント運用ガイド整備
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
-- 見直し対象: ToDo と RM の紐付けルール、ブランチ命名規則、RM 番号追加プロセス、ToDo 目的欄と Issue での RM 表記、PR 時の roadmap 更新スクリプトと完了済み RM の扱い。
+- 見直し対象: ToDo と RM の紐付けルール、ブランチ命名規則（`prefix/rmxxx-slug` 統一）、RM 番号採番プロセス、ToDo 目的欄と Issue での RM 表記、PR 時の roadmap 更新スクリプトと完了済み RM の扱い。
+- 次アクション候補: `docs/roadmap/roadmap.md` への RM-069 追加案作成、`docs/AGENTS.md` のブランチ／ToDo 運用ルール更新、必要に応じて `docs/policies/task-management.md` や `docs/runbooks/` の連携手順を更新する。
