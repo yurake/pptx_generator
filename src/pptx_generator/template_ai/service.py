@@ -7,12 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..utils.usage_tags import (
-    CANONICAL_USAGE_TAGS,
-    get_usage_tag_config,
-    normalize_usage_tags,
-    normalize_usage_tags_with_unknown,
-)
+from ..utils.usage_tags import (CANONICAL_USAGE_TAGS, get_layout_rules,
+                                get_usage_tag_catalog, normalize_usage_tags,
+                                normalize_usage_tags_with_unknown)
 from .client import (
     TemplateAIClient,
     TemplateAIClientConfigurationError,
@@ -170,27 +167,28 @@ class TemplateAIService:
         )
 
     def _apply_static_rules(self, layout_name: str) -> list[str] | None:
+        matched: list[str] = []
         for rule in self._policy.static_rules:
             if rule.matches(layout_name):
-                return rule.tags
+                matched.extend(rule.tags)
 
-        config = get_usage_tag_config()
-        config_rules = config.get("static_rules") or []
-        for rule in config_rules:
-            if not isinstance(rule, dict):
-                continue
-            pattern = rule.get("layout_name_pattern")
-            tags = rule.get("tags")
-            if not isinstance(tags, list):
-                continue
-            try:
-                import re
+        layout_rules = get_layout_rules()
+        for section_rules in layout_rules.values():
+            for rule in section_rules:
+                pattern = rule.get("layout_name_pattern")
+                tags = rule.get("tags") or []
+                try:
+                    import re
 
-                if pattern is None or re.search(pattern, layout_name, re.IGNORECASE):
-                    return tags
-            except re.error:
-                continue
-        return None
+                    if pattern is None or re.search(pattern or "", layout_name, re.IGNORECASE):
+                        matched.extend(tags)
+                except re.error:
+                    continue
+
+        if not matched:
+            return None
+        normalised, _ = normalize_usage_tags_with_unknown(matched)
+        return list(normalised)
 
     def _build_payload(
         self,
@@ -203,11 +201,21 @@ class TemplateAIService:
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
     ) -> dict[str, object]:
-        config = get_usage_tag_config()
-        intent_tags = config.get("intent_tags") or []
-        media_tags = config.get("media_tags") or []
-        fallback = config.get("fallback_tag")
-        static_rules = config.get("static_rules") or []
+        catalog = get_usage_tag_catalog()
+        intent_tags = catalog.get("intent") or []
+        media_tags = catalog.get("media") or []
+        fallback_tag = catalog.get("fallback")
+        layout_rules = get_layout_rules()
+
+        combined_static_rules: list[dict[str, object]] = []
+        for section_rules in layout_rules.values():
+            for rule in section_rules:
+                combined_static_rules.append(
+                    {
+                        "layout_name_pattern": rule.get("layout_name_pattern"),
+                        "tags": list(rule.get("tags") or []),
+                    }
+                )
 
         payload: dict[str, object] = {
             "template_id": template_id,
@@ -220,8 +228,9 @@ class TemplateAIService:
             "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
             "intent_tags": intent_tags,
             "media_tags": media_tags,
-            "fallback_tag": fallback,
-            "static_rules": static_rules,
+            "fallback_tag": fallback_tag,
+            "layout_rules": layout_rules,
+            "static_rules": combined_static_rules,
         }
 
         if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):

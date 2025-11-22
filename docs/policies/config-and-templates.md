@@ -36,6 +36,22 @@
   - `enable_color_adjust`, `preferred_text_color`, `fallback_font_color`: 文字色をブランドカラーへ合わせる際の挙動。
 - `refiner` のカラー調整を有効化する場合は、ブランド設定 (`config/branding.json`) と整合する色を指定する。
 
+## usage_tags.json の運用
+- バージョン `2.0` では Intent（スライドの目的）と Media（表現形式）を分離し、各タグに `synonyms` / `examples` / `deprecated` を付与する。  
+  - Intent 例: `title`, `agenda`, `content`, `closing`, `call_to_action`  
+  - Media 例: `chart`, `table`, `visual`
+- フォールバックタグ（`fallback`）は用途不明時に使用する。新規タグ追加時は Intent / Media のいずれかに分類し、必要に応じてフォールバック説明を更新する。
+- `layout_rules.intent` / `layout_rules.media` でレイアウト名からタグを推定する正規表現ルールを管理する。  
+  - 既存の `static_rules` は廃止し、Intent / Media それぞれのルールに分離する。
+- シノニムは JSON に記載する（例: `title` の synonyms に `cover`, `headline` を追加）。`_SYNONYM_MAP` はコード内で自動生成されるため個別メンテナンスは不要。
+- 更新手順:
+  1. `config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する。
+  2. `uv run --extra dev pytest tests/test_utils_usage_tags.py tests/test_template_ai.py tests/test_layout_recommender.py` を実行して整合性を確認する。  
+     必要に応じて `scripts/test_template_ai.sh` を併用し、LLM プロンプトへの影響を確認する。
+  3. Layout AI / Template AI のポリシーテンプレート（`config/layout_ai_policies.json`, `config/template_ai_policies.json`）にタグ説明を反映する。
+  4. `docs/notes/20251122-usage-tag-taxonomy-plan.md` など関連ドキュメントを更新し、変更理由と影響範囲を記録する。
+- 変更後は ToDo とロードマップに記録し、PR の説明にもタグ体系更新を明記する。
+
 ## バリデーション
 - テンプレート更新時は次のコマンドで抽出結果と差分を検証する。
   ```bash

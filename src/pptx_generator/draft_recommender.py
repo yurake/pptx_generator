@@ -14,7 +14,7 @@ from .layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
 from .layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
 from .models import (ContentSlide, DraftAnalyzerSummary, DraftLayoutCandidate,
                      DraftLayoutScoreDetail)
-from .utils.usage_tags import (CANONICAL_USAGE_TAGS, get_usage_tag_config,
+from .utils.usage_tags import (CANONICAL_USAGE_TAGS, get_usage_tag_catalog,
                                normalize_usage_tag_value,
                                normalize_usage_tags_with_unknown)
 
@@ -535,35 +535,30 @@ def _get_allowed_tag_details() -> dict[str, str]:
     if _ALLOWED_TAG_DETAILS is not None:
         return _ALLOWED_TAG_DETAILS
 
-    config = get_usage_tag_config()
+    catalog = get_usage_tag_catalog()
     details: dict[str, str] = {}
 
-    def _register(entry: object) -> None:
-        if entry is None:
-            return
-        tag_value: str | None = None
-        description: str = ""
-        if isinstance(entry, str):
-            tag_value = entry.strip()
-        elif isinstance(entry, dict):
-            raw_tag = entry.get("tag")
-            if isinstance(raw_tag, str):
-                tag_value = raw_tag.strip()
-            raw_desc = entry.get("description")
-            if isinstance(raw_desc, str):
-                description = raw_desc.strip()
-        if not tag_value:
-            return
-        canonical = normalize_usage_tag_value(tag_value) or tag_value.casefold()
-        if canonical and canonical not in details:
-            details[canonical] = description
+    def _register_entries(entries: list[dict[str, object]]) -> None:
+        for entry in entries:
+            tag = entry.get("tag")
+            if not isinstance(tag, str):
+                continue
+            description = entry.get("description")
+            details[tag] = str(description or "")
 
-    for section in ("intent_tags", "media_tags"):
-        entries = config.get(section) or []
-        if isinstance(entries, list):
-            for item in entries:
-                _register(item)
-    _register(config.get("fallback_tag"))
+    intent_entries = catalog.get("intent") or []
+    media_entries = catalog.get("media") or []
+    if isinstance(intent_entries, list):
+        _register_entries(intent_entries)
+    if isinstance(media_entries, list):
+        _register_entries(media_entries)
+
+    fallback_entry = catalog.get("fallback")
+    if isinstance(fallback_entry, dict):
+        tag = fallback_entry.get("tag")
+        if isinstance(tag, str):
+            description = fallback_entry.get("description")
+            details[tag] = str(description or "")
 
     _ALLOWED_TAG_DETAILS = details
     return details

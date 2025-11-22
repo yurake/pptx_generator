@@ -228,6 +228,5 @@ def test_extract_slide_tags_includes_source_metadata() -> None:
 
     tags = CardLayoutRecommender._extract_slide_tags(slide)
 
-    assert "introduction" in tags
     assert "overview" in tags
     assert "call_to_action" in tags

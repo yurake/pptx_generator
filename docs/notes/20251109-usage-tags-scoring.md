@@ -52,6 +52,7 @@
 - ユニットテスト `tests/test_template_ai.py`（新設）と `tests/test_layout_validation_template_ai.py` で AI 推定およびフォールバックの動作を確認。既存の usage_tags ユーティリティテストも維持。
 - Stage3 の `PrepareNormalizationStep` で `ContentSlide.source` を生成し、story_phase / intent_tags / Blueprint 情報を Layout AI へのペイロードおよびヒューリスティック抽出に活用するように更新。`tests/test_layout_recommender.py` でタグ抽出拡張を検証。
 - Layout AI のカードペイロードに `allowed_tags_detail` を追加し、`config/usage_tags.json` の説明（intent / media / fallback）を LLM へ共有できるようにした。
+- 体系バージョン `2.0` に移行し、Intent / Media 二軸・Synonym・Layout Rules を `config/usage_tags.json` へ集約。Stage1/Stage3 のプロンプトから共通のタグ説明を参照するよう整備した（`src/pptx_generator/utils/usage_tags.py`）。
 
 ## 追加検証メモ（2025-11-10）
 - `PPTX_TEMPLATE_LLM_PROVIDER=mock uv run pptx --debug template samples/templates/templates.pptx` を実行し、`diagnostics.json.template_ai` に静的ルール採用状況が記録されること、DEBUG ログにレイアウトごとの推定結果が出力されることを確認。
