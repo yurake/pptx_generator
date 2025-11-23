@@ -85,8 +85,8 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] 対応状況調査: 現状の Template AI クライアント構成と設定値（`PPTX_TEMPLATE_LLM_PROVIDER`）を整理し、Stage3 で利用しているプロバイダ一覧との差分をまとめる。→ `docs/notes/20251123-template-ai-provider-expansion.md` を作成。
   - [x] 実装方針検討: Template AI に OpenAI 以外のクライアントを追加する設計案を作成し、必要な認証環境変数・ policy 拡張内容を定義する。→ 同上ノートに記録。
   - [x] タスク割り当て: 上記方針を別 RM として登録するか検討し、ロードマップ／ToDo にタスクを分割して記録する。→ RM-070 をロードマップへ追加し、`docs/todo/20251123-rm070-template-ai-providers.md` を作成。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #304 https://github.com/yurake/pptx_generator/pull/304（2025-11-23 完了）
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。

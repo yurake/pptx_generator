@@ -54,7 +54,6 @@ flowchart TB
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
-        RM064["RM-064<br/>レイアウト候補<br/>メタ情報拡充<br/>(未着手)"]
         RM067["RM-067<br/>ContentElements 制約見直し<br/>(未着手)"]
     end
 
@@ -73,8 +72,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM061 --> RM064
-    RM064 --> RM065
     RM062 --> RM066
 ```
 
@@ -778,8 +775,8 @@ flowchart TB
 - 対象工程: 3（マッピング）
 - ゴール: LLM に渡すレイアウト候補へ構造・制約のメタ情報を追加し、`pptx compose` のスコアリング精度と説明性を向上させる。
 - 参照ドキュメント: [docs/notes/20251110-layout-ai-candidate-metadata.md](../notes/20251110-layout-ai-candidate-metadata.md), [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
-- 参照 ToDo: [docs/todo/20251109-rm064-layout-ai-metadata.md](../todo/20251109-rm064-layout-ai-metadata.md)
-- 状況: 進行中（2025-11-09 更新）
+- 参照 ToDo: [docs/todo/archive/20251109-rm064-layout-ai-metadata.md](../todo/archive/20251109-rm064-layout-ai-metadata.md)
+- 状況: 完了（2025-11-23 更新）
 - 期待成果:
   - `candidate_layouts` へ `usage_tags`・`text_hint` などの要約を添付し、LLM が構造・制約を理解できるようにする。
   - `LayoutProfile` から抽出する属性とシリアライズ形式を再設計し、ポリシー／プロンプトとの互換性を保ったまま拡張する。
