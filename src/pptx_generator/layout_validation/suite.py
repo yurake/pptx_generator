@@ -431,9 +431,11 @@ class LayoutValidationSuite:
 
             raw_usage_tags = set(heuristic_tags)
             base_meta_reasons = list(dict.fromkeys(heuristic_result.reasons))
-            meta_payload = (
-                {"heuristic_reason": "; ".join(base_meta_reasons)} if base_meta_reasons else None
-            )
+            meta_payload_for_ai: dict[str, Any] = {}
+            if base_meta_reasons:
+                meta_payload_for_ai["heuristic_reason"] = "; ".join(base_meta_reasons)
+            if layout.layout_description:
+                meta_payload_for_ai["layout_description"] = layout.layout_description
             blueprint_info = blueprint_lookup.get(layout.name)
             ai_error = False
 
@@ -447,7 +449,7 @@ class LayoutValidationSuite:
                 heuristic_usage_tags=sorted(heuristic_tags),
                 placeholder_summary=placeholder_summary,
                 blueprint=blueprint_info,
-                meta=meta_payload,
+                meta=meta_payload_for_ai or None,
             )
 
             if ai_result and ai_result.success and ai_result.usage_tags:
@@ -512,7 +514,7 @@ class LayoutValidationSuite:
                     }
                 )
 
-            meta_reasons: list[str] = base_meta_reasons
+            meta_reasons: list[str] = list(base_meta_reasons)
             if ai_result is None or not ai_result.success:
                 meta_reasons.append("template_ai:fallback")
             elif ai_result.source == "static":
@@ -539,10 +541,14 @@ class LayoutValidationSuite:
             }
             if blueprint_info:
                 record_entry["blueprint"] = blueprint_info
-            if meta_reasons:
-                record_entry["meta"] = {
-                    "heuristic_reason": "; ".join(dict.fromkeys(meta_reasons))
-                }
+            meta_entry: dict[str, Any] = {}
+            if layout.layout_description:
+                meta_entry["layout_description"] = layout.layout_description
+            deduped_meta_reasons = list(dict.fromkeys(meta_reasons))
+            if deduped_meta_reasons:
+                meta_entry["heuristic_reason"] = "; ".join(deduped_meta_reasons)
+            if meta_entry:
+                record_entry["meta"] = meta_entry
 
             records.append(record_entry)
 

@@ -341,6 +341,11 @@ class DraftStructuringStep:
             meta_info = payload.get("meta")
             if not isinstance(meta_info, dict):
                 meta_info = {}
+            layout_description = None
+            description_value = meta_info.get("layout_description")
+            if isinstance(description_value, str):
+                stripped = description_value.strip()
+                layout_description = stripped or None
 
             record = LayoutProfile(
                 layout_id=layout_id,
@@ -352,6 +357,7 @@ class DraftStructuringStep:
                 heuristic=heuristic_info,
                 blueprint=blueprint_info,
                 meta=meta_info,
+                layout_description=layout_description,
             )
             records.append(record)
         return records

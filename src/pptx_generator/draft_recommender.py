@@ -41,6 +41,7 @@ class LayoutProfile:
     heuristic: dict[str, object] = field(default_factory=dict)
     blueprint: dict[str, object] = field(default_factory=dict)
     meta: dict[str, object] = field(default_factory=dict)
+    layout_description: str | None = None
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -417,6 +418,8 @@ class CardLayoutRecommender:
                 "text_hint": profile.text_hint,
                 "media_hint": profile.media_hint,
             }
+            if profile.layout_description:
+                entry["layout_description"] = profile.layout_description
             if profile.placeholder_summary:
                 entry["placeholder_summary"] = profile.placeholder_summary
                 summary = profile.placeholder_summary

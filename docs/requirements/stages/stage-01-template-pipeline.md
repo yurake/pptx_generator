@@ -18,7 +18,7 @@
   - `template_spec.json`（または `template_spec.yaml`）
   - `jobspec.json`
   - `branding.json`
-  - `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）。`diagnostics.json.template_ai` に LLM 応答の要約を出力し、usage_tags は Template AI が `config/usage_tags.json` の canonical 語彙へ正規化した結果を `layouts.jsonl` に記録する。Template AI のプロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などを選択できる。
+  - `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）。`diagnostics.json.template_ai` に LLM 応答の要約を出力し、usage_tags は Template AI が `config/usage_tags.json` の canonical 語彙へ正規化した結果を `layouts.jsonl` に記録する。Template AI のプロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などを選択できる。さらに `layouts.jsonl.meta.layout_description` としてレイアウト全体の説明文（構造・用途・プレースホルダー意図）を必ず出力し、Stage2/Stage3 の LLM プロンプトやログで共有する。
 - `.pptx/release/` 内の成果物（`--with-release` 指定時）
   - `template_release.json`
   - `release_report.json`

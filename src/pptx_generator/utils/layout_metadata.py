@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 from collections import Counter, defaultdict
 
+PositionLabel = tuple[str, str]
+
 
 @dataclass(slots=True)
 class HeuristicUsageTagsResult:
@@ -86,6 +88,216 @@ def summarize_placeholders(placeholders: Sequence[dict[str, Any]]) -> dict[str, 
         "details": details,
         "attributes": attributes,
     }
+
+
+def _classify_position(
+    *,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    slide_width: float,
+    slide_height: float,
+) -> PositionLabel:
+    if slide_width <= 0 or slide_height <= 0:
+        return ("中央", "中央")
+
+    center_x = left + width / 2
+    center_y = top + height / 2
+
+    horizontal_ratio = center_x / slide_width if slide_width else 0.5
+    vertical_ratio = center_y / slide_height if slide_height else 0.5
+
+    if horizontal_ratio < 1 / 3:
+        horizontal = "左側"
+    elif horizontal_ratio > 2 / 3:
+        horizontal = "右側"
+    else:
+        horizontal = "中央"
+
+    if vertical_ratio < 1 / 3:
+        vertical = "上部"
+    elif vertical_ratio > 2 / 3:
+        vertical = "下部"
+    else:
+        vertical = "中央"
+
+    return (vertical, horizontal)
+
+
+def _compose_position_label(position: PositionLabel) -> str:
+    vertical, horizontal = position
+
+    if vertical == "中央" and horizontal == "中央":
+        return "中央"
+
+    if vertical == "上部" and horizontal == "左側":
+        return "左上"
+    if vertical == "上部" and horizontal == "右側":
+        return "右上"
+    if vertical == "下部" and horizontal == "左側":
+        return "左下"
+    if vertical == "下部" and horizontal == "右側":
+        return "右下"
+
+    if horizontal == "中央":
+        return f"{vertical}中央"
+    if vertical == "中央":
+        base = horizontal.replace("側", "寄り")
+        return f"中央{base}"
+
+    return f"{vertical}{horizontal}"
+
+
+def _size_label(area_ratio: float | None) -> str | None:
+    if area_ratio is None:
+        return None
+    if area_ratio >= 0.25:
+        return "大きめの"
+    if area_ratio >= 0.12:
+        return "中程度の"
+    if area_ratio >= 0.05:
+        return "小さめの"
+    if area_ratio > 0:
+        return "コンパクトな"
+    return None
+
+
+def _placeholder_label(placeholder: dict[str, Any]) -> str:
+    name = str(placeholder.get("name") or "")
+    placeholder_type = str(placeholder.get("type") or "").casefold()
+    lowered_name = name.casefold()
+
+    if placeholder_type in {"title", "subtitle"}:
+        return "サブタイトル枠" if placeholder_type == "subtitle" else "タイトル枠"
+    if placeholder_type in {"body", "content", "text"}:
+        return "本文枠"
+    if placeholder_type == "table":
+        return "表用プレースホルダー"
+    if placeholder_type == "chart":
+        return "チャート用プレースホルダー"
+    if placeholder_type in {"image", "media"}:
+        return "ビジュアル枠"
+    if placeholder_type == "notes":
+        return "ノート枠"
+    if placeholder_type == "footer":
+        return "ページ番号枠"
+
+    if placeholder_type == "object":
+        if any(keyword in lowered_name for keyword in ("logo", "mark", "brand")):
+            return "ロゴ枠"
+        if any(keyword in lowered_name for keyword in ("image", "photo", "visual")):
+            return "ビジュアル枠"
+        if any(keyword in lowered_name for keyword in ("table", "grid")):
+            return "表用プレースホルダー"
+        if any(keyword in lowered_name for keyword in ("chart", "graph")):
+            return "チャート用プレースホルダー"
+        if any(keyword in lowered_name for keyword in ("body", "content", "text")):
+            return "本文枠"
+        return "オブジェクト枠"
+
+    return "コンテンツ枠" if placeholder_type else "プレースホルダー"
+
+
+def generate_layout_description(
+    layout_name: str,
+    placeholders: Sequence[dict[str, Any]],
+    slide_size_emu: tuple[int, int] | None,
+) -> str:
+    """Generate a human-readable Japanese description of a layout."""
+
+    if not placeholders:
+        target = layout_name or "このレイアウト"
+        return f"{target} レイアウトはプレースホルダーが未定義です。"
+
+    slide_width, slide_height = (slide_size_emu or (0, 0))
+    slide_area = float(slide_width) * float(slide_height)
+    counts: Counter[str] = Counter()
+
+    for placeholder in placeholders:
+        p_type = str(placeholder.get("type") or "").casefold() or "unknown"
+        counts[p_type] += 1
+
+    target = layout_name or "このレイアウト"
+    total = len(placeholders)
+
+    feature_labels: list[str] = []
+    if counts.get("title") or counts.get("subtitle"):
+        feature_labels.append("タイトル")
+    if counts.get("body") or counts.get("content") or counts.get("text"):
+        feature_labels.append("本文")
+    if counts.get("table"):
+        feature_labels.append("表")
+    if counts.get("chart"):
+        feature_labels.append("チャート")
+    if counts.get("image") or counts.get("media") or counts.get("object"):
+        feature_labels.append("ビジュアル")
+    if counts.get("footer"):
+        feature_labels.append("フッター")
+    if counts.get("notes"):
+        feature_labels.append("ノート")
+
+    feature_labels = list(dict.fromkeys(feature_labels))
+    if feature_labels:
+        features_text = "、".join(feature_labels)
+        summary = (
+            f"{target} レイアウトは {features_text} を配置できる {total} 個のプレースホルダー構成です。"
+        )
+    else:
+        summary = f"{target} レイアウトは {total} 個のプレースホルダーを備えています。"
+
+    detail_segments: list[str] = []
+
+    for placeholder in sorted(
+        placeholders,
+        key=lambda item: (
+            -(
+                float(item.get("bbox", {}).get("width") or 0.0)
+                * float(item.get("bbox", {}).get("height") or 0.0)
+            )
+        ),
+    ):
+        bbox = placeholder.get("bbox") or {}
+        left = float(bbox.get("x") or 0.0)
+        top = float(bbox.get("y") or 0.0)
+        width = float(bbox.get("width") or 0.0)
+        height = float(bbox.get("height") or 0.0)
+        area = width * height
+        area_ratio = area / slide_area if slide_area > 0 else None
+
+        position_label = _compose_position_label(
+            _classify_position(
+                left=left,
+                top=top,
+                width=width,
+                height=height,
+                slide_width=float(slide_width or 0.0),
+                slide_height=float(slide_height or 0.0),
+            )
+        )
+
+        size_label = _size_label(area_ratio)
+        label = _placeholder_label(placeholder)
+        name = str(placeholder.get("name") or "")
+
+        segment = f"{position_label}に"
+        if size_label:
+            segment += f"{size_label}"
+        segment += label
+        if name and name != label:
+            segment += f"（{name}）"
+        detail_segments.append(segment)
+
+    if detail_segments:
+        details_text = "、".join(detail_segments) + "が配置されています。"
+    else:
+        details_text = ""
+
+    description = summary
+    if details_text:
+        description = f"{summary} {details_text}"
+
+    return description.strip()
 
 
 PLACEHOLDER_TYPE_ALIASES: dict[str, str] = {

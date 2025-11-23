@@ -581,6 +581,7 @@ class MappingSlideMeta(BaseModel):
     blueprint_slide_id: str | None = None
     blueprint_slots: list[dict[str, Any]] | None = None
     auto_draw: list[dict[str, Any]] = Field(default_factory=list)
+    layout_description: str | None = None
 
 
 class GenerateReadySlide(BaseModel):
@@ -658,6 +659,7 @@ class MappingLogSlide(BaseModel):
     analyzer: MappingLogAnalyzerSummary = Field(
         default_factory=MappingLogAnalyzerSummary
     )
+    layout_description: str | None = None
 
 
 class MappingLogMeta(BaseModel):
@@ -719,6 +721,9 @@ class LayoutInfo(BaseModel):
     )
     heuristic: dict[str, Any] | None = Field(
         None, description="用途タグ推定のヒューリスティック結果"
+    )
+    layout_description: str | None = Field(
+        None, description="レイアウト構造を説明する文章"
     )
 
 

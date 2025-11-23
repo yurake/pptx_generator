@@ -22,6 +22,7 @@ from ..models import (JobSpecScaffold, JobSpecScaffoldBounds,
                       TemplateBlueprint, TemplateBlueprintSlide,
                       TemplateBlueprintSlot, TemplateSpec)
 from ..utils.layout_metadata import (derive_usage_tags,
+                                     generate_layout_description,
                                      normalise_placeholder_type,
                                      summarize_placeholders)
 from .base import PipelineContext, PipelineStep
@@ -63,6 +64,8 @@ class TemplateExtractorStep:
     
     def __init__(self, options: TemplateExtractorOptions) -> None:
         self.options = options
+        self._slide_width_emu: int | None = None
+        self._slide_height_emu: int | None = None
     
     def run(self, context: PipelineContext) -> None:
         """テンプレート抽出を実行する。"""
@@ -96,6 +99,13 @@ class TemplateExtractorStep:
             presentation = Presentation(self.options.template_path)
         except Exception as exc:
             raise RuntimeError(f"テンプレートファイルの読み込みに失敗しました: {exc}") from exc
+
+        try:
+            self._slide_width_emu = int(presentation.slide_width)
+            self._slide_height_emu = int(presentation.slide_height)
+        except Exception:  # noqa: BLE001
+            self._slide_width_emu = None
+            self._slide_height_emu = None
 
         layouts = []
         warnings = []
@@ -198,6 +208,15 @@ class TemplateExtractorStep:
             heuristic_payload = None
 
         placeholder_summary_payload = placeholder_summary or None
+        layout_description: str | None = None
+        try:
+            layout_description = generate_layout_description(
+                layout_name or "",
+                placeholder_records,
+                (self._slide_width_emu or 0, self._slide_height_emu or 0),
+            )
+        except Exception:  # noqa: BLE001
+            layout_description = None
 
         return LayoutInfo(
             name=layout_name,
@@ -205,6 +224,7 @@ class TemplateExtractorStep:
             anchors=anchors,
             placeholder_summary=placeholder_summary_payload,
             heuristic=heuristic_payload,
+            layout_description=layout_description,
         )
     
     def _extract_shape_info(self, shape: BaseShape) -> ShapeInfo:

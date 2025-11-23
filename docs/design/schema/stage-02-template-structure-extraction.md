@@ -61,6 +61,7 @@
   },
   "static_rules": [],
   "meta": {
+    "layout_description": "Overview - 1 Column レイアウトは タイトル、本文、ビジュアルを配置できる 3 個のプレースホルダー構成です。上部中央に大きめのタイトル枠（PH__Title__1）、中央に中程度の本文枠（PH__Body__Main）、右上にコンパクトなロゴ枠（PH__Logo__1）が配置されています。",
     "heuristic_reason": "placeholder:type=body; placeholder:type=object(visual); template_ai:fallback"
   },
   "version": "1.1.0"
@@ -73,6 +74,7 @@
 - `usage_tags`: 工程5のスコアリングに利用する用途タグ。
 - `text_hint.max_chars`: 面積から算出した推奨文字数。
 - `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。詳細は `docs/design/stages/stage1-stage3-metadata-interface.md` を参照。
+- `meta.layout_description`: Stage1 Template で生成するレイアウト説明文。レイアウト全体と各プレースホルダーの役割を文章化し、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
 
 ## diagnostics.json
 ```jsonc

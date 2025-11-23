@@ -273,6 +273,7 @@ def test_build_layout_metadata_retains_stage1_payload() -> None:
         heuristic={"tags": ["content"], "reasons": ["placeholder:type=body"]},
         blueprint=blueprint,
         meta=meta,
+        layout_description="タイトルと本文を中央に配置する構成です。",
     )
 
     metadata = CardLayoutRecommender._build_layout_metadata([profile])
@@ -281,3 +282,4 @@ def test_build_layout_metadata_retains_stage1_payload() -> None:
     assert metadata["sample-layout"]["blueprint"] == blueprint
     assert metadata["sample-layout"]["meta"] == meta
     assert metadata["sample-layout"]["heuristic"] == profile.heuristic
+    assert metadata["sample-layout"]["layout_description"] == profile.layout_description
