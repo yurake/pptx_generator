@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 
 from pptx_generator.template_ai import TemplateAIOptions, TemplateAIService
+from pptx_generator.template_ai.client import create_template_ai_client
+from pptx_generator.template_ai.policy import TemplateAIPolicy
 
 
 def test_template_ai_service_static_rule(tmp_path):
@@ -73,3 +75,32 @@ def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
     assert result.success
     assert result.usage_tags == ("content", "chart")
     assert result.source == "static"
+
+
+def test_template_ai_provider_resolves_to_azure(monkeypatch):
+    policy = TemplateAIPolicy(
+        id="default",
+        name="azure",
+        provider="azure-openai",
+        prompt_template="classify layout usage tags",
+    )
+
+    dummy_client = object()
+
+    class DummyAzureClient:
+        @classmethod
+        def from_env(cls, policy):
+            return dummy_client
+
+    monkeypatch.setattr(
+        "pptx_generator.template_ai.client.AzureOpenAITemplateAIClient",
+        DummyAzureClient,
+    )
+    monkeypatch.setenv("PPTX_TEMPLATE_LLM_PROVIDER", "azure-openai")
+
+    client, provider = create_template_ai_client(policy)
+
+    assert client is dummy_client
+    assert provider == "azure-openai"
+
+    monkeypatch.delenv("PPTX_TEMPLATE_LLM_PROVIDER", raising=False)

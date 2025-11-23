@@ -13,7 +13,8 @@
 
 ### Template AI 連携
 - `layout_validation` ステップで Template AI サービスを初期化し、レイアウトごとのプレースホルダー構造・テキスト／メディア推定・ヒューリスティックタグを payload にまとめて LLM へ送る。
-- プロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）の環境変数を優先して解決し、`config/template_ai_policies.json` のプロンプト定義を使って JSON 応答を取得する。
+- プロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）の環境変数を優先して解決し、OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）など Stage2/Stage3 と同じ LLM を選択できる。必要な API キーやエンドポイントは各プロバイダの環境変数（例: `OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY`, `AWS_REGION` など）を設定する。
+- プロンプトやモデルの既定値は `config/template_ai_policies.json` で管理し、policy 単位で `provider` / `model` / `temperature` / `max_tokens` を上書きできる。
 - `config/usage_tags.json` に canonical タグと説明、静的ルールを集約し、LLM 応答の正規化や `mock` 利用時のフォールバックに再利用する。
 - `pptx_generator.template_ai.llm` ロガーへ JSON 応答を出力し、`diagnostics.json.template_ai` に推論ソース・タグ・未知語・エラーを記録する。静的ルールが適用された場合も同様に記録し、後続工程から差分を確認できるようにする。
 
