@@ -61,6 +61,8 @@ class TestTemplateExtractorStep:
     def mock_presentation(self):
         """モックプレゼンテーションを作成。"""
         presentation = Mock()
+        presentation.slide_width = 9144000
+        presentation.slide_height = 6858000
         
         # レイアウトのモック
         layout1 = Mock()
