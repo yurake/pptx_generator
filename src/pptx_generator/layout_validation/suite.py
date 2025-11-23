@@ -435,6 +435,7 @@ class LayoutValidationSuite:
                 {"heuristic_reason": "; ".join(base_meta_reasons)} if base_meta_reasons else None
             )
             blueprint_info = blueprint_lookup.get(layout.name)
+            ai_error = False
 
             ai_result = self._invoke_template_ai(
                 template_id=template_id,
@@ -456,7 +457,9 @@ class LayoutValidationSuite:
             else:
                 if ai_result:
                     if ai_result.error:
-                        warnings.append(
+                        ai_error = True
+                        raw_usage_tags = set()
+                        errors.append(
                             {
                                 "code": "usage_tag_ai_error",
                                 "layout_id": layout_id,
@@ -482,10 +485,12 @@ class LayoutValidationSuite:
                 usage_tags_set.discard("title")
                 title_conflict_removed = True
 
-            if not usage_tags_set:
-                usage_tags_set.add("generic")
-
-            usage_tags = sorted(usage_tags_set)
+            if ai_error:
+                usage_tags = sorted(usage_tags_set)
+            else:
+                if not usage_tags_set:
+                    usage_tags_set.add("generic")
+                usage_tags = sorted(usage_tags_set)
 
             if ai_result and ai_result.success:
                 if ai_result.unknown_tags:
@@ -504,6 +509,19 @@ class LayoutValidationSuite:
                         "layout_id": layout_id,
                         "name": layout.name,
                         "detail": ", ".join(sorted(unknown_tags)),
+                    }
+                )
+
+            if title_conflict_removed:
+                detail = "タイトルタグが本文プレースホルダーの存在により除外されました"
+                if not title_from_name:
+                    detail += "（名前ベースの判定外）"
+                warnings.append(
+                    {
+                        "code": "usage_tag_title_suppressed",
+                        "layout_id": layout_id,
+                        "name": layout.name,
+                        "detail": detail,
                     }
                 )
 

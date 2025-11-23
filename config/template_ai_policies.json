@@ -1,14 +1,14 @@
 {
   "version": "1",
-  "default_policy_id": "mock",
+  "default_policy_id": "default",
   "policies": [
     {
-      "id": "mock",
-      "name": "Mock Template AI Policy",
-      "description": "Static rules for template AI integration tests.",
+      "id": "default",
+      "name": "default-template-ai",
+      "description": "Template AI policy with canonical usage tag prompt.",
       "provider": "mock",
       "model": "mock-template",
-      "prompt_template": "Classify the layout usage tags using the provided metadata.",
+      "prompt_template": "Classify the layout usage tags using the provided metadata. Respond with JSON containing usage_tags and reason.",
       "static_rules": [
         {
           "layout_name_pattern": ".*Title.*",

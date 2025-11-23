@@ -2,58 +2,59 @@
 
 ## 1. 背景と課題
 - Template AI は `mock` / `openai`（Responses API）にのみ対応し、Content AI / Layout AI がサポートする `azure-openai`・`anthropic`・`aws-claude` などを利用できない。
-- プロジェクト全体では `PPTX_LLM_PROVIDER` を基点に複数プロバイダへ切り替える運用を想定しており、Stage1 だけが制約付きだと本番環境での構成差異（例: Azure OpenAI を標準使用）に適合できない。
+- Stage2/Stage3 は `PPTX_LLM_PROVIDER` を通じて複数プロバイダを切り替えられる設計になっており、Stage1 だけが制約付きだと本番環境（例: Azure OpenAI 標準運用）との構成差異が生まれる。
 - RM-064 では Stage1 メタデータと Stage3 の整合を進めているため、Template AI 側も共通プロバイダ設計へ統一する必要がある。
 
 ## 2. 現状整理（2025-11-23 時点）
-| 機能 | 対応プロバイダ | 実装ファイル | 備考 |
+| 機能 | 対応プロバイダ | 主な実装 | 備考 |
 | --- | --- | --- | --- |
-| Template AI | `mock`, `openai` | `src/pptx_generator/template_ai/client.py` | Responses API 固定。`PPTX_TEMPLATE_LLM_PROVIDER` 未設定時は `PPTX_LLM_PROVIDER` を参照。 |
-| Content AI | `mock`, `openai`, `azure-openai`, `anthropic`, `aws-claude` | `src/pptx_generator/content_ai/client.py` | ラッパーを切り替えるファクトリ実装。各プロバイダごとに専用クライアントを実装済み。 |
-| Layout AI | 同上 | `src/pptx_generator/layout_ai/client.py` | `PPTX_LLM_PROVIDER` を基点に共通実装を利用。 |
+| Template AI | `mock`, `openai` | `src/pptx_generator/template_ai/client.py` | `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）を参照するが、分岐は限定的で Responses API 固定。 |
+| Content AI | `mock`, `openai`, `azure-openai`, `anthropic`, `aws-claude` | `src/pptx_generator/content_ai/client.py` | プロバイダごとに専用クライアントを実装済み。 |
+| Layout AI | 同上 | `src/pptx_generator/layout_ai/client.py` | JSON 応答ベースで共通クライアントを切り替える設計。 |
 
-Template AI で不足している要素:
-1. プロバイダ解決の条件式が `mock` / `openai` に限定されている。
-2. Content/Layout AI に存在する Azure OpenAI / Anthropic / AWS Bedrock のクラス・ユーティリティが Template AI 側に共有されていない。
-3. policy JSON (`config/template_ai_policies.json`) にプロバイダ別デプロイメント指定やモデル名の整理がなく、OpenAI 固定の前提になっている。
-4. README / ドキュメントの手順が Template AI のプロバイダ差異を説明していない。
+Template AI 側で不足している要素:
+1. プロバイダ解決が実質 `mock` / `openai` に固定されている。
+2. Content/Layout AI に存在する Azure OpenAI / Anthropic / AWS Bedrock のクラス・ユーティリティが流用されていない。
+3. policy JSON（`config/template_ai_policies.json`）にプロバイダ別デプロイメントやモデル情報を設定できる項目が不足している。
+4. README や設計ドキュメントに Template AI のプロバイダ差異が十分説明されていない。
 
-## 3. 対応方針案
-1. **クライアント層の共通化**
-   - `content_ai`・`layout_ai` で実装済みの LLM クライアント群（OpenAI/Azure/Anthropic/AWS）を Template AI でも再利用できるよう、共通モジュールへ切り出す。
-   - Template AI 特有の分類リクエスト（payload, prompt 生成）は保持しつつ、実際の API 呼び出しは共通クライアントで行う。
+## 3. 目標
+- Template AI でも OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）といった Stage2/Stage3 と同等の LLM を選択できるようにする。
+- policy 設定と環境変数でモデルやデプロイメントを制御可能にし、ドキュメントに設定手順を明記する。
+- `diagnostics.json.template_ai` などの監査メタに推論プロバイダやエラー情報を残す。
 
-2. **設定項目の拡張**
-   - 環境変数は `PPTX_TEMPLATE_LLM_PROVIDER` を優先し、Fallback で `PPTX_LLM_PROVIDER` を見る現行仕様を維持。
-   - プロバイダごとのモデル/デプロイメント指定は `config/template_ai_policies.json` の policy 単位で上書きできるようにし、Azure 用の `deployment` / `api_version`、Anthropic 用の `model` などを設定可能にする。
-   - README / `docs/design/stages/stage-01-template-pipeline.md` / `docs/requirements/stages/stage-01-template-pipeline.md` に、対応プロバイダと必要な環境変数を追記する。
+## 4. 対応方針
+1. **クライアント層の共通化**  
+   - Content/Layout AI の LLM クライアント抽象化を Template AI へ移植し、共通レスポンス解析とエラーハンドリングを導入する。  
+   - JSON 以外の応答や拒否が発生した場合はヒューリスティックへフォールバックし、ログに明示する。
 
-3. **テスト整備**
-   - `tests/test_template_ai.py` にプロバイダ選択の分岐テストを追加し、`PPTX_TEMPLATE_LLM_PROVIDER` を切り替えた際に想定クライアントが生成されることを検証。
-   - 既存のモックレスポンス検証を維持しつつ、新規クライアント導入時に行うべきスモークテストを追加（例: Azure クライアント初期化の例外ハンドリング）。
+2. **設定項目の拡張**  
+   - `PPTX_TEMPLATE_LLM_PROVIDER` を優先し、未設定時は `PPTX_LLM_PROVIDER` を利用する現行仕様を維持。  
+   - `config/template_ai_policies.json` で policy 単位に `provider` / `model` / `temperature` / `max_tokens` などを上書き可能にし、Azure（deployment）や AWS（modelId）など固有設定を扱えるようにする。  
+   - README、`docs/design/stages/stage-01-template-pipeline.md`、`docs/requirements/stages/stage-01-template-pipeline.md` 等に必要な環境変数（`OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY`, `AWS_REGION` など）と手順を追記する。
 
-4. **段階的リリース**
-   - 初期実装では Azure OpenAI を優先導入し、Anthropic/AWS は後続タスクでの追加でも可。
-   - `diagnostics.json.template_ai` にプロバイダ情報（model / deployment など）を追記し、実運用時に利用状況を把握できるようにする。
+3. **テスト整備**  
+   - `tests/test_template_ai.py` にプロバイダ選択テストを追加し、環境変数の切り替えで想定クライアントが生成されることを確認する。  
+   - 既存モックレスポンス検証を維持しつつ、新規クライアント導入時の例外パスをスモークテストする。
 
-## 4. 作業分解案
-1. 共通クライアントの抽象化（`content_ai.client` から共通ユーティリティを切り出す）。
-2. Template AI ファクトリのプロバイダ分岐を拡張し、Azure クライアントを追加。
-3. policy JSON の schema 更新（deployment / model 設定項目の追加）。
-4. ドキュメント更新（README, design, requirements, runbook）。
+4. **段階的リリース**  
+   - 初期対応では Azure OpenAI を優先し、Anthropic / AWS Bedrock の導入は段階的に進める。  
+   - `diagnostics.json.template_ai` にプロバイダ名・モデルを記録し、実運用での確認を容易にする。
+
+## 5. 作業分解案
+1. 共通クライアント抽象化（`content_ai.client` からユーティリティを切り出し Template AI に適用）。
+2. Template AI ファクトリのプロバイダ分岐拡張（Azure → Anthropic → AWS の順で導入）。
+3. policy JSON と diagnostics のスキーマ更新。
+4. README / design / requirements / runbook の更新。
 5. テスト更新と CI 通過確認。
 
-## 5. RM / ToDo 提案
-- RM-064 の子タスクでは範囲が大きいため、新規 RM（例: **RM-066 Template AI マルチプロバイダ対応**）を追加し、Stage1 のプロバイダ整合性を担当。
-- `docs/todo/YYYYMMDD-rm066-template-ai-providers.md` を作成し、上記作業分解案をチェックリスト化。
-- RM-064 の ToDo には「Template AI プロバイダ整合性の確認」タスクを記録済みなので、実装に移る段階で RM-066 とリンクさせる。
-
 ## 6. リスクと考慮事項
-- Azure / Anthropic / Bedrock の API 仕様は Content/Layout AI 実装依存のため、Template AI へ流用する際に JSON 応答フォーマットの差異が出ないか確認が必要。
-- Template AI は JSON スキーマ固定で応答を期待するため、応答フォーマットに制限を加えるテンプレートが実装できるか事前検証が必要（特に Anthropic / Bedrock）。
-- 実運用で Template AI を Azure に切り替える場合は Rate Limit やコストの影響を精査する必要があるため、Stage3 との同時切替を想定したロードマップを検討する。
+- Azure / Anthropic / Bedrock が返す応答フォーマット差異を吸収できるか事前に確認する。
+- Template AI は JSON 応答を前提としているため、プロンプト／ガードを調整しフォールバック経路を用意する。
+- 依存パッケージ（`openai`, `anthropic`, `boto3` など）が未導入の環境向けに、分かりやすい例外メッセージを維持する。
+- レート制限やコスト面の影響を把握し、Stage3 の切り替えと同時に検証するロードマップを整備する。
 
 ## 7. 次のアクション
-1. 共通クライアント抽象化の PoC ブランチを作成し、Template AI で Azure クライアントを呼び出せることを最小構成で検証。
-2. 作業範囲が確認でき次第、RM-066 をロードマップへ追加し、詳細 ToDo を作成。
-3. README / design / requirements へのドキュメント更新は PoC 成果を踏まえて反映。
+1. 共通クライアント抽象化の PoC ブランチを作成し、Template AI から Azure クライアントを呼び出せることを検証する。
+2. 必要な作業範囲を整理し、新規 RM（例: RM-070）および ToDo を整備する。完了後は ToDo をアーカイブ（`docs/todo/archive/20251123-rm070-template-ai-providers.md`）へ移動。
+3. README / design / requirements の更新方針をまとめ、レビュー後に順次反映する。

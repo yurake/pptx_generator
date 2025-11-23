@@ -852,19 +852,18 @@ flowchart TB
   - ブランチ命名を `prefix/rmxxx-slug` 形式へ統一し、テンプレート・ガイド・自動チェックを整備する。
  - `RM-000` を活用したロードマップ追加プロセスを明文化し、循環参照を排除する。
   - ToDo 目的欄・Issue 連携での RM 表示を標準化し、起票・レビュー時にテーマが即座に識別できるようにする。
-  - Mermaid 図から完了テーマを除外し、`todo-auto-complete` 等の自動化で完了時の扱いを一貫させる。
+- Mermaid 図から完了テーマを除外し、`todo-auto-complete` 等の自動化で完了時の扱いを一貫させる。
 - 関連テーマ: RM-002（エージェント運用ガイド整備）、RM-059（Mermaid 図自動レンダリング）
 - 次アクション: ポリシー更新の定着状況を四半期ごとにレビューし、必要に応じて lint・自動化スクリプトをチューニングする。
 
 <a id="rm-070"></a>
-### RM-070 Template AI マルチプロバイダ対応
 - 対象工程: 1（テンプレ抽出）
 - ゴール: Template AI が Stage2/Stage3 と同等の LLM プロバイダ群（Azure OpenAI / Anthropic Claude / AWS Bedrock など）を利用できるようにし、環境依存の制約を解消する。
 - 参照ドキュメント: [docs/notes/20251123-template-ai-provider-expansion.md](../notes/20251123-template-ai-provider-expansion.md)
-- 参照 ToDo: （予定）`docs/todo/20251123-rm070-template-ai-providers.md`
-- 状況: 未着手（2025-11-23 追加）
+- 参照 ToDo: [docs/todo/archive/20251123-rm070-template-ai-providers.md](../todo/archive/20251123-rm070-template-ai-providers.md)
+- 状況: 完了（2025-11-23 更新）
 - 期待成果:
-  - Template AI クライアントが共通 LLM ラッパーを利用し、OpenAI 以外のプロバイダへ切り替え可能になる。
+- Template AI クライアントが共通 LLM ラッパーを利用し、OpenAI 以外のプロバイダへ切り替え可能になる。
   - policy / README / requirements に各プロバイダの設定手順を追記し、本番構成でも Stage1 が動作する。
   - `diagnostics.json.template_ai` に推論プロバイダ情報を出力し、テストでプロバイダ切替が検証される。
 - 依存: RM-061（usage_tags ガバナンス強化）、RM-064（レイアウト候補メタ情報拡充）

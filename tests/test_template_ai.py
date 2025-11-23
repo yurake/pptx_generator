@@ -77,24 +77,24 @@ def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
     assert result.source == "static"
 
 
-def test_template_ai_provider_resolves_to_azure(monkeypatch):
+def test_template_ai_client_provider_resolution(monkeypatch):
     policy = TemplateAIPolicy(
         id="default",
-        name="azure",
+        name="azure-template-ai",
         provider="azure-openai",
         prompt_template="classify layout usage tags",
     )
 
     dummy_client = object()
 
-    class DummyAzureClient:
+    class DummyAzureTemplateClient:
         @classmethod
         def from_env(cls, policy):
             return dummy_client
 
     monkeypatch.setattr(
         "pptx_generator.template_ai.client.AzureOpenAITemplateAIClient",
-        DummyAzureClient,
+        DummyAzureTemplateClient,
     )
     monkeypatch.setenv("PPTX_TEMPLATE_LLM_PROVIDER", "azure-openai")
 
