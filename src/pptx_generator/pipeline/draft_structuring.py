@@ -1445,14 +1445,6 @@ class DraftStructuringStep:
             if subtitle:
                 elements["subtitle"] = subtitle
             return
-        if anchor_lower in {"body", "content"}:
-            if lines:
-                elements["body"] = lines
-            else:
-                headline = card.headline_or_title()
-                if headline:
-                    elements["body"] = [headline]
-            return
         content_type = (slot.content_type or "text").lower()
         if content_type == "table":
             table_block = next(
@@ -1468,6 +1460,49 @@ class DraftStructuringStep:
                     "headers": ["項目"],
                     "rows": [[line] for line in lines],
                 }
+            return
+        if content_type == "text":
+            bullet_entries: list[dict[str, Any]] = []
+            paragraph_entries: list[str] = []
+            for block in card.content.body:
+                if block.type == "bullets" and block.data:
+                    raw_items = block.data.get("items")
+                    if isinstance(raw_items, list):
+                        for entry in raw_items:
+                            if isinstance(entry, dict):
+                                text = str(entry.get("text") or "").strip()
+                                if not text:
+                                    continue
+                                level_raw = entry.get("level", 0)
+                                try:
+                                    level = max(int(level_raw), 0)
+                                except (TypeError, ValueError):
+                                    level = 0
+                                bullet_entry: dict[str, Any] = {"text": text, "level": level}
+                                for key, value in entry.items():
+                                    if key in {"text", "level"}:
+                                        continue
+                                    bullet_entry[key] = value
+                                bullet_entries.append(bullet_entry)
+                            elif isinstance(entry, str):
+                                text = entry.strip()
+                                if text:
+                                    bullet_entries.append({"text": text, "level": 0})
+                elif isinstance(block.text, str) and block.text.strip():
+                    paragraph_entries.append(block.text.strip())
+            if bullet_entries:
+                elements[anchor] = bullet_entries
+                return
+            if paragraph_entries:
+                elements[anchor] = paragraph_entries
+                return
+            if lines:
+                elements[anchor] = lines
+                return
+            if anchor_lower in {"body", "content"}:
+                headline = card.headline_or_title()
+                if headline:
+                    elements[anchor] = [headline]
             return
         if content_type not in {"text"}:
             return

@@ -161,8 +161,14 @@ class PrepareCard(BaseModel):
                         elif isinstance(item, dict):
                             line = str(item.get("text") or "").strip()
                             if line:
+                                level_raw = item.get("level", 0)
+                                try:
+                                    level = max(int(level_raw), 0)
+                                except (TypeError, ValueError):
+                                    level = 0
+                                indent = "  " * level
                                 for segment in _yield_segments(line):
-                                    yield segment
+                                    yield f"{indent}{segment}"
             if block.rows:
                 for row in block.rows:
                     row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
