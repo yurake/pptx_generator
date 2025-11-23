@@ -826,29 +826,7 @@ def _format_usage_tags_text(reference: list[dict[str, str]]) -> str:
 
 
 def _build_card_context_info(card_payload: dict[str, object]) -> dict[str, object]:
-    context: dict[str, object] = {}
-    for key in ("intent", "type_hint", "note"):
-        value = card_payload.get(key)
-        if value not in (None, "", []):
-            context[key] = value
-
-    source = card_payload.get("source")
-    if isinstance(source, dict) and source:
-        context["source"] = source
-
-    analyzer = card_payload.get("analyzer")
-    if isinstance(analyzer, dict) and analyzer:
-        context["analyzer_summary"] = analyzer
-
-    allowed_tags = card_payload.get("allowed_tags")
-    if isinstance(allowed_tags, list) and allowed_tags:
-        context["allowed_tags"] = allowed_tags
-
-    hints = card_payload.get("slide_tag_hints")
-    if isinstance(hints, list) and hints:
-        context["slide_tag_hints"] = hints
-
-    return context
+    return {}
 
 
 def _build_user_prompt(request: LayoutAIRequest) -> str:
@@ -879,14 +857,5 @@ def _build_user_prompt(request: LayoutAIRequest) -> str:
                 request.policy.card_context_template,
                 card_context=card_context_text,
             )
-
-    if request.layout_metadata and request.policy.layout_metadata_template:
-        layout_metadata_text = json.dumps(
-            request.layout_metadata, ensure_ascii=False, indent=2
-        )
-        payload["layout_metadata_prompt"] = _apply_policy_template(
-            request.policy.layout_metadata_template,
-            layout_metadata=layout_metadata_text,
-        )
 
     return json.dumps(payload, ensure_ascii=False)

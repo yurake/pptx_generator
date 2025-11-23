@@ -34,6 +34,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `uv run --extra dev pytest tests/test_template_ai.py tests/test_layout_validation_template_ai.py tests/test_layout_validation_suite.py tests/test_layout_recommender.py tests/test_draft_structuring_step.py` を実行し 17 件成功。
 - [ ] ドキュメント更新
   - メモ: 対象ドキュメントの更新内容を記載。
+  - メモ: 2025-11-24 Layout AI の card_context / card_context_prompt / layout_metadata_prompt を無効化し、docs/notes/20251122-layout-ai-policy-review.md に追記済み。content_ai ログはファイル出力＋標準出力に統一フォーマットで出力し、LLM 応答のみフィルタリングするよう変更。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
