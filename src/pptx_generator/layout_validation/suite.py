@@ -423,6 +423,7 @@ class LayoutValidationSuite:
             ) = self._derive_usage_tags(layout, placeholder_records)
 
             raw_usage_tags = set(heuristic_tags)
+            ai_error = False
 
             ai_result = self._invoke_template_ai(
                 template_id=template_id,
@@ -441,7 +442,9 @@ class LayoutValidationSuite:
             else:
                 if ai_result:
                     if ai_result.error:
-                        warnings.append(
+                        ai_error = True
+                        raw_usage_tags = set()
+                        errors.append(
                             {
                                 "code": "usage_tag_ai_error",
                                 "layout_id": layout_id,
@@ -467,10 +470,12 @@ class LayoutValidationSuite:
                 usage_tags_set.discard("title")
                 title_conflict_removed = True
 
-            if not usage_tags_set:
-                usage_tags_set.add("generic")
-
-            usage_tags = sorted(usage_tags_set)
+            if ai_error:
+                usage_tags = sorted(usage_tags_set)
+            else:
+                if not usage_tags_set:
+                    usage_tags_set.add("generic")
+                usage_tags = sorted(usage_tags_set)
 
             if ai_result and ai_result.success:
                 if ai_result.unknown_tags:

@@ -113,7 +113,7 @@ class OpenAITemplateAIClient:
 
         base_url = os.getenv("OPENAI_BASE_URL")
         temperature = float(os.getenv("OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(policy.max_tokens or 512)))
+        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(policy.max_tokens or 32000)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         model_name = policy.model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         if model_name in {"mock", "mock-local", "mock-template"}:
@@ -140,6 +140,9 @@ class OpenAITemplateAIClient:
             response = self._client.responses.create(**base_kwargs)  # type: ignore[attr-defined]
         except Exception as exc:  # noqa: BLE001
             raise TemplateAIClientConfigurationError(str(exc)) from exc
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("template AI raw response (provider=openai): %s", response)
 
         text_segments: list[str] = []
         for item in getattr(response, "output", []) or []:
@@ -186,7 +189,7 @@ class AzureOpenAITemplateAIClient:
             raise TemplateAIClientConfigurationError("AZURE_OPENAI_DEPLOYMENT が設定されていません")
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
         temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(policy.max_tokens or 512)))
+        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(policy.max_tokens or 32000)))
 
         endpoint_clean = endpoint.rstrip("/")
         lowered = endpoint_clean.lower()
@@ -217,6 +220,9 @@ class AzureOpenAITemplateAIClient:
             response = self._client.responses.create(**kwargs)  # type: ignore[attr-defined]
         except Exception as exc:  # noqa: BLE001
             raise TemplateAIClientConfigurationError(str(exc)) from exc
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("template AI raw response (provider=azure-openai): %s", response)
 
         text_segments: list[str] = []
         for item in getattr(response, "output", []) or []:
@@ -261,7 +267,7 @@ class AnthropicTemplateAIClient:
         model = policy.model if policy.model and policy.model not in {"mock", "mock-template"} else None
         model_id = model or os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
         fallback_model = os.getenv("ANTHROPIC_FALLBACK_MODEL")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or 1024)))
+        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or 32000)))
         client = anthropic.Anthropic(api_key=api_key)
         return cls(client, model=model_id, max_tokens=max_tokens, fallback_model=fallback_model)
 
@@ -375,7 +381,7 @@ class AwsClaudeTemplateAIClient:
                 "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
             ) from exc
 
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(policy.max_tokens or 1024)))
+        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(policy.max_tokens or 32000)))
         return cls(runtime_client, model_id=model_id, max_tokens=max_tokens, inference_profile_arn=inference_profile_arn)
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:

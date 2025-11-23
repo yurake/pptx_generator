@@ -145,6 +145,34 @@ class TemplateAIService:
         usage_tags = response.usage_tags or ()
         canonical, unknown = normalize_usage_tags_with_unknown(usage_tags)
 
+        if not canonical:
+            if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
+                _TEMPLATE_LLM_LOGGER.debug(
+                    "template AI response summary: layout=%s source=%s tags=%s unknown=%s reason=%s",
+                    layout_id,
+                    response.model,
+                    canonical,
+                    unknown,
+                    response.reason,
+                )
+            error_reason = response.reason or "テンプレートAIが usage_tags を返却しませんでした"
+            if response.raw_text:
+                raw_text = response.raw_text.strip()
+                if len(raw_text) > 200:
+                    raw_text = raw_text[:200] + "…"
+                error_reason = f"{error_reason} (raw={raw_text})"
+            elif not response.raw_text and not response.usage_tags:
+                error_reason = "テンプレートAIの応答を取得できず usage_tags を判定できませんでした"
+
+            return TemplateAIResult(
+                usage_tags=None,
+                unknown_tags=tuple(sorted(unknown)),
+                reason=response.reason,
+                raw_text=response.raw_text,
+                source=response.model,
+                error=error_reason,
+            )
+
         if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.DEBUG):
             _TEMPLATE_LLM_LOGGER.debug(
                 "template AI response summary: layout=%s source=%s tags=%s unknown=%s reason=%s",
