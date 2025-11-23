@@ -151,6 +151,7 @@ def test_layout_validation_ai_empty_tags_mark_error(monkeypatch, tmp_path):
             text_hint,
             media_hint,
             heuristic_usage_tags,
+            **extras,
         ) -> TemplateAIResult:
             return TemplateAIResult(
                 usage_tags=None,
