@@ -894,3 +894,16 @@ flowchart TB
   - README 更新時に他言語版へ反映するフロー／チェックリストを整備し、ToDo や CI で差分を検知できるようにする。
   - 翻訳ルール（用語集・スタイル）と翻訳担当の責務を明文化し、リリースフローに組み込む。
 - 依存: RM-002（エージェント運用ガイド整備）、RM-069（開発プロセス運用ルール見直し）
+
+<a id="rm-073"></a>
+### RM-073 README バッジ整備と静的解析導入
+- 対象領域: ルート `README.md`、CI（GitHub Actions）、静的解析（SonarCloud）
+- ゴール: README に主要バッジ（ライセンス／ビルド／Python バージョン／SonarCloud）を追加し、CI・静的解析の整備と共に視覚的に状態を把握できるようにする。
+- 参照ドキュメント: （作成予定: `docs/notes/README-badges-plan.md`）
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-23 追加）
+- 期待成果:
+  - SonarCloud プロジェクトを設定し、CI から静的解析を実行できるようにする。
+  - README にライセンスバッジ、GitHub Actions バッジ、Python バージョンバッジ、SonarCloud バッジを追加し、運用手順を整備する。
+  - バッジ更新を README の更新フローに組み込み、他言語版への展開方針も合わせて検討する。
+- 依存: RM-071（slide_alignment 命名と責務の再整理）、RM-072（README 多言語展開整備）
