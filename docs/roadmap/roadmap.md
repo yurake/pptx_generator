@@ -861,8 +861,8 @@ flowchart TB
 - 対象工程: 1（テンプレ抽出）
 - ゴール: Template AI が Stage2/Stage3 と同等の LLM プロバイダ群（Azure OpenAI / Anthropic Claude / AWS Bedrock など）を利用できるようにし、環境依存の制約を解消する。
 - 参照ドキュメント: [docs/notes/20251123-template-ai-provider-expansion.md](../notes/20251123-template-ai-provider-expansion.md)
-- 参照 ToDo: [docs/todo/20251123-rm070-template-ai-providers.md](../todo/20251123-rm070-template-ai-providers.md)
-- 状況: 未着手（2025-11-23 追加）
+- 参照 ToDo: [docs/todo/archive/20251123-rm070-template-ai-providers.md](../todo/archive/20251123-rm070-template-ai-providers.md)
+- 状況: 完了（2025-11-23 更新）
 - 期待成果:
   - Template AI クライアントが共通 LLM ラッパーを利用し、OpenAI 以外のプロバイダへ切り替え可能になる。
   - policy / README / requirements に各プロバイダの設定手順を追記し、本番構成でも Stage1 が動作する。
