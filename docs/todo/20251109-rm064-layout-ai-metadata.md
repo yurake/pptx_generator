@@ -71,11 +71,10 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
     - メモ: 2025-11-23 `docs/design/stages/stage1-stage3-metadata-interface.md` にドラフト案を追加し、レビュー用ベースラインとした。
     - メモ: 2025-11-23 LayoutValidationSuite / DraftStructuringStep / CardLayoutRecommender を更新し、`placeholder_summary`・Blueprint・`meta.heuristic_reason` を流通させる実装と pytest 188 件を完了。
 - [x] CLI / ログ / テスト整備
-  - メモ: 2025-11-23 CLI に `--show-usage-tag-catalog` を追加し、draft_mapping_log.json へ usage tag 説明を記録する変更を反映。統合テストと設計ドキュメントを更新。
+  - メモ: draft_mapping_log.json に `usage_tags_detail` を出力し、CLI テストでタグ説明が付与されることを確認。
   - [x] Canonical usage tags の共通利用を確認する CLI 統合テストを設計し、`scripts/` / `tests/` に追加する案をまとめる。
     - メモ: `tests/test_cli_outline.py::test_outline_with_layout_reasons` に usage tag カタログ表示とログ検証を追加。
   - [x] Layout AI / CLI ログで usage tag 説明を表示するオプションを追加する（usage_tags v2.0 反映）。
-    - メモ: `pptx outline` / `pptx compose` に `--show-usage-tag-catalog` を実装し、`draft_mapping_log.json` の候補エントリへ `usage_tags_detail` を付与。
 - [x] 関連Issue 行の更新
   - メモ: 
 - [x] チェックリスト整合確認

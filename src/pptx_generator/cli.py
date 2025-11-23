@@ -53,7 +53,6 @@ from .settings import BrandingConfig, RulesConfig
 from .spec_loader import load_jobspec_from_path
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
-from .utils.usage_tags import get_usage_tag_catalog
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_BRANDING_PATH = Path("config/branding.json")
@@ -1305,48 +1304,6 @@ def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -
             )
 
 
-def _print_usage_tag_catalog() -> None:
-    catalog = get_usage_tag_catalog()
-    click.echo("Usage tag カタログ（カテゴリ / タグ / 説明）:")
-
-    def _emit_entries(label: str, entries: object) -> None:
-        if not isinstance(entries, list):
-            return
-        available = [entry for entry in entries if isinstance(entry, dict) and not entry.get("deprecated")]
-        if not available:
-            return
-        click.echo(f"- {label}")
-        for entry in available:
-            tag = entry.get("tag")
-            if not isinstance(tag, str):
-                continue
-            display = tag
-            label_jp = entry.get("label_jp")
-            if isinstance(label_jp, str) and label_jp and label_jp.lower() != tag.lower():
-                display += f"（{label_jp}）"
-            description = entry.get("description")
-            if isinstance(description, str) and description.strip():
-                click.echo(f"    - {display}: {description.strip()}")
-            else:
-                click.echo(f"    - {display}")
-
-    _emit_entries("Intent（意図）", catalog.get("intent"))
-    _emit_entries("Media（メディア）", catalog.get("media"))
-    fallback_entry = catalog.get("fallback")
-    if isinstance(fallback_entry, dict) and not fallback_entry.get("deprecated"):
-        tag = fallback_entry.get("tag")
-        if isinstance(tag, str):
-            click.echo("- Fallback")
-            display = tag
-            label_jp = fallback_entry.get("label_jp")
-            if isinstance(label_jp, str) and label_jp and label_jp.lower() != tag.lower():
-                display += f"（{label_jp}）"
-            description = fallback_entry.get("description")
-            if isinstance(description, str) and description.strip():
-                click.echo(f"    - {display}: {description.strip()}")
-            else:
-                click.echo(f"    - {display}")
-
 
 def _run_mapping_pipeline(
     *,
@@ -2273,12 +2230,6 @@ def prepare(
     help="layout_hint 候補のスコア内訳を表示する",
 )
 @click.option(
-    "--show-usage-tag-catalog",
-    is_flag=True,
-    default=False,
-    help="canonical usage tags の説明一覧を表示する",
-)
-@click.option(
     "--prepare-cards",
     type=click.Path(exists=False, dir_okay=False,
                     readable=True, path_type=Path),
@@ -2313,7 +2264,6 @@ def outline(
     return_reasons_path: Path,
     return_reasons: bool,
     show_layout_reasons: bool,
-    show_usage_tag_catalog: bool,
     prepare_cards: Path,
     prepare_log: Path,
     prepare_meta: Path,
@@ -2371,8 +2321,6 @@ def outline(
         logging.exception("outline 実行中にエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
     _print_outline_result(result, show_layout_reasons=show_layout_reasons)
-    if show_usage_tag_catalog:
-        _print_usage_tag_catalog()
 
 
 @app.command("compose")
@@ -2440,12 +2388,6 @@ def outline(
     is_flag=True,
     default=False,
     help="layout_hint 候補のスコア内訳を表示する",
-)
-@click.option(
-    "--show-usage-tag-catalog",
-    is_flag=True,
-    default=False,
-    help="canonical usage tags の説明一覧を表示する",
 )
 @click.option(
     "--output",
@@ -2516,7 +2458,6 @@ def compose(  # noqa: PLR0913
     chapter_template: str | None,
     analysis_summary_path: Path | None,
     show_layout_reasons: bool,
-    show_usage_tag_catalog: bool,
     output_dir: Path,
     rules: Path,
     template: Optional[Path],
@@ -2585,8 +2526,6 @@ def compose(  # noqa: PLR0913
         raise click.exceptions.Exit(code=1) from exc
 
     _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
-    if show_usage_tag_catalog:
-        _print_usage_tag_catalog()
 
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(

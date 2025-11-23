@@ -438,7 +438,6 @@ def test_outline_with_layout_reasons(
             "--chapter-template",
             "bp-report-2025",
             "--show-layout-reasons",
-            "--show-usage-tag-catalog",
             "--prepare-cards",
             str(prepare_cards),
             "--prepare-log",
@@ -449,8 +448,6 @@ def test_outline_with_layout_reasons(
     )
 
     assert result.exit_code == 0, result.output
-    assert "Usage tag カタログ" in result.output
-    assert "overview" in result.output
     draft_path = output_dir / "draft_draft.json"
     assert draft_path.exists()
     draft = json.loads(draft_path.read_text(encoding="utf-8"))
