@@ -32,7 +32,6 @@ def test_layout_validation_uses_template_ai(tmp_path):
             {
                 "id": "default",
                 "name": "static-mock",
-                "provider": "mock",
                 "prompt_template": "classify layout usage tags",
                 "static_rules": [
                     {"layout_name_pattern": ".*Overview.*", "tags": ["overview", "content"]},
@@ -82,7 +81,6 @@ def test_layout_validation_static_ai_preserves_chart_tag(tmp_path):
             {
                 "id": "default",
                 "name": "static-mock",
-                "provider": "mock",
                 "prompt_template": "classify layout usage tags",
                 "static_rules": [
                     {"layout_name_pattern": None, "tags": ["content"]},
@@ -130,7 +128,6 @@ def test_layout_validation_ai_empty_tags_mark_error(monkeypatch, tmp_path):
             {
                 "id": "default",
                 "name": "dummy",
-                "provider": "mock",
                 "prompt_template": "dummy",
             }
         ],
