@@ -61,7 +61,32 @@
   },
   "static_rules": [],
   "meta": {
-    "layout_description": "Overview - 1 Column レイアウトは タイトル、本文、ビジュアルを配置できる 3 個のプレースホルダー構成です。上部中央に大きめのタイトル枠（PH__Title__1）、中央に中程度の本文枠（PH__Body__Main）、右上にコンパクトなロゴ枠（PH__Logo__1）が配置されています。",
+    "layout_description": {
+      "overview": "Overview - 1 Column レイアウトは タイトル、本文、ビジュアルを配置できる 3 個のプレースホルダー構成です。",
+      "elements": [
+        {
+          "description": "中央に中程度の本文枠（PH__Body__Main）",
+          "position": "中央",
+          "size_label": "中程度",
+          "expects_text": true,
+          "area_ratio": 0.35
+        },
+        {
+          "description": "上部中央に大きめのタイトル枠（PH__Title__1）",
+          "position": "上部中央",
+          "size_label": "大きめ",
+          "expects_text": true,
+          "area_ratio": 0.52
+        },
+        {
+          "description": "右上に小さな装飾用のロゴ枠（PH__Logo__1）（テキスト入力非想定）",
+          "position": "右上",
+          "size_label": "装飾用",
+          "expects_text": false,
+          "area_ratio": 0.02
+        }
+      ]
+    },
     "heuristic_reason": "placeholder:type=body; placeholder:type=object(visual); template_ai:fallback"
   },
   "version": "1.1.0"
@@ -74,7 +99,7 @@
 - `usage_tags`: 工程5のスコアリングに利用する用途タグ。
 - `text_hint.max_chars`: 面積から算出した推奨文字数。
 - `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。詳細は `docs/design/stages/stage1-stage3-metadata-interface.md` を参照。
-- `meta.layout_description`: Stage1 Template で生成するレイアウト説明文。レイアウト全体と各プレースホルダーの役割を文章化し、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
+- `meta.layout_description`: Stage1 Template で生成するレイアウト説明メタ。`overview`（全体概要）と `elements[*]`（個別プレースホルダーの説明リスト）で構成され、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
 
 ## diagnostics.json
 ```jsonc

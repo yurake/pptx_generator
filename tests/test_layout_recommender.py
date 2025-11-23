@@ -262,6 +262,17 @@ def test_build_layout_metadata_retains_stage1_payload() -> None:
         ],
     }
     meta = {"heuristic_reason": "placeholder:type=body"}
+    layout_description = {
+        "overview": "Sample Layout は本文メインの構成です。",
+        "elements": [
+            {
+                "description": "中央に大きめの本文枠（Body）",
+                "position": "中央",
+                "size_label": "大きめ",
+                "expects_text": True,
+            }
+        ],
+    }
 
     profile = LayoutProfile(
         layout_id="sample-layout",
@@ -273,7 +284,7 @@ def test_build_layout_metadata_retains_stage1_payload() -> None:
         heuristic={"tags": ["content"], "reasons": ["placeholder:type=body"]},
         blueprint=blueprint,
         meta=meta,
-        layout_description="タイトルと本文を中央に配置する構成です。",
+        layout_description=layout_description,
     )
 
     metadata = CardLayoutRecommender._build_layout_metadata([profile])

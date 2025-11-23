@@ -46,7 +46,10 @@ def test_layout_validation_suite_creates_outputs(tmp_path) -> None:
     assert "area_ratio" in summary and isinstance(summary["area_ratio"], dict)
     assert "heuristic" in first_record
     assert "meta" in first_record and "heuristic_reason" in first_record["meta"]
-    assert first_record["meta"].get("layout_description")
+    layout_description = first_record["meta"].get("layout_description")
+    assert isinstance(layout_description, dict)
+    assert "overview" in layout_description
+    assert isinstance(layout_description.get("elements"), list)
 
     diagnostics = json.loads(result.diagnostics_path.read_text(encoding="utf-8"))
     assert diagnostics["stats"]["layouts_total"] >= result.record_count

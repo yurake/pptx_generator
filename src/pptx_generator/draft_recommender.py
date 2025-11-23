@@ -41,7 +41,7 @@ class LayoutProfile:
     heuristic: dict[str, object] = field(default_factory=dict)
     blueprint: dict[str, object] = field(default_factory=dict)
     meta: dict[str, object] = field(default_factory=dict)
-    layout_description: str | None = None
+    layout_description: dict[str, object] | None = None
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))

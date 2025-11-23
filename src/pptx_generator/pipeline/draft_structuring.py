@@ -343,9 +343,15 @@ class DraftStructuringStep:
                 meta_info = {}
             layout_description = None
             description_value = meta_info.get("layout_description")
-            if isinstance(description_value, str):
+            if isinstance(description_value, dict):
+                layout_description = description_value
+            elif isinstance(description_value, str):
                 stripped = description_value.strip()
-                layout_description = stripped or None
+                if stripped:
+                    layout_description = {
+                        "overview": stripped,
+                        "elements": [],
+                    }
 
             record = LayoutProfile(
                 layout_id=layout_id,

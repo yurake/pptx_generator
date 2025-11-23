@@ -32,7 +32,8 @@
 | `blueprint.slots[*].required` | Stage1: Blueprint | `bool` | Stage3 の必須プレースホルダ突合。 |
 | `blueprint.slots[*].intent_tags` | Stage1: Blueprint | `string[]` | Stage3 ログにレイアウト候補の意図タグを提示。 |
 | `meta.heuristic_reason`（新設案） | Stage2（テンプレ検証） | `string` | ヒューリスティック結果の説明をステップログへ表示。 |
-| `meta.layout_description` | Stage1: TemplateExtractor | `string` | テンプレート LLM への入力、および Stage3 ログでのレイアウト説明に利用。 |
+| `meta.layout_description.overview` | Stage1: TemplateExtractor | `string` | レイアウト全体の要約文。 |
+| `meta.layout_description.elements[*]` | Stage1: TemplateExtractor | `object[]` | 個別プレースホルダーの説明（`description` / `position` / `size_label` / `expects_text` など）を保持し、LLM やログで再利用。 |
 
 > **注記**: 旧 `layouts.jsonl`（v1.0 系）では `meta` や `placeholder_summary.area_ratio` などの追加フィールドが存在しないため、Stage3 ではサポートしない。必ずテンプレ抽出／検証を再実行して新フォーマットを生成する。
 
@@ -90,7 +91,7 @@
 - Stage2 から Template AI へレイアウト分類を依頼する際、以下の追加情報を JSON ペイロードに含める:
   - `placeholder_summary`: 種別ごとの count / area_ratio / details。
   - `blueprint`: 静的モード時の参照スロットと意図タグ。
-  - `meta.layout_description`: レイアウト全体と各プレースホルダーの配置意図を文章化した説明。LLM が構造を理解し、回答の根拠を生成できるようにする。
+  - `meta.layout_description.overview` と `meta.layout_description.elements[*]`: レイアウト全体と各プレースホルダーの配置意図を文章化・構造化した情報。LLM が構造を理解し、回答の根拠を生成できるようにする。
   - `meta.heuristic_reason`: ヒューリスティック判定理由（AI フォールバック時に追記）。
 - これによりプロンプトからレイアウト構造の容量や Blueprint 前提を説明でき、AI が用途タグを推奨する際の根拠が安定する。
 
@@ -107,7 +108,7 @@
 - **欠損許容**: `placeholder_summary` や `meta.heuristic_reason` は新フォーマットの必須情報として扱う。旧フォーマット（欠損があるレコード）は Stage3 でエラー扱いとし、再抽出を求める。
 - **互換性**: Schema バージョンを `SUITE_VERSION` と連動させ、旧バージョンはサポート対象外とする。必ず `SUITE_VERSION` に一致するレイアウトデータを用意する。
 - **観測可能性**: Stage3 ログ（`draft_mapping_log.json` など）から AI/ヒューリスティックの採用経緯、Blueprint-slot 充足状況を追跡できることをレビューで確認する。
-- **レイアウト説明文の必須化**: Stage1 Template は `layout_description` を必ず生成し、レイアウト全体の用途と各プレースホルダーの意図を文章で表現する。Template AI / Layout AI / マッピングログで同一の説明を参照できることを確認する。
+- **レイアウト説明メタの必須化**: Stage1 Template は `layout_description.overview` と `layout_description.elements[*]` を必ず生成し、レイアウト全体の用途と各プレースホルダーの意図を構造化して表現する。Template AI / Layout AI / マッピングログで同一の情報を参照できることを確認する。
 
 ## 実装フェーズ案
 1. **Schema 拡張**: `layouts.jsonl` の JSON Schema と `LayoutProfile` モデルを新フィールドに対応させる。

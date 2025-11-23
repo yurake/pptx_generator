@@ -252,12 +252,15 @@ def generate_layout_description(
     layout_name: str,
     placeholders: Sequence[dict[str, Any]],
     slide_size_emu: tuple[int, int] | None,
-) -> str:
-    """Generate a human-readable Japanese description of a layout."""
+) -> dict[str, Any]:
+    """Generate structured overview and element descriptions for a layout."""
 
+    target = layout_name or "このレイアウト"
     if not placeholders:
-        target = layout_name or "このレイアウト"
-        return f"{target} レイアウトはプレースホルダーが未定義です。"
+        return {
+            "overview": f"{target} レイアウトはプレースホルダーが未定義です。",
+            "elements": [],
+        }
 
     slide_width, slide_height = (slide_size_emu or (0, 0))
     slide_area = float(slide_width) * float(slide_height)
@@ -267,7 +270,6 @@ def generate_layout_description(
         p_type = str(placeholder.get("type") or "").casefold() or "unknown"
         counts[p_type] += 1
 
-    target = layout_name or "このレイアウト"
     total = len(placeholders)
 
     feature_labels: list[str] = []
@@ -289,14 +291,11 @@ def generate_layout_description(
     feature_labels = list(dict.fromkeys(feature_labels))
     if feature_labels:
         features_text = "、".join(feature_labels)
-        summary = (
-            f"{target} レイアウトは {features_text} を配置できる {total} 個のプレースホルダー構成です。"
-        )
+        overview = f"{target} レイアウトは {features_text} を配置できる {total} 個のプレースホルダー構成です。"
     else:
-        summary = f"{target} レイアウトは {total} 個のプレースホルダーを備えています。"
+        overview = f"{target} レイアウトは {total} 個のプレースホルダーを備えています。"
 
-    detail_segments: list[str] = []
-
+    elements: list[dict[str, Any]] = []
     placeholders_sorted = sorted(
         placeholders,
         key=lambda item: -(
@@ -338,18 +337,33 @@ def generate_layout_description(
             segment += f"（{name}）"
         if not expects_text:
             segment += "（テキスト入力非想定）"
-        detail_segments.append(segment)
 
-    if detail_segments:
-        details_text = "、".join(detail_segments) + "が配置されています。"
-    else:
-        details_text = ""
+        size_keyword = None
+        if size_label:
+            size_keyword = size_label[:-1] if size_label.endswith("の") else size_label
 
-    description = summary
-    if details_text:
-        description = f"{summary} {details_text}"
+        element_entry: dict[str, Any] = {
+            "anchor": name or None,
+            "type": str(placeholder.get("type") or "").lower() or None,
+            "role": label,
+            "position": position_label,
+            "size_label": size_keyword,
+            "expects_text": expects_text,
+            "description": segment,
+        }
+        if area_ratio is not None:
+            element_entry["area_ratio"] = round(area_ratio, 3)
 
-    return description.strip()
+        flags = placeholder.get("flags")
+        if isinstance(flags, list) and flags:
+            element_entry["flags"] = list(flags)
+
+        elements.append(element_entry)
+
+    return {
+        "overview": overview,
+        "elements": elements,
+    }
 
 
 PLACEHOLDER_TYPE_ALIASES: dict[str, str] = {

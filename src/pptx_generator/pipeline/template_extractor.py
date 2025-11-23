@@ -219,7 +219,7 @@ class TemplateExtractorStep:
             heuristic_payload = None
 
         placeholder_summary_payload = placeholder_summary or None
-        layout_description: str | None = None
+        layout_description: dict[str, Any] | None = None
         try:
             layout_description = generate_layout_description(
                 layout_name or "",

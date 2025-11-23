@@ -59,7 +59,7 @@ class LayoutProfile:
     usage_tags: tuple[str, ...]
     text_hint: Mapping[str, Any]
     media_hint: Mapping[str, Any]
-    layout_description: str | None = None
+    layout_description: dict[str, Any] | None = None
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -392,13 +392,19 @@ class MappingStep:
                 continue
             usage_tags = normalize_usage_tags(payload.get("usage_tags", []))
             layout_name = payload.get("layout_name") or layout_id
-            layout_description: str | None = None
+            layout_description: dict[str, Any] | None = None
             meta_info = payload.get("meta")
             if isinstance(meta_info, dict):
                 description_value = meta_info.get("layout_description")
-                if isinstance(description_value, str):
+                if isinstance(description_value, dict):
+                    layout_description = description_value
+                elif isinstance(description_value, str):
                     stripped = description_value.strip()
-                    layout_description = stripped or None
+                    if stripped:
+                        layout_description = {
+                            "overview": stripped,
+                            "elements": [],
+                        }
             text_hint = payload.get("text_hint") or {}
             media_hint = payload.get("media_hint") or {}
             if not isinstance(text_hint, dict):
