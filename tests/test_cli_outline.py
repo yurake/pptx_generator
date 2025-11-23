@@ -438,6 +438,7 @@ def test_outline_with_layout_reasons(
             "--chapter-template",
             "bp-report-2025",
             "--show-layout-reasons",
+            "--show-usage-tag-catalog",
             "--prepare-cards",
             str(prepare_cards),
             "--prepare-log",
@@ -448,6 +449,8 @@ def test_outline_with_layout_reasons(
     )
 
     assert result.exit_code == 0, result.output
+    assert "Usage tag カタログ" in result.output
+    assert "overview" in result.output
     draft_path = output_dir / "draft_draft.json"
     assert draft_path.exists()
     draft = json.loads(draft_path.read_text(encoding="utf-8"))
@@ -474,3 +477,7 @@ def test_outline_with_layout_reasons(
     assert mapping_log and "candidates" in mapping_log[0]
     assert "heuristic_reason" in mapping_log[0]
     assert mapping_log[0]["candidates"][0].get("placeholder_summary") is not None
+    usage_details = mapping_log[0]["candidates"][0].get("usage_tags_detail")
+    assert usage_details and usage_details["overview"]["description"]
+    selected_details = mapping_log[0].get("selected_usage_tags_detail")
+    assert selected_details and selected_details["overview"]["category"] == "intent"

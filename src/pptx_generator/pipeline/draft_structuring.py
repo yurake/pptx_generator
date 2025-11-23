@@ -5,11 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
+from collections import Counter, defaultdict
 
 from ..prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ..models import (
@@ -39,7 +39,7 @@ from ..draft_recommender import (
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
-from ..utils.usage_tags import normalize_usage_tags
+from ..utils.usage_tags import get_usage_tag_detail_map, normalize_usage_tags
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..draft_intel import (
     ChapterTemplate,
@@ -520,6 +520,7 @@ class DraftStructuringStep:
                     )
 
             candidate_logs: list[dict[str, Any]] = []
+            tag_detail_map = get_usage_tag_detail_map()
             for candidate, detail in recommendation.candidates:
                 layout_id = candidate.layout_id
                 candidate_entry: dict[str, Any] = {
@@ -539,6 +540,13 @@ class DraftStructuringStep:
                     },
                 }
                 profile = layout_lookup.get(layout_id)
+                tags_for_detail: set[str] = set(recommendation.baseline_tags.get(layout_id, ()))
+                tags_for_detail.update(recommendation.classified_tags.get(layout_id, ()))
+                tags_for_detail.update(recommendation.effective_tags.get(layout_id, ()))
+                if profile:
+                    tags_for_detail.update(profile.usage_tags or ())
+                if recommendation.ai_unknown_tags.get(layout_id):
+                    tags_for_detail.update(recommendation.ai_unknown_tags[layout_id])
                 if profile:
                     if profile.placeholder_summary:
                         candidate_entry["placeholder_summary"] = profile.placeholder_summary
@@ -548,6 +556,13 @@ class DraftStructuringStep:
                         candidate_entry["blueprint"] = profile.blueprint
                     if profile.meta:
                         candidate_entry["meta"] = profile.meta
+                usage_tag_details = {
+                    tag: tag_detail_map[tag]
+                    for tag in sorted(tags_for_detail)
+                    if tag in tag_detail_map
+                }
+                if usage_tag_details:
+                    candidate_entry["usage_tags_detail"] = usage_tag_details
                 candidate_logs.append(candidate_entry)
 
             source_payload = (
@@ -595,6 +610,13 @@ class DraftStructuringStep:
                     mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
                 if selected_profile.blueprint:
                     mapping_entry["selected_blueprint"] = selected_profile.blueprint
+                selected_usage_details = {
+                    tag: tag_detail_map[tag]
+                    for tag in sorted(set(selected_profile.usage_tags or ()))
+                    if tag in tag_detail_map
+                }
+                if selected_usage_details:
+                    mapping_entry["selected_usage_tags_detail"] = selected_usage_details
             mapping_logs.append(mapping_entry)
 
         if dynamic_prepare:

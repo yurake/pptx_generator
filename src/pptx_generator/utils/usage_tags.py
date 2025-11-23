@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from collections import OrderedDict
+from functools import lru_cache
 from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -386,6 +387,7 @@ CANONICAL_USAGE_TAGS: frozenset[str] = _CANONICAL_USAGE_TAGS
 
 __all__ = [
     "CANONICAL_USAGE_TAGS",
+    "get_usage_tag_detail_map",
     "get_usage_tag_catalog",
     "get_layout_rules",
     "get_usage_tag_config",
@@ -393,3 +395,43 @@ __all__ = [
     "normalize_usage_tags",
     "normalize_usage_tags_with_unknown",
 ]
+
+
+@lru_cache(maxsize=1)
+def get_usage_tag_detail_map() -> dict[str, dict[str, str]]:
+    """Return mapping of canonical usage tags to descriptive metadata."""
+
+    catalog = get_usage_tag_catalog()
+    details: dict[str, dict[str, str]] = {}
+
+    def _register_entries(entries: object, *, category: str) -> None:
+        if not isinstance(entries, list):
+            return
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            tag = entry.get("tag")
+            if not isinstance(tag, str) or not tag:
+                continue
+            if entry.get("deprecated"):
+                continue
+            details[tag] = {
+                "category": category,
+                "label_jp": str(entry.get("label_jp") or ""),
+                "description": str(entry.get("description") or ""),
+            }
+
+    _register_entries(catalog.get("intent"), category="intent")
+    _register_entries(catalog.get("media"), category="media")
+
+    fallback_entry = catalog.get("fallback")
+    if isinstance(fallback_entry, dict):
+        tag = fallback_entry.get("tag")
+        if isinstance(tag, str) and tag and not fallback_entry.get("deprecated"):
+            details[tag] = {
+                "category": "fallback",
+                "label_jp": str(fallback_entry.get("label_jp") or ""),
+                "description": str(fallback_entry.get("description") or ""),
+            }
+
+    return details

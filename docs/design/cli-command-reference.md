@@ -148,6 +148,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID |  |  | `config/chapter_templates` / 自動推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
+| `--show-usage-tag-catalog` | canonical usage tags の説明を標準出力に表示する |  |  | 無効 |
 | `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
 | `--branding <path>` | ブランド設定ファイルを明示指定する |  |  | `config/branding.json` |
 
@@ -169,6 +170,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--return-reasons-path <path>` | 差戻し理由テンプレート辞書のパス |  |  | `config/return_reasons.json` |
 | `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
+| `--show-usage-tag-catalog` | canonical usage tags の説明を標準出力に表示する |  |  | 無効 |
 | `--prepare-log <path>` | 工程2の `prepare_log.json` |  |  | `.pptx/prepare/prepare_log.json` |
 | `--prepare-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 
