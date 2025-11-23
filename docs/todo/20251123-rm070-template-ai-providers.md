@@ -1,7 +1,7 @@
 ---
 目的: RM-070 Template AI マルチプロバイダ対応 — Stage1 の Template AI で Azure OpenAI / Anthropic / Bedrock 等を利用可能にする
 関連ブランチ: 未作成
-関連Issue: 未作成
+関連Issue: #302
 roadmap_item: RM-070 Template AI マルチプロバイダ対応
 ---
 
@@ -36,7 +36,7 @@ roadmap_item: RM-070 Template AI マルチプロバイダ対応
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成後に番号を反映する。
 - [ ] チェックリスト整合確認
   - メモ: 子タスク完了状況を確認し、必要に応じて `[x]` 化する。
