@@ -31,7 +31,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
 - [x] 実装
   - メモ: `utils/layout_metadata.py` に説明文ヘルパーを追加し、`template_extractor.py`・`layout_validation/suite.py`・`draft_recommender.py`・`draft_structuring.py`・`pipeline/mapping.py` で layout_description を連携。`MappingSlideMeta` / `MappingLogSlide` へ説明文を保持。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/test_layout_validation_suite.py tests/test_layout_recommender.py tests/test_draft_structuring_step.py` を実行し 15 件成功。
+  - メモ: `uv run --extra dev pytest tests/test_template_ai.py tests/test_layout_validation_template_ai.py tests/test_layout_validation_suite.py tests/test_layout_recommender.py tests/test_draft_structuring_step.py` を実行し 17 件成功。
 - [ ] ドキュメント更新
   - メモ: 対象ドキュメントの更新内容を記載。
   - [ ] docs/roadmap 配下
