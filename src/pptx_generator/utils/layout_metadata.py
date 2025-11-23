@@ -8,6 +8,29 @@ from collections import Counter, defaultdict
 
 PositionLabel = tuple[str, str]
 
+CONTENT_LIKE_PLACEHOLDER_TYPES = {
+    "title",
+    "subtitle",
+    "body",
+    "content",
+    "text",
+    "table",
+    "chart",
+    "image",
+    "media",
+    "object",
+}
+
+TEXT_INPUT_PLACEHOLDER_TYPES = {
+    "title",
+    "subtitle",
+    "body",
+    "content",
+    "text",
+    "table",
+    "notes",
+}
+
 
 @dataclass(slots=True)
 class HeuristicUsageTagsResult:
@@ -149,17 +172,29 @@ def _compose_position_label(position: PositionLabel) -> str:
     return f"{vertical}{horizontal}"
 
 
-def _size_label(area_ratio: float | None) -> str | None:
+def _size_label(placeholder: dict[str, Any], area_ratio: float | None) -> str | None:
     if area_ratio is None:
         return None
-    if area_ratio >= 0.25:
-        return "大きめの"
+    placeholder_type = str(placeholder.get("type") or "").casefold()
+    is_content_placeholder = placeholder_type in CONTENT_LIKE_PLACEHOLDER_TYPES
+    if is_content_placeholder:
+        if area_ratio >= 0.25:
+            return "大きめの"
+        if area_ratio >= 0.12:
+            return "中程度の"
+        if area_ratio >= 0.05:
+            return "小さめの"
+        if area_ratio > 0:
+            return "コンパクトな"
+        return None
+
+    # 非コンテンツ要素（ロゴや装飾など）はサイズに応じて装飾用途として明示する
     if area_ratio >= 0.12:
-        return "中程度の"
+        return "大きめの装飾用の"
     if area_ratio >= 0.05:
-        return "小さめの"
+        return "装飾用の"
     if area_ratio > 0:
-        return "コンパクトな"
+        return "小さな装飾用の"
     return None
 
 
@@ -197,6 +232,20 @@ def _placeholder_label(placeholder: dict[str, Any]) -> str:
         return "オブジェクト枠"
 
     return "コンテンツ枠" if placeholder_type else "プレースホルダー"
+
+
+def _expects_text_input(placeholder: dict[str, Any]) -> bool:
+    placeholder_type = str(placeholder.get("type") or "").casefold()
+    if placeholder_type in TEXT_INPUT_PLACEHOLDER_TYPES:
+        return True
+    lowered_name = str(placeholder.get("name") or "").casefold()
+    if placeholder_type == "object":
+        if any(keyword in lowered_name for keyword in ("body", "content", "text")):
+            return True
+    if placeholder_type == "unknown":
+        if any(keyword in lowered_name for keyword in ("title", "subtitle", "body", "content", "text")):
+            return True
+    return False
 
 
 def generate_layout_description(
@@ -248,15 +297,15 @@ def generate_layout_description(
 
     detail_segments: list[str] = []
 
-    for placeholder in sorted(
+    placeholders_sorted = sorted(
         placeholders,
-        key=lambda item: (
-            -(
-                float(item.get("bbox", {}).get("width") or 0.0)
-                * float(item.get("bbox", {}).get("height") or 0.0)
-            )
+        key=lambda item: -(
+            float(item.get("bbox", {}).get("width") or 0.0)
+            * float(item.get("bbox", {}).get("height") or 0.0)
         ),
-    ):
+    )
+
+    for placeholder in placeholders_sorted[:20]:
         bbox = placeholder.get("bbox") or {}
         left = float(bbox.get("x") or 0.0)
         top = float(bbox.get("y") or 0.0)
@@ -276,9 +325,10 @@ def generate_layout_description(
             )
         )
 
-        size_label = _size_label(area_ratio)
+        size_label = _size_label(placeholder, area_ratio)
         label = _placeholder_label(placeholder)
         name = str(placeholder.get("name") or "")
+        expects_text = _expects_text_input(placeholder)
 
         segment = f"{position_label}に"
         if size_label:
@@ -286,6 +336,8 @@ def generate_layout_description(
         segment += label
         if name and name != label:
             segment += f"（{name}）"
+        if not expects_text:
+            segment += "（テキスト入力非想定）"
         detail_segments.append(segment)
 
     if detail_segments:

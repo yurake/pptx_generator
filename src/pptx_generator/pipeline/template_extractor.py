@@ -101,11 +101,22 @@ class TemplateExtractorStep:
             raise RuntimeError(f"テンプレートファイルの読み込みに失敗しました: {exc}") from exc
 
         try:
-            self._slide_width_emu = int(presentation.slide_width)
-            self._slide_height_emu = int(presentation.slide_height)
-        except Exception:  # noqa: BLE001
-            self._slide_width_emu = None
-            self._slide_height_emu = None
+            slide_width = int(presentation.slide_width)
+            slide_height = int(presentation.slide_height)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("スライドサイズの取得に失敗しました: %s", exc)
+            raise RuntimeError("スライドサイズの取得に失敗しました") from exc
+
+        if slide_width <= 0 or slide_height <= 0:
+            logger.error(
+                "スライドサイズが不正です (width=%s, height=%s)", slide_width, slide_height
+            )
+            raise RuntimeError(
+                "スライドサイズが不正です。テンプレートのページ設定を確認してください。"
+            )
+
+        self._slide_width_emu = slide_width
+        self._slide_height_emu = slide_height
 
         layouts = []
         warnings = []
