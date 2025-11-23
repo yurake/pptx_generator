@@ -71,9 +71,9 @@
    - `tests/test_draft_structuring_step.py`：Blueprint slot 連携と `placeholder_summary` フォールバックの挙動を確認。  
    - CLI 統合テスト：`uv run pptx tpl-extract` → `pptx prepare --mode static` の静的フローで新フィールドが利用されることを検証。
 4. **移行方針**
-   - 旧形式（v1.0.x など）の `layouts.jsonl` はサポートせず、テンプレ抽出／検証を再実行して新フォーマットを生成する。  
-   - Stage3 は `SUITE_VERSION` が一致しないレコードをエラー扱いとし、再抽出を促す。  
-   - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントは新フォーマットのみを前提に更新する。
+   - 旧形式（v1.0.x など）の `layouts.jsonl` は破棄し、テンプレ抽出／検証を再実行して新フォーマットを生成する。  
+   - Stage3 は `SUITE_VERSION` が一致しないレコードをエラー扱いとし、再抽出を必須とする。  
+   - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントは新フォーマットのみを前提に更新し、旧成果物は削除する。
 
 ## 7. 実装確認（2025-11-23）
 - `CardLayoutRecommender._build_layout_metadata` で Stage1 由来メタデータ全体（`placeholder_summary` / `blueprint` / `meta`）を保持するよう更新（`src/pptx_generator/draft_recommender.py`）。
