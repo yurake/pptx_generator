@@ -10,7 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pptx import Presentation
 from pptx.shapes.base import BaseShape
@@ -21,6 +21,9 @@ from ..models import (JobSpecScaffold, JobSpecScaffoldBounds,
                       JobSpecScaffoldSlide, LayoutInfo, ShapeInfo,
                       TemplateBlueprint, TemplateBlueprintSlide,
                       TemplateBlueprintSlot, TemplateSpec)
+from ..utils.layout_metadata import (derive_usage_tags,
+                                     normalise_placeholder_type,
+                                     summarize_placeholders)
 from .base import PipelineContext, PipelineStep
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,7 @@ logger = logging.getLogger(__name__)
 SLIDE_BULLET_ANCHORS = {"bullets", "bullet_list", "content", "body"}
 JOBSPEC_SCHEMA_VERSION = "0.1"
 MAX_SAMPLE_TEXT_LENGTH = 200
+EMU_PER_INCH = 914400
 
 # PowerPoint 側で自動描画されるプレースホルダー種別
 AUTO_DRAW_PLACEHOLDER_TYPES = {
@@ -171,7 +175,37 @@ class TemplateExtractorStep:
                 )
                 anchors.append(error_shape)
 
-        return LayoutInfo(name=layout_name, identifier=identifier, anchors=anchors)
+        placeholder_records = [
+            self._build_placeholder_record(shape_info)
+            for shape_info in anchors
+            if self._should_include_for_summary(shape_info)
+        ]
+        placeholder_summary = summarize_placeholders(placeholder_records)
+        heuristic_result = derive_usage_tags(layout_name or "", placeholder_records)
+        heuristic_payload = {
+            "tags": sorted(heuristic_result.tags),
+            "reasons": heuristic_result.reasons,
+            "has_title_placeholder": heuristic_result.has_title_placeholder,
+            "has_body_placeholder": heuristic_result.has_body_placeholder,
+            "title_from_name": heuristic_result.title_from_name,
+        }
+        if (
+            not heuristic_payload["tags"]
+            and not heuristic_payload["reasons"]
+            and not heuristic_payload["has_title_placeholder"]
+            and not heuristic_payload["has_body_placeholder"]
+        ):
+            heuristic_payload = None
+
+        placeholder_summary_payload = placeholder_summary or None
+
+        return LayoutInfo(
+            name=layout_name,
+            identifier=identifier,
+            anchors=anchors,
+            placeholder_summary=placeholder_summary_payload,
+            heuristic=heuristic_payload,
+        )
     
     def _extract_shape_info(self, shape: BaseShape) -> ShapeInfo:
         """単一図形から情報を抽出する。"""
@@ -248,6 +282,49 @@ class TemplateExtractorStep:
             conflict=conflict,
             missing_fields=missing_fields,
         )
+
+    @staticmethod
+    def _should_include_for_summary(shape: ShapeInfo) -> bool:
+        if shape.is_placeholder:
+            return True
+        if shape.placeholder_type:
+            return True
+        if shape.name and shape.name.lower() not in {"rectangle", "textbox"}:
+            return True
+        return False
+
+    @staticmethod
+    def _shape_bbox_emu(shape: ShapeInfo) -> dict[str, int]:
+        return {
+            "x": int(round(shape.left_in * EMU_PER_INCH)),
+            "y": int(round(shape.top_in * EMU_PER_INCH)),
+            "width": int(round(shape.width_in * EMU_PER_INCH)),
+            "height": int(round(shape.height_in * EMU_PER_INCH)),
+        }
+
+    @staticmethod
+    def _build_summary_flags(shape: ShapeInfo, normalised_type: str) -> list[str]:
+        flags: list[str] = []
+        if normalised_type == "unknown":
+            flags.append("unknown_type")
+        if shape.conflict:
+            flags.append("anchor_conflict")
+        if shape.missing_fields:
+            flags.append("missing_fields")
+        return flags
+
+    def _build_placeholder_record(self, shape: ShapeInfo) -> dict[str, Any]:
+        normalised_type = normalise_placeholder_type(shape.placeholder_type, shape.name)
+        record: dict[str, Any] = {
+            "name": shape.name,
+            "type": normalised_type,
+            "bbox": self._shape_bbox_emu(shape),
+            "shape_type": str(shape.shape_type or "").casefold() or None,
+            "flags": self._build_summary_flags(shape, normalised_type),
+        }
+        if record["shape_type"] is None:
+            record.pop("shape_type")
+        return record
 
     @staticmethod
     def _matches_filter(value: str, keyword: str) -> bool:

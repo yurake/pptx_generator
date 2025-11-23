@@ -714,6 +714,12 @@ class LayoutInfo(BaseModel):
     identifier: str | None = Field(None, description="レイアウト固有識別子")
     anchors: list[ShapeInfo] = Field(default_factory=list, description="図形・プレースホルダー一覧")
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
+    placeholder_summary: dict[str, Any] | None = Field(
+        None, description="プレースホルダー統計情報"
+    )
+    heuristic: dict[str, Any] | None = Field(
+        None, description="用途タグ推定のヒューリスティック結果"
+    )
 
 
 class TemplateBlueprintSlot(BaseModel):
