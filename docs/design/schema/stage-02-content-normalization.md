@@ -81,7 +81,7 @@
     "model": "gpt-4o-mini",
     "response_digest": "intro 現状と課題",
     "warnings": ["token_limit"],
-    "tokens": {"prompt": 512, "completion": 128, "total": 640},
+    "tokens": {"prompt": 24000, "completion": 8000, "total": 32000},
     "generated_at": "2025-11-02T15:04:21.326381Z"
   }
 ]
