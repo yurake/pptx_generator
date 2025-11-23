@@ -41,8 +41,8 @@ roadmap_item: RM-070 Template AI マルチプロバイダ対応
   - メモ: Issue #302 を参照する。
 - [x] チェックリスト整合確認
   - メモ: ドキュメント更新チェックなど未チェック箇所が残っていないことを確認。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録し、todo-auto-complete の結果を確認する。
+- [x] PR 作成
+  - メモ: PR #303 https://github.com/yurake/pptx_generator/pull/303（2025-11-23 完了）
 
 ## メモ
 - Plan 承認後に実装へ着手する。
