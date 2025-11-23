@@ -21,14 +21,14 @@
 - `pptx prepare` を「プレペアビルダー」モードへ再定義し、テンプレ非依存の入力（`--prepare-source` など）を受け付ける案。ポリシーは既定値固定で扱う。
 - 新しい `PrepareCard` モデルは `role.story_phase` / `role.intent_tags` と `content.title` / `content.headline` / `content.body[]` / `content.notes[]` を中核に据え、テンプレート依存要素（layout, status, supporting_points 等）を排除して抽象カードとして定義する。
 - HITL ログは `card_id` と `version`（ETag 相当）を持たせ、差戻し・再生成履歴を保持。AI 生成ログもカード単位で参照できるよう `ai_generation_meta.json` を再設計する。
-- 後工程（RM-047）に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。
+- 後工程に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。既存のドラフト構成処理は PrepareCard を受け取る前提に更新済みのため、RM-046 では Stage3 出力の体裁を整えることに集中できる。
 - スキーマ更新時は `docs/design/schema/stage-03-content-normalization.md` と `docs/requirements/stages/stage-03-content-normalization.md` を同時更新し、`samples/` 配下に PrepareCard 前提のサンプル（例: `samples/prepare/prepare_card.sample.jsonc`）を追加する。
 
 ## CLI インターフェース検討
 - 要望: `uv run pptx prepare <prepare file>` でプレペア入力を直接指定し、従来必須だった `spec.json` 引数を不要化する。
 - 影響:
   - `src/pptx_generator/cli.py` の `content` コマンド定義（~1040-1260 行）でポジショナル引数 `spec_path` を廃止し、新たに `prepare_path`（必須）を受け取る設計へ変更。
-  - Spec 情報が必要な処理（例: `ContentApprovalStep` で既存 spec を適用する分岐）は RM-047 以降に委譲する前提で整理。従来の `--content-approved` / `--content-review-log` は Prepare モードでは使用不可と明記する。
+  - Spec 情報が必要な処理（例: `ContentApprovalStep` で既存 spec を適用する分岐）は既存実装側に委譲する前提で整理。従来の `--content-approved` / `--content-review-log` は Prepare モードでは使用不可と明記する。
   - `ContentImportService` を経由した複数ソース取り込みは `prepare_path` の拡張（JSON で複数参照を列挙する等）として別途検討する。
 - TODO: コマンドリファレンス（README, docs/runbooks/, docs/requirements/stages/stage-03-content-normalization.md）で新シグネチャを反映し、サンプルコマンドを更新する。
 
@@ -40,8 +40,8 @@
   - API: `fastapi` 実装、スキーマ、ストレージが `ContentSlide` を保存単位として採用。
 - 判断:
   - RM-046 以降はテンプレ独立のプレペアカードを唯一の成果物とし、`ContentSlide` は廃止する前提で計画を進める。
-  - 工程4/5 や API で利用している `ContentSlide` についても、RM-047 で刷新する `PrepareCard` ベースの構造へ置き換える。
-  - 段階的移行は行わず、`ContentSlide` 依存コードを一括でリプレースするため、RM-046/047 の Plan で合わせて改修範囲を定義する。
+  - 工程4/5 や API では PrepareCard を受け取る構造が既に導入されているため、RM-046 の成果物をその仕様に合わせる。
+  - 段階的移行は行わず、`ContentSlide` 依存コードを一括でリプレースするため、RM-046 の Plan で改修範囲を定義する。
 - 対応:
   - 新モデル `PrepareCard`（仮称）を Stage3 で定義し、CLI・API・パイプラインの型定義を統一する。
   - `ContentSlide` 関連モジュール（モデル、検証、ストレージ、API スキーマ、パイプラインステップ）を廃止し、必要な場合は互換層を設けずに削除する。
@@ -59,10 +59,9 @@
 1. **Stage3 基盤更新**
    - `PrepareCard` モデルと関連スキーマを実装し、CLI `pptx prepare` / API / パイプライン（`ContentAIOrchestrator`, `ContentImportService`, `ContentApprovalStep`）を全て新モデルへ置換。
    - `uv run pptx prepare <prepare file>` をエントリに据え、旧 `spec_path` 引数と `ContentSlide` 依存コードを削除。
-   - 新サンプル／テストデータを追加し、既存テストを `PrepareCard` 前提に改修。
-2. **Stage4/5・API 同期（RM-047 連携）**
-   - Draft/Mapping パイプラインを `PrepareCard` ベースで再設計し、`layout_hint` 算出やセクション構造を章メタ情報から導出。
-  - `PrepareStore` を中心とした FastAPI スキーマを整備し、旧 Content API を廃止する。
+   - 既存テストの失敗箇所を洗い出し、後続ステップでの改修範囲を明確にする。
+2. **ドキュメントとサンプルの整備**
+   - 新サンプル／テストデータを追加し、既存ドキュメントを `PrepareCard` ベースへ更新。
 3. **テストと移行**
    - CLI 統合テスト／API テストを新モデルで再構築し、旧成果物に依存するテストを廃止。
    - ドキュメント更新とサンプル差し替えを完了させた後、`ContentSlide` 系ファイルを削除。
@@ -71,7 +70,7 @@
 - 単体: `PrepareCard` バリデーション、AI プロンプト生成、インポートサービス変換を pytest で網羅。
 - CLI 統合: `uv run pptx prepare samples/contents/sample_import_content_summary.txt` を基準に生成物（`prepare_card.json`, `ai_generation_meta.json`, `prepare_log.json` など）を検証。
 - API: FastAPI エンドポイントのスキーマ検証と ETag 制御を `httpx` ベースで確認。
-- パイプライン: Stage4/5 連携テストを後続タスク（RM-047）で再構成し、`layout_hint` 一貫性をチェックする。
+- パイプライン: Stage3 内での PrepareCard 生成から承認ログ出力までを通しで確認し、既存 Stage4/5 入力との互換を検証する。
 
 ## 未決事項（次ステップで詰める）
 - Prepare 入力フォーマット（JSON スキーマ vs. Markdown パーサ）の優先度。

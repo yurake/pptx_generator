@@ -564,7 +564,7 @@ flowchart TB
 ### RM-046 生成AIプレペア構成自動化
 - 対象工程: 3（コンテンツ準備）
 - ゴール: 案件側の生情報から生成AIがプレペア（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
-- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md), [docs/notes/20251102-rm046-prepare-analysis.md](../notes/20251102-rm046-prepare-analysis.md)
 - 参照 ToDo: 作成予定
 - 状況: 完了（2025-11-03 更新）
 - 期待成果: 生成AIモードの `pptx prepare` 仕様、プレペア入力サンプル、HITL 承認ログ維持方針。
