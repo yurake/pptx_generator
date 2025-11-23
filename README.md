@@ -126,7 +126,7 @@ flowchart TD
 
 | 工程 | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
-| 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。usage_tags は Template AI が既定で推定し、`PPTX_TEMPLATE_LLM_PROVIDER`（未指定時は `PPTX_LLM_PROVIDER`）でプロバイダを切り替える。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
+| 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。usage_tags は Template AI が既定で推定し、`PPTX_TEMPLATE_LLM_PROVIDER`（未指定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などのプロバイダを切り替える。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
 | 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json` | `.pptx/compose/generate_ready.json` | `.pptx/prepare/` 配下の既定成果物を参照し、jobspec の `meta.template_path` / `meta.layouts_path` からテンプレートとレイアウトを自動解決 |
 | 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json` | `.pptx/gen/proposal.pptx` | `generate_ready.json` に埋め込まれたテンプレ／ブランド設定を利用して最終成果物を生成（PDF も出力したい場合は `--export-pdf` を追加）。 |
