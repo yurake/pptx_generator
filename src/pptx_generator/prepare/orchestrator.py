@@ -315,17 +315,29 @@ class PrepareAIOrchestrator:
                     description = item.get("description")
                     data = item.get("data")
                     items = item.get("items")
-                    bullet_lines: list[str] = []
-                    if isinstance(items, list):
-                        for value in items:
-                            if isinstance(value, str) and value.strip():
-                                bullet_lines.append(value.strip())
-                            elif isinstance(value, dict):
-                                line = str(value.get("text") or "").strip()
-                                if line:
-                                    bullet_lines.append(line)
-                    if block_type == "bullets" and bullet_lines and not text:
-                        text = "\n".join(f"- {line}" for line in bullet_lines)
+                    normalized_items: list[str] = []
+                    if block_type == "bullets":
+                        if isinstance(items, list):
+                            for entry in items:
+                                if isinstance(entry, str):
+                                    line = entry.strip()
+                                    if line:
+                                        normalized_items.append(line)
+                                elif isinstance(entry, dict):
+                                    line = str(entry.get("text") or "").strip()
+                                    if not line:
+                                        continue
+                                    normalized_items.append(line)
+                        if not normalized_items and isinstance(text, str):
+                            for line in text.splitlines():
+                                stripped = line.strip()
+                                if stripped.startswith("-"):
+                                    stripped = stripped.lstrip("-").strip()
+                                if stripped:
+                                    normalized_items.append(stripped)
+                    if block_type == "bullets":
+                        if normalized_items:
+                            text = None
 
                     has_content = any(
                         [
@@ -334,10 +346,16 @@ class PrepareAIOrchestrator:
                             isinstance(rows, list) and any(row for row in rows),
                             isinstance(description, str) and description.strip(),
                             isinstance(data, dict) and data,
+                            bool(normalized_items),
                         ]
                     )
                     if not has_content:
                         continue
+                    data_dict: dict[str, Any] | None = data if isinstance(data, dict) else None
+                    if normalized_items:
+                        if data_dict is None:
+                            data_dict = {}
+                        data_dict["items"] = normalized_items
                     block = PrepareBodyBlock(
                         type=block_type,
                         text=text,
@@ -345,7 +363,7 @@ class PrepareAIOrchestrator:
                         rows=rows,
                         ref=ref,
                         description=description,
-                        data=data,
+                        data=data_dict,
                     )
                     blocks.append(block)
                 elif isinstance(item, str) and item.strip():
@@ -358,6 +376,30 @@ class PrepareAIOrchestrator:
             ref = payload.get("ref")
             description = payload.get("description")
             data = payload.get("data")
+            items = payload.get("items")
+            normalized_items: list[str] = []
+            if block_type == "bullets":
+                if isinstance(items, list):
+                    for entry in items:
+                        if isinstance(entry, str):
+                            line = entry.strip()
+                            if line:
+                                normalized_items.append(line)
+                        elif isinstance(entry, dict):
+                            line = str(entry.get("text") or "").strip()
+                            if not line:
+                                continue
+                            normalized_items.append(line)
+                if not normalized_items and isinstance(text, str):
+                    for line in text.splitlines():
+                        stripped = line.strip()
+                        if stripped.startswith("-"):
+                            stripped = stripped.lstrip("-").strip()
+                        if stripped:
+                            normalized_items.append(stripped)
+            if block_type == "bullets":
+                if normalized_items:
+                    text = None
             has_content = any(
                 [
                     isinstance(text, str) and text.strip(),
@@ -365,9 +407,15 @@ class PrepareAIOrchestrator:
                     isinstance(rows, list) and any(row for row in rows),
                     isinstance(description, str) and description.strip(),
                     isinstance(data, dict) and data,
+                    bool(normalized_items),
                 ]
             )
             if has_content:
+                data_dict: dict[str, Any] | None = data if isinstance(data, dict) else None
+                if normalized_items:
+                    if data_dict is None:
+                        data_dict = {}
+                    data_dict["items"] = normalized_items
                 blocks.append(
                     PrepareBodyBlock(
                         type=block_type,
@@ -376,7 +424,7 @@ class PrepareAIOrchestrator:
                         rows=rows,
                         ref=ref,
                         description=description,
-                        data=data,
+                        data=data_dict,
                     )
                 )
         elif isinstance(payload, str) and payload.strip():

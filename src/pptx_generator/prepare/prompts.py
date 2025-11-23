@@ -18,7 +18,7 @@ JSON オブジェクトで返してください。トップレベルキーは ch
   - intent_tags: 章の意図を表す配列。空の場合は story_phase を含めてください。
   - body: 本文ブロックの配列。各ブロックはスライド要素に合わせて `type` を指定し、以下のフォーマットに従って構造化してください。
     - paragraph: `{"type": "paragraph", "text": "..."}` を出力し、text は 1 行 80 文字以内の要約にする。
-    - bullets: `{"type": "bullets", "items": [...], "text": "...(任意)"}` を用い、`items` は `["箇条書き", ...]` もしくは `{"text": "...", "level": 0}` の配列でネストを表す。互換のために `text` に `- 箇条書き` を併記するのは任意。
+    - bullets: `{"type": "bullets", "items": [...]}` を用い、`items` には各行のテキストを文字列配列で並べる（例: `["要点A", "要点B"]`）。ネストが必要な場合は `"  "` などのプレフィックスで表現してよい。互換用に `text` を添える場合でも `items` を必ず埋め、`text` は省略または空文字にする。
     - table: `{"type": "table", "headers": [...], "rows": [[...]]}` とし、Markdown ではなく配列で表データを返す。
     - その他の type: `{"type": "<custom>", "text": "...", "description": "...(任意)", "data": {...}}` のように必要なフィールドのみ埋め、アンカー指定が必要な場合は `ref` を設定する。
   - notes: ノート欄向けの補足配列。各要素は {"type": "note"|"rationale"|"risk"|..., "text": "..."} 形式で、本文の意図・根拠・追加説明を記述してください。空配列でも構いません。
@@ -48,7 +48,7 @@ JSON オブジェクトで返してください。トップレベルキーは `s
   - subtitle: 任意。補助的な短いテキスト。
   - body: 本文ブロックの配列。各ブロックは slot の `content_type` に合わせて `type` を指定し、以下のフォーマットに従って構造化する。
     - paragraph: `{"type": "paragraph", "text": "..."}`。text は 1 行 80 文字以内の要約にまとめる。
-    - bullets: `{"type": "bullets", "items": [...], "text": "...(任意)"}`。`items` は `["箇条書き", ...]` もしくは `{"text": "...", "level": 0}` の配列で作成し、必要なら `data.items` に同じ配列を複製しても良い。
+    - bullets: `{"type": "bullets", "items": [...]}`。`items` には各行のテキストを文字列配列で並べる（例: `["要点A", "要点B"]`）。ネストが必要な場合は `"  "` などのプレフィックスで表現してよい。互換用に `text` を添える場合でも `items` を必ず埋め、`text` は省略または空文字にする。
     - table: `{"type": "table", "headers": [...], "rows": [[...]]}`。Markdown ではなく配列で表データを返す。
     - その他の type: `{"type": "<custom>", "text": "...", "description": "...(任意)", "data": {...}}` のように、slot の属性や anchor に合わせて必要なフィールドのみ設定する。アンカー指定が必要な場合は `ref` を設定する。
   - notes: ノート欄向けの補足配列。各要素は {"type": "note"|"rationale"|"risk"|..., "text": "..."} 形式。空配列でも可。

@@ -1455,7 +1455,15 @@ class DraftStructuringStep:
             return
         content_type = (slot.content_type or "text").lower()
         if content_type == "table":
-            if lines:
+            table_block = next(
+                (block for block in card.content.body if block.type == "table"), None
+            )
+            if table_block and table_block.rows:
+                elements[anchor] = {
+                    "headers": list(table_block.headers or []),
+                    "rows": [list(row) for row in table_block.rows],
+                }
+            elif lines:
                 elements[anchor] = {
                     "headers": ["項目"],
                     "rows": [[line] for line in lines],

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import textwrap
 from datetime import datetime, timezone
 from typing import Any, Iterable, Literal
 
@@ -125,30 +126,54 @@ class PrepareCard(BaseModel):
         return None
 
     def iter_body_text(self) -> Iterable[str]:
+        def _yield_segments(value: str) -> Iterable[str]:
+            if "\n" in value:
+                lines = value.splitlines()
+            else:
+                lines = [value]
+            for line in lines:
+                chunk = line.strip()
+                if not chunk:
+                    continue
+                if len(chunk) <= 200:
+                    yield chunk
+                    continue
+                for segment in textwrap.wrap(
+                    chunk, width=200, drop_whitespace=True, break_long_words=True
+                ):
+                    segment_stripped = segment.strip()
+                    if segment_stripped:
+                        yield segment_stripped
+
         for block in self.content.body:
             if block.text:
                 text = block.text.strip()
                 if text:
-                    yield text
+                    for segment in _yield_segments(text):
+                        yield segment
             if block.data:
                 items = block.data.get("items")
                 if isinstance(items, list):
                     for item in items:
                         if isinstance(item, str) and item.strip():
-                            yield item.strip()
+                            for segment in _yield_segments(item):
+                                yield segment
                         elif isinstance(item, dict):
                             line = str(item.get("text") or "").strip()
                             if line:
-                                yield line
+                                for segment in _yield_segments(line):
+                                    yield segment
             if block.rows:
                 for row in block.rows:
                     row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
                     if row_text:
-                        yield row_text
+                        for segment in _yield_segments(row_text):
+                            yield segment
             if block.description:
                 desc = block.description.strip()
                 if desc:
-                    yield desc
+                    for segment in _yield_segments(desc):
+                        yield segment
 
     def notes_text(self) -> list[str]:
         return [note.text.strip() for note in self.content.notes if note.text.strip()]
