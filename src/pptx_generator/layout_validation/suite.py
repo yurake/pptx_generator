@@ -140,6 +140,17 @@ class LayoutValidationSuite:
                 blueprint=blueprint,
                 meta=meta,
             )
+        except TypeError:
+            # 古い実装との互換性のため、追加メタデータをサポートしないクライアントには従来の引数のみで再呼び出しする。
+            result = service.classify_layout(
+                template_id=template_id,
+                layout_id=layout_id,
+                layout_name=layout_name,
+                placeholders=placeholders,
+                text_hint=text_hint,
+                media_hint=media_hint,
+                heuristic_usage_tags=heuristic_usage_tags,
+            )
         except TemplateAIClientConfigurationError as exc:
             logger.warning("template AI classify failed: %s", exc)
             self._template_ai_stats["failed"] += 1
@@ -509,19 +520,6 @@ class LayoutValidationSuite:
                         "layout_id": layout_id,
                         "name": layout.name,
                         "detail": ", ".join(sorted(unknown_tags)),
-                    }
-                )
-
-            if title_conflict_removed:
-                detail = "タイトルタグが本文プレースホルダーの存在により除外されました"
-                if not title_from_name:
-                    detail += "（名前ベースの判定外）"
-                warnings.append(
-                    {
-                        "code": "usage_tag_title_suppressed",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": detail,
                     }
                 )
 
