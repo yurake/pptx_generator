@@ -2,6 +2,17 @@
 
 工程3（マッピング）で利用する JSON 仕様を定義する。
 
+## ID の扱いについて
+
+- `slide_id`（JobSpec / prepare / content ドキュメント）  
+  - 生成したいスライドの論理 ID。Prepare カードと JobSpec を突き合わせる際に利用する。  
+  - Content AI（`SlideIdAligner`）は、カードの内容に最も合致する `slide_id` を選定するだけで、レイアウト構造そのものは決めない。
+- `layout_id`（layouts.jsonl）  
+  - テンプレート PPTX から抽出したレイアウト定義の ID。プレースホルダー構成や用途タグを持つ。  
+  - Layout AI（`CardLayoutRecommender`）が候補を評価し、最終的にどのレイアウトを適用するかを決める。
+
+> **補足**: 同じ `layout_id` が複数の `slide_id` で再利用されたり、1 つの `slide_id` に複数レイアウト候補を比較して最終決定する場合があるため、多対多の関係になっている。`slide_id` は「どのスライドにコンテンツを入れるか」、`layout_id` は「そのスライドにどのレイアウト構造を当てるか」という役割が明確に分かれている点に注意。
+
 ## ファイル
 - `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
 - `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
