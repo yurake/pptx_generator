@@ -21,7 +21,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: Stage1 で説明文を生成 → Stage2 で `layouts.jsonl.meta.layout_description` と Template AI ペイロードへ連携 → Stage3 の推薦・マッピングログで参照する三段構成で確定。
 - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: 本 ToDo に方針と対象ファイルを記録済み。追加ノート不要と判断。
-- [ ] ドキュメント更新（要件・設計）
+- [x] ドキュメント更新（要件・設計）
   - メモ: `layout_description` を要件・設計ドキュメントに追記する。
   - メモ: Stage1 Template の LLM 出力要件として layout_description を位置づけ、設計/要件ドキュメントへ明記する。
   - [x] docs/requirements 配下
@@ -32,18 +32,23 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `utils/layout_metadata.py` に説明文ヘルパーを追加し、`template_extractor.py`・`layout_validation/suite.py`・`draft_recommender.py`・`draft_structuring.py`・`pipeline/mapping.py` で layout_description を連携。`MappingSlideMeta` / `MappingLogSlide` へ説明文を保持。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_template_ai.py tests/test_layout_validation_template_ai.py tests/test_layout_validation_suite.py tests/test_layout_recommender.py tests/test_draft_structuring_step.py` を実行し 17 件成功。
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
   - メモ: 対象ドキュメントの更新内容を記載。
   - メモ: 2025-11-24 Layout AI の card_context / card_context_prompt / layout_metadata_prompt を無効化し、docs/notes/20251122-layout-ai-policy-review.md に追記済み。content_ai ログはファイル出力＋標準出力に統一フォーマットで出力し、LLM 応答のみフィルタリングするよう変更。Static prepare プロンプトも table slot では `headers` / `rows` を含む構造化データを求めるよう更新。
   - メモ: Static モード `pptx gen` での `SlideBullet` 文字数超過を受け、本文・箇条書きの制約見直しは RM-067（ContentElements 制約見直し）に統合して対応する方針。必要な調査項目をそちらへ連携済み。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+    - メモ: `docs/roadmap/roadmap.md` の RM-067 項で段落・箇条書き制約見直しとレンダリング工程での最終トリミング方針を追記済み。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: 2025-11-24 時点の要件更新で構造化 bullets に関する追加変更は不要と判断し、「構造化差し込み要件は準拠済み」とメモに追記。
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: 設計ドキュメントへ bullets 構造化要件を反映済み。追加変更不要である旨を確認。
+  - [x] docs/runbook 配下
+    - メモ: ランブック影響なし（CLI オペレーションは変わらない）ため変更不要と記録。
+  - [x] README.md / AGENTS.md
+    - メモ: 仕様差分が無く既存ガイドの範囲内であるため更新不要とした。
 - [x] 関連Issue 行の更新
   - メモ: 必要に応じて Issue #281 の最新状況を反映する。
-- [ ] チェックリスト整合確認
+- [x] チェックリスト整合確認
   - メモ: 子タスク完了状況を確認し、親タスクのチェック漏れがないようにする。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。
