@@ -418,6 +418,7 @@ class CardLayoutRecommender:
                 "media_hint": profile.media_hint,
             }
             if profile.placeholder_summary:
+                entry["placeholder_summary"] = profile.placeholder_summary
                 summary = profile.placeholder_summary
                 counts = summary.get("counts")
                 if counts:

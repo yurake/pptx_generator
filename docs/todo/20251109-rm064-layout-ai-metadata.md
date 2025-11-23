@@ -55,10 +55,18 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] 対象整理: `src/pptx_generator/utils/usage_tags.py`, `template_ai`, `layout_ai`, `draft_recommender`, `pipeline/mapping.py`, `config/template_ai_policies.json`。
   - [x] 設計方針: シノニム拡張とタグ説明の更新、AI プロンプト差し替え、診断ログの出力調整を含む整合計画を策定する。
   - [x] テスト戦略: 正規化ユニットテスト、テンプレ抽出と compose の統合テスト、Stage3 推薦スコアへの影響確認を計画する。
-- [ ] Stage1 メタデータ抽出強化の検討
+- [x] Stage1 メタデータ抽出強化の検討
   - メモ: `pptx template` でのプレースホルダー要約や AI 連携可否を洗い出し、Stage3 と連携するための差分をまとめる。
   - メモ: `docs/notes/20251122-stage1-metadata-plan.md` に現状・課題・拡張候補を整理済み。
   - メモ: 2025-11-23 TemplateExtractor 拡張計画策定（placeholder summary/heuristic 共通化、models 更新、サンプル整備）Plan 承認済み。
+  - メモ: 2025-11-23 Stage1 メタデータ抽出強化 実装計画（本チャット承認）。
+    - Scope: Stage1 layouts.jsonl 拡張、Template AI/Layout AI ペイロード更新、Stage3 側メタ活用、関連ドキュメント＆サンプル更新。
+    - 手順: スキーマ確定→TemplateExtractor 拡張→AI ペイロード調整→Stage3 互換対応→ドキュメント整備→テスト強化。
+    - テスト: `pytest tests/test_layout_validation_suite.py tests/test_template_ai.py tests/test_draft_structuring_step.py` ほか必要に応じた CLI 統合実行。
+    - リスクとフォールバック: 旧フォーマット互換性喪失を防ぐガード追加、レスポンス肥大化監視、異常時は feat/rm064-layout-ai-metadata の差分を revert。
+  - メモ: 2025-11-23 Stage1 メタデータの保持動作を確認し、Layout AI へそのまま渡るよう `_build_layout_metadata` を更新（`src/pptx_generator/draft_recommender.py`）。
+  - メモ: `tests/test_layout_recommender.py::test_build_layout_metadata_retains_stage1_payload` で placeholder_summary / blueprint / meta の引き渡しを検証。
+  - メモ: `docs/notes/20251122-stage1-metadata-plan.md` に実装確認セクションを追記し、Stage1→Stage3 連携の完了状況を整理。
   - [x] Stage1 で付与する usage_tags とメタデータを Stage3 に引き渡すインターフェース案を作成する。
     - メモ: 2025-11-23 `docs/design/stages/stage1-stage3-metadata-interface.md` にドラフト案を追加し、レビュー用ベースラインとした。
     - メモ: 2025-11-23 LayoutValidationSuite / DraftStructuringStep / CardLayoutRecommender を更新し、`placeholder_summary`・Blueprint・`meta.heuristic_reason` を流通させる実装と pytest 188 件を完了。

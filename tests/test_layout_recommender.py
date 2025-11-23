@@ -230,3 +230,54 @@ def test_extract_slide_tags_includes_source_metadata() -> None:
 
     assert "overview" in tags
     assert "call_to_action" in tags
+
+
+def test_build_layout_metadata_retains_stage1_payload() -> None:
+    placeholder_summary = {
+        "counts": {"title": 1, "body": 1},
+        "area_ratio": {"title": 0.4, "body": 0.6},
+        "details": [
+            {"name": "Title", "type": "title", "area_ratio": 0.4},
+            {"name": "Body", "type": "body", "area_ratio": 0.6},
+        ],
+        "attributes": {
+            "total": 2,
+            "has_title": True,
+            "has_body": True,
+            "has_table": False,
+            "has_chart": False,
+            "has_visual": False,
+        },
+    }
+    blueprint = {
+        "layout": "Sample",
+        "slots": [
+            {
+                "slot_id": "sample.slot01",
+                "anchor": "Title",
+                "required": True,
+                "content_type": "text",
+                "intent_tags": ["overview"],
+            }
+        ],
+    }
+    meta = {"heuristic_reason": "placeholder:type=body"}
+
+    profile = LayoutProfile(
+        layout_id="sample-layout",
+        layout_name="Sample Layout",
+        usage_tags=("content",),
+        text_hint={"max_lines": 4},
+        media_hint={"allow_table": False},
+        placeholder_summary=placeholder_summary,
+        heuristic={"tags": ["content"], "reasons": ["placeholder:type=body"]},
+        blueprint=blueprint,
+        meta=meta,
+    )
+
+    metadata = CardLayoutRecommender._build_layout_metadata([profile])
+
+    assert metadata["sample-layout"]["placeholder_summary"] == placeholder_summary
+    assert metadata["sample-layout"]["blueprint"] == blueprint
+    assert metadata["sample-layout"]["meta"] == meta
+    assert metadata["sample-layout"]["heuristic"] == profile.heuristic

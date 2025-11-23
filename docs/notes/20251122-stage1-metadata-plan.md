@@ -74,3 +74,8 @@
    - 既存 `layouts.jsonl` を読み込む場合は新フィールド欠損を許容するガードを Stage3 に追加。  
    - Schema バージョンを比較し、旧版（1.0.x）の場合は警告ログのみ出力。  
    - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントを段階的に更新。
+
+## 7. 実装確認（2025-11-23）
+- `CardLayoutRecommender._build_layout_metadata` で Stage1 由来メタデータ全体（`placeholder_summary` / `blueprint` / `meta`）を保持するよう更新（`src/pptx_generator/draft_recommender.py`）。
+- メタ保持を検証するユニットテストを追加（`tests/test_layout_recommender.py::test_build_layout_metadata_retains_stage1_payload`）。
+- Layout AI リクエストに Stage1 メタが渡ることを確認済み（`CardLayoutRecommender._apply_layout_ai` で `_build_layout_metadata` の結果を利用）。
