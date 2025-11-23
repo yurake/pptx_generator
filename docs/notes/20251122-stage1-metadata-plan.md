@@ -70,10 +70,10 @@
    - `tests/test_layout_validation_suite.py`：新フィールド出力と schema 検証のケースを追加。  
    - `tests/test_draft_structuring_step.py`：Blueprint slot 連携と `placeholder_summary` フォールバックの挙動を確認。  
    - CLI 統合テスト：`uv run pptx tpl-extract` → `pptx prepare --mode static` の静的フローで新フィールドが利用されることを検証。
-4. **移行と互換性**
-   - 既存 `layouts.jsonl` を読み込む場合は新フィールド欠損を許容するガードを Stage3 に追加。  
-   - Schema バージョンを比較し、旧版（1.0.x）の場合は警告ログのみ出力。  
-   - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントを段階的に更新。
+4. **移行方針**
+   - 旧形式（v1.0.x など）の `layouts.jsonl` はサポートせず、テンプレ抽出／検証を再実行して新フォーマットを生成する。  
+   - Stage3 は `SUITE_VERSION` が一致しないレコードをエラー扱いとし、再抽出を促す。  
+   - サンプルデータ（`samples/json/sample_template_layouts.jsonl`）とドキュメントは新フォーマットのみを前提に更新する。
 
 ## 7. 実装確認（2025-11-23）
 - `CardLayoutRecommender._build_layout_metadata` で Stage1 由来メタデータ全体（`placeholder_summary` / `blueprint` / `meta`）を保持するよう更新（`src/pptx_generator/draft_recommender.py`）。

@@ -33,7 +33,7 @@
 | `blueprint.slots[*].intent_tags` | Stage1: Blueprint | `string[]` | Stage3 ログにレイアウト候補の意図タグを提示。 |
 | `meta.heuristic_reason`（新設案） | Stage2（テンプレ検証） | `string` | ヒューリスティック結果の説明をステップログへ表示。 |
 
-> **注記**: `meta` オブジェクトは `layouts.jsonl` のルート直下に追加する想定（例: `{"meta": {"heuristic_reason": "..."}}`）。既存レコードとの互換性を保つため optional フィールドとして設計する。
+> **注記**: 旧 `layouts.jsonl`（v1.0 系）では `meta` や `placeholder_summary.area_ratio` などの追加フィールドが存在しないため、Stage3 ではサポートしない。必ずテンプレ抽出／検証を再実行して新フォーマットを生成する。
 
 ### 追加フィールド導入ステータス
 | フィールド | 現状 | 対応方針 |
@@ -102,13 +102,13 @@
 ## 合意事項とレビュー観点
 - **タグ整合性**: `usage_tags` は `normalize_usage_tags_with_unknown` 済みの canonical 値のみを許可し、AI／ヒューリスティックいずれの経路でも同一タグ集合が返ること。
 - **Blueprint 整合性**: `blueprint.slots[*].slot_id` は `TemplateBlueprintSlot.slot_id` と一致させ、欠損時は Stage3 で警告を出力する。
-- **欠損許容**: `placeholder_summary` や `meta.heuristic_reason` は optional とし、欠損時は Stage3 で従来ロジックへフォールバックする。
-- **互換性**: 既存 `layouts.jsonl` を読み込む際にエラーが発生しないよう、Schema バージョンを `SUITE_VERSION` と連動させ、`version` フィールドで互換性を宣言する。
+- **欠損許容**: `placeholder_summary` や `meta.heuristic_reason` は新フォーマットの必須情報として扱う。旧フォーマット（欠損があるレコード）は Stage3 でエラー扱いとし、再抽出を求める。
+- **互換性**: Schema バージョンを `SUITE_VERSION` と連動させ、旧バージョンはサポート対象外とする。必ず `SUITE_VERSION` に一致するレイアウトデータを用意する。
 - **観測可能性**: Stage3 ログ（`draft_mapping_log.json` など）から AI/ヒューリスティックの採用経緯、Blueprint-slot 充足状況を追跡できることをレビューで確認する。
 
 ## 実装フェーズ案
 1. **Schema 拡張**: `layouts.jsonl` の JSON Schema と `LayoutProfile` モデルを新フィールドに対応させる。
-2. **データ算出**: Stage1/Stage2 で `placeholder_summary`・Blueprint 情報・`heuristic_reason` を生成し、欠損時のフォールバックを整備する。
+2. **データ算出**: Stage1/Stage2 で `placeholder_summary`・Blueprint 情報・`heuristic_reason` を生成し、欠損が発生しないようにする（旧フォーマットは再抽出）。
 3. **Stage3 利用**: `DraftStructuringStep`・`CardLayoutRecommender` を更新し、新フィールドをログやスコアリングに組み込む。
 4. **監査・テスト**: CLI 統合テストとドキュメントを更新し、静的モード／動的モード双方で差分が無いことを検証する。
 
