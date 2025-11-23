@@ -72,6 +72,11 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: 2025-11-23 CLI 変更とドキュメント更新を反映済みで未完タスクが残っていないこと、Plan 承認事項との乖離がないことを確認。
+- [x] Template AI プロバイダ整合性の確認
+  - メモ: Template AI が `mock` / `openai` のみに対応しているため、Stage3 と同じ `Azure OpenAI` / `Anthropic` / `Bedrock` を含むプロバイダ構成へ拡張する方針を調査する。
+  - [x] 対応状況調査: 現状の Template AI クライアント構成と設定値（`PPTX_TEMPLATE_LLM_PROVIDER`）を整理し、Stage3 で利用しているプロバイダ一覧との差分をまとめる。→ `docs/notes/20251123-template-ai-provider-expansion.md` を作成。
+  - [x] 実装方針検討: Template AI に OpenAI 以外のクライアントを追加する設計案を作成し、必要な認証環境変数・ policy 拡張内容を定義する。→ 同上ノートに記録。
+  - [x] タスク割り当て: 上記方針を別 RM として登録するか検討し、ロードマップ／ToDo にタスクを分割して記録する。→ RM-070 をロードマップへ追加し、`docs/todo/20251123-rm070-template-ai-providers.md` を作成。
 - [ ] PR 作成
   - メモ: 
 
