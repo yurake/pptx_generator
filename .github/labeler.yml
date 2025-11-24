@@ -1,0 +1,50 @@
+area:docs:
+  - changed-files:
+      any-glob-to-any-file:
+        - 'docs/**'
+        - 'README.md'
+        - 'README.*.md'
+type:docs:
+  - all:
+      - changed-files:
+          any-glob-to-any-file:
+            - 'docs/**'
+            - 'README.md'
+            - 'README.*.md'
+      - changed-files:
+          all-globs-to-all-files:
+            - '!src/**'
+            - '!templates/**'
+            - '!samples/**'
+            - '!config/**'
+            - '!dotnet/**'
+            - '!scripts/**'
+            - '!tests/**'
+            - '!.github/**'
+            - '!pyproject.toml'
+            - '!uv.lock'
+            - '!pptx_generator_sub2.sln'
+            - '!sonar-project.properties'
+area:automation:
+  - changed-files:
+      any-glob-to-any-file:
+        - '.github/**'
+        - 'scripts/**'
+area:templates:
+  - changed-files:
+      any-glob-to-any-file:
+        - 'templates/**'
+        - 'samples/**'
+        - 'config/**'
+area:cli:
+  - changed-files:
+      any-glob-to-any-file:
+        - 'src/**'
+        - 'pyproject.toml'
+        - 'uv.lock'
+        - 'tests/**'
+        - 'sonar-project.properties'
+area:dotnet:
+  - changed-files:
+      any-glob-to-any-file:
+        - 'dotnet/**'
