@@ -43,7 +43,7 @@ roadmap_item: RM-075 GitHub ラベル運用整備
   - メモ: 対応する Issue 未作成。必要になれば # 番号を更新する。
 - [x] チェックリスト整合確認
   - メモ: 未着手項目は `関連Issue` と `PR 作成` のみであり、今後のフローに合わせて残置。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #312 https://github.com/yurake/pptx_generator/pull/312（2025-11-24 完了）
 
 ## メモ

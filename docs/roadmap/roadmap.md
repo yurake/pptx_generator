@@ -32,7 +32,6 @@ flowchart TB
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
         RM069["RM-069<br/>コンテキスト設計ガイド整備<br/>(未着手)"]
         RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
-        RM075["RM-075<br/>GitHub ラベル運用整備<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -953,8 +952,8 @@ flowchart TB
 - 対象領域: リポジトリの Issue / PR 運用、ラベルポリシー、CI（GitHub Actions）
 - ゴール: GitHub Actions を用いた自動ラベリングと既存ラベルの整理により、課題・レビューのトリアージを効率化する。
 - 参照ドキュメント: （着手後に `docs/policies/` や `docs/runbooks/` を整備予定）
-- 参照 ToDo: [docs/todo/20251124-github-label-governance.md](../todo/20251124-github-label-governance.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-github-label-governance.md](../todo/archive/20251124-github-label-governance.md)
+- 状況: 完了（2025-11-24 更新）
 - 期待成果:
   - ラベル分類指針と命名規約を整理し、既存ラベルの棚卸し・統合・削除ポリシーを確立する。
   - Issue には `github/issue-labeler`、PR には `actions/labeler` を適用し、運用ルールに基づいた自動ラベリングワークフローを構築する。
