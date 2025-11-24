@@ -44,15 +44,15 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
     - `jobspec.meta` に含まれる `template_path` / `layouts_path` を唯一の参照元とし、CLI オプションによる上書きを廃止する。欠落時は明確なエラーメッセージで再抽出を促す。
     - ドキュメント（README, CLI リファレンス, Runbook 等）とテストを新仕様へ更新する。
 - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - メモ: 未着手。
+  - メモ: 方針自体は ToDo 内で管理。別メモが必要になった場合は docs/notes 配下へ整理する（現時点では不要）。
 - [ ] ドキュメント更新（要件・設計）
-  - メモ: 未着手。
+  - メモ: README / docs/design/cli-command-reference.md / docs/runbooks/story-outline-ops.md / docs/requirements/stages/ 等の旧オプション記載整理が残タスク。
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
-- [ ] 実装
-  - メモ: `PrepareDocument` へ meta を追加し CLI / パイプライン側の参照ロジックを更新済み。ドキュメント・テスト・残り CLI の細部調整を継続中。
+- [x] 実装
+  - メモ: `PrepareDocument.meta` 追加と CLI オプション削除を実装（commit `feat(cli): resolve prepare assets from metadata`）。残作業はドキュメント・テスト反映のみ。
 - [ ] テスト・検証
-  - メモ: 未着手。
+  - メモ: pytest 未実行。CLI 変更後の統合テスト（outline / compose / mapping）を再確認する。
 - [ ] ドキュメント更新
   - メモ: 未着手。
   - [ ] docs/roadmap 配下
