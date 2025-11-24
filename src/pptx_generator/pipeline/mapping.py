@@ -610,26 +610,8 @@ class MappingStep:
         max_lines = layout.max_lines()
         body = elements.get("body")
         if max_lines is not None and isinstance(body, list) and len(body) > max_lines:
-            truncated = body[:max_lines]
             warnings.append(
-                f"body が許容行数 {max_lines} を超過したため truncate しました"
-            )
-            fallback.applied = True
-            fallback.history.append("shrink_text")
-            fallback.reason = f"body_lines={len(body)} max_lines={max_lines}"
-            elements["body"] = truncated
-            ai_patches.append(
-                MappingAIPatch(
-                    patch_id=f"{slide_id}-shrink-text",
-                    description=f"本文を {max_lines} 行に短縮",
-                    patch=[
-                        JsonPatchOperation(
-                            op="replace",
-                            path="/elements/body",
-                            value=truncated,
-                        )
-                    ],
-                )
+                f"body が許容行数 {max_lines} を超過しています（現在 {len(body)} 行）"
             )
 
         if isinstance(body, list) and not body:

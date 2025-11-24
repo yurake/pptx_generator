@@ -18,9 +18,6 @@ logger = logging.getLogger(__name__)
 
 _LLM_LOGGER = logging.getLogger("pptx_generator.content_ai.llm")
 
-MAX_BODY_LINES = 6
-MAX_BODY_LENGTH = 40
-MAX_TITLE_LENGTH = 120
 DEFAULT_MAX_TOKENS = 32000
 
 
@@ -120,33 +117,21 @@ def create_llm_client() -> LLMClient:
     raise LLMClientConfigurationError(msg)
 
 
-def _truncate(value: str, max_length: int) -> str:
-    normalized = value.strip()
-    if len(normalized) <= max_length:
-        return normalized
-    ellipsis = "..."
-    if max_length <= len(ellipsis):
-        return ellipsis[:max_length]
-    return normalized[: max_length - len(ellipsis)] + ellipsis
-
-
 def _normalize_body(candidates: list[str]) -> tuple[list[str], list[str]]:
-    """本文候補を正規化し、長さ制限を満たすように整形する。"""
+    """本文候補を正規化し、空要素を除いた上で全文を保持する。"""
 
     body_lines: list[str] = []
     warnings: list[str] = []
 
     for candidate in candidates:
-        text = str(candidate).strip()
-        if not text:
+        text_raw = str(candidate)
+        segments = [segment.strip() for segment in text_raw.splitlines() if segment.strip()]
+        if segments:
+            body_lines.extend(segments)
             continue
-        if len(body_lines) >= MAX_BODY_LINES:
-            warnings.append("body_lines_truncated")
-            break
-        if len(text) > MAX_BODY_LENGTH:
-            warnings.append("body_line_length_truncated")
-            text = text[:MAX_BODY_LENGTH]
-        body_lines.append(text)
+        stripped = text_raw.strip()
+        if stripped:
+            body_lines.append(stripped)
 
     if not body_lines:
         body_lines.append("自動生成コンテンツ")
@@ -160,7 +145,7 @@ def _build_user_prompt(request: AIGenerationRequest) -> str:
         """
         以下の要件を必ず守って JSON 形式で回答してください。
         - JSON オブジェクトのキーは title, body, note。
-        - body は文字列の配列で最大6行、各行40文字以内。
+        - body は本文を段落や箇条書きごとの文字列として配列に格納し、途中で切り捨てず全文を保持してください。
         - note が不要な場合は null を指定。
         - 日本語で回答する。
         """
@@ -223,8 +208,11 @@ def _build_response_from_text(
         body_candidates = lines[1:] if len(lines) > 1 else lines
         body, body_warnings = _normalize_body(body_candidates)
         warnings.extend(body_warnings)
+        title_text = str(title_source).strip()
+        if not title_text:
+            title_text = request.slide.title or request.prompt
         return AIGenerationResponse(
-            title=_truncate(title_source, MAX_TITLE_LENGTH),
+            title=title_text,
             body=body,
             note=None,
             intent=request.intent,
@@ -252,8 +240,11 @@ def _build_response_from_text(
     intent_value = data.get("intent")
     intent = str(intent_value) if isinstance(intent_value, str) else request.intent
 
+    title_text = str(title_source).strip()
+    if not title_text:
+        title_text = request.slide.title or request.spec.meta.title
     return AIGenerationResponse(
-        title=_truncate(str(title_source), MAX_TITLE_LENGTH),
+        title=title_text,
         body=body,
         note=note,
         intent=intent,
@@ -354,7 +345,9 @@ class MockLLMClient:
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         slide = request.slide
         title_source = slide.title or f"{request.spec.meta.title} ({slide.id})"
-        title = _truncate(title_source, MAX_TITLE_LENGTH)
+        title = str(title_source).strip()
+        if not title:
+            title = request.prompt.strip() or f"{request.spec.meta.title} ({slide.id})"
 
         bullet_texts: list[str] = []
         for group in slide.iter_bullet_groups():

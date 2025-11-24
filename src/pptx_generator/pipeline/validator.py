@@ -18,9 +18,9 @@ class SpecValidatorStep:
     def __init__(
         self,
         *,
-        max_title_length: int = 25,
-        max_bullet_length: int = 120,
-        max_bullet_level: int = 3,
+        max_title_length: int | None = None,
+        max_bullet_length: int | None = None,
+        max_bullet_level: int | None = None,
         forbidden_words: tuple[str, ...] = (),
     ) -> None:
         self.max_title_length = max_title_length
@@ -42,12 +42,16 @@ class SpecValidatorStep:
             raise SpecValidationError("スライドが 1 件も定義されていません")
 
     def _validate_title_length(self, spec: JobSpec) -> None:
+        if self.max_title_length is None:
+            return
         for slide in spec.slides:
             if slide.title and len(slide.title) > self.max_title_length:
                 msg = f"スライド '{slide.id}' のタイトルが {self.max_title_length} 文字を超えています"
                 raise SpecValidationError(msg)
 
     def _validate_bullet_length(self, spec: JobSpec) -> None:
+        if self.max_bullet_length is None:
+            return
         for slide in spec.slides:
             for bullet in slide.iter_bullets():
                 if len(bullet.text) > self.max_bullet_length:
@@ -57,6 +61,8 @@ class SpecValidatorStep:
                     raise SpecValidationError(msg)
 
     def _validate_bullet_level(self, spec: JobSpec) -> None:
+        if self.max_bullet_level is None:
+            return
         for slide in spec.slides:
             for bullet in slide.iter_bullets():
                 if bullet.level > self.max_bullet_level:

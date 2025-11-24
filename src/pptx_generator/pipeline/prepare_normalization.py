@@ -217,56 +217,12 @@ class PrepareNormalizationStep:
         )
 
     def _build_body_lines(self, card: PrepareCard) -> list[str]:
-        lines: list[str] = []
-        max_lines = 6
+        lines = list(card.iter_body_text())
+        if lines:
+            return lines
 
-        def append_text(text: str) -> None:
-            text = text.strip()
-            if not text:
-                return
-            idx = 0
-            while idx < len(text) and len(lines) < max_lines:
-                lines.append(text[idx : idx + 40])
-                idx += 40
+        headline = card.headline_or_title().strip()
+        if headline:
+            return [headline]
 
-        for block in card.content.body:
-            if len(lines) >= max_lines:
-                break
-
-            text = (block.text or "").strip()
-            if text:
-                for line in text.splitlines():
-                    append_text(line)
-                    if len(lines) >= max_lines:
-                        break
-                if len(lines) >= max_lines:
-                    break
-
-            items: list[str] = []
-            if block.data:
-                raw_items = block.data.get("items")
-                if isinstance(raw_items, list):
-                    for value in raw_items:
-                        if isinstance(value, str) and value.strip():
-                            items.append(value.strip())
-                        elif isinstance(value, dict):
-                            line = str(value.get("text") or "").strip()
-                            if line:
-                                items.append(line)
-            for item in items:
-                if len(lines) >= max_lines:
-                    break
-                for line in item.splitlines():
-                    append_text(f"- {line}")
-                    if len(lines) >= max_lines:
-                        break
-
-        if not lines:
-            headline = card.headline_or_title().strip()
-            if headline:
-                for line in headline.splitlines():
-                    append_text(line)
-                    if len(lines) >= max_lines:
-                        break
-
-        return lines
+        return []

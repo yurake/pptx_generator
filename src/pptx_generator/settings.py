@@ -157,9 +157,9 @@ class PolisherRuleConfig:
 
 @dataclass(slots=True)
 class RulesConfig:
-    max_title_length: int = 25
-    max_bullet_length: int = 120
-    max_bullet_level: int = 3
+    max_title_length: int | None = None
+    max_bullet_length: int | None = None
+    max_bullet_level: int | None = None
     forbidden_words: tuple[str, ...] = ()
     analyzer: AnalyzerRuleConfig = field(default_factory=AnalyzerRuleConfig)
     refiner: RefinerRuleConfig = field(default_factory=RefinerRuleConfig)
@@ -169,17 +169,28 @@ class RulesConfig:
     def load(cls, path: Path) -> "RulesConfig":
         logger.info("Loading rules config from %s", path.resolve())
         data = json.loads(path.read_text(encoding="utf-8"))
-        title = data.get("title", {})
-        bullet = data.get("bullet", {})
-        defaults = cls()
+        title = data.get("title")
+        bullet = data.get("bullet")
         analyzer = AnalyzerRuleConfig.from_dict(data.get("analyzer", {}))
         refiner = RefinerRuleConfig.from_dict(data.get("refiner", {}))
         polisher = PolisherRuleConfig.from_dict(data.get("polisher", {}))
+        title_max = _maybe_int(title.get("max_length")) if isinstance(title, dict) else None
+        bullet_max_length = _maybe_int(bullet.get("max_length")) if isinstance(bullet, dict) else None
+        bullet_max_level = _maybe_int(bullet.get("max_level")) if isinstance(bullet, dict) else None
+        forbidden_words: tuple[str, ...] = ()
+        forbidden_raw = data.get("forbidden_words", ())
+        if isinstance(forbidden_raw, (list, tuple)):
+            normalized: list[str] = []
+            for word in forbidden_raw:
+                text = str(word).strip()
+                if text:
+                    normalized.append(text)
+            forbidden_words = tuple(normalized)
         config = cls(
-            max_title_length=title.get("max_length", defaults.max_title_length),
-            max_bullet_length=bullet.get("max_length", defaults.max_bullet_length),
-            max_bullet_level=bullet.get("max_level", defaults.max_bullet_level),
-            forbidden_words=tuple(data.get("forbidden_words", defaults.forbidden_words)),
+            max_title_length=title_max,
+            max_bullet_length=bullet_max_length,
+            max_bullet_level=bullet_max_level,
+            forbidden_words=forbidden_words,
             analyzer=analyzer,
             refiner=refiner,
             polisher=polisher,

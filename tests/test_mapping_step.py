@@ -195,19 +195,20 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
 
     generate_ready_payload = json.loads(generate_ready_path.read_text(encoding="utf-8"))
     body = generate_ready_payload["slides"][0]["elements"]["body"]
-    assert body == ["1行目", "2行目"], "最大行数に合わせて本文が縮約されること"
-    assert generate_ready_payload["slides"][0]["meta"]["fallback"] == "shrink_text"
+    assert body == ["1行目", "2行目", "3行目"], "オーバーフロー時でも本文は維持されること"
+    assert generate_ready_payload["slides"][0]["meta"]["fallback"] == "none"
     assert generate_ready_payload["meta"]["template_path"] == template_path.name
 
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     slide_log = mapping_payload["slides"][0]
-    assert slide_log["fallback"]["applied"] is True
-    assert slide_log["fallback"]["history"] == ["shrink_text"]
+    assert slide_log["fallback"]["applied"] is False
+    assert slide_log["fallback"]["history"] == []
     assert slide_log["analyzer"]["issue_count"] == 0
-    assert mapping_payload["meta"]["fallback_count"] == 1
-    assert mapping_payload["meta"]["ai_patch_count"] == 1
+    assert mapping_payload["meta"]["fallback_count"] == 0
+    assert mapping_payload["meta"]["ai_patch_count"] == 0
     assert mapping_payload["meta"]["analyzer_issue_count"] == 0
+    assert slide_log["warnings"] == [
+        "body が許容行数 2 を超過しています（現在 3 行）"
+    ]
 
-    assert fallback_report_path.exists()
-    report_payload = json.loads(fallback_report_path.read_text(encoding="utf-8"))
-    assert report_payload["slides"][0]["slide_id"] == "s01"
+    assert not fallback_report_path.exists()
