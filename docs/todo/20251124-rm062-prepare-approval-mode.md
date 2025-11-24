@@ -5,10 +5,10 @@
 roadmap_item: RM-062 pptx prepare 承認モード整備
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: 2025-11-24 main から feat/rm062-prepare-approval-mode を作成。`docs(rm062): add todo for prepare approval mode` を初期コミットとして作成済み。push は Plan 承認後に実施予定。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 2025-11-24 ユーザー承認済み Plan を転記。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: 2025-11-24 main から feat/rm062-prepare-approval-mode を作成し、`docs(rm062): add todo for prepare approval mode` および Plan 関連コミットを積み済み（現時点ではローカル作業中のため push は作業完了後にまとめて実施予定）。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 2025-11-24 ユーザー承認済み Plan を転記。上記メモに沿って実装／ドキュメント対応を進行中。
     - 対象整理（スコープ、対象ファイル、前提）:
       - CLI `pptx prepare` の承認モード／旧 `--approved` 系オプション残存有無を確認し、必要であれば実装を整理する。
       - 利用者向けドキュメント（`README.md`, `docs/design/cli-command-reference.md`, `docs/runbooks/story-outline-ops.md` など）から CLI で承認状態を扱う旨の記述を排除し、PrepareStore/prepare_log へ誘導する。
@@ -37,8 +37,12 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
       - コード変更時は該当コミットを巻き戻して旧 CLI 挙動・ドキュメントを復元する。
       - ドキュメントのみの場合は差分を戻すことで対応。
     - 承認メッセージ ID／リンク: （このスレッドの OK メッセージを記録）
-- [ ] 設計・実装方針の確定
-  - メモ: 未着手。
+- [x] 設計・実装方針の確定
+  - メモ: CLI から `--prepare-log` / `--prepare-meta` / `--template` / `--layouts` を削除する方針で着手済み。`PrepareDocument.meta` に各成果物パスを埋め込み、工程3側は常にメタから参照する構成へ移行する。jobspec 側も `meta.template_path` / `meta.layouts_path` を唯一の参照源とする。
+    - `prepare_card.json` に出力ファイル群のパスを `meta` として埋め込む（`prepare_log`, `prepare_ai_log`, `ai_generation_meta`, `prepare_story_outline` 等）。工程3ではこのメタ情報を基に常に参照先を決定する。
+    - `PrepareNormalizationStep` は `PrepareDocument.meta` からログ／メタパスを解決し、オプション未指定時でも自動読み込みできるようにする。
+    - `jobspec.meta` に含まれる `template_path` / `layouts_path` を唯一の参照元とし、CLI オプションによる上書きを廃止する。欠落時は明確なエラーメッセージで再抽出を促す。
+    - ドキュメント（README, CLI リファレンス, Runbook 等）とテストを新仕様へ更新する。
 - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: 未着手。
 - [ ] ドキュメント更新（要件・設計）
@@ -46,7 +50,7 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
   - [ ] docs/requirements 配下
   - [ ] docs/design 配下
 - [ ] 実装
-  - メモ: 未着手。
+  - メモ: `PrepareDocument` へ meta を追加し CLI / パイプライン側の参照ロジックを更新済み。ドキュメント・テスト・残り CLI の細部調整を継続中。
 - [ ] テスト・検証
   - メモ: 未着手。
 - [ ] ドキュメント更新

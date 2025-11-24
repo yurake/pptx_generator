@@ -27,7 +27,9 @@ def sample_spec(tmp_path: Path) -> Path:
                 "schema_version": "1.1",
                 "title": "Test Spec",
                 "client": "Test",
-                "locale": "ja-JP"
+                "locale": "ja-JP",
+                "template_path": "templates/templates.pptx",
+                "layouts_path": "layouts.jsonl",
             },
             "auth": {"created_by": "tester"},
             "slides": [
@@ -47,6 +49,25 @@ def sample_spec(tmp_path: Path) -> Path:
                 }
             ],
         },
+    )
+
+    template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_dst = spec_path.parent / "templates" / "templates.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(template_src, template_dst)
+
+    layouts_path = spec_path.parent / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
     return spec_path
 
@@ -79,6 +100,11 @@ def prepare_cards(tmp_path: Path) -> Path:
                 }
             ],
             "story_context": {"chapters": []},
+            "meta": {
+                "prepare_log_path": "prepare_log.json",
+                "ai_generation_meta_path": "ai_generation_meta.json",
+                "prepare_ai_log_path": "prepare_ai_log.json",
+            },
         },
     )
     return cards_path
@@ -273,10 +299,6 @@ def test_compose_resolves_paths_from_jobspec_meta(
             str(spec_path),
             "--prepare-cards",
             str(cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
             "--draft-output",
             str(draft_dir),
             "--output",
@@ -361,6 +383,10 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
                 }
             ],
             "story_context": {"chapters": []},
+            "meta": {
+                "prepare_log_path": "prepare_log.json",
+                "ai_generation_meta_path": "ai_generation_meta.json",
+            },
         },
     )
 
@@ -401,10 +427,6 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
             str(spec_path),
             "--prepare-cards",
             str(cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
             "--output",
             str(output_dir),
             "--draft-output",
@@ -420,9 +442,9 @@ def test_outline_with_layout_reasons(
     runner: CliRunner,
     sample_spec: Path,
     prepare_cards: Path,
-    prepare_log: Path,
-    prepare_meta: Path,
-    layouts_file: Path,
+    _prepare_log: Path,
+    _prepare_meta: Path,
+    _layouts_file: Path,
     tmp_path: Path,
 ) -> None:
     output_dir = tmp_path / "draft"
@@ -431,8 +453,6 @@ def test_outline_with_layout_reasons(
         [
             "outline",
             str(sample_spec),
-            "--layouts",
-            str(layouts_file),
             "--output",
             str(output_dir),
             "--chapter-template",
@@ -440,10 +460,6 @@ def test_outline_with_layout_reasons(
             "--show-layout-reasons",
             "--prepare-cards",
             str(prepare_cards),
-            "--prepare-log",
-            str(prepare_log),
-            "--prepare-meta",
-            str(prepare_meta),
         ],
     )
 

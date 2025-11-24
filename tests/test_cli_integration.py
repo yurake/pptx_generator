@@ -87,10 +87,6 @@ def _prepare_args(paths: dict[str, Path]) -> list[str]:
     return [
         "--prepare-cards",
         str(paths["cards"]),
-        "--prepare-log",
-        str(paths["log"]),
-        "--prepare-meta",
-        str(paths["meta"]),
     ]
 
 
@@ -132,8 +128,29 @@ def _create_matching_jobspec(root: Path, prepare_paths: dict[str, Path], *, file
     spec_path = root / filename
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     payload = jobspec.model_dump(mode="json")
+    payload.setdefault("meta", {})
+    payload["meta"]["template_path"] = "templates/templates.pptx"
+    payload["meta"]["layouts_path"] = "layouts.jsonl"
     spec_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    template_dst = spec_path.parent / "templates" / "templates.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(Path("samples/templates/templates.pptx"), template_dst)
+
+    layouts_path = spec_path.parent / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     return spec_path
@@ -312,6 +329,13 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
 
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload.get("meta", {}).pop("template_path", None)
+    spec_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
     prepare_paths = _prepare_inputs(runner, tmp_path)
     generate_ready_path = _prepare_generate_ready(
         runner,
@@ -464,7 +488,7 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
 
     assert result.exit_code == 2
     assert (
-        "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+        "jobspec.meta.template_path にテンプレートパスを設定してください。"
         in result.output
     )
 
@@ -485,8 +509,6 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
             str(draft_dir),
             "--output",
             str(output_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
             *_prepare_args(prepare_paths),
         ],
         catch_exceptions=False,
@@ -546,8 +568,6 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
             str(spec_path),
             "--output",
             str(mapping_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
             "--draft-output",
             str(draft_dir),
             "--prepare-cards",
@@ -1041,16 +1061,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         [
             "mapping",
             str(jobspec_path),
-            "--template",
-            str(template_path),
-            "--layouts",
-            str(Path("samples/extract/layouts.jsonl")),
             "--prepare-cards",
             str(prepare_dir / "prepare_card.json"),
-            "--prepare-log",
-            str(prepare_dir / "prepare_log.json"),
-            "--prepare-meta",
-            str(prepare_dir / "ai_generation_meta.json"),
             "--output",
             str(mapping_dir),
             "--draft-output",
