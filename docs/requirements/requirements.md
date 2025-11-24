@@ -94,6 +94,7 @@
 - テンプレート・ブランド設定の版管理と適用履歴の把握。
 - `template_release.json`（テンプレ受け渡しメタ）と差分レポートの保管。
 - CI/CD 環境で自動テストおよび自動デプロイを実行可能にすること。
+- CI では SonarCloud 静的解析を毎回実行し、README へライセンス・CI・Python バージョン、および SonarCloud（Quality Gate / Coverage / Bugs / Vulnerabilities / Code Smells / Maintainability / Reliability / Security / Duplicated Lines）のバッジを掲載して最新状態を示すこと。
 - 定期的なジョブ結果通知とアラート通知を行い、一次対応手順を明文化すること。
 - 生成物のストレージ保存期間（初期値 90 日）と削除ポリシーを設定すること。
 - 承認ログと生成ログを相互参照し、監査時にスライド単位の変更履歴を追跡できること。
