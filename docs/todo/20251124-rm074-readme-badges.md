@@ -18,9 +18,10 @@ roadmap_item: RM-074 README バッジ整備と静的解析導入
     - テスト方針: `uv run --extra dev pytest`, `dotnet run --project dotnet/Polisher.Tests` をローカル実行。SonarCloud ステップは GitHub Actions 上で確認。
     - ロールバック方法: 対象ファイルの差分を個別に `git revert`。Secrets を無効化すれば SonarCloud 実行も即停止可能。
     - 承認メッセージ ID／リンク: ユーザー「ok」（2025-11-24 本スレッド）のメッセージ。
-- [ ] 設計・実装方針の確定
-  - メモ: SonarCloud を `sonar-project.properties` + GitHub Actions（`SonarSource/sonarcloud-github-action@v2`）で固定運用し、Python 側は `pytest --cov=src --cov-report=xml` に統一する。README 先頭へテーブル形式で License/CI/Python および 10 種類の Sonar バッジを掲示し、`docs/notes/README-badges-plan.md` で URL・手順を管理する。要件ドキュメントにはバッジ掲載と静的解析実行を必須要件として追記する。
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針の確定
+  - メモ: 2025-11-24 に上記方針を最終確定。SonarCloud 連携は `sonar-project.properties` と GitHub Actions (`SonarSource/sonarcloud-github-action@v2`) の組合せで恒久運用し、Python テストは `pytest --cov=src --cov-report=xml` へ統一する。README 先頭に License/CI/Python と SonarCloud 10 指標のバッジをセンタリング配置し、ノートと要件へ反映済み。
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: 詳細方針とバッジ URL 一覧を `docs/notes/README-badges-plan.md` に追記し、参照先を整備した。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/notes/README-badges-plan.md` にバッジ一覧と運用手順、`docs/requirements/requirements.md` に CI + README バッジ要件を追記済み。設計ドキュメントは今回対象外のため更新不要。サポートされない Sonar 指標（Security Hotspots など）は除外済み。
   - [x] docs/requirements 配下
@@ -38,10 +39,10 @@ roadmap_item: RM-074 README バッジ整備と静的解析導入
   - [x] README.md / AGENTS.md（README バッジ更新済み）
 - [x] 関連Issue 行の更新
   - メモ: `#306` を確認済み。今後も進捗があれば ToDo 内の記述を更新する。
-- [ ] チェックリスト整合確認
-  - メモ: 未着手
+- [x] チェックリスト整合確認
+  - メモ: 2025-11-24 時点でチェック状態と成果物が一致することを点検。残タスクは「PR 作成」のみ。
 - [ ] PR 作成
   - メモ: 未着手
 
 ## メモ
-- 未着手
+- 設計方針の確定・共有およびチェックリスト整合を反映済み。残タスクは PR 作成とレビュー対応。
