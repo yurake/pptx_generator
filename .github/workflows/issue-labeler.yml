@@ -13,6 +13,10 @@ jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Apply labels
         uses: github/issue-labeler@v3
         with:
