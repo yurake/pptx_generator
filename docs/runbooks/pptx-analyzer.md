@@ -20,13 +20,10 @@
     ```bash
     uv run pptx compose samples/json/sample_jobspec.json \
       --prepare-cards .pptx/prepare/prepare_card.json \
-      --prepare-log .pptx/prepare/prepare_log.json \
-      --prepare-meta .pptx/prepare/ai_generation_meta.json \
       --draft-output .pptx/draft \
-      --output .pptx/compose \
-      --template templates/<brand>/<version>/template.pptx
+      --output .pptx/compose
     ```
-    - カード承認状態は PrepareStore / `prepare_log.json` で管理される。CLI には承認切り替えオプションがないため、HITL 操作後の最新ログを渡すこと。
+    - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。
   - 工程4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \

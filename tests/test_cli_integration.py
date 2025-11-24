@@ -285,21 +285,16 @@ def _prepare_generate_ready(
     *,
     draft_dir: Path,
     prepare_paths: dict[str, Path],
-    extra_args: list[str] | None = None,
 ) -> Path:
     args = [
         "mapping",
         str(spec_path),
         "--output",
         str(mapping_dir),
-        "--template",
-        str(SAMPLE_TEMPLATE),
         "--draft-output",
         str(draft_dir),
         *_prepare_args(prepare_paths),
     ]
-    if extra_args:
-        args.extend(extra_args)
 
     result = runner.invoke(app, args, catch_exceptions=False)
     assert result.exit_code == 0, result.output
@@ -328,13 +323,6 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
-
-    payload = json.loads(spec_path.read_text(encoding="utf-8"))
-    payload.get("meta", {}).pop("template_path", None)
-    spec_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
 
     prepare_paths = _prepare_inputs(runner, tmp_path)
     generate_ready_path = _prepare_generate_ready(
@@ -471,6 +459,12 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload.get("meta", {}).pop("template_path", None)
+    spec_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     result = runner.invoke(
         app,
@@ -814,13 +808,19 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    spec_payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec_payload.setdefault("meta", {})
+    spec_payload["meta"]["template_path"] = str(template_path)
+    spec_path.write_text(
+        json.dumps(spec_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     ready_path = _prepare_generate_ready(
         runner,
         spec_path,
         mapping_dir,
         draft_dir=draft_dir,
         prepare_paths=prepare_paths,
-        extra_args=["--template", str(template_path)],
     )
 
     result = runner.invoke(
@@ -842,6 +842,11 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "file"
+    ready_payload = json.loads(ready_path.read_text(encoding="utf-8"))
+    stored_template = ready_payload.get("meta", {}).get("template_path")
+    assert stored_template is not None
+    resolved_template = (ready_path.parent / Path(stored_template)).resolve()
+    assert resolved_template == template_path.resolve()
 
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
@@ -904,8 +909,6 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
                 str(spec_path.relative_to(Path(fs_root))),
                 "--output",
                 "samples/gen-ready",
-                "--template",
-                "samples/templates/templates.pptx",
                 *_prepare_args(prepare_paths),
             ],
             catch_exceptions=False,

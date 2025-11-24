@@ -82,5 +82,5 @@
 
 ## CLI 支援
 - `pptx outline` コマンドは Prepare 成果物とレイアウト候補を入力に `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` を生成し、章・スライド統計を `draft_meta.json` に出力する。
-- `--prepare-cards` / `--prepare-log` / `--prepare-meta` を指定して工程3の成果物を取り込み、Spec と組み合わせて構成計算を実行する（旧 `--prepare-*` は互換エイリアス）。
+- `--prepare-cards` で工程2の成果物を指定すると、`prepare_card.json.meta` に記録されたログ／AIメタのパスを用いて Spec と組み合わせた構成計算を実行する。
 - メタ情報には章ごとの承認状態や付録枚数上限が含まれ、工程5以降の監査ログや再実行時のトレースに活用できる。

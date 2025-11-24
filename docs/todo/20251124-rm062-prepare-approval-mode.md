@@ -36,32 +36,32 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
     - ロールバック方法:
       - コード変更時は該当コミットを巻き戻して旧 CLI 挙動・ドキュメントを復元する。
       - ドキュメントのみの場合は差分を戻すことで対応。
-    - 承認メッセージ ID／リンク: （このスレッドの OK メッセージを記録）
+    - 承認メッセージ ID／リンク: ユーザー返信「ok」（2025-11-24、本スレッド）
 - [x] 設計・実装方針の確定
   - メモ: CLI から `--prepare-log` / `--prepare-meta` / `--template` / `--layouts` を削除する方針で着手済み。`PrepareDocument.meta` に各成果物パスを埋め込み、工程3側は常にメタから参照する構成へ移行する。jobspec 側も `meta.template_path` / `meta.layouts_path` を唯一の参照源とする。
     - `prepare_card.json` に出力ファイル群のパスを `meta` として埋め込む（`prepare_log`, `prepare_ai_log`, `ai_generation_meta`, `prepare_story_outline` 等）。工程3ではこのメタ情報を基に常に参照先を決定する。
     - `PrepareNormalizationStep` は `PrepareDocument.meta` からログ／メタパスを解決し、オプション未指定時でも自動読み込みできるようにする。
     - `jobspec.meta` に含まれる `template_path` / `layouts_path` を唯一の参照元とし、CLI オプションによる上書きを廃止する。欠落時は明確なエラーメッセージで再抽出を促す。
     - ドキュメント（README, CLI リファレンス, Runbook 等）とテストを新仕様へ更新する。
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - メモ: 方針自体は ToDo 内で管理。別メモが必要になった場合は docs/notes 配下へ整理する（現時点では不要）。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: README / docs/design/cli-command-reference.md / docs/runbooks/story-outline-ops.md / docs/requirements/stages/ 等の旧オプション記載整理が残タスク。
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: 方針は本 ToDo 内に集約。追加メモは不要と判断（2025-11-24）。
+- [x] ドキュメント更新（要件・設計）
+  - メモ: `README.md`, `docs/design/cli-command-reference.md`, `docs/design/stages/stage-03-mapping.md`, `docs/requirements/stages/stage-02-content-normalization.md` ほか関連ファイルを最新仕様へ更新済み。
+  - [x] docs/requirements 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `PrepareDocument.meta` 追加と CLI オプション削除を実装（commit `feat(cli): resolve prepare assets from metadata`）。残作業はドキュメント・テスト反映のみ。
-- [ ] テスト・検証
-  - メモ: pytest 未実行。CLI 変更後の統合テスト（outline / compose / mapping）を再確認する。
-- [ ] ドキュメント更新
-  - メモ: 未着手。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/test_cli_outline.py tests/test_cli_integration.py tests/test_cli_cheatsheet_flow.py` → 全件成功後、`uv run --extra dev pytest` で全192件通過（2025-11-24）。
+- [x] ドキュメント更新
+  - メモ: README / design / requirements / runbook を更新。`docs/roadmap/` は既存ゴール記述と整合しているため変更不要、`AGENTS.md` も影響なしと判断。
+  - [x] docs/roadmap 配下（既存ゴール記述と矛盾なしのため更新不要）
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: 未着手。
+  - メモ: #308 参照。追加 Issue なし（2025-11-24 再確認）。
 - [ ] チェックリスト整合確認
   - メモ: 未着手。
 - [ ] PR 作成

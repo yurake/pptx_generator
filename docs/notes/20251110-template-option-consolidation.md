@@ -1,8 +1,10 @@
 # CLI テンプレートオプション削減の検討
 
+> **2025-11-24 Update:** `pptx compose` / `pptx mapping` から `--template` オプションを撤廃し、テンプレート解決は jobspec の `meta.template_path` に一本化済み。
+
 ## 背景
 - `pptx gen` は統合により `--template` オプションを廃止し、`generate_ready.json.meta.template_path` を必須とする仕様へ移行した。
-- `pptx compose` / `pptx mapping` には依然として `--template` オプションが残り、未指定時は `jobspec.meta.template_path` などからテンプレートを解決する。
+- （旧メモ）当時は `pptx compose` / `pptx mapping` に `--template` オプションが残り、未指定時は `jobspec.meta.template_path` などからテンプレートを解決していた。
 - ユーザーから、`compose` と `mapping` でも `--template` を削除し、テンプレ参照は成果物に埋め込む形へ統一したいという要望があった。
 
 ## 現状の挙動

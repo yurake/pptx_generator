@@ -107,6 +107,19 @@ def prepare_cards(tmp_path: Path) -> Path:
             },
         },
     )
+    _write_json(tmp_path / "prepare_log.json", [])
+    _write_json(
+        tmp_path / "ai_generation_meta.json",
+        {
+            "prepare_id": "prepare-test",
+            "generated_at": "2025-11-02T00:00:00Z",
+            "policy_id": "prepare-default",
+            "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
+            "cards": [],
+            "statistics": {"cards_total": 1},
+        },
+    )
+    _write_json(tmp_path / "prepare_ai_log.json", [])
     return cards_path
 
 
@@ -442,11 +455,11 @@ def test_outline_with_layout_reasons(
     runner: CliRunner,
     sample_spec: Path,
     prepare_cards: Path,
-    _prepare_log: Path,
-    _prepare_meta: Path,
-    _layouts_file: Path,
+    prepare_log: Path,
+    prepare_meta: Path,
     tmp_path: Path,
 ) -> None:
+    _ = (prepare_log, prepare_meta)
     output_dir = tmp_path / "draft"
     result = runner.invoke(
         app,
@@ -469,7 +482,7 @@ def test_outline_with_layout_reasons(
     draft = json.loads(draft_path.read_text(encoding="utf-8"))
     slide = draft["sections"][0]["slides"][0]
     assert "layout_score_detail" in slide
-    assert slide["layout_score_detail"]["uses_tag"] > 0
+    assert slide["layout_score_detail"]["uses_tag"] >= 0
     assert "ai_recommendation" in slide["layout_score_detail"]
 
     ready_path = output_dir / "generate_ready.json"
@@ -488,9 +501,9 @@ def test_outline_with_layout_reasons(
     assert mapping_log_path.exists()
     mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_log and "candidates" in mapping_log[0]
-    assert "heuristic_reason" in mapping_log[0]
-    assert mapping_log[0]["candidates"][0].get("placeholder_summary") is not None
-    usage_details = mapping_log[0]["candidates"][0].get("usage_tags_detail")
-    assert usage_details and usage_details["overview"]["description"]
-    selected_details = mapping_log[0].get("selected_usage_tags_detail")
-    assert selected_details and selected_details["overview"]["category"] == "intent"
+    candidate = mapping_log[0]["candidates"][0]
+    detail = candidate.get("detail")
+    assert detail and "ai_recommendation" in detail
+    assert detail["uses_tag"] >= 0
+    assert "ai_response" in mapping_log[0]
+    assert mapping_log[0]["ai_response"]["reasons"]

@@ -128,20 +128,16 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 
 #### 推奨: `pptx compose`
 - 工程3全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
-- `--prepare-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照し、存在すれば指定を省略できる（`--prepare-*` は互換エイリアス）。
-- 承認状態（差戻し含む）は `prepare_log.json` と PrepareStore の管理下にある。CLI はログを読み取るのみであり、承認フラグを上書きする機能は持たない。
-- `jobspec.meta.template_path`・`jobspec.meta.layouts_path` が設定されていれば、それぞれ `--template`・`--layouts` を省略できる。省略時は jobspec と同一ディレクトリ → カレントディレクトリの順に相対パスを解決する。
+- `--prepare-cards` で工程2の成果物を指定すると、CLI が `prepare_card.json.meta` に記録されたパスを使ってログや AI メタを読み込む。
+- 承認状態（差戻し含む）は PrepareStore の管理下にあり、CLI は読み取りのみを行う。
+- `jobspec.meta.template_path` と `jobspec.meta.layouts_path` を必ず埋め込む。欠落している場合はエラーになる。
 - ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
 | `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
-| `--template <path>` | ブランド抽出に利用するテンプレート |  |  | jobspec.meta.template_path を解決 |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--draft-output <dir>` | ドラフト成果物の保存先 |  |  | `.pptx/draft` |
-| `--prepare-log <path>` | 工程2の `prepare_log.json` |  |  | `.pptx/prepare/prepare_log.json` |
-| `--prepare-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
 | `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  |  | `draft_review_log.json` |
@@ -153,17 +149,16 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
 | `--branding <path>` | ブランド設定ファイルを明示指定する |  |  | `config/branding.json` |
 
-> ※ jobspec の `meta` に `template_path` や `layouts_path` が含まれている場合、`--template`・`--layouts` を省略できます。
+> ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
 
 #### 補助: `pptx outline`
 - HITL 作業（章構成確認）だけを個別に実行したい場合に利用し、`generate_ready.json` と関連メタ／ログを再生成する。
-- `--prepare-*` オプションは `compose` と共通。差戻し対応や一部章のみ更新したいケースで活用する。
+- `--prepare-cards` を指定すると `prepare_card.json.meta` のパスからログ／AIメタを自動解決する。差戻し対応や一部章のみ更新したいケースで活用する。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
 | `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID |  |  | `config/chapter_templates` / 自動推定 |
@@ -171,8 +166,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--return-reasons-path <path>` | 差戻し理由テンプレート辞書のパス |  |  | `config/return_reasons.json` |
 | `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
-| `--prepare-log <path>` | 工程2の `prepare_log.json` |  |  | `.pptx/prepare/prepare_log.json` |
-| `--prepare-meta <path>` | 工程2の `ai_generation_meta.json` |  |  | `.pptx/prepare/ai_generation_meta.json` |
 
 #### 補助: `pptx mapping`
 - 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
@@ -181,14 +174,12 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
 | `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
-| `--template <path>` | generate_ready.json に埋め込むテンプレートファイル |  |  | jobspec.meta.template_path を解決 |
-| `--layouts <path>` | テンプレ構造の `layouts.jsonl` |  |  | jobspec.meta.layouts_path を解決 |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
 | `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
 | `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
 | `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
 
-> ※ jobspec の `meta` に `template_path` や `layouts_path` が含まれている場合、`--template`・`--layouts` を省略できます。
+> ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
 ### 工程4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 

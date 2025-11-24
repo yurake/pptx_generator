@@ -2600,13 +2600,6 @@ def compose(  # noqa: PLR0913
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="layouts.jsonl のパス",
-)
-@click.option(
     "--draft-output",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path(".pptx/draft"),

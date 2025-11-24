@@ -24,7 +24,7 @@
 2. `PrepareAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `-p/--page-limit` が指定されていない限りポリシーまたは LLM 任せで、動的モードかつページ指定が無い場合はタイトルページ（`content.title` を持つカード）を自動挿入する。`--page-limit` を指定した場合はタイトルページを追加しない。
 3. 生成結果を Pydantic モデルで検証し、`prepare_card.json` と関連ログファイルを出力する。
 4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
-5. 工程3 `pptx compose` が `--prepare-cards` / `--prepare-log` / `--prepare-meta` オプションで成果物を参照し、章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
+5. 工程3 `pptx compose` は `--prepare-cards` でカード成果物を受け取り、`prepare_card.json.meta` に記録されたログ／AIメタ／アウトラインのパスを自動解決して章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
 
 ## 監査・品質要件
 - 生成 AI が警告を返した場合は `prepare_ai_log.json.warnings` に記録し、CLI 標準出力にも WARN を表示する。

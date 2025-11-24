@@ -24,7 +24,7 @@
 2. `PrepareAIOrchestrator` がポリシーを選択し、LLM（またはモック）でカード候補を生成。
 3. 生成カードとログを `.pptx/prepare/` に書き出し、統計情報を `ai_generation_meta.json` に記録。
 4. 監査ログ (`audit_log.json`) に成果物パスと SHA256 ハッシュ（将来拡張）を残す。
-5. 工程3 では `--prepare-cards`, `--prepare-log`, `--prepare-meta` を指定して再利用する。差戻し時はカード編集または再生成を実施。
+5. 工程3 では `--prepare-cards` を指定するだけで、`prepare_card.json.meta` に記録されたログ／AIメタのパスを再利用する。差戻し時はカード編集または再生成を実施。
 
 ## CLI (`pptx prepare`)
 - パラメータ
