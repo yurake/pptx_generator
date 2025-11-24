@@ -5,8 +5,8 @@
 roadmap_item: RM-074 README バッジ整備と静的解析導入
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: main から docs/rm074-readme-badges を作成済み。初期コミットは本 ToDo 追加で対応予定で push は未実施。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: main から docs/rm074-readme-badges を作成し、commit 1fa52d6 (docs(rm074): add todo for README badges) を push 済み。上位 worktree の権限制約により upstream 設定のみ手動追従が必要。
     - 必ずmainからブランチを切る
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 未着手（Plan 承認後に転記）
