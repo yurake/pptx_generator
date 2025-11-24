@@ -117,11 +117,17 @@ def create_llm_client() -> LLMClient:
     raise LLMClientConfigurationError(msg)
 
 
+MAX_BODY_LINES = 6
+MAX_BODY_LINE_LENGTH = 40
+
+
 def _normalize_body(candidates: list[str]) -> tuple[list[str], list[str]]:
     """本文候補を正規化し、空要素を除いた上で全文を保持する。"""
 
     body_lines: list[str] = []
     warnings: list[str] = []
+    wrapped = False
+    truncated = False
 
     for candidate in candidates:
         text_raw = str(candidate)
@@ -136,7 +142,42 @@ def _normalize_body(candidates: list[str]) -> tuple[list[str], list[str]]:
     if not body_lines:
         body_lines.append("自動生成コンテンツ")
 
-    return body_lines, warnings
+    normalized: list[str] = []
+    for line in body_lines:
+        if len(normalized) >= MAX_BODY_LINES:
+            truncated = True
+            break
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if len(stripped) <= MAX_BODY_LINE_LENGTH:
+            normalized.append(stripped)
+            continue
+        wrapped_segments = textwrap.wrap(
+            stripped,
+            width=MAX_BODY_LINE_LENGTH,
+            drop_whitespace=True,
+            break_long_words=True,
+        )
+        if wrapped_segments:
+            wrapped = True
+        for segment in wrapped_segments:
+            if len(normalized) >= MAX_BODY_LINES:
+                truncated = True
+                break
+            normalized.append(segment)
+        if len(normalized) >= MAX_BODY_LINES:
+            break
+
+    if truncated:
+        warnings.append("body_truncated")
+    if wrapped and "body_truncated" not in warnings:
+        warnings.append("body_wrapped")
+
+    if not normalized:
+        normalized.append("自動生成コンテンツ")
+
+    return normalized, warnings
 
 
 def _build_user_prompt(request: AIGenerationRequest) -> str:
