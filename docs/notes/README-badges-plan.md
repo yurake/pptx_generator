@@ -10,6 +10,7 @@ RM-074 に向けた要望を整理する。
 - README にはバッジが未掲載で、ロゴ画像と概要説明から始まっている。冒頭へ任意の Markdown を挿入するスペースは十分にある。
 - CI は `.github/workflows/ci.yml` の単一ジョブで `uv run --extra dev pytest` と Polisher .NET テストを実行している。ここに SonarCloud ステップを追加する。
 - Secrets 前提で実行するため `SONAR_TOKEN`（SonarCloud で生成）と既存の `GITHUB_TOKEN` を利用する。Secrets 未設定時のフォールバックは設けない。
+- Python カバレッジは `.coveragerc` ではなく `pyproject.toml` の `[tool.coverage.*]` と `pytest` の `addopts` で管理し、`uv run --extra dev pytest` だけで `coverage.xml` を生成できるよう統一した。
 
 ## 追加したいバッジと参考例
 - **License バッジ**: 例）<https://github.com/langchain-ai/langchain/blob/master/README.md>
