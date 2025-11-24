@@ -32,7 +32,6 @@ flowchart TB
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
         RM069["RM-069<br/>コンテキスト設計ガイド整備<br/>(未着手)"]
         RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
-        RM074["RM-074<br/>README バッジ整備と静的解析導入<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -941,7 +940,7 @@ flowchart TB
 - ゴール: README に主要バッジ（ライセンス／ビルド／Python バージョン／SonarCloud）を追加し、CI・静的解析の整備と共に視覚的に状態を把握できるようにする。
 - 参照ドキュメント: （作成予定: `docs/notes/README-badges-plan.md`）
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-23 追加）
+- 状況: 完了（2025-11-24 更新）
 - 期待成果:
   - SonarCloud プロジェクトを設定し、CI から静的解析を実行できるようにする。
   - README にライセンスバッジ、GitHub Actions バッジ、Python バージョンバッジ、SonarCloud バッジを追加し、運用手順を整備する。
