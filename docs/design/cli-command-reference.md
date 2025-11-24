@@ -122,12 +122,14 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 - `ai_generation_meta.json`: 生成統計・入力ハッシュ・モード情報・Blueprint 参照
 - `prepare_story_outline.json`: 章構成とカード紐付け
 - `audit_log.json`: 工程2の監査メタ情報（静的モード時は slot 充足率・Blueprint パスを記録）
+- カード承認ステータスは CLI では変更できない。HITL 承認は PrepareStore / API を通じて行い、その結果が `prepare_log.json` とストア内の状態へ記録される。工程3へ進む際は最新ログまたはストアエクスポート結果を参照させること。
 ### 工程3: マッピング (HITL + 自動)
 章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Prepare 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
 - 工程3全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
 - `--prepare-*` オプションで工程2の成果物を指定する。既定値は `.pptx/prepare/` 配下のファイルを参照し、存在すれば指定を省略できる（`--prepare-*` は互換エイリアス）。
+- 承認状態（差戻し含む）は `prepare_log.json` と PrepareStore の管理下にある。CLI はログを読み取るのみであり、承認フラグを上書きする機能は持たない。
 - `jobspec.meta.template_path`・`jobspec.meta.layouts_path` が設定されていれば、それぞれ `--template`・`--layouts` を省略できる。省略時は jobspec と同一ディレクトリ → カレントディレクトリの順に相対パスを解決する。
 - ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
 
