@@ -4,6 +4,7 @@
 - プロジェクト運用やルールをまとめたドキュメントを配置。
 - `docs/policies/config-and-templates.md`: 設定ファイルとテンプレートの変更手順。
 - `docs/policies/task-management.md`: タスク管理フローと ToDo 運用方針。
+- `docs/policies/github-label-governance.md`: GitHub ラベル体系と自動付与ワークフローの運用ガイド。
 
 ## requirements
 - 要件定義・期待する振る舞いを整理した資料を格納。
