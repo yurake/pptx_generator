@@ -1,12 +1,12 @@
 ---
-目的: RM-070 Template AI マルチプロバイダ対応 — Stage1 の Template AI で Azure OpenAI / Anthropic / Bedrock 等を利用可能にする
-関連ブランチ: feat/rm070-template-ai-providers
+目的: RM-071 Template AI マルチプロバイダ対応 — Stage1 の Template AI で Azure OpenAI / Anthropic / Bedrock 等を利用可能にする
+関連ブランチ: feat/rm071-template-ai-providers
 関連Issue: #302
-roadmap_item: RM-070 Template AI マルチプロバイダ対応
+roadmap_item: RM-071 Template AI マルチプロバイダ対応
 ---
 
 - [x] ブランチ作成と初期コミット
-  - メモ: 2025-11-23 `origin/main` から `feat/rm070-template-ai-providers` を作成。本ノート追加を初期コミットに含める。
+  - メモ: 2025-11-23 `origin/main` から `feat/rm071-template-ai-providers` を作成。本ノート追加を初期コミットに含める。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: Template AI クライアント（`src/pptx_generator/template_ai/client.py`）を Content/Layout AI と同じプロバイダ構成に拡張し、policy / diagnostics / ドキュメントを更新する。既存の `mock` / `openai` は互換維持。
@@ -30,7 +30,7 @@ roadmap_item: RM-070 Template AI マルチプロバイダ対応
 - [x] テスト・検証
   - メモ: `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/test_template_ai.py` を実行し 3 件成功。
 - [x] ドキュメント更新
-  - メモ: README と Stage1 設計・要件ドキュメントを更新し、ロードマップへ RM-070 を追加。runbook は影響なしのため未更新。
+  - メモ: README と Stage1 設計・要件ドキュメントを更新し、ロードマップへ RM-071 を追加。runbook は影響なしのため未更新。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）

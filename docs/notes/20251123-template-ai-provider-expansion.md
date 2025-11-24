@@ -56,5 +56,5 @@ Template AI 側で不足している要素:
 
 ## 7. 次のアクション
 1. 共通クライアント抽象化の PoC ブランチを作成し、Template AI から Azure クライアントを呼び出せることを検証する。
-2. 必要な作業範囲を整理し、新規 RM（例: RM-070）および ToDo を整備する。完了後は ToDo をアーカイブ（`docs/todo/archive/20251123-rm070-template-ai-providers.md`）へ移動。
+2. 必要な作業範囲を整理し、新規 RM（例: RM-071）および ToDo を整備する。完了後は ToDo をアーカイブ（`docs/todo/archive/20251123-rm071-template-ai-providers.md`）へ移動。
 3. README / design / requirements の更新方針をまとめ、レビュー後に順次反映する。

@@ -54,7 +54,8 @@ flowchart TB
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
-        RM067["RM-067<br/>ContentElements 制約見直し<br/>(未着手)"]
+        RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
+        RM068["RM-068<br/>ContentElements 制約見直し<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -812,62 +813,77 @@ flowchart TB
 - 依存: RM-062（pptx prepare 承認モード整備）、RM-048（工程4+5 統合CLI整備）
 
 <a id="rm-067"></a>
-### RM-067 ContentElements 制約見直し
+### RM-067 スケジュールスライド自動生成
+- 対象工程: 3・4（ドラフト構成 / PPTX 生成）
+- ゴール: JobSpec で管理するマイルストーンやフェーズ情報からスケジュールスライドを自動生成し、工程4で一貫したタイムライン表現を提供する。
+- 参照ドキュメント: （未作成 — 着手時に `docs/notes/` へ登録）
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-24 復元）
+- 期待成果:
+  - Stage3 でマイルストーン情報を集約し、スケジュールテンプレートへマッピングする共通モジュールを設計する。
+  - レイアウト選択時にガント・ロードマップ等の図版を自動割当し、Draft Mapping ログにスケジュール根拠を記録する。
+  - LLM 推薦およびヒューリスティック双方で利用可能なプロンプト／policy を整備し、CLI テストで回帰を担保する。
+- 依存: RM-047（テンプレ統合構成生成AI連携）、RM-064（レイアウト候補メタ情報拡充）
+- 次アクション: JobSpec のマイルストーンスキーマとテンプレート側のスケジュール図形設計を棚卸しし、ToDo を新規作成する。
+
+<a id="rm-068"></a>
+### RM-068 ContentElements 制約見直し
 - 対象工程: 3・4（ドラフト構成 / PPTX 生成）
 - ゴール: `ContentElements.body` の 6 行 / 40 文字制限を撤廃し、prepare / compose 段階では全文保持しつつ、レンダリング工程でレイアウトごとのトリミング方針へ移行する。
 - 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-17 追加）
 - 期待成果:
--  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` の 200 文字制限、title/subtitle 120 文字、`config/rules.json` の `title.max_length`/`bullet.max_length` など関連制約も含め再評価し、最終的なトリミングはレンダリング工程へ委譲する）。
--  - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
--  - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
+  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` の 200 文字制限、title/subtitle 120 文字、`config/rules.json` の `title.max_length`/`bullet.max_length` など関連制約も含め再評価し、最終的なトリミングはレンダリング工程へ委譲する）。
+  - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
+  - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
 - 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。
 
-<a id="rm-068"></a>
-### RM-068 コンテキスト設計ガイド整備
+<a id="rm-069"></a>
+### RM-069 コンテキスト設計ガイド整備
 - 対象領域: README / AGENTS / docs 配下の構造・運用ルール
 - ゴール: コンテキスト設計ポリシー（upfront はサマリのみ、オンデマンド参照、階層管理、必要時注入）を明文化し、ドキュメント群へ段階的に反映する。
 - 参照ドキュメント: [docs/notes/20250214-context-engineering-hand-off.md](../notes/20250214-context-engineering-hand-off.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-02-14 追加）
 - 期待成果:
--  - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
--  - トップレベル README / AGENTS にコンテキストパック（目的・入力・出力・制約・参照資料・チェックリスト）の章を追加する。
--  - Runbook の記述フォーマットを「前提 / 入力 / 手順 / 失敗時 / 関連資料」で統一し、必要に応じてテンプレート化する。
--  - ToDo テンプレートおよび運用ガイドに、設計・実装方針メモと参照資料リンクの記載ルールを追加する。
+  - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
+  - トップレベル README / AGENTS にコンテキストパック（目的・入力・出力・制約・参照資料・チェックリスト）の章を追加する。
+  - Runbook の記述フォーマットを「前提 / 入力 / 手順 / 失敗時 / 関連資料」で統一し、必要に応じてテンプレート化する。
+  - ToDo テンプレートおよび運用ガイドに、設計・実装方針メモと参照資料リンクの記載ルールを追加する。
 - 次アクション: ポリシー文書草案の作成とレビュー、README / AGENTS のドラフト更新方針を決定し、順次反映するための ToDo を作成する。
 
-<a id="rm-069"></a>
-### RM-069 開発プロセス運用ルール見直し
+<a id="rm-070"></a>
+### RM-070 開発プロセス運用ルール見直し
 - ゴール: Approval-First Development Policy に基づく ToDo／ロードマップ／ブランチ運用を統一し、循環参照や記録漏れを防止する。
 - 対象領域: Cross-Stage / Governance（ToDo 運用、ロードマップ保守、自動化スクリプト）
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md), [docs/todo/template.md](../todo/template.md), [docs/roadmap/roadmap.md](./roadmap.md)
-- 参照 ToDo: [docs/todo/archive/20251122-rm069-dev-process-guidance.md](../todo/archive/20251122-rm069-dev-process-guidance.md)
+- 参照 ToDo: [docs/todo/archive/20251122-rm070-dev-process-guidance.md](../todo/archive/20251122-rm070-dev-process-guidance.md)
 - 状況: 完了（2025-11-22 更新）
 - 期待成果:
   - ToDo 作成時に既存 `RM-xxx` を必須とするルールと lint 検証を導入し、ロードマップとの整合性を常に確保する。
   - ブランチ命名を `prefix/rmxxx-slug` 形式へ統一し、テンプレート・ガイド・自動チェックを整備する。
- - `RM-000` を活用したロードマップ追加プロセスを明文化し、循環参照を排除する。
+  - `RM-000` を活用したロードマップ追加プロセスを明文化し、循環参照を排除する。
   - ToDo 目的欄・Issue 連携での RM 表示を標準化し、起票・レビュー時にテーマが即座に識別できるようにする。
 - Mermaid 図から完了テーマを除外し、`todo-auto-complete` 等の自動化で完了時の扱いを一貫させる。
 - 関連テーマ: RM-002（エージェント運用ガイド整備）、RM-059（Mermaid 図自動レンダリング）
 - 次アクション: ポリシー更新の定着状況を四半期ごとにレビューし、必要に応じて lint・自動化スクリプトをチューニングする。
 
-<a id="rm-070"></a>
+<a id="rm-071"></a>
+### RM-071 Template AI マルチプロバイダ対応
 - 対象工程: 1（テンプレ抽出）
 - ゴール: Template AI が Stage2/Stage3 と同等の LLM プロバイダ群（Azure OpenAI / Anthropic Claude / AWS Bedrock など）を利用できるようにし、環境依存の制約を解消する。
 - 参照ドキュメント: [docs/notes/20251123-template-ai-provider-expansion.md](../notes/20251123-template-ai-provider-expansion.md)
-- 参照 ToDo: [docs/todo/archive/20251123-rm070-template-ai-providers.md](../todo/archive/20251123-rm070-template-ai-providers.md)
+- 参照 ToDo: [docs/todo/archive/20251123-rm071-template-ai-providers.md](../todo/archive/20251123-rm071-template-ai-providers.md)
 - 状況: 完了（2025-11-23 更新）
 - 期待成果:
-- Template AI クライアントが共通 LLM ラッパーを利用し、OpenAI 以外のプロバイダへ切り替え可能になる。
+  - Template AI クライアントが共通 LLM ラッパーを利用し、OpenAI 以外のプロバイダへ切り替え可能になる。
   - policy / README / requirements に各プロバイダの設定手順を追記し、本番構成でも Stage1 が動作する。
   - `diagnostics.json.template_ai` に推論プロバイダ情報を出力し、テストでプロバイダ切替が検証される。
 - 依存: RM-061（usage_tags ガバナンス強化）、RM-064（レイアウト候補メタ情報拡充）
 
-<a id="rm-071"></a>
-### RM-071 slide_alignment 命名と責務の再整理
+<a id="rm-072"></a>
+### RM-072 slide_alignment 命名と責務の再整理
 - 対象工程: 3（マッピング／SlideIdAligner）
 - ゴール: 現在 `content_ai` 名で運用している SlideIdAligner 系コンポーネントの名称とドキュメントを、実際の責務（カードと JobSpec スライドの整合）に合わせて `slide_ai` 等へ改称し、layout AI と混同しないよう整理する。
 - 参照ドキュメント: [docs/design/schema/stage-03-mapping.md](./stage-03-mapping.md)
@@ -879,8 +895,8 @@ flowchart TB
   - リネーム後も既存テスト・設定が正常に動作することを確認し、必要に応じて移行手順をドキュメント化する。
 - 依存: RM-064（レイアウト候補メタ情報拡充）
 
-<a id="rm-072"></a>
-### RM-072 README 多言語展開整備
+<a id="rm-073"></a>
+### RM-073 README 多言語展開整備
 - 対象領域: ルート `README.md`（日本語版）と多言語版 README（英語・中国語）
 - ゴール: ルート README の更新内容を英語版・中国語版にも速やかに反映できる運用を確立し、三言語の内容差分を最小化する。
 - 参照ドキュメント: （作成予定: `docs/notes/README-i18n-plan.md`）
@@ -890,10 +906,10 @@ flowchart TB
   - 英語版（`README.en.md` など）、中国語版 README を作成し、ルート README と同等の構成・更新履歴を保つ。
   - README 更新時に他言語版へ反映するフロー／チェックリストを整備し、ToDo や CI で差分を検知できるようにする。
   - 翻訳ルール（用語集・スタイル）と翻訳担当の責務を明文化し、リリースフローに組み込む。
-- 依存: RM-002（エージェント運用ガイド整備）、RM-069（開発プロセス運用ルール見直し）
+- 依存: RM-002（エージェント運用ガイド整備）、RM-070（開発プロセス運用ルール見直し）
 
-<a id="rm-073"></a>
-### RM-073 README バッジ整備と静的解析導入
+<a id="rm-074"></a>
+### RM-074 README バッジ整備と静的解析導入
 - 対象領域: ルート `README.md`、CI（GitHub Actions）、静的解析（SonarCloud）
 - ゴール: README に主要バッジ（ライセンス／ビルド／Python バージョン／SonarCloud）を追加し、CI・静的解析の整備と共に視覚的に状態を把握できるようにする。
 - 参照ドキュメント: （作成予定: `docs/notes/README-badges-plan.md`）
@@ -903,4 +919,4 @@ flowchart TB
   - SonarCloud プロジェクトを設定し、CI から静的解析を実行できるようにする。
   - README にライセンスバッジ、GitHub Actions バッジ、Python バージョンバッジ、SonarCloud バッジを追加し、運用手順を整備する。
   - バッジ更新を README の更新フローに組み込み、他言語版への展開方針も合わせて検討する。
-- 依存: RM-071（slide_alignment 命名と責務の再整理）、RM-072（README 多言語展開整備）
+- 依存: RM-072（slide_alignment 命名と責務の再整理）、RM-073（README 多言語展開整備）

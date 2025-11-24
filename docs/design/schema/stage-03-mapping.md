@@ -141,4 +141,4 @@
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。
-- `ContentElements.body` は現状 6 行 / 40 文字制限があるが、RM-067 で制約緩和とレンダリング工程へのトリミング移行を検討中。
+- `ContentElements.body` は現状 6 行 / 40 文字制限があるが、RM-068 で制約緩和とレンダリング工程へのトリミング移行を検討中。
