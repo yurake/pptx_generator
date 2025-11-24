@@ -63,8 +63,6 @@ def test_layout_provider_script_runs_when_env_present(provider: str) -> None:
 
     prepare_dir = project_root / "samples" / "prepare_single"
     cards_path = prepare_dir / "prepare_card.json"
-    prepare_log_path = prepare_dir / "prepare_log.json"
-    prepare_meta_path = prepare_dir / "ai_generation_meta.json"
 
     result = subprocess.run(
         [
@@ -72,10 +70,6 @@ def test_layout_provider_script_runs_when_env_present(provider: str) -> None:
             "scripts/test_layout_providers.sh",
             "--cards",
             str(cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
             provider,
         ],
         cwd=project_root,

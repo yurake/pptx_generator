@@ -225,11 +225,12 @@ class PrepareDocument(BaseModel):
     prepare_id: str
     cards: list[PrepareCard] = Field(default_factory=list)
     story_context: PrepareStoryContext = Field(default_factory=PrepareStoryContext)
+    meta: dict[str, Any] = Field(default_factory=dict)
 
     def compute_content_hash(self) -> str:
         """成果物全体のハッシュ値を返す。"""
 
-        payload = self.model_dump(mode="json", exclude_none=True)
+        payload = self.model_dump(mode="json", exclude_none=True, exclude={"meta"})
         digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(digest.encode("utf-8")).hexdigest()
 

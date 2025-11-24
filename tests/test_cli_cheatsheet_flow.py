@@ -121,6 +121,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
     meta_payload.setdefault("schema_version", "1.0")
     meta_payload.setdefault("title", "Matching Spec")
     meta_payload.setdefault("locale", "ja-JP")
+    meta_payload["template_path"] = str(SAMPLE_TEMPLATE.resolve())
+    meta_payload["layouts_path"] = str(layouts_path.resolve())
 
     auth_payload = jobspec_payload.get("auth")
     if not isinstance(auth_payload, dict):
@@ -149,16 +151,8 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
             str(compose_output_root / "draft"),
             "--output",
             str(compose_output_root / "gen"),
-            "--layouts",
-            str(layouts_path),
             "--prepare-cards",
             str(prepare_cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
-            "--template",
-            str(SAMPLE_TEMPLATE),
         ],
         catch_exceptions=False,
     )

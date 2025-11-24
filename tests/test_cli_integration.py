@@ -87,10 +87,6 @@ def _prepare_args(paths: dict[str, Path]) -> list[str]:
     return [
         "--prepare-cards",
         str(paths["cards"]),
-        "--prepare-log",
-        str(paths["log"]),
-        "--prepare-meta",
-        str(paths["meta"]),
     ]
 
 
@@ -132,8 +128,29 @@ def _create_matching_jobspec(root: Path, prepare_paths: dict[str, Path], *, file
     spec_path = root / filename
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     payload = jobspec.model_dump(mode="json")
+    payload.setdefault("meta", {})
+    payload["meta"]["template_path"] = "templates/templates.pptx"
+    payload["meta"]["layouts_path"] = "layouts.jsonl"
     spec_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    template_dst = spec_path.parent / "templates" / "templates.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(Path("samples/templates/templates.pptx"), template_dst)
+
+    layouts_path = spec_path.parent / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     return spec_path
@@ -268,21 +285,16 @@ def _prepare_generate_ready(
     *,
     draft_dir: Path,
     prepare_paths: dict[str, Path],
-    extra_args: list[str] | None = None,
 ) -> Path:
     args = [
         "mapping",
         str(spec_path),
         "--output",
         str(mapping_dir),
-        "--template",
-        str(SAMPLE_TEMPLATE),
         "--draft-output",
         str(draft_dir),
         *_prepare_args(prepare_paths),
     ]
-    if extra_args:
-        args.extend(extra_args)
 
     result = runner.invoke(app, args, catch_exceptions=False)
     assert result.exit_code == 0, result.output
@@ -447,6 +459,12 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload.get("meta", {}).pop("template_path", None)
+    spec_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     result = runner.invoke(
         app,
@@ -464,7 +482,7 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
 
     assert result.exit_code == 2
     assert (
-        "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+        "jobspec.meta.template_path にテンプレートパスを設定してください。"
         in result.output
     )
 
@@ -485,8 +503,6 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
             str(draft_dir),
             "--output",
             str(output_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
             *_prepare_args(prepare_paths),
         ],
         catch_exceptions=False,
@@ -546,8 +562,6 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
             str(spec_path),
             "--output",
             str(mapping_dir),
-            "--template",
-            str(SAMPLE_TEMPLATE),
             "--draft-output",
             str(draft_dir),
             "--prepare-cards",
@@ -794,13 +808,19 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    spec_payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec_payload.setdefault("meta", {})
+    spec_payload["meta"]["template_path"] = str(template_path)
+    spec_path.write_text(
+        json.dumps(spec_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     ready_path = _prepare_generate_ready(
         runner,
         spec_path,
         mapping_dir,
         draft_dir=draft_dir,
         prepare_paths=prepare_paths,
-        extra_args=["--template", str(template_path)],
     )
 
     result = runner.invoke(
@@ -822,6 +842,11 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     branding_info = audit_payload.get("branding")
     assert branding_info is not None
     assert branding_info.get("source", {}).get("type") == "file"
+    ready_payload = json.loads(ready_path.read_text(encoding="utf-8"))
+    stored_template = ready_payload.get("meta", {}).get("template_path")
+    assert stored_template is not None
+    resolved_template = (ready_path.parent / Path(stored_template)).resolve()
+    assert resolved_template == template_path.resolve()
 
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
@@ -884,8 +909,6 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
                 str(spec_path.relative_to(Path(fs_root))),
                 "--output",
                 "samples/gen-ready",
-                "--template",
-                "samples/templates/templates.pptx",
                 *_prepare_args(prepare_paths),
             ],
             catch_exceptions=False,
@@ -1041,16 +1064,8 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
         [
             "mapping",
             str(jobspec_path),
-            "--template",
-            str(template_path),
-            "--layouts",
-            str(Path("samples/extract/layouts.jsonl")),
             "--prepare-cards",
             str(prepare_dir / "prepare_card.json"),
-            "--prepare-log",
-            str(prepare_dir / "prepare_log.json"),
-            "--prepare-meta",
-            str(prepare_dir / "ai_generation_meta.json"),
             "--output",
             str(mapping_dir),
             "--draft-output",

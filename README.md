@@ -180,14 +180,14 @@ flowchart TD
 - プレペア入力（Markdown / JSON）を `PrepareCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
-- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json`などを出力します。
+- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json` などを出力します。CLI はこれらのパスを `prepare_card.json.meta.*` に書き込み、後続工程はメタ情報から自動的に解決します。
 - Dynamic モードでは `prepare_card.json.cards[*].order` の昇順で `pptx compose` / `pptx outline` がスライドを生成し、HITL の並び替えをそのまま反映します。Static モードはテンプレ Blueprint / JobSpec の順序を優先し、`ai_generation_meta.mode` が未設定・未知値の場合はエラーになります。
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
     --output .pptx/prepare
   ```
   - 主な生成物: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`
-  - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards`, `--prepare-log`, `--prepare-meta` を Stage3 に直接渡します（Stage2 をスキップ可能）。
+  - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards` のみ指定すれば十分です（ログ・メタは `prepare_card.json.meta` から自動参照されます）。
 
 ### 工程 3: マッピング (HITL + 自動)
 - 章構成承認とレイアウト割付を同一工程で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
@@ -195,14 +195,11 @@ flowchart TD
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
     --prepare-cards .pptx/prepare/prepare_card.json \
-    --prepare-log .pptx/prepare/prepare_log.json \
-    --prepare-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
-    --output .pptx/compose \
-    --layouts .pptx/extract/layouts.jsonl \
-    --template samples/templates/templates.pptx
+    --output .pptx/compose
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
+- jobspec にはテンプレートとレイアウトのパスを `meta.template_path` / `meta.layouts_path` として保存しておきます。CLI はこれらのメタ情報を必須とし、欠落している場合はエラーになります。
 - JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
 - `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
@@ -214,7 +211,7 @@ flowchart TD
     --branding config/branding.json \
     --export-pdf
   ```
-- `generate_ready.json` に `meta.template_path` が記録されていれば、`--template` を指定せずにテンプレートを自動解決します。
+- `generate_ready.json` に `meta.template_path` が記録されていることが前提です（Compose / Mapping が自動で埋め込みます）。
 - 詳細ガイド: `docs/requirements/stages/stage-04-rendering.md` と `docs/design/stages/stage-04-rendering.md`
 
 ## 主な成果物

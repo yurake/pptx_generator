@@ -377,12 +377,8 @@ def _resolve_template_path(
     *,
     spec: JobSpec,
     spec_source: Path,
-    template_option: Path | None,
 ) -> Path:
     """ジョブスペックとオプションからテンプレートパスを決定する。"""
-
-    if template_option is not None:
-        return template_option
 
     template_path_value: str | None = None
     meta = getattr(spec, "meta", None)
@@ -404,7 +400,7 @@ def _resolve_template_path(
 
     if not template_path_value:
         raise ValueError(
-            "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+            "jobspec.meta.template_path にテンプレートパスを設定してください。"
         )
 
     candidate_raw = Path(template_path_value)
@@ -419,7 +415,7 @@ def _resolve_template_path(
             resolved = cwd_relative
         else:
             raise ValueError(
-                "テンプレートファイルを --template で指定するか、jobspec.meta.template_path にテンプレートパスを設定してください。"
+                "jobspec.meta.template_path にテンプレートパスを設定してください。"
                 f"（確認したパス: {spec_relative}, {cwd_relative}）"
             )
     if not resolved.exists():
@@ -431,12 +427,8 @@ def _resolve_layouts_path(
     *,
     spec: JobSpec,
     spec_source: Path,
-    layouts_option: Path | None,
 ) -> Path | None:
     """ジョブスペックとオプションから layouts.jsonl のパスを決定する。"""
-
-    if layouts_option is not None:
-        return layouts_option
 
     layouts_path_value: str | None = None
     meta = getattr(spec, "meta", None)
@@ -473,7 +465,7 @@ def _resolve_layouts_path(
             return candidate
 
     message = (
-        "レイアウト定義ファイルを --layouts で指定するか、jobspec.meta.layouts_path に有効なパスを設定してください。"
+        "jobspec.meta.layouts_path に有効なパスを設定してください。"
         f"（確認したパス: {', '.join(str(path) for path in candidates)}）"
     )
     raise ValueError(message)
@@ -1142,8 +1134,6 @@ def _run_draft_pipeline(
     spec: JobSpec,
     output_dir: Path,
     prepare_cards: Path | None,
-    prepare_log: Path | None,
-    prepare_meta: Path | None,
     require_prepare: bool,
     draft_options: DraftStructuringOptions,
 ) -> PipelineContext:
@@ -1165,8 +1155,6 @@ def _run_draft_pipeline(
         PrepareNormalizationStep(
             PrepareNormalizationOptions(
                 cards_path=prepare_cards,
-                log_path=prepare_log,
-                ai_meta_path=prepare_meta,
                 require_document=require_prepare,
             )
         )
@@ -1274,8 +1262,6 @@ def _execute_outline(
     chapter_template: str | None,
     analysis_summary_path: Path | None,
     prepare_cards: Path | None,
-    prepare_log: Path | None,
-    prepare_meta: Path | None,
     require_prepare: bool,
 ) -> OutlineResult:
     draft_options = DraftStructuringOptions(
@@ -1294,8 +1280,6 @@ def _execute_outline(
         spec=spec,
         output_dir=output_dir,
         prepare_cards=prepare_cards,
-        prepare_log=prepare_log,
-        prepare_meta=prepare_meta,
         require_prepare=require_prepare,
         draft_options=draft_options,
     )
@@ -1373,8 +1357,6 @@ def _run_mapping_pipeline(
     refiner_options: RefinerOptions,
     branding_artifact: dict[str, object],
     prepare_cards: Path | None,
-    prepare_log: Path | None,
-    prepare_meta: Path | None,
     require_prepare: bool,
     layouts: Optional[Path],
     draft_output: Path,
@@ -1383,7 +1365,7 @@ def _run_mapping_pipeline(
     draft_options: DraftStructuringOptions | None = None,
 ) -> PipelineContext:
     if template is None:
-        msg = "テンプレートファイルを --template で指定してください。generate_ready.json の meta.template_path を設定します。"
+        msg = "jobspec.meta.template_path を設定し、テンプレートパスを埋め込んでください。"
         raise ValueError(msg)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1400,8 +1382,6 @@ def _run_mapping_pipeline(
             spec=spec,
             output_dir=draft_output,
             prepare_cards=prepare_cards,
-            prepare_log=prepare_log,
-            prepare_meta=prepare_meta,
             require_prepare=require_prepare,
             draft_options=draft_options
             or DraftStructuringOptions(
@@ -2164,6 +2144,24 @@ def prepare(
     story_outline_path = output_dir / "prepare_story_outline.json"
     audit_path = output_dir / "audit_log.json"
 
+    def _relativize(path: Path) -> str:
+        try:
+            return str(path.relative_to(output_dir))
+        except ValueError:
+            return str(path)
+
+    document.meta = dict(document.meta or {})
+    document.meta.update(
+        {
+            "prepare_card_path": _relativize(cards_path),
+            "prepare_log_path": _relativize(log_path),
+            "prepare_ai_log_path": _relativize(ai_log_path),
+            "ai_generation_meta_path": _relativize(meta_path),
+            "prepare_story_outline_path": _relativize(story_outline_path),
+            "prepare_audit_log_path": _relativize(audit_path),
+        }
+    )
+
     _dump_json(cards_path, document.model_dump(mode="json", exclude_none=True))
     _dump_json(log_path, [])
     _dump_json(
@@ -2212,13 +2210,6 @@ def prepare(
     "spec_path",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
-)
-@click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="工程2で生成した layouts.jsonl のパス",
 )
 @click.option(
     "--output",
@@ -2296,23 +2287,8 @@ def prepare(
     show_default=True,
     help="工程2の prepare_card.json",
 )
-@click.option(
-    "--prepare-log",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
-    show_default=True,
-    help="工程2の prepare_log.json（任意）",
-)
-@click.option(
-    "--prepare-meta",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
-    show_default=True,
-    help="工程2の ai_generation_meta.json（任意）",
-)
 def outline(
     spec_path: Path,
-    layouts: Path | None,
     output_dir: Path,
     target_length: int | None,
     structure_pattern: str | None,
@@ -2324,8 +2300,6 @@ def outline(
     return_reasons: bool,
     show_layout_reasons: bool,
     prepare_cards: Path,
-    prepare_log: Path,
-    prepare_meta: Path,
 ) -> None:
     """工程4 ドラフト構成（アウトライン）を生成する。"""
 
@@ -2351,9 +2325,18 @@ def outline(
     templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
 
     try:
+        resolved_layouts = _resolve_layouts_path(
+            spec=spec,
+            spec_source=spec_path,
+        )
+    except ValueError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=2) from exc
+
+    try:
         result = _execute_outline(
             spec=spec,
-            layouts=layouts,
+            layouts=resolved_layouts,
             output_dir=output_dir,
             spec_source_path=spec_path,
             target_length=target_length,
@@ -2363,8 +2346,6 @@ def outline(
             chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
             prepare_cards=prepare_cards,
-            prepare_log=prepare_log if prepare_log.exists() else None,
-            prepare_meta=prepare_meta if prepare_meta.exists() else None,
             require_prepare=True,
         )
     except PrepareNormalizationError as exc:
@@ -2387,13 +2368,6 @@ def outline(
     "spec_path",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
-)
-@click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="工程2で生成した layouts.jsonl のパス",
 )
 @click.option(
     "--draft-output",
@@ -2466,14 +2440,6 @@ def outline(
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="generate_ready.json に埋め込むテンプレートファイル（未指定時は jobspec.meta.template_path を利用）",
-)
-@click.option(
     "--branding",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
@@ -2490,25 +2456,8 @@ def outline(
     show_default=True,
     help="工程2の prepare_card.json",
 )
-@click.option(
-    "--prepare-log",
-    "prepare_log",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
-    show_default=True,
-    help="工程2の prepare_log.json（任意）",
-)
-@click.option(
-    "--prepare-meta",
-    "prepare_meta",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
-    show_default=True,
-    help="工程2の ai_generation_meta.json（任意）",
-)
 def compose(  # noqa: PLR0913
     spec_path: Path,
-    layouts: Path | None,
     draft_output: Path,
     target_length: int | None,
     structure_pattern: str | None,
@@ -2519,11 +2468,8 @@ def compose(  # noqa: PLR0913
     show_layout_reasons: bool,
     output_dir: Path,
     rules: Path,
-    template: Optional[Path],
     branding: Optional[Path],
     prepare_cards: Path,
-    prepare_log: Path,
-    prepare_meta: Path,
 ) -> None:
     """工程4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
@@ -2537,7 +2483,6 @@ def compose(  # noqa: PLR0913
         resolved_template = _resolve_template_path(
             spec=spec,
             spec_source=spec_path,
-            template_option=template,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)
@@ -2546,7 +2491,6 @@ def compose(  # noqa: PLR0913
         resolved_layouts = _resolve_layouts_path(
             spec=spec,
             spec_source=spec_path,
-            layouts_option=layouts,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)
@@ -2567,8 +2511,6 @@ def compose(  # noqa: PLR0913
             chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
             prepare_cards=prepare_cards,
-            prepare_log=prepare_log if prepare_log.exists() else None,
-            prepare_meta=prepare_meta if prepare_meta.exists() else None,
             require_prepare=True,
         )
     except PrepareNormalizationError as exc:
@@ -2601,8 +2543,6 @@ def compose(  # noqa: PLR0913
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
             prepare_cards=prepare_cards,
-            prepare_log=prepare_log if prepare_log.exists() else None,
-            prepare_meta=prepare_meta if prepare_meta.exists() else None,
             require_prepare=True,
             layouts=resolved_layouts,
             draft_output=draft_output,
@@ -2660,26 +2600,11 @@ def compose(  # noqa: PLR0913
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--layouts",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="layouts.jsonl のパス",
-)
-@click.option(
     "--draft-output",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path(".pptx/draft"),
     show_default=True,
     help="draft_draft.json / draft_approved.json の出力先",
-)
-@click.option(
-    "--template",
-    "-t",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="generate_ready.json に埋め込むテンプレートファイル（未指定時は jobspec.meta.template_path を利用）",
 )
 @click.option(
     "--branding",
@@ -2698,33 +2623,13 @@ def compose(  # noqa: PLR0913
     show_default=True,
     help="工程2の prepare_card.json",
 )
-@click.option(
-    "--prepare-log",
-    "prepare_log",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_log.json",
-    show_default=True,
-    help="工程2の prepare_log.json（任意）",
-)
-@click.option(
-    "--prepare-meta",
-    "prepare_meta",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR / "ai_generation_meta.json",
-    show_default=True,
-    help="工程2の ai_generation_meta.json（任意）",
-)
 def mapping(  # noqa: PLR0913
     spec_path: Path,
     output_dir: Path,
     rules: Path,
-    layouts: Optional[Path],
     draft_output: Path,
-    template: Optional[Path],
     branding: Optional[Path],
     prepare_cards: Path,
-    prepare_log: Path,
-    prepare_meta: Path,
 ) -> None:
     """工程5 マッピングを実行し generate_ready.json を生成する。"""
     try:
@@ -2737,7 +2642,6 @@ def mapping(  # noqa: PLR0913
         resolved_template = _resolve_template_path(
             spec=spec,
             spec_source=spec_path,
-            template_option=template,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)
@@ -2747,7 +2651,6 @@ def mapping(  # noqa: PLR0913
         resolved_layouts = _resolve_layouts_path(
             spec=spec,
             spec_source=spec_path,
-            layouts_option=layouts,
         )
     except ValueError as exc:
         click.echo(str(exc), err=True)
@@ -2768,8 +2671,6 @@ def mapping(  # noqa: PLR0913
             refiner_options=refiner_options,
             branding_artifact=branding_artifact,
             prepare_cards=prepare_cards,
-            prepare_log=prepare_log if prepare_log.exists() else None,
-            prepare_meta=prepare_meta if prepare_meta.exists() else None,
             require_prepare=True,
             layouts=resolved_layouts,
             draft_output=draft_output,
