@@ -57,7 +57,6 @@ flowchart TB
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
-        RM068["RM-068<br/>ContentElements 制約見直し<br/>(未着手)"]
         RM072["RM-072<br/>slide_alignment 命名と責務再整理<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
     end
@@ -858,7 +857,7 @@ flowchart TB
 - 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-047（テンプレ統合構成生成AI連携）
-- 状況: 未着手（2025-11-17 追加）
+- 状況: 完了（2025-11-24 更新）
 - 期待成果:
   - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` や title/subtitle の固定上限を撤廃し、`config/rules.json` からも長さ・階層の閾値を除外してレンダリング工程へ委譲する）。
   - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
