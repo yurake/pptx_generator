@@ -30,6 +30,9 @@ flowchart TB
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
+        RM069["RM-069<br/>コンテキスト設計ガイド整備<br/>(未着手)"]
+        RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
+        RM074["RM-074<br/>README バッジ整備と静的解析導入<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -53,9 +56,9 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
-        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM068["RM-068<br/>ContentElements 制約見直し<br/>(未着手)"]
+        RM072["RM-072<br/>slide_alignment 命名と責務再整理<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -85,6 +88,7 @@ flowchart TB
 - 対象工程: 5（マッピング）・6（PPTX レンダリング）に付随する Analyzer / Refiner 処理
 - 参照ドキュメント: [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
 - 参照 ToDo: [docs/todo/archive/20251007-analyzer-layout-consistency.md](../todo/archive/20251007-analyzer-layout-consistency.md)
+- 依存: なし（Analyzer / Refiner ルール拡張の基盤テーマ）
 - 状況: 完了（2025-10-15 更新）
 - 期待成果: `contrast_low` 判定の調整、`layout_consistency` 追加、Fix ログの監査連携。
 
@@ -93,6 +97,7 @@ flowchart TB
 - ゴール: エージェントが参照する AGENTS.md と連動ドキュメントを体系化し、開発プロセスやテンプレート準備手順を一元管理する。
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
 - 参照 ToDo: [docs/todo/20251009-samples-expansion.md](../todo/20251009-samples-expansion.md)
+- 依存: なし（エージェント運用ガイド整備の出発点）
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: テンプレート準備ガイドの整備に加え、最小構成・フル構成サンプルの提供と活用ドキュメントの拡充。
 - 関連テーマ: フェーズ1 で整備したサンプルテンプレートと運用ルール、レンダラー改善テーマ（RM-007/008/018）と連携するドキュメント基盤。
@@ -123,6 +128,7 @@ flowchart TB
 - ゴール: ユーザーの案件メモやディスカッションログから、提案書のストーリーラインを AI が共同設計できるよう企画・要件・設計ドキュメントを整備し、工程3でのストーリー要素取り込みを支える。
 - 対象工程: 3・4（コンテンツ準備 / ドラフト構成設計）の高度化
 - 参照ドキュメント: [docs/notes/20251004-initial-deiscussion.txt](../notes/20251004-initial-deiscussion.txt), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md)
+- 依存: RM-023（コンテンツ承認オーサリング基盤）のメタデータ整備
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: ストーリー骨子メタ (`story_outline.json`) の要件定義、ストーリーフェーズ分類・章立て整合ロジックの設計メモ、工程3 UI/ワークフローへの差し込み計画。
 - 関連テーマ: RM-023（コンテンツ承認オーサリング基盤）で整備する承認メタデータ、LLM プロンプト設計、ユーザー入力メタデータ（客先業界・想定読者）の整備。
@@ -220,6 +226,7 @@ flowchart TB
 - ゴール: 全自動パワポ生成パイプラインの戦略を整理し、4 工程（2・3 HITL 含む）のフェーズ構成・KPI・フォールバックポリシーを文書化する。
 - 参照ドキュメント: [docs/notes/20251011-roadmap-refresh.md](../notes/20251011-roadmap-refresh.md)
 - 参照 ToDo: [docs/todo/archive/20251011-roadmap-refresh.md](../todo/archive/20251011-roadmap-refresh.md)
+- 依存: RM-001・RM-002 で定義した指標と運用方針
 - 状況: 完了（2025-10-11 更新）
 - 期待成果: 工程ごとのタスク整理、レイアウト選定/縮約ポリシーの方針化、HITL 承認フローと監査ログ方針整理。
   - 工程1・2: テンプレ構造抽出 CLI 要件定義と PoC 設計（ToDo 発行予定）、テンプレ運用ポリシー更新。
@@ -544,6 +551,7 @@ flowchart TB
 - ゴール: テンプレ抽出時にページ単位の spec 雛形を自動生成し、工程3以降で共通利用できる `spec_scaffold.json` を整備する。
 - 参照ドキュメント: [docs/requirements/stages/stage-02-template-structure-extraction.md](../requirements/stages/stage-02-template-structure-extraction.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm044-spec-scaffold.md](../todo/archive/20251102-rm044-spec-scaffold.md)
+- 依存: RM-010（テンプレート仕様エクスポート）
 - 状況: 完了（2025-11-02 更新）
 - 達成成果: `tpl-extract` パイプラインで `jobspec.json`（spec scaffold）を自動生成し、`samples/extract/` への成果物提供と CLI ドキュメント更新を完了。工程3 以降で雛形を参照できるようにした。
 - 次アクション: プレペア非依存のページ雛形構造を定義し、`tpl-extract` 拡張案を設計する。
@@ -554,6 +562,7 @@ flowchart TB
 - ゴール: `tpl-extract` と `layout-validate` の連続実行を自動化し、抽出直後の検証をワンコマンドで行えるようにする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm045-template-validation-wrapper.md](../todo/archive/20251102-rm045-template-validation-wrapper.md)
+- 依存: RM-044（ジョブスペック雛形自動生成）
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: `tpl-extract --validate`（仮）仕様、CI での再実行サンプル、ユーザー向け手順書。
 - 次アクション: 抽出結果と同一ディレクトリで検証成果物を取り扱う運用マニュアルの整備、および CI 用サンプルの拡張。
@@ -564,6 +573,7 @@ flowchart TB
 - ゴール: 案件側の生情報から生成AIがプレペア（章構成、メッセージ、支援コンテンツ候補）を作成し、テンプレ依存の情報を持たない抽象カードとして出力する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-content-normalization.md](../requirements/stages/stage-03-content-normalization.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md), [docs/notes/20251102-rm046-prepare-analysis.md](../notes/20251102-rm046-prepare-analysis.md)
 - 参照 ToDo: 作成予定
+- 依存: RM-005（プレゼンストーリーモデラー）
 - 状況: 完了（2025-11-03 更新）
 - 期待成果: 生成AIモードの `pptx prepare` 仕様、プレペア入力サンプル、HITL 承認ログ維持方針。
 - 次アクション: 入力フォーマットと AI プロンプト設計を確定し、ストーリー要素の出力定義を更新する。
@@ -575,6 +585,7 @@ flowchart TB
 - ゴール: 工程3の `prepare_card.json` と工程2の `jobspec.json` を統合し、工程5が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
 - 参照ドキュメント: [docs/requirements/stages/stage-04-draft-structuring.md](../requirements/stages/stage-04-draft-structuring.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
+- 依存: RM-044（テンプレ雛形生成）・RM-046（生成AIプレペア）
 - 状況: 完了（2025-11-09 更新）
 - 期待成果: `generate_ready` ベースの CLI / API 仕様、カード単位 AI 推薦フロー、HITL ログと差戻し管理の再定義。
 - 次アクション: 設計ドキュメントのレビュー完了後、モデル・パイプライン・CLI 実装とテストを実施する。
@@ -586,6 +597,7 @@ flowchart TB
 - ゴール: `pptx outline` → `pptx mapping` の連続実行をラッパー CLI 化し、HITL 後の再実行を容易にする。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/](../runbooks/), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm048-cli-wrapper.md](../todo/archive/20251102-rm048-cli-wrapper.md)
+- 依存: RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、工程4/5 テレメトリの確認。
@@ -597,6 +609,7 @@ flowchart TB
 - ゴール: `pptx gen` をレンダリング工程専用に再定義し、工程4ラッパーと責務を分離する。
 - 参照ドキュメント: [docs/requirements/stages/stage-05-rendering.md](../requirements/stages/stage-05-rendering.md), [docs/runbooks/support.md](../runbooks/support.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: 作成予定
+- 依存: RM-047（generate_ready 統合）・RM-048（工程4+5 統合CLI）
 - 状況: 完了（2025-11-09 更新）
 - 期待成果: CLI オプション整理、既存テスト更新、移行ガイド。
 - 次アクション: 既存 `pptx gen` の呼び出し箇所を棚卸しし、後方互換サポート方針を決める。
@@ -607,6 +620,7 @@ flowchart TB
 - ゴール: ロードマップ項目にジョブスペック再設計ノートなどの参照リンクを追加し、関連ドキュメントの所在を明確化する。
 - 参照ドキュメント: [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md), [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md)
 - 参照 ToDo: [docs/todo/archive/20251102-rm050-roadmap-link.md](../todo/archive/20251102-rm050-roadmap-link.md)
+- 依存: RM-015（ロードマップ再設計）
 - 状況: 完了（2025-11-01 更新）
 - 期待成果: RM-044〜RM-049 など関連項目の参照ドキュメント欄が統一され、Plan 承認内容の転記運用が徹底されている状態。
 - 次アクション: 参照追加後の運用フローを確認し、追加の参照整備が必要なロードマップ項目を棚卸しする。
@@ -617,6 +631,7 @@ flowchart TB
 - ゴール: 現行の工程1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
 - 参照ドキュメント: [README.md](../README.md), [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
 - 参照 ToDo: [docs/todo/archive/20251103-rm-051-template-integration.md](../todo/archive/20251103-rm-051-template-integration.md)
+- 依存: RM-043（サンプルテンプレ拡充）・RM-045（テンプレ抽出検証ラッパー）
 - 状況: 完了（2025-11-03 更新）
 - 期待成果: `uv run pptx template` の正式ドキュメント整備、テンプレ工程を含む全資料の 4 工程体系への更新、`tpl-extract` / `layout-validate` / `tpl-release` の詳細オプション整理。
 - 次アクション: ロードマップ全体の工程表記差し替え、CI でのテンプレ検証ジョブ自動化検討、残タスクのフォローアップ。
@@ -627,6 +642,7 @@ flowchart TB
 - 対象工程: 全工程（共通ドキュメント整備）
 - 参照ドキュメント: [README.md](../README.md), [docs/requirements/requirements.md](../requirements/requirements.md), [docs/design/design.md](../design/design.md)
 - 参照 ToDo: [docs/todo/archive/20251031-rm052-docs-readability.md](../todo/archive/20251031-rm052-docs-readability.md)
+- 依存: RM-002（エージェント運用ガイド整備）・RM-015（ロードマップ再設計）
 - 状況: 完了（2025-11-08 更新）
 - 期待成果: 工程サマリの再構成、FAQ/導線の追記、技術詳細と運用手順の分離、用語集リンクの整備を完了。
 - 次アクション: なし（完了済みテーマとして運用に移行）
@@ -637,6 +653,7 @@ flowchart TB
 - ゴール: ユーザーと同一手順で生成した PPTX/PDF サンプルを整理し、`.pptx/gen/` の構造と同期した `samples/` 配下の構成を整える。
 - 参照ドキュメント: [README.md](../README.md), [docs/runbooks/support.md](../runbooks/support.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm053-samples-refresh.md](../todo/archive/20251104-rm053-samples-refresh.md)（作成予定）
+- 依存: RM-043（サンプルテンプレ拡充）
 - 状況: 完了（2025-11-04 更新）
 - 期待成果: CLI 操作手順の検証ログと生成物をサンプルとして共有し、ユーザー導線に沿った資料準備が可能な状態。
 - 次アクション: CLI 手順を確認しながらサンプル生成し、`samples/` 配下を `.pptx` 出力構造に合わせて再編する計画を策定。
@@ -647,6 +664,7 @@ flowchart TB
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう工程2のカード生成と工程3のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-02-content-normalization.md](../requirements/stages/stage-02-content-normalization.md), [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/rm054-static-template-blueprint.md](../design/rm054-static-template-blueprint.md)
 - 参照 ToDo: [docs/todo/archive/20251109-rm054-static-blueprint-plan.md](../todo/archive/20251109-rm054-static-blueprint-plan.md)
+- 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-22 更新）
 - 期待成果: テンプレ layout_mode 定義案、工程2成果物スキーマ拡張方針、工程3フォールバック／監査の静的モード対応メモ、`pptx prepare` の `--mode (dynamic|static)` 必須化と監査ログ連携の仕様整理、Blueprint 運用設計メモ整備。
 
@@ -657,6 +675,7 @@ flowchart TB
 - 参照ドキュメント: 作成予定
 - 参照 ToDo: 作成予定
 - 関連Issue: [#271](https://github.com/yurake/pptx_generator/issues/271)
+- 依存: RM-014（自動補正・仕上げ統合）・RM-049（pptx gen スコープ最適化）
 - 状況: 未着手（2025-11-05 追加）
 - 期待成果: PPTX/ PDF 双方での文言表示統一、ブランド別テンプレとの整合確認、生成プロセスへの設定パラメータ追加方針整理。
 - 次アクション: 文言挿入位置とテンプレ依存ルールの要件定義を行い、CLI オプションと既存レンダリングテストへの反映手順を策定する。
@@ -667,6 +686,7 @@ flowchart TB
 - ゴール: `ContentImportService` を CLI に統合し、PDF・URL・data URI など多形式ソースから工程2用プレペアを自動生成できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 依存: RM-046（生成AIプレペア構成自動化）
 - 状況: 未着手（2025-11-05 追加）
 - 期待成果:
   - CLI レイヤーで PDF や URL を指定可能にし、LibreOffice 連携を含む変換パイプラインを標準実装する。
@@ -680,6 +700,7 @@ flowchart TB
 - ゴール: テンプレ抽出で生成する `jobspec.json` を工程3の `JobSpec` スキーマへ適合させ、`pptx compose` で直接利用できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-jobspec-scaffold-validation.md](../notes/20251105-jobspec-scaffold-validation.md)
 - 参照 ToDo: [docs/todo/20251108-rm059-jobspec-scaffold.md](../todo/20251108-rm059-jobspec-scaffold.md)
+- 依存: RM-044（ジョブスペック雛形自動生成）
 - 状況: 完了（2025-11-08 更新）
 - 期待成果:
   - スキャフォールド出力で不足している `meta.title` / `auth` などの必須フィールド補完ロジックを実装する。
@@ -711,6 +732,7 @@ flowchart TB
 - 対象工程: 横断（ドキュメント／ナレッジ共有）
 - 参照ドキュメント: [docs/notes/20251105-mermaid-render-automation.md](../notes/20251105-mermaid-render-automation.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 依存: RM-002（エージェント運用ガイド整備）・RM-050（ロードマップ参照整備）
 - 状況: 未着手（2025-11-05 追加）
 - 期待成果:
   - `diagrams/` にソースを管理し、生成 PNG/SVG を `assets/diagrams/` 配下へ出力する構成を整備する。
@@ -724,6 +746,7 @@ flowchart TB
 - ゴール: PrepareCard と JobSpec のスライド ID 不整合を即検知し、工程3の処理を停止する品質ゲートを確立する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md)
 - 参照 ToDo: [docs/todo/20251108-rm060-stage3-id-strict-check.md](../todo/20251108-rm060-stage3-id-strict-check.md)、[docs/todo/archive/20251108-rm060-id-alignment.md](../todo/archive/20251108-rm060-id-alignment.md)、[docs/todo/archive/20251108-rm060-card-sync.md](../todo/archive/20251108-rm060-card-sync.md)
+- 依存: RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-09 更新）
 - 期待成果:
   - DraftStructuringStep が ID 不一致を検知した際に例外を送出し、CLI 実行も明示的に失敗する。
@@ -738,6 +761,7 @@ flowchart TB
 - ゴール: Stage1 で usage_tags を生成 AI に統一し、Stage3 推薦でも同じ canonical 語彙を参照してレイアウト意図と `intent`/`type_hint` の整合を高める。
 - 参照ドキュメント: [docs/notes/20251109-usage-tags-scoring.md](../notes/20251109-usage-tags-scoring.md)
 - 参照 ToDo: [docs/todo/archive/20251109-rm061-usage-tags-governance.md](../todo/archive/20251109-rm061-usage-tags-governance.md)
+- 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-16 更新）
 - 期待成果:
   - テンプレ抽出コマンドで Template AI を既定起動し、`config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
@@ -832,6 +856,7 @@ flowchart TB
 - ゴール: `ContentElements.body` の 6 行 / 40 文字制限を撤廃し、prepare / compose 段階では全文保持しつつ、レンダリング工程でレイアウトごとのトリミング方針へ移行する。
 - 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 依存: RM-047（テンプレ統合構成生成AI連携）
 - 状況: 未着手（2025-11-17 追加）
 - 期待成果:
   - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` の 200 文字制限、title/subtitle 120 文字、`config/rules.json` の `title.max_length`/`bullet.max_length` など関連制約も含め再評価し、最終的なトリミングはレンダリング工程へ委譲する）。
@@ -845,6 +870,7 @@ flowchart TB
 - ゴール: コンテキスト設計ポリシー（upfront はサマリのみ、オンデマンド参照、階層管理、必要時注入）を明文化し、ドキュメント群へ段階的に反映する。
 - 参照ドキュメント: [docs/notes/20250214-context-engineering-hand-off.md](../notes/20250214-context-engineering-hand-off.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 依存: RM-002（エージェント運用ガイド整備）・RM-052（ドキュメント可読性向上）
 - 状況: 未着手（2025-02-14 追加）
 - 期待成果:
   - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
@@ -859,6 +885,7 @@ flowchart TB
 - 対象領域: Cross-Stage / Governance（ToDo 運用、ロードマップ保守、自動化スクリプト）
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/policies/task-management.md](../policies/task-management.md), [docs/todo/template.md](../todo/template.md), [docs/roadmap/roadmap.md](./roadmap.md)
 - 参照 ToDo: [docs/todo/archive/20251122-rm070-dev-process-guidance.md](../todo/archive/20251122-rm070-dev-process-guidance.md)
+- 依存: RM-002（エージェント運用ガイド整備）
 - 状況: 完了（2025-11-22 更新）
 - 期待成果:
   - ToDo 作成時に既存 `RM-xxx` を必須とするルールと lint 検証を導入し、ロードマップとの整合性を常に確保する。
