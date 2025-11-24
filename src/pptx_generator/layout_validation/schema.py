@@ -40,6 +40,7 @@ LAYOUT_RECORD_SCHEMA: dict[str, object] = {
                         },
                         "additionalProperties": False,
                     },
+                    "shape_type": {"type": "string"},
                     "style_hint": {
                         "type": "object",
                         "properties": {
@@ -79,6 +80,128 @@ LAYOUT_RECORD_SCHEMA: dict[str, object] = {
                 "allow_image": {"type": "boolean"},
             },
             "additionalProperties": False,
+        },
+        "placeholder_summary": {
+            "type": "object",
+            "properties": {
+                "counts": {
+                    "type": "object",
+                    "additionalProperties": {"type": "integer", "minimum": 0},
+                },
+                "area_ratio": {
+                    "type": "object",
+                    "additionalProperties": {"type": "number", "minimum": 0.0},
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "type"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "type": {"type": "string"},
+                            "shape_type": {"type": "string"},
+                            "flags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "area_ratio": {"type": ["number", "null"]},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "attributes": {
+                    "type": "object",
+                    "properties": {
+                        "total": {"type": "integer", "minimum": 0},
+                        "has_title": {"type": "boolean"},
+                        "has_body": {"type": "boolean"},
+                        "has_table": {"type": "boolean"},
+                        "has_chart": {"type": "boolean"},
+                        "has_visual": {"type": "boolean"},
+                    },
+                    "additionalProperties": True,
+                },
+            },
+            "additionalProperties": False,
+        },
+        "heuristic": {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                "has_title_placeholder": {"type": "boolean"},
+                "has_body_placeholder": {"type": "boolean"},
+                "title_from_name": {"type": "boolean"},
+            },
+            "additionalProperties": True,
+        },
+        "static_rules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "layout_name_pattern": {"type": ["string", "null"]},
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "additionalProperties": False,
+            },
+        },
+        "blueprint": {
+            "type": "object",
+            "properties": {
+                "layout": {"type": "string"},
+                "slides": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "blueprint_slide_id": {"type": "string"},
+                            "required": {"type": "boolean"},
+                            "intent_tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["slot_id", "anchor"],
+                        "properties": {
+                            "slot_id": {"type": "string"},
+                            "anchor": {"type": "string"},
+                            "required": {"type": "boolean"},
+                            "content_type": {"type": "string"},
+                            "intent_tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+        "meta": {
+            "type": "object",
+            "properties": {
+                "heuristic_reason": {"type": "string"},
+            },
+            "additionalProperties": True,
         },
         "version": {"type": "string", "minLength": 1},
     },

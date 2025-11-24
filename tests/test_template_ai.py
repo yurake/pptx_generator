@@ -16,7 +16,6 @@ def test_template_ai_service_static_rule(tmp_path):
             {
                 "id": "default",
                 "name": "static-mock",
-                "provider": "mock",
                 "prompt_template": "classify layout usage tags",
                 "static_rules": [
                     {"layout_name_pattern": ".*Title.*", "tags": ["title"]},
@@ -51,7 +50,6 @@ def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
             {
                 "id": "default",
                 "name": "static-mock",
-                "provider": "mock",
                 "prompt_template": "classify layout usage tags",
                 "static_rules": [
                     {"layout_name_pattern": None, "tags": ["content"]},
@@ -81,7 +79,6 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     policy = TemplateAIPolicy(
         id="default",
         name="azure-template-ai",
-        provider="azure-openai",
         prompt_template="classify layout usage tags",
     )
 
@@ -97,6 +94,9 @@ def test_template_ai_client_provider_resolution(monkeypatch):
         DummyAzureTemplateClient,
     )
     monkeypatch.setenv("PPTX_TEMPLATE_LLM_PROVIDER", "azure-openai")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "dummy")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "dummy-key")
 
     client, provider = create_template_ai_client(policy)
 
@@ -104,3 +104,6 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     assert provider == "azure-openai"
 
     monkeypatch.delenv("PPTX_TEMPLATE_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)

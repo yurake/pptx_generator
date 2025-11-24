@@ -29,6 +29,9 @@ class LayoutAIPolicy(BaseModel):
     description: str | None = None
     prompt_template: str | None = Field(default=None)
     slide_policies: list[LayoutAISlidePolicy] = Field(default_factory=list)
+    usage_tags_template: str | None = None
+    card_context_template: str | None = None
+    layout_metadata_template: str | None = None
 
     def resolve_prompt(self, layout_id: str | None = None) -> str:
         if layout_id:

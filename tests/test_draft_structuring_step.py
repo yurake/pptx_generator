@@ -168,6 +168,7 @@ def test_draft_structuring_generates_documents(
     assert mapping_log_path.exists()
     mapping_payload = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_payload and mapping_payload[0]["ai_recommendation_used"] is not None
+    assert mapping_payload[0]["source"]["card_id"] == "introduction-1"
     ready_meta_path = tmp_path / "generate_ready_meta.json"
     meta_payload = json.loads(ready_meta_path.read_text(encoding="utf-8"))
     assert meta_payload["ai_recommendation"]["used"] >= 0

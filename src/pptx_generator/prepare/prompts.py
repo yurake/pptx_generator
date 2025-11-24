@@ -16,7 +16,11 @@ JSON オブジェクトで返してください。トップレベルキーは ch
   - subtitle: 任意。章名やサブカテゴリを表す短いテキストを入れてください。章タイトルがあればここへ記載します。
   - story_phase: slide の役割を表す値。introduction / problem / solution / impact / next など、文脈に適したフェーズ名を入れてください。
   - intent_tags: 章の意図を表す配列。空の場合は story_phase を含めてください。
-  - body: 本文ブロックの配列。各ブロックは {"type": "paragraph"|"bullets"|"table"|..., "text": "...", "headers": [...], "rows": [[...]], "ref": "...", "description": "...", "data": {...}} のような構造を取り、必要な項目のみ出力してください。段落は 80 文字以内で簡潔にまとめてください。特殊スライドは type を "agenda" などに変えて表現しても構いません。
+  - body: 本文ブロックの配列。各ブロックはスライド要素に合わせて `type` を指定し、以下のフォーマットに従って構造化してください。
+    - paragraph: `{"type": "paragraph", "text": "..."}` を出力し、text は 1 行 80 文字以内の要約にする。
+    - bullets: `{"type": "bullets", "items": [{"text": "...", "level": 0}, ...]}` を用い、`items[*].text` に箇条書き本文、`items[*].level` に階層レベル (0 以上の整数) を設定する。追加のメタ情報があれば `items[*]` に他フィールドを追加してよい。互換用に `text` を添える必要はない（省略する）。
+    - table: `{"type": "table", "headers": [...], "rows": [[...]]}` とし、Markdown ではなく配列で表データを返す。
+    - その他の type: `{"type": "<custom>", "text": "...", "description": "...(任意)", "data": {...}}` のように必要なフィールドのみ埋め、アンカー指定が必要な場合は `ref` を設定する。
   - notes: ノート欄向けの補足配列。各要素は {"type": "note"|"rationale"|"risk"|..., "text": "..."} 形式で、本文の意図・根拠・追加説明を記述してください。空配列でも構いません。
 
 # 制約
@@ -42,11 +46,15 @@ JSON オブジェクトで返してください。トップレベルキーは `s
   - title: 任意。タイトルが要求される slot の場合のみ設定する。通常は null。
   - headline: 任意。スライドの結論を 1 行でまとめる。title を併用する場合は headline を null にする。
   - subtitle: 任意。補助的な短いテキスト。
-  - body: 本文ブロックの配列。各ブロックは {"type": "paragraph"|"bullets"|"table"|..., "text": "..."} のような構造で、slot に差し込みやすい形で構成する。
+  - body: 本文ブロックの配列。各ブロックは slot の `content_type` に合わせて `type` を指定し、以下のフォーマットに従って構造化する。
+    - paragraph: `{"type": "paragraph", "text": "..."}`。text は 1 行 80 文字以内の要約にまとめる。
+    - bullets: `{"type": "bullets", "items": [{"text": "...", "level": 0}, ...]}`。`items[*].text` に箇条書き本文、`items[*].level` に階層レベル (0 以上の整数) を設定する。追加メタ情報があれば `items[*]` に他フィールドを追加してよい。互換用に `text` を添える必要はありません（省略する）。
+    - table: `{"type": "table", "headers": [...], "rows": [[...]]}`。Markdown ではなく配列で表データを返す。
+    - その他の type: `{"type": "<custom>", "text": "...", "description": "...(任意)", "data": {...}}` のように、slot の属性や anchor に合わせて必要なフィールドのみ設定する。アンカー指定が必要な場合は `ref` を設定する。
   - notes: ノート欄向けの補足配列。各要素は {"type": "note"|"rationale"|"risk"|..., "text": "..."} 形式。空配列でも可。
 
 # 制約
-- slot_specs[*] には slot ごとの anchor / required / intent_tags / content_type / context が含まれます。context を踏まえつつ、required=true の場合は必ず意味のあるテキストを生成してください。content_type が text 以外（image 等）の場合は文字情報を出力せず空のままにしてください。
+- slot_specs[*] には slot ごとの anchor / required / intent_tags / content_type / context が含まれます。context を踏まえつつ、required=true の場合は必ず意味のあるテキストを生成してください。
 - 同一スライド内での整合性を保つため、headline や body のトーンは raw_context の要約と一致させること。
 - JSON 以外のテキストや説明文は出力に含めないでください。
 """

@@ -384,6 +384,35 @@ class AIReviewResult(BaseModel):
     autofix_proposals: list[AutoFixProposal] = Field(default_factory=list)
 
 
+class ContentSlideSource(BaseModel):
+    card_id: str | None = None
+    order: int | None = None
+    story_phase: str | None = None
+    intent_tags: tuple[str, ...] = ()
+    blueprint: dict[str, Any] | None = None
+
+    @field_validator("intent_tags", mode="before")
+    @classmethod
+    def _normalize_intent_tags(cls, value: object) -> tuple[str, ...]:
+        if value is None:
+            return ()
+        if isinstance(value, (list, tuple, set)):
+            items = [str(item).strip() for item in value if str(item).strip()]
+        else:
+            text = str(value).strip()
+            items = [text] if text else []
+        # preserve order while removing duplicates
+        seen: set[str] = set()
+        unique: list[str] = []
+        for item in items:
+            lower = item.lower()
+            if lower in seen:
+                continue
+            seen.add(lower)
+            unique.append(item)
+        return tuple(unique)
+
+
 class ContentSlide(BaseModel):
     id: str
     intent: str
@@ -392,6 +421,7 @@ class ContentSlide(BaseModel):
     status: ContentSlideStatus = "draft"
     ai_review: AIReviewResult | None = None
     applied_autofix: list[str] = Field(default_factory=list)
+    source: ContentSlideSource | None = None
 
     @field_validator("applied_autofix", mode="before")
     @classmethod
@@ -551,6 +581,7 @@ class MappingSlideMeta(BaseModel):
     blueprint_slide_id: str | None = None
     blueprint_slots: list[dict[str, Any]] | None = None
     auto_draw: list[dict[str, Any]] = Field(default_factory=list)
+    layout_description: dict[str, Any] | None = None
 
 
 class GenerateReadySlide(BaseModel):
@@ -628,6 +659,7 @@ class MappingLogSlide(BaseModel):
     analyzer: MappingLogAnalyzerSummary = Field(
         default_factory=MappingLogAnalyzerSummary
     )
+    layout_description: dict[str, Any] | None = None
 
 
 class MappingLogMeta(BaseModel):
@@ -684,6 +716,15 @@ class LayoutInfo(BaseModel):
     identifier: str | None = Field(None, description="レイアウト固有識別子")
     anchors: list[ShapeInfo] = Field(default_factory=list, description="図形・プレースホルダー一覧")
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
+    placeholder_summary: dict[str, Any] | None = Field(
+        None, description="プレースホルダー統計情報"
+    )
+    heuristic: dict[str, Any] | None = Field(
+        None, description="用途タグ推定のヒューリスティック結果"
+    )
+    layout_description: dict[str, Any] | None = Field(
+        None, description="レイアウト構造の概要と要素一覧"
+    )
 
 
 class TemplateBlueprintSlot(BaseModel):

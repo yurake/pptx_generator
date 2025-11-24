@@ -5,11 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections import Counter
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
+from collections import Counter, defaultdict
 
 from ..prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ..models import (
@@ -39,7 +39,7 @@ from ..draft_recommender import (
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
-from ..utils.usage_tags import normalize_usage_tags
+from ..utils.usage_tags import get_usage_tag_detail_map, normalize_usage_tags
 from ..api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..draft_intel import (
     ChapterTemplate,
@@ -329,7 +329,29 @@ class DraftStructuringStep:
             placeholder_records = payload.get("placeholders") or []
             if not isinstance(placeholder_records, list):
                 placeholder_records = []
-            placeholder_summary = self._summarize_placeholders(placeholder_records)
+            placeholder_summary = payload.get("placeholder_summary")
+            if not isinstance(placeholder_summary, dict):
+                placeholder_summary = self._summarize_placeholders(placeholder_records)
+            heuristic_info = payload.get("heuristic")
+            if not isinstance(heuristic_info, dict):
+                heuristic_info = {}
+            blueprint_info = payload.get("blueprint")
+            if not isinstance(blueprint_info, dict):
+                blueprint_info = {}
+            meta_info = payload.get("meta")
+            if not isinstance(meta_info, dict):
+                meta_info = {}
+            layout_description = None
+            description_value = meta_info.get("layout_description")
+            if isinstance(description_value, dict):
+                layout_description = description_value
+            elif isinstance(description_value, str):
+                stripped = description_value.strip()
+                if stripped:
+                    layout_description = {
+                        "overview": stripped,
+                        "elements": [],
+                    }
 
             record = LayoutProfile(
                 layout_id=layout_id,
@@ -338,6 +360,10 @@ class DraftStructuringStep:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 placeholder_summary=placeholder_summary,
+                heuristic=heuristic_info,
+                blueprint=blueprint_info,
+                meta=meta_info,
+                layout_description=layout_description,
             )
             records.append(record)
         return records
@@ -351,6 +377,8 @@ class DraftStructuringStep:
 
         counts: Counter[str] = Counter()
         processed: list[tuple[float, dict[str, Any]]] = []
+        total_area = 0.0
+        type_area: defaultdict[str, float] = defaultdict(float)
 
         for placeholder in placeholders:
             raw_type = placeholder.get("type")
@@ -363,6 +391,8 @@ class DraftStructuringStep:
             width = float(bbox.get("width") or 0.0)
             height = float(bbox.get("height") or 0.0)
             area = max(width, 0.0) * max(height, 0.0)
+            total_area += area
+            type_area[p_type] += area
 
             shape_type = placeholder.get("shape_type")
             shape_type_str = str(shape_type or "").casefold() or None
@@ -383,13 +413,18 @@ class DraftStructuringStep:
                 entry["flags"] = flags_list
             processed.append((area, entry))
 
-        total_area = sum(area for area, _ in processed)
         details: list[dict[str, Any]] = []
         for area, entry in sorted(processed, key=lambda item: item[0], reverse=True)[:8]:
             ratio = round(area / total_area, 3) if total_area > 0 else None
             entry = dict(entry)
             entry["area_ratio"] = ratio
             details.append(entry)
+
+        area_ratio = {
+            key: round(value / total_area, 3)
+            for key, value in type_area.items()
+            if total_area > 0
+        }
 
         attributes = {
             "total": sum(counts.values()),
@@ -407,6 +442,7 @@ class DraftStructuringStep:
 
         return {
             "counts": {key: counts[key] for key in sorted(counts)},
+            "area_ratio": area_ratio,
             "details": details,
             "attributes": attributes,
         }
@@ -434,6 +470,8 @@ class DraftStructuringStep:
 
         spec_lookup = {slide.id: slide for slide in spec.slides}
         dynamic_prepare = prepare_meta.mode == "dynamic"
+
+        layout_lookup = {profile.layout_id: profile for profile in layouts}
 
         def process_slide(content_slide: ContentSlide | None, spec_slide: Slide | None) -> None:
             if content_slide is None:
@@ -494,26 +532,56 @@ class DraftStructuringStep:
                     )
 
             candidate_logs: list[dict[str, Any]] = []
+            tag_detail_map = get_usage_tag_detail_map()
             for candidate, detail in recommendation.candidates:
                 layout_id = candidate.layout_id
-                candidate_logs.append(
-                    {
-                        "layout_id": layout_id,
-                        "score": candidate.score,
-                        "ai_score": ai_scores.get(layout_id, 0.0),
-                        "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
-                        "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
-                        "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
-                        "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
-                        "detail": {
-                            "uses_tag": detail.uses_tag,
-                            "content_capacity": detail.content_capacity,
-                            "diversity": detail.diversity,
-                            "analyzer_support": detail.analyzer_support,
-                            "ai_recommendation": detail.ai_recommendation,
-                        },
-                    }
-                )
+                candidate_entry: dict[str, Any] = {
+                    "layout_id": layout_id,
+                    "score": candidate.score,
+                    "ai_score": ai_scores.get(layout_id, 0.0),
+                    "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
+                    "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
+                    "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
+                    "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
+                    "detail": {
+                        "uses_tag": detail.uses_tag,
+                        "content_capacity": detail.content_capacity,
+                        "diversity": detail.diversity,
+                        "analyzer_support": detail.analyzer_support,
+                        "ai_recommendation": detail.ai_recommendation,
+                    },
+                }
+                profile = layout_lookup.get(layout_id)
+                tags_for_detail: set[str] = set(recommendation.baseline_tags.get(layout_id, ()))
+                tags_for_detail.update(recommendation.classified_tags.get(layout_id, ()))
+                tags_for_detail.update(recommendation.effective_tags.get(layout_id, ()))
+                if profile:
+                    tags_for_detail.update(profile.usage_tags or ())
+                if recommendation.ai_unknown_tags.get(layout_id):
+                    tags_for_detail.update(recommendation.ai_unknown_tags[layout_id])
+                if profile:
+                    if profile.placeholder_summary:
+                        candidate_entry["placeholder_summary"] = profile.placeholder_summary
+                    if profile.heuristic:
+                        candidate_entry["heuristic"] = profile.heuristic
+                    if profile.blueprint:
+                        candidate_entry["blueprint"] = profile.blueprint
+                    if profile.meta:
+                        candidate_entry["meta"] = profile.meta
+                usage_tag_details = {
+                    tag: tag_detail_map[tag]
+                    for tag in sorted(tags_for_detail)
+                    if tag in tag_detail_map
+                }
+                if usage_tag_details:
+                    candidate_entry["usage_tags_detail"] = usage_tag_details
+                candidate_logs.append(candidate_entry)
+
+            source_payload = (
+                content_slide.source.model_dump(mode="json")
+                if content_slide.source is not None
+                else None
+            )
 
             ai_response_payload: dict[str, Any] | None = None
             if recommendation.ai_response is not None:
@@ -539,16 +607,29 @@ class DraftStructuringStep:
                         recommendation.ai_response.classifications,
                     )
 
-            mapping_logs.append(
-                {
-                    "slide_id": content_slide.id,
-                    "preferred_layout": preferred_layout,
-                    "selected_layout": selected_layout,
-                    "ai_recommendation_used": ai_used,
-                    "candidates": candidate_logs,
-                    "ai_response": ai_response_payload,
+            selected_profile = layout_lookup.get(selected_layout)
+            mapping_entry: dict[str, Any] = {
+                "slide_id": content_slide.id,
+                "preferred_layout": preferred_layout,
+                "selected_layout": selected_layout,
+                "ai_recommendation_used": ai_used,
+                "candidates": candidate_logs,
+                "ai_response": ai_response_payload,
+                "source": source_payload,
+            }
+            if selected_profile:
+                if selected_profile.meta and selected_profile.meta.get("heuristic_reason"):
+                    mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
+                if selected_profile.blueprint:
+                    mapping_entry["selected_blueprint"] = selected_profile.blueprint
+                selected_usage_details = {
+                    tag: tag_detail_map[tag]
+                    for tag in sorted(set(selected_profile.usage_tags or ()))
+                    if tag in tag_detail_map
                 }
-            )
+                if selected_usage_details:
+                    mapping_entry["selected_usage_tags_detail"] = selected_usage_details
+            mapping_logs.append(mapping_entry)
 
         if dynamic_prepare:
             for content_slide in document.slides:
@@ -1364,21 +1445,64 @@ class DraftStructuringStep:
             if subtitle:
                 elements["subtitle"] = subtitle
             return
-        if anchor_lower in {"body", "content"}:
-            if lines:
-                elements["body"] = lines
-            else:
-                headline = card.headline_or_title()
-                if headline:
-                    elements["body"] = [headline]
-            return
         content_type = (slot.content_type or "text").lower()
         if content_type == "table":
-            if lines:
+            table_block = next(
+                (block for block in card.content.body if block.type == "table"), None
+            )
+            if table_block and table_block.rows:
+                elements[anchor] = {
+                    "headers": list(table_block.headers or []),
+                    "rows": [list(row) for row in table_block.rows],
+                }
+            elif lines:
                 elements[anchor] = {
                     "headers": ["項目"],
                     "rows": [[line] for line in lines],
                 }
+            return
+        if content_type == "text":
+            bullet_entries: list[dict[str, Any]] = []
+            paragraph_entries: list[str] = []
+            for block in card.content.body:
+                if block.type == "bullets" and block.data:
+                    raw_items = block.data.get("items")
+                    if isinstance(raw_items, list):
+                        for entry in raw_items:
+                            if isinstance(entry, dict):
+                                text = str(entry.get("text") or "").strip()
+                                if not text:
+                                    continue
+                                level_raw = entry.get("level", 0)
+                                try:
+                                    level = max(int(level_raw), 0)
+                                except (TypeError, ValueError):
+                                    level = 0
+                                bullet_entry: dict[str, Any] = {"text": text, "level": level}
+                                for key, value in entry.items():
+                                    if key in {"text", "level"}:
+                                        continue
+                                    bullet_entry[key] = value
+                                bullet_entries.append(bullet_entry)
+                            elif isinstance(entry, str):
+                                text = entry.strip()
+                                if text:
+                                    bullet_entries.append({"text": text, "level": 0})
+                elif isinstance(block.text, str) and block.text.strip():
+                    paragraph_entries.append(block.text.strip())
+            if bullet_entries:
+                elements[anchor] = bullet_entries
+                return
+            if paragraph_entries:
+                elements[anchor] = paragraph_entries
+                return
+            if lines:
+                elements[anchor] = lines
+                return
+            if anchor_lower in {"body", "content"}:
+                headline = card.headline_or_title()
+                if headline:
+                    elements[anchor] = [headline]
             return
         if content_type not in {"text"}:
             return

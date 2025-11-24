@@ -9,12 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from ..prepare import PrepareCard, PrepareDocument, PrepareGenerationMeta, PrepareLogEntry
-from ..models import (
-    ContentApprovalDocument,
-    ContentDocumentMeta,
-    ContentElements,
-    ContentSlide,
-)
+from ..models import (ContentApprovalDocument, ContentDocumentMeta,
+                      ContentElements, ContentSlide, ContentSlideSource)
 from .base import PipelineContext, PipelineStep
 
 logger = logging.getLogger(__name__)
@@ -201,6 +197,14 @@ class PrepareNormalizationStep:
         else:
             slide_id = card.card_id or f"prepare-{index:03d}"
 
+        source = ContentSlideSource(
+            card_id=card.card_id,
+            order=card.order,
+            story_phase=card.role.story_phase,
+            intent_tags=card.role.intent_tags,
+            blueprint=blueprint_meta if isinstance(blueprint_meta, dict) else None,
+        )
+
         return ContentSlide(
             id=slide_id,
             intent=intent,
@@ -209,6 +213,7 @@ class PrepareNormalizationStep:
             status="draft",
             ai_review=None,
             applied_autofix=[],
+            source=source,
         )
 
     def _build_body_lines(self, card: PrepareCard) -> list[str]:

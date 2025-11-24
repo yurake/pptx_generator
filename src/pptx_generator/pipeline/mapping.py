@@ -59,6 +59,7 @@ class LayoutProfile:
     usage_tags: tuple[str, ...]
     text_hint: Mapping[str, Any]
     media_hint: Mapping[str, Any]
+    layout_description: dict[str, Any] | None = None
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -191,6 +192,9 @@ class MappingStep:
 
             selected_profile = layout_catalog.get(selected_layout)
             layout_name = selected_profile.layout_name if selected_profile else selected_layout
+            layout_description = (
+                selected_profile.layout_description if selected_profile else None
+            )
             auto_draw_payload: list[dict[str, float]] = []
             if spec_slide is not None:
                 auto_draw_payload = [
@@ -216,6 +220,7 @@ class MappingStep:
                         fallback=fallback_state.history[-1]
                         if fallback_state.applied and fallback_state.history
                         else "none",
+                        layout_description=layout_description,
                         auto_draw=auto_draw_payload,
                     ),
                 )
@@ -229,6 +234,7 @@ class MappingStep:
                     fallback=fallback_state,
                     ai_patch=ai_patches,
                     warnings=warnings,
+                    layout_description=layout_description,
                 )
             )
 
@@ -386,12 +392,32 @@ class MappingStep:
                 continue
             usage_tags = normalize_usage_tags(payload.get("usage_tags", []))
             layout_name = payload.get("layout_name") or layout_id
+            layout_description: dict[str, Any] | None = None
+            meta_info = payload.get("meta")
+            if isinstance(meta_info, dict):
+                description_value = meta_info.get("layout_description")
+                if isinstance(description_value, dict):
+                    layout_description = description_value
+                elif isinstance(description_value, str):
+                    stripped = description_value.strip()
+                    if stripped:
+                        layout_description = {
+                            "overview": stripped,
+                            "elements": [],
+                        }
+            text_hint = payload.get("text_hint") or {}
+            media_hint = payload.get("media_hint") or {}
+            if not isinstance(text_hint, dict):
+                text_hint = {}
+            if not isinstance(media_hint, dict):
+                media_hint = {}
             catalog[layout_id] = LayoutProfile(
                 layout_id=layout_id,
                 layout_name=layout_name,
                 usage_tags=usage_tags,
-                text_hint=payload.get("text_hint") or {},
-                media_hint=payload.get("media_hint") or {},
+                text_hint=text_hint,
+                media_hint=media_hint,
+                layout_description=layout_description,
             )
         return catalog
 

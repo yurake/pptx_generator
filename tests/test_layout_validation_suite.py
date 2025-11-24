@@ -40,6 +40,16 @@ def test_layout_validation_suite_creates_outputs(tmp_path) -> None:
     first_record = json.loads(layouts_lines[0])
     assert first_record["template_id"] == "sample"
     assert "placeholders" in first_record
+    assert "placeholder_summary" in first_record
+    summary = first_record["placeholder_summary"]
+    assert "counts" in summary and isinstance(summary["counts"], dict)
+    assert "area_ratio" in summary and isinstance(summary["area_ratio"], dict)
+    assert "heuristic" in first_record
+    assert "meta" in first_record and "heuristic_reason" in first_record["meta"]
+    layout_description = first_record["meta"].get("layout_description")
+    assert isinstance(layout_description, dict)
+    assert "overview" in layout_description
+    assert isinstance(layout_description.get("elements"), list)
 
     diagnostics = json.loads(result.diagnostics_path.read_text(encoding="utf-8"))
     assert diagnostics["stats"]["layouts_total"] >= result.record_count

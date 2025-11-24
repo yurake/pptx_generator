@@ -37,8 +37,6 @@ class TemplateAIPolicy(BaseModel):
     id: str
     name: str
     description: str | None = None
-    provider: str = Field(default="mock", description="LLM プロバイダ ID")
-    model: str = Field(default="mock-template", description="利用するモデル名")
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     max_tokens: int = Field(default=32000, ge=16, le=32768)
     prompt_template: str | None = Field(
