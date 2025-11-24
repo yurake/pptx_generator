@@ -54,21 +54,21 @@ def test_job_spec_accepts_tables_and_charts() -> None:
     assert chart.options.data_labels is True
 
 
-def test_content_elements_body_constraints() -> None:
+def test_content_elements_body_accepts_long_entries() -> None:
+    long_line = "a" * 500
+    extra_lines = [f"line-{index}" for index in range(12)]
     elements = ContentElements(
         title="市場環境の変化",
-        body=["短文1", "短文2"],
+        body=[long_line, *extra_lines],
         table_data=ContentTableData(
             headers=["指標", "前年比"],
             rows=[["売上", "112%"], ["利益", "108%"]],
         ),
     )
 
-    assert len(elements.body) == 2
-    with pytest.raises(ValueError):
-        ContentElements(title="NG", body=["a" * 41])
-    with pytest.raises(ValueError):
-        ContentElements(title="NG", body=["a"] * 7)
+    assert elements.body[0] == long_line
+    assert elements.body[1:] == extra_lines
+    assert len(elements.body) == len(extra_lines) + 1
 
 
 def test_prepare_card_content_requires_single_heading() -> None:

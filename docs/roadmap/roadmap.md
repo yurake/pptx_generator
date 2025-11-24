@@ -54,9 +54,10 @@ flowchart TB
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
+        RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
-        RM068["RM-068<br/>ContentElements 制約見直し<br/>(未着手)"]
         RM072["RM-072<br/>slide_alignment 命名と責務再整理<br/>(未着手)"]
+        RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -854,9 +855,9 @@ flowchart TB
 - 参照ドキュメント: [docs/todo/20251116-rm054-prepare-card-schema.md](../todo/20251116-rm054-prepare-card-schema.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-047（テンプレ統合構成生成AI連携）
-- 状況: 未着手（2025-11-17 追加）
+- 状況: 完了（2025-11-24 更新）
 - 期待成果:
-  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` の 200 文字制限、title/subtitle 120 文字、`config/rules.json` の `title.max_length`/`bullet.max_length` など関連制約も含め再評価し、最終的なトリミングはレンダリング工程へ委譲する）。
+  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` や title/subtitle の固定上限を撤廃し、`config/rules.json` からも長さ・階層の閾値を除外してレンダリング工程へ委譲する）。
   - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
   - 新方針を `docs/requirements/stages/stage-03-content-normalization.md` や `docs/design/schema/stage-03-mapping.md` など関連ドキュメントへ反映し、工程別のトリミング責務を定義する。
 - 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。
@@ -957,3 +958,16 @@ flowchart TB
   - Issue には `github/issue-labeler`、PR には `actions/labeler` を適用し、運用ルールに基づいた自動ラベリングワークフローを構築する。
   - 例外的な手動運用フローとラベル付与結果の検証手順をドキュメント化する。
 - 依存: RM-002（エージェント運用ガイド整備）、RM-073（README 多言語展開整備）
+
+<a id="rm-076"></a>
+### RM-076 コンテンツオーバーフロー自動化
+- 対象工程: 3・4（ドラフト構成 / PPTX 生成）
+- ゴール: テンプレート許容量を超えた本文を自動で調整し、全文保持方針とレンダリング品質を両立する。
+- 参照ドキュメント: [docs/notes/20251124-overflow-handling-strategy.md](../notes/20251124-overflow-handling-strategy.md)
+- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 状況: 未着手（2025-11-24 追加）
+- 期待成果:
+  - MappingStep でオーバーフローを検知した際、LLM 要約を優先的に試行し、差分を patch_ai / 監査ログへ記録する。
+  - SimpleRefinerStep でブランド許容範囲内のフォント縮小をフォールバックとして適用し、適用結果を監査ログへ残す。
+  - フラグ設計と警告出力を整備し、段階的に自動対処へ移行できる設定を提供する。
+- 次アクション: 要約プロンプト・フォント縮小ヒューリスティックの案出し、Stage3/Stage4 への組み込み仕様の詳細化。

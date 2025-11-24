@@ -27,6 +27,11 @@ from ..models import (
     JobAuth,
     JobMeta,
     JobSpec,
+    MappingCandidate,
+    MappingFallbackState,
+    MappingLog,
+    MappingLogMeta,
+    MappingLogSlide,
     MappingSlideMeta,
     TemplateBlueprint,
     TemplateBlueprintSlide,
@@ -52,6 +57,12 @@ from ..draft_intel import (
 )
 from .base import PipelineContext
 from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
+from .table_anchor import (
+    build_table_payload,
+    is_table_payload,
+    normalize_placeholders,
+    resolve_table_anchor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +141,7 @@ class DraftStructuringStep:
         self._recommender: CardLayoutRecommender | None = None
         self._alignment_records: list | None = None
         self._layout_name_lookup: dict[str, str] = {}
+        self._layout_catalog: dict[str, LayoutProfile] = {}
 
     # ------------------------------------------------------------------ #
     # public API
@@ -184,6 +196,7 @@ class DraftStructuringStep:
 
         layouts = self._load_layouts(self.options.layouts_path)
         self._layout_name_lookup = {profile.layout_id: profile.layout_name for profile in layouts}
+        self._layout_catalog = {profile.layout_id: profile for profile in layouts}
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
         template: ChapterTemplate | None = None
         if self.options.chapter_templates_dir:
@@ -329,6 +342,7 @@ class DraftStructuringStep:
             placeholder_records = payload.get("placeholders") or []
             if not isinstance(placeholder_records, list):
                 placeholder_records = []
+            normalized_placeholders = normalize_placeholders(placeholder_records)
             placeholder_summary = payload.get("placeholder_summary")
             if not isinstance(placeholder_summary, dict):
                 placeholder_summary = self._summarize_placeholders(placeholder_records)
@@ -364,6 +378,7 @@ class DraftStructuringStep:
                 blueprint=blueprint_info,
                 meta=meta_info,
                 layout_description=layout_description,
+                placeholders=normalized_placeholders,
             )
             records.append(record)
         return records
@@ -446,6 +461,7 @@ class DraftStructuringStep:
             "details": details,
             "attributes": attributes,
         }
+
 
     def _build_document(
         self,
@@ -828,7 +844,8 @@ class DraftStructuringStep:
                 layout_name = spec_slide.layout
             if layout_name is None:
                 layout_name = layout_id
-            elements = self._merge_slide_elements(spec_slide, content_slide)
+            layout_profile = self._layout_catalog.get(layout_id)
+            elements = self._merge_slide_elements(spec_slide, content_slide, layout_profile)
             sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
             auto_draw_payload = []
             if spec_slide is not None:
@@ -939,34 +956,34 @@ class DraftStructuringStep:
         self,
         spec_slide: Slide | None,
         content_slide: ContentSlide | None,
+        layout_profile: LayoutProfile | None,
     ) -> dict[str, Any]:
         base = self._convert_slide_elements(spec_slide) if spec_slide is not None else {}
         if content_slide is None or content_slide.elements is None:
             return base
 
+        content_elements = content_slide.elements
         elements: dict[str, Any] = {}
-        title = content_slide.elements.title
-        if title:
-            elements["title"] = title
 
-        if content_slide.elements.subtitle:
-            elements["subtitle"] = content_slide.elements.subtitle
+        if content_elements.title:
+            elements["title"] = content_elements.title
 
-        if content_slide.elements.body:
-            elements["body"] = list(content_slide.elements.body)
+        if content_elements.subtitle:
+            elements["subtitle"] = content_elements.subtitle
+
+        if content_elements.body:
+            elements["body"] = list(content_elements.body)
         elif "body" in base:
             elements["body"] = base["body"]
 
-        if content_slide.elements.note:
-            elements["note"] = content_slide.elements.note
+        if content_elements.note:
+            elements["note"] = content_elements.note
         elif "note" in base:
             elements["note"] = base["note"]
 
-        if content_slide.elements.table_data is not None:
-            elements["table"] = {
-                "headers": list(content_slide.elements.table_data.headers),
-                "rows": [list(row) for row in content_slide.elements.table_data.rows],
-            }
+        table_payload: dict[str, Any] | None = None
+        if content_elements.table_data is not None:
+            table_payload = build_table_payload(content_elements.table_data)
 
         if spec_slide is not None:
             if spec_slide.subtitle and "subtitle" not in elements:
@@ -974,9 +991,41 @@ class DraftStructuringStep:
             for key, value in base.items():
                 if key in {"title", "body", "note", "subtitle"}:
                     continue
+                if table_payload is not None and is_table_payload(value):
+                    continue
                 elements.setdefault(key, value)
             for anchor in spec_slide.auto_draw_anchors:
                 elements.pop(anchor, None)
+
+        if table_payload is not None:
+            placeholders = layout_profile.placeholders if layout_profile else ()
+            anchor, reasons = resolve_table_anchor(spec_slide, placeholders)
+            target_key = anchor or "table"
+
+            if logger.isEnabledFor(logging.DEBUG):
+                debug_reason = ", ".join(reasons) if reasons else "none"
+                logger.debug(
+                    "table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
+                    getattr(content_slide, "id", "unknown"),
+                    layout_profile.layout_id if layout_profile else "unknown",
+                    target_key,
+                    debug_reason,
+                )
+
+            for key in list(elements.keys()):
+                if key == target_key:
+                    continue
+                if is_table_payload(elements[key]):
+                    elements.pop(key, None)
+
+            if spec_slide is not None:
+                for key, value in base.items():
+                    if key == target_key:
+                        continue
+                    if is_table_payload(value):
+                        elements.pop(key, None)
+
+            elements[target_key] = table_payload
 
         return elements
 
@@ -1224,7 +1273,7 @@ class DraftStructuringStep:
         draft_sections = [section]
 
         generate_ready_slides: list[GenerateReadySlide] = []
-        mapping_entries: list[dict[str, Any]] = []
+        mapping_slides: list[MappingLogSlide] = []
 
         layout_lookup = self._layout_name_lookup
 
@@ -1310,14 +1359,21 @@ class DraftStructuringStep:
                 )
             )
 
-            mapping_entries.append(
-                {
-                    "mode": "static",
-                    "slide_id": blueprint_slide.slide_id,
-                    "layout": layout_id,
-                    "slots": slot_records,
-                    "auto_draw": auto_draw_payload,
-                }
+            mapping_slides.append(
+                MappingLogSlide(
+                    ref_id=slide_card.ref_id,
+                    selected_layout=layout_id,
+                    candidates=[MappingCandidate(layout_id=layout_id, score=1.0)],
+                    fallback=MappingFallbackState(),
+                    warnings=[],
+                    layout_description={
+                        "layout_id": layout_id,
+                        "layout_name": layout_name,
+                        "blueprint_slots": slot_records,
+                        "auto_draw": auto_draw_payload,
+                        "mode": "static",
+                    },
+                )
             )
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1353,16 +1409,20 @@ class DraftStructuringStep:
 
         blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
 
-        mapping_log = {
-            "mode": "static",
-            "slides": mapping_entries,
-            "slot_summary": slot_summary,
-            "static_slot_checks": {
+        mapping_log_meta = MappingLogMeta(
+            mapping_time_ms=0,
+            fallback_count=0,
+            ai_patch_count=0,
+            analyzer_issue_count=0,
+            mode="static",
+            blueprint_path=str(blueprint_path_value) if blueprint_path_value else None,
+            slot_summary=slot_summary,
+            static_slot_checks={
                 "unused_slots": unused_slots,
                 "orphan_cards": orphan_cards,
             },
-            "blueprint_path": blueprint_path_value,
-        }
+        )
+        mapping_log = MappingLog(slides=mapping_slides, meta=mapping_log_meta).model_dump(mode="json")
 
         ai_summary = {
             "mode": "static",
