@@ -314,3 +314,43 @@ def test_prepare_normalization_preserves_subtitle(tmp_path: Path, sample_spec: J
     content_document = context.artifacts["content_approved"]
     assert content_document.slides[0].elements.subtitle == "Executive Summary"
     assert content_document.slides[1].elements.subtitle == "現状の課題"
+
+
+def test_prepare_normalization_preserves_table_blocks() -> None:
+    card = PrepareCard(
+        card_id="sample-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=["automation"]),
+        content=PrepareCardContent(
+            headline="AI×HITLで提案書を量産する",
+            body=[
+                PrepareBodyBlock(type="paragraph", text="自動化と承認フローの協調で品質を担保"),
+                PrepareBodyBlock(
+                    type="bullets",
+                    data={
+                        "items": [
+                            {"text": "Approval-Firstで早期判断", "level": 0},
+                            {"text": "Analyzer/Refinerで体裁補正", "level": 1},
+                        ]
+                    },
+                ),
+                PrepareBodyBlock(
+                    type="table",
+                    headers=["Stage", "Owner", "Mode"],
+                    rows=[
+                        ["Outline", "LLM", "Automation"],
+                        ["Approval", "HITL", "Manual"],
+                    ],
+                ),
+            ],
+            notes=[],
+        ),
+        meta={},
+    )
+
+    phase_counts: dict[str, int] = {}
+    step = PrepareNormalizationStep()
+    slide = step._convert_card_to_slide(card, 1, phase_counts)
+
+    assert slide.elements.table_data is not None
+    assert slide.elements.table_data.headers == ["Stage", "Owner", "Mode"]
+    assert all("Outline | Owner" not in line for line in slide.elements.body)

@@ -39,10 +39,22 @@ roadmap_item: RM-068 ContentElements 制約見直し
   - [x] README.md / AGENTS.md（今回変更不要である旨確認）
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: 全項目の状態を確認し、親子タスクの整合をチェック済み。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
+- 2025-11-24: Dynamic/Static UAT で判明した差異対応 Plan（承認済み: 本チャットID）
+  - スコープ:
+    - 動的モードの prepare→draft 変換で bullets / table を構造保持したまま generate_ready.json へ引き継げるよう改修し、既存 ContentElements 互換利用箇所の副作用を抑制する。
+    - 静的モードの mapping_log 出力を MappingLog スキーマへ合わせ、Analyzer 連携で ref_id / selected_layout 等を解決できるよう修正する。
+  - 影響ファイル（想定）: `src/pptx_generator/pipeline/prepare_normalization.py`, `src/pptx_generator/pipeline/draft_structuring.py`, `src/pptx_generator/models.py`, `tests/**`, `docs/todo/20251124-rm068-content-elements.md`
+  - リスク/前提:
+    - ContentElements のスキーマ拡張による downstream 影響に注意。LLM 生成ロジックや API レスポンスの互換性確認が必要。
+    - 静的 mapping_log フォーマット変更に伴い、既存ログ解析スクリプト（存在する場合）の追随確認。
+  - テスト戦略:
+    - 単体: prepare_normalization / draft_structuring 周辺の新規ユニットテスト追加。
+    - 統合: `uv run --extra dev pytest tests/test_mapping_step.py tests/test_prepare_llm_client.py` を中心に、必要に応じて CLI 統合テストを追加実行。
+  - ロールバック: 修正コミットを revert し、`feat/rm068-content-elements` ブランチを承認前状態へ戻す。

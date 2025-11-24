@@ -901,9 +901,11 @@ def _build_analyzer_options(
     primary_color = branding_config.primary_color
     background_color = branding_config.background_color
 
-    max_bullet_level = rules_config.max_bullet_level
-    if max_bullet_level is not None
-    else AnalyzerOptions().max_bullet_level
+    max_bullet_level = (
+        rules_config.max_bullet_level
+        if rules_config.max_bullet_level is not None
+        else analyzer_defaults.max_bullet_level
+    )
 
     return AnalyzerOptions(
         min_font_size=analyzer_rules.min_font_size
@@ -949,9 +951,12 @@ def _build_refiner_options(
     body_font_color = branding_config.body_font.color_hex
     primary_color = branding_config.primary_color
 
-    max_bullet_level = rules_config.max_bullet_level
-    if max_bullet_level is not None
-    else RefinerOptions().max_bullet_level
+    refiner_defaults = RefinerOptions()
+    max_bullet_level = (
+        rules_config.max_bullet_level
+        if rules_config.max_bullet_level is not None
+        else refiner_defaults.max_bullet_level
+    )
 
     return RefinerOptions(
         max_bullet_level=max_bullet_level,

@@ -27,6 +27,11 @@ from ..models import (
     JobAuth,
     JobMeta,
     JobSpec,
+    MappingCandidate,
+    MappingFallbackState,
+    MappingLog,
+    MappingLogMeta,
+    MappingLogSlide,
     MappingSlideMeta,
     TemplateBlueprint,
     TemplateBlueprintSlide,
@@ -1224,7 +1229,7 @@ class DraftStructuringStep:
         draft_sections = [section]
 
         generate_ready_slides: list[GenerateReadySlide] = []
-        mapping_entries: list[dict[str, Any]] = []
+        mapping_slides: list[MappingLogSlide] = []
 
         layout_lookup = self._layout_name_lookup
 
@@ -1310,14 +1315,21 @@ class DraftStructuringStep:
                 )
             )
 
-            mapping_entries.append(
-                {
-                    "mode": "static",
-                    "slide_id": blueprint_slide.slide_id,
-                    "layout": layout_id,
-                    "slots": slot_records,
-                    "auto_draw": auto_draw_payload,
-                }
+            mapping_slides.append(
+                MappingLogSlide(
+                    ref_id=slide_card.ref_id,
+                    selected_layout=layout_id,
+                    candidates=[MappingCandidate(layout_id=layout_id, score=1.0)],
+                    fallback=MappingFallbackState(),
+                    warnings=[],
+                    layout_description={
+                        "layout_id": layout_id,
+                        "layout_name": layout_name,
+                        "blueprint_slots": slot_records,
+                        "auto_draw": auto_draw_payload,
+                        "mode": "static",
+                    },
+                )
             )
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1353,16 +1365,20 @@ class DraftStructuringStep:
 
         blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
 
-        mapping_log = {
-            "mode": "static",
-            "slides": mapping_entries,
-            "slot_summary": slot_summary,
-            "static_slot_checks": {
+        mapping_log_meta = MappingLogMeta(
+            mapping_time_ms=0,
+            fallback_count=0,
+            ai_patch_count=0,
+            analyzer_issue_count=0,
+            mode="static",
+            blueprint_path=str(blueprint_path_value) if blueprint_path_value else None,
+            slot_summary=slot_summary,
+            static_slot_checks={
                 "unused_slots": unused_slots,
                 "orphan_cards": orphan_cards,
             },
-            "blueprint_path": blueprint_path_value,
-        }
+        )
+        mapping_log = MappingLog(slides=mapping_slides, meta=mapping_log_meta).model_dump(mode="json")
 
         ai_summary = {
             "mode": "static",

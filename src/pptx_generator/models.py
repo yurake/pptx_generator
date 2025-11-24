@@ -666,6 +666,10 @@ class MappingLogMeta(BaseModel):
     analyzer_issue_count: int = 0
     analyzer_issue_counts_by_type: dict[str, int] = Field(default_factory=dict)
     analyzer_issue_counts_by_severity: dict[str, int] = Field(default_factory=dict)
+    mode: Literal["dynamic", "static"] | None = None
+    blueprint_path: str | None = None
+    slot_summary: dict[str, int] | None = None
+    static_slot_checks: dict[str, Any] | None = None
 
 
 class MappingLog(BaseModel):

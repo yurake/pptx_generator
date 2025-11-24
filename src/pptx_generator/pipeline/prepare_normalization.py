@@ -6,11 +6,18 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+import textwrap
+from typing import Any, Iterable
 
 from ..prepare import PrepareCard, PrepareDocument, PrepareGenerationMeta, PrepareLogEntry
-from ..models import (ContentApprovalDocument, ContentDocumentMeta,
-                      ContentElements, ContentSlide, ContentSlideSource)
+from ..models import (
+    ContentApprovalDocument,
+    ContentDocumentMeta,
+    ContentElements,
+    ContentSlide,
+    ContentSlideSource,
+    ContentTableData,
+)
 from .base import PipelineContext, PipelineStep
 
 logger = logging.getLogger(__name__)
@@ -180,11 +187,12 @@ class PrepareNormalizationStep:
         body = self._build_body_lines(card)
         notes_text = card.notes_text()
         subtitle = card.subtitle_or_chapter()
+        table_data = self._extract_table_data(card)
         elements = ContentElements(
             title=title,
             subtitle=subtitle,
             body=body,
-            table_data=None,
+            table_data=table_data,
             note="\n".join(notes_text) if notes_text else None,
         )
         intent = card.primary_intent()
@@ -217,7 +225,62 @@ class PrepareNormalizationStep:
         )
 
     def _build_body_lines(self, card: PrepareCard) -> list[str]:
-        lines = list(card.iter_body_text())
+        def _split_text(value: str) -> list[str]:
+            stripped = value.strip()
+            if not stripped:
+                return []
+            segments = stripped.splitlines() if "\n" in stripped else [stripped]
+            output: list[str] = []
+            for segment in segments:
+                segment = segment.strip()
+                if not segment:
+                    continue
+                if len(segment) <= 200:
+                    output.append(segment)
+                else:
+                    wrapped = textwrap.wrap(
+                        segment,
+                        width=200,
+                        drop_whitespace=True,
+                        break_long_words=True,
+                    )
+                    output.extend(chunk.strip() for chunk in wrapped if chunk.strip())
+            return output
+
+        lines: list[str] = []
+        for block in card.content.body:
+            if block.type == "table":
+                continue
+            if block.type == "bullets" and block.data:
+                items = block.data.get("items")
+                if not isinstance(items, list):
+                    continue
+                for entry in items:
+                    if isinstance(entry, dict):
+                        text = str(entry.get("text") or "").strip()
+                        if not text:
+                            continue
+                        level_raw = entry.get("level", 0)
+                        try:
+                            level = max(int(level_raw), 0)
+                        except (TypeError, ValueError):
+                            level = 0
+                        prefix = "  " * level
+                        for segment in _split_text(text):
+                            lines.append(f"{prefix}{segment}")
+                    elif isinstance(entry, str):
+                        for segment in _split_text(entry):
+                            lines.append(segment)
+                continue
+
+            if isinstance(block.text, str):
+                for segment in _split_text(block.text):
+                    lines.append(segment)
+
+            if isinstance(block.description, str):
+                for segment in _split_text(block.description):
+                    lines.append(segment)
+
         if lines:
             return lines
 
@@ -226,3 +289,15 @@ class PrepareNormalizationStep:
             return [headline]
 
         return []
+
+    @staticmethod
+    def _extract_table_data(card: PrepareCard) -> ContentTableData | None:
+        for block in card.content.body:
+            if block.type != "table":
+                continue
+            if not block.rows:
+                continue
+            headers = list(block.headers or [])
+            rows = [list(row) for row in block.rows]
+            return ContentTableData(headers=headers, rows=rows)
+        return None

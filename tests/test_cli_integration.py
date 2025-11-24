@@ -1071,9 +1071,10 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
 
     mapping_log_payload = json.loads(
         (mapping_dir / "mapping_log.json").read_text(encoding="utf-8"))
-    assert mapping_log_payload["mode"] == "static"
-    assert mapping_log_payload["static_slot_checks"]["unused_slots"] == []
-    assert mapping_log_payload["slot_summary"]["required_total"] == 2
+    meta_payload = mapping_log_payload["meta"]
+    assert meta_payload["mode"] == "static"
+    assert meta_payload["static_slot_checks"]["unused_slots"] == []
+    assert meta_payload["slot_summary"]["required_total"] == 2
 
     generate_ready_meta_payload = json.loads(
         (mapping_dir / DEFAULT_GENERATE_READY_META_FILENAME).read_text(encoding="utf-8"))
