@@ -1,7 +1,7 @@
 ---
 目的: RM-074 README バッジ整備と静的解析導入
 関連ブランチ: docs/rm074-readme-badges
-関連Issue: 未作成
+関連Issue: #306
 roadmap_item: RM-074 README バッジ整備と静的解析導入
 ---
 
@@ -36,7 +36,7 @@ roadmap_item: RM-074 README バッジ整備と静的解析導入
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 未着手
 - [ ] チェックリスト整合確認
   - メモ: 未着手
