@@ -1,7 +1,7 @@
 ---
 目的: RM-075 GitHub ラベル運用整備
 関連ブランチ: docs/rm075-github-label-governance
-関連Issue: 未作成
+関連Issue: #311
 roadmap_item: RM-075 GitHub ラベル運用整備
 ---
 
@@ -39,7 +39,7 @@ roadmap_item: RM-075 GitHub ラベル運用整備
   - [x] docs/runbook 配下
     - メモ: 運用手順への反映は不要なため未更新。
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 対応する Issue 未作成。必要になれば # 番号を更新する。
 - [x] チェックリスト整合確認
   - メモ: 未着手項目は `関連Issue` と `PR 作成` のみであり、今後のフローに合わせて残置。
