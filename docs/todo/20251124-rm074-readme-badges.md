@@ -28,7 +28,7 @@ roadmap_item: RM-074 README バッジ整備と静的解析導入
 - [x] チェックリスト整合確認
   - メモ: 2025-11-24 時点で整合。
 - [x] PR 作成
-  - メモ: PR #307 (ci: SonarCloud 連携と README バッジ整備) を提出。
+  - メモ: PR #310 https://github.com/yurake/pptx_generator/pull/310（2025-11-24 完了）
 
 ## 2025-11-26 再開タスク（SonarCloud カバレッジ取り込み修正）
 
@@ -66,7 +66,7 @@ roadmap_item: RM-074 README バッジ整備と静的解析導入
   - メモ: 必要な場合に更新。
 - [ ] チェックリスト整合確認
   - メモ: 工程完了時に整合を確認。
-- [ ] PR 作成
+- [x] PR 作成
   - メモ: 修正完了後に PR を作成し、Plan 承認メッセージ ID を記載。
 
 ## メモ
