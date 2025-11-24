@@ -59,7 +59,7 @@ flowchart TB
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM068["RM-068<br/>ContentElements 制約見直し<br/>(未着手)"]
         RM072["RM-072<br/>slide_alignment 命名と責務再整理<br/>(未着手)"]
-        RM075["RM-075<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
+        RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -950,7 +950,20 @@ flowchart TB
 - 依存: RM-072（slide_alignment 命名と責務の再整理）、RM-073（README 多言語展開整備）
 
 <a id="rm-075"></a>
-### RM-075 コンテンツオーバーフロー自動化
+### RM-075 GitHub ラベル運用整備
+- 対象領域: リポジトリの Issue / PR 運用、ラベルポリシー、CI（GitHub Actions）
+- ゴール: GitHub Actions を用いた自動ラベリングと既存ラベルの整理により、課題・レビューのトリアージを効率化する。
+- 参照ドキュメント: （着手後に `docs/policies/` や `docs/runbooks/` を整備予定）
+- 参照 ToDo: [docs/todo/archive/20251124-github-label-governance.md](../todo/archive/20251124-github-label-governance.md)
+- 状況: 完了（2025-11-24 更新）
+- 期待成果:
+  - ラベル分類指針と命名規約を整理し、既存ラベルの棚卸し・統合・削除ポリシーを確立する。
+  - Issue には `github/issue-labeler`、PR には `actions/labeler` を適用し、運用ルールに基づいた自動ラベリングワークフローを構築する。
+  - 例外的な手動運用フローとラベル付与結果の検証手順をドキュメント化する。
+- 依存: RM-002（エージェント運用ガイド整備）、RM-073（README 多言語展開整備）
+
+<a id="rm-076"></a>
+### RM-076 コンテンツオーバーフロー自動化
 - 対象工程: 3・4（ドラフト構成 / PPTX 生成）
 - ゴール: テンプレート許容量を超えた本文を自動で調整し、全文保持方針とレンダリング品質を両立する。
 - 参照ドキュメント: [docs/notes/20251124-overflow-handling-strategy.md](../notes/20251124-overflow-handling-strategy.md)

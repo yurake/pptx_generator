@@ -1,0 +1,41 @@
+name: issue-labeler
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue-number:
+        description: 手動実行時にラベル付与対象とする Issue 番号
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Apply labels (issue event)
+        if: github.event_name == 'issues'
+        uses: github/issue-labeler@v3.4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/issue-labeler.yml
+          not-before: '2025-11-24T00:00:00Z'
+          enable-versioned-regex: 0
+      - name: Apply labels (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: github/issue-labeler@v3.4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/issue-labeler.yml
+          issue-number: ${{ inputs.issue-number }}
+          not-before: '2025-11-24T00:00:00Z'
+          enable-versioned-regex: 0

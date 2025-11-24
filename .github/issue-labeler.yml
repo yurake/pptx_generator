@@ -1,0 +1,28 @@
+# Issue body / title に基づく自動ラベル設定
+type:bug:
+  - '/\[Bug\]/'
+  - '/不具合/'
+type:enhancement:
+  - '/\[Feature\]/'
+  - '/改善/'
+type:docs:
+  - '/docs\//'
+  - '/ドキュメント/'
+area:docs:
+  - '/docs\//'
+  - '/README(\.md)?/'
+area:templates:
+  - '/テンプレ/'
+  - '/branding/'
+  - '/generate_ready/'
+  - '/template/'
+area:automation:
+  - '/\.github/'
+  - '/workflow/'
+  - '/Actions?/'
+area:cli:
+  - '/CLI\b/'
+  - '/uv run/'
+area:dotnet:
+  - '/\.NET/'
+  - '/Polisher/'
