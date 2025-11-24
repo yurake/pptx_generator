@@ -28,7 +28,7 @@ roadmap_item: RM-075 GitHub ラベル運用整備
 - [x] 実装
   - メモ: ラベル設定ファイル・GitHub Actions ワークフローを追加し、Issue テンプレートの初期ラベルを `type:` 系へ統一。
 - [x] テスト・検証
-  - メモ: `uv run python` で `.github/issue-labeler.yml` と `.github/labeler.yml` の YAML 構文を確認。
+  - メモ: `uv run python` で `.github/issue-labeler.yml` と `.github/labeler.yml` の YAML 構文を確認。GitHub Actions 手動実行時は `issue-labeler` / `pr-labeler` ともに対象番号入力が必要なため、`workflow_dispatch` に必須入力を追加済み。
 - [x] ドキュメント更新
   - メモ: `docs/policies/github-label-governance.md` を新設し、`docs/README.md` と `docs/roadmap/roadmap.md` を更新。
   - [x] docs/roadmap 配下
