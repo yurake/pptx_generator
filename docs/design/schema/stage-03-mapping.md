@@ -2,6 +2,17 @@
 
 工程3（マッピング）で利用する JSON 仕様を定義する。
 
+## ID の扱いについて
+
+- `slide_id`（JobSpec / prepare / content ドキュメント）  
+  - 生成したいスライドの論理 ID。Prepare カードと JobSpec を突き合わせる際に利用する。  
+  - Content AI（`SlideIdAligner`）は、カードの内容に最も合致する `slide_id` を選定するだけで、レイアウト構造そのものは決めない。
+- `layout_id`（layouts.jsonl）  
+  - テンプレート PPTX から抽出したレイアウト定義の ID。プレースホルダー構成や用途タグを持つ。  
+  - Layout AI（`CardLayoutRecommender`）が候補を評価し、最終的にどのレイアウトを適用するかを決める。
+
+> **補足**: 同じ `layout_id` が複数の `slide_id` で再利用されたり、1 つの `slide_id` に複数レイアウト候補を比較して最終決定する場合があるため、多対多の関係になっている。`slide_id` は「どのスライドにコンテンツを入れるか」、`layout_id` は「そのスライドにどのレイアウト構造を当てるか」という役割が明確に分かれている点に注意。
+
 ## ファイル
 - `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
 - `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
@@ -63,6 +74,12 @@
     {
       "ref_id": "intro",
       "selected_layout": "overview__one_col_v1",
+      "source": {
+        "card_id": "intro",
+        "story_phase": "introduction",
+        "intent_tags": ["introduction"],
+        "blueprint": null
+      },
       "candidates": [
         {"layout_id": "overview__one_col_v1", "score": 0.92},
         {"layout_id": "overview__two_col_v1", "score": 0.78}
@@ -110,6 +127,7 @@
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
+- `source`: PrepareCard のメタデータ。`card_id` や `story_phase`、`intent_tags`、Blueprint 情報（静的モード時）を保持する。
 - `analyzer`: 工程4で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
 
 ## fallback_report.json
@@ -123,4 +141,4 @@
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。
-- `ContentElements.body` は現状 6 行 / 40 文字制限があるが、RM-067 で制約緩和とレンダリング工程へのトリミング移行を検討中。
+- `ContentElements.body` は現状 6 行 / 40 文字制限があるが、RM-068 で制約緩和とレンダリング工程へのトリミング移行を検討中。

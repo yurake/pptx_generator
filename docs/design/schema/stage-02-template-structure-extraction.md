@@ -9,24 +9,87 @@
 {
   "template_id": "acme_v1",
   "layout_id": "overview__one_col_v1",
+  "layout_name": "Overview - 1 Column",
   "placeholders": [
     {
       "name": "PH__Title__1",
       "type": "title",
       "bbox": {"x": 137160, "y": 68580, "width": 7010400, "height": 685800},
+      "shape_type": "LayoutPlaceholder",
       "style_hint": {"font": "Noto Sans JP", "alignment": "center"}
     },
     {
       "name": "PH__Body__Main",
       "type": "body",
       "bbox": {"x": 137160, "y": 822960, "width": 7010400, "height": 4114800},
+      "shape_type": "LayoutPlaceholder",
       "style_hint": {"font": "Noto Sans JP", "line_spacing": 1.3}
+    },
+    {
+      "name": "PH__Logo__1",
+      "type": "object",
+      "bbox": {"x": 9310000, "y": 1600000, "width": 800000, "height": 800000},
+      "shape_type": "LayoutPlaceholder"
     }
   ],
-  "usage_tags": ["overview", "content"],
+  "usage_tags": ["overview", "content", "visual"],
   "text_hint": {"max_chars": 400, "max_lines": 10},
-  "media_hint": {"allow_table": true, "allow_chart": false},
-  "version": "1.0.0"
+  "media_hint": {"allow_table": true, "allow_chart": false, "allow_image": true},
+  "placeholder_summary": {
+    "counts": {"body": 1, "object": 1, "title": 1},
+    "area_ratio": {"title": 0.52, "body": 0.35, "object": 0.13},
+    "details": [
+      {"name": "PH__Title__1", "type": "title", "area_ratio": 0.52},
+      {"name": "PH__Body__Main", "type": "body", "area_ratio": 0.35},
+      {"name": "PH__Logo__1", "type": "object", "area_ratio": 0.13}
+    ],
+    "attributes": {
+      "total": 3,
+      "has_title": true,
+      "has_body": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_visual": true
+    }
+  },
+  "heuristic": {
+    "tags": ["content", "visual"],
+    "reasons": ["placeholder:type=body", "placeholder:type=object(visual)"],
+    "has_title_placeholder": true,
+    "has_body_placeholder": true,
+    "title_from_name": true
+  },
+  "static_rules": [],
+  "meta": {
+    "layout_description": {
+      "overview": "Overview - 1 Column レイアウトは タイトル、本文、ビジュアルを配置できる 3 個のプレースホルダー構成です。",
+      "elements": [
+        {
+          "description": "中央に中程度の本文枠（PH__Body__Main）",
+          "position": "中央",
+          "size_label": "中程度",
+          "expects_text": true,
+          "area_ratio": 0.35
+        },
+        {
+          "description": "上部中央に大きめのタイトル枠（PH__Title__1）",
+          "position": "上部中央",
+          "size_label": "大きめ",
+          "expects_text": true,
+          "area_ratio": 0.52
+        },
+        {
+          "description": "右上に小さな装飾用のロゴ枠（PH__Logo__1）（テキスト入力非想定）",
+          "position": "右上",
+          "size_label": "装飾用",
+          "expects_text": false,
+          "area_ratio": 0.02
+        }
+      ]
+    },
+    "heuristic_reason": "placeholder:type=body; placeholder:type=object(visual); template_ai:fallback"
+  },
+  "version": "1.1.0"
 }
 ```
 
@@ -35,6 +98,8 @@
 - `style_hint`: レンダリング・AI 補完のヒントであり、必須ではない。
 - `usage_tags`: 工程5のスコアリングに利用する用途タグ。
 - `text_hint.max_chars`: 面積から算出した推奨文字数。
+- `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。詳細は `docs/design/stages/stage1-stage3-metadata-interface.md` を参照。
+- `meta.layout_description`: Stage1 Template で生成するレイアウト説明メタ。`overview`（全体概要）と `elements[*]`（個別プレースホルダーの説明リスト）で構成され、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
 
 ## diagnostics.json
 ```jsonc
@@ -89,3 +154,4 @@
 - 差分レポート出力の標準化とサンプル追加。
 - `usage_tags` 推定ロジックの指標化とテスト整備。
 - JSON Lines サンプルを `docs/design/schema/samples/` に追加し、レポート生成例を整備する。
+- Stage1 → Stage3 連携フィールド（`placeholder_summary.area_ratio` や Blueprint slot 情報など）をスキーマへ反映し、`docs/design/stages/stage1-stage3-metadata-interface.md` に沿って検証を追加する。

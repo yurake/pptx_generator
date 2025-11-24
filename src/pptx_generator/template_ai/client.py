@@ -48,16 +48,10 @@ def create_template_ai_client(policy: TemplateAIPolicy) -> tuple[TemplateAIClien
     """ポリシー設定から適切なクライアントを生成し、利用プロバイダ名を返す。"""
 
     provider_env = os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER")
-    base_provider = (policy.provider or "mock").strip().lower()
-    if provider_env and provider_env.strip():
-        provider = provider_env.strip().lower()
-    else:
-        provider = base_provider or "mock"
-    provider = provider or "mock"
+    provider = (provider_env or "mock").strip().lower() or "mock"
     logger.info(
-        "template AI provider resolved: env=%s policy=%s -> %s",
+        "template AI provider resolved: env=%s -> %s",
         provider_env or "",
-        base_provider,
         provider,
     )
     if provider in {"mock", ""}:
@@ -115,9 +109,9 @@ class OpenAITemplateAIClient:
         temperature = float(os.getenv("OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
         max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(policy.max_tokens or 32000)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        model_name = policy.model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-        if model_name in {"mock", "mock-local", "mock-template"}:
-            model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        model_name = os.getenv("OPENAI_MODEL")
+        if not model_name:
+            raise TemplateAIClientConfigurationError("OPENAI_MODEL が設定されていません")
         return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:
@@ -184,7 +178,7 @@ class AzureOpenAITemplateAIClient:
             raise TemplateAIClientConfigurationError(
                 "AZURE_OPENAI_ENDPOINT と AZURE_OPENAI_API_KEY を設定してください"
             )
-        deployment = policy.model or os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
         if not deployment:
             raise TemplateAIClientConfigurationError("AZURE_OPENAI_DEPLOYMENT が設定されていません")
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
@@ -264,8 +258,7 @@ class AnthropicTemplateAIClient:
         if not api_key:
             raise TemplateAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
 
-        model = policy.model if policy.model and policy.model not in {"mock", "mock-template"} else None
-        model_id = model or os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
+        model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
         fallback_model = os.getenv("ANTHROPIC_FALLBACK_MODEL")
         max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or 32000)))
         client = anthropic.Anthropic(api_key=api_key)
@@ -352,8 +345,7 @@ class AwsClaudeTemplateAIClient:
             msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
             raise TemplateAIClientConfigurationError(msg) from exc
 
-        model = policy.model if policy.model and policy.model not in {"mock", "mock-template"} else None
-        model_id = model or os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+        model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
         inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
         region = os.getenv("AWS_REGION")
         profile = os.getenv("AWS_PROFILE")

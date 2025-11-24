@@ -14,7 +14,8 @@ from .layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
 from .layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
 from .models import (ContentSlide, DraftAnalyzerSummary, DraftLayoutCandidate,
                      DraftLayoutScoreDetail)
-from .utils.usage_tags import (CANONICAL_USAGE_TAGS, normalize_usage_tag_value,
+from .utils.usage_tags import (CANONICAL_USAGE_TAGS, get_usage_tag_catalog,
+                               normalize_usage_tag_value,
                                normalize_usage_tags_with_unknown)
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ class LayoutProfile:
     text_hint: dict[str, object]
     media_hint: dict[str, object]
     placeholder_summary: dict[str, object] = field(default_factory=dict)
+    heuristic: dict[str, object] = field(default_factory=dict)
+    blueprint: dict[str, object] = field(default_factory=dict)
+    meta: dict[str, object] = field(default_factory=dict)
+    layout_description: dict[str, object] | None = None
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -328,6 +333,13 @@ class CardLayoutRecommender:
             "allowed_tags": sorted(CANONICAL_USAGE_TAGS),
             "slide_tag_hints": sorted(tag for tag in slide_tags if tag),
         }
+        allowed_details = _get_allowed_tag_details()
+        card_payload["allowed_tags_detail"] = {
+            tag: allowed_details.get(tag, "")
+            for tag in card_payload["allowed_tags"]
+        }
+        if slide.source is not None:
+            card_payload["source"] = slide.source.model_dump(mode="json")
 
         layout_metadata = self._build_layout_metadata(layouts)
 
@@ -406,17 +418,29 @@ class CardLayoutRecommender:
                 "text_hint": profile.text_hint,
                 "media_hint": profile.media_hint,
             }
+            if profile.layout_description:
+                entry["layout_description"] = profile.layout_description
             if profile.placeholder_summary:
+                entry["placeholder_summary"] = profile.placeholder_summary
                 summary = profile.placeholder_summary
                 counts = summary.get("counts")
                 if counts:
                     entry["placeholder_counts"] = counts
+                area_ratio = summary.get("area_ratio")
+                if area_ratio:
+                    entry["placeholder_area_ratio"] = area_ratio
                 details = summary.get("details")
                 if details:
                     entry["placeholders"] = details
                 extras = summary.get("attributes")
                 if extras:
                     entry["placeholder_attributes"] = extras
+            if profile.heuristic:
+                entry["heuristic"] = profile.heuristic
+            if profile.blueprint:
+                entry["blueprint"] = profile.blueprint
+            if profile.meta:
+                entry["meta"] = profile.meta
             metadata[profile.layout_id] = entry
         return metadata
 
@@ -479,6 +503,20 @@ class CardLayoutRecommender:
             canonical_hint = normalize_usage_tag_value(slide.type_hint)
             tags.add(canonical_hint or slide.type_hint.casefold())
 
+        source = slide.source
+        if source is not None:
+            if source.story_phase:
+                raw_phase = source.story_phase.strip()
+                if raw_phase:
+                    canonical_phase = normalize_usage_tag_value(raw_phase)
+                    tags.add(canonical_phase or raw_phase.casefold())
+            for tag_value in source.intent_tags:
+                raw_tag = str(tag_value).strip()
+                if not raw_tag:
+                    continue
+                canonical_tag = normalize_usage_tag_value(raw_tag)
+                tags.add(canonical_tag or raw_tag.casefold())
+
         title = slide.elements.title.lower()
         for token in CardLayoutRecommender._tokenize(title):
             if len(token) >= 3:
@@ -505,3 +543,38 @@ class CardLayoutRecommender:
             token.append(ch)
         if token:
             yield "".join(token)
+_ALLOWED_TAG_DETAILS: dict[str, str] | None = None
+
+
+def _get_allowed_tag_details() -> dict[str, str]:
+    global _ALLOWED_TAG_DETAILS
+    if _ALLOWED_TAG_DETAILS is not None:
+        return _ALLOWED_TAG_DETAILS
+
+    catalog = get_usage_tag_catalog()
+    details: dict[str, str] = {}
+
+    def _register_entries(entries: list[dict[str, object]]) -> None:
+        for entry in entries:
+            tag = entry.get("tag")
+            if not isinstance(tag, str):
+                continue
+            description = entry.get("description")
+            details[tag] = str(description or "")
+
+    intent_entries = catalog.get("intent") or []
+    media_entries = catalog.get("media") or []
+    if isinstance(intent_entries, list):
+        _register_entries(intent_entries)
+    if isinstance(media_entries, list):
+        _register_entries(media_entries)
+
+    fallback_entry = catalog.get("fallback")
+    if isinstance(fallback_entry, dict):
+        tag = fallback_entry.get("tag")
+        if isinstance(tag, str):
+            description = fallback_entry.get("description")
+            details[tag] = str(description or "")
+
+    _ALLOWED_TAG_DETAILS = details
+    return details

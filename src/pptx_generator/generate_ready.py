@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from itertools import count
+import textwrap
 from typing import Any
 
 from .models import (ChartOptions, ChartSeries, JobAuth, JobMeta, JobSpec,
@@ -40,9 +41,14 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
 
     body_value = elements.get("body")
     if isinstance(body_value, list):
-        bullets = [_create_bullet(slide_id, None, next(bullet_counter), text) for text in body_value]
-        if bullets:
-            bullet_groups.append(SlideBulletGroup(anchor=None, items=bullets))
+        body_bullets: list[SlideBullet] = []
+        for entry in body_value:
+            for text_segment, level in _normalize_bullet_value(entry):
+                body_bullets.append(
+                    _create_bullet(slide_id, None, next(bullet_counter), text_segment, level=level)
+                )
+        if body_bullets:
+            bullet_groups.append(SlideBulletGroup(anchor=None, items=body_bullets))
 
     tables: list[SlideTable] = []
     images: list[SlideImage] = []
@@ -54,13 +60,16 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
     for key, value in elements.items():
         if key in {"title", "subtitle", "note", "body"}:
             continue
-        if isinstance(value, list) and all(isinstance(item, str) for item in value):
-            bullets = [
-                _create_bullet(slide_id, key, next(bullet_counter), text) for text in value
-            ]
-            if bullets:
-                bullet_groups.append(SlideBulletGroup(anchor=key, items=bullets))
-            continue
+        if isinstance(value, list):
+            anchor_bullets: list[SlideBullet] = []
+            for entry in value:
+                for text_segment, level in _normalize_bullet_value(entry):
+                    anchor_bullets.append(
+                        _create_bullet(slide_id, key, next(bullet_counter), text_segment, level=level)
+                    )
+            if anchor_bullets:
+                bullet_groups.append(SlideBulletGroup(anchor=key, items=anchor_bullets))
+                continue
         if isinstance(value, dict):
             if _looks_like_table(value):
                 tables.append(
@@ -153,10 +162,40 @@ def _resolve_slide_id(index: int, slide: GenerateReadySlide) -> str:
     return f"slide-{index}"
 
 
-def _create_bullet(slide_id: str, anchor: str | None, sequence: int, text: str) -> SlideBullet:
+def _create_bullet(
+    slide_id: str, anchor: str | None, sequence: int, text: str, *, level: int = 0
+) -> SlideBullet:
     anchor_part = anchor or "body"
     bullet_id = f"{slide_id}-{anchor_part}-bullet-{sequence}"
-    return SlideBullet(id=bullet_id, text=text, level=0)
+    clamped_level = level if 0 <= level <= 5 else max(min(level, 5), 0)
+    return SlideBullet(id=bullet_id, text=text, level=clamped_level)
+
+
+def _normalize_bullet_value(value: Any) -> list[tuple[str, int]]:
+    entries: list[tuple[str, int]] = []
+    text: str | None = None
+    level = 0
+    extra_level = None
+    if isinstance(value, str):
+        text = value.strip()
+    elif isinstance(value, dict):
+        text = str(value.get("text") or "").strip()
+        extra_level = value.get("level", 0)
+    if not text:
+        return entries
+    if extra_level is not None:
+        try:
+            level = max(int(extra_level), 0)
+        except (TypeError, ValueError):
+            level = 0
+    segments = textwrap.wrap(text, width=200, drop_whitespace=True, break_long_words=True)
+    if not segments:
+        segments = [text]
+    for segment in segments:
+        segment_text = segment.strip()
+        if segment_text:
+            entries.append((segment_text, level))
+    return entries
 
 
 def _value_as_str(value: Any) -> str | None:

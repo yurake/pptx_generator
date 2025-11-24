@@ -3,8 +3,10 @@
     "schema_version": "0.1",
     "template_path": "samples/templates/templates.pptx",
     "template_id": "templates",
-    "generated_at": "2025-11-04T10:49:59.610272+00:00",
-    "layout_count": 24
+    "generated_at": "2025-11-22T00:00:00+00:00",
+    "layout_count": 24,
+    "layouts_path": "layouts.jsonl",
+    "template_spec_path": "template_spec.json"
   },
   "slides": [
     {
@@ -25,7 +27,8 @@
             "height_in": 2.8311679790026245
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Sub Title",
@@ -40,7 +43,8 @@
             "height_in": 0.9480533683289589
           },
           "sample_text": "マスター サブタイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -55,7 +59,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Text1",
@@ -70,7 +75,8 @@
             "height_in": 0.6883103674540683
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Logo",
@@ -85,7 +91,8 @@
             "height_in": 1.0
           },
           "sample_text": "logo",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -107,7 +114,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Section Title",
@@ -122,7 +130,8 @@
             "height_in": 2.8311679790026245
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Section Sub Title",
@@ -137,7 +146,8 @@
             "height_in": 0.9480533683289589
           },
           "sample_text": "マスター サブタイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Logo",
@@ -152,7 +162,8 @@
             "height_in": 1.0
           },
           "sample_text": "logo",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -174,7 +185,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Section Title",
@@ -189,7 +201,8 @@
             "height_in": 2.8311679790026245
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Section Sub Title",
@@ -204,7 +217,8 @@
             "height_in": 0.9480533683289589
           },
           "sample_text": "マスター サブタイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Logo",
@@ -219,7 +233,8 @@
             "height_in": 1.0
           },
           "sample_text": "logo",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -241,7 +256,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Agenda",
@@ -256,7 +272,8 @@
             "height_in": 6.059387576552931
           },
           "sample_text": "目次1\n目次2\n目次2-1\n目次2-2\n目次2-2-1\n目次2-2-2",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Sub Title",
@@ -271,7 +288,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Logo",
@@ -286,7 +304,8 @@
             "height_in": 1.0
           },
           "sample_text": "logo",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -308,7 +327,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body",
@@ -325,7 +345,8 @@
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "notes": [
             "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
-          ]
+          ],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -340,7 +361,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -355,7 +377,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -377,7 +400,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper",
@@ -392,7 +416,8 @@
             "height_in": 2.3824365704286965
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -407,7 +432,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -422,7 +448,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower",
@@ -437,7 +464,8 @@
             "height_in": 2.3824365704286965
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -459,7 +487,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Right",
@@ -474,7 +503,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -489,7 +519,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -504,7 +535,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -519,7 +551,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -541,7 +574,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Right",
@@ -556,7 +590,8 @@
             "height_in": 2.4119149168853893
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -571,7 +606,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -586,7 +622,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -601,7 +638,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Right",
@@ -616,7 +654,8 @@
             "height_in": 2.4119149168853893
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -638,7 +677,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Right",
@@ -653,7 +693,8 @@
             "height_in": 2.4119149168853893
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -668,7 +709,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -683,7 +725,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -698,7 +741,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Right",
@@ -713,7 +757,8 @@
             "height_in": 2.4119149168853893
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -735,7 +780,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper",
@@ -750,7 +796,8 @@
             "height_in": 1.6122615923009624
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -765,7 +812,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -780,7 +828,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Center",
@@ -795,7 +844,8 @@
             "height_in": 1.6122615923009624
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower",
@@ -810,7 +860,8 @@
             "height_in": 1.6122615923009624
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -832,7 +883,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body 1",
@@ -847,7 +899,8 @@
             "height_in": 1.1426531058617673
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -862,7 +915,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -877,7 +931,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body 2",
@@ -892,7 +947,8 @@
             "height_in": 1.1426531058617673
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body 3",
@@ -907,7 +963,8 @@
             "height_in": 1.1426531058617673
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body 4",
@@ -922,7 +979,8 @@
             "height_in": 1.1426531058617673
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -944,7 +1002,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Body Left",
@@ -959,7 +1018,8 @@
             "height_in": 3.394355861767279
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Right",
@@ -974,7 +1034,8 @@
             "height_in": 3.394355861767279
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -989,7 +1050,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Notes",
@@ -1004,7 +1066,24 @@
             "height_in": 1.4527974628171478
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
+        },
+        {
+          "anchor": "Sub Title",
+          "kind": "text",
+          "placeholder_type": "SUBTITLE",
+          "shape_type": "LayoutPlaceholder",
+          "is_placeholder": true,
+          "bounds": {
+            "left_in": 0.3416666666666667,
+            "top_in": 0.0,
+            "width_in": 5.134061679790026,
+            "height_in": 0.3506496062992126
+          },
+          "sample_text": "サブタイトル の書式設定",
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1026,7 +1105,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -1041,7 +1121,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1056,7 +1137,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1071,7 +1153,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Right",
@@ -1086,7 +1169,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Center",
@@ -1101,7 +1185,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1123,7 +1208,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1138,7 +1224,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1153,7 +1240,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Left",
@@ -1168,7 +1256,8 @@
             "height_in": 2.4295505249343834
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Right",
@@ -1183,7 +1272,8 @@
             "height_in": 2.4295505249343834
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Left",
@@ -1198,7 +1288,8 @@
             "height_in": 2.4295505249343834
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Right",
@@ -1213,7 +1304,8 @@
             "height_in": 2.4295505249343834
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1235,7 +1327,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -1250,7 +1343,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1265,7 +1359,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1280,7 +1375,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Right",
@@ -1295,7 +1391,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Upper Center",
@@ -1310,7 +1407,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Left",
@@ -1325,7 +1423,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Right",
@@ -1340,7 +1439,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Lower Center",
@@ -1355,7 +1455,8 @@
             "height_in": 2.3575667104111986
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1377,7 +1478,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1392,7 +1494,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1407,7 +1510,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Top Left",
@@ -1422,7 +1526,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Top Right",
@@ -1437,7 +1542,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Top Center",
@@ -1452,7 +1558,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Middle Left",
@@ -1467,7 +1574,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Middle Right",
@@ -1482,7 +1590,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Center",
@@ -1497,7 +1606,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Bottom Left",
@@ -1512,7 +1622,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Bottom Right",
@@ -1527,7 +1638,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Body Bottom Center",
@@ -1542,7 +1654,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1564,7 +1677,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1579,7 +1693,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1594,7 +1709,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 1",
@@ -1609,7 +1725,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 1",
@@ -1624,7 +1741,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 2",
@@ -1639,7 +1757,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 2",
@@ -1654,7 +1773,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 3",
@@ -1669,7 +1789,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 3",
@@ -1684,7 +1805,8 @@
             "height_in": 1.529884076990376
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1706,7 +1828,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1721,7 +1844,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1736,7 +1860,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 1",
@@ -1751,7 +1876,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 1",
@@ -1766,7 +1892,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 2",
@@ -1781,7 +1908,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 2",
@@ -1796,7 +1924,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 3",
@@ -1811,7 +1940,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 3",
@@ -1826,7 +1956,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 4",
@@ -1841,7 +1972,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 4",
@@ -1856,7 +1988,8 @@
             "height_in": 1.0510575240594926
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -1878,7 +2011,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -1893,7 +2027,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -1908,7 +2043,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 1",
@@ -1923,7 +2059,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 1",
@@ -1938,7 +2075,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 2",
@@ -1953,7 +2091,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 2",
@@ -1968,7 +2107,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 3",
@@ -1983,7 +2123,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 3",
@@ -1998,7 +2139,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 5",
@@ -2013,7 +2155,8 @@
             "height_in": 0.8110236220472441
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 5",
@@ -2028,7 +2171,8 @@
             "height_in": 0.8110236220472441
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Key 4",
@@ -2043,7 +2187,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Value 4",
@@ -2058,7 +2203,8 @@
             "height_in": 0.8074354768153981
           },
           "sample_text": "マスター テキストの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -2080,7 +2226,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 2",
@@ -2095,7 +2242,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -2110,7 +2258,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -2125,7 +2274,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -2140,7 +2290,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 1",
@@ -2155,7 +2306,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -2177,7 +2329,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -2192,7 +2345,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -2207,7 +2361,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -2222,7 +2377,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 3",
@@ -2237,7 +2393,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 2",
@@ -2252,7 +2409,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 1",
@@ -2267,7 +2425,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 2",
@@ -2282,7 +2441,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -2304,7 +2464,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 2",
@@ -2319,7 +2480,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -2334,7 +2496,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -2349,7 +2512,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -2364,7 +2528,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 2",
@@ -2379,7 +2544,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 3",
@@ -2394,7 +2560,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow 4",
@@ -2409,7 +2576,8 @@
             "height_in": 5.014948600174979
           },
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 1",
@@ -2424,7 +2592,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Flow Image Arrow 3",
@@ -2439,7 +2608,8 @@
             "height_in": 0.9239129483814523
           },
           "sample_text": null,
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -2463,7 +2633,8 @@
           "sample_text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "notes": [
             "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
-          ]
+          ],
+          "auto_draw": false
         },
         {
           "anchor": "Num",
@@ -2478,7 +2649,8 @@
             "height_in": 0.3993055555555556
           },
           "sample_text": "‹#›",
-          "notes": []
+          "notes": [],
+          "auto_draw": true
         },
         {
           "anchor": "Sub Title",
@@ -2493,7 +2665,8 @@
             "height_in": 0.3506496062992126
           },
           "sample_text": "サブタイトル の書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         },
         {
           "anchor": "Main Message",
@@ -2508,7 +2681,8 @@
             "height_in": 0.9090912073490813
           },
           "sample_text": "マスター タイトルの書式設定",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     },
@@ -2530,7 +2704,8 @@
             "height_in": 1.0
           },
           "sample_text": "logo",
-          "notes": []
+          "notes": [],
+          "auto_draw": false
         }
       ]
     }

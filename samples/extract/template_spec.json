@@ -1,10 +1,9 @@
 {
   "template_path": "samples/templates/templates.pptx",
-  "extracted_at": "2025-11-04T10:49:59.609426+00:00",
+  "extracted_at": "2025-11-22T00:00:00+00:00",
   "layouts": [
     {
       "name": "Title",
-      "identifier": null,
       "anchors": [
         {
           "name": "Title",
@@ -16,9 +15,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "CENTER_TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -30,9 +27,7 @@
           "text": "マスター サブタイトルの書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -44,9 +39,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Text1",
@@ -58,9 +51,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "BODY",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Logo",
@@ -72,16 +63,85 @@
           "text": "logo",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "body": 1,
+          "footer": 1,
+          "object": 1,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "title": 0.608,
+          "subtitle": 0.203,
+          "footer": 0.024,
+          "body": 0.148,
+          "object": 0.017
+        },
+        "details": [
+          {
+            "name": "Title",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.608
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.203
+          },
+          {
+            "name": "Text1",
+            "type": "body",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.148
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Logo",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.017
+          }
+        ],
+        "attributes": {
+          "total": 5,
+          "has_title": true,
+          "has_body": true,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=body",
+          "placeholder:type=footer",
+          "placeholder:type=title",
+          "placeholder:type=object(visual)"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": true
+      }
     },
     {
       "name": "Section Covor Left",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -93,9 +153,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Section Title",
@@ -107,9 +165,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "CENTER_TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Section Sub Title",
@@ -121,9 +177,7 @@
           "text": "マスター サブタイトルの書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Logo",
@@ -135,16 +189,75 @@
           "text": "logo",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 1,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.028,
+          "title": 0.713,
+          "subtitle": 0.239,
+          "object": 0.02
+        },
+        "details": [
+          {
+            "name": "Section Title",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.713
+          },
+          {
+            "name": "Section Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.239
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.028
+          },
+          {
+            "name": "Logo",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.02
+          }
+        ],
+        "attributes": {
+          "total": 4,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=title",
+          "placeholder:type=object(visual)"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Section Covor Center",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -156,9 +269,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Section Title",
@@ -170,9 +281,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "CENTER_TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Section Sub Title",
@@ -184,9 +293,7 @@
           "text": "マスター サブタイトルの書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Logo",
@@ -198,16 +305,75 @@
           "text": "logo",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 1,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.028,
+          "title": 0.713,
+          "subtitle": 0.239,
+          "object": 0.02
+        },
+        "details": [
+          {
+            "name": "Section Title",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.713
+          },
+          {
+            "name": "Section Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.239
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.028
+          },
+          {
+            "name": "Logo",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.02
+          }
+        ],
+        "attributes": {
+          "total": 4,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=title",
+          "placeholder:type=object(visual)"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Agenda",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -219,9 +385,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Agenda",
@@ -233,9 +397,7 @@
           "text": "目次1\n目次2\n目次2-1\n目次2-2\n目次2-2-1\n目次2-2-2\n",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -247,9 +409,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Logo",
@@ -261,16 +421,75 @@
           "text": "logo",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 2,
+          "subtitle": 1
+        },
+        "area_ratio": {
+          "footer": 0.018,
+          "object": 0.96,
+          "subtitle": 0.022
+        },
+        "details": [
+          {
+            "name": "Agenda",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.948
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.022
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.018
+          },
+          {
+            "name": "Logo",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.012
+          }
+        ],
+        "attributes": {
+          "total": 4,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "agenda",
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "name:contains=agenda",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle",
+          "placeholder:type=object(visual)"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "One Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Main Message",
@@ -282,9 +501,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body",
@@ -296,7 +513,6 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
           "missing_fields": [],
           "conflict": "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
         },
@@ -310,9 +526,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -324,16 +538,78 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 1,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "title": 0.147,
+          "object": 0.812,
+          "footer": 0.018,
+          "subtitle": 0.023
+        },
+        "details": [
+          {
+            "name": "Body",
+            "type": "object",
+            "flags": [
+              "anchor_conflict"
+            ],
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.812
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.147
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.023
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.018
+          }
+        ],
+        "attributes": {
+          "total": 4,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=title"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Two Rows Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Main Message",
@@ -345,9 +621,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper",
@@ -359,9 +633,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -373,9 +645,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -387,9 +657,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower",
@@ -401,16 +669,81 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 2,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "title": 0.153,
+          "object": 0.804,
+          "footer": 0.019,
+          "subtitle": 0.024
+        },
+        "details": [
+          {
+            "name": "Body Upper",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.402
+          },
+          {
+            "name": "Body Lower",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.402
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.153
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 5,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=title"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Two Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body Left",
@@ -422,9 +755,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Right",
@@ -436,9 +767,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -450,9 +779,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -464,9 +791,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -478,16 +803,81 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 2,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.808,
+          "footer": 0.019,
+          "subtitle": 0.023,
+          "title": 0.15
+        },
+        "details": [
+          {
+            "name": "Body Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.404
+          },
+          {
+            "name": "Body Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.404
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.15
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.023
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 5,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Left Highlight Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body Left",
@@ -499,9 +889,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Right",
@@ -513,9 +901,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -527,9 +913,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -541,9 +925,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -555,9 +937,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Right",
@@ -569,16 +949,87 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.805,
+          "footer": 0.019,
+          "subtitle": 0.024,
+          "title": 0.152
+        },
+        "details": [
+          {
+            "name": "Body Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.41
+          },
+          {
+            "name": "Body Upper Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.197
+          },
+          {
+            "name": "Body Lower Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.197
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.152
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Right Highlight Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body Left",
@@ -590,9 +1041,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Right",
@@ -604,9 +1053,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -618,9 +1065,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -632,9 +1077,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -646,9 +1089,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Right",
@@ -660,16 +1101,87 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.805,
+          "footer": 0.019,
+          "subtitle": 0.024,
+          "title": 0.152
+        },
+        "details": [
+          {
+            "name": "Body Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.41
+          },
+          {
+            "name": "Body Upper Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.197
+          },
+          {
+            "name": "Body Lower Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.197
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.152
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Three Rows Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Main Message",
@@ -681,9 +1193,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper",
@@ -695,9 +1205,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -709,9 +1217,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -723,9 +1229,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Center",
@@ -737,9 +1241,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower",
@@ -751,16 +1253,87 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "title": 0.151,
+          "object": 0.806,
+          "footer": 0.019,
+          "subtitle": 0.024
+        },
+        "details": [
+          {
+            "name": "Body Upper",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.269
+          },
+          {
+            "name": "Body Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.269
+          },
+          {
+            "name": "Body Lower",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.269
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.151
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=title"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Four Rows Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Main Message",
@@ -772,9 +1345,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body 1",
@@ -786,9 +1357,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -800,9 +1369,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -814,9 +1381,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body 2",
@@ -828,9 +1393,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body 3",
@@ -842,9 +1405,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body 4",
@@ -856,16 +1417,93 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 4,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "title": 0.159,
+          "object": 0.797,
+          "footer": 0.02,
+          "subtitle": 0.025
+        },
+        "details": [
+          {
+            "name": "Body 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.199
+          },
+          {
+            "name": "Body 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.199
+          },
+          {
+            "name": "Body 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.199
+          },
+          {
+            "name": "Body 4",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.199
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.159
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.025
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.02
+          }
+        ],
+        "attributes": {
+          "total": 7,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=title"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Executive Summary",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -877,9 +1515,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Left",
@@ -891,9 +1527,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Right",
@@ -905,9 +1539,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -919,9 +1551,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Notes",
@@ -933,16 +1563,101 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
+        },
+        {
+          "name": "Sub Title",
+          "shape_type": "LayoutPlaceholder",
+          "left_in": 0.3416666666666667,
+          "top_in": 0.0,
+          "width_in": 5.134061679790026,
+          "height_in": 0.3506496062992126,
+          "text": "サブタイトル の書式設定",
+          "placeholder_type": "SUBTITLE",
+          "is_placeholder": true,
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.019,
+          "object": 0.804,
+          "title": 0.153,
+          "subtitle": 0.024
+        },
+        "details": [
+          {
+            "name": "Body Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.28
+          },
+          {
+            "name": "Body Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.28
+          },
+          {
+            "name": "Notes",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.245
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.153
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "overview",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "name:contains=overview",
+          "placeholder:type=title"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Three Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body Left",
@@ -954,9 +1669,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -968,9 +1681,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -982,9 +1693,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -996,9 +1705,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Right",
@@ -1010,9 +1717,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Center",
@@ -1024,16 +1729,87 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.809,
+          "footer": 0.019,
+          "subtitle": 0.023,
+          "title": 0.149
+        },
+        "details": [
+          {
+            "name": "Body Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.27
+          },
+          {
+            "name": "Body Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.27
+          },
+          {
+            "name": "Body Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.27
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.149
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.023
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Four Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -1045,9 +1821,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1059,9 +1833,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1073,9 +1845,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Left",
@@ -1087,9 +1857,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Right",
@@ -1101,9 +1869,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Left",
@@ -1115,9 +1881,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Right",
@@ -1129,16 +1893,93 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 4,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.019,
+          "subtitle": 0.024,
+          "title": 0.154,
+          "object": 0.803
+        },
+        "details": [
+          {
+            "name": "Body Upper Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.201
+          },
+          {
+            "name": "Body Upper Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.201
+          },
+          {
+            "name": "Body Lower Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.201
+          },
+          {
+            "name": "Body Lower Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.201
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.154
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.024
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.019
+          }
+        ],
+        "attributes": {
+          "total": 7,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Six Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body Upper Left",
@@ -1150,9 +1991,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -1164,9 +2003,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1178,9 +2015,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1192,9 +2027,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Right",
@@ -1206,9 +2039,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Upper Center",
@@ -1220,9 +2051,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Left",
@@ -1234,9 +2063,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Right",
@@ -1248,9 +2075,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Lower Center",
@@ -1262,16 +2087,99 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 6,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.799,
+          "footer": 0.019,
+          "subtitle": 0.025,
+          "title": 0.157
+        },
+        "details": [
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.157
+          },
+          {
+            "name": "Body Upper Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Body Upper Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Body Upper Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Body Lower Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Body Lower Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Body Lower Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.133
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.025
+          }
+        ],
+        "attributes": {
+          "total": 9,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Nine Column Detail",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -1283,9 +2191,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1297,9 +2203,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1311,9 +2215,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Top Left",
@@ -1325,9 +2227,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Top Right",
@@ -1339,9 +2239,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Top Center",
@@ -1353,9 +2251,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Middle Left",
@@ -1367,9 +2263,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Middle Right",
@@ -1381,9 +2275,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Center",
@@ -1395,9 +2287,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Bottom Left",
@@ -1409,9 +2299,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Bottom Right",
@@ -1423,9 +2311,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Body Bottom Center",
@@ -1437,16 +2323,99 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 9,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.02,
+          "subtitle": 0.025,
+          "title": 0.16,
+          "object": 0.795
+        },
+        "details": [
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.16
+          },
+          {
+            "name": "Body Top Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Top Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Top Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Middle Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Middle Right",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Center",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          },
+          {
+            "name": "Body Bottom Left",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.088
+          }
+        ],
+        "attributes": {
+          "total": 12,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Three List",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -1458,9 +2427,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1472,9 +2439,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1486,9 +2451,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 1",
@@ -1500,9 +2463,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 1",
@@ -1514,9 +2475,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 2",
@@ -1528,9 +2487,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 2",
@@ -1542,9 +2499,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 3",
@@ -1556,9 +2511,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 3",
@@ -1570,16 +2523,97 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 6,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.02,
+          "subtitle": 0.025,
+          "title": 0.16,
+          "object": 0.795
+        },
+        "details": [
+          {
+            "name": "Value 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.195
+          },
+          {
+            "name": "Value 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.195
+          },
+          {
+            "name": "Value 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.195
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.16
+          },
+          {
+            "name": "Key 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.07
+          },
+          {
+            "name": "Key 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.07
+          },
+          {
+            "name": "Key 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.07
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.025
+          }
+        ],
+        "attributes": {
+          "total": 9,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Four List",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -1591,9 +2625,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1605,9 +2637,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1619,9 +2649,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 1",
@@ -1633,9 +2661,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 1",
@@ -1647,9 +2673,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 2",
@@ -1661,9 +2685,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 2",
@@ -1675,9 +2697,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 3",
@@ -1689,9 +2709,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 3",
@@ -1703,9 +2721,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 4",
@@ -1717,9 +2733,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 4",
@@ -1731,16 +2745,97 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 8,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.021,
+          "subtitle": 0.027,
+          "title": 0.171,
+          "object": 0.781
+        },
+        "details": [
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.171
+          },
+          {
+            "name": "Value 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.143
+          },
+          {
+            "name": "Value 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.143
+          },
+          {
+            "name": "Value 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.143
+          },
+          {
+            "name": "Value 4",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.143
+          },
+          {
+            "name": "Key 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.052
+          },
+          {
+            "name": "Key 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.052
+          },
+          {
+            "name": "Key 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.052
+          }
+        ],
+        "attributes": {
+          "total": 11,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Five List",
-      "identifier": null,
       "anchors": [
         {
           "name": "Num",
@@ -1752,9 +2847,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1766,9 +2859,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1780,9 +2871,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 1",
@@ -1794,9 +2883,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 1",
@@ -1808,9 +2895,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 2",
@@ -1822,9 +2907,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 2",
@@ -1836,9 +2919,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 3",
@@ -1850,9 +2931,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 3",
@@ -1864,9 +2943,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 5",
@@ -1878,9 +2955,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 5",
@@ -1892,9 +2967,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Key 4",
@@ -1906,9 +2979,7 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Value 4",
@@ -1920,16 +2991,97 @@
           "text": "マスター テキストの書式設定",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 10,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "footer": 0.022,
+          "subtitle": 0.028,
+          "title": 0.177,
+          "object": 0.774
+        },
+        "details": [
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.177
+          },
+          {
+            "name": "Value 5",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.114
+          },
+          {
+            "name": "Value 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.114
+          },
+          {
+            "name": "Value 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.114
+          },
+          {
+            "name": "Value 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.114
+          },
+          {
+            "name": "Value 4",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.114
+          },
+          {
+            "name": "Key 5",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.041
+          },
+          {
+            "name": "Key 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.041
+          }
+        ],
+        "attributes": {
+          "total": 13,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Two Flow",
-      "identifier": null,
       "anchors": [
         {
           "name": "Flow 1",
@@ -1941,9 +3093,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 2",
@@ -1955,9 +3105,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -1969,9 +3117,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -1983,9 +3129,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -1997,9 +3141,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 1",
@@ -2009,18 +3151,90 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "image": 1,
+          "object": 2,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.787,
+          "footer": 0.02,
+          "subtitle": 0.025,
+          "title": 0.161,
+          "image": 0.007
+        },
+        "details": [
+          {
+            "name": "Flow 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.394
+          },
+          {
+            "name": "Flow 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.394
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.161
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.025
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.02
+          },
+          {
+            "name": "Flow Image Arrow 1",
+            "type": "image",
+            "shape_type": "shape",
+            "area_ratio": 0.007
+          }
+        ],
+        "attributes": {
+          "total": 6,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle",
+          "placeholder:type=image"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Three Flow",
-      "identifier": null,
       "anchors": [
         {
           "name": "Flow 1",
@@ -2032,9 +3246,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -2046,9 +3258,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -2060,9 +3270,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -2074,9 +3282,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 3",
@@ -2088,9 +3294,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 2",
@@ -2102,9 +3306,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 1",
@@ -2114,11 +3316,8 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 2",
@@ -2128,18 +3327,102 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "image": 2,
+          "object": 3,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.782,
+          "footer": 0.02,
+          "subtitle": 0.025,
+          "title": 0.159,
+          "image": 0.014
+        },
+        "details": [
+          {
+            "name": "Flow 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.261
+          },
+          {
+            "name": "Flow 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.261
+          },
+          {
+            "name": "Flow 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.261
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.159
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.025
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.02
+          },
+          {
+            "name": "Flow Image Arrow 1",
+            "type": "image",
+            "shape_type": "shape",
+            "area_ratio": 0.007
+          },
+          {
+            "name": "Flow Image Arrow 2",
+            "type": "image",
+            "shape_type": "shape",
+            "area_ratio": 0.007
+          }
+        ],
+        "attributes": {
+          "total": 8,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle",
+          "placeholder:type=image"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "1_Two Flow",
-      "identifier": null,
       "anchors": [
         {
           "name": "Flow 1",
@@ -2151,9 +3434,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 2",
@@ -2165,9 +3446,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Num",
@@ -2179,9 +3458,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -2193,9 +3470,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -2207,9 +3482,7 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 2",
@@ -2219,11 +3492,8 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 3",
@@ -2235,9 +3505,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow 4",
@@ -2249,9 +3517,7 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 1",
@@ -2261,11 +3527,8 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Flow Image Arrow 3",
@@ -2275,18 +3538,102 @@
           "width_in": 0.543477690288714,
           "height_in": 0.9239129483814523,
           "text": "",
-          "placeholder_type": null,
           "is_placeholder": false,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "image": 3,
+          "object": 4,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.747,
+          "footer": 0.022,
+          "subtitle": 0.028,
+          "title": 0.18,
+          "image": 0.024
+        },
+        "details": [
+          {
+            "name": "Flow 1",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.187
+          },
+          {
+            "name": "Flow 2",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.187
+          },
+          {
+            "name": "Flow 3",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.187
+          },
+          {
+            "name": "Flow 4",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.187
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.18
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.028
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.022
+          },
+          {
+            "name": "Flow Image Arrow 2",
+            "type": "image",
+            "shape_type": "shape",
+            "area_ratio": 0.008
+          }
+        ],
+        "attributes": {
+          "total": 10,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "footer",
+          "title",
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=footer",
+          "placeholder:type=subtitle",
+          "placeholder:type=image"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     },
     {
       "name": "Closing",
-      "identifier": null,
       "anchors": [
         {
           "name": "Body",
@@ -2298,7 +3645,6 @@
           "text": "マスター テキストの書式設定\n第 2 レベル\n第 3 レベル\n第 4 レベル\n第 5 レベル",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
           "missing_fields": [],
           "conflict": "SlideBullet拡張仕様で使用される可能性のあるアンカー名: Body"
         },
@@ -2312,9 +3658,7 @@
           "text": "‹#›",
           "placeholder_type": "SLIDE_NUMBER",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Sub Title",
@@ -2326,9 +3670,7 @@
           "text": "サブタイトル の書式設定",
           "placeholder_type": "SUBTITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         },
         {
           "name": "Main Message",
@@ -2340,16 +3682,78 @@
           "text": "マスター タイトルの書式設定",
           "placeholder_type": "TITLE",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "footer": 1,
+          "object": 1,
+          "subtitle": 1,
+          "title": 1
+        },
+        "area_ratio": {
+          "object": 0.812,
+          "footer": 0.018,
+          "subtitle": 0.023,
+          "title": 0.147
+        },
+        "details": [
+          {
+            "name": "Body",
+            "type": "object",
+            "flags": [
+              "anchor_conflict"
+            ],
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.812
+          },
+          {
+            "name": "Main Message",
+            "type": "title",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.147
+          },
+          {
+            "name": "Sub Title",
+            "type": "subtitle",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.023
+          },
+          {
+            "name": "Num",
+            "type": "footer",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 0.018
+          }
+        ],
+        "attributes": {
+          "total": 4,
+          "has_title": true,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "content",
+          "footer",
+          "title"
+        ],
+        "reasons": [
+          "placeholder:type=object(body)",
+          "placeholder:type=footer",
+          "placeholder:type=subtitle"
+        ],
+        "has_title_placeholder": true,
+        "has_body_placeholder": true,
+        "title_from_name": false
+      }
     },
     {
       "name": "Closin Covor",
-      "identifier": null,
       "anchors": [
         {
           "name": "Logo",
@@ -2361,14 +3765,47 @@
           "text": "logo",
           "placeholder_type": "OBJECT",
           "is_placeholder": true,
-          "error": null,
-          "missing_fields": [],
-          "conflict": null
+          "missing_fields": []
         }
       ],
-      "error": null
+      "placeholder_summary": {
+        "counts": {
+          "object": 1
+        },
+        "area_ratio": {
+          "object": 1.0
+        },
+        "details": [
+          {
+            "name": "Logo",
+            "type": "object",
+            "shape_type": "layoutplaceholder",
+            "area_ratio": 1.0
+          }
+        ],
+        "attributes": {
+          "total": 1,
+          "has_title": false,
+          "has_body": false,
+          "has_table": false,
+          "has_chart": false,
+          "has_visual": true
+        }
+      },
+      "heuristic": {
+        "tags": [
+          "visual"
+        ],
+        "reasons": [
+          "placeholder:type=object(visual)"
+        ],
+        "has_title_placeholder": false,
+        "has_body_placeholder": false,
+        "title_from_name": false
+      }
     }
   ],
   "warnings": [],
-  "errors": []
+  "errors": [],
+  "layout_mode": "dynamic"
 }

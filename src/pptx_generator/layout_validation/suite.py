@@ -13,12 +13,18 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Iterable
 
-from ..models import LayoutInfo, ShapeInfo, TemplateSpec
+from ..models import LayoutInfo, ShapeInfo, TemplateBlueprint, TemplateSpec
 from ..utils.usage_tags import normalize_usage_tags_with_unknown
 from ..pipeline.template_extractor import TemplateExtractor, TemplateExtractorOptions
 from ..template_ai import TemplateAIOptions, TemplateAIResult, TemplateAIService
 from ..template_ai.client import TemplateAIClientConfigurationError
 from ..template_ai.policy import TemplateAIPolicyError
+from ..utils.layout_metadata import (
+    HeuristicUsageTagsResult,
+    derive_usage_tags,
+    normalise_placeholder_type,
+    summarize_placeholders,
+)
 from .schema import (
     DIAGNOSTICS_VALIDATOR,
     DIFF_REPORT_VALIDATOR,
@@ -26,30 +32,10 @@ from .schema import (
 )
 
 EMU_PER_INCH = 914400
-SUITE_VERSION = "1.0.0"
+SUITE_VERSION = "1.1.0"
 
 logger = logging.getLogger(__name__)
 
-
-PLACEHOLDER_TYPE_ALIASES: dict[str, str] = {
-    "BODY": "body",
-    "VERTICAL_BODY": "body",
-    "TITLE": "title",
-    "SUBTITLE": "subtitle",
-    "CENTER_TITLE": "title",
-    "TABLE": "table",
-    "CHART": "chart",
-    "PICTURE": "image",
-    "CONTENT": "body",
-    "TEXT": "body",
-    "MEDIA_CLIP": "media",
-    "OBJECT": "object",
-    "FOOTER": "footer",
-    "SLIDE_NUMBER": "footer",
-    "DATE": "footer",
-    "VERTICAL_TITLE": "title",
-    "NOTES": "notes",
-}
 
 TEXT_PLACEHOLDER_TYPES = {"body", "title", "subtitle", "notes"}
 IMAGE_PLACEHOLDER_TYPES = {"image", "media", "object"}
@@ -129,6 +115,9 @@ class LayoutValidationSuite:
         text_hint: dict[str, Any],
         media_hint: dict[str, Any],
         heuristic_usage_tags: list[str],
+        placeholder_summary: dict[str, Any],
+        blueprint: dict[str, Any] | None,
+        meta: dict[str, Any] | None,
     ) -> TemplateAIResult | None:
         service = self._template_ai_service
         if service is None:
@@ -147,6 +136,9 @@ class LayoutValidationSuite:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 heuristic_usage_tags=heuristic_usage_tags,
+                placeholder_summary=placeholder_summary,
+                blueprint=blueprint,
+                meta=meta,
             )
         except TemplateAIClientConfigurationError as exc:
             logger.warning("template AI classify failed: %s", exc)
@@ -324,6 +316,8 @@ class LayoutValidationSuite:
         errors: list[dict[str, Any]] = []
 
         seen_layout_ids: dict[str, int] = {}
+        blueprint_lookup = self._build_blueprint_lookup(template_spec.blueprint)
+        static_rules_payload = self._policy_static_rules()
 
         for layout in template_spec.layouts:
             layout_id = self._resolve_layout_id(layout, seen_layout_ids)
@@ -365,6 +359,7 @@ class LayoutValidationSuite:
                         "type": normalised_type,
                         "bbox": bbox,
                         "style_hint": style_hint,
+                        "shape_type": shape.shape_type,
                         "flags": flags,
                     }
                 )
@@ -415,14 +410,33 @@ class LayoutValidationSuite:
             text_hint = self._derive_text_hint(placeholder_records)
             media_hint = self._derive_media_hint(placeholder_records)
 
-            (
-                heuristic_tags,
-                has_title_placeholder,
-                has_body_placeholder,
-                title_from_name,
-            ) = self._derive_usage_tags(layout, placeholder_records)
+            placeholder_summary = (
+                layout.placeholder_summary or summarize_placeholders(placeholder_records)
+            )
+
+            if layout.heuristic:
+                heuristic_result = HeuristicUsageTagsResult(
+                    tags=set(layout.heuristic.get("tags") or []),
+                    has_title_placeholder=bool(layout.heuristic.get("has_title_placeholder")),
+                    has_body_placeholder=bool(layout.heuristic.get("has_body_placeholder")),
+                    title_from_name=bool(layout.heuristic.get("title_from_name")),
+                    reasons=list(layout.heuristic.get("reasons") or []),
+                )
+            else:
+                heuristic_result = derive_usage_tags(layout.name or "", placeholder_records)
+            heuristic_tags = heuristic_result.tags
+            has_title_placeholder = heuristic_result.has_title_placeholder
+            has_body_placeholder = heuristic_result.has_body_placeholder
+            title_from_name = heuristic_result.title_from_name
 
             raw_usage_tags = set(heuristic_tags)
+            base_meta_reasons = list(dict.fromkeys(heuristic_result.reasons))
+            meta_payload_for_ai: dict[str, Any] = {}
+            if base_meta_reasons:
+                meta_payload_for_ai["heuristic_reason"] = "; ".join(base_meta_reasons)
+            if layout.layout_description:
+                meta_payload_for_ai["layout_description"] = layout.layout_description
+            blueprint_info = blueprint_lookup.get(layout.name)
             ai_error = False
 
             ai_result = self._invoke_template_ai(
@@ -433,6 +447,9 @@ class LayoutValidationSuite:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 heuristic_usage_tags=sorted(heuristic_tags),
+                placeholder_summary=placeholder_summary,
+                blueprint=blueprint_info,
+                meta=meta_payload_for_ai or None,
             )
 
             if ai_result and ai_result.success and ai_result.usage_tags:
@@ -497,31 +514,43 @@ class LayoutValidationSuite:
                     }
                 )
 
-            if title_conflict_removed:
-                detail = "タイトルタグが本文プレースホルダーの存在により除外されました"
-                if not title_from_name:
-                    detail += "（名前ベースの判定外）"
-                warnings.append(
-                    {
-                        "code": "usage_tag_title_suppressed",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": detail,
-                    }
-                )
+            meta_reasons: list[str] = list(base_meta_reasons)
+            if ai_result is None or not ai_result.success:
+                meta_reasons.append("template_ai:fallback")
+            elif ai_result.source == "static":
+                meta_reasons.append("template_ai:static")
 
-            records.append(
-                {
-                    "template_id": template_id,
-                    "layout_id": layout_id,
-                    "layout_name": layout.name,
-                    "placeholders": placeholder_records,
-                    "usage_tags": usage_tags,
-                    "text_hint": text_hint,
-                    "media_hint": media_hint,
-                    "version": SUITE_VERSION,
-                }
-            )
+            record_entry: dict[str, Any] = {
+                "template_id": template_id,
+                "layout_id": layout_id,
+                "layout_name": layout.name,
+                "placeholders": placeholder_records,
+                "usage_tags": usage_tags,
+                "text_hint": text_hint,
+                "media_hint": media_hint,
+                "placeholder_summary": placeholder_summary,
+                "heuristic": {
+                    "tags": sorted(heuristic_tags),
+                    "reasons": heuristic_result.reasons,
+                    "has_title_placeholder": heuristic_result.has_title_placeholder,
+                    "has_body_placeholder": heuristic_result.has_body_placeholder,
+                    "title_from_name": heuristic_result.title_from_name,
+                },
+                "static_rules": static_rules_payload,
+                "version": SUITE_VERSION,
+            }
+            if blueprint_info:
+                record_entry["blueprint"] = blueprint_info
+            meta_entry: dict[str, Any] = {}
+            if layout.layout_description:
+                meta_entry["layout_description"] = layout.layout_description
+            deduped_meta_reasons = list(dict.fromkeys(meta_reasons))
+            if deduped_meta_reasons:
+                meta_entry["heuristic_reason"] = "; ".join(deduped_meta_reasons)
+            if meta_entry:
+                record_entry["meta"] = meta_entry
+
+            records.append(record_entry)
 
         for message in template_spec.warnings:
             warnings.append(
@@ -557,33 +586,7 @@ class LayoutValidationSuite:
         return False
 
     def _normalise_placeholder_type(self, shape: ShapeInfo) -> str:
-        key = (shape.placeholder_type or "").upper()
-        if key in PLACEHOLDER_TYPE_ALIASES:
-            return PLACEHOLDER_TYPE_ALIASES[key]
-        # name から推測
-        guessed = self._guess_type_from_name(shape.name)
-        return guessed or "unknown"
-
-    @staticmethod
-    def _guess_type_from_name(name: str | None) -> str | None:
-        if not name:
-            return None
-        lowered = name.casefold()
-        if "title" in lowered:
-            return "title"
-        if "sub" in lowered:
-            return "subtitle"
-        if "note" in lowered:
-            return "notes"
-        if "table" in lowered:
-            return "table"
-        if "chart" in lowered or "graph" in lowered:
-            return "chart"
-        if "image" in lowered or "picture" in lowered or "photo" in lowered:
-            return "image"
-        if "body" in lowered or "content" in lowered:
-            return "body"
-        return None
+        return normalise_placeholder_type(shape.placeholder_type, shape.name)
 
     @staticmethod
     def _shape_bbox(shape: ShapeInfo) -> dict[str, int]:
@@ -613,6 +616,80 @@ class LayoutValidationSuite:
         if shape.missing_fields:
             flags.append("missing_fields")
         return flags
+
+    @staticmethod
+    def _build_blueprint_lookup(
+        blueprint: TemplateBlueprint | None,
+    ) -> dict[str, dict[str, Any]]:
+        if blueprint is None:
+            return {}
+
+        lookup: dict[str, dict[str, Any]] = {}
+        for slide in blueprint.slides:
+            layout_name = slide.layout
+            if not layout_name:
+                continue
+
+            entry = lookup.setdefault(
+                layout_name,
+                {"layout": layout_name, "slides": [], "slots": []},
+            )
+
+            slide_entry = {
+                "blueprint_slide_id": slide.slide_id,
+                "required": slide.required,
+                "intent_tags": sorted(slide.intent_tags),
+            }
+            entry["slides"].append(slide_entry)
+
+            for slot in slide.slots:
+                entry["slots"].append(
+                    {
+                        "slot_id": slot.slot_id,
+                        "anchor": slot.anchor,
+                        "required": slot.required,
+                        "content_type": slot.content_type,
+                        "intent_tags": sorted(slot.intent_tags),
+                    }
+                )
+
+        for layout_name, entry in lookup.items():
+            if entry["slides"]:
+                entry["slides"] = sorted(
+                    entry["slides"],
+                    key=lambda item: item["blueprint_slide_id"],
+                )
+            else:
+                entry.pop("slides")
+
+            if entry["slots"]:
+                unique_slots: dict[str, dict[str, Any]] = {}
+                for slot_entry in entry["slots"]:
+                    unique_slots.setdefault(slot_entry["slot_id"], slot_entry)
+                entry["slots"] = [
+                    unique_slots[key] for key in sorted(unique_slots)
+                ]
+            else:
+                entry.pop("slots")
+
+        return lookup
+
+    def _policy_static_rules(self) -> list[dict[str, Any]]:
+        service = self._template_ai_service
+        if service is None:
+            return []
+        policy = getattr(service, "_policy", None)
+        if policy is None:
+            return []
+        payload: list[dict[str, Any]] = []
+        for rule in policy.static_rules:
+            payload.append(
+                {
+                    "layout_name_pattern": rule.layout_name_pattern,
+                    "tags": list(rule.tags),
+                }
+            )
+        return payload
 
     def _compare_with_analyzer_snapshot(
         self, records: list[dict[str, Any]], template_id: str
@@ -754,99 +831,6 @@ class LayoutValidationSuite:
                 )
 
         return warnings, errors, issues
-
-    @staticmethod
-    def _derive_usage_tags(
-        layout: LayoutInfo, placeholders: Iterable[dict[str, Any]]
-    ) -> tuple[set[str], bool, bool, bool]:
-        tags: set[str] = set()
-        name = layout.name or ""
-        name_cf = name.casefold()
-
-        has_title_placeholder = False
-        has_body_placeholder = False
-        has_chart_placeholder = False
-        has_table_placeholder = False
-        has_image_placeholder = False
-
-        for placeholder in placeholders:
-            p_type_raw = placeholder.get("type") or ""
-            p_type = p_type_raw.casefold()
-            placeholder_name_cf = (placeholder.get("name") or "").casefold()
-
-            if p_type == "title":
-                has_title_placeholder = True
-            elif p_type in {"body", "content", "text"}:
-                has_body_placeholder = True
-                tags.add("content")
-            elif p_type == "chart":
-                has_chart_placeholder = True
-                tags.add("chart")
-            elif p_type == "table":
-                has_table_placeholder = True
-                tags.add("table")
-            elif p_type == "image":
-                has_image_placeholder = True
-                tags.add("visual")
-            elif p_type == "object":
-                if any(keyword in placeholder_name_cf for keyword in ("body", "content", "text", "message")):
-                    has_body_placeholder = True
-                    tags.add("content")
-                elif any(keyword in placeholder_name_cf for keyword in ("logo", "image", "picture", "visual")):
-                    has_image_placeholder = True
-                    tags.add("visual")
-            elif p_type == "media":
-                if any(keyword in placeholder_name_cf for keyword in ("image", "picture", "photo", "visual")):
-                    has_image_placeholder = True
-                    tags.add("visual")
-
-        if has_chart_placeholder and "chart" not in tags:
-            tags.add("chart")
-        if has_table_placeholder and "table" not in tags:
-            tags.add("table")
-        if has_image_placeholder and "visual" not in tags:
-            tags.add("visual")
-
-        if "agenda" in name_cf or "toc" in name_cf:
-            tags.add("agenda")
-        if "summary" in name_cf or "overview" in name_cf:
-            tags.add("overview")
-        if "table" in name_cf:
-            tags.add("table")
-        if "chart" in name_cf:
-            tags.add("chart")
-
-        title_from_name = LayoutValidationSuite._looks_like_title_layout(name, name_cf)
-        if title_from_name:
-            tags.add("title")
-        elif has_title_placeholder and not has_body_placeholder:
-            tags.add("title")
-
-        if has_body_placeholder:
-            tags.add("content")
-
-        return tags, has_title_placeholder, has_body_placeholder, title_from_name
-
-    @staticmethod
-    def _looks_like_title_layout(name: str, name_cf: str) -> bool:
-        if not name:
-            return False
-
-        # ASCII keywords
-        if any(keyword in name_cf for keyword in ("cover", "front page")):
-            return True
-        if "title" in name_cf and "content" not in name_cf:
-            return True
-
-        # Japanese keywords（casefold では変わらないためそのまま検索）
-        if "タイトル" in name and "コンテンツ" not in name:
-            return True
-        if "表紙" in name:
-            return True
-        if "セクション" in name and ("タイトル" in name or "表紙" in name):
-            return True
-
-        return False
 
     def _derive_text_hint(self, placeholders: Iterable[dict[str, Any]]) -> dict[str, int]:
         max_chars = 0

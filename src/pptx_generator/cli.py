@@ -198,13 +198,72 @@ def _configure_llm_logger() -> None:
     log_dir = Path("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
     llm_logger = logging.getLogger("pptx_generator.content_ai.llm")
-    if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(log_dir / "out.log") for h in llm_logger.handlers):
+
+    class _LLMLogFormatter(logging.Formatter):
+        """content_ai ログ用の安全なフォーマッタ。"""
+
+        def __init__(self, *args, max_chars: int = 2000, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+            self._max_chars = max_chars
+
+        def _sanitize(self, value: object) -> str:
+            if value is None:
+                return "-"
+            text = str(value).replace("\n", "\\n")
+            if len(text) > self._max_chars:
+                return f"{text[: self._max_chars]}...(truncated)"
+            return text
+
+        def format(self, record: logging.LogRecord) -> str:  # noqa: D401
+            for attr in ("slide_id", "card_id", "model", "intent", "reason", "finish_reason", "refusal"):
+                if not hasattr(record, attr):
+                    setattr(record, attr, "-")
+
+            record.warnings = self._sanitize(getattr(record, "warnings", None))
+            record.prompt_excerpt = self._sanitize(getattr(record, "prompt", None))
+            record.raw_response_excerpt = self._sanitize(getattr(record, "raw_response", None))
+
+            return super().format(record)
+
+    formatter = _LLMLogFormatter(
+        fmt=(
+            "%(asctime)s %(levelname)s %(name)s "
+            "slide_id=%(slide_id)s card_id=%(card_id)s model=%(model)s intent=%(intent)s "
+            "reason=%(reason)s finish=%(finish_reason)s refusal=%(refusal)s warnings=%(warnings)s "
+                "message=%(message)s prompt=%(prompt_excerpt)s raw_response=%(raw_response_excerpt)s"
+        ),
+    )
+    class _LLMLogFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            return bool(getattr(record, "raw_response", None) or getattr(record, "prompt", None))
+
+    if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
+        llm_logger.addFilter(_LLMLogFilter())
+
+    existing_handler = next(
+        (
+            handler
+            for handler in llm_logger.handlers
+            if isinstance(handler, logging.FileHandler)
+            and getattr(handler, "baseFilename", None) == str(log_dir / "out.log")
+        ),
+        None,
+    )
+    if existing_handler:
+        existing_handler.setFormatter(formatter)
+    else:
         handler = logging.FileHandler(log_dir / "out.log", encoding="utf-8")
-        formatter = logging.Formatter(
-            fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
-        )
         handler.setFormatter(formatter)
         llm_logger.addHandler(handler)
+
+    stream_handler_exists = any(
+        isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
+        for handler in llm_logger.handlers
+    )
+    if not stream_handler_exists:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        llm_logger.addHandler(stream_handler)
     llm_logger.setLevel(logging.INFO)
     llm_logger.propagate = False
 
@@ -1302,6 +1361,7 @@ def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -
                 f"diversity={detail.diversity:.2f}, "
                 f"analyzer={detail.analyzer_support:.2f})"
             )
+
 
 
 def _run_mapping_pipeline(
@@ -2524,8 +2584,7 @@ def compose(  # noqa: PLR0913
         logging.exception("compose 実行中にアウトライン工程でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
-    _print_outline_result(
-        outline_result, show_layout_reasons=show_layout_reasons)
+    _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
     branding_config, branding_artifact = _prepare_branding(

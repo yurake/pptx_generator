@@ -6,7 +6,6 @@
       "id": "default",
       "name": "default-template-ai",
       "description": "Template AI policy with canonical usage tag prompt.",
-      "model": "",
       "prompt_template": "Classify the layout usage tags using the provided metadata. Respond with JSON containing usage_tags and reason.",
       "static_rules": [
         {

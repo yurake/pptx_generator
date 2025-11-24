@@ -28,7 +28,7 @@
 - Plan 承認後に ToDo の「設計・実装方針の確定」で方針メモを記載し、関連ドキュメント（Runbook / Design 等）へのリンクを明示する運用を強化する予定。
 - ToDo テンプレートへ「設計・実装方針メモの共有」チェック欄を追加し、参照資料のリンク先を記す案を検討中（まだ未反映）。
 
-## 次に実施するべきタスク案（RM-068 として管理）
+## 次に実施するべきタスク案（RM-069 として管理）
 1. **policies へのポリシー文書追加**  
    - `docs/policies/context-engineering.md`（仮）を作成し、上記 4 ポイントと README / AGENTS 構成テンプレ、ルール読み順を明文化する。
 2. **README / AGENTS の冒頭刷新**  
@@ -488,4 +488,3 @@ Codex には Subagent という形がないですが、
 [9]: https://eval.16x.engineer/blog/llm-context-management-guide?utm_source=chatgpt.com "LLM Context Management: How to Improve Performance and ..."
 [10]: https://www.datacamp.com/blog/ai-cost-optimization?utm_source=chatgpt.com "Top 10 Methods to Reduce LLM Costs"
 [11]: https://github.com/yurake/pptx_generator "GitHub - yurake/pptx_generator"
-
