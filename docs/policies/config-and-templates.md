@@ -23,7 +23,7 @@
 - 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
 
 ## rules.json の構成
-- `title.max_length` / `bullet.max_length` / `bullet.max_level` は従来通りタイトル・本文の長さと階層を制御する。
+- タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング工程での警告に委譲する。
 - `forbidden_words` は禁則語を列挙し、バリデーションで一致したテキストを拒否する。
 - `analyzer` セクションでは自動診断の閾値を管理する。
   - `min_font_size`, `default_font_size`: 箇条書きの最低フォントサイズと既定サイズ。

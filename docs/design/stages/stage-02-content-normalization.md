@@ -42,7 +42,7 @@
   - `audit_log.json`
 
 ## ログと監査
-- `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`body_lines_truncated` など）、トークン消費量を記録。
+- `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`response_not_json` や `body_not_array` など）、トークン消費量を記録。
 - `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、工程3での差分検出に利用。
 - `audit_log.json`: 生成時刻・ポリシー ID・成果物のパスをまとめる。今後ハッシュ値を追加し改ざん検知を強化する。
 

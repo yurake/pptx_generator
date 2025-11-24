@@ -16,7 +16,15 @@ from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.draft_structuring import SlideIdAligner
 from pptx_generator.pipeline.slide_alignment import (SlideAlignmentRecord,
                                                      SlideAlignmentResult)
-from pptx_generator.models import JobSpec, Slide
+from pptx_generator.models import (
+    ContentElements,
+    ContentSlide,
+    ContentTableData,
+    JobSpec,
+    Slide,
+    SlideTable,
+)
+from pptx_generator.draft_recommender import LayoutProfile
 from pptx_generator.prepare import (
     PrepareBodyBlock,
     PrepareCard,
@@ -314,3 +322,124 @@ def test_prepare_normalization_preserves_subtitle(tmp_path: Path, sample_spec: J
     content_document = context.artifacts["content_approved"]
     assert content_document.slides[0].elements.subtitle == "Executive Summary"
     assert content_document.slides[1].elements.subtitle == "現状の課題"
+
+
+def test_prepare_normalization_preserves_table_blocks() -> None:
+    card = PrepareCard(
+        card_id="sample-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=["automation"]),
+        content=PrepareCardContent(
+            headline="AI×HITLで提案書を量産する",
+            body=[
+                PrepareBodyBlock(type="paragraph", text="自動化と承認フローの協調で品質を担保"),
+                PrepareBodyBlock(
+                    type="bullets",
+                    data={
+                        "items": [
+                            {"text": "Approval-Firstで早期判断", "level": 0},
+                            {"text": "Analyzer/Refinerで体裁補正", "level": 1},
+                        ]
+                    },
+                ),
+                PrepareBodyBlock(
+                    type="table",
+                    headers=["Stage", "Owner", "Mode"],
+                    rows=[
+                        ["Outline", "LLM", "Automation"],
+                        ["Approval", "HITL", "Manual"],
+                    ],
+                ),
+            ],
+            notes=[],
+        ),
+        meta={},
+    )
+
+    phase_counts: dict[str, int] = {}
+    step = PrepareNormalizationStep()
+    slide = step._convert_card_to_slide(card, 1, phase_counts)
+
+    assert slide.elements.table_data is not None
+    assert slide.elements.table_data.headers == ["Stage", "Owner", "Mode"]
+    assert all("Outline | Owner" not in line for line in slide.elements.body)
+
+
+def test_merge_slide_elements_assigns_table_anchor() -> None:
+    step = DraftStructuringStep()
+    layout_profile = LayoutProfile(
+        layout_id="two_column_detail",
+        layout_name="Two Column Detail",
+        usage_tags=("content",),
+        text_hint={},
+        media_hint={"allow_table": True},
+        placeholders=(
+            {"name": "Body Left", "type": "object", "area_ratio": 0.49},
+            {"name": "Body Right", "type": "object", "area_ratio": 0.51},
+        ),
+    )
+    content_slide = ContentSlide(
+        id="slide-1",
+        intent="overview",
+        elements=ContentElements(
+            title="タイトル",
+            body=["要点"],
+            table_data=ContentTableData(headers=["指標"], rows=[["120件/月"]]),
+        ),
+    )
+
+    merged = step._merge_slide_elements(
+        spec_slide=None,
+        content_slide=content_slide,
+        layout_profile=layout_profile,
+    )
+
+    assert "Body Right" in merged
+    assert merged["Body Right"]["headers"] == ["指標"]
+    assert merged["Body Right"]["rows"] == [["120件/月"]]
+    assert "table" not in merged
+
+
+def test_merge_slide_elements_overwrites_spec_table_payload() -> None:
+    step = DraftStructuringStep()
+    layout_profile = LayoutProfile(
+        layout_id="two_column_detail",
+        layout_name="Two Column Detail",
+        usage_tags=("content",),
+        text_hint={},
+        media_hint={"allow_table": True},
+        placeholders=(
+            {"name": "Body Left", "type": "object", "area_ratio": 0.49},
+            {"name": "Body Right", "type": "object", "area_ratio": 0.51},
+        ),
+    )
+    spec_slide = Slide(
+        id="slide-1",
+        layout="two_column_detail",
+        tables=[
+            SlideTable(
+                id="table-1",
+                anchor="Body Right",
+                columns=["旧指標"],
+                rows=[["80件/月"]],
+            )
+        ],
+    )
+    content_slide = ContentSlide(
+        id="slide-1",
+        intent="overview",
+        elements=ContentElements(
+            title="タイトル",
+            body=["要点"],
+            table_data=ContentTableData(headers=["指標"], rows=[["120件/月"]]),
+        ),
+    )
+
+    merged = step._merge_slide_elements(
+        spec_slide=spec_slide,
+        content_slide=content_slide,
+        layout_profile=layout_profile,
+    )
+
+    assert merged["Body Right"]["headers"] == ["指標"]
+    assert merged["Body Right"]["rows"] == [["120件/月"]]
+    assert "table_1" not in merged

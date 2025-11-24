@@ -5,10 +5,7 @@
     "model": "mock-local",
     "prompt_fragment": "カバースライド \"intro 現状と課題\" のリード文を1行で生成してください。案件名: intro-outline はじめに。",
     "response_digest": "{\"title\": \"intro 現状と課題\", \"body\": [\"カバースライド \\\"intro 現状と課題\\\" のリード文を1行で生成してください。\", \"テスト用の簡易プレペア入力です。このテキストを工程2 CLI の `uv run\"], \"note\": \"提案書ドラフト標準 ポリシーを使用して自動生成しました。\", \"intent\": \"cover\"}",
-    "warnings": [
-      "body_line_length_truncated",
-      "body_line_length_truncated"
-    ],
+    "warnings": [],
     "tokens": {},
     "generated_at": "2025-01-01T00:00:00Z"
   }

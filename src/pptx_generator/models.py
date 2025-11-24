@@ -27,7 +27,7 @@ class SlideBullet(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    text: str = Field(..., max_length=200)
+    text: str
     level: int = Field(0, ge=0, le=5)
     font: FontSpec | None = None
 
@@ -290,8 +290,8 @@ class ContentTableData(BaseModel):
 
 
 class ContentElements(BaseModel):
-    title: str = Field(..., max_length=120)
-    subtitle: str | None = Field(default=None, max_length=120)
+    title: str
+    subtitle: str | None = None
     body: list[str] = Field(default_factory=list)
     table_data: ContentTableData | None = None
     note: str | None = None
@@ -304,17 +304,14 @@ class ContentElements(BaseModel):
         text = str(value).strip()
         return text or None
 
-    @field_validator("body")
+    @field_validator("body", mode="before")
     @classmethod
-    def validate_body(cls, value: list[str]) -> list[str]:
-        if len(value) > 6:
-            msg = "body は最大 6 行までです"
-            raise ValueError(msg)
-        for line in value:
-            if len(line) > 40:
-                msg = "body の各行は 40 文字以内で入力してください"
-                raise ValueError(msg)
-        return value
+    def normalize_body(cls, value: object) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item) for item in value]
+        return [str(value)]
 
 
 JsonPatchOp = Literal["add", "remove", "replace", "move", "copy", "test"]
@@ -669,6 +666,10 @@ class MappingLogMeta(BaseModel):
     analyzer_issue_count: int = 0
     analyzer_issue_counts_by_type: dict[str, int] = Field(default_factory=dict)
     analyzer_issue_counts_by_severity: dict[str, int] = Field(default_factory=dict)
+    mode: Literal["dynamic", "static"] | None = None
+    blueprint_path: str | None = None
+    slot_summary: dict[str, int] | None = None
+    static_slot_checks: dict[str, Any] | None = None
 
 
 class MappingLog(BaseModel):

@@ -6,7 +6,6 @@ import base64
 import json
 import shutil
 import subprocess
-import textwrap
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -439,31 +438,17 @@ def _strip_bullet_marker(line: str) -> str:
 
 def _build_body_lines(lines: Sequence[str]) -> tuple[list[str], bool]:
     body: list[str] = []
-    truncated = False
     for line in lines:
-        wrapped = textwrap.wrap(
-            line,
-            width=40,
-            replace_whitespace=True,
-            drop_whitespace=True,
-        )
-        if not wrapped:
-            continue
-        for chunk in wrapped:
-            body.append(chunk)
-            if len(body) >= 6:
-                truncated = True
-                break
-        if truncated:
-            break
+        stripped = _strip_bullet_marker(line).strip()
+        if stripped:
+            body.append(stripped)
 
     if not body:
         body = ["(本文未設定)"]
-    return body[:6], truncated
+    return body, False
 
 
 def _truncate(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     return f"{text[:limit - 1]}…"
-

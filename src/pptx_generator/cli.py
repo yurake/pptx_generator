@@ -893,6 +893,12 @@ def _build_analyzer_options(
     primary_color = branding_config.primary_color
     background_color = branding_config.background_color
 
+    max_bullet_level = (
+        rules_config.max_bullet_level
+        if rules_config.max_bullet_level is not None
+        else analyzer_defaults.max_bullet_level
+    )
+
     return AnalyzerOptions(
         min_font_size=analyzer_rules.min_font_size
         if analyzer_rules.min_font_size is not None
@@ -921,7 +927,7 @@ def _build_analyzer_options(
         slide_height_in=analyzer_rules.slide_height_in
         if analyzer_rules.slide_height_in is not None
         else analyzer_defaults.slide_height_in,
-        max_bullet_level=rules_config.max_bullet_level,
+        max_bullet_level=max_bullet_level,
         snapshot_output_filename="analysis_snapshot.json"
         if emit_structure_snapshot
         else None,
@@ -937,8 +943,15 @@ def _build_refiner_options(
     body_font_color = branding_config.body_font.color_hex
     primary_color = branding_config.primary_color
 
+    refiner_defaults = RefinerOptions()
+    max_bullet_level = (
+        rules_config.max_bullet_level
+        if rules_config.max_bullet_level is not None
+        else refiner_defaults.max_bullet_level
+    )
+
     return RefinerOptions(
-        max_bullet_level=rules_config.max_bullet_level,
+        max_bullet_level=max_bullet_level,
         enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
         enable_font_raise=refiner_rules.enable_font_raise,
         min_font_size=refiner_rules.min_font_size
@@ -3272,9 +3285,14 @@ def _run_golden_specs(
                 branding=branding_config,
             )
         )
+        refiner_bullet_level = (
+            rules_config.max_bullet_level
+            if rules_config.max_bullet_level is not None
+            else RefinerOptions().max_bullet_level
+        )
         refiner = SimpleRefinerStep(
             RefinerOptions(
-                max_bullet_level=rules_config.max_bullet_level,
+                max_bullet_level=refiner_bullet_level,
             )
         )
         analyzer = SimpleAnalyzerStep(
@@ -3284,7 +3302,11 @@ def _run_golden_specs(
                 default_font_color=branding_config.body_font.color_hex,
                 preferred_text_color=branding_config.primary_color,
                 background_color=branding_config.background_color,
-                max_bullet_level=rules_config.max_bullet_level,
+                max_bullet_level=(
+                    rules_config.max_bullet_level
+                    if rules_config.max_bullet_level is not None
+                    else AnalyzerOptions().max_bullet_level
+                ),
                 large_text_threshold_pt=branding_config.body_font.size_pt,
             )
         )

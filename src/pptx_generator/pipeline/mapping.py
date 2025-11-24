@@ -33,6 +33,12 @@ from ..models import (
 )
 from ..utils.usage_tags import normalize_usage_tag_value, normalize_usage_tags
 from .base import PipelineContext
+from .table_anchor import (
+    build_table_payload,
+    is_table_payload,
+    normalize_placeholders,
+    resolve_table_anchor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +66,7 @@ class LayoutProfile:
     text_hint: Mapping[str, Any]
     media_hint: Mapping[str, Any]
     layout_description: dict[str, Any] | None = None
+    placeholders: tuple[dict[str, Any], ...] = ()
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))
@@ -166,10 +173,39 @@ class MappingStep:
             selected_layout = self._select_layout(base_layout, card, candidates)
             previous_layout = selected_layout
 
+            selected_profile = layout_catalog.get(selected_layout)
+            table_payload: dict[str, Any] | None = None
+            if (
+                content_slide is not None
+                and content_slide.elements is not None
+                and content_slide.elements.table_data is not None
+            ):
+                table_payload = build_table_payload(content_slide.elements.table_data)
+
             elements = self._build_elements(spec_slide, content_slide)
+            if table_payload is not None:
+                placeholders = selected_profile.placeholders if selected_profile else ()
+                anchor, anchor_reasons = resolve_table_anchor(spec_slide, placeholders)
+                target_key = anchor or "table"
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "mapping table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
+                        slide_id,
+                        selected_layout,
+                        target_key,
+                        ", ".join(anchor_reasons) if anchor_reasons else "none",
+                    )
+                elements.pop("table", None)
+                for key in list(elements.keys()):
+                    if key == target_key:
+                        continue
+                    if is_table_payload(elements[key]):
+                        elements.pop(key, None)
+                elements[target_key] = table_payload
+
             fallback_state, ai_patches, warnings = self._apply_capacity_controls(
                 slide_id=slide_id,
-                layout=layout_catalog.get(selected_layout),
+                layout=selected_profile,
                 elements=elements,
             )
 
@@ -190,7 +226,6 @@ class MappingStep:
             if spec_slide is not None:
                 sources = [spec_slide.id]
 
-            selected_profile = layout_catalog.get(selected_layout)
             layout_name = selected_profile.layout_name if selected_profile else selected_layout
             layout_description = (
                 selected_profile.layout_description if selected_profile else None
@@ -411,6 +446,10 @@ class MappingStep:
                 text_hint = {}
             if not isinstance(media_hint, dict):
                 media_hint = {}
+            placeholder_records = payload.get("placeholders") or []
+            if not isinstance(placeholder_records, list):
+                placeholder_records = []
+            normalized_placeholders = normalize_placeholders(placeholder_records)
             catalog[layout_id] = LayoutProfile(
                 layout_id=layout_id,
                 layout_name=layout_name,
@@ -418,6 +457,7 @@ class MappingStep:
                 text_hint=text_hint,
                 media_hint=media_hint,
                 layout_description=layout_description,
+                placeholders=normalized_placeholders,
             )
         return catalog
 
@@ -610,26 +650,8 @@ class MappingStep:
         max_lines = layout.max_lines()
         body = elements.get("body")
         if max_lines is not None and isinstance(body, list) and len(body) > max_lines:
-            truncated = body[:max_lines]
             warnings.append(
-                f"body が許容行数 {max_lines} を超過したため truncate しました"
-            )
-            fallback.applied = True
-            fallback.history.append("shrink_text")
-            fallback.reason = f"body_lines={len(body)} max_lines={max_lines}"
-            elements["body"] = truncated
-            ai_patches.append(
-                MappingAIPatch(
-                    patch_id=f"{slide_id}-shrink-text",
-                    description=f"本文を {max_lines} 行に短縮",
-                    patch=[
-                        JsonPatchOperation(
-                            op="replace",
-                            path="/elements/body",
-                            value=truncated,
-                        )
-                    ],
-                )
+                f"body が許容行数 {max_lines} を超過しています（現在 {len(body)} 行）"
             )
 
         if isinstance(body, list) and not body:

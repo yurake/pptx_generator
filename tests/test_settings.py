@@ -77,9 +77,9 @@ class TestRulesConfig:
 
         config = RulesConfig.load(config_path)
 
-        assert config.max_title_length == RulesConfig().max_title_length
-        assert config.max_bullet_length == RulesConfig().max_bullet_length
-        assert config.max_bullet_level == RulesConfig().max_bullet_level
+        assert config.max_title_length is None
+        assert config.max_bullet_length is None
+        assert config.max_bullet_level is None
         assert config.forbidden_words == ()
         assert config.analyzer.min_font_size is None
         assert config.analyzer.preferred_text_color is None
