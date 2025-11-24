@@ -11,7 +11,16 @@ from pptx_generator.models import (
     ContentDocumentMeta,
     ContentElements,
     ContentSlide,
+    ContentTableData,
+    DraftDocument,
+    DraftSection,
+    DraftSlideCard,
+    GenerateReadyDocument,
     JobSpec,
+    JobMeta,
+    JobAuth,
+    Slide,
+    SlideTable,
 )
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
@@ -212,3 +221,89 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     ]
 
     assert not fallback_report_path.exists()
+
+
+def test_mapping_step_assigns_table_anchor(tmp_path: Path) -> None:
+    layouts_path = tmp_path / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "two_column_detail",
+                "layout_name": "Two Column Detail",
+                "usage_tags": ["content"],
+                "text_hint": {"max_lines": 4},
+                "media_hint": {"allow_table": True},
+                "placeholders": [
+                    {
+                        "name": "Body Left",
+                        "type": "object",
+                        "bbox": {"x": 0, "y": 0, "width": 1000000, "height": 1000000},
+                    },
+                    {
+                        "name": "Body Right",
+                        "type": "object",
+                        "bbox": {"x": 1200000, "y": 0, "width": 1200000, "height": 1000000},
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="テーブル検証"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-1",
+                layout="two_column_detail",
+                title="テーブルページ",
+                tables=[
+                    SlideTable(
+                        id="tbl-legacy",
+                        anchor="Body Right",
+                        columns=["旧指標"],
+                        rows=[["80件/月"]],
+                    )
+                ],
+            )
+        ],
+    )
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+
+    draft_card = DraftSlideCard(ref_id="slide-1", order=1, layout_hint="two_column_detail")
+    draft_section = DraftSection(name="Main", order=1, slides=[draft_card])
+    draft_document = DraftDocument(sections=[draft_section])
+    context.add_artifact("draft_document", draft_document)
+
+    content_slide = ContentSlide(
+        id="slide-1",
+        intent="overview",
+        elements=ContentElements(
+            title="テーブルページ",
+            body=["主要指標"],
+            table_data=ContentTableData(headers=["指標"], rows=[["120件/月"]]),
+        ),
+        status="approved",
+    )
+    content_document = ContentApprovalDocument(
+        slides=[content_slide],
+        meta=ContentDocumentMeta(),
+    )
+    context.add_artifact("content_approved", content_document)
+
+    output_dir = tmp_path / "mapping-output"
+    options = MappingOptions(
+        output_dir=output_dir,
+        layouts_path=layouts_path,
+    )
+    step = MappingStep(options)
+    step.run(context)
+
+    generate_ready: GenerateReadyDocument = context.artifacts["generate_ready"]
+    slide_elements = generate_ready.slides[0].elements
+    assert "Body Right" in slide_elements
+    assert slide_elements["Body Right"]["rows"] == [["120件/月"]]
+    assert "table" not in slide_elements

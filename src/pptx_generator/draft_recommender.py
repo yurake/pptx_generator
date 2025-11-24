@@ -42,6 +42,7 @@ class LayoutProfile:
     blueprint: dict[str, object] = field(default_factory=dict)
     meta: dict[str, object] = field(default_factory=dict)
     layout_description: dict[str, object] | None = None
+    placeholders: tuple[dict[str, object], ...] = field(default_factory=tuple)
 
     def allows_table(self) -> bool:
         return bool(self.media_hint.get("allow_table"))

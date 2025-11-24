@@ -56,5 +56,21 @@ roadmap_item: RM-068 ContentElements 制約見直し
     - 静的 mapping_log フォーマット変更に伴い、既存ログ解析スクリプト（存在する場合）の追随確認。
   - テスト戦略:
     - 単体: prepare_normalization / draft_structuring 周辺の新規ユニットテスト追加。
-    - 統合: `uv run --extra dev pytest tests/test_mapping_step.py tests/test_prepare_llm_client.py` を中心に、必要に応じて CLI 統合テストを追加実行。
+   - 統合: `uv run --extra dev pytest tests/test_mapping_step.py tests/test_prepare_llm_client.py` を中心に、必要に応じて CLI 統合テストを追加実行。
   - ロールバック: 修正コミットを revert し、`feat/rm068-content-elements` ブランチを承認前状態へ戻す。
+- 2025-11-24: 動的テーブルの既存プレースホルダー割り当て Plan（承認済み: 本チャットID）
+  - スコープ: 動的モードで生成する `generate_ready.json` のテーブル要素を既存テンプレートプレースホルダーへマッピングし、Stage3/Stage4 の両経路で新規図形生成を抑止する。
+  - 影響ファイル（想定）: `src/pptx_generator/pipeline/draft_structuring.py`, `src/pptx_generator/pipeline/mapping.py`, `src/pptx_generator/draft_recommender.py`, `src/pptx_generator/pipeline/table_anchor.py`（新規ヘルパー予定）, `tests/test_draft_structuring_step.py`, `tests/test_mapping_step.py` ほか関連テスト。
+  - リスク/前提:
+    - レイアウトメタデータに依存したヒューリスティック判定のため、テンプレート命名規則差異で誤マッピングが発生する可能性がある。`table` フォールバックは維持し、警告ログで検知できるようにする。
+    - `layouts.jsonl` の `placeholder_summary` 等が欠損する旧フォーマットを考慮し、不足時は安全に現行挙動へフォールバックする。
+  - 作業ステップ:
+    1. Draft/Mappng 共通で利用できるレイアウト読み込みヘルパーを整備し、プレースホルダー情報を抽出できるようにする。
+    2. テーブルアンカーを決定するヒューリスティックを新規ヘルパーへ実装し、Blueprint/明示指定を最優先にしたうえでキーワード・位置情報で候補を絞り込む。
+    3. `DraftStructuringStep._merge_slide_elements` を更新し、テーブルをアンカーへ変換したうえで `generate_ready.json` に書き出す。
+    4. `MappingStep._build_elements` でも同ヘルパーを適用し、Mapping ログへ割当結果を記録する。
+    5. CLI 動的経路の回帰テストを追加し、`generate_ready.json` のテーブルが期待アンカーへ設定されることを検証する。
+  - テスト戦略:
+    - ユニット: ヒューリスティックの判定ロジックを `tests/test_draft_structuring_step.py` と `tests/test_mapping_step.py` に新規追加して確認。
+    - 統合: `uv run --extra dev pytest tests/test_cli_integration.py::test_dynamic_compose_table_anchor`（追加予定）で動的パイプライン全体を検証。必要に応じて既存 CLI シナリオも再実行。
+  - ロールバック: 新規ヘルパーと関連変更を revert し、`_merge_slide_elements` / `_build_elements` を現行実装へ戻すことで復旧。
