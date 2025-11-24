@@ -39,6 +39,7 @@ jobs:
         run: dotnet run --project dotnet/Polisher.Tests
 
       - name: SonarCloud Scan
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
