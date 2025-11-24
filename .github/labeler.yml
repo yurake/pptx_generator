@@ -42,7 +42,8 @@ area:cli:
       - 'src/**'
       - 'pyproject.toml'
       - 'uv.lock'
-      - 'tests/**'        - 'sonar-project.properties'
+      - 'tests/**'
+      - 'sonar-project.properties'
 area:dotnet:
   - changed-files:
     - any-glob-to-any-file:
