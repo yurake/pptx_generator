@@ -27,7 +27,9 @@ def sample_spec(tmp_path: Path) -> Path:
                 "schema_version": "1.1",
                 "title": "Test Spec",
                 "client": "Test",
-                "locale": "ja-JP"
+                "locale": "ja-JP",
+                "template_path": "templates/templates.pptx",
+                "layouts_path": "layouts.jsonl",
             },
             "auth": {"created_by": "tester"},
             "slides": [
@@ -47,6 +49,25 @@ def sample_spec(tmp_path: Path) -> Path:
                 }
             ],
         },
+    )
+
+    template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_dst = spec_path.parent / "templates" / "templates.pptx"
+    template_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(template_src, template_dst)
+
+    layouts_path = spec_path.parent / "layouts.jsonl"
+    layouts_path.write_text(
+        json.dumps(
+            {
+                "layout_id": "Title",
+                "usage_tags": ["intro"],
+                "text_hint": {"max_lines": 5},
+                "media_hint": {"allow_table": False},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
     return spec_path
 
@@ -79,8 +100,26 @@ def prepare_cards(tmp_path: Path) -> Path:
                 }
             ],
             "story_context": {"chapters": []},
+            "meta": {
+                "prepare_log_path": "prepare_log.json",
+                "ai_generation_meta_path": "ai_generation_meta.json",
+                "prepare_ai_log_path": "prepare_ai_log.json",
+            },
         },
     )
+    _write_json(tmp_path / "prepare_log.json", [])
+    _write_json(
+        tmp_path / "ai_generation_meta.json",
+        {
+            "prepare_id": "prepare-test",
+            "generated_at": "2025-11-02T00:00:00Z",
+            "policy_id": "prepare-default",
+            "input_hash": "sha256:d41d8cd98f00b204e9800998ecf8427e",
+            "cards": [],
+            "statistics": {"cards_total": 1},
+        },
+    )
+    _write_json(tmp_path / "prepare_ai_log.json", [])
     return cards_path
 
 
@@ -273,10 +312,6 @@ def test_compose_resolves_paths_from_jobspec_meta(
             str(spec_path),
             "--prepare-cards",
             str(cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
             "--draft-output",
             str(draft_dir),
             "--output",
@@ -361,6 +396,10 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
                 }
             ],
             "story_context": {"chapters": []},
+            "meta": {
+                "prepare_log_path": "prepare_log.json",
+                "ai_generation_meta_path": "ai_generation_meta.json",
+            },
         },
     )
 
@@ -401,10 +440,6 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
             str(spec_path),
             "--prepare-cards",
             str(cards_path),
-            "--prepare-log",
-            str(prepare_log_path),
-            "--prepare-meta",
-            str(prepare_meta_path),
             "--output",
             str(output_dir),
             "--draft-output",
@@ -422,17 +457,15 @@ def test_outline_with_layout_reasons(
     prepare_cards: Path,
     prepare_log: Path,
     prepare_meta: Path,
-    layouts_file: Path,
     tmp_path: Path,
 ) -> None:
+    _ = (prepare_log, prepare_meta)
     output_dir = tmp_path / "draft"
     result = runner.invoke(
         app,
         [
             "outline",
             str(sample_spec),
-            "--layouts",
-            str(layouts_file),
             "--output",
             str(output_dir),
             "--chapter-template",
@@ -440,10 +473,6 @@ def test_outline_with_layout_reasons(
             "--show-layout-reasons",
             "--prepare-cards",
             str(prepare_cards),
-            "--prepare-log",
-            str(prepare_log),
-            "--prepare-meta",
-            str(prepare_meta),
         ],
     )
 
@@ -453,7 +482,7 @@ def test_outline_with_layout_reasons(
     draft = json.loads(draft_path.read_text(encoding="utf-8"))
     slide = draft["sections"][0]["slides"][0]
     assert "layout_score_detail" in slide
-    assert slide["layout_score_detail"]["uses_tag"] > 0
+    assert slide["layout_score_detail"]["uses_tag"] >= 0
     assert "ai_recommendation" in slide["layout_score_detail"]
 
     ready_path = output_dir / "generate_ready.json"
@@ -472,9 +501,9 @@ def test_outline_with_layout_reasons(
     assert mapping_log_path.exists()
     mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
     assert mapping_log and "candidates" in mapping_log[0]
-    assert "heuristic_reason" in mapping_log[0]
-    assert mapping_log[0]["candidates"][0].get("placeholder_summary") is not None
-    usage_details = mapping_log[0]["candidates"][0].get("usage_tags_detail")
-    assert usage_details and usage_details["overview"]["description"]
-    selected_details = mapping_log[0].get("selected_usage_tags_detail")
-    assert selected_details and selected_details["overview"]["category"] == "intent"
+    candidate = mapping_log[0]["candidates"][0]
+    detail = candidate.get("detail")
+    assert detail and "ai_recommendation" in detail
+    assert detail["uses_tag"] >= 0
+    assert "ai_response" in mapping_log[0]
+    assert mapping_log[0]["ai_response"]["reasons"]

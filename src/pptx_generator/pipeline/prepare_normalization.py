@@ -51,11 +51,36 @@ class PrepareNormalizationStep:
         if self.options.cards_path:
             context.add_artifact("prepare_document_path", str(self.options.cards_path.resolve()))
 
-        logs = self._load_logs(self.options.log_path)
+        base_dir = self.options.cards_path.parent if self.options.cards_path else Path.cwd()
+        document_meta = document.meta if isinstance(document.meta, dict) else {}
+
+        log_path = self.options.log_path
+        if log_path is None:
+            meta_value = document_meta.get("prepare_log_path") if document_meta else None
+            log_path = self._resolve_meta_path(meta_value, base_dir)
+        if log_path is None and self.options.cards_path is not None:
+            candidate = self.options.cards_path.parent / "prepare_log.json"
+            if candidate.exists():
+                log_path = candidate
+        if log_path is not None and not log_path.exists():
+            log_path = None
+
+        logs = self._load_logs(log_path)
         if logs is not None:
             context.add_artifact("prepare_log", logs)
 
-        meta = self._load_generation_meta(self.options.ai_meta_path)
+        ai_meta_path = self.options.ai_meta_path
+        if ai_meta_path is None:
+            meta_value = document_meta.get("ai_generation_meta_path") if document_meta else None
+            ai_meta_path = self._resolve_meta_path(meta_value, base_dir)
+        if ai_meta_path is None and self.options.cards_path is not None:
+            candidate = self.options.cards_path.parent / "ai_generation_meta.json"
+            if candidate.exists():
+                ai_meta_path = candidate
+        if ai_meta_path is not None and not ai_meta_path.exists():
+            ai_meta_path = None
+
+        meta = self._load_generation_meta(ai_meta_path)
         if meta is not None:
             context.add_artifact("prepare_generation_meta", meta)
 
@@ -169,6 +194,18 @@ class PrepareNormalizationStep:
             "hash": document.compute_content_hash(),
         }
         return content_document, meta_payload
+
+    @staticmethod
+    def _resolve_meta_path(value: object, base_dir: Path) -> Path | None:
+        if not value:
+            return None
+        try:
+            candidate = Path(str(value))
+        except TypeError:
+            return None
+        if candidate.is_absolute():
+            return candidate
+        return (base_dir / candidate).resolve()
 
     def _convert_card_to_slide(
         self,

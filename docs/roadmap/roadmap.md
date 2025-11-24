@@ -44,7 +44,6 @@ flowchart TB
         ST2_ANCHOR(( ))
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
         RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
-        RM062["RM-062<br/>pptx prepare<br/>承認モード整備<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
         RM066["RM-066<br/>テンプレ指定統一<br/>CLI整備<br/>(未着手)"]
     end
@@ -75,7 +74,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM062 --> RM066
 ```
 
 ## 個別状況
@@ -774,7 +772,7 @@ flowchart TB
 - ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
 - 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-10 追加）
+- 状況: 完了（2025-11-24 更新）
 - 期待成果:
 -  - CLI リファレンスおよびクイックスタートから `--approved` オプションを削除し、承認ステータスは API / PrepareStore のワークフローで扱うことを明記する。
 -  - `docs/runbooks/story-outline-ops.md` など運用ドキュメントで、カード承認は prepare_log / prepare_store を通じて行う手順へ更新する。

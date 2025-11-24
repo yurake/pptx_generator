@@ -20,8 +20,6 @@ mkdir -p "${UV_CACHE_DIR}"
 
 default_providers=("azure")
 cards_path=".pptx/prepare/prepare_card.json"
-prepare_log_path=".pptx/prepare/prepare_log.json"
-prepare_meta_path=".pptx/prepare/ai_generation_meta.json"
 providers=()
 
 print_usage() {
@@ -30,8 +28,6 @@ Usage: scripts/test_layout_providers.sh [options] [provider ...]
 
 Options:
   --cards <path>       使用する prepare_card.json のパス (既定: ${cards_path})
-  --prepare-log <path>   使用する prepare_log.json のパス (既定: ${prepare_log_path})
-  --prepare-meta <path>  使用する ai_generation_meta.json のパス (既定: ${prepare_meta_path})
   -h, --help           このヘルプを表示
 
 引数にプロバイダーを指定しない場合は ${default_providers[*]} を実行します。
@@ -51,22 +47,6 @@ while [[ ${#} -gt 0 ]]; do
         exit 2
       fi
       cards_path="${2}"
-      shift 2
-      ;;
-    --prepare-log)
-      if [[ ${#} -lt 2 ]]; then
-        echo "[layout-providers] --prepare-log requires a path" >&2
-        exit 2
-      fi
-      prepare_log_path="${2}"
-      shift 2
-      ;;
-    --prepare-meta)
-      if [[ ${#} -lt 2 ]]; then
-        echo "[layout-providers] --prepare-meta requires a path" >&2
-        exit 2
-      fi
-      prepare_meta_path="${2}"
       shift 2
       ;;
     --*)
@@ -102,10 +82,7 @@ for provider in "${providers[@]}"; do
   PPTX_LLM_PROVIDER="${provider}" \
     uv run pptx --debug compose \
       .pptx/extract/jobspec.json \
-      --prepare-cards "${cards_path}" \
-      --prepare-log "${prepare_log_path}" \
-      --prepare-meta "${prepare_meta_path}" \
-      --layouts .pptx/extract/layouts.jsonl || {
+      --prepare-cards "${cards_path}" || {
       echo "provider ${provider} failed" >&2
       exit 1
     }

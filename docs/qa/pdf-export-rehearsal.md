@@ -14,11 +14,8 @@
 
   uv run pptx compose samples/json/sample_jobspec.json \
     --prepare-cards .pptx/prepare/prepare_card.json \
-    --prepare-log .pptx/prepare/prepare_log.json \
-    --prepare-meta .pptx/prepare/ai_generation_meta.json \
     --draft-output .pptx/draft \
-    --output .pptx/compose \
-    --template samples/templates/templates.pptx
+    --output .pptx/compose
   ```
 - ブランド設定は既定の `config/branding.json` を利用。
 

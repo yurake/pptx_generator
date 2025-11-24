@@ -15,7 +15,7 @@
 | CLI | `pptx compose` / `pptx outline` | Click | compose が工程3全体をラップし、outline が構成再実行を担う |
 
 ## 入出力
-- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`,（任意）`analysis_summary.json`、章テンプレ辞書、差戻し理由辞書。
+- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`（ログ／AIメタのパスは `prepare_card.json.meta.*` から参照）、（任意）`analysis_summary.json`、章テンプレ辞書、差戻し理由辞書。
 - 出力: `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json`。
 
 ## ワークフロー概要
@@ -33,8 +33,6 @@
 | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
 | `--prepare-cards <path>` | 工程2の PrepareCard | `.pptx/prepare/prepare_card.json` |
-| `--prepare-log <path>` | 工程2のレビュー ログ | `.pptx/prepare/prepare_log.json` |
-| `--prepare-meta <path>` | 工程2の生成メタ | `.pptx/prepare/ai_generation_meta.json` |
 | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
 | `--target-length <int>` | 目標スライド枚数 | 未指定 |
 | `--structure-pattern <name>` | 章構成パターン名 | 未指定 |
@@ -42,22 +40,20 @@
 | `--chapter-templates-dir <dir>` | 章テンプレート辞書ディレクトリ | `config/chapter_templates` |
 | `--chapter-template <id>` | 強制適用する章テンプレート ID | 未指定 |
 | `--import-analysis <path>` | `analysis_summary.json` のパス | 未指定 |
-| `--layouts <path>` | テンプレ構造 (`layouts.jsonl`) | jobspec の meta から解決 |
 | `--output, -o <dir>` | `generate_ready.json` 等の出力ディレクトリ | `.pptx/compose` |
 | `--rules <path>` | 検証ルール設定ファイル | `config/rules.json` |
-| `--template, -t <path>` | テンプレートファイル | jobspec の meta から解決 |
 | `--branding <path>` | ブランド設定ファイル | `config/branding.json` |
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit`, `--chapter-template` など。詳細は CLI リファレンスを参照。
 
 ### `pptx outline`
-- ドラフト構成のみを再実行する際に利用。`--prepare-*` オプションは `compose` と共通。
+- ドラフト構成のみを再実行する際に利用。`--prepare-cards` を指定すると、`prepare_card.json.meta` に記録されたログ／AIメタを自動解決する。
 - 差戻し後に Draft のみ更新したいケースや UI 連携での個別更新時に利用する。
 
 ### `pptx mapping`
 - 工程3のマッピング処理だけを個別に実行し、`.pptx/gen/`（既定）配下に `generate_ready.json` などを生成するコマンド。
-- `pptx compose` とほぼ同じオプションを持ち、Prepare 成果物・テンプレート解決の扱いも共通。レンダリング工程（工程4）は `pptx gen` が担当する。
+- `pptx compose` と同様に、Prepare 成果物は `--prepare-cards` で指定し、テンプレート／レイアウトは jobspec の `meta` から解決する。レンダリング工程（工程4）は `pptx gen` が担当する。
 
 ## ログ・監査
 - `draft_review_log.json`: 章/スライドの承認・差戻し履歴（`action`, `actor`, `timestamp`, `reason_code`, `notes`）。
