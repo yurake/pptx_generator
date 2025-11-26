@@ -19,8 +19,8 @@ roadmap_item: RM-077 LLM ラベル整備
     - 承認メッセージ ID／リンク: ユーザー承認「ok」（2025-11-24 の会話メッセージ）を参照。
 - [x] 設計・実装方針の確定
   - メモ: 自動ラベルの対象に `prepare` / `content_ai` / `layout_ai` / `template_ai` / LLM 補助ステップ（`pipeline/slide_alignment.py`、`draft_recommender.py`）を含め、ポリシー／設定ファイル一式をカバーする方針で確定。既存エリアラベルと重複した場合はレビューで調整する。
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: 追加ドキュメント不要と判断。判断者: Assistant（2025-11-24）。再検討条件: LLM 対象領域が増えた際に改めて記録。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/policies/github-label-governance.md` と `docs/roadmap/roadmap.md` を更新済み。変更不要の領域については以下に記録。
   - [x] docs/requirements 配下
@@ -44,9 +44,9 @@ roadmap_item: RM-077 LLM ラベル整備
   - [x] README.md / AGENTS.md
     - メモ: 表記変更不要のため更新せず。
 - [x] 関連Issue 行の更新
-  - メモ: 対応する Issue 未作成のため `未作成` のままとする。
-- [ ] チェックリスト整合確認
-  - メモ: 
+  - メモ:
+- [x] チェックリスト整合確認
+  - メモ: PR 作成を除く工程が完了していることを確認。
 - [ ] PR 作成
   - メモ: 
 
