@@ -41,7 +41,7 @@ roadmap_item: RM-066 テンプレ指定統一 CLI整備
   - メモ: 関連 Issue #323 のままで整合。
 - [x] チェックリスト整合確認
   - メモ: 残タスクは PR 作成のみ。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #325 https://github.com/yurake/pptx_generator/pull/325（2025-11-26 完了）
 
 ## メモ
