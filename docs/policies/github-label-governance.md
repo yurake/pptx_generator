@@ -23,7 +23,7 @@
 |  | `area:docs` | `bfdadc` | `docs/**`、`README*`。 |
 |  | `area:automation` | `f8c2d7` | `.github/**`、`scripts/**`。 |
 |  | `area:dotnet` | `e6e6fa` | `dotnet/**`。 |
-|  | `area:llm` | `f9d5ff` | `src/pptx_generator/prepare/**`、`src/pptx_generator/content_ai/**`、`config/**/*policy*/**`。 |
+|  | `area:llm` | `f9d5ff` | `src/pptx_generator/prepare/**`、`src/pptx_generator/content_ai/**`、`src/pptx_generator/layout_ai/**`、`src/pptx_generator/template_ai/**`、`src/pptx_generator/pipeline/slide_alignment.py`、`src/pptx_generator/draft_recommender.py`、`config/**/*policy*.json`。 |
 | 自動化 | `todo-sync` | `0e8a16` | `todo-sync` ワークフローが使用。名称を変更しない。 |
 |  | `automation:ci` | `5319e7` | CI 連携確認用。必要に応じて付与。 |
 
@@ -44,7 +44,8 @@
 - Issue 本文に `docs/` パスや「ドキュメント」という語が含まれる場合は `area:docs` を付与。
 - 「テンプレート」「branding」「generate_ready」などテンプレ関連キーワードで `area:templates` を付与。
 - `.github` や `Actions`、`ワークフロー` といった語で `area:automation` を付与。
-- 「LLM」「プロンプト」「指示文」「directive」「推論設定」といった語を含む場合は `area:llm` を付与。
+- 「LLM」「プロンプト（prompt）」「指示文（directive）」「推論設定」「モデル（model）」といった語を含む場合は `area:llm` を付与（`(?i)` プレフィックスにより英語は大小問わず一致）。
+- 「Template AI」「テンプレ AI」「Layout AI」「レイアウト AI」の語句、ならびに主要 LLM プロバイダ名（OpenAI / Azure OpenAI / Anthropic / Claude / Bedrock / GPT を含む表記）も `area:llm` の対象。
   - 自動付与は精度重視で最低限とし、曖昧なケースは手動で補正する。
 - `not-before` はワークフロー導入時点の日付を設定し、過去 Issue への大量付与を防ぐ。
 
@@ -57,7 +58,7 @@
   - `templates/**`, `samples/**`, `config/**`, `pptx/` 関連で `area:templates`。
   - `src/**`, `pyproject.toml`, `uv.lock` の変更で `area:cli`。CI で Python ロジックが主対象のため `type` 自動付与は行わず、レビュー時に判断する。
   - `dotnet/**` の変更で `area:dotnet`。
-  - `src/pptx_generator/prepare/**`, `src/pptx_generator/content_ai/**`, `config/**/*policy*.json`, `docs/design/cli-command-reference.md` の変更で `area:llm`。
+  - `src/pptx_generator/prepare/**`, `src/pptx_generator/content_ai/**`, `src/pptx_generator/layout_ai/**`, `src/pptx_generator/template_ai/**`, `src/pptx_generator/pipeline/slide_alignment.py`, `src/pptx_generator/draft_recommender.py`, `config/**/*policy*.json`, `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-01-*`, `docs/requirements/stages/stage-03-*`, `docs/design/stages/stage-01-template-pipeline.md` の変更で `area:llm`。
   - 変更ファイルが 1 カテゴリに限定される場合は `type:docs` など補助ラベルを付与できるよう `all-globs-to-any-file` を活用する。
   - `!` 否定を利用し、ドキュメントのみ変更の PR には `type:docs` を付与しつつ、コード変更が混在する場合は付与しない。
 
