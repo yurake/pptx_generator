@@ -14,16 +14,16 @@
 
 ## 実行手順
 1. 解析対象 JSON を用意する  
-   - `samples/json/sample_jobspec.json` をベースに案件仕様を整備し、必要に応じてブランド設定 (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
+   - Stage1 の抽出成果物（例: `samples/extract/jobspec.json`）をベースに案件仕様を整備し、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。ブランド設定 (`config/branding.json`) は必要に応じて差し替える。
 2. CLI でレンダリングと解析を実行する  
   - まず工程3のラッパーで `generate_ready.json` を用意する（未実施の場合）:
     ```bash
-    uv run pptx compose samples/json/sample_jobspec.json \
+    uv run pptx compose samples/extract/jobspec.json \
       --prepare-cards .pptx/prepare/prepare_card.json \
       --draft-output .pptx/draft \
       --output .pptx/compose
     ```
-    - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。
+    - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。独自 JobSpec を利用する場合も `meta` にテンプレート／レイアウトのパスを設定してから実行する。
   - 工程4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \

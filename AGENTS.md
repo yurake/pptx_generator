@@ -19,15 +19,15 @@
 - PDF 変換確認 (任意): `soffice --headless --version`
 
 # 4 CLI 実行の基本
-- 入力 JSON を `samples/json/sample_jobspec.json` から派生させ、必要に応じてブランド設定 JSON (`config/branding.json`) やテンプレート (`templates/*.pptx`) を指定する。
+- 入力 JSON を `samples/extract/jobspec.json` など Stage1 で抽出した JobSpec から派生させ、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。ブランド設定 JSON (`config/branding.json`) は必要に応じて差し替える。
 - PPTX と解析結果を生成する基本コマンド例:
   ```bash
-  uv run pptx compose samples/json/sample_jobspec.json \
-    --template samples/templates/templates.pptx \
+  uv run pptx compose samples/extract/jobspec.json \
     --output .pptx/compose --draft-output .pptx/draft
 
   uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen
   ```
+  - `samples/extract/jobspec.json` にはテンプレート／レイアウトへの参照パスが含まれる。独自 JobSpec を利用する場合も `meta.template_path` / `meta.layouts_path` を設定する。
   - `generate_ready.json` にテンプレートパスが埋め込まれるため、`pptx gen` に `--template` を指定する必要はない。
   - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
   - ブランド設定を差し替える場合は `--branding <path>` を指定する。

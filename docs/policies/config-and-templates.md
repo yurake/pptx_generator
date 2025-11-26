@@ -69,7 +69,7 @@
 - 設定ファイルは `jsonschema` に基づく検証スクリプト（未整備の場合は CLI で手動検証）を実施する。
 
 ## テンプレート利用要件
-- CLI の `--template` オプションで指定できるのは `.pptx` ファイルのみ。.potx は PowerPoint で新規 `.pptx` として保存し直す。
+- Stage1 系コマンド（`pptx template` / `tpl-extract` / `layout-validate` など）の `--template` オプションで指定できるのは `.pptx` ファイルのみ。.potx は PowerPoint で新規 `.pptx` として保存し直す。Stage3 (`pptx compose` / `pptx mapping`) では `jobspec.meta.template_path` にテンプレートを記載する。
 - JSON 仕様の `layout` はテンプレート内のレイアウト名と一致させる。不一致時は既定レイアウトが利用されるため、意図した構成を反映したい場合はテンプレート側の名称を確認する。
 - 画像・表・グラフなどを特定位置へ差し込みたい場合は、テンプレートの図形またはプレースホルダーに一意な名前を付けて JSON の `anchor` に同じ名前を記載する。アンカーが無い場合は既定のフォールバック座標に配置される。
 - 色やフォントはスライドマスターの設定ではなく `config/branding.json` を参照して適用される。テンプレート側でフォントや配色を変えても自動では反映されない点に注意する。

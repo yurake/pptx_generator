@@ -12,11 +12,11 @@
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
     --output .pptx/prepare
 
-  uv run pptx compose samples/json/sample_jobspec.json \
+  uv run pptx compose samples/extract/jobspec.json \
     --prepare-cards .pptx/prepare/prepare_card.json \
     --draft-output .pptx/draft \
     --output .pptx/compose
-  ```
+```
 - ブランド設定は既定の `config/branding.json` を利用。
 
 ## 手順
