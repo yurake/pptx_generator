@@ -19,6 +19,7 @@ from pptx_generator.models import (
     JobAuth,
     JobMeta,
     JobSpec,
+    PipelineFallbackError,
     Slide,
     SlideBullet,
     SlideBulletGroup,
@@ -366,7 +367,7 @@ def test_renderer_falls_back_when_anchor_not_specified(tmp_path: Path) -> None:
     ) == expected_box
 
 
-def test_renderer_falls_back_when_anchor_unknown(tmp_path: Path) -> None:
+def test_renderer_errors_when_anchor_unknown(tmp_path: Path, caplog) -> None:
     spec = JobSpec(
         meta=JobMeta(schema_version="1.0", title="Fallback Unknown"),
         auth=JobAuth(created_by="tester"),
@@ -390,21 +391,13 @@ def test_renderer_falls_back_when_anchor_unknown(tmp_path: Path) -> None:
     renderer = SimpleRendererStep(
         RenderingOptions(output_filename="fallback-unknown.pptx")
     )
-    renderer.run(context)
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.renderer"):
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            renderer.run(context)
 
-    presentation = Presentation(context.require_artifact("pptx_path"))
-    slide = presentation.slides[0]
-    table_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_table", False)
-    )
-
-    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
-    assert (
-        table_shape.left,
-        table_shape.top,
-        table_shape.width,
-        table_shape.height,
-    ) == expected_box
+    assert "アンカー 'Unknown Anchor'" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
 
 
 def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
@@ -680,7 +673,7 @@ def test_renderer_uses_layout_placeholder_names_for_anchors(tmp_path: Path) -> N
     assert "Picture Content Placeholder" not in placeholder_names(image_slide)
 
 
-def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> None:
+def test_renderer_fails_when_placeholder_removed(tmp_path: Path, caplog) -> None:
     (
         template_path,
         two_content_layout_name,
@@ -734,25 +727,14 @@ def test_renderer_fallback_when_placeholder_removed(tmp_path: Path, caplog) -> N
 
     caplog.clear()
     with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.renderer"):
-        renderer.run(context)
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            renderer.run(context)
 
-    presentation = Presentation(context.require_artifact("pptx_path"))
-    slide = presentation.slides[0]
-    table_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_table", False)
-    )
-
-    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
-    assert (
-        table_shape.left,
-        table_shape.top,
-        table_shape.width,
-        table_shape.height,
-    ) == expected_box
-    assert not any(record.levelno >= logging.ERROR for record in caplog.records)
+    assert "アンカー" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
 
 
-def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> None:
+def test_renderer_fails_when_placeholder_renamed(tmp_path: Path, caplog) -> None:
     (
         template_path,
         two_content_layout_name,
@@ -806,22 +788,11 @@ def test_renderer_fallback_when_placeholder_renamed(tmp_path: Path, caplog) -> N
 
     caplog.clear()
     with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.renderer"):
-        renderer.run(context)
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            renderer.run(context)
 
-    presentation = Presentation(context.require_artifact("pptx_path"))
-    slide = presentation.slides[0]
-    table_shape = next(
-        shape for shape in slide.shapes if getattr(shape, "has_table", False)
-    )
-
-    expected_box = _emu_box_from_inches((1.0, 1.5, 8.5, 3.0))
-    assert (
-        table_shape.left,
-        table_shape.top,
-        table_shape.width,
-        table_shape.height,
-    ) == expected_box
-    assert not any(record.levelno >= logging.ERROR for record in caplog.records)
+    assert "アンカー" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
 
 
 def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:

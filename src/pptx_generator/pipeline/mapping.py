@@ -24,6 +24,7 @@ from ..models import (
     MappingLogMeta,
     MappingLogSlide,
     MappingSlideMeta,
+    PipelineFallbackError,
     GenerateReadyDocument,
     GenerateReadyMeta,
     GenerateReadySlide,
@@ -379,15 +380,13 @@ class MappingStep:
     def _require_draft_document(self, context: PipelineContext) -> DraftDocument:
         draft_document = context.artifacts.get("draft_document")
         if draft_document is None:
-            logger.info("draft_document が存在しないため簡易ドラフトを生成します")
-            fallback = self._build_fallback_draft(context.spec)
-            context.add_artifact("draft_document", fallback)
-            return fallback
+            msg = "draft_document が存在しません。工程3/4 の出力を確認してください。"
+            logger.error(msg)
+            raise PipelineFallbackError(msg)
         if not isinstance(draft_document, DraftDocument):
-            logger.warning("draft_document artifact の型が不正のため簡易ドラフトを生成します")
-            fallback = self._build_fallback_draft(context.spec)
-            context.add_artifact("draft_document", fallback)
-            return fallback
+            msg = "draft_document artifact の型が不正です。"
+            logger.error(msg)
+            raise PipelineFallbackError(msg)
         return draft_document
 
     @staticmethod
@@ -398,8 +397,9 @@ class MappingStep:
         if document is None:
             return None
         if not isinstance(document, ContentApprovalDocument):
-            logger.warning("content_approved artifact の型が不正のため無視します")
-            return None
+            msg = "content_approved artifact の型が不正です。"
+            logger.error(msg)
+            raise PipelineFallbackError(msg)
         return document
 
     def _load_layout_catalog(
@@ -409,9 +409,10 @@ class MappingStep:
             return {}
         try:
             text = path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            logger.warning("layouts.jsonl が見つからないため既定値を使用します: %s", path)
-            return {}
+        except FileNotFoundError as exc:
+            msg = f"layouts.jsonl が見つかりません: {path}"
+            logger.error(msg)
+            raise PipelineFallbackError(msg) from exc
         catalog: dict[str, LayoutProfile] = {}
         for line in text.splitlines():
             line = line.strip()
@@ -690,25 +691,3 @@ class MappingStep:
             if isinstance(hash_value, str):
                 return hash_value
         return None
-
-    @staticmethod
-    def _build_fallback_draft(spec: JobSpec) -> DraftDocument:
-        section = DraftSection(name="auto", order=1, slides=[])
-        for index, slide in enumerate(spec.slides, start=1):
-            section.slides.append(
-                DraftSlideCard(
-                    ref_id=slide.id,
-                    order=index,
-                    layout_hint=slide.layout,
-                    locked=False,
-                    status="draft",
-                    layout_candidates=[],
-                    appendix=False,
-                )
-            )
-        meta = DraftMeta(
-            target_length=len(section.slides),
-            structure_pattern="auto",
-            appendix_limit=0,
-        )
-        return DraftDocument(sections=[section], meta=meta)

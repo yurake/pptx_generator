@@ -691,6 +691,13 @@ class SpecValidationError(RuntimeError):
         return cls("入力仕様の検証に失敗しました", errors=exc.errors())
 
 
+class PipelineFallbackError(RuntimeError):
+    """フォールバック禁止ポリシーに反した場合の実行時エラー。"""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 # テンプレート抽出用モデル
 
 class ShapeInfo(BaseModel):

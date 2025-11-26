@@ -115,10 +115,9 @@ class MockLayoutAIClient:
 class OpenAIChatLayoutClient:
     """OpenAI Chat completions を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, temperature: float, max_tokens: int, fallback_model: str | None = None) -> None:
+    def __init__(self, client, *, model: str, temperature: float, max_tokens: int) -> None:
         self._client = client
         self._model = model
-        self._fallback_model = fallback_model
         self._temperature = temperature
         self._max_tokens = max_tokens
 
@@ -139,8 +138,7 @@ class OpenAIChatLayoutClient:
         max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        fallback_model = os.getenv("OPENAI_FALLBACK_MODEL")
-        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens, fallback_model=fallback_model)
+        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
@@ -149,137 +147,75 @@ class OpenAIChatLayoutClient:
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
-        base_kwargs: dict[str, object] = {
+        kwargs: dict[str, object] = {
             "input": messages,
             "temperature": self._temperature,
             "response_format": {"type": "json_object"},
         }
         if self._max_tokens > 0:
-            base_kwargs["max_output_tokens"] = self._max_tokens
+            kwargs["max_output_tokens"] = self._max_tokens
 
-        candidate_models: list[str] = []
-        for value in (
-            os.getenv("OPENAI_MODEL"),
-            self._model,
-            os.getenv("OPENAI_FALLBACK_MODEL"),
-            self._fallback_model,
-            "gpt-4o-mini",
-            "gpt-4o-mini-2024-07-18",
-        ):
-            if not value:
-                continue
-            normalized = value.strip()
-            if normalized in {"", "mock", "mock-local", "mock-layout"}:
-                continue
-            if normalized not in candidate_models:
-                candidate_models.append(normalized)
-        if not candidate_models:
-            candidate_models.append(self._model)
+        try:
+            response = self._client.responses.create(  # type: ignore[attr-defined]
+                model=self._model,
+                **kwargs,
+            )
+        except Exception as exc:
+            logger.error(
+                "OpenAI layout request failed: model=%s candidates=%s error=%s",
+                self._model,
+                request.layout_candidates,
+                exc,
+            )
+            raise LayoutAIClientExecutionError(str(exc)) from exc
 
-        for model_name in candidate_models:
-            attempt_kwargs = dict(base_kwargs)
-            attempt_kwargs["model"] = model_name
-            expanded_tokens = False
-            removed_response_format = False
-            while True:
-                try:
-                    response = self._client.responses.create(**attempt_kwargs)  # type: ignore[attr-defined]
-                except Exception as exc:
-                    message = str(exc)
-                    if isinstance(exc, TypeError) and "response_format" in message and "unexpected" in message.lower():
-                        attempt_kwargs.pop("response_format", None)
-                        removed_response_format = True
-                        logger.debug(
-                            "retrying OpenAI layout completion without response_format (model=%s)",
-                            model_name,
-                        )
-                        continue
-                    logger.warning(
-                        "OpenAI layout request failed for model '%s': %s",
-                        model_name,
-                        exc,
-                    )
-                    break
-
-                logger.debug("OpenAI layout raw response: %s", response)
-                text_segments: list[str] = []
-                incomplete = False
-                for item in getattr(response, "output", []) or []:
-                    if isinstance(item, ResponseOutputMessage):
-                        if getattr(item, "status", None) == "incomplete":
-                            incomplete = True
-                        for content in item.content:
-                            if isinstance(content, ResponseOutputText):
-                                text_segments.append(content.text)
-                            elif isinstance(content, ResponseOutputRefusal):  # pragma: no cover - refusal path
-                                logger.info("OpenAI layout AI refusal: %s", content.refusal)
-                if getattr(response, "status", None) == "incomplete":
+        logger.debug("OpenAI layout raw response: %s", response)
+        text_segments: list[str] = []
+        incomplete = False
+        for item in getattr(response, "output", []) or []:
+            if isinstance(item, ResponseOutputMessage):
+                if getattr(item, "status", None) == "incomplete":
                     incomplete = True
-                content = "\n".join(segment.strip() for segment in text_segments if segment.strip())
+                for content in item.content:
+                    if isinstance(content, ResponseOutputText):
+                        text_segments.append(content.text)
+                    elif isinstance(content, ResponseOutputRefusal):  # pragma: no cover - refusal path
+                        logger.info("OpenAI layout AI refusal: %s", content.refusal)
+        if getattr(response, "status", None) == "incomplete":
+            incomplete = True
+        if incomplete:
+            logger.error(
+                "OpenAI layout model %s returned incomplete response",
+                getattr(response, "model", self._model),
+            )
+            raise LayoutAIResponseFormatError("OpenAI layout AI から不完全な応答が返されました")
 
-                parse_failed = False
-                parsed_response: LayoutAIResponse | None = None
-                if content:
-                    try:
-                        parsed_response = _parse_layout_response(content, model=model_name)
-                    except LayoutAIResponseFormatError as exc:
-                        parse_failed = True
-                        logger.debug(
-                            "OpenAI layout response parse failed (model=%s): %s",
-                            model_name,
-                            exc,
-                        )
-                else:
-                    logger.debug(
-                        "OpenAI layout completion produced no content (status=%s model=%s) kwargs=%s",
-                        getattr(response, "status", None),
-                        model_name,
-                        attempt_kwargs,
-                    )
+        content = "\n".join(segment.strip() for segment in text_segments if segment and segment.strip())
+        if not content:
+            logger.error(
+                "OpenAI layout model %s returned empty content",
+                getattr(response, "model", self._model),
+            )
+            raise LayoutAIResponseFormatError("OpenAI layout AI の応答が空でした")
 
-                if parsed_response and parsed_response.recommended:
-                    return parsed_response
+        try:
+            parsed = _parse_layout_response(content, model=getattr(response, "model", self._model))
+        except LayoutAIResponseFormatError as exc:
+            logger.error(
+                "OpenAI layout model %s response parsing failed: %s",
+                getattr(response, "model", self._model),
+                exc,
+            )
+            raise
 
-                if (incomplete or parse_failed) and not expanded_tokens and "max_output_tokens" in attempt_kwargs:
-                    value = attempt_kwargs.get("max_output_tokens")
-                    try:
-                        current = int(value) if value is not None else self._max_tokens
-                    except (TypeError, ValueError):
-                        current = self._max_tokens
-                    attempt_kwargs["max_output_tokens"] = min((current or self._max_tokens or DEFAULT_MAX_TOKENS) * 2, 4096)
-                    expanded_tokens = True
-                    logger.debug(
-                        "retrying OpenAI layout completion with expanded max_output_tokens=%s (model=%s)",
-                        attempt_kwargs["max_output_tokens"],
-                        model_name,
-                    )
-                    continue
+        if not parsed.recommended:
+            logger.error(
+                "OpenAI layout model %s returned no recommendations",
+                parsed.model,
+            )
+            raise LayoutAIResponseFormatError("OpenAI layout AI からレイアウト候補が返却されませんでした")
 
-                if parse_failed and not removed_response_format and "response_format" in attempt_kwargs:
-                    attempt_kwargs.pop("response_format", None)
-                    removed_response_format = True
-                    logger.debug(
-                        "retrying OpenAI layout completion after removing response_format (model=%s)",
-                        model_name,
-                    )
-                    continue
-
-                if parsed_response and not parsed_response.recommended:
-                    logger.debug("OpenAI layout model %s returned no recommendations", model_name)
-                    break
-
-                if parse_failed:
-                    logger.warning(
-                        "OpenAI layout model %s returned unparsable content after fallbacks",
-                        model_name,
-                    )
-                    break
-                if incomplete:
-                    logger.debug("OpenAI layout model %s produced no usable content", model_name)
-                    break
-
-                break
-        raise LayoutAIClientConfigurationError("OpenAI 応答が空でした")
+        return parsed
 
 
 class AzureOpenAIChatLayoutClient:
@@ -372,10 +308,9 @@ class AzureOpenAIChatLayoutClient:
 class AnthropicClaudeLayoutClient:
     """Anthropic Claude API を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int, fallback_model: str | None = None) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int) -> None:
         self._client = client
         self._model = model
-        self._fallback_model = fallback_model
         self._max_tokens = max_tokens
 
     @classmethod
@@ -390,10 +325,9 @@ class AnthropicClaudeLayoutClient:
         if not api_key:
             raise LayoutAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
         model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        fallback_model = os.getenv("ANTHROPIC_FALLBACK_MODEL")
         max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = anthropic.Anthropic(api_key=api_key)
-        return cls(client, model=model_id, max_tokens=max_tokens, fallback_model=fallback_model)
+        return cls(client, model=model_id, max_tokens=max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         messages = [
@@ -407,60 +341,40 @@ class AnthropicClaudeLayoutClient:
                 ],
             }
         ]
-        candidate_models: list[str] = []
-        for value in (
-            os.getenv("ANTHROPIC_MODEL"),
-            self._model,
-            os.getenv("ANTHROPIC_FALLBACK_MODEL"),
-            self._fallback_model,
-            "claude-3-haiku-20240307",
-        ):
-            if not value:
-                continue
-            normalized = value.strip()
-            if normalized in {"", "mock", "mock-local", "mock-layout"}:
-                continue
-            if normalized not in candidate_models:
-                candidate_models.append(normalized)
-
         temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
-        last_error: Exception | None = None
-        for candidate in candidate_models:
-            try:
-                response = self._client.messages.create(  # type: ignore[attr-defined]
-                    model=candidate,
-                    system=_build_system_prompt(request),
-                    max_tokens=self._max_tokens,
-                    temperature=temperature,
-                    messages=messages,
-                )
-                model_name = candidate
-                break
-            except Exception as exc:  # pragma: no cover - best effort retries
-                from anthropic import APIStatusError
-
-                last_error = exc
-                if isinstance(exc, APIStatusError):
-                    logger.info(
-                        "Anthropic layout AI request failed for model '%s': %s",
-                        candidate,
-                        exc,
-                    )
-                    continue
-                raise
-        else:  # no break
-            raise LayoutAIClientConfigurationError(
-                f"Anthropic API error: {last_error}"
-            ) from last_error
-        text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
-        content = "\n".join(text_parts)
-        if not content:
-            raise LayoutAIClientConfigurationError("Anthropic 応答が空でした")
         try:
-            return _parse_layout_response(content, model=model_name)
+            response = self._client.messages.create(  # type: ignore[attr-defined]
+                model=self._model,
+                system=_build_system_prompt(request),
+                max_tokens=self._max_tokens,
+                temperature=temperature,
+                messages=messages,
+            )
+        except Exception as exc:  # pragma: no cover - API failure
+            logger.error(
+                "Anthropic layout request failed: model=%s candidates=%s error=%s",
+                self._model,
+                request.layout_candidates,
+                exc,
+            )
+            raise LayoutAIClientExecutionError(str(exc)) from exc
+
+        text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
+        content = "\n".join(part.strip() for part in text_parts if part and part.strip())
+        if not content:
+            logger.error("Anthropic layout model %s returned empty content", getattr(response, "model", self._model))
+            raise LayoutAIResponseFormatError("Anthropic 応答が空でした")
+        try:
+            parsed = _parse_layout_response(content, model=getattr(response, "model", self._model))
         except LayoutAIResponseFormatError as exc:
-            logger.debug("Anthropic layout response parse failed: %s", exc)
-            return LayoutAIResponse(model=model_name, raw_text=content)
+            logger.error("Anthropic layout response parse failed: %s", exc)
+            raise
+
+        if not parsed.recommended:
+            logger.error("Anthropic layout model %s returned no recommendations", parsed.model)
+            raise LayoutAIResponseFormatError("Anthropic レイアウトAIから候補が返されませんでした")
+
+        return parsed
 
 
 class AwsClaudeLayoutClient:

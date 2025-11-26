@@ -6,22 +6,12 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from pptx_generator.models import (
-    ContentApprovalDocument,
-    ContentDocumentMeta,
-    ContentElements,
-    ContentSlide,
-    ContentTableData,
-    DraftDocument,
-    DraftSection,
-    DraftSlideCard,
-    GenerateReadyDocument,
-    JobSpec,
-    JobMeta,
-    JobAuth,
-    Slide,
-    SlideTable,
-)
+from pptx_generator.models import (ContentApprovalDocument, ContentDocumentMeta,
+                                   ContentElements, ContentSlide,
+                                   ContentTableData, DraftDocument,
+                                   DraftSection, DraftSlideCard,
+                                   GenerateReadyDocument, JobAuth, JobMeta,
+                                   JobSpec, Slide, SlideTable)
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
 from pptx_generator.prepare import (
@@ -62,9 +52,21 @@ def _build_spec(body_lines: Iterable[str]) -> JobSpec:
     return JobSpec.model_validate(payload)
 
 
+def _attach_minimal_draft_document(context: PipelineContext, spec: JobSpec) -> None:
+    """工程4で生成されるドラフトの疑似データを付与する。"""
+    draft_cards = [
+        DraftSlideCard(ref_id=slide.id, order=index, layout_hint=slide.layout)
+        for index, slide in enumerate(spec.slides, start=1)
+    ]
+    draft_section = DraftSection(name="auto", order=1, slides=draft_cards)
+    draft_document = DraftDocument(sections=[draft_section])
+    context.add_artifact("draft_document", draft_document)
+
+
 def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     spec = _build_spec(["最初のポイント", "次のステップ"])
     context = PipelineContext(spec=spec, workdir=tmp_path)
+    _attach_minimal_draft_document(context, spec)
     template_path = tmp_path / "template.pptx"
     template_path.write_bytes(b"")
     prepare_doc = PrepareDocument(
@@ -196,6 +198,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
             template_path=template_path,
         )
     )
+    _attach_minimal_draft_document(context, spec)
     step.run(context)
 
     generate_ready_path = tmp_path / "generate_ready.json"
