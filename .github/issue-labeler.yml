@@ -20,6 +20,12 @@ area:automation:
   - '/\.github/'
   - '/workflow/'
   - '/Actions?/'
+area:llm:
+  - '/LLM/'
+  - '/プロンプト/'
+  - '/directive/'
+  - '/指示文/'
+  - '/推論設定/'
 area:cli:
   - '/CLI\b/'
   - '/uv run/'

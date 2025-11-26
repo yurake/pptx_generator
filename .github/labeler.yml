@@ -36,6 +36,15 @@ area:templates:
       - 'templates/**'
       - 'samples/**'
       - 'config/**'
+area:llm:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/pptx_generator/prepare/**'
+      - 'src/pptx_generator/content_ai/**'
+      - 'config/**/prepare_policies/**'
+      - 'config/**/*policy*.json'
+      - 'docs/design/cli-command-reference.md'
+      - 'docs/requirements/stages/stage-03-*'
 area:cli:
   - changed-files:
     - any-glob-to-any-file:
