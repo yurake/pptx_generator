@@ -1,7 +1,7 @@
 ---
 目的: RM-066 テンプレ指定統一 CLI整備
 関連ブランチ: feat/rm066-template-option-consolidation
-関連Issue: 未作成
+関連Issue: #323
 roadmap_item: RM-066 テンプレ指定統一 CLI整備
 ---
 
@@ -36,7 +36,7 @@ roadmap_item: RM-066 テンプレ指定統一 CLI整備
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
   - メモ: 
