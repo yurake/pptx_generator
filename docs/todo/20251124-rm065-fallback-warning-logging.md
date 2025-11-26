@@ -22,10 +22,12 @@ roadmap_item: RM-065 フォールバック警告ログ整備
   - メモ: Mapping/Renderer でフォールバックを許可しない。`PipelineFallbackError` を導入して例外化し、ドラフト未生成・アンカー欠損・ layouts.jsonl 不備などは即停止させる。例外発生時は `logger.error` で詳細を出力する。
 - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: `docs/notes/20251110-fallback-warning-logging.md` を更新し、フォールバック禁止と LLM 例外化方針を記録済み。
-- [ ] ドキュメント更新（要件・設計）
-  - メモ: 
-  - [ ] docs/requirements 配下
-  - [ ] docs/design 配下
+- [x] ドキュメント更新（要件・設計）
+  - メモ: 今回の変更で要件・設計ドキュメントに反映すべき事項はなく、確認済み。必要なし旨を記録。
+  - [x] docs/requirements 配下
+    - メモ: フォールバック仕様に関する記述なし。更新不要を確認。
+  - [x] docs/design 配下
+    - メモ: デザイン文書に該当フォールバック仕様なし。更新不要を確認。
 - [x] 実装
   - メモ: `PipelineFallbackError` 追加、MappingStep のフォールバック削除・例外化、Renderer のアンカー未解決時の例外化と要素判別メッセージ追加、関連テスト更新、docs/notes をエラー化方針へ改訂。
 - [x] テスト・検証
