@@ -5,8 +5,8 @@
 roadmap_item: RM-065 フォールバック警告ログ整備
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: ブランチ feat/rm065-fallback-warning-logging を main から作成。初期コミットと push は Plan 承認後に実施予定。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: ブランチ feat/rm065-fallback-warning-logging を main から作成済み。コミット `refactor(pipeline): remove fallback paths and enforce errors` を push 済み（リモート refs 更新時に権限警告が出るが push 自体は成功）。
     - 必ずmainからブランチを切る
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
@@ -20,7 +20,8 @@ roadmap_item: RM-065 フォールバック警告ログ整備
     - 承認メッセージ ID／リンク: ユーザー「ok」返信（フォールバック全面禁止の再承認）
 - [x] 設計・実装方針の確定
   - メモ: Mapping/Renderer でフォールバックを許可しない。`PipelineFallbackError` を導入して例外化し、ドラフト未生成・アンカー欠損・ layouts.jsonl 不備などは即停止させる。例外発生時は `logger.error` で詳細を出力する。
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: `docs/notes/20251110-fallback-warning-logging.md` を更新し、フォールバック禁止と LLM 例外化方針を記録済み。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: 
   - [ ] docs/requirements 配下
