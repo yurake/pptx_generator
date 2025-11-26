@@ -27,6 +27,7 @@ flowchart TB
     subgraph GOV["Cross-Stage / Governance"]
         direction TB
         GOV_ANCHOR(( ))
+        RM078["RM-078<br/>stage 表記統一<br/>(未着手)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
@@ -37,11 +38,14 @@ flowchart TB
     subgraph ST1["Stage 1: テンプレ"]
         direction TB
         ST1_ANCHOR(( ))
+        RM080["RM-080<br/>テンプレ実スライド<br/>スナップショット強化<br/>(未着手)"]
+        RM081["RM-081<br/>文字数許容量算出と<br/>スキーマ反映<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
         direction TB
         ST2_ANCHOR(( ))
+        RM079["RM-079<br/>pptx prepare directive 拡張<br/>(未着手)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
         RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
@@ -971,3 +975,63 @@ flowchart TB
   - SimpleRefinerStep でブランド許容範囲内のフォント縮小をフォールバックとして適用し、適用結果を監査ログへ残す。
   - フラグ設計と警告出力を整備し、段階的に自動対処へ移行できる設定を提供する。
 - 次アクション: 要約プロンプト・フォント縮小ヒューリスティックの案出し、Stage3/Stage4 への組み込み仕様の詳細化。
+
+<a id="rm-077"></a>
+### RM-077 LLM ラベル整備
+- 対象領域: Cross-Stage（GitHub 運用・CI ラベル自動化）
+- ゴール: LLM 関連作業を識別できる `area:llm` ラベルを導入し、Issue / PR のトリアージ精度を高める。
+- 参照ドキュメント: [docs/policies/github-label-governance.md](../policies/github-label-governance.md)
+- 参照 ToDo: [docs/todo/archive/20251124-rm077-llm-enhancements.md](../todo/archive/20251124-rm077-llm-enhancements.md)
+- 状況: 完了（2025-11-26 更新）
+- 期待成果:
+  - `.github/issue-labeler.yml` と `.github/labeler.yml` に `area:llm` を追加し、対象ファイルパターンとキーワードを定義する。
+  - ラベルポリシードキュメントを更新し、運用ルールと自動付与条件を明記する。
+  - 既存ラベルとの棲み分けを整理し、LLM 関連作業のレビューフローを明確化する。
+
+<a id="rm-078"></a>
+### RM-078 stage 表記統一
+- 対象領域: Cross-Stage ドキュメント・ログ
+- ゴール: パイプライン工程の表記を「stage」で統一し、ドキュメント／CLI 表示の一貫性を確保する。
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/cli-command-reference.md](../design/cli-command-reference.md)
+- 参照 ToDo: [docs/todo/20251124-rm078-stage-terminology.md](../todo/20251124-rm078-stage-terminology.md)
+- 状況: 未着手（2025-11-24 追加）
+- 期待成果:
+  - リポジトリ全体の「工程」表記を網羅的に置換し、Mermaid 図や CLI メッセージも含めて整合を取る。
+  - 置換対象／除外条件を整理し、運用ガイドへ更新方針を記録する。
+  - 変更後のレビュー手順を `docs/policies/task-management.md` 等に追記し、今後の表記ゆれを防止する。
+
+<a id="rm-079"></a>
+### RM-079 pptx prepare directive 拡張
+- 対象工程: Stage 2（コンテンツ準備）
+- ゴール: `pptx prepare` で LLM プロンプトへ外部要望を安全に注入できる仕組みを提供し、柔軟なドラフト生成を可能にする。
+- 参照ドキュメント: [docs/design/cli-command-reference.md](../design/cli-command-reference.md)
+- 参照 ToDo: [docs/todo/20251124-rm079-prepare-directives.md](../todo/20251124-rm079-prepare-directives.md)
+- 状況: 未着手（2025-11-24 追加）
+- 期待成果:
+  - CLI に `--prompt-directive` および `--prompt-directive-file` を追加し、複数ディレクティブを順序通りに渡せるようにする。
+  - `PrepareAIOrchestrator` とプロンプト生成ロジックで directives を統合し、生成メタ・AI ログへ記録する。
+  - セキュリティガイドとドキュメントを更新し、外部要望の記載形式とレビュー手順を明文化する。
+
+<a id="rm-080"></a>
+### RM-080 テンプレ実スライドスナップショット強化
+- 対象工程: Stage 1（テンプレ）
+- ゴール: `pptx template` で実スライドの形状・段落情報を詳細に取得し、テンプレ解析と後続工程で活用できる状態にする。
+- 参照ドキュメント: [docs/design/stages/stage-01-template-pipeline.md](../design/stages/stage-01-template-pipeline.md)（要更新）
+- 参照 ToDo: [docs/todo/20251124-rm080-template-slide-snapshot.md](../todo/20251124-rm080-template-slide-snapshot.md)
+- 状況: 未着手（2025-11-24 追加）
+- 期待成果:
+  - `slide_snapshot.json` に図形寸法・段落属性・プレースホルダー種別を網羅し、差分検証に利用できるフォーマットへ拡張する。
+  - `TemplateExtractor` の抽出結果と整合を取り、バリデーションや Analyzer と共有できるようにする。
+  - サンプルデータと CLI リファレンスを更新し、活用事例を docs/notes に記録する。
+
+<a id="rm-081"></a>
+### RM-081 文字数許容量算出とスキーマ反映
+- 対象工程: Stage 1（テンプレ）・Stage 3（マッピング）
+- ゴール: プレースホルダーの寸法から許容文字数を推定し、`jobspec`・`generate_ready` で利用できるメタ情報として提供する。
+- 参照ドキュメント: [docs/requirements/stages/stage-03-mapping.md](../requirements/stages/stage-03-mapping.md), [docs/design/schema/stage-03-mapping.md](../design/schema/stage-03-mapping.md)
+- 参照 ToDo: [docs/todo/20251124-rm081-text-capacity.md](../todo/20251124-rm081-text-capacity.md)
+- 状況: 未着手（2025-11-24 追加）
+- 期待成果:
+  - `TemplateExtractor` と `layout_validation` で文字数・行数の推定値を算出し、`JobSpecScaffoldPlaceholder`／`SlideTextbox` に `text_capacity` 情報を追加する。
+  - Mapping/Renderer が許容量を参照してオーバーフロー検知や警告出力を行えるよう、モデルとテストを整合させる。
+  - サンプル `jobspec.json`・テストケースを更新し、推定方法と誤差範囲をドキュメントに記載する。
