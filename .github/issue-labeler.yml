@@ -36,6 +36,8 @@ type:enhancement:
   - '/[Ii]mprove/'
   - '/[Uu]pdate/'
   - '/[Rr]efactor/'
+  - '導入'
+  - '実装'
 type:docs:
   - '/docs\//'
   - '/ドキュメント/'
