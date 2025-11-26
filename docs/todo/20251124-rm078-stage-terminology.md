@@ -1,12 +1,12 @@
 ---
 目的: RM-078 stage 表記統一
-関連ブランチ: 未作成
+関連ブランチ: docs/rm078-stage-terminology
 関連Issue: #317
 roadmap_item: RM-078 stage 表記統一
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: 
+- [x] ブランチ作成・初期コミット・push
+  - メモ: docs/rm078-stage-terminology ブランチ作成。初期コミットで ToDo を更新。
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: リポジトリ全体で工程表記を「stage」へ統一。Markdown / reStructuredText / JSON / Python docstring / CLI メッセージを対象にし、誤置換を避けるため日本語文脈での確認を行う。
