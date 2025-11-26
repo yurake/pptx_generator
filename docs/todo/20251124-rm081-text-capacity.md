@@ -1,7 +1,7 @@
 ---
 目的: RM-081 文字数許容量算出とスキーマ反映
 関連ブランチ: 未作成
-関連Issue: 未作成
+関連Issue: #320
 roadmap_item: RM-081 文字数許容量算出とスキーマ反映
 ---
 
@@ -35,7 +35,7 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
   - メモ: 
