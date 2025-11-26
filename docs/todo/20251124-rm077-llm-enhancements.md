@@ -1,7 +1,7 @@
 ---
 目的: RM-077 LLM ラベル整備
 関連ブランチ: feat/rm077-llm-enhancements
-関連Issue: 未作成
+関連Issue: #316
 roadmap_item: RM-077 LLM ラベル整備
 ---
 
