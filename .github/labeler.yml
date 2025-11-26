@@ -36,6 +36,21 @@ area:templates:
       - 'templates/**'
       - 'samples/**'
       - 'config/**'
+area:llm:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/pptx_generator/prepare/**'
+      - 'src/pptx_generator/content_ai/**'
+      - 'src/pptx_generator/layout_ai/**'
+      - 'src/pptx_generator/template_ai/**'
+      - 'src/pptx_generator/pipeline/slide_alignment.py'
+      - 'src/pptx_generator/draft_recommender.py'
+      - 'config/**/prepare_policies/**'
+      - 'config/**/*policy*.json'
+      - 'docs/design/cli-command-reference.md'
+      - 'docs/requirements/stages/stage-03-*'
+      - 'docs/requirements/stages/stage-01-*'
+      - 'docs/design/stages/stage-01-template-pipeline.md'
 area:cli:
   - changed-files:
     - any-glob-to-any-file:
