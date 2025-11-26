@@ -1,7 +1,7 @@
 ---
 目的: RM-065 フォールバック警告ログ整備の実施準備
 関連ブランチ: feat/rm065-fallback-warning-logging
-関連Issue: 未作成
+関連Issue: #324
 roadmap_item: RM-065 フォールバック警告ログ整備
 ---
 
@@ -41,7 +41,7 @@ roadmap_item: RM-065 フォールバック警告ログ整備
     - メモ: 運用手順の更新は別タスクで検討。今回は影響範囲のみ共有。
   - [x] README.md / AGENTS.md
     - メモ: README/AGENTS にフォールバック許容記載なしのため変更不要
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
   - メモ: 
