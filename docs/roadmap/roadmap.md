@@ -27,7 +27,6 @@ flowchart TB
     subgraph GOV["Cross-Stage / Governance"]
         direction TB
         GOV_ANCHOR(( ))
-        RM077["RM-077<br/>LLM ラベル整備<br/>(未着手)"]
         RM078["RM-078<br/>stage 表記統一<br/>(未着手)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
@@ -982,8 +981,8 @@ flowchart TB
 - 対象領域: Cross-Stage（GitHub 運用・CI ラベル自動化）
 - ゴール: LLM 関連作業を識別できる `area:llm` ラベルを導入し、Issue / PR のトリアージ精度を高める。
 - 参照ドキュメント: [docs/policies/github-label-governance.md](../policies/github-label-governance.md)
-- 参照 ToDo: [docs/todo/20251124-rm077-llm-enhancements.md](../todo/20251124-rm077-llm-enhancements.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm077-llm-enhancements.md](../todo/archive/20251124-rm077-llm-enhancements.md)
+- 状況: 完了（2025-11-26 更新）
 - 期待成果:
   - `.github/issue-labeler.yml` と `.github/labeler.yml` に `area:llm` を追加し、対象ファイルパターンとキーワードを定義する。
   - ラベルポリシードキュメントを更新し、運用ルールと自動付与条件を明記する。

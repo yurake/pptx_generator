@@ -47,7 +47,7 @@ roadmap_item: RM-077 LLM ラベル整備
   - メモ:
 - [x] チェックリスト整合確認
   - メモ: PR 作成を除く工程が完了していることを確認。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #322 https://github.com/yurake/pptx_generator/pull/322（2025-11-26 完了）
 
 ## メモ
