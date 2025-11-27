@@ -1040,8 +1040,8 @@ flowchart TB
 - 対象 stage: Stage 2（コンテンツ準備）
 - ゴール: `pptx_generator.prepare` 内の生成 AI コンポーネントを `prepare_ai` サブパッケージへ分離し、ステージ名と AI 実装の責務を切り分ける。
 - 参照ドキュメント: [docs/design/stages/stage-02-content-normalization.md](../design/stages/stage-02-content-normalization.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: [docs/todo/20251127-rm082-prepare-ai-package.md](../todo/20251127-rm082-prepare-ai-package.md)
-- 状況: 未着手（2025-11-27 追加）
+- 参照 ToDo: [docs/todo/archive/20251127-rm082-prepare-ai-package.md](../todo/archive/20251127-rm082-prepare-ai-package.md)
+- 状況: 完了（2025-11-27 更新）
 - 期待成果:
   - `pptx_generator.prepare` の公開 API を維持したまま、LLM クライアントやプロンプトを `prepare_ai` 以下へ移設し、後方互換を確保する。
   - Stage 2 のドキュメントと CLI リファレンスを更新し、ステージ名とパッケージ構造の対応を明示する。

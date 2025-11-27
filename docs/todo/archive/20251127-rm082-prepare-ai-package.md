@@ -38,8 +38,8 @@ roadmap_item: RM-082 Prepare AI パッケージ再編
   - メモ: 関連 Issue を作成次第更新。
 - [x] チェックリスト整合確認
   - メモ: 子タスクのチェック状態を再確認し、親タスクの整合を確認済み。
-- [ ] PR 作成
-  - メモ: PR 未作成。
+- [x] PR 作成
+  - メモ: PR #330 https://github.com/yurake/pptx_generator/pull/330（2025-11-27 完了）
 
 ## メモ
 - 計画のみで完了とする場合の判断は未定。
