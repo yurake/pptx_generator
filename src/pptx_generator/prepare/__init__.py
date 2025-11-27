@@ -13,7 +13,6 @@ from .models import (
     PrepareNoteEntry,
     PrepareStoryContext,
 )
-from .orchestrator import PrepareAIOrchestrator, PrepareAIOrchestrationError
 from .policy import (
     PreparePolicy,
     PreparePolicyError,
@@ -21,11 +20,32 @@ from .policy import (
     load_prepare_policy_set,
 )
 from .source import PrepareSourceChapter, PrepareSourceDocument, PrepareSourceMeta
+from importlib import import_module
+from typing import Any
+
+_ORCHESTRATOR_MODULE = "pptx_generator.prepare_ai.orchestrator"
+
+
+def _load_orchestrator() -> Any:
+    return import_module(_ORCHESTRATOR_MODULE)
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"PrepareAIOrchestrator", "PrepareAIOrchestrationError"}:
+        module = _load_orchestrator()
+        value = getattr(module, name)
+        globals()[name] = value  # cache for subsequent attribute access
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    base = set(globals().keys())
+    base.update({"PrepareAIOrchestrator", "PrepareAIOrchestrationError"})
+    return sorted(base)
 
 __all__ = [
     "PrepareAIRecord",
-    "PrepareAIOrchestrator",
-    "PrepareAIOrchestrationError",
     "PrepareBodyBlock",
     "PrepareCard",
     "PrepareCardContent",
@@ -43,4 +63,6 @@ __all__ = [
     "PrepareSourceMeta",
     "PrepareStoryContext",
     "load_prepare_policy_set",
+    "PrepareAIOrchestrator",
+    "PrepareAIOrchestrationError",
 ]

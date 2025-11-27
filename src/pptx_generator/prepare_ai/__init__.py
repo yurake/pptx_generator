@@ -3,31 +3,48 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable
 
-_orchestrator = import_module("pptx_generator.prepare_ai.orchestrator")
-_llm_client = import_module("pptx_generator.prepare_ai.llm_client")
-_prompts = import_module("pptx_generator.prepare_ai.prompts")
+_MODULE_PATHS = (
+    "pptx_generator.prepare_ai.orchestrator",
+    "pptx_generator.prepare_ai.llm_client",
+    "pptx_generator.prepare_ai.prompts",
+)
 
-
-def _collect_exports(module: Any) -> list[str]:
-    names = getattr(module, "__all__", None)
-    if names is None:
-        names = [attr for attr in dir(module) if not attr.startswith("_")]
-    return list(names)
+_CACHED_MODULES: list[Any | None] = [None, None, None]
+__all__: list[str] = []
 
 
-def _export(module: Any, names: Sequence[str]) -> None:
-    for name in names:
-        globals()[name] = getattr(module, name)
+def _iterate_modules() -> Iterable[Any]:
+    for index, path in enumerate(_MODULE_PATHS):
+        module = _CACHED_MODULES[index]
+        if module is None:
+            module = import_module(path)
+            _CACHED_MODULES[index] = module
+        yield module
 
 
-_orchestrator_exports = _collect_exports(_orchestrator)
-_llm_client_exports = _collect_exports(_llm_client)
-_prompts_exports = _collect_exports(_prompts)
+def _ensure_all() -> list[str]:
+    global __all__
+    if not __all__:
+        names: set[str] = set()
+        for module in _iterate_modules():
+            module_all = getattr(module, "__all__", None)
+            if module_all is None:
+                module_all = [attr for attr in dir(module) if not attr.startswith("_")]
+            names.update(module_all)
+        __all__ = sorted(names)
+    return __all__
 
-__all__ = sorted(set(_orchestrator_exports) | set(_llm_client_exports) | set(_prompts_exports))
 
-_export(_orchestrator, _orchestrator_exports)
-_export(_llm_client, _llm_client_exports)
-_export(_prompts, _prompts_exports)
+def __getattr__(name: str) -> Any:
+    for module in _iterate_modules():
+        if hasattr(module, name):
+            value = getattr(module, name)
+            globals()[name] = value
+            return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals().keys()) | set(_ensure_all()))
