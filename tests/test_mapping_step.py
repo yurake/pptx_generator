@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Iterable
+
+import pytest
 
 from pptx_generator.models import (ContentApprovalDocument, ContentDocumentMeta,
                                    ContentElements, ContentSlide,
                                    ContentTableData, DraftDocument,
                                    DraftSection, DraftSlideCard,
                                    GenerateReadyDocument, JobAuth, JobMeta,
-                                   JobSpec, Slide, SlideTable)
+                                   JobSpec, PipelineFallbackError, Slide,
+                                   SlideTable)
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
 from pptx_generator.prepare import (
@@ -310,3 +314,73 @@ def test_mapping_step_assigns_table_anchor(tmp_path: Path) -> None:
     assert "Body Right" in slide_elements
     assert slide_elements["Body Right"]["rows"] == [["120件/月"]]
     assert "table" not in slide_elements
+
+
+def test_mapping_step_errors_on_invalid_content_artifact(tmp_path: Path, caplog) -> None:
+    spec = _build_spec(["本文"])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    _attach_minimal_draft_document(context, spec)
+    prepare_doc = PrepareDocument(
+        prepare_id="prepare-test",
+        cards=[
+            PrepareCard(
+                card_id="s01",
+                order=1,
+                role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=PrepareCardContent(
+                    headline="概要",
+                    body=[PrepareBodyBlock(type="paragraph", text="本文")],
+                ),
+            )
+        ],
+        story_context=PrepareStoryContext(chapters=[]),
+    )
+    context.add_artifact("prepare_document", prepare_doc)
+    context.add_artifact("content_approved", object())
+
+    step = MappingStep(MappingOptions(output_dir=tmp_path))
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.mapping"):
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            step.run(context)
+
+    assert "content_approved artifact の型が不正です" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
+
+
+def test_mapping_step_errors_when_layout_catalog_missing(tmp_path: Path, caplog) -> None:
+    spec = _build_spec(["本文"])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    _attach_minimal_draft_document(context, spec)
+    prepare_doc = PrepareDocument(
+        prepare_id="prepare-test",
+        cards=[
+            PrepareCard(
+                card_id="s01",
+                order=1,
+                role=PrepareCardRole(story_phase="introduction", intent_tags=["overview"]),
+                content=PrepareCardContent(
+                    headline="概要",
+                    body=[PrepareBodyBlock(type="paragraph", text="本文")],
+                ),
+            )
+        ],
+        story_context=PrepareStoryContext(chapters=[]),
+    )
+    context.add_artifact("prepare_document", prepare_doc)
+
+    missing_path = tmp_path / "layouts.jsonl"
+    step = MappingStep(
+        MappingOptions(
+            output_dir=tmp_path,
+            layouts_path=missing_path,
+        )
+    )
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.mapping"):
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            step.run(context)
+
+    assert str(missing_path) in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
