@@ -8,8 +8,8 @@ tags:
 ---
 
 ## 目的
-- `generate_ready.json` にテンプレート参照やマッピングメタを埋め込み、工程5専用の `pptx gen` で追加オプションなしにテンプレートを解決できるようにする。
-- 監査ログ (`audit_log.json`) に工程4のメタ情報を確実に残し、再実行時のトレーサビリティを担保する。
+- `generate_ready.json` にテンプレート参照やマッピングメタを埋め込み、stage 5 専用の `pptx gen` で追加オプションなしにテンプレートを解決できるようにする。
+- 監査ログ (`audit_log.json`) に stage 4 のメタ情報を確実に残し、再実行時のトレーサビリティを担保する。
 
 ## 追加したメタ情報
 - `meta.template_path`: マッピング時に指定したテンプレートへの絶対／相対パス。CLI 側では generate_ready と同一ディレクトリを基点に解決するフォールバックを実装。
@@ -20,7 +20,7 @@ tags:
 ## CLI (`pptx gen`) 側の対応
 - `GenerateReadyDocument` をロードして `template_path` が欠落している場合は Exit Code 2 で警告、再マッピングを促す。
 - `mapping_log.json` が存在する場合は `meta` セクションを監査メタに統合し、`maps` のフェールバック回数や AI 修正件数を記録。
-- 旧 `--template` / `--content-approved` 系オプションを削除し、`generate_ready` と `--branding` のみで工程5を完結させる。
+- 旧 `--template` / `--content-approved` 系オプションを削除し、`generate_ready` と `--branding` のみで stage 5 を完結させる。
 
 ## 監査ログへの反映
 - `mapping_meta` をベースアーティファクトとしてレンダリングパイプラインに渡し、`mapping` セクションに以下を確保：
@@ -32,7 +32,7 @@ tags:
 - ブランド設定はテンプレートから抽出した場合でも `branding.source.template` にテンプレートパスを格納。
 
 ## 残検討事項
-- `meta.content_hash` を工程5で活用し、レンダリング後のプレゼンハッシュと突合する仕組み。
+- `meta.content_hash` を stage 5 で活用し、レンダリング後のプレゼンハッシュと突合する仕組み。
 - 監査ログの `mapping.slides` に generate_ready のスライド数を復活させるか、`mapping_log.json` の統計から充足可能かを判断。
 - 監査ログと `.pptx/compose/mapping_log.json` の保管ポリシー整備（保持期間やアーカイブ先）。
 

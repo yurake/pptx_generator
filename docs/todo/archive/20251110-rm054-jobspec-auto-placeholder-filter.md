@@ -24,7 +24,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: TemplateExtractor と SpecLoader を改修し、Blueprint/JobSpec 両方で `auto_draw` を処理。renderer 対応は未着手のため別工程で管理する。
+  - メモ: TemplateExtractor と SpecLoader を改修し、Blueprint/JobSpec 両方で `auto_draw` を処理。renderer 対応は未着手のため別 stage で管理する。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_template_extractor.py tests/test_spec_loader.py` を実施し、新挙動を確認
 - [x] ドキュメント更新

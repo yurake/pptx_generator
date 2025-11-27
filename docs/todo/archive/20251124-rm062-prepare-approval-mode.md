@@ -38,8 +38,8 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
       - ドキュメントのみの場合は差分を戻すことで対応。
     - 承認メッセージ ID／リンク: ユーザー返信「ok」（2025-11-24、本スレッド）
 - [x] 設計・実装方針の確定
-  - メモ: CLI から `--prepare-log` / `--prepare-meta` / `--template` / `--layouts` を削除する方針で着手済み。`PrepareDocument.meta` に各成果物パスを埋め込み、工程3側は常にメタから参照する構成へ移行する。jobspec 側も `meta.template_path` / `meta.layouts_path` を唯一の参照源とする。
-    - `prepare_card.json` に出力ファイル群のパスを `meta` として埋め込む（`prepare_log`, `prepare_ai_log`, `ai_generation_meta`, `prepare_story_outline` 等）。工程3ではこのメタ情報を基に常に参照先を決定する。
+  - メモ: CLI から `--prepare-log` / `--prepare-meta` / `--template` / `--layouts` を削除する方針で着手済み。`PrepareDocument.meta` に各成果物パスを埋め込み、stage 3 側は常にメタから参照する構成へ移行する。jobspec 側も `meta.template_path` / `meta.layouts_path` を唯一の参照源とする。
+    - `prepare_card.json` に出力ファイル群のパスを `meta` として埋め込む（`prepare_log`, `prepare_ai_log`, `ai_generation_meta`, `prepare_story_outline` 等）。stage 3 ではこのメタ情報を基に常に参照先を決定する。
     - `PrepareNormalizationStep` は `PrepareDocument.meta` からログ／メタパスを解決し、オプション未指定時でも自動読み込みできるようにする。
     - `jobspec.meta` に含まれる `template_path` / `layouts_path` を唯一の参照元とし、CLI オプションによる上書きを廃止する。欠落時は明確なエラーメッセージで再抽出を促す。
     - ドキュメント（README, CLI リファレンス, Runbook 等）とテストを新仕様へ更新する。

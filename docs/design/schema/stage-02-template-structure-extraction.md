@@ -1,6 +1,6 @@
 # ステージ2: テンプレ構造抽出スキーマ
 
-工程2で生成する `layouts.jsonl`、`diagnostics.json`、`diff_report.json` の構造を定義する。
+stage 2 で生成する `layouts.jsonl`、`diagnostics.json`、`diff_report.json` の構造を定義する。
 
 ## layouts.jsonl
 - JSON Lines 形式。1行につき1レイアウト。
@@ -96,7 +96,7 @@
 ### フィールド補足
 - `bbox`: EMU 単位で位置・サイズを表す。
 - `style_hint`: レンダリング・AI 補完のヒントであり、必須ではない。
-- `usage_tags`: 工程5のスコアリングに利用する用途タグ。
+- `usage_tags`: stage 5 のスコアリングに利用する用途タグ。
 - `text_hint.max_chars`: 面積から算出した推奨文字数。
 - `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。詳細は `docs/design/stages/stage1-stage3-metadata-interface.md` を参照。
 - `meta.layout_description`: Stage1 Template で生成するレイアウト説明メタ。`overview`（全体概要）と `elements[*]`（個別プレースホルダーの説明リスト）で構成され、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
@@ -120,8 +120,8 @@
 ```
 
 ### レベル
-- `warnings`: 後工程で回避可能な問題（未知の PH 種別など）。
-- `errors`: 致命的な問題（重複 PH、抽出失敗）。存在する場合は工程を停止する。
+- `warnings`: 後 stage で回避可能な問題（未知の PH 種別など）。
+- `errors`: 致命的な問題（重複 PH、抽出失敗）。存在する場合は stage を停止する。
 
 ## diff_report.json
 ```jsonc

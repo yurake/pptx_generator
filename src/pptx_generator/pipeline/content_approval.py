@@ -1,4 +1,4 @@
-"""工程3 承認済みコンテンツを読み込むステップ。"""
+"""stage 3 承認済みコンテンツを読み込むステップ。"""
 
 from __future__ import annotations
 

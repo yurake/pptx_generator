@@ -1,24 +1,24 @@
 # 静的テンプレート対応検討メモ（2025-11-05）
 
 - 背景: 静的テンプレート（スライド順・プレースホルダが固定）を現行の動的テンプレート中心パイプラインへ統合する方針を整理。ロードマップの新規項目 RM-054 として管理する。
-- 現状（動的モード）: 工程2 `pptx prepare` はテンプレ参照なしで PrepareCard を生成し、工程3 `pptx compose` がレイアウトスコアリングとフォールバックで最適レイアウトを決定している。
-- 静的モード要件: テンプレ Blueprint（slide_id / slot_id / 意図タグ / 必須フラグ）を前提に、工程2でカードを slot 単位に生成し、工程3では空き slot の検知と監査が中心となる。マッピング候補の探索は不要。
-- 工程1への追加: `template_spec` に `layout_mode: dynamic|static` と静的テンプレ用 Blueprint を追加。テンプレ抽出 CLI は Blueprint を生成し、テンプレ版ごとの固定スライド構成を提供する。
-- 工程2の拡張:
+- 現状（動的モード）: stage 2 `pptx prepare` はテンプレ参照なしで PrepareCard を生成し、stage 3 `pptx compose` がレイアウトスコアリングとフォールバックで最適レイアウトを決定している。
+- 静的モード要件: テンプレ Blueprint（slide_id / slot_id / 意図タグ / 必須フラグ）を前提に、stage 2 でカードを slot 単位に生成し、stage 3 では空き slot の検知と監査が中心となる。マッピング候補の探索は不要。
+- stage 1 への追加: `template_spec` に `layout_mode: dynamic|static` と静的テンプレ用 Blueprint を追加。テンプレ抽出 CLI は Blueprint を生成し、テンプレ版ごとの固定スライド構成を提供する。
+- stage 2 の拡張:
   - CLI オプションで Blueprint を指定 (`--template-spec` など) し、生成 AI が slot 情報を参照してテキストを構成。
-  - `pptx prepare` 実行時に `--mode (dynamic|static)` を必須にし、選択モードを `ai_generation_meta.json` と `audit_log.json` に記録して後工程でトレースできるようにする。
+  - `pptx prepare` 実行時に `--mode (dynamic|static)` を必須にし、選択モードを `ai_generation_meta.json` と `audit_log.json` に記録して後 stage でトレースできるようにする。
   - `prepare_card.json` に `slot_id`、`slide_id`、必須/任意の充足ステータス、`layout_mode` を追加。
   - 静的モード時は Blueprint の slot に沿ってカードを個別生成し、必要であれば `LLMClient.generate()` をスライド（=slot）単位で呼び出す。
   - 動的モードとの整合を保つため、Blueprint 由来の骨子と `PrepareAIOrchestrator` のカード単位生成を統合する設計を検討する。
   - `ai_generation_meta.json` に必須 slot 充足率や Blueprint 参照情報を記録し、監査ログへ連携する。
-- 工程3の分岐:
+- stage 3 の分岐:
   - 動的モード: 現行どおりレイアウトスコアリング・フォールバック・`generate_ready` 生成を担当。
-  - 静的モード: Blueprint をベースに `draft_approved.json` を検証し、空き slot や未使用カードをログ化。`generate_ready.json` は工程2成果物をバリデーション後に確定する。フォールバックは「slot 未充足 → 差戻し」中心へ見直す。
+  - 静的モード: Blueprint をベースに `draft_approved.json` を検証し、空き slot や未使用カードをログ化。`generate_ready.json` は stage 2 成果物をバリデーション後に確定する。フォールバックは「slot 未充足 → 差戻し」中心へ見直す。
   - `mapping_log.json` に `mode=static` の監査項目（必須 slot 空き件数、差戻し推奨理由）を追加。
-- 動的モードの補足: RM-060 で検討中の AI ベース ID 整合ステップは工程3手前でカードと JobSpec の紐付けを確実にするが、レイアウト候補の再評価はこれまで通り継続する。静的モードへ移行する場合は、この AI 整合結果をもとに「slot=slide を固定しレイアウト差し替えを行わない」運用へ切り替える想定で、RM-054 の完了タイミングで再整理する。
-- 工程4の補足: 静的モード時は `generate_ready` に `layout_mode=static` を保持し、レンダリング監査で必須 slot 空きが 0 件であることを品質ゲート化。
+- 動的モードの補足: RM-060 で検討中の AI ベース ID 整合ステップは stage 3 手前でカードと JobSpec の紐付けを確実にするが、レイアウト候補の再評価はこれまで通り継続する。静的モードへ移行する場合は、この AI 整合結果をもとに「slot=slide を固定しレイアウト差し替えを行わない」運用へ切り替える想定で、RM-054 の完了タイミングで再整理する。
+- stage 4 の補足: 静的モード時は `generate_ready` に `layout_mode=static` を保持し、レンダリング監査で必須 slot 空きが 0 件であることを品質ゲート化。
 - 未決定事項:
   - Blueprint スキーマの詳細（入れ子構造、付録扱い）とテンプレ差分管理方法。
   - 静的テンプレ専用の差戻し理由セットや UI 連携方法。
   - `--mode` 必須化後のテンプレ自動判定や既存スクリプト互換性の整理（デフォルトモード廃止に伴う導線調整）。
-- 次アクション: Blueprint スキーマ案と CLI 拡張仕様を起票し、工程2/3 のスキーマ変更案を `docs/requirements/` と `docs/design/` へ落とし込む。関連タスクを細分化して RM-054 の ToDo へ展開する。
+- 次アクション: Blueprint スキーマ案と CLI 拡張仕様を起票し、stage 2/3 のスキーマ変更案を `docs/requirements/` と `docs/design/` へ落とし込む。関連タスクを細分化して RM-054 の ToDo へ展開する。

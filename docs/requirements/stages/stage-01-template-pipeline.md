@@ -1,8 +1,8 @@
-# 工程1 テンプレ工程 要件詳細
+# stage 1 テンプレ stage 要件詳細
 
 ## 概要
 - ブランドガイドに沿ってテンプレート資産を設計・改修し、版管理と承認フローを標準化する。
-- 承認済みテンプレートから構造情報（`template_spec.json` / `jobspec.json`）とブランド設定を抽出し、後続工程がテンプレ依存の座標やアンカーを参照できる状態にする。
+- 承認済みテンプレートから構造情報（`template_spec.json` / `jobspec.json`）とブランド設定を抽出し、後続 stage がテンプレ依存の座標やアンカーを参照できる状態にする。
 - 抽出結果の妥当性を自動検証し、差分レポートや診断情報を用いて品質を担保する。
 - リリースメタ (`template_release.json`) を生成し、ゴールデンサンプル検証と環境メタを含む監査ログを整備する。
 
@@ -37,12 +37,12 @@
    - リリースメタが必要な場合は `uv run pptx template <template.pptx> --with-release --brand <brand> --version <ver>` を実行し、`template_release.json` を生成する。
    - ゴールデンサンプル検証を行う場合は `--golden-spec` を指定し、互換性エラーを `template_release.json` の diagnostics に反映する。
 4. **成果物アーカイブと配布**
-   - 抽出成果物とリリースメタをリポジトリ／テンプレ資産管理ストレージへ配置し、後続工程（コンテンツ準備・マッピング）から参照可能にする。
+   - 抽出成果物とリリースメタをリポジトリ／テンプレ資産管理ストレージへ配置し、後続 stage（コンテンツ準備・マッピング）から参照可能にする。
 
 ## 推奨 CLI
 - 標準フロー: `uv run pptx template templates/libraries/acme/v1/template.pptx --output .pptx/extract/acme_v1`
 - リリースメタ生成を含める場合: `uv run pptx template templates/libraries/acme/v1/template.pptx --with-release --brand ACME --version v1 --output .pptx/extract/acme_v1`
-- 高度な運用（個別コマンドの活用）は `docs/design/cli-command-reference.md` の「テンプレ工程詳細オプション」を参照する（`tpl-extract` / `layout-validate` / `tpl-release` を直接呼び出すケース）。
+- 高度な運用（個別コマンドの活用）は `docs/design/cli-command-reference.md` の「テンプレ stage 詳細オプション」を参照する（`tpl-extract` / `layout-validate` / `tpl-release` を直接呼び出すケース）。
 
 ## 品質ゲート
 - プレースホルダ構成

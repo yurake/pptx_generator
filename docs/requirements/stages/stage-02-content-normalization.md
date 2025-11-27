@@ -1,7 +1,7 @@
-# 工程2 コンテンツ準備 (HITL) 要件詳細
+# stage 2 コンテンツ準備 (HITL) 要件詳細
 
 ## 概要
-- プレペア入力を PrepareCard へ正規化し、工程3 で直接利用できる JSON 群を `.pptx/prepare/` に出力する。
+- プレペア入力を PrepareCard へ正規化し、stage 3 で直接利用できる JSON 群を `.pptx/prepare/` に出力する。
 - 生成 AI とポリシー設定を切り替えられるようにしつつ、HITL による承認・差戻しの記録を残す。
 - 監査証跡と再現性を担保するため、生成結果・統計・成果物パスを `audit_log.json` にまとめる。
 
@@ -16,7 +16,7 @@
 - `prepare_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
 - 動的モードでは呼び出しを 1 回に集約し、`prepare_ai_log.json` にはバッチ単位のレコードを出力する。
 - `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、`mode`（`dynamic` / `static`）、静的モード時は Blueprint 情報（`blueprint_path` / `blueprint_hash` / `slot_coverage`）。
-- `prepare_story_outline.json`: 章 ID とカード ID の対応表。工程3 の章構成初期化に利用する。
+- `prepare_story_outline.json`: 章 ID とカード ID の対応表。stage 3 の章構成初期化に利用する。
 - `audit_log.json`: 生成時刻、ポリシー ID、成果物パス、実行モード、Blueprint 参照、統計値（必須 slot 充足率など）、`slot_summary`。
 
 ## 業務フロー
@@ -24,12 +24,12 @@
 2. `PrepareAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `-p/--page-limit` が指定されていない限りポリシーまたは LLM 任せで、動的モードかつページ指定が無い場合はタイトルページ（`content.title` を持つカード）を自動挿入する。`--page-limit` を指定した場合はタイトルページを追加しない。
 3. 生成結果を Pydantic モデルで検証し、`prepare_card.json` と関連ログファイルを出力する。
 4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
-5. 工程3 `pptx compose` は `--prepare-cards` でカード成果物を受け取り、`prepare_card.json.meta` に記録されたログ／AIメタ／アウトラインのパスを自動解決して章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
+5. stage 3 `pptx compose` は `--prepare-cards` でカード成果物を受け取り、`prepare_card.json.meta` に記録されたログ／AIメタ／アウトラインのパスを自動解決して章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
 
 ## 監査・品質要件
 - 生成 AI が警告を返した場合は `prepare_ai_log.json.warnings` に記録し、CLI 標準出力にも WARN を表示する。
 - `ai_generation_meta.json.statistics.cards_total` と `prepare_card.json.cards.length` が一致すること。
-- `ai_generation_meta.json.mode` と `audit_log.json.prepare_normalization.mode` が一致し、後工程で参照できるように保持すること。
+- `ai_generation_meta.json.mode` と `audit_log.json.prepare_normalization.mode` が一致し、後 stage で参照できるように保持すること。
 - 入力プレペアのハッシュ (`input_hash`) は `audit_log.json` と `ai_generation_meta.json` の両方で整合させる。
 
 ## CLI 要件
@@ -44,7 +44,7 @@
 - `--output` を指定して別ディレクトリへ書き込む際もファイル構成（`prepare_card.json` 等）は変えない。
 
 ## 静的モード固有要件
-- Blueprint 内の必須 slot (`required=true`) は工程2でカードを生成する際に必ず割当し、未割当がある場合は exit code 6 を返す。
+- Blueprint 内の必須 slot (`required=true`) は stage 2 でカードを生成する際に必ず割当し、未割当がある場合は exit code 6 を返す。
 - Blueprint の `slide_id` 順にカードを出力し、`prepare_card.json.cards[*].slot_id` で slot を一意に識別できるようにする。
 - `ai_generation_meta.json.statistics` に `required_slot_total` / `required_slot_fulfilled` / `optional_slot_used` を追記し、監査ログ `audit_log.json.prepare_normalization.slot_summary` と整合させる。
 - Blueprint が指定されても `--mode=dynamic` の場合は従来どおりの動作とし、slot 情報は出力しない。

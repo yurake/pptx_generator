@@ -10,13 +10,13 @@
 - LibreOffice（PDF 変換時）および .NET 8 SDK（仕上げツール連携時）がインストール済み。
 - `config/branding.json` とテンプレートが最新化され、レンダラーが図形 ID／アンカー名を付与できる状態。
 - `docs/notes/20251015-pptx-analyzer.md` に記録された実装メモを参照し、対象バージョンに差異がないことを確認する。
-- プロジェクト全体の工程配置は README の「アーキテクチャ概要」に掲載している工程図で事前に確認しておく。
+- プロジェクト全体の stage 配置は README の「アーキテクチャ概要」に掲載している stage 図で事前に確認しておく。
 
 ## 実行手順
 1. 解析対象 JSON を用意する  
    - Stage1 の抽出成果物（例: `samples/extract/jobspec.json`）をベースに案件仕様を整備し、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。ブランド設定 (`config/branding.json`) は必要に応じて差し替える。
 2. CLI でレンダリングと解析を実行する  
-  - まず工程3のラッパーで `generate_ready.json` を用意する（未実施の場合）:
+  - まず stage 3 のラッパーで `generate_ready.json` を用意する（未実施の場合）:
     ```bash
     uv run pptx compose samples/extract/jobspec.json \
       --prepare-cards .pptx/prepare/prepare_card.json \
@@ -24,14 +24,14 @@
       --output .pptx/compose
     ```
     - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。独自 JobSpec を利用する場合も `meta` にテンプレート／レイアウトのパスを設定してから実行する。
-  - 工程4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
+  - stage 4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \
       --branding config/branding.json \
       --output .pptx/gen \
       --export-pdf
     ```
-  - 工程4の成果物を点検済みであっても、最終出力を更新する際は `pptx gen` を再実行する。
+  - stage 4 の成果物を点検済みであっても、最終出力を更新する際は `pptx gen` を再実行する。
    - `analysis.json` は `--output` で指定したディレクトリに保存される。既定値は `.pptx/gen/analysis.json`。
    - Review Engine 連携用に `review_engine_analyzer.json` も併せて出力される。設計と一致しない場合は CLI バージョンを確認する。
    - `--export-pdf` は任意。LibreOffice が利用できない場合は外してもよい。

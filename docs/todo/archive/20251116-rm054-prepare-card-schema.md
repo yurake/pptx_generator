@@ -1,5 +1,5 @@
 ---
-目的: prepare_card.json のスキーマをゼロベースで再設計し、後続工程が扱いやすい構造へ刷新する
+目的: prepare_card.json のスキーマをゼロベースで再設計し、後続 stage が扱いやすい構造へ刷新する
 関連ブランチ: feat/rm054-static-blueprint-plan
 関連Issue: #272
 roadmap_item: RM-054 静的テンプレ構成統合
@@ -13,7 +13,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
     - ドキュメント／コード修正方針: スキーマ案に沿って `src/pptx_generator/prepare` と `pipeline/prepare_normalization.py`、および `samples/prepare/*.json` を刷新し、仕様ドキュメント（requirements/design）を更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗管理し、スキーマ案・実装結果をユーザーと擦り合わせる。
     - 想定影響ファイル: `src/pptx_generator/prepare/*.py`, `src/pptx_generator/pipeline/prepare_normalization.py`, `tests/test_cli_prepare.py`, `samples/prepare/*.json`, `docs/requirements/stages/stage-02-content-normalization.md`, `docs/design/schema/stage-02-content-normalization.md`。
-    - リスク: compose/mapping 等の後段工程が旧スキーマを前提としており、合わせて修正する必要がある。移行期間中の互換性は担保しない。
+    - リスク: compose/mapping 等の後段 stage が旧スキーマを前提としており、合わせて修正する必要がある。移行期間中の互換性は担保しない。
     - テスト方針: CLI prepare のモック／Azure 実行、関連 pytest を更新して実行する。
     - ロールバック方法: 新スキーマに起因する問題があれば該当変更を元に戻し、旧スキーマへ復元する。
     - 承認メッセージ ID／リンク: ユーザー承認 (「ok, 新規にtodoを作成して対応しよう」)
@@ -58,7 +58,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - プロンプト側で「notes はノート欄に記載する補足情報」「headline はページの結論」といった指示を入れ直す。
   - `PrepareNormalizationStep` で `PrepareCard` の新構造を取り込み、後段の `ContentSlide` へ変換する処理も更新する。`body` ブロックや notes を適切に PPT 要素へマッピングする必要がある。
   - `samples/prepare/*.json` を新構造で再生成し、`tests/test_cli_prepare.py` や `tests/test_draft_structuring_step.py` 等に反映する。
-  - compose / mapping など後工程は旧構造前提なので、実装後は順次そちらも改修する。移行期間に互換レイヤーを設ける想定はなし（後方互換は考えない方針）。
+  - compose / mapping など後 stage は旧構造前提なので、実装後は順次そちらも改修する。移行期間に互換レイヤーを設ける想定はなし（後方互換は考えない方針）。
   - CLI prepare や Azure 実行の動作確認 (`uv run pptx prepare ...`) を mock / 実環境双方で再確認する。`widgets` 等の追加ブロックにも対応可能なよう、body のバリデーションは緩めにする。
 - 次の担当者への TODO 例:
 1. `prepare/models.py` で新スキーマの型（PrepareCardRole, PrepareCardContent, PrepareBodyBlock, PrepareNoteEntry 等）を実装し、関連箇所を更新する。

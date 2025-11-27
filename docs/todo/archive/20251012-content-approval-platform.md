@@ -1,5 +1,5 @@
 ---
-目的: コンテンツ承認 UI / API と AI レビュー連携を構築し、工程3の HITL オペレーションを整備する
+目的: コンテンツ承認 UI / API と AI レビュー連携を構築し、stage 3 の HITL オペレーションを整備する
 関連ブランチ: feat/content-approval-platform
 関連Issue: #172
 roadmap_item: RM-023 コンテンツ承認オーサリング基盤

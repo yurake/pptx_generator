@@ -1,22 +1,22 @@
-# （レガシー）工程4 ドラフト構成設計 (HITL) 設計
+# （レガシー）stage 4 ドラフト構成設計 (HITL) 設計
 
-> **注記**: RM-047 以降、ドラフト構成設計は工程3「マッピング」に統合され、`generate_ready.json` を出力する最新仕様は [stage-03-mapping.md](./stage-03-mapping.md) を参照する。本ドキュメントは旧 `draft_*` フローの履歴を保持する目的で残している。
+> **注記**: RM-047 以降、ドラフト構成設計は stage 3「マッピング」に統合され、`generate_ready.json` を出力する最新仕様は [stage-03-mapping.md](./stage-03-mapping.md) を参照する。本ドキュメントは旧 `draft_*` フローの履歴を保持する目的で残している。
 
 ## 目的
 - 承認済みコンテンツを章立て・ページ順へ並べ、`layout_hint` を確定する。
 - 付録送りや統合といった構成操作を Draft API / CLI で提供し、承認ログを監査可能にする。
-- Stage1/Stage2 からのレイアウトメタデータ受け渡し仕様は [stage1-stage3-metadata-interface.md](./stage1-stage3-metadata-interface.md) に整理している。最新の用途タグ・Blueprint 連携方針を確認しながら工程4（旧仕様）を参照すること。
+- Stage1/Stage2 からのレイアウトメタデータ受け渡し仕様は [stage1-stage3-metadata-interface.md](./stage1-stage3-metadata-interface.md) に整理している。最新の用途タグ・Blueprint 連携方針を確認しながら stage 4（旧仕様）を参照すること。
 
 ## コンポーネント構成
 | コンポーネント | 概要 | 技術 |
 | --- | --- | --- |
 | Draft Service API | 章/カード管理、layout_hint 候補計算 | FastAPI |
 | CLI / Integration Scripts | Draft API を操作し、構成データを確認・更新 | Python |
-| Layout Hint Engine | 工程2の `layouts.jsonl` を参照し候補提示 | Python |
+| Layout Hint Engine | stage 2 の `layouts.jsonl` を参照し候補提示 | Python |
 | Chapter Template Registry | `structure_pattern` ごとの章テンプレ管理と適合率計算 | Python (dataclass + JSON) |
 | Draft Log Store | `draft_review_log.json` と履歴管理 | PostgreSQL / SQLite |
 | Storyboard UI（バックログ） | 章レーン + スライドカードの視覚編集 | React / Next.js 等（検討中） |
-| Analyzer Metrics Adapter | 工程6の `analysis_summary.json` を集約し Draft へ連携 | Python |
+| Analyzer Metrics Adapter | stage 6 の `analysis_summary.json` を集約し Draft へ連携 | Python |
 | Return Reason Template Store | 差戻し理由コード辞書の管理と CLI 提供 | JSON / YAML |
 
 ## データモデル
@@ -43,7 +43,7 @@
 
 ### layout_hint インテリジェンス
 - `layout_score_detail` は `uses_tag`, `content_capacity`, `diversity`, `analyzer_support` の 4 指標。
-- `analyzer_support` は工程6の `analysis_summary` から重大度別件数を取得し、ヒント適合度を算出する。
+- `analyzer_support` は stage 6 の `analysis_summary` から重大度別件数を取得し、ヒント適合度を算出する。
 - 候補提示時にスコア内訳を理由として表示し、HITL 作業者が提案妥当性を判断できるようにする。
 - CLI 出力例:
   ```bash
@@ -68,7 +68,7 @@
 - 差戻し記録時の UX: CLI は `--return-reason STRUCTURE_GAP --note "補強が必要"` の形式で受け付け、未指定時はエラー。
 
 ### Analyzer サマリ連携
-- 工程6は `analysis_summary.json` を生成し、スライド単位に `severity_counts`, `layout_consistency`, `blocking_tags[]` を記録する。
+- stage 6 は `analysis_summary.json` を生成し、スライド単位に `severity_counts`, `layout_consistency`, `blocking_tags[]` を記録する。
 - Draft サービスは `analysis_summary.json` を `draft_meta.json.analyzer_summary` へ統合し、候補提示と差戻しテンプレ選択のトリガに使用する。
 - CLI では `--show-analyzer` オプションで章/スライドの重大度合計とブロッキング要因を一覧表示する。
 
@@ -77,7 +77,7 @@
   - `--chapter-template <template_id>`: 強制的にテンプレを指定し、適合度を再計算。
   - `--return-reasons`: 差戻しテンプレ一覧を表示。
   - `--show-layout-reasons`: layout_hint 候補のスコア内訳を表示（デフォルト OFF）。
-  - `--import-analysis <path>`: 工程6で生成した `analysis_summary.json` を読み込み、`analyzer_support` を再計算。
+  - `--import-analysis <path>`: stage 6 で生成した `analysis_summary.json` を読み込み、`analyzer_support` を再計算。
 - API 追加エンドポイント
   - `GET /draft/templates`: テンプレ辞書を一覧返却。クエリ `structure_pattern` で絞り込み。
   - `GET /draft/return-reasons`: 差戻し理由テンプレ一覧を返却。
@@ -105,7 +105,7 @@
 ## エラーハンドリング
 - 承認済み章の変更要求 → `409 Conflict`
 - layout_hint 未選択で承認 → `400 Bad Request`
-- 候補計算失敗時は fallback として工程2のデフォルトレイアウトを提示。
+- 候補計算失敗時は fallback として stage 2 のデフォルトレイアウトを提示。
 - 差戻し理由コード未指定 → `422 Unprocessable Entity`
 - Analyzer 指摘駆動の警告を無視して承認 → ログへ `acknowledged_analyzer_risk=true` を記録。
 - `analysis_summary.json` のスライド ID 不一致 → `400 Bad Request` とし、詳細な不一致リストを返却。
@@ -130,7 +130,7 @@
 - 章テンプレプリセットのライフサイクル管理と更新フロー。
 - layout_hint 候補の AI 補完アルゴリズム（閾値調整、学習データ）と UI 連携。
 - 差戻しテンプレートのコード体系拡張と運用部門の合意形成。
-- Analyzer 指標のリアルタイム化（工程6からの連携頻度、キャッシュ戦略）。
+- Analyzer 指標のリアルタイム化（stage 6 からの連携頻度、キャッシュ戦略）。
 - 章テンプレと差戻しテンプレの翻訳・多言語対応。
 - Analyzer サマリの差分更新（フル replace ではなく patch）をどう扱うか。
 

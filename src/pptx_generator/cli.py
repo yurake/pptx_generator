@@ -78,7 +78,7 @@ _LOG_LEVEL_ALIASES = {
 
 @dataclass(slots=True)
 class OutlineResult:
-    """アウトライン工程の実行結果。"""
+    """アウトライン stage の実行結果。"""
 
     context: PipelineContext
     draft_path: Path
@@ -1890,7 +1890,7 @@ def gen(  # noqa: PLR0913
     template_path_str = generate_ready.meta.template_path
     if not template_path_str:
         click.echo(
-            "generate_ready.json に template_path が含まれていません。工程4を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
+            "generate_ready.json に template_path が含まれていません。stage 4 を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
             err=True,
         )
         raise click.exceptions.Exit(code=2)
@@ -2033,7 +2033,7 @@ def prepare(
     mode: str,
     page_limit: int | None,
 ) -> None:
-    """工程2 コンテンツ準備: PrepareCard 成果物を生成する。"""
+    """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
     try:
         source = PrepareSourceDocument.parse_file(prepare_path)
@@ -2298,7 +2298,7 @@ def prepare(
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程2の prepare_card.json",
+    help="stage 2 の prepare_card.json",
 )
 def outline(
     spec_path: Path,
@@ -2314,7 +2314,7 @@ def outline(
     show_layout_reasons: bool,
     prepare_cards: Path,
 ) -> None:
-    """工程4 ドラフト構成（アウトライン）を生成する。"""
+    """stage 4 ドラフト構成（アウトライン）を生成する。"""
 
     if return_reasons:
         reasons = load_return_reasons(return_reasons_path)
@@ -2467,7 +2467,7 @@ def outline(
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程2の prepare_card.json",
+    help="stage 2 の prepare_card.json",
 )
 def compose(  # noqa: PLR0913
     spec_path: Path,
@@ -2484,7 +2484,7 @@ def compose(  # noqa: PLR0913
     branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
-    """工程4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
+    """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
     try:
         spec = _load_jobspec(spec_path)
@@ -2536,7 +2536,7 @@ def compose(  # noqa: PLR0913
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
-        logging.exception("compose 実行中にアウトライン工程でエラーが発生しました")
+        logging.exception("compose 実行中にアウトライン stage でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
     _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
@@ -2583,7 +2583,7 @@ def compose(  # noqa: PLR0913
         click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except Exception as exc:  # noqa: BLE001
-        logging.exception("compose 実行中にマッピング工程でエラーが発生しました")
+        logging.exception("compose 実行中にマッピング stage でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
     _echo_mapping_outputs(mapping_context)
@@ -2634,7 +2634,7 @@ def compose(  # noqa: PLR0913
                     readable=True, path_type=Path),
     default=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     show_default=True,
-    help="工程2の prepare_card.json",
+    help="stage 2 の prepare_card.json",
 )
 def mapping(  # noqa: PLR0913
     spec_path: Path,
@@ -2644,7 +2644,7 @@ def mapping(  # noqa: PLR0913
     branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
-    """工程5 マッピングを実行し generate_ready.json を生成する。"""
+    """stage 5 マッピングを実行し generate_ready.json を生成する。"""
     try:
         spec = _load_jobspec(spec_path)
     except SpecValidationError as exc:
@@ -2830,7 +2830,7 @@ def mapping(  # noqa: PLR0913
     "-f",
     is_flag=True,
     default=False,
-    help="レイアウト検証をスキップして強制的にテンプレ工程を継続する（緊急時のみ使用）",
+    help="レイアウト検証をスキップして強制的にテンプレ stage を継続する（緊急時のみ使用）",
 )
 def template(  # noqa: PLR0913
     template_path: Path,
@@ -2854,7 +2854,7 @@ def template(  # noqa: PLR0913
     slide: bool,
     force: bool,
 ) -> None:
-    """テンプレ工程（抽出・検証・必要に応じてリリース）を実行する。"""
+    """テンプレ stage（抽出・検証・必要に応じてリリース）を実行する。"""
     _log_current_llm_provider("template")
     try:
         extraction_result = _run_template_extraction(
@@ -2905,7 +2905,7 @@ def template(  # noqa: PLR0913
         raise click.exceptions.Exit(code=6)
 
     if not with_release:
-        click.echo("テンプレ工程（抽出＋検証）が完了しました。")
+        click.echo("テンプレ stage（抽出＋検証）が完了しました。")
         return
 
     if brand is None or version is None:
@@ -2939,7 +2939,7 @@ def template(  # noqa: PLR0913
     if release_result.release.diagnostics.errors:
         raise click.exceptions.Exit(code=6)
 
-    click.echo("テンプレ工程（抽出＋検証＋リリース）が完了しました。")
+    click.echo("テンプレ stage（抽出＋検証＋リリース）が完了しました。")
 
 
 @app.command("tpl-extract")

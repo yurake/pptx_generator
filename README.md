@@ -34,11 +34,11 @@
 - 資料データ（プレーンテキストや PDF など）とプレゼン仕様 JSON を取り込み、PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
 
 ## アーキテクチャ概要
-本プロジェクトは 4 工程で資料を生成します。詳細は `docs/design/design.md` を参照してください。
+本プロジェクトは 4 stage 構成で資料を生成します。詳細は `docs/design/design.md` を参照してください。
 
-| 工程 | 入力 | 出力 | 主な出力先 | 概要 |
+| stage | 入力 | 出力 | 主な出力先 | 概要 |
 | --- | --- | --- | --- | --- |
-| 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続工程の基盤データを用意 |
+| 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続 stage の基盤データを用意 |
 | 2. コンテンツ準備 | 資料データ(text,PDFなど)、<br>テンプレ仕様(`jobspec.json`)  | ドラフト(`prepare_card.json`) | `.pptx/prepare/` | 入力データをスライド候補へ整形し、生成AIを併用しながら正規化を行う |
 | 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
 | 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録（デフォルト出力先は `.pptx/gen/`） |
@@ -56,28 +56,28 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**工程 1 テンプレ**"]:::stage
+  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 テンプレ**"]:::stage
   S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**工程 2 コンテンツ準備**"]:::stage
+  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 コンテンツ準備**"]:::stage
   S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
   PrepareCards --> S3
 
   %% ======= Stage 3 =======
-  S3["**工程 3 マッピング**"]:::stage
+  S3["**stage 3 マッピング**"]:::stage
   Jobspec --> S3
   S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**工程 4 PPTX生成**"]:::stage
+  Ready --> S4["**stage 4 PPTX生成**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
   S4 --> PDF["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
     direction LR
-    A1["**工程（自動/HITL）**"]:::stage
+    A1["**stage（自動/HITL）**"]:::stage
     A2["**システム生成ファイル**"]:::file
     A3["**ユーザー準備ファイル**"]:::userfile
     A4["**最終成果物**"]:::final
@@ -95,29 +95,29 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**工程 1 テンプレ**"]:::stage
+  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 テンプレ**"]:::stage
   S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**工程 2 コンテンツ準備 (slot 生成)**"]:::stage
+  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (slot 生成)**"]:::stage
   SpecStatic --> S2Static
   S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
 
   %% ======= Stage 3 =======
-  S3Static["**工程 3 マッピング (Blueprint 検証)**"]:::stage
+  S3Static["**stage 3 マッピング (Blueprint 検証)**"]:::stage
   SpecStatic --> S3Static
   S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  ReadyStatic --> S4Static["**工程 4 PPTX生成**"]:::stage
+  ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
   S4Static --> PDFStatic["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph LegendStatic[凡例]
     direction LR
-    B1["**工程（自動/HITL）**"]:::stage
+    B1["**stage（自動/HITL）**"]:::stage
     B2["**テンプレ仕様 / 構造ファイル**"]:::file
     B3["**ユーザー準備ファイル**"]:::userfile
     B4["**最終成果物**"]:::final
@@ -144,7 +144,7 @@ flowchart TD
 
 ## CLI チートシート
 
-| 工程 | コマンド例 | 主な出力 | 補足 |
+| stage | コマンド例 | 主な出力 | 補足 |
 | --- | --- | --- | --- |
 | 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。usage_tags は Template AI が既定で推定し、`PPTX_TEMPLATE_LLM_PROVIDER`（未指定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などのプロバイダを切り替える。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
 | 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
@@ -157,14 +157,14 @@ flowchart TD
 - 3.マッピンングの個別サブコマンド（ `outline` / `mapping` ）の詳細は `docs/runbooks/story-outline-ops.md` を参照してください。
 
 
-## 工程別ガイド概要
-ここでは各工程の目的と主要な参照ドキュメントをまとめます。詳細な手順やチェックリストはリンク先を参照してください。
+## stage 別ガイド概要
+ここでは各 stage の目的と主要な参照ドキュメントをまとめます。詳細な手順やチェックリストはリンク先を参照してください。
 
 ### 原則
 - CLI の詳細なオプションは各サブコマンドに対して `uv run pptx <cmd> --help` を参照してください。
 - `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
 
-### 工程 1: テンプレ工程
+### stage 1: テンプレ stage
 - テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
 - 抽出と検証は `uv run pptx template` で一括実行します。リリースメタが必要な場合は `--with-release --brand <brand> --version <ver>` を付与してください。
   ```bash
@@ -173,14 +173,14 @@ flowchart TD
     --with-release --brand <brand> --version <version>
   ```
   - 既定の出力先は `.pptx/extract/` です。抽出成果物に加え、`--with-release` 指定時は `.pptx/release/` に `template_release.json` や `release_report.json` が生成されます。
-- 個別コマンド（`tpl-extract` / `layout-validate` / `tpl-release`）やゴールデンサンプル運用は `docs/design/cli-command-reference.md` の「テンプレ工程詳細オプション」を参照してください。
+- 個別コマンド（`tpl-extract` / `layout-validate` / `tpl-release`）やゴールデンサンプル運用は `docs/design/cli-command-reference.md` の「テンプレ stage 詳細オプション」を参照してください。
 - 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
 
-### 工程 2: コンテンツ準備
+### stage 2: コンテンツ準備
 - プレペア入力（Markdown / JSON）を `PrepareCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
 - ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
 - 代表的な実行例:
-- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json` などを出力します。CLI はこれらのパスを `prepare_card.json.meta.*` に書き込み、後続工程はメタ情報から自動的に解決します。
+- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json` などを出力します。CLI はこれらのパスを `prepare_card.json.meta.*` に書き込み、後続 stage はメタ情報から自動的に解決します。
 - Dynamic モードでは `prepare_card.json.cards[*].order` の昇順で `pptx compose` / `pptx outline` がスライドを生成し、HITL の並び替えをそのまま反映します。Static モードはテンプレ Blueprint / JobSpec の順序を優先し、`ai_generation_meta.mode` が未設定・未知値の場合はエラーになります。
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
@@ -189,8 +189,8 @@ flowchart TD
   - 主な生成物: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`
   - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards` のみ指定すれば十分です（ログ・メタは `prepare_card.json.meta` から自動参照されます）。
 
-### 工程 3: マッピング (HITL + 自動)
-- 章構成承認とレイアウト割付を同一工程で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
+### stage 3: マッピング (HITL + 自動)
+- 章構成承認とレイアウト割付を同一 stage で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
 - 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（ドラフトは `.pptx/draft/`、マッピング成果物は `.pptx/compose/`）を維持します。
   ```bash
   uv run pptx compose .pptx/extract/jobspec.json \
@@ -200,10 +200,10 @@ flowchart TD
   # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
   ```
 - jobspec にはテンプレートとレイアウトのパスを `meta.template_path` / `meta.layouts_path` として保存しておきます。CLI はこれらのメタ情報を必須とし、欠落している場合はエラーになります。
-- JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し工程3を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
-- `pptx gen` は工程4のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
+- JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し stage 3 を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
+- `pptx gen` は stage 4 のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
 
-### 工程 4: PPTX レンダリング
+### stage 4: PPTX レンダリング
 - `pptx gen` サブコマンドで `generate_ready.json` を入力し、PPTX／PDF（任意）と監査ログを生成します。
   ```bash
   uv run pptx gen .pptx/compose/generate_ready.json \
@@ -218,7 +218,7 @@ flowchart TD
 - 最終成果物（`proposal.pptx` や任意の `proposal.pdf`）および中間ファイルの一覧は `docs/design/design.md` を参照してください。
 
 ## 詳細コマンドリファレンス
-- 4 工程パイプラインと各コマンドの責務・主要オプションは `docs/design/cli-command-reference.md` を参照してください。
+- 4 stage パイプラインと各コマンドの責務・主要オプションは `docs/design/cli-command-reference.md` を参照してください。
 
 ## テスト・検証
 - 全体テスト: `uv run --extra dev pytest`
@@ -249,7 +249,7 @@ flowchart TD
 - `docs/design/design.md`: アーキテクチャ全体像
 - `docs/design/schema/README.md`: 中間 JSON スキーマと AI レビュー仕様
 - `docs/requirements/requirements.md`: ビジネス／機能要件
-- `docs/requirements/stages/stage-0x-*.md`: 各工程の詳細要件
+- `docs/requirements/stages/stage-0x-*.md`: 各 stage の詳細要件
 - `docs/notes/20251012-readme-refactor.md`: README リファクタリングの検討メモ
 - `docs/roadmap/roadmap.md`: ロードマップとテーマ一覧
 

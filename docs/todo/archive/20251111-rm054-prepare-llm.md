@@ -1,5 +1,5 @@
 ---
-目的: 工程2 dynamic モードで生成AIを呼び出すよう Prepare オーケストレーションを実装する
+目的: stage 2 dynamic モードで生成AIを呼び出すよう Prepare オーケストレーションを実装する
 関連ブランチ: feat/rm054-static-blueprint-plan
 関連Issue: #272
 roadmap_item: RM-054 静的テンプレ構成統合

@@ -1,5 +1,5 @@
 ---
-目的: README に工程1 テンプレ準備 CLI 利用手順を追記する
+目的: README に stage 1 テンプレ準備 CLI 利用手順を追記する
 関連ブランチ: docs/readme-template-cli
 関連Issue: #190
 roadmap_item: RM-019 CLI ツールチェーン整備
@@ -10,7 +10,7 @@ roadmap_item: RM-019 CLI ツールチェーン整備
 - [x] 計画策定（スコープ・前提・担当の整理）
   - メモ: 2025-10-15 ユーザー承認済み（チャット返信 "ok"）
 - [x] 設計・実装方針の確定
-  - メモ: README 工程1で紹介する CLI フローとテンプレ要件を整理済み。
+  - メモ: README stage 1 で紹介する CLI フローとテンプレ要件を整理済み。
 - [x] ドキュメント更新（要件・設計）
   - メモ: 対象外（README のみ更新で要件・設計ドキュメントに変更なし）。
   - [x] docs/requirements 配下
@@ -32,4 +32,4 @@ roadmap_item: RM-019 CLI ツールチェーン整備
   - メモ: PR #192 https://github.com/yurake/pptx_generator/pull/192（2025-10-16 完了）
 
 ## メモ
-- README の工程2 記述とスタイルを揃えることを意識する
+- README の stage 2 記述とスタイルを揃えることを意識する

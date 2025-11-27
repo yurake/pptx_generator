@@ -10,7 +10,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - 対象: DraftStructuring 直前に AI ベースの ID 整合ステップを挿入し、`prepare_card.json.cards[*].card_id` と `JobSpec.slides[*].id` の最適マッピングを生成する。
-    - 前提: `content_ai` のクライアント／ポリシー仕組みを流用し、カード属性（章・intent・本文要約等）と JobSpec スライド情報（title/layout/stage情報）を AI へ渡す。
+    - 前提: `content_ai` のクライアント／ポリシー仕組みを流用し、カード属性（章・intent・本文要約等）と JobSpec スライド情報（title/layout/stage 情報）を AI へ渡す。
     - 戦略:
       - card_id ごとに AI が推奨 slide_id と信頼スコアを返すプロンプト設計。
       - 閾値以上は即適用、閾値未満は手動エラーへフォールバック（既存 missing_ids チェックを最終フェイルセーフとして残す）。
@@ -36,7 +36,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [x] docs/runbook 配下
     - メモ: `docs/runbooks/story-outline-ops.md` の手順 5 に DraftStructuringError の復旧手順を確認。
   - [x] README.md / AGENTS.md
-    - メモ: `README.md` の工程3 説明へ品質ゲート通知を追記済みであることを確認。
+    - メモ: `README.md` の stage 3 説明へ品質ゲート通知を追記済みであることを確認。
 - [x] 関連Issue 行の更新
 - [x] PR 作成
   - メモ: PR #280 https://github.com/yurake/pptx_generator/pull/280（2025-11-09 完了）

@@ -1,6 +1,6 @@
 # ステージ1: テンプレ準備スキーマ
 
-工程1ではテンプレート受け渡しの品質を確保するため、以下の成果物を想定する。
+stage 1 ではテンプレート受け渡しの品質を確保するため、以下の成果物を想定する。
 
 ## ファイル
 - `template_spec.json`: テンプレ抽出結果。`layout_mode` や Blueprint を含むテンプレ構造を表現し、`jobspec.json.meta.template_spec_path` から参照される。`layouts[*]` には Stage1 時点で集計した `placeholder_summary`（種別ごとの counts / area_ratio / attributes）と、用途タグ推定のヒューリスティック結果 `heuristic`（tags / reasons / has_title_placeholder など）を保持する。
@@ -11,7 +11,7 @@
 ## Blueprint スキーマ
 - 静的テンプレートを扱う場合は `template_spec.json.blueprint` にスライド順と slot 情報を保持する。
 - `layout_mode` は `dynamic` / `static` を取り、`static` の場合は Blueprint を必須とする。
-- `jobspec.json.meta.template_spec_path` には `template_spec.json` への相対パスを記録し、工程2/3 から Blueprint を参照できるようにする。
+- `jobspec.json.meta.template_spec_path` には `template_spec.json` への相対パスを記録し、stage 2/3 から Blueprint を参照できるようにする。
 
 ```jsonc
 {
@@ -44,14 +44,14 @@
 ```
 
 - `slides[*].layout` は抽出済みレイアウト名と一致させる。
-- `slots[*].anchor` はテンプレ内の shape 名に一致させ、`required=true` の slot は工程2/3 で必須充足を検査する。
-- `content_type` は `text` / `image` / `table` / `chart` / `shape` / `other` を想定し、工程2 のカード生成と工程3 のマッピングに利用する。
+- `slots[*].anchor` はテンプレ内の shape 名に一致させ、`required=true` の slot は stage 2/3 で必須充足を検査する。
+- `content_type` は `text` / `image` / `table` / `chart` / `shape` / `other` を想定し、stage 2 のカード生成と stage 3 のマッピングに利用する。
 
 ### 自動描画プレースホルダーの扱い
 - PowerPoint が自動描画するプレースホルダー（例: `SLIDE_NUMBER`、`DATE`／`DATETIME`、`FOOTER`、`HEADER`）は `jobspec.json` にそのまま残るが、`auto_draw=true` が付与される。  
-- Blueprint には自動描画プレースホルダーの slot を生成しないため、工程2/3 のカード整形でコンテンツ差し込み対象とはならない。  
+- Blueprint には自動描画プレースホルダーの slot を生成しないため、stage 2/3 のカード整形でコンテンツ差し込み対象とはならない。  
 - 実装側（レンダラー等）は `auto_draw` を判定してテンプレート既定の描画枠を維持する。  
-- 上記以外のプレースホルダーは従来通り jobspec に残り、工程2 以降でコンテンツ差し込み対象となる。
+- 上記以外のプレースホルダーは従来通り jobspec に残り、stage 2 以降でコンテンツ差し込み対象となる。
 
 ## template_release.json
 ```jsonc

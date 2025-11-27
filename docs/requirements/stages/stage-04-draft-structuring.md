@@ -1,17 +1,17 @@
-# （レガシー）工程4 ドラフト構成設計 (HITL) 要件詳細
+# （レガシー）stage 4 ドラフト構成設計 (HITL) 要件詳細
 
-> **注記**: 現行フローではドラフト構成設計は工程3「マッピング」で実施し、`generate_ready.json` を出力する。最新要件は [stage-03-mapping.md](../stages/stage-03-mapping.md) を参照。本ファイルは旧 `draft_*` フローの履歴として保持する。
+> **注記**: 現行フローではドラフト構成設計は stage 3「マッピング」で実施し、`generate_ready.json` を出力する。最新要件は [stage-03-mapping.md](../stages/stage-03-mapping.md) を参照。本ファイルは旧 `draft_*` フローの履歴として保持する。
 
 ## 概要
 - PrepareCard 成果物を章立て・スライド順に配置し、`layout_hint` を確定させる。
-- HITL 承認により構成をロックし、後続工程に安定した入力を提供する。
+- HITL 承認により構成をロックし、後続 stage に安定した入力を提供する。
 
 ## 入力
-- 工程3の `prepare_card.json`（`story.phase` / `intent_tags` / `supporting_points` などカード情報を含む）。
-- 工程2の `layouts.jsonl`（利用可能なレイアウトカテゴリのヒント）。
+- stage 3 の `prepare_card.json`（`story.phase` / `intent_tags` / `supporting_points` などカード情報を含む）。
+- stage 2 の `layouts.jsonl`（利用可能なレイアウトカテゴリのヒント）。
 - 制約情報（本編枚数上限、章構成テンプレ、付録方針）。
 - 章テンプレ定義 (`config/chapter_templates/*.json`) と構成テンプレ適用ポリシー。
-- Analyzer 連携データ（`analysis_summary.json` など工程6の集計結果）。
+- Analyzer 連携データ（`analysis_summary.json` など stage 6 の集計結果）。
 - 差戻し理由テンプレート辞書 (`return_reasons.json`)。
 
 ## 出力
@@ -27,17 +27,17 @@
 2. AI が提案する構成案をベースに、人が CLI / 外部ツールから順序や章を調整する。
 3. `layout_hint` を選択し、必要に応じて付録送りや統合を行う。
 4. 承認単位（章・スライド）で承認フラグを更新し、差戻し理由を記録する。
-5. 承認完了後に `draft_approved.json` を出力し、工程5へ渡す。
+5. 承認完了後に `draft_approved.json` を出力し、stage 5 へ渡す。
 
 ## 品質ゲート
 - すべてのスライドが章に所属し、章順が定義されている。
-- 工程3のストーリーフェーズ情報と章構成が整合している（不一致は差戻しまたは章調整を実施）。
+- stage 3 のストーリーフェーズ情報と章構成が整合している（不一致は差戻しまたは章調整を実施）。
 - `layout_hint` が未設定のスライドが存在しない。
 - 本編枚数が制約内に収まっている（超過は付録へ移動済み）。
 - 承認ログが揃い、差戻し理由が空欄でない。
 
 ## ログ・連携
-- 承認イベントログと工程3ログを `slide_uid` で突合可能にする。
+- 承認イベントログと stage 3 ログを `slide_uid` で突合可能にする。
 - レイアウト候補のスコア（用途タグ一致率、容量適合度、多様性）を記録する。
 - 付録送り・統合の履歴を残し、後続のマッピングで参照する。
 - Analyzer 指摘サマリを章・スライド単位で保存し、差戻しテンプレートと相互参照できるようにする。
@@ -66,8 +66,8 @@
 - 運用要件: コードの追加・変更は HITL 運用ポリシーに基づき承認プロセスを実施し、辞書更新時は CLI で自動取得できること。
 
 ### Analyzer サマリ連携要件
-- 工程6が生成する `analysis_summary.json` の形式を標準化（スライド単位の `severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at`）。
-- Draft 工程は読み込み時にスライド ID の整合性チェックを行い、不一致があれば詳細エラーを返却する。
+- stage 6 が生成する `analysis_summary.json` の形式を標準化（スライド単位の `severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at`）。
+- Draft stage は読み込み時にスライド ID の整合性チェックを行い、不一致があれば詳細エラーを返却する。
 - analyzer_summary の導入により、差戻しテンプレ候補や layout_hint スコアに Analyzer 情報を反映する。
 - 運用要件: `analysis_summary.json` は 24 時間以内のデータを使用し、古いデータは再解析を促す。
 
@@ -82,5 +82,5 @@
 
 ## CLI 支援
 - `pptx outline` コマンドは Prepare 成果物とレイアウト候補を入力に `draft_draft.json` / `draft_approved.json` / `draft_review_log.json` を生成し、章・スライド統計を `draft_meta.json` に出力する。
-- `--prepare-cards` で工程2の成果物を指定すると、`prepare_card.json.meta` に記録されたログ／AIメタのパスを用いて Spec と組み合わせた構成計算を実行する。
-- メタ情報には章ごとの承認状態や付録枚数上限が含まれ、工程5以降の監査ログや再実行時のトレースに活用できる。
+- `--prepare-cards` で stage 2 の成果物を指定すると、`prepare_card.json.meta` に記録されたログ／AIメタのパスを用いて Spec と組み合わせた構成計算を実行する。
+- メタ情報には章ごとの承認状態や付録枚数上限が含まれ、stage 5 以降の監査ログや再実行時のトレースに活用できる。

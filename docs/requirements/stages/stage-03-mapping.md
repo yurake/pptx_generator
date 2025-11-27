@@ -1,4 +1,4 @@
-# 工程3 マッピング (HITL + 自動) 要件詳細
+# stage 3 マッピング (HITL + 自動) 要件詳細
 
 ## 概要
 - Prepare 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
@@ -8,7 +8,7 @@
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`, `template_spec.json`。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
-- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし工程3を停止する。
+- Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし stage 3 を停止する。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。
 - 差戻し理由辞書 `config/return_reasons.json`（任意）。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
@@ -25,7 +25,7 @@
    - `prepare_card.json.cards[*].card_id` と `jobspec.json.slides[*].id` を AI スライドマッチャで突合し、カードごとに最適な `slide_id` を推奨する。
    - 推奨結果は `content_approved` の `ContentSlide.id` として反映し、信頼度（閾値）未満のカードは保留扱いとして最終フェイルセーフ（`DraftStructuringError`）で検知する。
    - アライメント結果（採用数・信頼度・未確定カード）を監査メタへ記録し、ログに INFO レベルで出力する。
-   - このステップは工程3開始前に実施され、以降のレイアウト候補評価・フォールバック処理とは独立して動作する。
+   - このステップは stage 3 開始前に実施され、以降のレイアウト候補評価・フォールバック処理とは独立して動作する。
 
 2. **章構成管理（HITL）**
    - 章テンプレートの適合率を計算し、過不足章は `generate_ready_meta.template.mismatch[]` に出力する。
@@ -65,7 +65,7 @@
   - `generate_ready` 系成果物のみ再生成する。`--refresh-candidates` 指定時は候補スコアも再計算する。
 
 ## 品質ゲート
-- JobSpec の `slides[*].id` が `prepare_card.json` 由来の `content_approved` に存在しない場合は `DraftStructuringError` を送出し、欠損 ID 一覧を含むメッセージと共に工程3を停止する。CLI では exit code 6 を返し、HITL が ID を修正後に再実行すること。
+- JobSpec の `slides[*].id` が `prepare_card.json` 由来の `content_approved` に存在しない場合は `DraftStructuringError` を送出し、欠損 ID 一覧を含むメッセージと共に stage 3 を停止する。CLI では exit code 6 を返し、HITL が ID を修正後に再実行すること。
 - `generate_ready_meta.sections[*].status` に未承認 (`pending`) が残っていない。
 - `generate_ready.json` のスライド数が `generate_ready_meta.statistics.cards_total` と一致する。
 - `draft_mapping_log.json` の `warnings` と `analyzer.issue_count` が監視対象（PagerDuty 等）へ連携可能な形式である。
@@ -74,7 +74,7 @@
 ## 静的モード固有要件
 - Blueprint の `slides` は `generate_ready.slides[*].meta.blueprint_slide_id` と同期させる。
 - `prepare_card.json.cards[*].slot_id` と Blueprint `slots[*].slot_id` を 1:1 で対応させ、未使用 slot は `draft_mapping_log.json.static_slot_checks.unused_slots` に列挙する。
-- `generate_ready_meta.statistics` に `static_required_total` / `static_required_fulfilled` / `static_optional_used` を追加し、工程2の統計値と一致させる。
+- `generate_ready_meta.statistics` に `static_required_total` / `static_required_fulfilled` / `static_optional_used` を追加し、stage 2 の統計値と一致させる。
 - `generate_ready_meta.layout_mode` と `ai_generation_meta.mode` は必ず一致させ、監査ログで静的モードの実行を追跡できるようにする。
 - 静的モード時の exit code 6 は Blueprint の必須 slot 未充足または `slot_id` 重複検知を表す。CLI は詳細を標準エラーに出力する。
 - `generate_ready.slides[*].meta.blueprint_slots[*].fulfilled` を監査し、slot 充足状況を `draft_mapping_log.json` と同期させる。
@@ -86,4 +86,4 @@
 - 章テンプレート適合率のダッシュボード表示と KPI 化。
 - Analyzer 指摘に応じた自動フォールバック戦略の改善。
 - PrepareCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
-- `ContentElements.body` は Stage2 から全文を維持し、工程3ではレイアウトの `text_hint.max_lines` を参照してオーバーフローを警告ログに記録するのみとする（自動トリミングは実施しない、RM-068 実施済み）。
+- `ContentElements.body` は Stage2 から全文を維持し、stage 3 ではレイアウトの `text_hint.max_lines` を参照してオーバーフローを警告ログに記録するのみとする（自動トリミングは実施しない、RM-068 実施済み）。

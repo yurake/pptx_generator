@@ -1,14 +1,14 @@
 # コンテンツ準備スキーマ
 
-工程2（コンテンツ準備）で生成される Prepare 成果物の JSON 仕様を定義する。
+stage 2（コンテンツ準備）で生成される Prepare 成果物の JSON 仕様を定義する。
 
 ## ファイル
-- `prepare_card.json`: PrepareCard コレクション。工程3のドラフト構築・マッピングの基礎データ。
+- `prepare_card.json`: PrepareCard コレクション。stage 3 のドラフト構築・マッピングの基礎データ。
 - `prepare_log.json`: プレペア承認イベントの監査ログ（初期状態は空配列）。
 - `prepare_ai_log.json`: 生成 AI との対話ログとワーニング情報。
 - `ai_generation_meta.json`: ポリシー ID、生成統計、入力ハッシュなどのメタ情報。
 - `prepare_story_outline.json`: 章構成とカード ID の対応表。
-- `audit_log.json`: 工程2全体の監査メタ。成果物パスと統計をまとめる。
+- `audit_log.json`: stage 2 全体の監査メタ。成果物パスと統計をまとめる。
 
 ## prepare_card.json
 ```jsonc
@@ -62,7 +62,7 @@
 ### フィールド補足
 - `prepare_id`: プレペア成果物を一意に識別する ID。
 - `meta`: 全カード共通のメタ情報（例: `locale` / `generated_at`）。任意。
-- `card_id`: 後続工程で参照するユニークなスラグ。人間が識別しやすい文字列を推奨。
+- `card_id`: 後続 stage で参照するユニークなスラグ。人間が識別しやすい文字列を推奨。
 - `order`: カードの並び順。`card_id` とは独立して管理する。
 - `role.story_phase`: ストーリーライン分類（`introduction` / `problem` / `solution` / `impact` / `next` など）。
 - `role.intent_tags`: レイアウト選定や意図推定に利用するタグ。
@@ -104,7 +104,7 @@
 }
 ```
 
-- `content_hash`: `cards[].content.body` / `cards[].content.notes` をもとにしたハッシュ。工程3で差分検知に利用。
+- `content_hash`: `cards[].content.body` / `cards[].content.notes` をもとにしたハッシュ。stage 3 で差分検知に利用。
 - `statistics`: カード総数および slot coverage の集計値。承認状態は PrepareStore 側で管理する。
 
 ## prepare_story_outline.json
@@ -119,7 +119,7 @@
 }
 ```
 
-- `chapters[].cards`: 章に紐づく `card_id` の配列。工程3で章順を初期化する。
+- `chapters[].cards`: 章に紐づく `card_id` の配列。stage 3 で章順を初期化する。
 - `narrative_theme` / `summary`: オプション項目。HITL で補完可能。
 
 ## audit_log.json
@@ -143,7 +143,7 @@
 }
 ```
 
-- 監査ログは全成果物の絶対パスとハッシュ（将来拡張）を記録する。工程3・4 の `audit_log.json` と同様、`hashes` セクション追加を想定。
+- 監査ログは全成果物の絶対パスとハッシュ（将来拡張）を記録する。stage 3・4 の `audit_log.json` と同様、`hashes` セクション追加を想定。
 
 ## バリデーション
 - `prepare_card.json` の `cards[].card_id` は一意であること。

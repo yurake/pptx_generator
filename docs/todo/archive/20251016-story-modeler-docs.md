@@ -1,5 +1,5 @@
 ---
-目的: 工程3でストーリー要素を取り込むための企画・要件・設計ドキュメントを整備し、RM-005 の実装準備を整える
+目的: stage 3 でストーリー要素を取り込むための企画・要件・設計ドキュメントを整備し、RM-005 の実装準備を整える
 関連ブランチ: docs/rm005-story-modeler
 関連Issue: #196
 roadmap_item: RM-005 プレゼンストーリーモデラー
@@ -12,7 +12,7 @@ roadmap_item: RM-005 プレゼンストーリーモデラー
 - [x] 設計・実装方針の確定
   - メモ: ストーリーフェーズ分類と `story_outline.json` スキーマ草案をレビュー可能な形にまとめる（docs/design/rm005-story-modeler.md 参照）
 - [x] ドキュメント更新（要件・設計）
-  - メモ: stage-03 要件差分と工程4連携を整理し、迷う点はユーザーへ相談した結果を残す
+  - メモ: stage-03 要件差分と stage 4 連携を整理し、迷う点はユーザーへ相談した結果を残す
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
@@ -33,5 +33,5 @@ roadmap_item: RM-005 プレゼンストーリーモデラー
 
 ## メモ
 - `stage-03-content-normalization` のストーリー要素追記は本タスクで実施する。
-- `story_outline` の仕様合意後に工程4/5の ToDo を見直し、必要な連動タスクを洗い出す。
+- `story_outline` の仕様合意後に stage 4/5の ToDo を見直し、必要な連動タスクを洗い出す。
 - RM-024 にて `draft_approved.json` スキーマ拡張と UI 反映のフォローアップを実施する。

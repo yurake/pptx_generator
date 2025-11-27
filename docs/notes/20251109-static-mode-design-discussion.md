@@ -3,41 +3,41 @@
 
 静的テンプレートモード設計
 ユーザーが準備したテンプレートのpptxはスライドの順番、プレースホルダー、ページ数が固定になっており、このテンプレートに合わせてコンテンツを配置する必要がある。
-工程1 template では静的テンプレートであることをオプションで指定(例: --mode static)。outputはこれまでと同じjobspec.jsonやlayouts.jsonのままでok。
-工程2 prepare では --mode static を指定。入力引数にjobspec.jsonを追加し、このjobspec.jsonに従ってスライド素材を生成する。出力は generate_ready.json で、動的テンプレートモードと同じスキーマを使う。ただし各スライド素材には jobspec.json の slide_id を紐付ける。outputはこれまでと同じprepare_card.jsonのままでok。**jobspecのcard1つ1つに対して適切なコンテンツを入力データから差し込む必要があり、これを生成AI呼び出しで行う。1ページずつ呼び出し**
-工程3 compose では --mode static を指定。generate_ready.json と jobspec.json を参照し、outputはこれまでと同じdraft_approved.json、generate_ready.jsonのままでok。各json作成時には生成AI呼び出しを行う必要がないため、行わないように制御する。
-工程4 変更なし
+stage 1 template では静的テンプレートであることをオプションで指定(例: --mode static)。outputはこれまでと同じjobspec.jsonやlayouts.jsonのままでok。
+stage 2 prepare では --mode static を指定。入力引数にjobspec.jsonを追加し、このjobspec.jsonに従ってスライド素材を生成する。出力は generate_ready.json で、動的テンプレートモードと同じスキーマを使う。ただし各スライド素材には jobspec.json の slide_id を紐付ける。outputはこれまでと同じprepare_card.jsonのままでok。**jobspecのcard1つ1つに対して適切なコンテンツを入力データから差し込む必要があり、これを生成AI呼び出しで行う。1ページずつ呼び出し**
+stage 3 compose では --mode static を指定。generate_ready.json と jobspec.json を参照し、outputはこれまでと同じdraft_approved.json、generate_ready.jsonのままでok。各json作成時には生成AI呼び出しを行う必要がないため、行わないように制御する。
+stage 4 変更なし
 
 動的テンプレートモード設計
 ユーザーが準備したテンプレートのpptxはスライドの順番やページ数は可変で、コンテンツに応じて適切なスライドを採用する必要がある。
 コンテンツをスライド形式でドラフトしたのち（prepare_card.json）、テンプレートとマッピングして最終的なスライドを決定する（draft_approved.json、generate_ready.json）。
-工程1 template では動的テンプレートであることをオプションで指定(例: --mode dynamic)。outputはこれまでと同じjobspec.jsonやlayouts.jsonのままでok。
-工程2 prepare では --mode dynamic を指定。入力引数にjobspec.jsonは不要。出力はこれまでと同じprepare_card.jsonのままでok。**コンテンツをスライド形式でドラフトするために生成AI呼び出しを行う。全体で1回の呼び出し**
-工程3 compose では --mode dynamic を指定。処理の内容（生成AIを2回呼び出す等）や、outputはこれまでと同じ。
-工程4 変更なし
+stage 1 template では動的テンプレートであることをオプションで指定(例: --mode dynamic)。outputはこれまでと同じjobspec.jsonやlayouts.jsonのままでok。
+stage 2 prepare では --mode dynamic を指定。入力引数にjobspec.jsonは不要。出力はこれまでと同じprepare_card.jsonのままでok。**コンテンツをスライド形式でドラフトするために生成AI呼び出しを行う。全体で1回の呼び出し**
+stage 3 compose では --mode dynamic を指定。処理の内容（生成AIを2回呼び出す等）や、outputはこれまでと同じ。
+stage 4 変更なし
 
 以下、いただいた設計イメージと現行実装のつながり／差分を整理しました。
 
 **共通事項**
 - `--mode dynamic/static` オプション導入・テンプレ種類の明示指定：実装済み。
-- 動的モードの既存パイプライン構成は維持（工程4も変更なし）。
+- 動的モードの既存パイプライン構成は維持（stage 4 も変更なし）。
 
-**工程1 template**
+**stage 1 template**
 - 現行実装では `--layout-mode static` 指定時に `template_spec.json` へ `layout_mode` と Blueprint を自動追加します。
 - いただいたイメージでは Stage1 の出力（jobspec/layouts）は既存通りを想定とのことですが、現実装では追加フィールドが増えています（既存 JSON と互換性は保っているものの、新規キーが入ります）。  
   → Blueprint を別ファイルに切り出す／追加キーを抑止する必要があれば要調整です。
 
-**工程2 prepare**
+**stage 2 prepare**
 - 現実装では `--template-spec`（Blueprint 含む `template_spec.json`）を必須にし、Blueprint に基づき slot ごとのカードを生成します。`jobspec.json` は参照していません。
 - 生成結果はこれまで通り `prepare_card.json` 等で、`generate_ready.json` は出力していません（従来フローを踏襲）。  
 - 生成AI呼び出しは slot 単位のループに拡張しておらず、従来通りの章単位生成（既存オーケストレータ）なので「1ページずつ生成AIを呼ぶ」仕様には未対応です。
-- ご提示の「jobspec.json を入力にして slot 生成」「工程2で generate_ready.json を出力」の方針とは乖離があります。こちらを採用する場合、工程2のインターフェースと成果物構成を変更する追加作業が必要です。
+- ご提示の「jobspec.json を入力にして slot 生成」「stage 2 で generate_ready.json を出力」の方針とは乖離があります。こちらを採用する場合、stage 2 のインターフェースと成果物構成を変更する追加作業が必要です。
 
-**工程3 compose / mapping**
-- Static モードでは、工程2で生成したカード＋Blueprintから直接 `draft_approved.json` / `generate_ready.json` を組み立て、レイアウトスコアリングや追加 AI 呼び出しは停止しています（ご要望通り）。  
+**stage 3 compose / mapping**
+- Static モードでは、stage 2 で生成したカード＋Blueprintから直接 `draft_approved.json` / `generate_ready.json` を組み立て、レイアウトスコアリングや追加 AI 呼び出しは停止しています（ご要望通り）。  
 - ただし、Stage2 で `generate_ready.json` を用意しないため、compose は“Blueprint ベースの generate_ready をその場で確定する”振る舞いです。
 
-**工程4**
+**stage 4**
 - 無変更で設計と一致しています。
 
 **動的モード (baseline)**

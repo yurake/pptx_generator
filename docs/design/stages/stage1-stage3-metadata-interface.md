@@ -5,14 +5,14 @@
 - 静的モード（prepare blueprint）の検証や usage_tags 正規化の根拠を Stage3 ログに連携し、手動確認コストを下げる。
 
 ## 前提と用語
-- **Stage1**: `TemplateExtractor` により `template_spec.json` や Blueprint を生成する工程。
-- **Stage2**: `LayoutValidationSuite`（およびテンプレ検証 CLI）が `layouts.jsonl`・`diagnostics.json` を出力する工程。
-- **Stage3**: `DraftStructuringStep` と `CardLayoutRecommender` がレイアウト候補を決定する工程。
+- **Stage1**: `TemplateExtractor` により `template_spec.json` や Blueprint を生成する stage。
+- **Stage2**: `LayoutValidationSuite`（およびテンプレ検証 CLI）が `layouts.jsonl`・`diagnostics.json` を出力する stage。
+- **Stage3**: `DraftStructuringStep` と `CardLayoutRecommender` がレイアウト候補を決定する stage。
 - **Blueprint**: 静的モード向け slot 定義（`TemplateBlueprint`）。`prepare_generation_meta.mode == "static"` のとき必須。
-- **Canonical usage tags**: `config/usage_tags.json` で定義された語彙。全工程で同一タグ集合を利用する。
+- **Canonical usage tags**: `config/usage_tags.json` で定義された語彙。全 stage で同一タグ集合を利用する。
 
 ## アーティファクト間の役割整理
-| アーティファクト | 主な生成工程 | 主な利用工程 | 現在含まれる主な項目 | Stage3 への活用ポイント |
+| アーティファクト | 主な生成 stage | 主な利用 stage | 現在含まれる主な項目 | Stage3 への活用ポイント |
 | --- | --- | --- | --- | --- |
 | `template_spec.json` | Stage1: `TemplateExtractor` | Stage3: `DraftStructuringStep`（静的モード） | レイアウト名、アンカー一覧、`layout_mode`、`blueprint`（静的時） | 静的モード時の slot 定義、アンカー整合性チェック、`template_spec_path` 保存 |
 | `layouts.jsonl` | Stage2: `LayoutValidationSuite` | Stage3: `DraftStructuringStep`、`CardLayoutRecommender` | `usage_tags`（ヒューリスティック＋AI）、`placeholder_summary`、`text_hint`、`media_hint`、`blueprint` サマリ | レイアウトスコア算出、AI 推薦への入力、レイアウト診断ログの詳細化 |

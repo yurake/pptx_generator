@@ -1,5 +1,5 @@
 ---
-目的: Force オプションでテンプレート検証をスキップできるようにし、緊急時もテンプレ工程を継続可能にする
+目的: Force オプションでテンプレート検証をスキップできるようにし、緊急時もテンプレ stage を継続可能にする
 関連ブランチ: feat/rm061-usage-tags-governance
 関連Issue: #288
 roadmap_item: RM-061 usage_tags ガバナンス強化

@@ -23,7 +23,7 @@
 - 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
 
 ## rules.json の構成
-- タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング工程での警告に委譲する。
+- タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング stage での警告に委譲する。
 - `forbidden_words` は禁則語を列挙し、バリデーションで一致したテキストを拒否する。
 - `analyzer` セクションでは自動診断の閾値を管理する。
   - `min_font_size`, `default_font_size`: 箇条書きの最低フォントサイズと既定サイズ。
@@ -75,10 +75,10 @@
 - 色やフォントはスライドマスターの設定ではなく `config/branding.json` を参照して適用される。テンプレート側でフォントや配色を変えても自動では反映されない点に注意する。
 - 利用者向けテンプレートは `templates/` ディレクトリ配下に管理し、案件固有のテンプレートは `samples/` など任意の場所に置いたうえで CLI 実行時にパスを明示する。
 - 具体例として、`samples/templates/templates.pptx` にレイアウト名とアンカー命名例を添付している。
-- 画像は連携済みロゴのみを想定する。写真・アイコンなど任意画像はテンプレート側に含めず、必要に応じて後工程で人手挿入とする。チャートはテキストで構造化可能なデータのみ表形式で表現する。
+- 画像は連携済みロゴのみを想定する。写真・アイコンなど任意画像はテンプレート側に含めず、必要に応じて後 stage で人手挿入とする。チャートはテキストで構造化可能なデータのみ表形式で表現する。
 
 ## CLI 成果物命名方針
-- 工程2の出力は `.pptx/prepare/` 配下へ集約し、主要ファイルは `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json` など工程名＋役割で統一する。
+- stage 2 の出力は `.pptx/prepare/` 配下へ集約し、主要ファイルは `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json` など stage 名＋役割で統一する。
 - CLI オプションの既定値も同じ命名規則に揃え、`.pptx/prepare/` を標準入力ディレクトリとして扱う。歴史的な `.pptx/content/` パスへの依存は残さない。
 - 新しい命名ルールを適用した場合は README や runbook のサンプルコマンド、ToDo のメモ欄を更新し、利用者が参照するドキュメントと不一致にならないよう確認する。
 
