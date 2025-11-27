@@ -10,7 +10,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - 対象: DraftStructuring 直前に AI ベースの ID 整合ステップを挿入し、`prepare_card.json.cards[*].card_id` と `JobSpec.slides[*].id` の最適マッピングを生成する。
-    - 前提: `content_ai` のクライアント／ポリシー仕組みを流用し、カード属性（章・intent・本文要約等）と JobSpec スライド情報（title/layout/stage 情報）を AI へ渡す。
+    - 前提: `slide_ai` のクライアント／ポリシー仕組みを流用し、カード属性（章・intent・本文要約等）と JobSpec スライド情報（title/layout/stage 情報）を AI へ渡す。
     - 戦略:
       - card_id ごとに AI が推奨 slide_id と信頼スコアを返すプロンプト設計。
       - 閾値以上は即適用、閾値未満は手動エラーへフォールバック（既存 missing_ids チェックを最終フェイルセーフとして残す）。

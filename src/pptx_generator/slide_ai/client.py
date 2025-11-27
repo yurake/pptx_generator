@@ -12,11 +12,11 @@ from difflib import SequenceMatcher
 from typing import Protocol
 
 from ..models import JobSpec, Slide
-from .policy import ContentAIPolicy
+from .policy import SlideAIPolicy
 
 logger = logging.getLogger(__name__)
 
-_LLM_LOGGER = logging.getLogger("pptx_generator.content_ai.llm")
+_LLM_LOGGER = logging.getLogger("pptx_generator.slide_ai.llm")
 
 DEFAULT_MAX_TOKENS = 32000
 
@@ -30,7 +30,7 @@ class AIGenerationRequest:
     """LLM へのリクエスト。"""
 
     prompt: str
-    policy: ContentAIPolicy
+    policy: SlideAIPolicy
     spec: JobSpec
     slide: Slide
     intent: str

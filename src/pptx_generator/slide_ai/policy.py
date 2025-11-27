@@ -14,11 +14,11 @@ from . import prompts
 
 logger = logging.getLogger(__name__)
 
-class ContentAIPolicyError(RuntimeError):
+class SlideAIPolicyError(RuntimeError):
     """AI ポリシー定義に関する例外。"""
 
 
-class ContentAISlidePolicy(BaseModel):
+class SlideAISlidePolicy(BaseModel):
     """レイアウトごとの意図やプロンプト設定。"""
 
     layout: str | None = Field(
@@ -43,11 +43,11 @@ class ContentAISlidePolicy(BaseModel):
                 return prompts.get_prompt_template(self.prompt_id)
             except prompts.PromptRegistryError as exc:
                 msg = f"スライド用 prompt_id '{self.prompt_id}' が未登録です"
-                raise ContentAIPolicyError(msg) from exc
+                raise SlideAIPolicyError(msg) from exc
         return self.prompt_template
 
 
-class ContentAIPolicy(BaseModel):
+class SlideAIPolicy(BaseModel):
     """生成 AI 用のポリシー設定。"""
 
     id: str
@@ -64,7 +64,7 @@ class ContentAIPolicy(BaseModel):
     )
     model: str = Field(default="mock-local")
     safeguards: dict[str, Any] = Field(default_factory=dict)
-    slide_policies: list[ContentAISlidePolicy] = Field(default_factory=list)
+    slide_policies: list[SlideAISlidePolicy] = Field(default_factory=list)
 
     def resolve_intent(self, layout: str | None) -> str:
         """レイアウトに応じた意図タグを決定する。"""
@@ -96,21 +96,21 @@ class ContentAIPolicy(BaseModel):
                 return prompts.get_prompt_template(self.prompt_id)
             except prompts.PromptRegistryError as exc:
                 msg = f"ポリシー {self.id} の prompt_id '{self.prompt_id}' が未登録です"
-                raise ContentAIPolicyError(msg) from exc
+                raise SlideAIPolicyError(msg) from exc
         if self.prompt_template:
             return self.prompt_template
         msg = f"ポリシー {self.id} に prompt_id または prompt_template が設定されていません"
-        raise ContentAIPolicyError(msg)
+        raise SlideAIPolicyError(msg)
 
 
-class ContentAIPolicySet(BaseModel):
+class SlideAIPolicySet(BaseModel):
     """ポリシー定義全体。"""
 
     version: str | None = None
     default_policy_id: str
-    policies: list[ContentAIPolicy] = Field(default_factory=list)
+    policies: list[SlideAIPolicy] = Field(default_factory=list)
 
-    def get_policy(self, policy_id: str | None = None) -> ContentAIPolicy:
+    def get_policy(self, policy_id: str | None = None) -> SlideAIPolicy:
         """指定 ID のポリシーを返す。未指定時は default_policy_id を利用する。"""
 
         target_id = policy_id or self.default_policy_id
@@ -118,10 +118,10 @@ class ContentAIPolicySet(BaseModel):
             if policy.id == target_id:
                 return policy
         msg = f"ポリシー ID '{target_id}' が定義ファイルに見つかりません"
-        raise ContentAIPolicyError(msg)
+        raise SlideAIPolicyError(msg)
 
 
-def load_policy_set(path: Path) -> ContentAIPolicySet:
+def load_policy_set(path: Path) -> SlideAIPolicySet:
     """JSON ファイルからポリシー定義を読み込む。"""
 
     logger.info("Loading AI policy definition from %s", path.resolve())
@@ -129,16 +129,16 @@ def load_policy_set(path: Path) -> ContentAIPolicySet:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         msg = f"AI ポリシー定義ファイルが見つかりません: {path}"
-        raise ContentAIPolicyError(msg) from exc
+        raise SlideAIPolicyError(msg) from exc
     except json.JSONDecodeError as exc:  # noqa: PERF203
         msg = f"AI ポリシー定義の JSON 解析に失敗しました: {path}"
-        raise ContentAIPolicyError(msg) from exc
+        raise SlideAIPolicyError(msg) from exc
 
     try:
-        policy_set = ContentAIPolicySet.model_validate(payload)
+        policy_set = SlideAIPolicySet.model_validate(payload)
     except ValidationError as exc:
         msg = f"AI ポリシー定義の検証に失敗しました: {path}"
-        raise ContentAIPolicyError(msg) from exc
+        raise SlideAIPolicyError(msg) from exc
     logger.info(
         "Loaded AI policy definition from %s (policies=%d)",
         path.resolve(),

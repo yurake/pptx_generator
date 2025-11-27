@@ -10,10 +10,10 @@ roadmap_item: RM-065 フォールバック警告ログ整備
     - 必ずmainからブランチを切る
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
-    - 対象整理（スコープ、対象ファイル、前提）: 既定値へのフォールバックを行っている主要処理（mapping/renderer、template_ai/layout_ai/content_ai/prepare 等）でフォールバックを廃止し、失敗時は例外化する。既存の `fallback_report.json` やフォールバック専用成果物も挙動を見直す。現行ロギングは `WARNING` 以上が CLI に出力される前提。
+    - 対象整理（スコープ、対象ファイル、前提）: 既定値へのフォールバックを行っている主要処理（mapping/renderer、template_ai/layout_ai/slide_ai/prepare 等）でフォールバックを廃止し、失敗時は例外化する。既存の `fallback_report.json` やフォールバック専用成果物も挙動を見直す。現行ロギングは `WARNING` 以上が CLI に出力される前提。
     - ドキュメント／コード修正方針: フォールバック処理を削除または無効化し、適切な例外送出とエラーメッセージ出力を実装。`docs/notes/20251110-fallback-warning-logging.md` など関連ドキュメントを更新。
     - 確認・共有方法（レビュー、ToDo 更新など）: 実装後にレビュー依頼。ToDo と関連ドキュメントへ更新内容を反映。
-    - 想定影響ファイル: `src/pptx_generator/pipeline/mapping.py`, `src/pptx_generator/pipeline/renderer.py`, `src/pptx_generator/template_ai/client.py`, `src/pptx_generator/layout_ai/client.py`, `src/pptx_generator/content_ai/client.py`, `src/pptx_generator/prepare/orchestrator.py`, フォールバック関連モジュール全般、`src/pptx_generator/cli.py`, `tests/pipeline/test_mapping*`, `tests/test_renderer.py`, `tests/test_cli_integration.py` など。
+    - 想定影響ファイル: `src/pptx_generator/pipeline/mapping.py`, `src/pptx_generator/pipeline/renderer.py`, `src/pptx_generator/template_ai/client.py`, `src/pptx_generator/layout_ai/client.py`, `src/pptx_generator/slide_ai/client.py`, `src/pptx_generator/prepare/orchestrator.py`, フォールバック関連モジュール全般、`src/pptx_generator/cli.py`, `tests/pipeline/test_mapping*`, `tests/test_renderer.py`, `tests/test_cli_integration.py` など。
     - リスク: 既存ワークフローがフォールバックに依存している場合に強制停止する可能性。例外メッセージが不足すると調査が難しい。テストの期待値変更による失敗。LLM 障害時の停止率増加。
     - テスト方針: `pytest` で失敗ケースを再現し、例外発生とエラーメッセージ出力を `caplog` 等で検証。CLI 統合テストも実行し、LLM 例外時の挙動を確認。
     - ロールバック方法: 例外化関連コミットをリバートしてフォールバック処理を復元。
@@ -31,7 +31,7 @@ roadmap_item: RM-065 フォールバック警告ログ整備
 - [x] 実装
   - メモ: `PipelineFallbackError` 追加、MappingStep のフォールバック削除・例外化、Renderer のアンカー未解決時の例外化と要素判別メッセージ追加、関連テスト更新、docs/notes をエラー化方針へ改訂。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/test_mapping_step.py` / `tests/test_renderer.py` / `tests/test_cli_integration.py` / `tests/test_template_ai.py` / `tests/test_layout_validation_template_ai.py` / `tests/test_layout_validation_suite.py` / `tests/test_layout_recommender.py` / `tests/test_cli_outline.py` / `tests/content_ai/test_orchestrator.py` / `tests/content_ai/test_client_factory.py` / `tests/test_cli_prepare.py`
+  - メモ: `uv run --extra dev pytest tests/test_mapping_step.py` / `tests/test_renderer.py` / `tests/test_cli_integration.py` / `tests/test_template_ai.py` / `tests/test_layout_validation_template_ai.py` / `tests/test_layout_validation_suite.py` / `tests/test_layout_recommender.py` / `tests/test_cli_outline.py` / `tests/slide_ai/test_orchestrator.py` / `tests/slide_ai/test_client_factory.py` / `tests/test_cli_prepare.py`
 - [x] ドキュメント更新
   - メモ: `docs/notes/20251110-fallback-warning-logging.md` をフォールバック廃止に合わせて更新。その他要件・設計ドキュメントは今回対象外。
   - [x] docs/roadmap 配下

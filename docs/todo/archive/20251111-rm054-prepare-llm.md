@@ -9,7 +9,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: 既存ブランチ `feat/rm054-static-blueprint-plan` 上で継続作業
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan（2025-11-11）
-    - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/prepare/orchestrator.py` を中心に、章単位で LLM を呼び出す処理へ刷新。新しい LLM クライアント（OpenAI/Azure/Mock 対応）とプロンプト定義を追加し、CLI `prepare` dynamic モードで生成AIを必ず呼び出す。ログ出力 (`prepare_ai_log.json`) とメタ (`ai_generation_meta.json`) をカード単位の記録へ更新。既存 `content_ai` とは別レイヤで管理する。
+    - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/prepare/orchestrator.py` を中心に、章単位で LLM を呼び出す処理へ刷新。新しい LLM クライアント（OpenAI/Azure/Mock 対応）とプロンプト定義を追加し、CLI `prepare` dynamic モードで生成AIを必ず呼び出す。ログ出力 (`prepare_ai_log.json`) とメタ (`ai_generation_meta.json`) をカード単位の記録へ更新。既存 `slide_ai` とは別レイヤで管理する。
     - ドキュメント／コード修正方針: `prepare` モジュール内に LLM クライアント／プロンプトレジストリを追加し、ポリシー (`config/prepare_policies/default.json`) を LLM フィールド対応に拡張。`docs/design/stages/stage-02-content-normalization.md` とサンプル (`samples/prepare/*.json`) を新フォーマットへ更新し、既存の mock ログから `llm_stub` 表記を除去。CLI ユニットテストに LLM モックを注入し、カード枚数分の呼び出しを検証。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗管理し、完了時にユーザーへ実行ログを提示。必要に応じて `docs/notes/` へ調査メモを追加。
     - 想定影響ファイル: `src/pptx_generator/prepare/orchestrator.py`, `src/pptx_generator/prepare/llm_client.py`（新規）, `src/pptx_generator/prepare/prompts.py`（新規）, `config/prepare_policies/default.json`, `src/pptx_generator/cli.py`, `docs/design/stages/stage-02-content-normalization.md`, `samples/prepare/*.json`, `tests/test_cli_prepare.py`, `tests/test_prepare_orchestrator.py`（新規予定）。
@@ -18,7 +18,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
     - ロールバック方法: Prepare オーケストレータ／クライアント差分とポリシー変更を `git revert` で戻す。サンプル・ドキュメントは以前のバージョンへ復元。
     - 承認メッセージ ID／リンク: ユーザー承認 (2025-11-11, 「わかった、任せる」)
 - [x] 設計・実装方針の確定
-  - メモ: ContentAIOrchestrator を利用したカード単位 LLM 呼び出しで合意
+  - メモ: SlideAIOrchestrator を利用したカード単位 LLM 呼び出しで合意
 - [x] ドキュメント更新（要件・設計）
   - メモ: Stage-02 設計／スキーマ、ノートを LLM 対応へ更新済み。Stage-02 要件も現行仕様と一致することを再確認し、追加更新は不要と判断。
   - [x] docs/requirements 配下
