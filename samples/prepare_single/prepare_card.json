@@ -11,7 +11,7 @@
         ]
       },
       "content": {
-        "headline": "テスト用の簡易プレペア入力です。このテキストを工程2 CLI の `uv run pptx prepare` に渡すと、内容を PrepareCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。",
+        "headline": "テスト用の簡易プレペア入力です。このテキストを stage 2 CLI の `uv run pptx prepare` に渡すと、内容を PrepareCard として整備し `.pptx/prepare/` 配下へ成果物を生成します。",
         "body": [
           {
             "type": "paragraph",
@@ -19,7 +19,7 @@
           },
           {
             "type": "paragraph",
-            "text": "テスト用の簡易プレペア入力です。このテキストを工程2 CLI の `uv run"
+            "text": "テスト用の簡易プレペア入力です。このテキストを stage 2 CLI の `uv run"
           }
         ],
         "notes": [

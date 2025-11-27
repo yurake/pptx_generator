@@ -1,7 +1,7 @@
 # RM-046 生成AIプレペア構成自動化 初期調査（2025-11-02）
 
 ## 背景
-- ロードマップ `RM-046 生成AIプレペア構成自動化` の実装前調査として、現行の工程3（コンテンツ準備）仕様と CLI 実装を確認。
+- ロードマップ `RM-046 生成AIプレペア構成自動化` の実装前調査として、現行の stage 3（コンテンツ準備）仕様と CLI 実装を確認。
 - 既存仕様はテンプレート構造を前提とした `JobSpec.slides` を AI 入力に用いており、ロードマップが求める「テンプレ依存を排した抽象プレペア出力」と乖離している。
 
 ## 現行フロー整理（旧仕様の確認）
@@ -15,13 +15,13 @@
 - **入力形態**: `pptx prepare` が常に `spec.json` を必須とするため、生情報（案件プレペア、取材メモ等）を直接流し込むフローを想定できない。
 - **出力構造**: `ContentSlide.elements.body` の 40 文字×6 行制約はテンプレ向けに最適化されており、章骨子・メッセージ・支援コンテンツなど複数粒度を保持できない（その後 RM-068 で制約を撤廃済み）。
 - **HITL ログ**: `content_review_log.json` はスライド ID ベースであり、抽象カード同士の結合／バージョン履歴を保持できる構造になっていない。
-- **後工程整合**: 旧工程4（当時の `docs/requirements/stages/stage-04-draft-structuring.md` 53 行付近）が legacy コンテンツ承認 JSON のストーリー情報を参照する設計になっており、抽象カード化に合わせたプロパティ再定義が必要。
+- **後 stage 整合**: 旧 stage 4（当時の `docs/requirements/stages/stage-04-draft-structuring.md` 53 行付近）が legacy コンテンツ承認 JSON のストーリー情報を参照する設計になっており、抽象カード化に合わせたプロパティ再定義が必要。
 
 ## 方向性メモ
 - `pptx prepare` を「プレペアビルダー」モードへ再定義し、テンプレ非依存の入力（`--prepare-source` など）を受け付ける案。ポリシーは既定値固定で扱う。
 - 新しい `PrepareCard` モデルは `role.story_phase` / `role.intent_tags` と `content.title` / `content.headline` / `content.body[]` / `content.notes[]` を中核に据え、テンプレート依存要素（layout, status, supporting_points 等）を排除して抽象カードとして定義する。
 - HITL ログは `card_id` と `version`（ETag 相当）を持たせ、差戻し・再生成履歴を保持。AI 生成ログもカード単位で参照できるよう `ai_generation_meta.json` を再設計する。
-- 後工程に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。既存のドラフト構成処理は PrepareCard を受け取る前提に更新済みのため、RM-046 では Stage3 出力の体裁を整えることに集中できる。
+- 後 stage に引き継ぐため、章 → セクション → カードの階層構造と `layout_hint` へ渡すためのメタ情報（優先レイアウトカテゴリ、情報密度指標など）を定義する必要がある。既存のドラフト構成処理は PrepareCard を受け取る前提に更新済みのため、RM-046 では Stage3 出力の体裁を整えることに集中できる。
 - スキーマ更新時は `docs/design/schema/stage-03-content-normalization.md` と `docs/requirements/stages/stage-03-content-normalization.md` を同時更新し、`samples/` 配下に PrepareCard 前提のサンプル（例: `samples/prepare/prepare_card.sample.jsonc`）を追加する。
 
 ## CLI インターフェース検討
@@ -34,13 +34,13 @@
 
 ## ContentSlide の扱い整理
 - 依存箇所:
-  - 工程3: `PrepareAIOrchestrator`, `PrepareNormalizationStep`, API ストア（`PrepareStore`）が `PrepareCard` を前提に動作。
-  - 工程4: `DraftStructuringStep` が `ContentSlide` の `intent` / `type_hint` / `elements.body` に基づきレイアウト候補スコアを計算。
-  - 工程5: `MappingStep` でも `ContentSlide` を参照し、layout 選定に利用。
+  - stage 3: `PrepareAIOrchestrator`, `PrepareNormalizationStep`, API ストア（`PrepareStore`）が `PrepareCard` を前提に動作。
+  - stage 4: `DraftStructuringStep` が `ContentSlide` の `intent` / `type_hint` / `elements.body` に基づきレイアウト候補スコアを計算。
+  - stage 5: `MappingStep` でも `ContentSlide` を参照し、layout 選定に利用。
   - API: `fastapi` 実装、スキーマ、ストレージが `ContentSlide` を保存単位として採用。
 - 判断:
   - RM-046 以降はテンプレ独立のプレペアカードを唯一の成果物とし、`ContentSlide` は廃止する前提で計画を進める。
-  - 工程4/5 や API では PrepareCard を受け取る構造が既に導入されているため、RM-046 の成果物をその仕様に合わせる。
+  - stage 4/5 や API では PrepareCard を受け取る構造が既に導入されているため、RM-046 の成果物をその仕様に合わせる。
   - 段階的移行は行わず、`ContentSlide` 依存コードを一括でリプレースするため、RM-046 の Plan で改修範囲を定義する。
 - 対応:
   - 新モデル `PrepareCard`（仮称）を Stage3 で定義し、CLI・API・パイプラインの型定義を統一する。

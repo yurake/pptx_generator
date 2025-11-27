@@ -22,7 +22,7 @@ roadmap_item: RM-025 マッピング補完エンジン
 - [x] ドキュメント更新
   - メモ: 完了条件: 実装結果に基づく各種ドキュメントを更新し、差分なしの場合も判断理由をメモする / 実施内容: requirements/design/README を更新、ロードマップ・runbook は影響なしのためメモで判断を記録
   - [x] docs/roadmap 配下
-    - メモ: RM-025 の範囲に変更なし（工程5の実装進捗は ToDo で管理）
+    - メモ: RM-025 の範囲に変更なし（stage 5 の実装進捗は ToDo で管理）
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下

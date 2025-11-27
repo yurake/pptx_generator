@@ -2,7 +2,7 @@
 
 ## このドキュメントの読み方
 - 全体構成を把握したい場合は「1. システム全体像」と「2. コンポーネント構成」を先に確認してください。
-- 工程ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
+- stage ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
 - JSON スキーマやバリデーションルールなど詳細仕様は必要に応じて後半の章（4〜7 章）を確認する構成にしています。
 
 ## 既存AIサービス比較・本プロジェクト選定理由
@@ -30,11 +30,11 @@
 | Service-G Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
 
 ## 3. データフロー
-最新ロードマップでは、以下の 4 工程で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
+最新ロードマップでは、以下の 4 stage で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
 
-README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化した Mermaid フローを掲載しているため、工程の全体像を素早く把握したい場合は併せて確認する。
+README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
-1. **テンプレ工程**（自動＋HITL）  
+1. **テンプレ stage**（自動＋HITL）  
    テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備**（HITL）  
@@ -42,9 +42,9 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 3. **マッピング（HITL + 自動）**  
   Prepare 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
 4. **PPTX レンダリング**（自動）  
-  `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後工程は従来どおり。
+  `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後 stage は従来どおり。
 
-工程 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-content-normalization.md` / `docs/design/stages/stage-03-mapping.md` にまとめている。
+stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-content-normalization.md` / `docs/design/stages/stage-03-mapping.md` にまとめている。
 
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
@@ -53,18 +53,18 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
 | レンダリング | `generate_ready.json`, `template.pptx`, `branding.json` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | 軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
 
-### 3.2 工程別設計ドキュメント
-| 工程 | 設計ドキュメント | 主な設計観点 |
+### 3.2 stage 別設計ドキュメント
+| stage | 設計ドキュメント | 主な設計観点 |
 | --- | --- | --- |
-| 1 テンプレ工程 | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
+| 1 テンプレ stage | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
 | 2 コンテンツ準備 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビュー、監査ログ |
 | 3 マッピング (HITL + 自動) | [stage-03-mapping.md](./stages/stage-03-mapping.md) | `generate_ready` 構築、HITL 承認ログ、レイアウト候補スコアリング、フォールバック制御 |
 | 4 PPTX レンダリング | [stage-04-rendering.md](./stages/stage-04-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
 
-### 3.3 工程別入出力一覧
-| ファイル名 | 必須区分 | 概要 | 使用する工程 |
+### 3.3 stage 別入出力一覧
+| ファイル名 | 必須区分 | 概要 | 使用する stage |
 |-------------|-----------|------|---------------|
-| template.pptx | 必須（ユーザー準備） | ユーザー準備の PPTX テンプレ。以後の全工程で参照されるベース。 | S1 入 / S1 出 / S3 入 / S4 入 |
+| template.pptx | 必須（ユーザー準備） | ユーザー準備の PPTX テンプレ。以後の全 stage で参照されるベース。 | S1 入 / S1 出 / S3 入 / S4 入 |
 | template_release.json | 任意 | テンプレのリリースメタ。差分・版管理用。 | S1 入（過去版） / S1 出 |
 | release_report.json | 任意 | テンプレ差分レポート。 | S1 出 |
 | golden_runs/* | 任意 | ゴールデンテスト実行結果。テンプレ検証用。 | S1 出 |
@@ -73,12 +73,12 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S1 出 / S3 入 / S4 入 |
 | layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S1 出 / S3 入 |
 | diagnostics.json / diff_report.json | 任意 | 抽出/検証時の診断および差分レポート。 | S1 出 |
-| prepare_card.json | 必須（工程2出口） | PrepareCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |
+| prepare_card.json | 必須（stage 2 出口） | PrepareCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |
 | prepare_log.json | 任意 | プレペアレビュー／承認ログ。 | S2 出 / S3 入 |
 | prepare_ai_log.json | 任意 | 生成AIとのやり取りログ。 | S2 出 / S3 入 |
 | ai_generation_meta.json | 任意 | 生成カード枚数やハッシュなどの統計情報。 | S2 出 / S3 入 |
 | prepare_story_outline.json | 任意 | 章構成とカード紐付け。 | S2 出 / S3 入 |
-| prepare/audit_log.json | 任意 | コンテンツ工程の監査ログ。 | S2 出 |
+| prepare/audit_log.json | 任意 | コンテンツ stage の監査ログ。 | S2 出 |
 | generate_ready.json | 必須 | レイアウト割付済みの描画直前仕様。 | S3 出 / S4 入 |
 | generate_ready_meta.json | 必須 | 章テンプレ適合率、承認統計、Analyzer サマリ。 | S3 出 |
 | draft_review_log.json | 任意 | HITL 承認・差戻しの操作履歴。 | S3 出 |
@@ -88,8 +88,8 @@ README の「アーキテクチャ概要」節にも同じ 4 工程を視覚化�
 | proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S4 出 |
 | proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S4 出 |
 | analysis.json / review_engine_analyzer.json | 任意 | レンダリング結果の解析・レビュー用メタ。 | S4 出 |
-| rendering_log.json / monitoring_report.json | 任意 | レンダリング工程のサマリと監視レポート。 | S4 出 |
-| audit_log.json | 任意 | レンダリング工程の監査ログ。 | S4 出 |
+| rendering_log.json / monitoring_report.json | 任意 | レンダリング stage のサマリと監視レポート。 | S4 出 |
+| audit_log.json | 任意 | レンダリング stage の監査ログ。 | S4 出 |
 | analysis_snapshot.json | 任意 | レイアウト構造スナップショット。 | S4 出 |
 
 ### 3.3 レイアウトカバレッジ指針 (RM-043)
@@ -180,7 +180,7 @@ slides:
           left_indent_in: float
           right_indent_in: float
           first_line_indent_in: float
-- レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続工程が同名アンカーで参照できるようにする。
+- レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続 stage が同名アンカーで参照できるようにする。
 - 段落スタイルは `config/branding.json` の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合はブランド既定を上書きする。
 assets:
   fonts: [{ name: string, url: string }]

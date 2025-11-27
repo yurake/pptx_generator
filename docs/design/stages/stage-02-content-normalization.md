@@ -1,9 +1,9 @@
-# 工程2 コンテンツ準備 (HITL) 設計
+# stage 2 コンテンツ準備 (HITL) 設計
 
 ## 目的
-- プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、後続工程が直接利用できる構造化データを提供する。
+- プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、後続 stage が直接利用できる構造化データを提供する。
 - AI 生成と HITL 承認を組み合わせ、監査可能なログと統計情報を残す。
-- `.pptx/prepare/` 配下に成果物を集約し、工程3 の `pptx compose` がそのまま参照できるようにする。
+- `.pptx/prepare/` 配下に成果物を集約し、stage 3 の `pptx compose` がそのまま参照できるようにする。
 
 ## システム構成
 | レイヤ | コンポーネント | 概要 |
@@ -24,7 +24,7 @@
 2. `PrepareAIOrchestrator` がポリシーを選択し、LLM（またはモック）でカード候補を生成。
 3. 生成カードとログを `.pptx/prepare/` に書き出し、統計情報を `ai_generation_meta.json` に記録。
 4. 監査ログ (`audit_log.json`) に成果物パスと SHA256 ハッシュ（将来拡張）を残す。
-5. 工程3 では `--prepare-cards` を指定するだけで、`prepare_card.json.meta` に記録されたログ／AIメタのパスを再利用する。差戻し時はカード編集または再生成を実施。
+5. stage 3 では `--prepare-cards` を指定するだけで、`prepare_card.json.meta` に記録されたログ／AIメタのパスを再利用する。差戻し時はカード編集または再生成を実施。
 
 ## CLI (`pptx prepare`)
 - パラメータ
@@ -43,7 +43,7 @@
 
 ## ログと監査
 - `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`response_not_json` や `body_not_array` など）、トークン消費量を記録。
-- `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、工程3での差分検出に利用。
+- `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、stage 3 での差分検出に利用。
 - `audit_log.json`: 生成時刻・ポリシー ID・成果物のパスをまとめる。今後ハッシュ値を追加し改ざん検知を強化する。
 
 ## エラーハンドリング

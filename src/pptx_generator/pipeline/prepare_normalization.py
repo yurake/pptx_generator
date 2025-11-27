@@ -1,4 +1,4 @@
-"""工程3 プレペア成果物を読み込むステップ。"""
+"""stage 3 プレペア成果物を読み込むステップ。"""
 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 # RM-044 ジョブスペック雛形自動生成 設計メモ
 
 ## 目的と出力物
-- 工程2 (`pptx tpl-extract`) の成果物としてテンプレート依存情報のみをまとめた `jobspec.json` を追加する。
-- 既存の `template_spec.json`・`branding.json` と同一ディレクトリ (`.pptx/extract/`) に保存し、工程3 以降がテンプレ構造を参照できるようにする。
+- stage 2 (`pptx tpl-extract`) の成果物としてテンプレート依存情報のみをまとめた `jobspec.json` を追加する。
+- 既存の `template_spec.json`・`branding.json` と同一ディレクトリ (`.pptx/extract/`) に保存し、stage 3 以降がテンプレ構造を参照できるようにする。
 - 雛形は章構成や本文コンテンツを含めず、レイアウトとプレースホルダー情報の catalog として機能する。
 
 ## jobspec.json スキーマ案

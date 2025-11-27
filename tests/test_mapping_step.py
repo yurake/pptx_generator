@@ -57,7 +57,7 @@ def _build_spec(body_lines: Iterable[str]) -> JobSpec:
 
 
 def _attach_minimal_draft_document(context: PipelineContext, spec: JobSpec) -> None:
-    """工程4で生成されるドラフトの疑似データを付与する。"""
+    """stage 4 で生成されるドラフトの疑似データを付与する。"""
     draft_cards = [
         DraftSlideCard(ref_id=slide.id, order=index, layout_hint=slide.layout)
         for index, slide in enumerate(spec.slides, start=1)

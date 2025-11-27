@@ -11,7 +11,7 @@
 - 生成フローや承認ステップに関する仕様は `docs/notes/20251011-roadmap-refresh.md` と `docs/design/design.md` を起点に確認し、実装・要件ドキュメント側で詳細を更新する。`docs/AGENTS.md` には概要のみを残し、重複記述を避ける。
 
 ## ToDo 運用との連携
-- テンプレートを `docs/todo/template.md` からコピーする際は各チェック項目に付いた注意書きを削除しない（例: 「PR 作成は todo-auto-complete が自動更新するため手動でチェックしない」）。手動更新禁止の工程を維持したまま、必要なメモのみ追記し、チェック完了時に初めて注意書きを実績メモへ差し替える。
+- テンプレートを `docs/todo/template.md` からコピーする際は各チェック項目に付いた注意書きを削除しない（例: 「PR 作成は todo-auto-complete が自動更新するため手動でチェックしない」）。手動更新禁止の stage を維持したまま、必要なメモのみ追記し、チェック完了時に初めて注意書きを実績メモへ差し替える。
 - ToDo 作成手順・更新ルール・アーカイブ方法は `docs/todo/README.md` に記載している。`docs/` 配下の作業では同ガイドを常に参照し、進捗ログを一元管理する。
 - ToDo を省略する条件やフローは `docs/policies/task-management.md` で定義されている。最新ルールに沿って運用し、判断に迷う場合はユーザーへ確認する。
 
@@ -20,7 +20,7 @@
 - `docs/policies/`: 運用ルール・手順。設定変更やタスク運用のような規約レベルの改訂はここにまとめ、README の一覧も更新する。
 - `docs/requirements/`: ビジネス要件や期待機能。スキーマ変更など仕様に関わる内容を追加する。
 - `docs/design/`: アーキテクチャ・実装方針。図表や構成案を含める場合は、関連箇所からリンクする。
-  - `docs/runbooks/`: リリース・サポートなどの実務手順。チェックリストを更新した場合は該当 ToDo にメモを残す。ストーリー骨子運用は `docs/runbooks/story-outline-ops.md` に手順を追記し、工程3/4 ドキュメントと整合させる。Polisher / PDF 連携やレンダリング監査ログ（`rendering_log.json` / `audit_log.json`）のトラブルシューティングは `docs/runbooks/support.md` に集約し、CLI オプションの変更と同期する。Analyzer 連携の運用手順は `docs/runbooks/pptx-analyzer.md` を参照し、`mapping_log.json` の Analyzer サマリ確認も実施する。
+  - `docs/runbooks/`: リリース・サポートなどの実務手順。チェックリストを更新した場合は該当 ToDo にメモを残す。ストーリー骨子運用は `docs/runbooks/story-outline-ops.md` に手順を追記し、stage 3/4 ドキュメントと整合させる。Polisher / PDF 連携やレンダリング監査ログ（`rendering_log.json` / `audit_log.json`）のトラブルシューティングは `docs/runbooks/support.md` に集約し、CLI オプションの変更と同期する。Analyzer 連携の運用手順は `docs/runbooks/pptx-analyzer.md` を参照し、`mapping_log.json` の Analyzer サマリ確認も実施する。
 - `docs/notes/`: 調査メモや議事録。短期的な共有事項はここに保存し、アーカイブ化が必要なら `docs/todo/` のメモにも記録する。
 - `docs/roadmap/`: 大項目 ToDo。テーマステータスを更新した場合は、関連する ToDo ファイルから相互リンクを張る。
 - `docs/todo/`: ToDo 管理。テンプレートに沿った更新ルールは `docs/todo/README.md` を参照。

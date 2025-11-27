@@ -90,7 +90,7 @@ class _HTMLTextExtractor(HTMLParser):
 
 
 class ContentImportService:
-    """プレーンテキスト・PDF・URL を工程3向けドラフトへ正規化する。"""
+    """プレーンテキスト・PDF・URL を stage 3 向けドラフトへ正規化する。"""
 
     def __init__(
         self,

@@ -1,18 +1,18 @@
 # プレペアポリシー廃止調査メモ（2025-11-05）
 
 ## 背景
-- 工程2 `uv run pptx prepare` で `config/prepare_policies/default.json` を読み込み、`PrepareAIOrchestrator` へ渡しているが、外部ファイルによる骨子制御を廃止したいという議論があったため現状を確認。
+- stage 2 `uv run pptx prepare` で `config/prepare_policies/default.json` を読み込み、`PrepareAIOrchestrator` へ渡しているが、外部ファイルによる骨子制御を廃止したいという議論があったため現状を確認。
 
 ## 調査結果
 - CLI の `prepare` コマンドは `DEFAULT_PREPARE_POLICY_PATH = config/prepare_policies/default.json` を固定参照し、`load_prepare_policy_set` で読み込んだポリシーを `PrepareAIOrchestrator.generate_document()` に渡している（`src/pptx_generator/cli.py:55`, `src/pptx_generator/cli.py:1395-1415`）。
-- `PrepareAIOrchestrator` はポリシーに基づいて `resolve_story_phase`／`resolve_chapter_title` を実行し、`PrepareCard` の章タイトル・ストーリーフェーズを決定するとともに `PrepareStoryContext` を生成する（`src/pptx_generator/prepare/orchestrator.py:54-137`）。工程3以降はこの `story_context` を前提に章順を扱う。
+- `PrepareAIOrchestrator` はポリシーに基づいて `resolve_story_phase`／`resolve_chapter_title` を実行し、`PrepareCard` の章タイトル・ストーリーフェーズを決定するとともに `PrepareStoryContext` を生成する（`src/pptx_generator/prepare/orchestrator.py:54-137`）。stage 3 以降はこの `story_context` を前提に章順を扱う。
 - `--prepare-policy` オプションは削除済みで、CLI からポリシーを切り替える手段は存在しない。現状は「固定ファイルを必ず読み込み、骨子を決める」挙動となっている。
-- ドキュメント上でも `config/prepare_policies/default.json` が工程2の前提として記載されており、CLI 仕様・要件ドキュメント双方が依存している（例: `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-content-normalization.md`）。
-- RM-054（静的テンプレ統合）では Blueprint から slot 単位の骨子を扱う構想があるが、現時点では工程2への具体的な組み込みが未実装。Blueprint を導入しない限り、`prepare` はポリシーに頼って章順・story_phase を決定している。
+- ドキュメント上でも `config/prepare_policies/default.json` が stage 2 の前提として記載されており、CLI 仕様・要件ドキュメント双方が依存している（例: `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-content-normalization.md`）。
+- RM-054（静的テンプレ統合）では Blueprint から slot 単位の骨子を扱う構想があるが、現時点では stage 2 への具体的な組み込みが未実装。Blueprint を導入しない限り、`prepare` はポリシーに頼って章順・story_phase を決定している。
 
 ## 代替案・課題
 - ポリシーをコード内の定数へ内製化し、外部ファイルを廃止する（CLI 互換性維持）。ただし story_phase・章タイトルの変更容易性が低下するため、後続の RM-054 やテンプレ運用と整合させる設計が必要。
-- 工程2で生成する骨子をテンプレ Blueprint（RM-054）や JobSpec から自動導出するフローを設計し、ポリシー機能を Blueprint へ移管する。
+- stage 2 で生成する骨子をテンプレ Blueprint（RM-054）や JobSpec から自動導出するフローを設計し、ポリシー機能を Blueprint へ移管する。
 - RM-054 と連動させる場合、静的テンプレ Blueprint から `story_context` を生成する設計を先に確立し、動的モードでのデフォルト骨子（introduction/problem/…）も Blueprint 互換の形で保持する必要がある。
 - ドキュメントとテスト（`docs/design/cli-command-reference.md` など）でポリシーファイルを前提にしている箇所を更新する必要がある。
 

@@ -1,4 +1,4 @@
-"""工程5 マッピングステップ。"""
+"""stage 5 マッピングステップ。"""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(slots=True)
 class MappingOptions:
-    """マッピング工程の設定。"""
+    """マッピング stage の設定。"""
 
     layouts_path: Path | None = None
     output_dir: Path | None = None
@@ -380,7 +380,7 @@ class MappingStep:
     def _require_draft_document(self, context: PipelineContext) -> DraftDocument:
         draft_document = context.artifacts.get("draft_document")
         if draft_document is None:
-            msg = "draft_document が存在しません。工程3/4 の出力を確認してください。"
+            msg = "draft_document が存在しません。stage 3/4 の出力を確認してください。"
             logger.error(msg)
             raise PipelineFallbackError(msg)
         if not isinstance(draft_document, DraftDocument):

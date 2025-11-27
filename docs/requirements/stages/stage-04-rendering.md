@@ -1,13 +1,13 @@
-# 工程4 PPTX 生成 要件詳細
+# stage 4 PPTX 生成 要件詳細
 
 ## 概要
-- 工程4で生成した `generate_ready.json` を元にテンプレ PPTX へ描画し、最終 `output.pptx` と付随ログを生成する。
+- stage 4 で生成した `generate_ready.json` を元にテンプレ PPTX へ描画し、最終 `output.pptx` と付随ログを生成する。
 - 軽量整合チェックと監査メタの付与を自動化し、配布前の品質を確保する。
-- CLI からは `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を利用して工程5のみを実行する（`--output` 未指定時の出力先は `.pptx/gen/`）。工程4の成果物を事前に確認したい場合は `pptx compose` や `pptx mapping` を使用する。
+- CLI からは `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を利用して stage 5 のみを実行する（`--output` 未指定時の出力先は `.pptx/gen/`）。stage 4 の成果物を事前に確認したい場合は `pptx compose` や `pptx mapping` を使用する。
 
 ## 入力
-- 工程4の `generate_ready.json`（`job_meta` / `job_auth` を内包）。
-- 工程1のテンプレ PPTX、および任意のロゴアセット。
+- stage 4 の `generate_ready.json`（`job_meta` / `job_auth` を内包）。
+- stage 1 のテンプレ PPTX、および任意のロゴアセット。
 - ブランド設定 JSON、レンダリング構成（フォント置換、行間調整などのポリシー）。
 - Polisher ルール (`config/polisher-rules.json` など任意ファイル)。有効化時に必須。
 

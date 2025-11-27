@@ -1,6 +1,6 @@
 # マッピングスキーマ
 
-工程5（マッピング）で利用する JSON 仕様を定義する。
+stage 5（マッピング）で利用する JSON 仕様を定義する。
 
 ## ファイル
 - `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
@@ -122,8 +122,8 @@
 - `fallback.history`: `["shrink_text", "split_slide"]` のように適用順を記録。
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
-- `analyzer`: 工程6で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
-- `meta.job_meta` / `meta.job_auth`: 元 `JobSpec` のメタ情報を保持し、工程6での `JobSpec` 再構築に利用する。
+- `analyzer`: stage 6 で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
+- `meta.job_meta` / `meta.job_auth`: 元 `JobSpec` のメタ情報を保持し、stage 6 での `JobSpec` 再構築に利用する。
 
 ## サンプル
 - `samples/generate_ready.jsonc`

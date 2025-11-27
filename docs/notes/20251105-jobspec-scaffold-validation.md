@@ -13,7 +13,7 @@
 - そのため、抽出直後の `jobspec.json` をそのまま `pptx compose` に渡すと、`missing`（必須フィールド不足）および `extra_forbidden`（未許可フィールド）エラーが発生することを確認した。
 
 ## まとめ
-- テンプレ抽出成果物は設計補助用のスキャフォールドであり、工程3で求められる `JobSpec` とはスキーマが異なる。
+- テンプレ抽出成果物は設計補助用のスキャフォールドであり、stage 3 で求められる `JobSpec` とはスキーマが異なる。
 - `uv run pptx compose` の入力として利用するには、`meta.title` / `auth` の補完や `placeholders` → `textboxes` 等への正規化を行う変換ステップが必要。
 - 抽出 CLI で生成する `jobspec.json` と `pptx compose` 入力スキーマを統一するためのロードマップ項目が必要。
 

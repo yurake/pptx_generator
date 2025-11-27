@@ -1,7 +1,7 @@
 # CLI コマンド設計ガイド
 
 ## 目的
-- CLI の各コマンドが 4 工程パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
+- CLI の各コマンドが 4 stage パイプラインのどこに位置づくかを整理し、責務や成果物、主要オプションを設計観点でまとめる。
 - README のクイックスタートで触れ切れない詳細設定（Polisher・PDF 連携・AI プロバイダー切り替え等）を参照できるようにする。
 
 ## ログレベル制御
@@ -10,11 +10,11 @@
 - 旧環境変数 `OPENAI_LOG` は廃止したため、設定が残っている場合は警告を出して無視する。OpenAI SDK 含む関連ロガーも `LOG_LEVEL` に追従する。
 
 ## パイプライン全体像
-- パイプラインは「テンプレ工程 → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 工程で構成される。
-- `pptx compose` は工程3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
-- `pptx gen` は工程4（レンダリング）を担当し、工程3で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
+- パイプラインは「テンプレ stage → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
+- `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
+- `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
 
-### 工程1: テンプレ工程
+### stage 1: テンプレ stage
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
 
 #### `pptx template`
@@ -49,7 +49,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
-`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ工程が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
+`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ stage が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
 
 #### 詳細: 個別コマンド
 
@@ -92,8 +92,8 @@ uv run pptx template samples/templates/templates.pptx
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） |  |  | 指定なし |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 
-### 工程2: コンテンツ準備 (HITL)
-プレペア入力（Markdown / JSON など）を PrepareCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は工程3のドラフト構築・マッピングで直接参照される。
+### stage 2: コンテンツ準備 (HITL)
+プレペア入力（Markdown / JSON など）を PrepareCard モデルに整形し、HITL でレビューしながら `.pptx/prepare/` 配下へ成果物一式を出力する。生成内容は stage 3 のドラフト構築・マッピングで直接参照される。
 
 #### `pptx prepare`
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
@@ -121,14 +121,14 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 - `prepare_ai_log.json`: 生成 AI との対話ログ
 - `ai_generation_meta.json`: 生成統計・入力ハッシュ・モード情報・Blueprint 参照
 - `prepare_story_outline.json`: 章構成とカード紐付け
-- `audit_log.json`: 工程2の監査メタ情報（静的モード時は slot 充足率・Blueprint パスを記録）
-- カード承認ステータスは CLI では変更できない。HITL 承認は PrepareStore / API を通じて行い、その結果が `prepare_log.json` とストア内の状態へ記録される。工程3へ進む際は最新ログまたはストアエクスポート結果を参照させること。
-### 工程3: マッピング (HITL + 自動)
+- `audit_log.json`: stage 2 の監査メタ情報（静的モード時は slot 充足率・Blueprint パスを記録）
+- カード承認ステータスは CLI では変更できない。HITL 承認は PrepareStore / API を通じて行い、その結果が `prepare_log.json` とストア内の状態へ記録される。stage 3 へ進む際は最新ログまたはストアエクスポート結果を参照させること。
+### stage 3: マッピング (HITL + 自動)
 章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Prepare 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
-- 工程3全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
-- `--prepare-cards` で工程2の成果物を指定すると、CLI が `prepare_card.json.meta` に記録されたパスを使ってログや AI メタを読み込む。
+- stage 3 全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
+- `--prepare-cards` で stage 2 の成果物を指定すると、CLI が `prepare_card.json.meta` に記録されたパスを使ってログや AI メタを読み込む。
 - 承認状態（差戻し含む）は PrepareStore の管理下にあり、CLI は読み取りのみを行う。
 - `jobspec.meta.template_path` と `jobspec.meta.layouts_path` を必ず埋め込む。欠落している場合はエラーになる。
 - ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
@@ -136,7 +136,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
-| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--draft-output <dir>` | ドラフト成果物の保存先 |  |  | `.pptx/draft` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
@@ -158,7 +158,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--chapter-templates-dir` / `--chapter-template` | 章テンプレート辞書／テンプレート ID |  |  | `config/chapter_templates` / 自動推定 |
@@ -168,23 +168,23 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
 
 #### 補助: `pptx mapping`
-- 工程4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
+- stage 4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--prepare-cards <path>` | 工程2の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
 | `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
 | `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
 | `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
-### 工程4: レンダリング
+### stage 4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
 #### `pptx gen`
-- `generate_ready.json` を入力に工程4を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
+- `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
 - `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
@@ -215,7 +215,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 #### `pptx gen`
-- 工程3で生成した `generate_ready.json` を入力に、工程4のレンダリング・Polisher・PDF 変換を実行するコマンド。
+- stage 3 で生成した `generate_ready.json` を入力に、stage 4 のレンダリング・Polisher・PDF 変換を実行するコマンド。
 - `generate_ready.json.meta.template_path` からテンプレートを解決するため、`--template` オプションは存在しない。テンプレート情報が欠落している場合は CLI がエラーで停止し、再マッピングを促す。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
@@ -241,8 +241,8 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 ## 生成物とログの設計メモ
-- `prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` / `prepare_story_outline.json`: 工程2で生成される Prepare 成果物。
-- `generate_ready.json`: マッピング工程で確定したレイアウトとプレースホルダー割付。
+- `prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` / `prepare_story_outline.json`: stage 2 で生成される Prepare 成果物。
+- `generate_ready.json`: マッピング stage で確定したレイアウトとプレースホルダー割付。
 - `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、Analyzer 指摘サマリ。
 - `fallback_report.json`: フォールバック発生スライドの一覧（発生時のみ）。
 - `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、監査メタ。

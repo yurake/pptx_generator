@@ -11,7 +11,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: テンプレ抽出ステップ（`TemplateExtractor`／`layout_validation`）を中心に、Stage1 で `usage_tags` を生成 AI に置き換える。既存 `usage_tags` ヒューリスティックはフォールバックとして残し、Stage3 以降の呼び出しには影響させない。
     - ドキュメント／コード修正方針: `template_ai` モジュールを新設し、テンプレ抽出中にレイアウト情報を AI へ渡してタグを受け取る。`layout_validation` で AI 由来タグとフォールバックを記録し、`diagnostics` に統計を出力する。CLI からの設定・ログ出力・ドキュメント（`docs/notes/20251109-usage-tags-scoring.md` 等）を更新する。
-    - 確認・共有方法（レビュー、ToDo 更新など）: 各工程完了後に ToDo を更新し、最終的に PR で差分・ログ出力・検証結果を共有。必要に応じて `docs/notes` に検討事項を追記する。
+    - 確認・共有方法（レビュー、ToDo 更新など）: 各 stage 完了後に ToDo を更新し、最終的に PR で差分・ログ出力・検証結果を共有。必要に応じて `docs/notes` に検討事項を追記する。
     - 想定影響ファイル: `src/pptx_generator/pipeline/template_extractor.py`, `src/pptx_generator/layout_validation/suite.py`, 新規 `src/pptx_generator/template_ai/*`, CLI 設定（`src/pptx_generator/cli/template.py` など）、`docs/notes/20251109-usage-tags-scoring.md`, テスト類。
     - リスク: AI 応答フォーマット揺らぎやタイムアウトによる抽出失敗、API 呼び出しコスト増、既存テンプレとの差異で Stage3 以降のスコアリングが変わる可能性。フォールバックと詳細ログで影響を可視化し、設定で OFF にできるようにする。
     - テスト方針: 新規ユーティリティのユニットテスト、テンプレ抽出フローのモック検証、`uv run pptx tpl-extract` を用いた手動確認。必要に応じて `tests/test_template_extraction_*.py` を追加。
