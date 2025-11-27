@@ -5,8 +5,8 @@
 roadmap_item: RM-082 Prepare AI パッケージ再編
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: ブランチ `feat/rm082-prepare-ai-package` を作成済み。初期コミットと push は未実施。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: ブランチ `feat/rm082-prepare-ai-package` を作成し、コミット `refactor(prepare): extract ai modules into subpackage`（933d3b9）を作成して push 済み。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 対象整理（スコープ、対象ファイル、前提）: Stage2 のうち生成 AI に関わる実装（`prepare/orchestrator.py`, `prepare/llm_client.py`, `prepare/prompts.py`）を新設する `pptx_generator.prepare_ai` サブパッケージへ移設し、`pptx_generator.prepare` にはステージ共通モデル (`models.py`, `policy.py`, `source.py`) を残す。CLI や既存コードからの import は互換ラッパーで保持する。  
     ドキュメント／コード修正方針: 新ディレクトリを追加し、旧モジュールは薄いラッパーへ変更。`__init__.py` の公開 API を `prepare_ai` 由来へ向け直し、`docs/design/stage-02-content-normalization.md` 等で構成図を更新。`docs/policies/github-label-governance.md` に `prepare_ai` を追記。  
@@ -36,8 +36,8 @@ roadmap_item: RM-082 Prepare AI パッケージ再編
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 関連 Issue を作成次第更新。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスク完了時に確認予定。
+- [x] チェックリスト整合確認
+  - メモ: 子タスクのチェック状態を再確認し、親タスクの整合を確認済み。
 - [ ] PR 作成
   - メモ: PR 未作成。
 
