@@ -47,7 +47,7 @@ roadmap_item: RM-072 slide_alignment 命名と責務の再整理
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #331 https://github.com/yurake/pptx_generator/pull/331（2025-11-27 完了）
 
 ## メモ

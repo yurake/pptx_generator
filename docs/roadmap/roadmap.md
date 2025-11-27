@@ -59,7 +59,6 @@ flowchart TB
         RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
-        RM072["RM-072<br/>slide_alignment 命名と責務再整理<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
     end
 
@@ -916,7 +915,7 @@ flowchart TB
 - ゴール: 旧 `content_ai` 名で運用している SlideIdAligner 系コンポーネントの名称とドキュメントを、実際の責務（カードと JobSpec スライドの整合）に合わせて `slide_ai` へ改称し、layout AI と混同しないよう整理する。
 - 参照ドキュメント: [docs/design/schema/stage-03-mapping.md](./stage-03-mapping.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-23 追加）
+- 状況: 完了（2025-11-27 更新）
 - 期待成果:
   - `pptx_generator.slide_ai` モジュール、ロガー名、policy ファイルなどの名称を `slide_ai` 系へ統一し、ログや CLI からも役割が一目で分かる状態にする。
   - 設計ドキュメント／CLI リファレンスの用語を更新し、layout AI との用途の違いを明記する。
