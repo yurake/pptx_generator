@@ -23,6 +23,7 @@ from ..models import (
     ChartSeries,
     FontSpec,
     JobSpec,
+    PipelineFallbackError,
     Slide,
     SlideBullet,
     SlideBulletGroup,
@@ -422,7 +423,13 @@ class SimpleRendererStep:
                     "table", layout=slide_spec.layout, placement_key=table_spec.id
                 )
             )
-            resolution = self._resolve_anchor(slide, table_spec.anchor, fallback_box)
+            element_label = table_spec.id or (table_spec.anchor or "table")
+            resolution = self._resolve_anchor(
+                slide,
+                table_spec.anchor,
+                fallback_box,
+                owner_description=f"テーブル要素 '{element_label}' (slide_id='{slide_spec.id}')",
+            )
             anchor_shape = resolution.shape
             if resolution.is_placeholder:
                 self._prepare_placeholder(anchor_shape)
@@ -470,7 +477,13 @@ class SimpleRendererStep:
                     "image", layout=slide_spec.layout, placement_key=image_spec.id
                 )
             )
-            resolution = self._resolve_anchor(slide, image_spec.anchor, fallback_box)
+            element_label = image_spec.id or (image_spec.anchor or "image")
+            resolution = self._resolve_anchor(
+                slide,
+                image_spec.anchor,
+                fallback_box,
+                owner_description=f"画像要素 '{element_label}' (slide_id='{slide_spec.id}')",
+            )
             anchor_shape = resolution.shape
             if resolution.is_placeholder:
                 self._prepare_placeholder(anchor_shape)
@@ -516,7 +529,13 @@ class SimpleRendererStep:
                     "chart", layout=slide_spec.layout, placement_key=chart_spec.id
                 )
             )
-            resolution = self._resolve_anchor(slide, chart_spec.anchor, fallback_box)
+            element_label = chart_spec.id or (chart_spec.anchor or "chart")
+            resolution = self._resolve_anchor(
+                slide,
+                chart_spec.anchor,
+                fallback_box,
+                owner_description=f"チャート要素 '{element_label}' (slide_id='{slide_spec.id}')",
+            )
             anchor_shape = resolution.shape
             if resolution.is_placeholder:
                 self._prepare_placeholder(anchor_shape)
@@ -694,7 +713,12 @@ class SimpleRendererStep:
         return None
 
     def _resolve_anchor(
-        self, slide, anchor: str | None, fallback_box: LayoutBox
+        self,
+        slide,
+        anchor: str | None,
+        fallback_box: LayoutBox,
+        *,
+        owner_description: str | None = None,
     ) -> AnchorResolution:
         if anchor:
             shape = self._find_shape_by_name(slide, anchor)
@@ -717,6 +741,11 @@ class SimpleRendererStep:
                     int(placeholder.height),
                     True,
                 )
+            message = (
+                f"{owner_description or '指定された要素'} のアンカー '{anchor}' がテンプレートで見つかりません。"
+            )
+            logger.error(message)
+            raise PipelineFallbackError(message)
         left, top, width, height = fallback_box.to_emu()
         return AnchorResolution(None, left, top, width, height)
 
@@ -728,7 +757,15 @@ class SimpleRendererStep:
         fallback_box: LayoutBox,
         strict_anchor: bool,
     ):
-        resolution = self._resolve_anchor(slide, anchor_name, fallback_box)
+        owner_description = (
+            f"テキストボックス anchor '{anchor_name}'" if anchor_name else "テキストボックス要素"
+        )
+        resolution = self._resolve_anchor(
+            slide,
+            anchor_name,
+            fallback_box,
+            owner_description=owner_description,
+        )
         shape = resolution.shape
 
         if strict_anchor and anchor_name and shape is None:

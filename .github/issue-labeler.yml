@@ -1,50 +1,20 @@
 # Issue body / title に基づく自動ラベル設定
 type:bug:
-  - '/\[Bug\]/'
-  - '/不具合/'
+  - '/(\\[Bug\\]|不具合|バグ|エラー|例外|障害|異常|落ちる|クラッシュ|stack trace|bugfix|hotfix|failure|crash|動作しない|不正|想定外)/i'
 type:enhancement:
-  - '/\[Feature\]/'
-  - '/改善/'
+  - '/(\\[Feature\\]|改善|機能追加|追加|強化|拡張|要望|提案|整備|実装|導入|最適化|アップデート|enhancement|feature|improve|update|refactor)/i'
 type:docs:
-  - '/docs\//'
-  - '/ドキュメント/'
+  - '/(docs\\/|ドキュメント)/i'
 area:docs:
-  - '/docs\//'
-  - '/README(\.md)?/'
+  - '/(docs\\/|README(\\.md)?)/i'
 area:templates:
-  - '/テンプレ/'
-  - '/branding/'
-  - '/generate_ready/'
-  - '/template/'
+  - '/(テンプレ|テンプレート|branding|generate_ready|template|templates\\/|samples\\/templates\\/|branding\\.json|template_spec|template_ai|layout_ai|jobspec\\.meta\\.template_path)/i'
 area:automation:
-  - '/\.github/'
-  - '/workflow/'
-  - '/Actions?/'
+  - '/(\\.github|workflow|actions?)/i'
 area:llm:
-  - '/(?i)llm/'
-  - '/プロンプト/'
-  - '/(?i)prompt/'
-  - '/directive/'
-  - '/(?i)directive/'
-  - '/指示文/'
-  - '/推論設定/'
-  - '/モデル/'
-  - '/(?i)model/'
-  - '/Template\\s*AI/'
-  - '/テンプレ\\s*AI/'
-  - '/(?i)template\\s*ai/'
-  - '/Layout\\s*AI/'
-  - '/レイアウト\\s*AI/'
-  - '/(?i)layout\\s*ai/'
-  - '/(?i)openai/'
-  - '/(?i)azure\\s*openai/'
-  - '/(?i)anthropic/'
-  - '/(?i)claude/'
-  - '/(?i)bedrock/'
-  - '/(?i)gpt/'
+  - '/(llm|プロンプト|prompt|directive|指示文|推論設定|モデル|model|Template\\s*AI|テンプレ\\s*AI|template\\s*ai|Layout\\s*AI|レイアウト\\s*AI|layout\\s*ai|openai|azure\\s*openai|anthropic|claude|bedrock|gpt)/i'
 area:cli:
-  - '/CLI\b/'
-  - '/uv run/'
+  - '/(CLI\\b|CLIツール|コマンド|uv\\s+run|pptx\\s+(compose|mapping|gen|prepare|tpl-extract|schedule)|--output|--workdir|引数)/i'
 area:dotnet:
   - '/\.NET/'
   - '/Polisher/'

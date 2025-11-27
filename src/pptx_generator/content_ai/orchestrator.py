@@ -81,7 +81,11 @@ class ContentAIOrchestrator:
                 )
 
             response = self._llm_client.generate(request)
-            content_slide = _build_content_slide(spec_slide.id, response, intent)
+            if not response.intent:
+                msg = f"LLM 応答に intent が含まれていません: slide_id={spec_slide.id}"
+                logger.error(msg)
+                raise ContentAIOrchestrationError(msg)
+            content_slide = _build_content_slide(spec_slide.id, response)
             slides.append(content_slide)
             if logger.isEnabledFor(logging.INFO):
                 logger.info(
@@ -148,9 +152,10 @@ def _render_prompt(*, template: str, spec: JobSpec, slide) -> str:
 def _build_content_slide(
     slide_id: str,
     response: AIGenerationResponse,
-    fallback_intent: str,
 ) -> ContentSlide:
-    intent = response.intent or fallback_intent
+    intent = response.intent
+    if intent is None:
+        raise ContentAIOrchestrationError(f"LLM 応答に intent が未設定です: slide_id={slide_id}")
     elements = ContentElements(
         title=response.title,
         body=response.body,
