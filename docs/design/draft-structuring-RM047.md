@@ -1,31 +1,31 @@
-# RM-047 工程4ドラフト構成設計リニューアル設計書
+# RM-047 stage 4 ドラフト構成設計リニューアル設計書
 
 ## 背景と目的
-- 工程3で確定した `prepare_card.json`（テンプレ依存を排したプレペアカード集合）と、工程2で抽出した `jobspec.json`（テンプレ構造とプレースホルダ情報）を統合し、工程5が期待する `generate_ready.json` を工程4で生成する。
-- 既存の `draft_draft.json` / `draft_approved.json` / `rendering_ready.json` を前提としたフローを廃止し、工程4→5 の受け渡しを `generate_ready` 基盤へ全面移行する。
+- stage 3 で確定した `prepare_card.json`（テンプレ依存を排したプレペアカード集合）と、stage 2 で抽出した `jobspec.json`（テンプレ構造とプレースホルダ情報）を統合し、stage 5 が期待する `generate_ready.json` を stage 4 で生成する。
+- 既存の `draft_draft.json` / `draft_approved.json` / `rendering_ready.json` を前提としたフローを廃止し、stage 4→5 の受け渡しを `generate_ready` 基盤へ全面移行する。
 - 生成AIがカード単位でスライド割当提案を行い、HITL による承認・差戻し操作と連携できる構造へ再設計する。
 
 ## 入出力
 ### 入力
-- `prepare_card.json`: 工程3 の成果物。`cards[*]` に `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]` などテンプレート非依存の情報を保持。
+- `prepare_card.json`: stage 3 の成果物。`cards[*]` に `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]` などテンプレート非依存の情報を保持。
 - `prepare_log.json`, `ai_generation_meta.json`: 生成経緯・HITL 操作のログ。必須ではないが、差戻し理由や AI の使用メタを参照するために読み込む。
-- `jobspec.json`: 工程2 で管理するテンプレ構造データ。`slides[*]` に `layout`, `anchor`（図形名）, `textboxes` / `tables` / `images` 等のプレースホルダ情報を保持。
+- `jobspec.json`: stage 2 で管理するテンプレ構造データ。`slides[*]` に `layout`, `anchor`（図形名）, `textboxes` / `tables` / `images` 等のプレースホルダ情報を保持。
 - `layouts.jsonl`: レイアウトカテゴリのメタ（用途タグ、テキスト収容量、メディア許容フラグなど）。
-- `analysis_summary.json`（任意）: 工程6（Analyzer）の結果。重大度別件数やレイアウト整合性をカード割当時に参照する。
+- `analysis_summary.json`（任意）: stage 6（Analyzer）の結果。重大度別件数やレイアウト整合性をカード割当時に参照する。
 - 章テンプレ辞書（任意）: `config/chapter_templates/<pattern>/<id>.json`。章構成の整合チェックに利用する。
 
 ### 出力
-- `generate_ready.json`: 工程5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
+- `generate_ready.json`: stage 5 がレンダリングに利用する唯一の構成ファイル。`slides[*]` には `layout_id`, `elements`, `meta`（章情報や割当元カード ID）を含める。
 - `generate_ready_meta.json`: 主に HITL と運用向けのメタ情報。章テンプレ適合率、カード割当結果、Analyzer 指摘要約、AI 推薦の適用件数などを記録。
 - `draft_mapping_log.json`: カード単位の割当プロセスログ。選定した `layout_id`、候補スコア、AI 推薦内容（LLM 応答の model / recommended / reasons）とシミュレーション結果、HITL アクション、PrepareCard 由来の `source` 情報（card_id / story_phase / intent_tags / Blueprint）を保持する。
-- `draft_review_log.json`: 工程4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
+- `draft_review_log.json`: stage 4 HITL 操作ログ（承認・差戻し・付録送り）。既存仕様のフィールドを維持しつつ `generate_ready` 向けに再定義。
 
 ## プロセス概要
 1. **Prepare 読み込み**: `PrepareNormalizationStep` が `prepare_cards` / `prepare_log` / `ai_generation_meta` を読み込み、`PipelineContext` に `prepare_document` を格納する。
 2. **カードメタ抽出**: 各カードの `role.story_phase`, `role.intent_tags`, `content.body`, `content.notes` からテンプレ選定に必要な特徴量を生成する（用途タグ、情報密度、補足情報の量など）。Prepare 正規化時に生成した `ContentSlide.source` を保持し、story_phase / intent_tags / Blueprint 情報を Layout AI へのペイロードへ連携する（ヒューリスティックはフォールバック用途のみ利用）。
 3. **ジョブスペック参照**: `jobspec.slides[*]` を `layout_id` キーでインデックス化し、アンカー構造やプレースホルダ数を計算する。`layouts.jsonl` が存在する場合は用途タグ・容量ヒントを補完する。
 4. **AI 推薦（カード単位）**:
-   - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、工程3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
+   - `CardLayoutRecommender`（新規）でカード 1 件ずつプロンプトを生成し、stage 3 で使用している Orchestrator のポリシーを再利用して推奨レイアウトを取得する。
    - プロンプトにはカード本文、意図タグ、章テンプレ要件、利用可能なテンプレ一覧（用途タグと主要アンカー情報）を含める。
    - LLM プロバイダは `PPTX_LLM_PROVIDER` で切り替える。`openai`（gpt-5-mini → JSON 応答が得られない場合は自動的に gpt-4o-mini 系へフェイルオーバー）、`azure`（Azure OpenAI Responses API）、`anthropic`（Claude 3 系列）、`aws-claude`（Bedrock Claude 3 系列）をサポートし、いずれも JSON オブジェクト形式で `recommended` / `reasons` を返す前提とする。
    - プロバイダ毎の互換性は `scripts/test_layout_providers.sh` で検証できる。`UV_CACHE_DIR` をリポジトリ直下に指定しておけば、初回承認後は同一キャッシュを再利用できる。
@@ -39,13 +39,13 @@
    - 差戻し時には `return_reasons.json` からコードを選択し、カードに紐付ける。差戻し後にカードが再割当されると過去ログはバージョンとして保持する。
 7. **generate_ready 出力**:
    - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `content.title` / `content.headline` / `content.body` / `content.notes` をアンカー構造に合わせて整形して格納。
-   - `meta.sources` には `card_id` を記載し、工程5 以降でトレース可能にする。
+   - `meta.sources` には `card_id` を記載し、stage 5 以降でトレース可能にする。
    - `generate_ready_meta.json` へは章テンプレ適合率、AI 推薦件数、差戻し統計、Analyzer 指摘要約（severity 別件数）を記録する。
 
 ## 主要コンポーネント
 | コンポーネント | 役割 | 備考 |
 | --- | --- | --- |
-| `PrepareNormalizationStep` | Prepare 成果物の読み込み。`PipelineContext` に `prepare_document` を格納し、互換の `content_approved` を生成（工程5 互換用途）。 | RM-047 では `content_approved` 互換出力を段階的に縮退させる。 |
+| `PrepareNormalizationStep` | Prepare 成果物の読み込み。`PipelineContext` に `prepare_document` を格納し、互換の `content_approved` を生成（stage 5 互換用途）。 | RM-047 では `content_approved` 互換出力を段階的に縮退させる。 |
 | `CardLayoutRecommender`（新規） | カード単位でテンプレ候補を評価。AI 推薦が成功した場合はトップ候補を採用し、ヒューリスティックはフォールバック用途で維持。 | 生成AIの利用有無は設定で切り替え可能。 |
 | `DraftStructuringStep`（刷新） | `prepare_document` と `jobspec` を突合し、`DraftAllocationResult` を生成。章テンプレ適合、付録候補判定を実施。 | 出力は `generate_ready` 専用アーティファクトへ転送。 |
 | `GenerateReadyBuilder`（新規） | 割当結果から `GenerateReadyDocument` とメタ情報を構築。 | CLI から直接利用。 |
@@ -157,21 +157,21 @@
 
 ## CLI / API 更新点
 - `uv run pptx outline` の引数を刷新し、最低限以下を必須とする。
-  - `jobspec`（旧 `spec_path`）: 工程2 の `jobspec.json`。
-  - `--prepare-cards`: 工程3 の `prepare_card.json`。
+  - `jobspec`（旧 `spec_path`）: stage 2 の `jobspec.json`。
+  - `--prepare-cards`: stage 3 の `prepare_card.json`。
   - `--output`: 出力ディレクトリ。既定 `.pptx/draft`。
   - `--generate-ready-filename`: 既定 `generate_ready.json`。
 - 廃止予定のオプション: `--draft-filename`, `--approved-filename`, `--meta-filename` など `draft_*` 系。互換目的の出力は生成しない。
 - 追加オプション: `--ai-recommender`（AI 利用設定）、`--analysis-summary`, `--chapter-template`, `--appendix-limit` 等は継続。
 - CLI 実行後は `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json` のパスを表示する。
-- API 側も同名エンドポイントへ置換し、工程5 で `generate_ready` を直接参照するよう更新する。
+- API 側も同名エンドポイントへ置換し、stage 5 で `generate_ready` を直接参照するよう更新する。
 
 ## 未決事項とリスク
-- AI 推薦のプロンプト詳細とモデル選定。工程3 で使用しているローカル LLM スタブを流用し、将来的な API 連携に備えた抽象化が必要。
-- `jobspec.json` に含まれないテンプレ専用メタ（例: 配色テンプレ ID、動的エレメント定義）が必要になった場合の拡張方法。工程2 の抽出結果で補完できるか確認が必要。
+- AI 推薦のプロンプト詳細とモデル選定。stage 3 で使用しているローカル LLM スタブを流用し、将来的な API 連携に備えた抽象化が必要。
+- `jobspec.json` に含まれないテンプレ専用メタ（例: 配色テンプレ ID、動的エレメント定義）が必要になった場合の拡張方法。stage 2 の抽出結果で補完できるか確認が必要。
 - `generate_ready_meta.json` の粒度（差戻しログとの重複）。運用側の監査要件と整合するよう調整する。
 
-## 実装ステップ（次工程）
+## 実装ステップ（次 stage）
 1. モデル追加 (`GenerateReady*`, `DraftAllocationResult` など) とユーティリティ実装。
 2. `pipeline/draft_structuring.py` の刷新と `GenerateReadyBuilder` の追加。
 3. CLI コマンド（`outline`）の引数・出力更新、市場テストサンプルの整備。

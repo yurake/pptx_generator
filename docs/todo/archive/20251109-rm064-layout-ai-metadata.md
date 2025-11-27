@@ -14,7 +14,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo を都度更新し、進捗は PR で共有。必要に応じて `docs/notes` に補足メモを追加。
     - 想定影響ファイル: `src/pptx_generator/draft_recommender.py`, `src/pptx_generator/layout_ai/client.py`, `src/pptx_generator/pipeline/draft_structuring.py`, `docs/notes/20251109-usage-tags-scoring.md`, `tests/test_layout_recommender.py` など。
     - リスク: AI 応答フォーマット揺らぎによるタグ抽出失敗、メタ情報増加に伴うレスポンス遅延、既存 usage_tags との不整合。フォールバックとログで影響可視化し、必要時に手動確認。
-    - テスト方針: ユニットテストでタグ正規化とフォールバック経路を確認し、`tests/test_cli_integration.py` で工程全体の回帰を確認。必要に応じて `uv run pptx tpl-extract` でメタデータ出力を検証。
+    - テスト方針: ユニットテストでタグ正規化とフォールバック経路を確認し、`tests/test_cli_integration.py` で stage 全体の回帰を確認。必要に応じて `uv run pptx tpl-extract` でメタデータ出力を検証。
     - ロールバック方法: `feat/rm064-layout-ai-metadata` のコミットをリバートし、AI メタデータ拡張を無効化する。
     - 承認メッセージ ID／リンク: チャットログ（2025-11-09 Plan 承認）
 - [x] 設計・実装方針の確定

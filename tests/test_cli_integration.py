@@ -177,7 +177,7 @@ def test_cli_template_basic(tmp_path: Path) -> None:
     assert (extract_dir / "jobspec.json").exists()
     assert (extract_dir / "layouts.jsonl").exists()
     assert (extract_dir / "diagnostics.json").exists()
-    assert "テンプレ工程（抽出＋検証）が完了しました。" in result.output
+    assert "テンプレ stage（抽出＋検証）が完了しました。" in result.output
 
 
 def test_cli_template_with_release(tmp_path: Path) -> None:
@@ -208,7 +208,7 @@ def test_cli_template_with_release(tmp_path: Path) -> None:
     assert (extract_dir / "branding.json").exists()
     assert (release_dir / "template_release.json").exists()
     assert (release_dir / "release_report.json").exists()
-    assert "テンプレ工程（抽出＋検証＋リリース）が完了しました。" in result.output
+    assert "テンプレ stage（抽出＋検証＋リリース）が完了しました。" in result.output
 
 
 def test_cli_template_force_skips_validation(tmp_path: Path, monkeypatch) -> None:

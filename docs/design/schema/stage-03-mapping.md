@@ -1,6 +1,6 @@
 # マッピングスキーマ
 
-工程3（マッピング）で利用する JSON 仕様を定義する。
+stage 3（マッピング）で利用する JSON 仕様を定義する。
 
 ## ID の扱いについて
 
@@ -128,7 +128,7 @@
 - `ai_patch`: 適用された JSON Patch の ID と説明。差分は別途ログに記録。
 - `warnings`: `layout_mismatch`, `table_overflow` など Renderer へ引き継ぐ警告。
 - `source`: PrepareCard のメタデータ。`card_id` や `story_phase`、`intent_tags`、Blueprint 情報（静的モード時）を保持する。
-- `analyzer`: 工程4で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
+- `analyzer`: stage 4 で生成された Analyzer 指摘のスライド別サマリ。件数集計 (`issue_count`／`issue_counts_*`) と `analysis.json` の対象エントリを保持する。
 
 ## fallback_report.json
 - 重大フォールバック（章削減、付録移動など）が発生したスライドのみを列挙する任意ファイル。
@@ -141,4 +141,4 @@
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。
-- `ContentElements.body` は Stage2 から全文を保持し、工程3ではレイアウトヒントの許容量を超えた場合に警告を記録するのみで自動トリミングは行わない（RM-068 対応済み）。
+- `ContentElements.body` は Stage2 から全文を保持し、stage 3 ではレイアウトヒントの許容量を超えた場合に警告を記録するのみで自動トリミングは行わない（RM-068 対応済み）。

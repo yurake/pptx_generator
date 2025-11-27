@@ -1,5 +1,5 @@
 ---
-目的: 工程3のレイアウトAI応答で得られるトップ候補を即採用できるようにし、従来のスコア合成処理を省略する
+目的: stage 3 のレイアウトAI応答で得られるトップ候補を即採用できるようにし、従来のスコア合成処理を省略する
 関連ブランチ: feat/rm054-static-blueprint-plan
 関連Issue: #286
 roadmap_item: RM-054 静的テンプレ構成統合
@@ -9,7 +9,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
   - メモ: 既存ブランチ `feat/rm054-static-blueprint-plan` を継続利用する（初期セットアップ済み）
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認メッセージ(2025-11-12 "ok")を受領。Plan を以下の通り転記。
-    - 対象整理（スコープ、対象ファイル、前提）: 工程3のレイアウト候補決定ロジックを対象とし、AI応答が得られたスライドで従来のスコア合成を省いてトップ候補を即採用する。フォールバック用途としてヒューリスティック／シミュレーションは保持する。想定変更ファイルは `src/pptx_generator/draft_recommender.py` と `tests/test_layout_recommender.py`。
+    - 対象整理（スコープ、対象ファイル、前提）: stage 3 のレイアウト候補決定ロジックを対象とし、AI応答が得られたスライドで従来のスコア合成を省いてトップ候補を即採用する。フォールバック用途としてヒューリスティック／シミュレーションは保持する。想定変更ファイルは `src/pptx_generator/draft_recommender.py` と `tests/test_layout_recommender.py`。
     - ドキュメント／コード修正方針: `CardLayoutRecommender.recommend` と `_apply_layout_ai` の分岐を調整し、AI応答成功時はトップ候補のみを `RecommendationResult` へ反映。AIレスポンスが空・解析失敗・モックプロバイダーの場合は従来ロジック（ヒューリスティック合成）を利用。必要に応じてログやAIメタ情報の整合も確認。
     - 確認・共有方法（レビュー、ToDo 更新など）: 作業完了時に当該 ToDo を更新し、ユーザーへ結果報告。必要に応じて関連ドキュメントやメモを連絡。
     - 想定影響ファイル: `src/pptx_generator/draft_recommender.py`, `tests/test_layout_recommender.py`。

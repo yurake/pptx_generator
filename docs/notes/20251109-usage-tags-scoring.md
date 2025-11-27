@@ -2,7 +2,7 @@
 
 ## 背景
 - `uv run pptx template` で抽出した `.pptx/extract/layouts.jsonl` の `usage_tags` が `title` に偏っている事象を確認。
-- 生成 AI へ渡す入力としてレイアウト情報を活用するため、タグ付けの意味付けと後続工程での利用方法を整理する。
+- 生成 AI へ渡す入力としてレイアウト情報を活用するため、タグ付けの意味付けと後続 stage での利用方法を整理する。
 
 ## usage_tags の抽出ロジック
 - Stage1 では `TemplateAIService` を介して生成 AI にレイアウト構造（プレースホルダー種類、テキスト・メディアヒント、ヒューリスティック結果）を渡し、`usage_tags` を返してもらう。  
@@ -12,10 +12,10 @@
 - `diagnostics.json` には `template_ai_*` 統計とレイアウト単位の推定結果が記録される。
 
 ## usage_tags の利用箇所
-- 工程3 ドラフト構築: `src/pptx_generator/pipeline/draft_structuring.py:282` 付近。
+- stage 3 ドラフト構築: `src/pptx_generator/pipeline/draft_structuring.py:282` 付近。
   - `layout_candidates` 生成時に `intent` 一致で `+0.4`、`type_hint` 一致で `+0.3` を加点。
   - `text_hint.max_lines` やテーブル可否で追加の加減点。
-- 工程5 マッピング: `src/pptx_generator/pipeline/mapping.py:353` 付近。
+- stage 5 マッピング: `src/pptx_generator/pipeline/mapping.py:353` 付近。
   - `intent` 一致で `+0.5`、`type_hint` 一致で `+0.15` を加点。
   - 上限行数、テーブル可否、直前レイアウト重複などで補正。
 - `fix/rm060-stage3-id-enforce` ブランチのレコメンダ: `src/pptx_generator/draft_recommender.py:136` 付近。

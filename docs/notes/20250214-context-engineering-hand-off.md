@@ -19,7 +19,7 @@
    - Plan / ToDo には参照する資料のリンクのみを記載し、作業中に詳細を都度確認する運用へ寄せる。
 
 ### 既存ドキュメントの現状メモ
-- `README.md`: 工程・コマンドが詳細に記載されている。冒頭サマリとドキュメント索引を追加する余地あり（まだ未実施）。
+- `README.md`: stage・コマンドが詳細に記載されている。冒頭サマリとドキュメント索引を追加する余地あり（まだ未実施）。
 - `AGENTS.md`: タスク運用や ToDo 連携を中心に説明。コンテキスト整理ルールの追記が必要。
 - `docs/README.md`: カテゴリ一覧は存在。各カテゴリの役割を State/History/Goals 形式で補足する案がある。
 - Runbook: 入力・手順・失敗時対応が揃っているものとそうでないものが混在。
@@ -134,9 +134,9 @@ coding agent で実務に落とすなら、もう少し実装寄りに：
    * 開発方針、命名規約、テストポリシー、CLI の非機能要件など
    * → `AGENTS.md` / `CLAUDE.md` / `CONTRIBUTING.md` などで管理
 
-2. **ドメイン別・工程別の仕様／設計**
+2. **ドメイン別・stage 別の仕様／設計**
 
-   * pptx_generator でいうと、テンプレ工程 / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
+   * pptx_generator でいうと、テンプレ stage / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
    * → `docs/requirements/stages/*` `docs/design/stages/*` など
 
 3. **タスクローカルな情報**
@@ -206,7 +206,7 @@ Claude Code では、**custom subagents がコンテキスト管理の最強機�
 
 3. **Subsystem / Stage レイヤ**
 
-   * 「テンプレ工程」「コンテンツ準備」「マッピング」「レンダリング」など、工程別の仕様・設計・運用ガイド。
+   * 「テンプレ stage」「コンテンツ準備」「マッピング」「レンダリング」など、stage 別の仕様・設計・運用ガイド。
    * → `docs/requirements/stages/*`, `docs/design/stages/*`, `docs/runbooks/*`。
 
 4. **Task レイヤ（PR / Issue / ローカルノート）**
@@ -295,7 +295,7 @@ Datacamp や LLM コスト最適化の記事では、コンテキスト設計と
 
    * 例：
 
-     * テンプレ工程タスク
+     * テンプレ stage タスク
        → `docs/requirements/stages/stage-01-template-pipeline.md`
        → `docs/design/layout-style-governance.md`
        → `templates/libraries/**/`
@@ -404,7 +404,7 @@ Codex には Subagent という形がないですが、
    * 「MappingAgent を使って、`pptx compose` に `--dry-run` オプションを追加してください。挙動の要件は…」と指示。
 2. エージェント側のステップ（AGENTS.md で明記しておく）:
 
-   1. `docs/context/context-map.md` の「工程 3 マッピング」セクションを見る。
+   1. `docs/context/context-map.md` の「stage 3 マッピング」セクションを見る。
    2. 指定された docs を要約し、要件・制約を抽出。
    3. `src/pptx_generator/compose/**` 周辺を search し、CLI entry point を特定。
    4. 修正案を diff で提案。
@@ -422,7 +422,7 @@ Codex には Subagent という形がないですが、
 
 1. **`docs/context/context-map.md` を新規作成**
 
-   * 工程別・タスク別に「読むべき docs / コードフォルダ」を表形式で整理。
+   * stage 別・タスク別に「読むべき docs / コードフォルダ」を表形式で整理。
 
 2. **AGENTS.md に「コンテキスト利用ポリシー」セクションを追加**
 
@@ -440,7 +440,7 @@ Codex には Subagent という形がないですが、
 
    * 例: `src/pptx_generator/compose/main.py` の先頭に
 
-     * 「このモジュールは工程 3 マッピングの CLI をまとめている」
+     * 「このモジュールは stage 3 マッピングの CLI をまとめている」
      * 「参照すべき設計ドキュメントのパス」
        をコメントで書く。
    * これだけで search ベースのエージェントが「どこを読めばいいか」をかなり把握しやすくなる。

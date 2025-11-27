@@ -1,4 +1,4 @@
-"""工程4 ドラフト構成設計ステップ。"""
+"""stage 4 ドラフト構成設計ステップ。"""
 
 from __future__ import annotations
 

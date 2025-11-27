@@ -37,7 +37,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: 2025-11-24 Layout AI の card_context / card_context_prompt / layout_metadata_prompt を無効化し、docs/notes/20251122-layout-ai-policy-review.md に追記済み。content_ai ログはファイル出力＋標準出力に統一フォーマットで出力し、LLM 応答のみフィルタリングするよう変更。Static prepare プロンプトも table slot では `headers` / `rows` を含む構造化データを求めるよう更新。
   - メモ: Static モード `pptx gen` での `SlideBullet` 文字数超過を受け、本文・箇条書きの制約見直しは RM-068（ContentElements 制約見直し）に統合して対応する方針。必要な調査項目をそちらへ連携済み。
   - [x] docs/roadmap 配下
-    - メモ: `docs/roadmap/roadmap.md` の RM-068 項で段落・箇条書き制約見直しとレンダリング工程での最終トリミング方針を追記済み。
+    - メモ: `docs/roadmap/roadmap.md` の RM-068 項で段落・箇条書き制約見直しとレンダリング stage での最終トリミング方針を追記済み。
   - [x] docs/requirements 配下（実装結果との整合再確認）
     - メモ: 2025-11-24 時点の要件更新で構造化 bullets に関する追加変更は不要と判断し、「構造化差し込み要件は準拠済み」とメモに追記。
   - [x] docs/design 配下（実装結果との整合再確認）

@@ -1,7 +1,7 @@
-# 工程3 マッピング (HITL + 自動) 設計
+# stage 3 マッピング (HITL + 自動) 設計
 
 ## 目的
-- 工程2の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、工程4（PPTX 作成）が参照する `generate_ready.json` を生成する。
+- stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。
 - HITL 承認と割当ログを `generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約し、監査しやすい構造を維持する。
 - 再実行や差戻しが発生した際も `.pptx/draft/` 配下の成果物を固定し、CLI／自動化から運用できるようにする。
 
@@ -12,7 +12,7 @@
 | Draft Structuring Engine | 章構成・差戻しワークフロー | Python / dataclass | `generate_ready_meta.sections[]`・`draft_review_log.json` を管理 |
 | Layout Hint Engine | レイアウト候補スコアリング | Python | Prepare の intent / chapter / Analyzer 指摘を参照 |
 | GenerateReady Builder | プレースホルダ割付・フォールバック制御 | Python | `generate_ready.json`, `draft_mapping_log.json` を生成 |
-| CLI | `pptx compose` / `pptx outline` | Click | compose が工程3全体をラップし、outline が構成再実行を担う |
+| CLI | `pptx compose` / `pptx outline` | Click | compose が stage 3 全体をラップし、outline が構成再実行を担う |
 
 ## 入出力
 - 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`（ログ／AIメタのパスは `prepare_card.json.meta.*` から参照）、（任意）`analysis_summary.json`、章テンプレ辞書、差戻し理由辞書。
@@ -32,7 +32,7 @@
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
-| `--prepare-cards <path>` | 工程2の PrepareCard | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の PrepareCard | `.pptx/prepare/prepare_card.json` |
 | `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
 | `--target-length <int>` | 目標スライド枚数 | 未指定 |
 | `--structure-pattern <name>` | 章構成パターン名 | 未指定 |
@@ -52,8 +52,8 @@
 - 差戻し後に Draft のみ更新したいケースや UI 連携での個別更新時に利用する。
 
 ### `pptx mapping`
-- 工程3のマッピング処理だけを個別に実行し、`.pptx/gen/`（既定）配下に `generate_ready.json` などを生成するコマンド。
-- `pptx compose` と同様に、Prepare 成果物は `--prepare-cards` で指定し、テンプレート／レイアウトは jobspec の `meta` から解決する。レンダリング工程（工程4）は `pptx gen` が担当する。
+- stage 3 のマッピング処理だけを個別に実行し、`.pptx/gen/`（既定）配下に `generate_ready.json` などを生成するコマンド。
+- `pptx compose` と同様に、Prepare 成果物は `--prepare-cards` で指定し、テンプレート／レイアウトは jobspec の `meta` から解決する。レンダリング stage（stage 4）は `pptx gen` が担当する。
 
 ## ログ・監査
 - `draft_review_log.json`: 章/スライドの承認・差戻し履歴（`action`, `actor`, `timestamp`, `reason_code`, `notes`）。
@@ -62,7 +62,7 @@
 - `generate_ready_meta.json` には章テンプレ適合率、承認統計、AI 推薦採用件数などを記録し、ハッシュ情報は別途 `audit_log.json` に集約する。
 
 ## 品質ゲート
-- `jobspec.json.slides[*].id` に含まれる ID はすべて `content_approved.slides[*].id` に存在することを必須とし、不一致が 1 件でも見つかった場合は `DraftStructuringError` を送出して工程3を即時停止する。エラーメッセージには欠損 ID 一覧を含め、CLI 側では exit code 6 として扱う。
+- `jobspec.json.slides[*].id` に含まれる ID はすべて `content_approved.slides[*].id` に存在することを必須とし、不一致が 1 件でも見つかった場合は `DraftStructuringError` を送出して stage 3 を即時停止する。エラーメッセージには欠損 ID 一覧を含め、CLI 側では exit code 6 として扱う。
 - Slide ID Aligner が `content_approved` を補正した後も未解決の ID が残るケースを前提とし、品質ゲートに到達する前に INFO ログで検出状況を通知する。
 - 例外発生時は `.pptx/draft/` 配下へ中間成果物を出力せず、HITL は `prepare_card.json` / `jobspec.json` を突合して ID 設定ミスを修正した上で再実行する。
 

@@ -2,7 +2,7 @@
 目的: PR #257 の pytest 失敗要因を特定し、テストが通過するよう修正する
 関連ブランチ: feat/rm048-cli-wrapper
 関連Issue: #253
-roadmap_item: RM-048 工程4+5 統合CLI整備
+roadmap_item: RM-048 stage 4+5 統合CLI整備
 ---
 
 - [x] ブランチ作成と初期コミット
@@ -46,4 +46,4 @@ roadmap_item: RM-048 工程4+5 統合CLI整備
   - メモ: PR #257 での対応を継続し、今回の修正反映後に再プッシュ予定。
 
 ## メモ
-- gh issue list は TLS エラーで取得できず、関連 Issue は #253（工程4+5 統合 CLI 対応）を継続利用する。
+- gh issue list は TLS エラーで取得できず、関連 Issue は #253（stage 4+5 統合 CLI 対応）を継続利用する。

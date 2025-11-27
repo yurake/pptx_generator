@@ -13,7 +13,7 @@ roadmap_item: RM-054 静的テンプレ構成統合プランニング
     - ドキュメント／コード修正方針: `src/pptx_generator/prepare/models.py`, `models.ContentElements`, `prepare_normalization`, `draft_structuring` を更新し、`docs/requirements/stages/stage-02-content-normalization.md` など要件・設計資料を同期。必要に応じ `docs/roadmap/roadmap.md`（RM-068 参照）へ注記を追加。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 進捗に反映し、Plan 承認メッセージ（本スレッド）を PR/ToDo に明記。実装後は関連テスト結果と CLI 動作確認を共有。
     - 想定影響ファイル: `src/pptx_generator/prepare/models.py`, `prepare/orchestrator.py`, `prepare/prompts.py`, `pipeline/prepare_normalization.py`, `pipeline/draft_structuring.py`, `src/pptx_generator/models.py`, `tests/test_cli_prepare.py` 他 prepare/draft テスト、`docs/requirements`, `docs/design`。
-    - リスク: モデル変更で既存成果物の読み込みが失敗する可能性。タイトルページ自動挿入により枚数変動が発生し、下流工程で意図しない挙動となる恐れ。Subtitle 追加がテンプレ依存 UI と矛盾するリスク。
+    - リスク: モデル変更で既存成果物の読み込みが失敗する可能性。タイトルページ自動挿入により枚数変動が発生し、下流 stage で意図しない挙動となる恐れ。Subtitle 追加がテンプレ依存 UI と矛盾するリスク。
     - テスト方針: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_cli_integration.py::test_prepare_dynamic` 等で prepare/draft フローを検証。必要に応じ CLI 手動実行で `.pptx/prepare/prepare_card.json` と `.pptx/compose/generate_ready.json` の挙動を確認。
     - ロールバック方法: 変更は機能単位でコミットし、問題発生時は該当コミットを revert する。スキーマ互換性問題が顕在化した場合は旧モデル定義へ戻す。
     - 承認メッセージ ID／リンク: （本スレッドの Plan 承認メッセージ）

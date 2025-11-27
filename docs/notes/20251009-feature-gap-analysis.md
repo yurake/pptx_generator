@@ -23,7 +23,7 @@
   - 2025-10-15 更新: RM-013 の実装で PPTX 実体を解析し、余白・グリッド・フォント・コントラストを計測する `analysis.json` を出力するよう対応済み。
 - **自動補正（Refiner/Polisher）の適用範囲不足**
   - Refiner が適用するのは箇条書きレベル再調整のみで、フォント引き上げや色補正は提案止まり（`src/pptx_generator/pipeline/refiner.py:25`）。要件では安全な補正の自動適用を求めている（`docs/requirements/requirements.md:31`）。
-  - `.NET` 製 Polisher（Open XML SDK）も未実装で、設計ドキュメントの構成と乖離（`docs/design/design.md:155`）。段落間隔や禁則調整など仕上げ工程が欠落している。
+  - `.NET` 製 Polisher（Open XML SDK）も未実装で、設計ドキュメントの構成と乖離（`docs/design/design.md:155`）。段落間隔や禁則調整など仕上げ stage が欠落している。
 - **通知／配布チャネルの未整備**
   - 生成成果物の通知や保存先連携は要件に含まれる（`docs/requirements/requirements.md:34`）が、実装や ToDo が存在しない。
   - ロードマップでも `Service-F Distributor` をバックログ扱いにしており（`docs/roadmap/roadmap.md:128`）、優先度再評価が必要。

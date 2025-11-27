@@ -6,7 +6,7 @@
 ## 前提条件
 - Mac / Windows / Linux いずれかで LibreOffice 7.6 以降がインストール済み。
 - `soffice` コマンドが PATH から呼び出せるか、または `LIBREOFFICE_PATH` でフルパスを指定。
-- 工程4（`pptx compose` もしくは `pptx mapping`）で `.pptx/compose/generate_ready.json` が生成済み。サンプルワークフローは以下の通り。
+- stage 4（`pptx compose` もしくは `pptx mapping`）で `.pptx/compose/generate_ready.json` が生成済み。サンプルワークフローは以下の通り。
 
   ```bash
   uv run pptx prepare samples/contents/sample_import_content_summary.txt \
