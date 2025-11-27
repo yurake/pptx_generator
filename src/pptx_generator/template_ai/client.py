@@ -79,7 +79,7 @@ class MockTemplateAIClient:
         return TemplateAIResponse(
             model="mock-template",
             usage_tags=canonical,
-            reason="heuristic-fallback",
+            reason="heuristic",
             raw_text=json.dumps({"usage_tags": list(canonical)}, ensure_ascii=False),
         )
 
@@ -240,10 +240,9 @@ class AzureOpenAITemplateAIClient:
 class AnthropicTemplateAIClient:
     """Anthropic Claude API を利用したテンプレート分類。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int, fallback_model: str | None = None) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int) -> None:
         self._client = client
         self._model = model
-        self._fallback_model = fallback_model
         self._max_tokens = max_tokens
 
     @classmethod
@@ -259,58 +258,39 @@ class AnthropicTemplateAIClient:
             raise TemplateAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
 
         model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        fallback_model = os.getenv("ANTHROPIC_FALLBACK_MODEL")
         max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or 32000)))
         client = anthropic.Anthropic(api_key=api_key)
-        return cls(client, model=model_id, max_tokens=max_tokens, fallback_model=fallback_model)
+        return cls(client, model=model_id, max_tokens=max_tokens)
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:
-        candidate_models: list[str] = []
-        for value in (
-            os.getenv("ANTHROPIC_MODEL"),
-            self._model,
-            os.getenv("ANTHROPIC_FALLBACK_MODEL"),
-            self._fallback_model,
-        ):
-            if not value:
-                continue
-            normalized = value.strip()
-            if normalized in {"", "mock", "mock-template"}:
-                continue
-            if normalized not in candidate_models:
-                candidate_models.append(normalized)
-        if not candidate_models:
-            candidate_models.append(self._model)
-
+        model_name = self._model or os.getenv("ANTHROPIC_MODEL") or ""
         temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", str(request.policy.temperature or 0.0)))
-        last_error: Exception | None = None
-        response = None
-        model_name = candidate_models[0]
-        for candidate in candidate_models:
-            try:
-                response = self._client.messages.create(  # type: ignore[attr-defined]
-                    model=candidate,
-                    system=_build_system_prompt(),
-                    max_tokens=self._max_tokens,
-                    temperature=temperature,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": _build_user_prompt(request),
-                                }
-                            ],
-                        }
-                    ],
-                )
-                model_name = candidate
-                break
-            except Exception as exc:  # pragma: no cover - best effort retries
-                last_error = exc
-        if response is None:
-            raise TemplateAIClientConfigurationError(str(last_error)) from last_error
+        try:
+            response = self._client.messages.create(  # type: ignore[attr-defined]
+                model=model_name,
+                system=_build_system_prompt(),
+                max_tokens=self._max_tokens,
+                temperature=temperature,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": _build_user_prompt(request),
+                            }
+                        ],
+                    }
+                ],
+            )
+        except Exception as exc:  # pragma: no cover - API failure
+            logger.error(
+                "Anthropic template AI request failed: model=%s payload_keys=%s error=%s",
+                model_name,
+                list(request.payload.keys()),
+                exc,
+            )
+            raise TemplateAIClientConfigurationError(str(exc)) from exc
 
         text_parts = [
             block.text for block in response.content if getattr(block, "type", None) == "text" and getattr(block, "text", None)
