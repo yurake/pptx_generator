@@ -19,6 +19,9 @@ from pptx_generator.prepare import (
     PrepareStoryContext,
 )
 from pptx_generator.models import (
+    DraftDocument,
+    DraftSection,
+    DraftSlideCard,
     FontSpec,
     JobAuth,
     JobMeta,
@@ -60,6 +63,15 @@ def _render_spec(spec: JobSpec, workdir, template_path=None) -> PipelineContext:
     renderer = SimpleRendererStep(options)
     renderer.run(context)
     return context
+
+
+def _attach_minimal_draft_document(context: PipelineContext, spec: JobSpec) -> None:
+    cards = [
+        DraftSlideCard(ref_id=slide.id, order=index, layout_hint=slide.layout)
+        for index, slide in enumerate(spec.slides, start=1)
+    ]
+    section = DraftSection(name="auto", order=1, slides=cards)
+    context.add_artifact("draft_document", DraftDocument(sections=[section]))
 
 
 def test_simple_analyzer_detects_quality_issues(tmp_path) -> None:
@@ -180,6 +192,7 @@ def test_analyzer_updates_mapping_log(tmp_path) -> None:
     )
 
     mapping_context = PipelineContext(spec=spec, workdir=tmp_path)
+    _attach_minimal_draft_document(mapping_context, spec)
     prepare_doc = PrepareDocument(
         prepare_id="prepare-test",
         cards=[
