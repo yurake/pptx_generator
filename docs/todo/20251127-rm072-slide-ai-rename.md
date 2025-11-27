@@ -1,7 +1,7 @@
 ---
 目的: RM-072 slide_alignment 命名と責務の再整理
 関連ブランチ: chore/rm072-slide-ai-rename
-関連Issue: 未作成
+関連Issue: #328
 roadmap_item: RM-072 slide_alignment 命名と責務の再整理
 ---
 
@@ -35,7 +35,7 @@ roadmap_item: RM-072 slide_alignment 命名と責務の再整理
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
   - メモ: 
