@@ -45,9 +45,9 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
-from .prepare import (PrepareAIOrchestrationError, PrepareAIOrchestrator,
-                      PrepareDocument, PreparePolicyError,
+from .prepare import (PrepareDocument, PreparePolicyError,
                       PrepareSourceDocument, load_prepare_policy_set)
+from .prepare_ai import (PrepareAIOrchestrationError, PrepareAIOrchestrator)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import BrandingConfig, RulesConfig
 from .spec_loader import load_jobspec_from_path

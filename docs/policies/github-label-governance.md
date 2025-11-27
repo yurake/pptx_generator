@@ -23,7 +23,7 @@
 |  | `area:docs` | `bfdadc` | `docs/**`、`README*`。 |
 |  | `area:automation` | `f8c2d7` | `.github/**`、`scripts/**`。 |
 |  | `area:dotnet` | `e6e6fa` | `dotnet/**`。 |
-|  | `area:llm` | `f9d5ff` | `src/pptx_generator/prepare/**`、`src/pptx_generator/content_ai/**`、`src/pptx_generator/layout_ai/**`、`src/pptx_generator/template_ai/**`、`src/pptx_generator/pipeline/slide_alignment.py`、`src/pptx_generator/draft_recommender.py`、`config/**/*policy*.json`。 |
+|  | `area:llm` | `f9d5ff` | `src/pptx_generator/prepare/**`、`src/pptx_generator/prepare_ai/**`、`src/pptx_generator/content_ai/**`、`src/pptx_generator/layout_ai/**`、`src/pptx_generator/template_ai/**`、`src/pptx_generator/pipeline/slide_alignment.py`、`src/pptx_generator/draft_recommender.py`、`config/**/*policy*.json`。 |
 | 自動化 | `todo-sync` | `0e8a16` | `todo-sync` ワークフローが使用。名称を変更しない。 |
 |  | `automation:ci` | `5319e7` | CI 連携確認用。必要に応じて付与。 |
 
@@ -58,7 +58,7 @@
   - `templates/**`, `samples/**`, `config/**`, `pptx/` 関連で `area:templates`。
   - `src/**`, `pyproject.toml`, `uv.lock` の変更で `area:cli`。CI で Python ロジックが主対象のため `type` 自動付与は行わず、レビュー時に判断する。
   - `dotnet/**` の変更で `area:dotnet`。
-  - `src/pptx_generator/prepare/**`, `src/pptx_generator/content_ai/**`, `src/pptx_generator/layout_ai/**`, `src/pptx_generator/template_ai/**`, `src/pptx_generator/pipeline/slide_alignment.py`, `src/pptx_generator/draft_recommender.py`, `config/**/*policy*.json`, `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-01-*`, `docs/requirements/stages/stage-03-*`, `docs/design/stages/stage-01-template-pipeline.md` の変更で `area:llm`。
+  - `src/pptx_generator/prepare/**`, `src/pptx_generator/prepare_ai/**`, `src/pptx_generator/content_ai/**`, `src/pptx_generator/layout_ai/**`, `src/pptx_generator/template_ai/**`, `src/pptx_generator/pipeline/slide_alignment.py`, `src/pptx_generator/draft_recommender.py`, `config/**/*policy*.json`, `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-01-*`, `docs/requirements/stages/stage-03-*`, `docs/design/stages/stage-01-template-pipeline.md` の変更で `area:llm`。
   - 変更ファイルが 1 カテゴリに限定される場合は `type:docs` など補助ラベルを付与できるよう `all-globs-to-any-file` を活用する。
   - `!` 否定を利用し、ドキュメントのみ変更の PR には `type:docs` を付与しつつ、コード変更が混在する場合は付与しない。
 
