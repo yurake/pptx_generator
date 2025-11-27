@@ -27,7 +27,6 @@ flowchart TB
     subgraph GOV["Cross-Stage / Governance"]
         direction TB
         GOV_ANCHOR(( ))
-        RM078["RM-078<br/>stage 表記統一<br/>(未着手)"]
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
@@ -993,8 +992,8 @@ flowchart TB
 - 対象領域: Cross-Stage ドキュメント・ログ
 - ゴール: パイプライン stage の表記を「stage」で統一し、ドキュメント／CLI 表示の一貫性を確保する。
 - 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/cli-command-reference.md](../design/cli-command-reference.md)
-- 参照 ToDo: [docs/todo/20251124-rm078-stage-terminology.md](../todo/20251124-rm078-stage-terminology.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm078-stage-terminology.md](../todo/archive/20251124-rm078-stage-terminology.md)
+- 状況: 完了（2025-11-27 更新）
 - 期待成果:
   - リポジトリ全体の「stage」表記を網羅的に置換し、Mermaid 図や CLI メッセージも含めて整合を取る。
   - 置換対象／除外条件を整理し、運用ガイドへ更新方針を記録する。

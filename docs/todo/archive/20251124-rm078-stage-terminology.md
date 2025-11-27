@@ -54,7 +54,7 @@ roadmap_item: RM-078 stage 表記統一
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: 各サブチェックが stage 表記統一作業と一致していることをレビューし、未記入項目がないことを確認。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #327 https://github.com/yurake/pptx_generator/pull/327（2025-11-27 完了）
 
 ## メモ
