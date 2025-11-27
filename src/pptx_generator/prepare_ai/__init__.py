@@ -2,14 +2,32 @@
 
 from __future__ import annotations
 
-from . import llm_client as _llm_client
-from . import orchestrator as _orchestrator
-from . import prompts as _prompts
+from importlib import import_module
+from typing import Any, Iterable, Sequence
 
-__all__ = sorted(
-    set(_orchestrator.__all__) | set(_llm_client.__all__) | set(_prompts.__all__)
-)
+_orchestrator = import_module("pptx_generator.prepare_ai.orchestrator")
+_llm_client = import_module("pptx_generator.prepare_ai.llm_client")
+_prompts = import_module("pptx_generator.prepare_ai.prompts")
 
-globals().update({name: getattr(_orchestrator, name) for name in _orchestrator.__all__})
-globals().update({name: getattr(_llm_client, name) for name in _llm_client.__all__})
-globals().update({name: getattr(_prompts, name) for name in _prompts.__all__})
+
+def _collect_exports(module: Any) -> list[str]:
+    names = getattr(module, "__all__", None)
+    if names is None:
+        names = [attr for attr in dir(module) if not attr.startswith("_")]
+    return list(names)
+
+
+def _export(module: Any, names: Sequence[str]) -> None:
+    for name in names:
+        globals()[name] = getattr(module, name)
+
+
+_orchestrator_exports = _collect_exports(_orchestrator)
+_llm_client_exports = _collect_exports(_llm_client)
+_prompts_exports = _collect_exports(_prompts)
+
+__all__ = sorted(set(_orchestrator_exports) | set(_llm_client_exports) | set(_prompts_exports))
+
+_export(_orchestrator, _orchestrator_exports)
+_export(_llm_client, _llm_client_exports)
+_export(_prompts, _prompts_exports)
