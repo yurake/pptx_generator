@@ -34,7 +34,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `uv run --extra dev pytest tests/test_template_ai.py tests/test_layout_validation_template_ai.py tests/test_layout_validation_suite.py tests/test_layout_recommender.py tests/test_draft_structuring_step.py` を実行し 17 件成功。
 - [x] ドキュメント更新
   - メモ: 対象ドキュメントの更新内容を記載。
-  - メモ: 2025-11-24 Layout AI の card_context / card_context_prompt / layout_metadata_prompt を無効化し、docs/notes/20251122-layout-ai-policy-review.md に追記済み。content_ai ログはファイル出力＋標準出力に統一フォーマットで出力し、LLM 応答のみフィルタリングするよう変更。Static prepare プロンプトも table slot では `headers` / `rows` を含む構造化データを求めるよう更新。
+  - メモ: 2025-11-24 Layout AI の card_context / card_context_prompt / layout_metadata_prompt を無効化し、docs/notes/20251122-layout-ai-policy-review.md に追記済み。slide_ai ログはファイル出力＋標準出力に統一フォーマットで出力し、LLM 応答のみフィルタリングするよう変更。Static prepare プロンプトも table slot では `headers` / `rows` を含む構造化データを求めるよう更新。
   - メモ: Static モード `pptx gen` での `SlideBullet` 文字数超過を受け、本文・箇条書きの制約見直しは RM-068（ContentElements 制約見直し）に統合して対応する方針。必要な調査項目をそちらへ連携済み。
   - [x] docs/roadmap 配下
     - メモ: `docs/roadmap/roadmap.md` の RM-068 項で段落・箇条書き制約見直しとレンダリング stage での最終トリミング方針を追記済み。

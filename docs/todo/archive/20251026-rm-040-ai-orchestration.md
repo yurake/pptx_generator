@@ -10,15 +10,15 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 2025-10-26 ユーザー承認済み Plan（このスレッド）を反映済み。
 - [x] 設計・実装方針の確定
-  - メモ: content_ai モジュール構成と CLI 拡張を docs/notes/20251026-rm-040-initial-plan.md に整理。
+  - メモ: slide_ai モジュール構成と CLI 拡張を docs/notes/20251026-rm-040-initial-plan.md に整理。
 - [x] ドキュメント更新（要件・設計）
   - メモ: stage 3 の AI オーケストレーション追記を設計・要件へ反映。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: content_ai モジュール新設、CLI オプション追加、サンプルポリシー／ログ出力を実装。
+  - メモ: slide_ai モジュール新設、CLI オプション追加、サンプルポリシー／ログ出力を実装。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/content_ai -q` と `uv run --extra dev pytest tests/test_cli_integration.py -k content_ai_generation -q` を完了。
+  - メモ: `uv run --extra dev pytest tests/slide_ai -q` と `uv run --extra dev pytest tests/test_cli_integration.py -k slide_ai_generation -q` を完了。
 - [x] ドキュメント更新
   - メモ: README を生成AIデフォルト仕様へ更新。ロードマップ／runbook 連携は別途検討。
   - [x] docs/roadmap 配下
@@ -33,7 +33,7 @@ roadmap_item: RM-040 コンテンツ生成AIオーケストレーション
 
 ## メモ
 - 計画策定に合わせて docs/notes/20251023-roadmap-theme-research.md の追加調査要否を判断する。
-- config/content_ai_policies.json を初版作成。将来のモデル差し替え時は `model` と `safeguards` を更新予定。
-- CLI は生成AIモードをデフォルト化し、プロンプトは `src/pptx_generator/content_ai/prompts.py` で ID 管理とした。非生成AIは `--content-source` / `--content-approved` 指定時のみ使用。
+- config/slide_ai_policies.json を初版作成。将来のモデル差し替え時は `model` と `safeguards` を更新予定。
+- CLI は生成AIモードをデフォルト化し、プロンプトは `src/pptx_generator/slide_ai/prompts.py` で ID 管理とした。非生成AIは `--content-source` / `--content-approved` 指定時のみ使用。
 - `-v/--verbose` または `--debug` 指定時に AI プロンプト／レスポンスの概要ログを出力。
 - 環境変数 `PPTX_LLM_PROVIDER` で OpenAI / Azure / Claude / AWS Claude を切り替え、各プロバイダー向けキー／エンドポイントにも対応。

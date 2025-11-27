@@ -8,18 +8,18 @@ import logging
 
 import pytest
 
-from pptx_generator.content_ai import ContentAIOrchestrationError, ContentAIOrchestrator, load_policy_set
-from pptx_generator.content_ai.client import AIGenerationResponse
+from pptx_generator.slide_ai import SlideAIOrchestrationError, SlideAIOrchestrator, load_policy_set
+from pptx_generator.slide_ai.client import AIGenerationResponse
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide, SlideBullet, SlideBulletGroup
 
 
 def test_orchestrator_generates_document(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
     spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
-    policy_set = load_policy_set(Path("config/content_ai_policies.json"))
-    orchestrator = ContentAIOrchestrator(policy_set)
+    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
+    orchestrator = SlideAIOrchestrator(policy_set)
 
-    caplog.set_level(logging.INFO, logger="pptx_generator.content_ai.orchestrator")
+    caplog.set_level(logging.INFO, logger="pptx_generator.slide_ai.orchestrator")
     document, meta, logs = orchestrator.generate_document(spec)
 
     assert len(document.slides) == len(spec.slides)
@@ -52,7 +52,7 @@ class _NoIntentLLMClient:
 
 
 def test_orchestrator_raises_when_intent_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    policy_set = load_policy_set(Path("config/content_ai_policies.json"))
+    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
     spec = JobSpec(
         meta=JobMeta(schema_version="1.0", title="テスト資料"),
         auth=JobAuth(created_by="tester"),
@@ -65,7 +65,7 @@ def test_orchestrator_raises_when_intent_missing(monkeypatch: pytest.MonkeyPatch
             )
         ],
     )
-    orchestrator = ContentAIOrchestrator(policy_set, llm_client=_NoIntentLLMClient())
+    orchestrator = SlideAIOrchestrator(policy_set, llm_client=_NoIntentLLMClient())
 
-    with pytest.raises(ContentAIOrchestrationError):
+    with pytest.raises(SlideAIOrchestrationError):
         orchestrator.generate_document(spec)

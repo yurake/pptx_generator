@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.content_ai import ContentAIPolicyError, load_policy_set
-from pptx_generator.content_ai import prompts
+from pptx_generator.slide_ai import SlideAIPolicyError, load_policy_set
+from pptx_generator.slide_ai import prompts
 
 
 def test_load_policy_set_and_resolve(tmp_path: Path) -> None:
@@ -43,8 +43,8 @@ def test_load_policy_set_and_resolve(tmp_path: Path) -> None:
 
 
 def test_get_policy_with_unknown_id() -> None:
-    policy_set = load_policy_set(Path("config/content_ai_policies.json"))
-    with pytest.raises(ContentAIPolicyError):
+    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
+    with pytest.raises(SlideAIPolicyError):
         policy_set.get_policy("unknown-policy")
 
 
@@ -72,5 +72,5 @@ def test_resolve_prompt_with_unknown_prompt_id(tmp_path: Path) -> None:
     policy_set = load_policy_set(policy_file)
     policy = policy_set.get_policy()
 
-    with pytest.raises(ContentAIPolicyError):
+    with pytest.raises(SlideAIPolicyError):
         policy.resolve_prompt("Title")
