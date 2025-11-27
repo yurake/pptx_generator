@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import json
 import os
 import shutil
@@ -11,11 +12,13 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
+import click
 import pytest
 from click.testing import CliRunner
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+from pptx_generator import cli
 from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
 from pptx_generator.layout_validation import (LayoutValidationResult,
@@ -24,6 +27,7 @@ from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec)
 from pptx_generator.pipeline import pdf_exporter
+from pptx_generator.pipeline.base import PipelineContext
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -178,6 +182,124 @@ def test_cli_template_basic(tmp_path: Path) -> None:
     assert (extract_dir / "layouts.jsonl").exists()
     assert (extract_dir / "diagnostics.json").exists()
     assert "テンプレ stage（抽出＋検証）が完了しました。" in result.output
+
+
+def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    spec_path = tmp_path / "jobspec.json"
+    spec_path.write_text("{}", encoding="utf-8")
+    (tmp_path / "rules.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(cli, "_load_jobspec", lambda path: object())
+    monkeypatch.setattr(
+        cli,
+        "_resolve_template_path",
+        lambda spec, spec_source: tmp_path / "template.pptx",
+    )
+    monkeypatch.setattr(
+        cli,
+        "_resolve_layouts_path",
+        lambda spec, spec_source: tmp_path / "layouts.jsonl",
+    )
+
+    def boom(**_: object) -> None:
+        raise RuntimeError("outline failure")
+
+    monkeypatch.setattr(cli, "_execute_outline", boom)
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(click.exceptions.Exit) as exc:
+            cli.compose.callback(
+                spec_path=spec_path,
+                draft_output=tmp_path / "draft",
+                target_length=None,
+                structure_pattern=None,
+                appendix_limit=5,
+                chapter_templates_dir=tmp_path,
+                chapter_template=None,
+                analysis_summary_path=None,
+                show_layout_reasons=False,
+                output_dir=tmp_path / "compose",
+                rules=tmp_path / "rules.json",
+                branding=None,
+                prepare_cards=tmp_path / "prepare_card.json",
+            )
+
+    assert exc.value.exit_code == 1
+    assert any(
+        "アウトライン stage" in record.getMessage() for record in caplog.records
+    )
+
+
+def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    spec_path = tmp_path / "jobspec.json"
+    spec_path.write_text("{}", encoding="utf-8")
+    rules_path = tmp_path / "rules.json"
+    rules_path.write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(cli, "_load_jobspec", lambda path: object())
+    monkeypatch.setattr(
+        cli,
+        "_resolve_template_path",
+        lambda spec, spec_source: tmp_path / "template.pptx",
+    )
+    monkeypatch.setattr(
+        cli,
+        "_resolve_layouts_path",
+        lambda spec, spec_source: tmp_path / "layouts.jsonl",
+    )
+
+    outline_result = cli.OutlineResult(
+        context=PipelineContext(spec=object(), workdir=tmp_path),
+        draft_path=tmp_path / "draft.json",
+        approved_path=tmp_path / "approved.json",
+        log_path=tmp_path / "log.json",
+        meta_path=tmp_path / "meta.json",
+        generate_ready_path=tmp_path / "ready.json",
+        generate_ready_meta_path=tmp_path / "ready_meta.json",
+    )
+    monkeypatch.setattr(cli, "_execute_outline", lambda **_: outline_result)
+    monkeypatch.setattr(cli, "_print_outline_result", lambda *args, **kwargs: None)
+
+    dummy_rules = object()
+
+    def fake_rules_load(cls: object, path: Path) -> object:
+        return dummy_rules
+
+    monkeypatch.setattr(cli.RulesConfig, "load", classmethod(fake_rules_load))
+    monkeypatch.setattr(
+        cli, "_prepare_branding", lambda template, branding: (object(), {})
+    )
+    monkeypatch.setattr(
+        cli, "_build_refiner_options", lambda rules_config, branding_config: object()
+    )
+
+    def mapping_boom(**_: object) -> None:
+        raise RuntimeError("mapping failure")
+
+    monkeypatch.setattr(cli, "_run_mapping_pipeline", mapping_boom)
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(click.exceptions.Exit) as exc:
+            cli.compose.callback(
+                spec_path=spec_path,
+                draft_output=tmp_path / "draft",
+                target_length=None,
+                structure_pattern=None,
+                appendix_limit=5,
+                chapter_templates_dir=tmp_path,
+                chapter_template=None,
+                analysis_summary_path=None,
+                show_layout_reasons=False,
+                output_dir=tmp_path / "compose",
+                rules=rules_path,
+                branding=None,
+                prepare_cards=tmp_path / "prepare_card.json",
+            )
+
+    assert exc.value.exit_code == 1
+    assert any(
+        "マッピング stage" in record.getMessage() for record in caplog.records
+    )
 
 
 def test_cli_template_with_release(tmp_path: Path) -> None:
