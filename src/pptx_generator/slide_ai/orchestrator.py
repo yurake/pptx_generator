@@ -1,4 +1,4 @@
-"""コンテンツ生成 AI のオーケストレーション。"""
+"""スライド整合および生成 AI のオーケストレーション。"""
 
 from __future__ import annotations
 
@@ -12,22 +12,22 @@ from ..models import (ContentApprovalDocument, ContentDocumentMeta,
                       ContentElements, ContentSlide, JobSpec)
 from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
                      create_llm_client)
-from .policy import ContentAIPolicy, ContentAIPolicyError, ContentAIPolicySet
+from .policy import SlideAIPolicy, SlideAIPolicyError, SlideAIPolicySet
 
 
 logger = logging.getLogger(__name__)
 
 
-class ContentAIOrchestrationError(RuntimeError):
+class SlideAIOrchestrationError(RuntimeError):
     """オーケストレーション全体の例外。"""
 
 
-class ContentAIOrchestrator:
+class SlideAIOrchestrator:
     """ポリシーと LLM クライアントを用いてスライド候補を生成する。"""
 
     def __init__(
         self,
-        policy_set: ContentAIPolicySet,
+        policy_set: SlideAIPolicySet,
         llm_client: LLMClient | None = None,
     ) -> None:
         self._policy_set = policy_set
@@ -45,8 +45,8 @@ class ContentAIOrchestrator:
 
         try:
             policy = self._policy_set.get_policy(policy_id)
-        except ContentAIPolicyError as exc:
-            raise ContentAIOrchestrationError(str(exc)) from exc
+        except SlideAIPolicyError as exc:
+            raise SlideAIOrchestrationError(str(exc)) from exc
 
         slides: list[ContentSlide] = []
         logs: list[dict[str, Any]] = []
@@ -84,7 +84,7 @@ class ContentAIOrchestrator:
             if not response.intent:
                 msg = f"LLM 応答に intent が含まれていません: slide_id={spec_slide.id}"
                 logger.error(msg)
-                raise ContentAIOrchestrationError(msg)
+                raise SlideAIOrchestrationError(msg)
             content_slide = _build_content_slide(spec_slide.id, response)
             slides.append(content_slide)
             if logger.isEnabledFor(logging.INFO):
@@ -115,7 +115,7 @@ class ContentAIOrchestrator:
                 "response_text_truncated": truncated,
             }
             logs.append(log_entry)
-            logging.getLogger("pptx_generator.content_ai.llm").info(
+            logging.getLogger("pptx_generator.slide_ai.llm").info(
                 "slide_id=%s model=%s intent=%s warnings=%s prompt=%s response=%s",
                 spec_slide.id,
                 response.model,
@@ -155,7 +155,7 @@ def _build_content_slide(
 ) -> ContentSlide:
     intent = response.intent
     if intent is None:
-        raise ContentAIOrchestrationError(f"LLM 応答に intent が未設定です: slide_id={slide_id}")
+        raise SlideAIOrchestrationError(f"LLM 応答に intent が未設定です: slide_id={slide_id}")
     elements = ContentElements(
         title=response.title,
         body=response.body,
@@ -173,7 +173,7 @@ def _build_content_slide(
     )
 
 
-def _build_document_meta(spec: JobSpec, policy: ContentAIPolicy) -> ContentDocumentMeta:
+def _build_document_meta(spec: JobSpec, policy: SlideAIPolicy) -> ContentDocumentMeta:
     safeguard_tone = None
     if isinstance(policy.safeguards, dict):
         tone = policy.safeguards.get("tone")
@@ -193,7 +193,7 @@ def _build_document_meta(spec: JobSpec, policy: ContentAIPolicy) -> ContentDocum
 
 def _build_generation_meta(
     spec: JobSpec,
-    policy: ContentAIPolicy,
+    policy: SlideAIPolicy,
     document: ContentApprovalDocument,
     logs: list[dict[str, Any]],
 ) -> dict[str, Any]:

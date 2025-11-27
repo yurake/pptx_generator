@@ -11,7 +11,7 @@ from pptx_generator.prepare.models import (
     PrepareCardRole,
     PrepareDocument,
 )
-from pptx_generator.content_ai import SlideMatchResponse
+from pptx_generator.slide_ai import SlideMatchResponse
 from pptx_generator.models import (ContentApprovalDocument, ContentElements,
                                    ContentSlide, JobAuth, JobMeta, JobSpec,
                                    Slide)

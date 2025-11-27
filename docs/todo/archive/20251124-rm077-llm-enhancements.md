@@ -18,7 +18,7 @@ roadmap_item: RM-077 LLM ラベル整備
     - ロールバック方法: 追加した `area:llm` 行を削除して元の YAML を復元し、ポリシードキュメントの該当セクションを revert する。
     - 承認メッセージ ID／リンク: ユーザー承認「ok」（2025-11-24 の会話メッセージ）を参照。
 - [x] 設計・実装方針の確定
-  - メモ: 自動ラベルの対象に `prepare` / `content_ai` / `layout_ai` / `template_ai` / LLM 補助ステップ（`pipeline/slide_alignment.py`、`draft_recommender.py`）を含め、ポリシー／設定ファイル一式をカバーする方針で確定。既存エリアラベルと重複した場合はレビューで調整する。
+  - メモ: 自動ラベルの対象に `prepare` / `slide_ai` / `layout_ai` / `template_ai` / LLM 補助ステップ（`pipeline/slide_alignment.py`、`draft_recommender.py`）を含め、ポリシー／設定ファイル一式をカバーする方針で確定。既存エリアラベルと重複した場合はレビューで調整する。
 - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: 追加ドキュメント不要と判断。判断者: Assistant（2025-11-24）。再検討条件: LLM 対象領域が増えた際に改めて記録。
 - [x] ドキュメント更新（要件・設計）

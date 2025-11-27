@@ -809,7 +809,7 @@ flowchart TB
   - スコアリング結果ログと根拠説明を強化し、監査・テストの観点を整備する。
 - 依存: RM-047（テンプレ統合構成生成AI連携）、RM-061（usage_tags ガバナンス強化）
 - 進捗メモ: Stage3 `layout_ai` でテンプレ構造メタを利用しタグ正規化を行う機構を整備済み。Stage1 連携と layout_ai policy 再設計は未着手。
-- 次アクション: content_ai（Slide ID アライメント）の名称と責務を再整理し、`slide_ai` 等の命名を含むリファクタリング方針を検討する。
+- 次アクション: 旧 `content_ai`（Slide ID アライメント担当）の名称と責務を再整理し、`slide_ai` 系の命名へ統一するリファクタリング方針を検討する。
 
 <a id="rm-065"></a>
 ### RM-065 フォールバック警告ログ整備
@@ -913,12 +913,12 @@ flowchart TB
 <a id="rm-072"></a>
 ### RM-072 slide_alignment 命名と責務の再整理
 - 対象 stage: 3（マッピング／SlideIdAligner）
-- ゴール: 現在 `content_ai` 名で運用している SlideIdAligner 系コンポーネントの名称とドキュメントを、実際の責務（カードと JobSpec スライドの整合）に合わせて `slide_ai` 等へ改称し、layout AI と混同しないよう整理する。
+- ゴール: 旧 `content_ai` 名で運用している SlideIdAligner 系コンポーネントの名称とドキュメントを、実際の責務（カードと JobSpec スライドの整合）に合わせて `slide_ai` へ改称し、layout AI と混同しないよう整理する。
 - 参照ドキュメント: [docs/design/schema/stage-03-mapping.md](./stage-03-mapping.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-11-23 追加）
 - 期待成果:
-  - `pptx_generator.content_ai` モジュール、ロガー名、policy ファイルなどの名称を `slide_ai` 系へ統一し、ログや CLI からも役割が一目で分かる状態にする。
+  - `pptx_generator.slide_ai` モジュール、ロガー名、policy ファイルなどの名称を `slide_ai` 系へ統一し、ログや CLI からも役割が一目で分かる状態にする。
   - 設計ドキュメント／CLI リファレンスの用語を更新し、layout AI との用途の違いを明記する。
   - リネーム後も既存テスト・設定が正常に動作することを確認し、必要に応じて移行手順をドキュメント化する。
 - 依存: RM-064（レイアウト候補メタ情報拡充）
