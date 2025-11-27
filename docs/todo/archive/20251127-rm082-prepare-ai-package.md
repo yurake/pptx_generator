@@ -42,4 +42,4 @@ roadmap_item: RM-082 Prepare AI パッケージ再編
   - メモ: PR #330 https://github.com/yurake/pptx_generator/pull/330（2025-11-27 完了）
 
 ## メモ
-- 計画のみで完了とする場合の判断は未定。
+- 
