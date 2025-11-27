@@ -74,6 +74,40 @@ def test_anthropic_template_ai_logs_error_and_raises(caplog: pytest.LogCaptureFi
     assert "Anthropic template AI request failed" in caplog.text
 
 
+def test_anthropic_template_ai_success() -> None:
+    policy = TemplateAIPolicy(
+        id="default",
+        name="Anthropic Policy",
+        prompt_template="Describe layout usage tags.",
+    )
+
+    def _success_create(**kwargs):
+        text = json.dumps(
+            {
+                "usage_tags": ["cover", "summary"],
+                "model": "claude-3-haiku",
+            }
+        )
+        content = [SimpleNamespace(type="text", text=text)]
+        return SimpleNamespace(content=content, model="claude-3-haiku")
+
+    client = AnthropicTemplateAIClient(
+        SimpleNamespace(messages=SimpleNamespace(create=_success_create)),
+        model="claude-3-haiku",
+        max_tokens=1024,
+    )
+    request = TemplateAIRequest(
+        prompt="classify",
+        policy=policy,
+        payload={"heuristic_usage_tags": ["cover"]},
+    )
+
+    response = client.classify(request)
+
+    assert response.model.endswith("claude-3-haiku")
+    assert "summary" in response.usage_tags
+
+
 def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
     policy_path = tmp_path / "template_ai_policy.json"
     policy_payload = {

@@ -384,3 +384,32 @@ def test_mapping_step_errors_when_layout_catalog_missing(tmp_path: Path, caplog)
 
     assert str(missing_path) in str(excinfo.value)
     assert any(record.levelno >= logging.ERROR for record in caplog.records)
+
+
+def test_mapping_step_errors_when_draft_missing(tmp_path: Path, caplog) -> None:
+    spec = _build_spec(["本文"])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    step = MappingStep(MappingOptions(output_dir=tmp_path))
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.mapping"):
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            step.run(context)
+
+    assert "draft_document が存在しません" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
+
+
+def test_mapping_step_errors_when_draft_has_invalid_type(tmp_path: Path, caplog) -> None:
+    spec = _build_spec(["本文"])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    context.add_artifact("draft_document", object())
+    step = MappingStep(MappingOptions(output_dir=tmp_path))
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.pipeline.mapping"):
+        with pytest.raises(PipelineFallbackError) as excinfo:
+            step.run(context)
+
+    assert "draft_document artifact の型が不正です" in str(excinfo.value)
+    assert any(record.levelno >= logging.ERROR for record in caplog.records)
