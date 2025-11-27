@@ -1,7 +1,7 @@
 ---
 目的: RM-082 Prepare AI パッケージ再編
 関連ブランチ: feat/rm082-prepare-ai-package
-関連Issue: 未作成
+関連Issue: #329
 roadmap_item: RM-082 Prepare AI パッケージ再編
 ---
 
@@ -34,7 +34,7 @@ roadmap_item: RM-082 Prepare AI パッケージ再編
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 関連 Issue を作成次第更新。
 - [ ] チェックリスト整合確認
   - メモ: 子タスク完了時に確認予定。
