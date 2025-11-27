@@ -520,49 +520,20 @@ class OpenAIChatClient:
         }
         if self._max_tokens > 0:
             kwargs["max_completion_tokens"] = self._max_tokens
-        for _ in range(3):
-            try:
-                response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-                    **kwargs,
-                )
-                break
-            except Exception as exc:  # noqa: BLE001
-                _LLM_LOGGER.warning(
-                    "OpenAI chat completion error: %s",
-                    exc,
-                    extra={
-                        "model": model_name,
-                        "slide_id": request.slide.id,
-                    },
-                )
-                message = str(exc).lower()
-                if (
-                    "max_completion_tokens" in message
-                    and "max_tokens" in message
-                    and "max_completion_tokens" in kwargs
-                ):
-                    kwargs.pop("max_completion_tokens", None)
-                    if self._max_tokens > 0:
-                        kwargs["max_tokens"] = self._max_tokens
-                    continue
-                if (
-                    "max_tokens" in message
-                    and "max_completion_tokens" in message
-                    and "max_tokens" in kwargs
-                ):
-                    kwargs.pop("max_tokens", None)
-                    if self._max_tokens > 0:
-                        kwargs["max_completion_tokens"] = self._max_tokens
-                    continue
-                if "temperature" in message and "unsupported" in message:
-                    kwargs["temperature"] = 1.0
-                    continue
-                if "response_format" in message and "not" in message and "support" in message:
-                    kwargs.pop("response_format", None)
-                    continue
-                raise
-        else:  # pragma: no cover - safeguard
-            raise RuntimeError("OpenAI API call failed after applying compatibility fallbacks")
+        try:
+            response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+                **kwargs,
+            )
+        except Exception as exc:  # noqa: BLE001
+            _LLM_LOGGER.error(
+                "OpenAI chat completion error: %s",
+                exc,
+                extra={
+                    "model": model_name,
+                    "slide_id": request.slide.id,
+                },
+            )
+            raise RuntimeError("OpenAI API call failed") from exc
         choice = response.choices[0]  # type: ignore[index]
         message = choice.message
         content = getattr(message, "content", None)
@@ -596,46 +567,20 @@ class OpenAIChatClient:
         }
         if self._max_tokens > 0:
             kwargs["max_completion_tokens"] = self._max_tokens
-        for _ in range(3):
-            try:
-                response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-                    **kwargs,
-                )
-                break
-            except Exception as exc:  # noqa: BLE001
-                _LLM_LOGGER.warning(
-                    "OpenAI chat completion error: %s",
-                    exc,
-                    extra={
-                        "model": model_name,
-                        "card_id": request.card_id,
-                    },
-                )
-                message = str(exc).lower()
-                if (
-                    "max_completion_tokens" in message
-                    and "max_tokens" in message
-                    and "max_completion_tokens" in kwargs
-                ):
-                    kwargs.pop("max_completion_tokens", None)
-                    if self._max_tokens > 0:
-                        kwargs["max_tokens"] = self._max_tokens
-                    continue
-                if (
-                    "max_tokens" in message
-                    and "max_completion_tokens" in message
-                    and "max_tokens" in kwargs
-                ):
-                    kwargs.pop("max_tokens", None)
-                    if self._max_tokens > 0:
-                        kwargs["max_completion_tokens"] = self._max_tokens
-                    continue
-                if "response_format" in message and "not" in message and "support" in message:
-                    kwargs.pop("response_format", None)
-                    continue
-                raise
-        else:  # pragma: no cover - safeguard
-            raise RuntimeError("OpenAI API match call failed after applying compatibility fallbacks")
+        try:
+            response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+                **kwargs,
+            )
+        except Exception as exc:  # noqa: BLE001
+            _LLM_LOGGER.error(
+                "OpenAI chat completion error: %s",
+                exc,
+                extra={
+                    "model": model_name,
+                    "card_id": request.card_id,
+                },
+            )
+            raise RuntimeError("OpenAI API match call failed") from exc
         choice = response.choices[0]  # type: ignore[index]
         message = choice.message
         content = getattr(message, "content", None)

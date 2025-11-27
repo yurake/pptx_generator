@@ -8,8 +8,9 @@ import logging
 
 import pytest
 
-from pptx_generator.content_ai import ContentAIOrchestrator, load_policy_set
-from pptx_generator.models import JobSpec
+from pptx_generator.content_ai import ContentAIOrchestrationError, ContentAIOrchestrator, load_policy_set
+from pptx_generator.content_ai.client import AIGenerationResponse
+from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide, SlideBullet, SlideBulletGroup
 
 
 def test_orchestrator_generates_document(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -40,3 +41,31 @@ def test_orchestrator_generates_document(caplog: pytest.LogCaptureFixture, monke
             assert len(line) <= 40
 
     assert meta["spec"]["title"] in logs[0]["prompt"]
+
+
+class _NoIntentLLMClient:
+    def generate(self, request):
+        return AIGenerationResponse(title="title", body=["body"], intent=None, model="mock")
+
+    def match_slide(self, request):  # pragma: no cover - interface compatibility
+        raise NotImplementedError
+
+
+def test_orchestrator_raises_when_intent_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    policy_set = load_policy_set(Path("config/content_ai_policies.json"))
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="テスト資料"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="s01",
+                layout="layout_basic",
+                title="概要",
+                bullets=[SlideBulletGroup(items=[SlideBullet(id="b1", text="本文", level=0)])],
+            )
+        ],
+    )
+    orchestrator = ContentAIOrchestrator(policy_set, llm_client=_NoIntentLLMClient())
+
+    with pytest.raises(ContentAIOrchestrationError):
+        orchestrator.generate_document(spec)
