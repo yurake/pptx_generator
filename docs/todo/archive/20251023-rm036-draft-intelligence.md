@@ -10,7 +10,7 @@ roadmap_item: RM-036 ドラフト構成インテリジェンス拡張
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 2025-10-23 ユーザー承認済み。チャット #RM-036 Plan OK を記録。
 - [x] 設計・実装方針の確定
-  - メモ: 章テンプレ・layout_hint 候補・差戻しテンプレ PoC の構成案を docs/design/stages/stage-04-draft-structuring.md へ反映。
+  - メモ: 章テンプレ・layout_hint 候補・差戻しテンプレ PoC の構成案を docs/design/stages/stage-03-compose.md へ反映。
 - [x] ドキュメント更新（要件・設計）
   - メモ: 要件・スキーマを更新し、RM-036 の PoC 要件とデータ項目を追加。
   - [x] docs/requirements 配下

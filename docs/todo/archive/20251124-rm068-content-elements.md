@@ -13,7 +13,7 @@ roadmap_item: RM-068 ContentElements 制約見直し
     - 対象整理（スコープ、対象ファイル、前提）: ContentElements および prepare_normalization/content_import/slide_ai/API での本文トリミングを撤廃し、テンプレート由来のレイアウト情報に基づく容量管理へ統一する。Overflow 時は現状警告のみで自動処理は行わず、運用実績を踏まえて再検討する前提。
     - ドキュメント／コード修正方針: モデルのバリデーションから行数・文字数制限を外し、上流 stage の加工ロジックを削除。mapping/generate_ready 等は既存フォールバックと警告出力を維持しつつ挙動を確認。`config/rules.json` から可変閾値を削除し、禁止ワード等のみ残す。変更内容は要件・設計ドキュメントへ反映。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo を stage ごとに更新し、実装後に差分確認結果とテスト結果を共有。必要に応じて docs/notes へ補足を残す。
-    - 想定影響ファイル: `src/pptx_generator/models.py`, `pipeline/prepare_normalization.py`, `content_import/service.py`, `slide_ai/client.py`, `pipeline/mapping.py`, `generate_ready.py`, `pipeline/validator.py`, `config/rules.json`, `tests/**`, `docs/requirements/stages/stage-03-mapping.md`, `docs/design/schema/stage-03-mapping.md` ほか関連資料。
+    - 想定影響ファイル: `src/pptx_generator/models.py`, `pipeline/prepare_normalization.py`, `content_import/service.py`, `slide_ai/client.py`, `pipeline/mapping.py`, `generate_ready.py`, `pipeline/validator.py`, `config/rules.json`, `tests/**`, `docs/requirements/stages/stage-03-compose.md`, `docs/design/schema/stage-03-compose.md` ほか関連資料。
     - リスク: レイアウト許容量を超える長文でレンダリング崩れが発生する恐れ／`rules.json` のキー削除による既存コードの想定外挙動／API・CLI 利用者が長文に未対応のままになる可能性。
     - テスト方針: `uv run --extra dev pytest` を基本とし、時間制約がある場合は models・mapping・CLI 統合テストを優先。必要に応じ `uv run pptx compose`→`pptx gen` で長文維持と警告ログを手動確認。
     - ロールバック方法: `feat/rm068-content-elements` ブランチを削除し、ローカルで `git reset --hard origin/main` → `git checkout main`（ローカル限定）で差分を戻す。

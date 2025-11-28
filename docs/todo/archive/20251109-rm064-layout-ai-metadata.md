@@ -22,7 +22,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
 - [x] 設計・実装方針メモの共有
   - メモ: 2025-11-22 `docs/notes/20251122-layout-ai-policy-review.md` と `docs/notes/20251122-usage-tag-taxonomy-plan.md` に設計メモを整理し、ユーザー共有済み。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/requirements/stages/stage-03-mapping.md`・`docs/design/schema/stage-02-template-structure-extraction.md` ほか関連設計文書にメタデータ連携方針を反映。
+  - メモ: `docs/requirements/stages/stage-03-compose.md`・`docs/design/schema/stage-02-template-structure-extraction.md` ほか関連設計文書にメタデータ連携方針を反映。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] RM-054 取り込み後の設計・実装改修（最優先）
@@ -30,7 +30,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] RM-054 ブランチ（もしくは `main` 反映済み差分）を取り込み、Stage1/Stage3 間のインターフェース変更点を棚卸しする。
     - メモ: 2025-11-22 `origin/main` を merge 済み。`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest` を実行し 187 件のテストが成功。
   - [x] layout_ai / draft_structuring / mapping ロジックにおけるメタデータ設計を見直し、必要な仕様調整を設計ドキュメントへ反映する。
-    - メモ: 2025-11-22 `ContentSlide.source` を導入し、LayoutAIRequest と `draft_mapping_log.json` に PrepareCard メタデータ（card_id / story_phase / intent_tags / blueprint）を連携。`docs/design/schema/stage-03-mapping.md` ほか関連ドキュメントを更新。
+    - メモ: 2025-11-22 `ContentSlide.source` を導入し、LayoutAIRequest と `draft_mapping_log.json` に PrepareCard メタデータ（card_id / story_phase / intent_tags / blueprint）を連携。`docs/design/schema/stage-03-compose.md` ほか関連ドキュメントを更新。
   - [x] 設計変更を踏まえて実装を改修し、回帰テストと新規テストケースを追加する。
     - メモ: `CardLayoutRecommender` のタグ抽出に `ContentSlide.source` を統合し、`tests/test_layout_recommender.py::test_extract_slide_tags_includes_source_metadata` を追加。`UV_CACHE_DIR=.uv-cache uv run --extra dev pytest` で 188 件通過。
 - [x] 実装

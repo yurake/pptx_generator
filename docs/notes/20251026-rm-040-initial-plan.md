@@ -18,6 +18,6 @@
 - Review Engine / Analyzer との統合: 生成結果に対する初回レビュー自動呼び出しは本タスクの範囲外のため、後続 ToDo で検討する。
 
 ## 参照
-- `docs/design/stages/stage-03-content-normalization.md`
-- `docs/requirements/stages/stage-03-content-normalization.md`
+- `docs/design/stages/stage-02-prepare.md`
+- `docs/requirements/stages/stage-02-prepare.md`
 - `docs/todo/20251026-rm-040-ai-orchestration.md`

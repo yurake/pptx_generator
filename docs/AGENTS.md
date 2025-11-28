@@ -17,7 +17,7 @@
 
 ## カテゴリと配置ルール
 - `README.md`: リポジトリの入口。環境セットアップ、主要 CLI のクイックスタート（`tpl-extract`, `tpl-release`, `gen` など）の使い方と出力例を掲載し、詳細仕様は専門ドキュメントへリンクする。
-- `docs/policies/`: 運用ルール・手順。設定変更やタスク運用のような規約レベルの改訂はここにまとめ、README の一覧も更新する。
+- `docs/policies/`: 運用ルール・手順。まず `docs/policies/policies.md` で参照順と更新手順を確認し、個別ポリシー（例: `context-engineering.md`, `task-management.md`, `config-and-templates.md`）へ進む。設定変更やタスク運用を改訂した際は README の一覧も更新する。
 - `docs/requirements/`: ビジネス要件や期待機能。スキーマ変更など仕様に関わる内容を追加する。
 - `docs/design/`: アーキテクチャ・実装方針。図表や構成案を含める場合は、関連箇所からリンクする。
   - `docs/runbooks/`: リリース・サポートなどの実務手順。チェックリストを更新した場合は該当 ToDo にメモを残す。ストーリー骨子運用は `docs/runbooks/story-outline-ops.md` に手順を追記し、stage 3/4 ドキュメントと整合させる。Polisher / PDF 連携やレンダリング監査ログ（`rendering_log.json` / `audit_log.json`）のトラブルシューティングは `docs/runbooks/support.md` に集約し、CLI オプションの変更と同期する。Analyzer 連携の運用手順は `docs/runbooks/pptx-analyzer.md` を参照し、`mapping_log.json` の Analyzer サマリ確認も実施する。
@@ -25,13 +25,13 @@
 - `docs/roadmap/`: 大項目 ToDo。テーマステータスを更新した場合は、関連する ToDo ファイルから相互リンクを張る。
 - `docs/todo/`: ToDo 管理。テンプレートに沿った更新ルールは `docs/todo/README.md` を参照。
 - `config/`: 章テンプレ辞書（`config/chapter_templates/`）や差戻し理由テンプレ（`config/return_reasons.json`）など、CLI で参照する設定を配置。更新時は対応する requirements/design/runbook へ根拠を記録する。
-  - `config/usage_tags.json` を改訂する場合は Template AI / layout AI の語彙整合を確認し、`docs/requirements/stages/stage-01-template-pipeline.md` と `docs/design/stages/stage-01-template-pipeline.md` の記述を更新する。環境変数で `mock` 以外を利用する手順を README と runbook に反映すること。
+  - `config/usage_tags.json` を改訂する場合は Template AI / layout AI の語彙整合を確認し、`docs/requirements/stages/stage-01-template.md` と `docs/design/stages/stage-01-template.md` の記述を更新する。環境変数で `mock` 以外を利用する手順を README と runbook に反映すること。
 - `assets/`: ロゴ・図版など共有資産の保管場所。更新フローと注意事項は `assets/README.md` を参照し、機微情報が混入していないかを必ず確認する。
 
 ## 更新手順
 1. 追加・改訂する資料のカテゴリを決め、該当ディレクトリに Markdown ファイルを作成・編集する。
 2. カテゴリの README（例: `docs/README.md`, `docs/roadmap/roadmap.md`）を更新し、新規資料へのリンクを追記する。
-3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/design.md`・`docs/design/layout-style-governance.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
+3. フロー・承認・AI レビューなど仕様面の変更は、必ず `docs/design/design.md`・`docs/design/initiatives/template-style-governance.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` などの専門ドキュメントにも反映する。`docs/notes/20251011-docs-update-plan.md` を参照し、対象範囲を確認する。
 4. 変更内容を ToDo のメモに反映し、必要に応じてロードマップや関連ドキュメントへリンクを追加する。
 5. コミット前に `git status` で対象ファイルを確認し、不要な差分（バイナリやキャッシュ）が混入していないかをチェックする。
 

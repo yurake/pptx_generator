@@ -48,8 +48,3 @@
 - Polisher 実行結果（実行可否、所要時間、ルールパス、サマリ JSON）と PDF 変換結果（リトライ回数、所要時間、使用コンバータ、モード）を `audit_log.json` に記録する。
 - `generate_ready.json`・`proposal.pptx`・`analysis_pre_polisher.json`・`analysis.json`・`monitoring_report.json`・PDF（生成時）のハッシュを `audit_log.json.hashes` に格納し、監査ログから検証できる状態を保つ。
 - `monitoring_summary` を監査ログへ記録し、CI から alert level / headline を即時参照できるようにする。
-
-## 未実装項目（機能単位）
-- 軽量整合チェックルールの実装と警告ハンドリング。
-- 生成ログと承認ログを結合する監査メタ拡張。
-- Polisher 適用後の差分ログ設計とルールセット管理。

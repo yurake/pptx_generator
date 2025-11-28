@@ -1,8 +1,8 @@
-# stage 3 マッピング (HITL + 自動) 要件詳細
+# stage 3 Compose 要件詳細
 
 ## 概要
 - Prepare 成果物をもとに章構成とレイアウト割付を連続的に実行し、`generate_ready.json` と `generate_ready_meta.json` を確定させる。
-- HITL が章構成・差戻しを操作でき、フォールバックや Analyzer 結果を含む監査ログを `draft_review_log.json`・`draft_mapping_log.json` に残す。
+- 章構成・差戻しを手動で操作でき、フォールバックや Analyzer 結果を含む監査ログを `draft_review_log.json`・`draft_mapping_log.json` に残す。
 - CLI (`pptx compose` / `pptx outline`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
 ## 入力
@@ -27,10 +27,10 @@
    - アライメント結果（採用数・信頼度・未確定カード）を監査メタへ記録し、ログに INFO レベルで出力する。
    - このステップは stage 3 開始前に実施され、以降のレイアウト候補評価・フォールバック処理とは独立して動作する。
 
-2. **章構成管理（HITL）**
+2. **章構成管理**
    - 章テンプレートの適合率を計算し、過不足章は `generate_ready_meta.template.mismatch[]` に出力する。
    - `layout_hint` 候補ごとにスコア (`layout_score_detail`) を算出。指標: 用途タグ一致度、容量適合度、多様性、Analyzer 支援度、テンプレ適合度。
-   - 差戻し時は `return_reason_code` を必須化し、自由記述は `draft_review_log.json` の `notes` に記録する。
+- 差戻し時は `return_reason_code` を必須化し、自由記述は `draft_review_log.json` の `notes` に記録する。
    - 承認完了後に章順・スライド順・付録情報を `generate_ready.json` に保存し、章ステータスを `generate_ready_meta.sections[*].status` へ反映。
 
 3. **レイアウト割付（自動）**
@@ -80,10 +80,3 @@
 - `generate_ready.slides[*].meta.blueprint_slots[*].fulfilled` を監査し、slot 充足状況を `draft_mapping_log.json` と同期させる。
 - `draft_mapping_log.json.static_slot_checks.orphan_cards` に Blueprint へ取り込めなかったカードを記録し、CI で差分検証できるようにする。
 - jobspec 側に `template_spec_path` が存在することを前提とし、静的モードではそれを参照して Blueprint を取得する。
-
-## 将来計画 / 未解決事項
-- Layout Hint Engine の ML 化と学習データパイプライン。
-- 章テンプレート適合率のダッシュボード表示と KPI 化。
-- Analyzer 指摘に応じた自動フォールバック戦略の改善。
-- PrepareCard と章テンプレの双方向同期（差分検出・再マッピングルール）。
-- `ContentElements.body` は Stage2 から全文を維持し、stage 3 ではレイアウトの `text_hint.max_lines` を参照してオーバーフローを警告ログに記録するのみとする（自動トリミングは実施しない、RM-068 実施済み）。

@@ -10,9 +10,9 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan（2025-11-11）
     - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/prepare/orchestrator.py` を中心に、章単位で LLM を呼び出す処理へ刷新。新しい LLM クライアント（OpenAI/Azure/Mock 対応）とプロンプト定義を追加し、CLI `prepare` dynamic モードで生成AIを必ず呼び出す。ログ出力 (`prepare_ai_log.json`) とメタ (`ai_generation_meta.json`) をカード単位の記録へ更新。既存 `slide_ai` とは別レイヤで管理する。
-    - ドキュメント／コード修正方針: `prepare` モジュール内に LLM クライアント／プロンプトレジストリを追加し、ポリシー (`config/prepare_policies/default.json`) を LLM フィールド対応に拡張。`docs/design/stages/stage-02-content-normalization.md` とサンプル (`samples/prepare/*.json`) を新フォーマットへ更新し、既存の mock ログから `llm_stub` 表記を除去。CLI ユニットテストに LLM モックを注入し、カード枚数分の呼び出しを検証。
+    - ドキュメント／コード修正方針: `prepare` モジュール内に LLM クライアント／プロンプトレジストリを追加し、ポリシー (`config/prepare_policies/default.json`) を LLM フィールド対応に拡張。`docs/design/stages/stage-02-prepare.md` とサンプル (`samples/prepare/*.json`) を新フォーマットへ更新し、既存の mock ログから `llm_stub` 表記を除去。CLI ユニットテストに LLM モックを注入し、カード枚数分の呼び出しを検証。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗管理し、完了時にユーザーへ実行ログを提示。必要に応じて `docs/notes/` へ調査メモを追加。
-    - 想定影響ファイル: `src/pptx_generator/prepare/orchestrator.py`, `src/pptx_generator/prepare/llm_client.py`（新規）, `src/pptx_generator/prepare/prompts.py`（新規）, `config/prepare_policies/default.json`, `src/pptx_generator/cli.py`, `docs/design/stages/stage-02-content-normalization.md`, `samples/prepare/*.json`, `tests/test_cli_prepare.py`, `tests/test_prepare_orchestrator.py`（新規予定）。
+    - 想定影響ファイル: `src/pptx_generator/prepare/orchestrator.py`, `src/pptx_generator/prepare/llm_client.py`（新規）, `src/pptx_generator/prepare/prompts.py`（新規）, `config/prepare_policies/default.json`, `src/pptx_generator/cli.py`, `docs/design/stages/stage-02-prepare.md`, `samples/prepare/*.json`, `tests/test_cli_prepare.py`, `tests/test_prepare_orchestrator.py`（新規予定）。
     - リスク: LLM エラー時のリトライ／フォールバック未整備、トークン上限設定ミス、既存モック依存のテストの影響。ユーザー環境での API キー未設定時に明示的なエラーメッセージを出す必要あり。
     - テスト方針: LLM クライアントをモック化した単体テストでカード生成とログ内容を検証し、`uv run --extra dev pytest tests/test_cli_prepare.py` を実行。統合テストでは環境変数 `PPTX_LLM_PROVIDER=mock` を維持しつつ card 限定呼び出しを確認。
     - ロールバック方法: Prepare オーケストレータ／クライアント差分とポリシー変更を `git revert` で戻す。サンプル・ドキュメントは以前のバージョンへ復元。
@@ -28,7 +28,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_template_extractor.py tests/test_spec_loader.py tests/test_draft_structuring_step.py tests/test_generate_ready_utils.py tests/test_cli_prepare.py` を実行
 - [x] ドキュメント更新
-  - メモ: Stage-02 要件（`docs/requirements/stages/stage-02-content-normalization.md`）と Roadmap/Runbook/README を確認し、既存記述が LLM 化後の仕様と整合していたため追記不要と判断。
+  - メモ: Stage-02 要件（`docs/requirements/stages/stage-02-prepare.md`）と Roadmap/Runbook/README を確認し、既存記述が LLM 化後の仕様と整合していたため追記不要と判断。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）

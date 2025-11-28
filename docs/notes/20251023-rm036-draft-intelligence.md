@@ -2,8 +2,8 @@
 
 ## 背景
 - RM-036 のゴールに沿い、章テンプレ・layout_hint 候補提示・差戻し理由テンプレートを体系化して HITL stage の手戻りを削減する方針を整理した。
-- 現状仕様は `docs/design/stages/stage-04-draft-structuring.md` と `docs/requirements/stages/stage-04-draft-structuring.md` に集約されているが、テンプレ運用や Analyzer 連携は未定義のままである。
-- Analyzer 活用案（`docs/notes/20251016-pptx-analyzer-integration-opportunities.md`）との整合、および Stage 4 の未解決事項の棚卸しを本メモで実施した。
+- 現状仕様は `docs/design/stages/stage-03-compose.md` と `docs/requirements/stages/stage-03-compose.md` に集約されているが、テンプレ運用や Analyzer 連携は未定義のままである。
+- Analyzer 活用案（`docs/notes/20251016-pptx-analyzer-integration-opportunities.md`）との整合、および Compose stage の未解決事項の棚卸しを本メモで実施した。
 
 ## 現状整理
 ### 章テンプレ運用
@@ -26,7 +26,7 @@
 - 章テンプレが定義されていないため、案件種別による標準構成の差分管理ができていない。
 - layout_hint 候補の裏付けが可視化されず、HITL 作業者が AI 提案へ十分な信頼を置けない。
 - 差戻し理由が標準化されておらず、再発防止策やノウハウ蓄積につながらない。
-- Analyzer 指標を stage 4 へ持ち込む導線がなく、構成判断の優先度付けが属人的。
+- Analyzer 指標を Compose stage へ持ち込む導線がなく、構成判断の優先度付けが属人的。
 
 ## PoC ターゲット案
 - 章テンプレプリセット PoC: `config/chapter_templates/*.json` にテンプレ構造を定義し、Draft API が `structure_pattern` と照合して章候補とギャップを提示する。評価指標はテンプレ一致率と差戻し減少率。
@@ -45,7 +45,7 @@
 - 差戻しテンプレートの導入には HITL 運用チームとの合意形成が必要で、運用変更の影響が大きい。
 
 ## 次アクション
-- Stage 4 要件・設計ドキュメントへ上記データ項目と PoC スコープを追記する。
+- Stage 3 要件・設計ドキュメントへ上記データ項目と PoC スコープを追記する。
 - Draft スキーマに `chapter_template_id` と `layout_score_detail` を追加し、差戻しログのテンプレコード化を定義する。
 - ロードマップ RM-036 のステータスを調査中へ更新し、以降の実装タスク分解案を ToDo に反映する。
 - Analyzer 指標の集計フローを stage 5 担当と擦り合わせるタスクを別途起案する。

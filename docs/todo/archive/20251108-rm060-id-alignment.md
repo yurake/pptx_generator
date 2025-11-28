@@ -30,9 +30,9 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - [x] docs/roadmap 配下
     - メモ: `docs/roadmap/roadmap.md` の RM-060 セクションに ID アラインメント進捗と追加 ToDo を記録（2025-11-08 更新）。
   - [x] docs/requirements 配下（実装結果との整合再確認）
-    - メモ: `docs/requirements/stages/stage-03-mapping.md` の機能要件にカード ID アライメント手順と品質ゲート反映を確認。
+    - メモ: `docs/requirements/stages/stage-03-compose.md` の機能要件にカード ID アライメント手順と品質ゲート反映を確認。
   - [x] docs/design 配下（実装結果との整合再確認）
-    - メモ: `docs/design/stages/stage-03-mapping.md` で Slide ID Aligner コンポーネントを確認。
+    - メモ: `docs/design/stages/stage-03-compose.md` で Slide ID Aligner コンポーネントを確認。
   - [x] docs/runbook 配下
     - メモ: `docs/runbooks/story-outline-ops.md` の手順 5 に DraftStructuringError の復旧手順を確認。
   - [x] README.md / AGENTS.md

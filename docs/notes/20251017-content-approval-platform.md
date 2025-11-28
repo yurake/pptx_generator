@@ -2,7 +2,7 @@
 
 ## 背景
 - stage 3 の HITL 承認基盤を `ContentSlide` から `PrepareCard` へ移行するため、既存メモを刷新。
-- `docs/design/stages/stage-03-content-normalization.md` と `docs/design/schema/stage-03-content-normalization.md` に合わせ、API / CLI / ストア構成を再整理した。
+- `docs/design/stages/stage-02-prepare.md` と `docs/design/schema/stage-02-prepare.md` に合わせ、API / CLI / ストア構成を再整理した。
 
 ## コンポーネント構成
 - **Prepare Core Models**: `PrepareCard`, `PrepareStoryContext`, `PrepareLogEntry`, `PrepareAIRecord`。`prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` で共通利用する。

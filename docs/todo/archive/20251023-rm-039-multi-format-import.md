@@ -13,7 +13,7 @@ roadmap_item: RM-039 コンテンツ多形式インポート
   - メモ: 2025-10-23 ユーザー承認済（本スレッド）
 - [x] 設計・実装方針の確定
   - 完了条件: 入力形式別のアーキテクチャ案とデータフローを設計しレビュー合意を得る
-  - メモ: ContentImportService を定義し CLI 拡張案を docs/design/stages/stage-03-content-normalization.md へ反映
+  - メモ: ContentImportService を定義し CLI 拡張案を docs/design/stages/stage-02-prepare.md へ反映
 - [x] ドキュメント更新（要件・設計）
   - 完了条件: 合意内容を docs/requirements, docs/design に反映し記録する
   - メモ: 2025-10-23 要件・設計初版を更新

@@ -10,6 +10,8 @@
 - 単一テストモジュール: `uv run --extra dev pytest tests/test_renderer.py`
 - 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py -k "not pdf" --maxfail=1`
 - PDF 変換を含むテストは LibreOffice が必要なため、実行前に `soffice --headless --version` で環境確認する。
+- 差分カバレッジ確認: `uv tool run diff-cover coverage.xml --compare-branch origin/main`。`uv run --extra dev pytest` などで `coverage.xml` を生成したあと、80% 未満なら不足箇所に対するテストを追加する。
+- 差分重複率確認: 上記 `diff-cover` の出力や SonarCloud の Quality Gate 通知で重複が検知された場合は、設計・実装を見直して 3% 以下になるようにする。
 
 ## 追加・更新ポリシー
 - 新機能やバグフィックスでは必ず失敗パターンを先に再現させるテストを追加し、緑化を確認する。承認フローや AI レビューのテストを追加する場合は、仕様を `docs/design/design.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` で確認する。

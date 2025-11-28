@@ -38,14 +38,20 @@
 4. **ToDo テンプレートの更新**  
    - 設計・実装方針メモと参照資料リンクを記載するチェック欄を追加し、Plan → 実装までの流れを強制できるよう調整。
 5. **サンプル作業フローのドキュメント化**  
-   - 例: 「静的 Blueprint パイプラインを実行する場合」のコンテキストパックを README → Runbook → ToDo の順にどう参照するかをガイドとして残す。
+   - 例: 「静的 Blueprint パイプラインを実行する場合」に、README → Runbook → ToDo の順でどの資料を参照するかをガイドとして残す。
 
 ## 補足メモ
 - 既存の README / AGENTS を即時に書き換えるのではなく、ガイドライン整備 → 段階的反映の順で進めるのが安全。
 - Runbook がスキルの原型になる想定で整理しておくと、将来的に自動化が必要になった際にも対応しやすい。
-- 変更反映時は ToDo を作成し、設計・実装方針メモにコンテキストパック要約と参照資料を記載する運用を徹底する。
+- 変更反映時は ToDo を作成し、設計・実装方針メモに参照資料と要約を記載する運用を徹底する。
 
 ---
+
+## 2025-11-28 更新メモ
+- `docs/policies/context-engineering.md` を新設し、Upfront サマリ・オンデマンド参照・階層管理・タスク分離の 4 原則を明文化した。
+- README / AGENTS / `docs/README.md` をサマリ中心の構成へ刷新し、詳細は下位ドキュメントへ誘導する運用へ切り替えた。
+- `docs/policies/task-management.md` に Plan／ToDo 記述時の参照資料リンクを明示する項目を追加した。
+- 今後のドキュメント更新では、各カテゴリ README と ToDo のメモ欄で参照リンクを明示し、Plan 承認メッセージを記録する運用を継続する。
 
 別の方に同様の相談をした際のコメントを転記します。検討の参考としてください。
 
@@ -136,7 +142,7 @@ coding agent で実務に落とすなら、もう少し実装寄りに：
 
 2. **ドメイン別・stage 別の仕様／設計**
 
-   * pptx_generator でいうと、テンプレ stage / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
+   * pptx_generator でいうと、テンプレ / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
    * → `docs/requirements/stages/*` `docs/design/stages/*` など
 
 3. **タスクローカルな情報**
@@ -206,7 +212,7 @@ Claude Code では、**custom subagents がコンテキスト管理の最強機�
 
 3. **Subsystem / Stage レイヤ**
 
-   * 「テンプレ stage」「コンテンツ準備」「マッピング」「レンダリング」など、stage 別の仕様・設計・運用ガイド。
+   * 「テンプレ」「コンテンツ準備」「マッピング」「レンダリング」など、stage 別の仕様・設計・運用ガイド。
    * → `docs/requirements/stages/*`, `docs/design/stages/*`, `docs/runbooks/*`。
 
 4. **Task レイヤ（PR / Issue / ローカルノート）**
@@ -295,18 +301,18 @@ Datacamp や LLM コスト最適化の記事では、コンテキスト設計と
 
    * 例：
 
-     * テンプレ stage タスク
-       → `docs/requirements/stages/stage-01-template-pipeline.md`
-       → `docs/design/layout-style-governance.md`
+     * テンプレ タスク
+       → `docs/requirements/stages/stage-01-template.md`
+       → `docs/design/initiatives/template-style-governance.md`
        → `templates/libraries/**/`
      * コンテンツ準備タスク
-       → `docs/requirements/stages/stage-02-content-normalization.md`
+       → `docs/requirements/stages/stage-02-prepare.md`
        → `samples/contents/`
      * マッピングタスク
-       → `docs/requirements/stages/stage-03-mapping.md` / `stage-05-mapping.md`
+       → `docs/requirements/stages/stage-03-compose.md` / `stage-03-compose.md`
        → `src/pptx_generator/mapping/**` `templates/**`
      * レンダリングタスク
-       → `docs/design/stages/stage-04-rendering.md`
+       → `docs/design/stages/stage-04-gen.md`
        → `src/pptx_generator/render/**` `dotnet/**`
 
    * coding agent には、
@@ -345,7 +351,7 @@ Claude Code の best practices やサブエージェント活用記事をベー�
 
      * `templates/`
      * `docs/requirements/stages/stage-01-*`
-     * `docs/design/layout-style-governance.md`
+    * `docs/design/initiatives/template-style-governance.md`
      * `docs/policies/config-and-templates.md`
    * 役割:
 
@@ -370,7 +376,7 @@ Claude Code の best practices やサブエージェント活用記事をベー�
    * スコープ:
 
      * `docs/requirements/stages/stage-03-*`, `stage-05-*`
-     * `docs/design/stages/stage-05-mapping.md`
+     * `docs/design/stages/stage-03-compose.md`
      * `src/pptx_generator/compose/**`, `mapping/**`
    * 役割:
 
@@ -380,8 +386,8 @@ Claude Code の best practices やサブエージェント活用記事をベー�
 
    * スコープ:
 
-     * `docs/requirements/stages/stage-04-rendering.md`
-     * `docs/design/stages/stage-04-rendering.md`
+     * `docs/requirements/stages/stage-04-gen.md`
+     * `docs/design/stages/stage-04-gen.md`
      * `src/pptx_generator/render/**`, `dotnet/`, `config/branding.json`
    * 役割:
 

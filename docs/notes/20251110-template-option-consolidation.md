@@ -20,7 +20,7 @@
 ## 要件（提案）
 - `compose` / `mapping` から `--template` オプションを削除し、テンプレート解決は `jobspec.meta.template_path`（および stage 1 成果物）に一本化する。
 - スクリプト実行時にテンプレ情報が存在しない場合は明確なエラーメッセージを出し、`pptx template` → `jobspec/meta` へ流すフローを促す。
-- ドキュメント（CLI リファレンス、README、docs/design/cli-command-reference.md 等）を更新し、テンプレ指定の新方針を周知する。
+- ドキュメント（CLI リファレンス、README、docs/design/cli/cli-command-reference.md 等）を更新し、テンプレ指定の新方針を周知する。
 - テストでは `--template` 不在での正常系／エラー系を検証し、`generate_ready.json` への埋め込みが確実に行われることを確認する。
 
 ## 次ステップ案
