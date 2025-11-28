@@ -15,6 +15,13 @@ TODO_MARKER_RE = re.compile(r"<!--\s*todo-path:\s*(.*?)\s*-->")
 RELATED_ISSUE_TASK_RE = re.compile(
     r"^(\s*-\s*\[)( |x|X)(\]\s*関連Issue 行の更新\b.*)$"
 )
+LABEL_KEY_RE = re.compile(r"^([A-Za-z0-9:_-]+):\s*$")
+LABEL_ENTRY_RE = re.compile(r"^\s*-\s*['\"](/.*?/[a-z]*)['\"]\s*$")
+SUPPORTED_REGEX_FLAGS = {
+    "i": re.IGNORECASE,
+    "m": re.MULTILINE,
+    "s": re.DOTALL,
+}
 ROADMAP_ITEM_CODE_RE = re.compile(r"(RM-\d{3})")
 
 
@@ -192,6 +199,70 @@ def ensure_issue_labels(owner: str, repo: str, token: str, issue, labels: Iterab
             json={"labels": missing},
         )
         issue["labels"] = updated_labels
+
+
+def _parse_regex_literal(literal: str) -> Tuple[str, int]:
+    raw = literal.strip()
+    if raw[0] in {"'", '"'}:
+        raw = raw[1:-1]
+    if not raw.startswith("/"):
+        raise ValueError(f"Invalid regex literal: {literal}")
+    # find last unescaped slash
+    idx = len(raw) - 1
+    while idx > 0:
+        if raw[idx] == "/" and raw[idx - 1] != "\\":
+            break
+        idx -= 1
+    if idx <= 0:
+        raise ValueError(f"Invalid regex literal: {literal}")
+    pattern = raw[1:idx]
+    flag_text = raw[idx + 1 :]
+    flag_value = 0
+    for flag_char in flag_text:
+        flag = SUPPORTED_REGEX_FLAGS.get(flag_char.lower())
+        if flag:
+            flag_value |= flag
+    return pattern, flag_value
+
+
+def load_issue_label_patterns(config_path: str) -> List[Tuple[str, re.Pattern]]:
+    if not os.path.exists(config_path):
+        return []
+    patterns: List[Tuple[str, re.Pattern]] = []
+    current_label: Optional[str] = None
+    with open(config_path, "r", encoding="utf-8") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            key_match = LABEL_KEY_RE.match(line)
+            if key_match:
+                current_label = key_match.group(1)
+                continue
+            entry_match = LABEL_ENTRY_RE.match(line)
+            if current_label and entry_match:
+                literal = entry_match.group(1)
+                pattern, flags = _parse_regex_literal(literal)
+                try:
+                    compiled = re.compile(pattern, flags)
+                except re.error:
+                    # skip invalid expressions gracefully
+                    continue
+                patterns.append((current_label, compiled))
+    return patterns
+
+
+def match_issue_labels(title: str, body: str, patterns: List[Tuple[str, re.Pattern]]) -> List[str]:
+    matched: List[str] = []
+    seen = set()
+    combined = f"{title}\n{body}" if body else title
+    for label, regex in patterns:
+        if label in seen:
+            continue
+        if regex.search(title) or (body and regex.search(body)) or regex.search(combined):
+            matched.append(label)
+            seen.add(label)
+    return matched
 
 
 def build_issue_body(rel_path: str, fields: Dict[str, str], tasks: str, notes: str) -> str:
@@ -405,6 +476,11 @@ def main():
     ap.add_argument("--include-template", action="store_true", help="テンプレートも同期対象に含める")
     ap.add_argument("--global-label", default="todo-sync", help="Issue に付与する共通ラベル")
     ap.add_argument("--parent-label", default="todo-card", help="識別用ラベル (任意)")
+    ap.add_argument(
+        "--label-config",
+        default=".github/issue-labeler.yml",
+        help="追加ラベル判定に利用する設定ファイルのパス",
+    )
     args = ap.parse_args()
 
     repo = os.environ.get("GITHUB_REPOSITORY")
@@ -420,6 +496,11 @@ def main():
 
     ensure_label(owner, repo_name, token, args.global_label, "Synced from docs/todo files")
     ensure_label(owner, repo_name, token, args.parent_label, "ToDo tracking issue")
+
+    label_patterns = load_issue_label_patterns(args.label_config)
+    pattern_labels = sorted({label for label, _ in label_patterns})
+    for lbl in pattern_labels:
+        ensure_label(owner, repo_name, token, lbl, "Auto-labeled from todo-sync patterns")
 
     cached_issues = list_issues_by_label(owner, repo_name, token, args.global_label)
 
@@ -446,22 +527,31 @@ def main():
         if not issue:
             issue = find_issue_by_path(cached_issues, rel)
         created = False
+
+        matched_labels = match_issue_labels(issue_title, body, label_patterns)
+        desired_labels: List[str] = []
+        for candidate in (args.global_label, args.parent_label):
+            if candidate and candidate not in desired_labels:
+                desired_labels.append(candidate)
+        for candidate in matched_labels:
+            if candidate and candidate not in desired_labels:
+                desired_labels.append(candidate)
+
         if not issue:
-            labels = [lbl for lbl in [args.global_label, args.parent_label] if lbl]
             issue = gh(
                 "POST",
                 f"{API}/repos/{owner}/{repo_name}/issues",
                 token,
                 json={
                     "title": issue_title,
-                    "labels": labels,
+                    "labels": desired_labels,
                     "body": body,
                 },
             )
             cached_issues.append(issue)
             created = True
 
-        ensure_issue_labels(owner, repo_name, token, issue, [args.global_label, args.parent_label])
+        ensure_issue_labels(owner, repo_name, token, issue, desired_labels)
 
         updates = {}
         desired_title = issue_title

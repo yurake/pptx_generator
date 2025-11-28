@@ -8,10 +8,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from pptx_generator.content_ai.client import (AIGenerationRequest,
-                                              OpenAIChatClient, SlideMatchCandidate,
-                                              SlideMatchRequest)
-from pptx_generator.content_ai.policy import ContentAIPolicy
+from pptx_generator.slide_ai.client import (AIGenerationRequest,
+                                            OpenAIChatClient, SlideMatchCandidate,
+                                            SlideMatchRequest)
+from pptx_generator.slide_ai.policy import SlideAIPolicy
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide
 
 
@@ -20,8 +20,8 @@ class _FailingCompletions:
         raise RuntimeError("synthetic api failure")
 
 
-def _build_policy() -> ContentAIPolicy:
-    return ContentAIPolicy.model_validate(
+def _build_policy() -> SlideAIPolicy:
+    return SlideAIPolicy.model_validate(
         {
             "id": "default",
             "name": "Default Policy",
@@ -88,7 +88,7 @@ def test_openai_chat_client_generate_logs_and_raises(caplog: pytest.LogCaptureFi
     )
 
     caplog.clear()
-    with caplog.at_level(logging.ERROR, logger="pptx_generator.content_ai.llm"):
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.slide_ai.llm"):
         with pytest.raises(RuntimeError) as excinfo:
             client.generate(request)
 
@@ -111,7 +111,7 @@ def test_openai_chat_client_match_slide_logs_and_raises(caplog: pytest.LogCaptur
     )
 
     caplog.clear()
-    with caplog.at_level(logging.ERROR, logger="pptx_generator.content_ai.llm"):
+    with caplog.at_level(logging.ERROR, logger="pptx_generator.slide_ai.llm"):
         with pytest.raises(RuntimeError) as excinfo:
             client.match_slide(match_request)
 

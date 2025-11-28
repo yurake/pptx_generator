@@ -9,7 +9,7 @@
 | 機能 | 対応プロバイダ | 主な実装 | 備考 |
 | --- | --- | --- | --- |
 | Template AI | `mock`, `openai` | `src/pptx_generator/template_ai/client.py` | `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）を参照するが、分岐は限定的で Responses API 固定。 |
-| Content AI | `mock`, `openai`, `azure-openai`, `anthropic`, `aws-claude` | `src/pptx_generator/content_ai/client.py` | プロバイダごとに専用クライアントを実装済み。 |
+| Content AI | `mock`, `openai`, `azure-openai`, `anthropic`, `aws-claude` | `src/pptx_generator/slide_ai/client.py` | プロバイダごとに専用クライアントを実装済み。 |
 | Layout AI | 同上 | `src/pptx_generator/layout_ai/client.py` | JSON 応答ベースで共通クライアントを切り替える設計。 |
 
 Template AI 側で不足している要素:
@@ -42,7 +42,7 @@ Template AI 側で不足している要素:
    - `diagnostics.json.template_ai` にプロバイダ名・モデルを記録し、実運用での確認を容易にする。
 
 ## 5. 作業分解案
-1. 共通クライアント抽象化（`content_ai.client` からユーティリティを切り出し Template AI に適用）。
+1. 共通クライアント抽象化（`slide_ai.client` からユーティリティを切り出し Template AI に適用）。
 2. Template AI ファクトリのプロバイダ分岐拡張（Azure → Anthropic → AWS の順で導入）。
 3. policy JSON と diagnostics のスキーマ更新。
 4. README / design / requirements / runbook の更新。

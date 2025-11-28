@@ -21,7 +21,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
     - Plan承認: ユーザー「ok」（2025-11-02 02:11 JST）
     - スコープ: RM-046「生成AIプレペア構成自動化」の最終形に合わせて stage 3 の仕様を再設計し、現行設計との差分を整理する。既存挙動の互換維持は考慮せず、理想像への刷新を前提とする。
     - 影響ファイル: docs/requirements/stages/stage-03-content-normalization.md, docs/design/stages/stage-03-content-normalization.md, 必要に応じて docs/notes/, docs/roadmap/roadmap.md。
-    - 前提・確認: 生成AIモード周辺（config/content_ai_policies.json, src/pptx_generator/content_ai/ など）の現状を把握し、RM-046 の期待成果（テンプレ依存ゼロの抽象プレペアカード、HITL ログ方針）に照らして不足点を特定する。
+    - 前提・確認: 生成AIモード周辺（config/slide_ai_policies.json, src/pptx_generator/slide_ai/ など）の現状を把握し、RM-046 の期待成果（テンプレ依存ゼロの抽象プレペアカード、HITL ログ方針）に照らして不足点を特定する。
     - 手順:
       1. 関連ドキュメント・コードから現状の生成AIフローと制約を洗い出し、RM-046 のゴールとギャップを一覧化する。
       2. プレペア入力フォーマット、生成カード構造、HITL ログ／承認フローの改訂案をまとめ、更新するドキュメント章立てを設計する。

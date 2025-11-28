@@ -1,15 +1,15 @@
-"""生成AI オーケストレーション関連の公開 API。"""
+"""Slide AI（旧 content_ai）関連の公開 API。"""
 
 from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
                      LLMClientConfigurationError, MockLLMClient,
                      SlideMatchCandidate, SlideMatchRequest,
                      SlideMatchResponse, create_llm_client)
-from .orchestrator import ContentAIOrchestrator, ContentAIOrchestrationError
+from .orchestrator import SlideAIOrchestrationError, SlideAIOrchestrator
 from .policy import (
-    ContentAIPolicy,
-    ContentAIPolicyError,
-    ContentAIPolicySet,
-    ContentAISlidePolicy,
+    SlideAIPolicy,
+    SlideAIPolicyError,
+    SlideAIPolicySet,
+    SlideAISlidePolicy,
     load_policy_set,
 )
 
@@ -23,11 +23,11 @@ __all__ = [
     "SlideMatchRequest",
     "SlideMatchResponse",
     "create_llm_client",
-    "ContentAIOrchestrator",
-    "ContentAIOrchestrationError",
-    "ContentAIPolicy",
-    "ContentAISlidePolicy",
-    "ContentAIPolicySet",
-    "ContentAIPolicyError",
+    "SlideAIOrchestrator",
+    "SlideAIOrchestrationError",
+    "SlideAIPolicy",
+    "SlideAISlidePolicy",
+    "SlideAIPolicySet",
+    "SlideAIPolicyError",
     "load_policy_set",
 ]

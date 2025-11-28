@@ -8,9 +8,8 @@ from difflib import SequenceMatcher
 from typing import Iterable, Literal
 
 from ..prepare.models import PrepareCard, PrepareDocument
-from ..content_ai import (LLMClient, SlideMatchCandidate,
-                          SlideMatchRequest, SlideMatchResponse,
-                          create_llm_client)
+from ..slide_ai import (LLMClient, SlideMatchCandidate, SlideMatchRequest,
+                        SlideMatchResponse, create_llm_client)
 from ..models import ContentApprovalDocument, ContentSlide, JobSpec, Slide
 
 logger = logging.getLogger(__name__)

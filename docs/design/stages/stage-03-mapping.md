@@ -8,7 +8,7 @@
 ## コンポーネント
 | コンポーネント | 役割 | 技術 | 備考 |
 | --- | --- | --- | --- |
-| Slide ID Aligner (新規) | PrepareCard ↔ JobSpec の card/slide ID を AI で突合 | Python / content_ai | `content_approved` の `ContentSlide.id` を補正、監査ログへ出力 |
+| Slide ID Aligner (新規) | PrepareCard ↔ JobSpec の card/slide ID を AI で突合 | Python / slide_ai | `content_approved` の `ContentSlide.id` を補正、監査ログへ出力 |
 | Draft Structuring Engine | 章構成・差戻しワークフロー | Python / dataclass | `generate_ready_meta.sections[]`・`draft_review_log.json` を管理 |
 | Layout Hint Engine | レイアウト候補スコアリング | Python | Prepare の intent / chapter / Analyzer 指摘を参照 |
 | GenerateReady Builder | プレースホルダ割付・フォールバック制御 | Python | `generate_ready.json`, `draft_mapping_log.json` を生成 |

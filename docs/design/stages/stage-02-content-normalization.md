@@ -9,7 +9,11 @@
 | レイヤ | コンポーネント | 概要 |
 | --- | --- | --- |
 | CLI | `pptx prepare` | Prepare ソースを読み込み、PrepareCard 生成・評価・監査ログ出力を実行 |
-| サービス層 | `PrepareAIOrchestrator` (`src/pptx_generator/prepare_ai/orchestrator.py`) + `ContentAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
+<<<<<<< HEAD
+| サービス層 | `PrepareAIOrchestrator` (`src/pptx_generator/prepare_ai/orchestrator.py`) + `SlideAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
+=======
+| サービス層 | `PrepareAIOrchestrator` + `SlideAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
+>>>>>>> origin/main
 | モデル層 | `PrepareDocument` / `PrepareCard` | Pydantic モデルで JSON スキーマを表現 |
 | ストレージ | Prepare Store | `.pptx/prepare/prepare_card.json` など成果物一式を保存 |
 

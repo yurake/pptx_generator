@@ -197,10 +197,10 @@ def _discover_template_ai_policy() -> Path | None:
 def _configure_llm_logger() -> None:
     log_dir = Path("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    llm_logger = logging.getLogger("pptx_generator.content_ai.llm")
+    llm_logger = logging.getLogger("pptx_generator.slide_ai.llm")
 
     class _LLMLogFormatter(logging.Formatter):
-        """content_ai ログ用の安全なフォーマッタ。"""
+        """slide_ai ログ用の安全なフォーマッタ。"""
 
         def __init__(self, *args, max_chars: int = 2000, **kwargs) -> None:
             super().__init__(*args, **kwargs)

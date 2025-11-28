@@ -6,8 +6,8 @@
 
 ## 現行フロー整理（旧仕様の確認）
 - 当時の `docs/requirements/stages/stage-03-content-normalization.md` は従来のコンテンツ承認 JSON（テンプレ由来の `slide_id` / `intent` を維持）を前提に記載されていた（現在は PrepareCard ベースへ更新済み）。
-- `src/pptx_generator/cli.py` の `pptx prepare` コマンド（旧実装）は `ContentAIOrchestrator` が `JobSpec.slides` から `ContentSlide` を生成し、`content_draft.json` を出力していた。
-- `ContentAIOrchestrator`（当時の `src/pptx_generator/content_ai/orchestrator.py` 59-146 行）は各スライドのレイアウト名をプロンプト解決に使用し、レイアウトごとの `intent` をポリシーから取得していた。
+- `src/pptx_generator/cli.py` の `pptx prepare` コマンド（旧実装）は `SlideAIOrchestrator` が `JobSpec.slides` から `ContentSlide` を生成し、`content_draft.json` を出力していた。
+- `SlideAIOrchestrator`（当時の `src/pptx_generator/slide_ai/orchestrator.py` 59-146 行）は各スライドのレイアウト名をプロンプト解決に使用し、レイアウトごとの `intent` をポリシーから取得していた。
 - `docs/design/schema/stage-03-content-normalization.md` も `elements.title/body` をレイアウトと 1:1 で結び付けるスキーマを想定しており、プレペア抽象化は考慮されていなかった。
 
 ## ギャップと課題
@@ -49,7 +49,7 @@
 
 ## 提案するドキュメント更新
 - `docs/requirements/stages/stage-03-content-normalization.md`: 入力を「プレペアソース」「AI プロンプト設定」「テンプレ独立カード構造」に再構成し、出力を `prepare_card` ベースへ更新。品質ゲートとログ要件もカード ID / バージョン軸で書き換える。
-- `docs/design/stages/stage-03-content-normalization.md`: `ContentAIOrchestrator` の役割を「テンプレ依存 → プレペア抽象化」へ移行する設計図を追加。`PrepareCard` モデルと CLI オプション（`--prepare-source`, `-p/--page-limit` など）を反映する。
+- `docs/design/stages/stage-03-content-normalization.md`: `SlideAIOrchestrator` の役割を「テンプレ依存 → プレペア抽象化」へ移行する設計図を追加。`PrepareCard` モデルと CLI オプション（`--prepare-source`, `-p/--page-limit` など）を反映する。
 - `docs/design/schema/stage-03-content-normalization.md`: JSON スキーマを `prepare_card`・`story_context`・`supporting_materials[]` に改訂し、旧 `elements.title/body` の制約を撤廃。承認ログも `card_id` / `revision` 前提で書き換える。
 - `docs/notes/20251017-content-approval-platform.md`: 新モデルとの差分と段階移行方針を追記（従来 `ContentSlide` 利用箇所の移行ガイド）。
 - `docs/roadmap/roadmap.md`: RM-046 の「次アクション」を本調査内容に合わせて更新し、プレペア抽象化タスクを明確化。
@@ -57,7 +57,7 @@
 
 ## 実装ロードマップ（案）
 1. **Stage3 基盤更新**
-   - `PrepareCard` モデルと関連スキーマを実装し、CLI `pptx prepare` / API / パイプライン（`ContentAIOrchestrator`, `ContentImportService`, `ContentApprovalStep`）を全て新モデルへ置換。
+   - `PrepareCard` モデルと関連スキーマを実装し、CLI `pptx prepare` / API / パイプライン（`SlideAIOrchestrator`, `ContentImportService`, `ContentApprovalStep`）を全て新モデルへ置換。
    - `uv run pptx prepare <prepare file>` をエントリに据え、旧 `spec_path` 引数と `ContentSlide` 依存コードを削除。
    - 既存テストの失敗箇所を洗い出し、後続ステップでの改修範囲を明確にする。
 2. **ドキュメントとサンプルの整備**
@@ -74,6 +74,6 @@
 
 ## 未決事項（次ステップで詰める）
 - Prepare 入力フォーマット（JSON スキーマ vs. Markdown パーサ）の優先度。
-- `config/content_ai_policies.json` の再構成（章タイプ別テンプレート／プロンプト差し替え）と CLI オプション設計。
+- `config/slide_ai_policies.json` の再構成（章タイプ別テンプレート／プロンプト差し替え）と CLI オプション設計。
 - 後方互換を切り捨てるにあたり、legacy コンテンツ承認 JSON を参照するテスト・ドキュメントの更新順序。
 - API レイヤ (`src/pptx_generator/api/`) を抽象カードに合わせてどこまで同時改修するか。

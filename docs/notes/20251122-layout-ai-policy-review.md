@@ -45,6 +45,6 @@
 - `layout_ai/policy.py` に `usage_tags_template` / `card_context_template` を追加し、ポリシーごとにメタデータセクションの文面を制御できるようにした。
 - `config/layout_ai_policies.json` にデフォルトテンプレートを追加し、Layout AI へ用途タグ説明・カード文脈を明示的に渡す設定を反映。
 - `layout_ai/client.py` の `_build_user_prompt` を拡張し、上記テンプレートに基づいて `usage_tags_prompt` / `card_context_prompt` を生成。あわせて構造化データ（usage_tags_reference / card_context）を payload に内包。
-- content_ai ログのフォーマッタを刷新し、ファイル出力に加えて標準出力にも同内容を流しつつ、LLM リクエスト／レスポンス以外の雑多なログはフィルタで抑制した（2025-11-24 追記）。
+- slide_ai ログのフォーマッタを刷新し、ファイル出力に加えて標準出力にも同内容を流しつつ、LLM リクエスト／レスポンス以外の雑多なログはフィルタで抑制した（2025-11-24 追記）。
 - `card_context` 経由の付帯情報は削除し、カード本体と usage_tags で重複するデータを送らない設計へ変更（2025-11-24 更新）。
 - Stage3 側で追加した `allowed_tags_detail` や `ContentSlide.source` を活用し、LLM が canonical usage tags とカード背景を参照したうえで評価できる状態に更新済み。
