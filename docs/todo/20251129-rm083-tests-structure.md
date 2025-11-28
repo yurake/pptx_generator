@@ -5,8 +5,8 @@
 roadmap_item: RM-083 テストディレクトリ整備
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: 2025-11-29 に `main` から `chore/rm083-tests-structure` を作成済み。初期コミットと push は Plan 反映後に実施予定。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: 2025-11-29 に `main` から `chore/rm083-tests-structure` を作成し、コミット `chore(rm083): bootstrap test restructuring` を作成済み。リモートへの push はユーザー確認後に実施予定。
     - 必ずmainからブランチを切る
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
