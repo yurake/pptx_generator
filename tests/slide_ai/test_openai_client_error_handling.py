@@ -15,6 +15,15 @@ from pptx_generator.slide_ai.policy import SlideAIPolicy
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide
 
 
+@pytest.fixture(autouse=True)
+def reset_llm_logger():
+    logger = logging.getLogger("pptx_generator.slide_ai.llm")
+    logger.handlers.clear()
+    logger.filters.clear()
+    logger.propagate = True
+    yield
+
+
 class _FailingCompletions:
     def create(self, **kwargs):
         raise RuntimeError("synthetic api failure")

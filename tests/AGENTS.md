@@ -1,9 +1,13 @@
 # tests ディレクトリ向け作業指針
 
 ## テスト構成
-- 単体テスト: `tests/test_*.py` に配置。レンダラー・アナライザー・モデルなどコンポーネント単位の挙動を検証する。
-- 統合テスト: `tests/test_cli_integration.py` が CLI から PPTX/PDF を生成するフローをカバー。サンプル JSON は `samples/` を利用。
-- 補助スクリプト: `tests/test_todo_sync_scripts.py` で `scripts/` 配下の GitHub 同期ロジックを検証。
+- 単体テスト: ドメインごとに `tests/<domain>/` へ配置し、`src` 配下の責務と 1:1 で対応付ける。主要ディレクトリ例:
+  - `tests/api/`, `tests/cli/`, `tests/template_ai/`, `tests/template_audit/`
+  - `tests/prepare/`, `tests/prepare_ai/`, `tests/pipeline/<stage>/`（`analyzer` / `compose` / `content` / `mapping` / `monitoring` / `refine` / `render` / `spec_validation`）
+  - `tests/layout_ai/`, `tests/layout_validation/`, `tests/review_engine/`, `tests/slide_ai/`
+  - `tests/todo/`, `tests/utils/`, `tests/models/`, `tests/generate_ready/`
+- 統合テスト: `tests/integration/test_cli_generate_pipeline_flow.py` が CLI から PPTX/PDF を生成するフローをカバー。サンプル JSON は `samples/` を利用。
+- スクリプト検証: `tests/todo/test_todo_sync_scripts_execution.py` や `tests/cli/test_cli_template_extraction_export.py` で `scripts/` 配下の CLI ラッパーを検証。
 
 ## ディレクトリ体系とモジュール配置
 - ドメイン単位で `tests/<domain>/` サブディレクトリを作成し、`src` や `docs` の責務と対応付ける。例: コンテンツ生成は `tests/content_ai/`、レイアウト関連は `tests/layout_ai/`。
@@ -22,8 +26,8 @@
 
 ## 実行コマンド
 - すべてのテスト: `uv run --extra dev pytest`
-- 単一テストモジュール: `uv run --extra dev pytest tests/test_renderer.py`
-- 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py -k "not pdf" --maxfail=1`
+- 単一テストモジュール: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py`
+- 統合テストのみ: `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py -k "not pdf" --maxfail=1`
 - PDF 変換を含むテストは LibreOffice が必要なため、実行前に `soffice --headless --version` で環境確認する。
 - 差分カバレッジ確認: `uv tool run diff-cover coverage.xml --compare-branch origin/main`。`uv run --extra dev pytest` などで `coverage.xml` を生成したあと、80% 未満なら不足箇所に対するテストを追加する。
 - 差分重複率確認: 上記 `diff-cover` の出力や SonarCloud の Quality Gate 通知で重複が検知された場合は、設計・実装を見直して 3% 以下になるようにする。
