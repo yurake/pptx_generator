@@ -16,9 +16,9 @@
 - 未反映領域  
   - 上記アイデアは requirements・design・roadmap いずれにも未掲載。新規タスクとして整理が必要。
 
-### stage 2 テンプレ構造抽出
+### stage 1 抽出・検証 CLI
 - 既存ドキュメント  
-  - `docs/design/stages/stage-02-template-structure-extraction.md:37-40` に Analyzer/Renderer 連携インターフェースが未解決項目として記載。
+  - `docs/design/stages/stage-01-template.md:42-51` で `pptx tpl-extract`・`pptx layout-validate` を用いたテンプレ抽出と診断フローを整理。
 - 追加アイデア  
   - 抽出したプレースホルダ情報と Analyzer のスナップショットを照合し、命名漏れやアンカー欠落を diff レポートで提示。
   - `diagnostics.json` へ Analyzer 由来の警告を取り込み、テンプレ構造の課題を一括で確認できるようにする。
@@ -27,7 +27,7 @@
 
 ### stage 3 コンテンツ準備 (HITL)
 - 既存ドキュメント  
-  - `docs/design/stages/stage-03-content-normalization.md` では Review Engine の診断と Auto-fix を中心に説明しているが、Analyzer 連携には触れていない。
+  - `docs/design/stages/stage-02-prepare.md` では Review Engine の診断と Auto-fix を中心に説明しているが、Analyzer 連携には触れていない。
 - 追加アイデア  
   - `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー優先度の指標に利用。
   - `severity` に基づく差戻し優先度タグを UI に表示し、HITL レビューの効率化を図る。
@@ -36,14 +36,14 @@
 - 未反映領域  
   - 要件・設計・ロードマップでの記載なし。HITL 系ロードマップ項目（例: RM-024）への組み込みを検討。
 
-### stage 4 ドラフト構成設計 (HITL)
+### stage 3 マッピング (HITL + 自動)
 - 既存ドキュメント  
-  - `docs/design/stages/stage-04-draft-structuring.md` は章レーン UI と layout_hint 決定にフォーカスし、Analyzer の活用は未記載。
+  - `docs/design/stages/stage-03-compose.md` は章レーン運用、layout_hint スコアリング、Analyzer 連携を定義しているが、ダッシュボード活用までは触れていない。
 - 追加アイデア  
   - layout_hint 承認前に対象スライドの Analyzer 指摘件数をダッシュボードで可視化し、構成調整の判断材料とする。
   - `layout_consistency` の警告を Draft Service 側で再インデント候補に変換し、HITL 作業の手戻りを削減。
 - 未反映領域  
-  - ドキュメント・ロードマップともに未反映。stage 4 のワークフロー見直しタスクとして追加余地あり。
+  - ドキュメント・ロードマップともに未反映。stage 3 のワークフロー見直しタスクとして追加余地あり。
 
 ### stage 5 マッピング
 - 既存ドキュメント  

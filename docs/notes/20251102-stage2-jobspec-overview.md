@@ -20,7 +20,7 @@
   - stage 1（テンプレ準備）はテンプレート PPTX の管理・命名・バージョン整理に専念しており、ジョブスペックのようなスライド構造データは生成しない (`README.md:51-62`)。
   - stage 2（テンプレ構造抽出）は `uv run pptx tpl-extract ...` や `layout-validate` でレイアウト構造・アンカー・ブランド設定を JSON / YAML 化するが、生成されるのは `layouts.jsonl`・`branding.json` 等であり、ジョブスペック形式の `slides` 配列は出力されない (`README.md:63-95`)。
 - ドキュメント記載との整合
-  - `docs/requirements/stages/stage-03-content-normalization.md` はジョブスペックを stage 3 の入力（プレペア整形済みデータ）と位置付け、HITL 承認後に `prepare_card.json` を生成する流れを定義。
+  - `docs/requirements/stages/stage-02-prepare.md` はジョブスペックを stage 3 の入力（プレペア整形済みデータ）と位置付け、HITL 承認後に `prepare_card.json` を生成する流れを定義。
   - `docs/design/design.md:34-60` も「stage 3: プレペア正規化（HITL）が `spec.json` とテンプレ構造を参照しつつ `prepare_card.json` を作る」前提でアーキテクチャ図を記載しており、ジョブスペックは stage 3 より前に人が整備する想定になっている。
 
 ## 再設計案（ユーザー要望ベース）
@@ -30,10 +30,10 @@
 - stage 3 (生成AI) の位置づけを調整
   - 案件側の生情報を入力に、生成AIが章構成案・スライド順・各ページのメインメッセージおよび支えるコンテンツ候補を整理したプレペア（抽象カード集合）を作成する。
   - テンプレとのマージは行わず、`prepare_card.json` や関連ログをテンプレ非依存の構造として出力する。
-  - stage 3 出力にはストーリーフェーズ・意図タグ・メッセージアングルなど既存要件 (`docs/requirements/stages/stage-03-content-normalization.md:3-45`) を維持。
+  - stage 3 出力にはストーリーフェーズ・意図タグ・メッセージアングルなど既存要件 (`docs/requirements/stages/stage-02-prepare.md:3-45`) を維持。
 - stage 4 (生成AI) の役割再定義
   - stage 3 で作成したプレペア（抽象カード）と、stage 2 のジョブスペック雛形／テンプレ構造 JSON をマージし、`layout_hint` やページ割り当てまで具体的に埋めた `draft_approved.json` を生成する。
-  - 現行仕様にある HITL 差戻し管理・章テンプレ適用 (`docs/requirements/stages/stage-04-draft-structuring.md:1-120`) を前提にしつつ、生成AIの補助で「ほぼ形にした成果物」を出す方向を目指す。
+  - 現行仕様にある HITL 差戻し管理・章テンプレ適用 (`docs/requirements/stages/stage-03-compose.md:1-120`) を前提にしつつ、生成AIの補助で「ほぼ形にした成果物」を出す方向を目指す。
 - stage 5 以降は現行フローを維持
   - `pptx mapping` → `pptx render` の自動処理で品質ゲートと最終出力を担保する。
 - 実装着手タイミング
@@ -55,10 +55,10 @@
   - `docs/requirements/stages/stage-04-mapping.md` は、stage 4 の出力として `generate_ready.json`・`mapping_log.json`・（必要に応じて）`fallback_report.json` を要求し、必須プレースホルダー充足やフォールバック履歴、Analyzer サマリを品質ゲートとする設計を明記。
   - 同ドキュメントは「レイアウト候補スコアリング」「AI 補完」「フォールバック適用」「監査ログ収集」を stage 5 の責務としており、stage 4 には含まれない。
 - stage 4 との責務境界
-  - `docs/requirements/stages/stage-04-draft-structuring.md` は HITL stage として章構成・`layout_hint` の確定、差戻し理由管理、章テンプレ適用率などを扱う。プレースホルダーの具体的割付や自動補完、監査ログ生成は扱っていない。
+  - `docs/requirements/stages/stage-03-compose.md` は HITL stage として章構成・`layout_hint` の確定、差戻し理由管理、章テンプレ適用率などを扱う。プレースホルダーの具体的割付や自動補完、監査ログ生成は扱っていない。
   - stage 4 で出力される `draft_approved.json` には `layout_hint` は含まれるが、テンプレのアンカーごとにどの要素を入れるかは未決定であり、stage 5 でのルール／AI 処理が必要。
 - stage 5 との連携
-  - `docs/requirements/stages/stage-05-rendering.md` は入力として `generate_ready.json` を前提としており、そこに `job_meta` / `job_auth` や PH→要素マッピングが埋まっていることを要求。stage 4 を取り除くと、stage 5 が自前で割付・検証・監査ログ生成まで担う必要が生じ、責務が過大になる。
+  - `docs/requirements/stages/stage-04-gen.md` は入力として `generate_ready.json` を前提としており、そこに `job_meta` / `job_auth` や PH→要素マッピングが埋まっていることを要求。stage 4 を取り除くと、stage 5 が自前で割付・検証・監査ログ生成まで担う必要が生じ、責務が過大になる。
   - 監査ログ (`audit_log.json`) は stage 5 が出力する `mapping_log.json` を参照してフォールバック履歴や警告を記録する設計になっているため、stage 5 を省くと監査フローが破綻する。
 - 2段階品質ゲートの意義
   - 実務では stage 4 完了後も stage 5 でエラーが出れば stage 4 へ戻って差戻しを行うが、これは「HITL 承認済み構成」がまず提出され、その後「自動割付が完了し品質ゲートを通過した」ことを確認する二段階の審査になっている。

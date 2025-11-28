@@ -10,9 +10,9 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - 対象整理（スコープ、対象ファイル、前提）: テンプレ抽出で生成する `JobSpecScaffold` を stage 3 の `JobSpec` と互換化する。`src/pptx_generator/models.py`、`src/pptx_generator/pipeline/template_extractor.py`、`src/pptx_generator/cli.py`（compose フロー）、`samples/extract/jobspec.json` 等を想定。`docs/notes/20251105-jobspec-scaffold-validation.md` の調査結果を前提とし、既存 CLI 挙動は維持する。
-    - ドキュメント／コード修正方針: `JobSpecScaffold`→`JobSpec` 変換ロジックを設計・実装し、CLI またはパイプラインへ組み込む。必要に応じて `samples/` と `docs/requirements/stages/stage-03-mapping.md` など関連ドキュメントを更新する。
+    - ドキュメント／コード修正方針: `JobSpecScaffold`→`JobSpec` 変換ロジックを設計・実装し、CLI またはパイプラインへ組み込む。必要に応じて `samples/` と `docs/requirements/stages/stage-03-compose.md` など関連ドキュメントを更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗を更新し、Plan 承認内容をメモへ転記。
-    - 想定影響ファイル: `src/pptx_generator/models.py`、`src/pptx_generator/pipeline/template_extractor.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/__init__.py`（必要時）、`samples/extract/jobspec.json`、`docs/requirements/stages/stage-03-mapping.md`、関連ノートや README。
+    - 想定影響ファイル: `src/pptx_generator/models.py`、`src/pptx_generator/pipeline/template_extractor.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/__init__.py`（必要時）、`samples/extract/jobspec.json`、`docs/requirements/stages/stage-03-compose.md`、関連ノートや README。
     - リスク: 他 stage や外部ツールが現行スキャフォールド形式へ依存している場合の互換性低下、テンプレ情報だけでは `meta.title` / `auth` を補完しづらい点、`placeholders` 正規化時の情報損失。
     - テスト方針: 可能なら `uv run --extra dev pytest` で全体回帰。最低限 `tests/test_cli_integration.py` などで抽出→変換→compose の統合テストを追加／更新し、変換関数のユニットテストも検討。
     - ロールバック方法: 追加する変換モジュールと CLI・ドキュメントの変更を revert すれば従来のスキャフォールド挙動へ戻せる。
@@ -20,7 +20,7 @@ roadmap_item: RM-057 JobSpec スキャフォールド整合
 - [x] 設計・実装方針の確定
   - メモ: JobSpecScaffold を CLI ローダーで吸収し、テンプレ抽出成果物を JobSpec へ整形する方針を採用。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/requirements/stages/stage-03-mapping.md` へ自動変換仕様を追記。
+  - メモ: `docs/requirements/stages/stage-03-compose.md` へ自動変換仕様を追記。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

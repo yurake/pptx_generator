@@ -20,7 +20,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
     - 承認メッセージ ID／リンク
     - Plan承認: ユーザー「ok」（2025-11-02 02:11 JST）
     - スコープ: RM-046「生成AIプレペア構成自動化」の最終形に合わせて stage 3 の仕様を再設計し、現行設計との差分を整理する。既存挙動の互換維持は考慮せず、理想像への刷新を前提とする。
-    - 影響ファイル: docs/requirements/stages/stage-03-content-normalization.md, docs/design/stages/stage-03-content-normalization.md, 必要に応じて docs/notes/, docs/roadmap/roadmap.md。
+    - 影響ファイル: docs/requirements/stages/stage-02-prepare.md, docs/design/stages/stage-02-prepare.md, 必要に応じて docs/notes/, docs/roadmap/roadmap.md。
     - 前提・確認: 生成AIモード周辺（config/slide_ai_policies.json, src/pptx_generator/slide_ai/ など）の現状を把握し、RM-046 の期待成果（テンプレ依存ゼロの抽象プレペアカード、HITL ログ方針）に照らして不足点を特定する。
     - 手順:
       1. 関連ドキュメント・コードから現状の生成AIフローと制約を洗い出し、RM-046 のゴールとギャップを一覧化する。
@@ -44,7 +44,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
       - 承認: ユーザー「後方互換への考慮は不要。他については承認」メッセージ（2025-11-02 14:04 JST）。
     - 追記 (2025-11-03 11:05 JST): prepare policy オプション廃止に関する計画を下記の通り整理。
       - スコープ: `pptx prepare` サブコマンドから `--prepare-policy` / `--ai-policy*` を撤廃し、既定ポリシー固定でプレペア生成を行う。関連ロジック・ドキュメント・テストも新仕様に合わせる。
-      - 想定更新ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/*`, `tests/test_cli_content.py` ほか content 関連テスト、README、`docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-03-*`, 必要に応じて `docs/notes/`。
+      - 想定更新ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/*`, `tests/test_cli_content.py` ほか content 関連テスト、README、`docs/design/cli/cli-command-reference.md`, `docs/requirements/stages/stage-03-*`, 必要に応じて `docs/notes/`。
       - 進め方: (1) main の差分を再確認し影響範囲を把握。(2) CLI から該当オプションを削除し、デフォルトポリシーを内部固定化。(3) プレペア生成ロジックの依存（`load_prepare_policy_set` など）を簡素化し、エラーメッセージや監査ログを更新。(4) テストを更新して `uv run --extra dev pytest` を実行。(5) README 等のドキュメントを新仕様に合わせて改訂。(6) ToDo・必要なドキュメントに結果を共有。
       - リスク: 既存の `--prepare-policy` 利用パターンとの互換性がなくなること、外部ドキュメントにオプション前提の記述が残る可能性。
       - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx prepare samples/contents/sample_import_content_summary.txt` など手動確認。
@@ -86,7 +86,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
   - [x] テスト更新と検証（`uv run --extra dev pytest`, `uv run pptx compose ...` 実行確認）
     - メモ: `tests/test_cli_integration.py::test_cli_compose_generates_stage45_outputs` を追加。`uv run --extra dev pytest tests/test_cli_integration.py` を実行し 30 ケース成功。手動で `uv run pptx compose` を走らせ、標準出力と生成物を確認。
   - [x] ドキュメント刷新（README, AGENTS, docs/requirements/, docs/design/, docs/runbooks/ 等）
-    - メモ: README チートシート／stage 解説、`docs/design/cli-command-reference.md`、`docs/runbooks/story-outline-ops.md` を compose 前提へ更新。既存要件ドキュメント（stage-04 mapping）との記述整合を再確認。
+    - メモ: README チートシート／stage 解説、`docs/design/cli/cli-command-reference.md`、`docs/runbooks/story-outline-ops.md` を compose 前提へ更新。既存要件ドキュメント（stage-04 mapping）との記述整合を再確認。
   - [x] 結果共有（ToDo/ドキュメント更新履歴の記録、必要に応じて docs/notes/ 追加）
     - メモ: 本報告（2025-11-02）で compose 実装内容と検証結果を共有。追加メモは当 ToDo と関連ドキュメントの更新履歴に集約。
 
@@ -99,7 +99,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
     - メモ: `src/pptx_generator/cli.py` を更新し、サンプルコンテンツ `samples/json/sample_content_approved.json` / `sample_content_review_log.json` を追加。
   - [x] テスト更新と検証（`uv run --extra dev pytest`, `uv run pptx template ...` 実行確認、テンプレ系統の統合テスト追加）
     - メモ: tpl-extract 関連アサーションを拡充し、README チートシート順の新統合テストを追加。`uv run --extra dev pytest` で 159 ケース通過。
-  - [x] ドキュメント刷新（README, docs/design/cli-command-reference.md, docs/runbooks/, docs/requirements/stages/stage-02-*, docs/policies/config-and-templates.md 等）
+  - [x] ドキュメント刷新（README, docs/design/cli/cli-command-reference.md, docs/runbooks/, docs/requirements/stages/stage-02-*, docs/policies/config-and-templates.md 等）
     - メモ: README と CLI リファレンスに抽出＋検証の一括実行と成果物一覧を追記。
   - [x] 結果共有（ToDo 更新・必要に応じて docs/notes/ 追加、ロードマップとの整合確認）
 
@@ -108,7 +108,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
   - [x] CLI から `--prepare-policy` / `--ai-policy*` オプションを削除し、既定ポリシー固定にする
   - [x] プレペア生成ロジックの依存（`load_prepare_policy_set` など）を最小化し、エラーメッセージ・監査ログを新仕様へ揃える
   - [x] テスト更新と回帰実行（`tests/test_cli_content.py` ほか、`uv run --extra dev pytest`）
-  - [x] ドキュメント改訂（README, CLI リファレンス, docs/requirements/stages/stage-03-*, docs/design/cli-command-reference.md 等）
+  - [x] ドキュメント改訂（README, CLI リファレンス, docs/requirements/stages/stage-03-*, docs/design/cli/cli-command-reference.md 等）
   - [x] 結果共有（ToDo 更新・必要に応じて docs/notes/ 記録、ロードマップへの反映確認）
     - メモ: 2025-11-03 このメッセージで作業内容とテスト結果を報告。
 

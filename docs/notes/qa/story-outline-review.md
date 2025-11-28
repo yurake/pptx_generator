@@ -1,10 +1,10 @@
 # ストーリー骨子整合チェック結果（2025-10-16）
 
 ## 対象
-- `docs/requirements/stories/story-outline.md`
-- `docs/design/rm005-story-modeler.md`
-- `docs/requirements/stages/stage-03-content-normalization.md`
-- `docs/requirements/stages/stage-04-draft-structuring.md`
+- `docs/design/initiatives/story-modeler.md`
+- `docs/requirements/stages/stage-02-prepare.md`
+- `docs/requirements/stages/stage-03-compose.md`
+- `docs/requirements/stages/stage-04-gen.md`
 - `docs/runbooks/story-outline-ops.md`
 
 ## チェックリスト

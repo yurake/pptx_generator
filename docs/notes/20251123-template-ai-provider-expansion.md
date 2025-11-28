@@ -31,7 +31,7 @@ Template AI 側で不足している要素:
 2. **設定項目の拡張**  
    - `PPTX_TEMPLATE_LLM_PROVIDER` を優先し、未設定時は `PPTX_LLM_PROVIDER` を利用する現行仕様を維持。  
    - `config/template_ai_policies.json` で policy 単位に `provider` / `model` / `temperature` / `max_tokens` などを上書き可能にし、Azure（deployment）や AWS（modelId）など固有設定を扱えるようにする。  
-   - README、`docs/design/stages/stage-01-template-pipeline.md`、`docs/requirements/stages/stage-01-template-pipeline.md` 等に必要な環境変数（`OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY`, `AWS_REGION` など）と手順を追記する。
+   - README、`docs/design/stages/stage-01-template.md`、`docs/requirements/stages/stage-01-template.md` 等に必要な環境変数（`OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY`, `AWS_REGION` など）と手順を追記する。
 
 3. **テスト整備**  
    - `tests/test_template_ai.py` にプロバイダ選択テストを追加し、環境変数の切り替えで想定クライアントが生成されることを確認する。  

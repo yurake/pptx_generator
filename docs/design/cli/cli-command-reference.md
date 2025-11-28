@@ -10,11 +10,11 @@
 - 旧環境変数 `OPENAI_LOG` は廃止したため、設定が残っている場合は警告を出して無視する。OpenAI SDK 含む関連ロガーも `LOG_LEVEL` に追従する。
 
 ## パイプライン全体像
-- パイプラインは「テンプレ stage → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
+- パイプラインは「テンプレ → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
 
-### stage 1: テンプレ stage
+### stage 1: テンプレ
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
 
 #### `pptx template`
@@ -49,7 +49,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
-`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ stage が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
+`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
 
 #### 詳細: 個別コマンド
 

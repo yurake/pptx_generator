@@ -31,7 +31,7 @@ roadmap_item: RM-066 テンプレ指定統一 CLI整備
 - [x] テスト・検証
   - メモ: 2025-11-26 `uv run --extra dev pytest tests/test_cli_integration.py`（19 件成功）。
 - [x] ドキュメント更新
-  - メモ: AGENTS ガイド（`AGENTS.md` / `src/AGENTS.md` / `config/AGENTS.md`）と運用ドキュメント（`docs/runbooks/pptx-analyzer.md`、`docs/qa/pdf-export-rehearsal.md`、`docs/policies/config-and-templates.md`、`docs/notes/20251105-jobspec-scaffold-validation.md`、`docs/todo/archive/20251108-rm059-jobspec-scaffold.md`）を jobspec.meta ベースへ更新済み。README / roadmap 等は現行記述で整合するため変更なし。
+  - メモ: AGENTS ガイド（`AGENTS.md` / `src/AGENTS.md` / `config/AGENTS.md`）と運用ドキュメント（`docs/runbooks/pptx-analyzer.md`、`docs/notes/qa/pdf-export-rehearsal.md`、`docs/policies/config-and-templates.md`、`docs/notes/20251105-jobspec-scaffold-validation.md`、`docs/todo/archive/20251108-rm059-jobspec-scaffold.md`）を jobspec.meta ベースへ更新済み。README / roadmap 等は現行記述で整合するため変更なし。
   - [x] docs/roadmap 配下（変更不要）
   - [x] docs/requirements 配下（整合確認のみ）
   - [x] docs/design 配下（整合確認のみ）

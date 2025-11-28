@@ -67,7 +67,7 @@
 
 ## レンダリング stage への影響
 - `generate_ready.json.meta.layout_mode` を参照し、静的モード時はレンダリング監査で必須 slot 未充足が 0 件であることを確認する。
-- Blueprint slot のアンカー名をそのまま利用するため、テンプレ側の shape 名と齟齬がある場合はテンプレ stage の検証で弾く。
+- Blueprint slot のアンカー名をそのまま利用するため、テンプレ側の shape 名と齟齬がある場合はテンプレ の検証で弾く。
 
 ## 監査・運用メモ
 - Blueprint ファイルのハッシュは stage 2・stage 3 の監査ログに記録し、将来の改版時に差分追跡できるようにする。

@@ -20,7 +20,7 @@ roadmap_item: RM-061 usage_tags ガバナンス強化
 - [x] 設計・実装方針の確定
   - メモ: テンプレ抽出で AI 推定を主としつつヒューリスティックをフォールバックに回す構成とし、`template_ai` 新設・CLI 連携・診断拡張までをスコープとする方針を確定。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/requirements/requirements.md` と `docs/requirements/stages/stage-01-template-pipeline.md` に Template AI 既定挙動と `config/usage_tags.json` の扱いを追記。`docs/design/design.md` および `docs/design/stages/stage-01-template-pipeline.md` へも canonical 語彙連携とログ出力の設計を反映した。
+  - メモ: `docs/requirements/requirements.md` と `docs/requirements/stages/stage-01-template.md` に Template AI 既定挙動と `config/usage_tags.json` の扱いを追記。`docs/design/design.md` および `docs/design/stages/stage-01-template.md` へも canonical 語彙連携とログ出力の設計を反映した。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

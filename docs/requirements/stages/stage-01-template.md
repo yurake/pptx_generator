@@ -1,4 +1,4 @@
-# stage 1 テンプレ stage 要件詳細
+# stage 1 テンプレ 要件詳細
 
 ## 概要
 - ブランドガイドに沿ってテンプレート資産を設計・改修し、版管理と承認フローを標準化する。
@@ -25,7 +25,7 @@
   - `golden_runs.json` および `golden_runs/<spec名>/`（ゴールデンサンプル実行時）
 
 ## ワークフロー
-1. **テンプレ設計・準備（HITL）**
+1. **テンプレ設計・準備**
    - レイアウト構成、フォント・配色、図形配置を策定し、ブランド側の承認を得る。
    - 重複／欠落プレースホルダが無いか、命名規約に沿っているかをチェックする。
    - テンプレ修正の目視検証を行い、重大な崩れがないことを確認する。
@@ -42,7 +42,7 @@
 ## 推奨 CLI
 - 標準フロー: `uv run pptx template templates/libraries/acme/v1/template.pptx --output .pptx/extract/acme_v1`
 - リリースメタ生成を含める場合: `uv run pptx template templates/libraries/acme/v1/template.pptx --with-release --brand ACME --version v1 --output .pptx/extract/acme_v1`
-- 高度な運用（個別コマンドの活用）は `docs/design/cli-command-reference.md` の「テンプレ stage 詳細オプション」を参照する（`tpl-extract` / `layout-validate` / `tpl-release` を直接呼び出すケース）。
+- 高度な運用（個別コマンドの活用）は `docs/design/cli/cli-command-reference.md` の「テンプレ 詳細オプション」を参照する（`tpl-extract` / `layout-validate` / `tpl-release` を直接呼び出すケース）。
 
 ## 品質ゲート
 - プレースホルダ構成
@@ -60,9 +60,3 @@
 - `release_report.json` でハッシュ値と差分レポートを管理し、改訂理由を追跡する。
 - 抽出時に生成される `diagnostics.json` の処理時間・警告件数を記録し、再発時は `docs/notes/` にフォローアップを追加する。
 - ゴールデンサンプル実行ログ (`golden_runs/`) は互換性検証の証跡として保管し、失敗時は Issue にリンクする。
-
-## 未実装項目（機能単位）
-- テンプレ版比較レポートの自動通知ジョブおよび配布チャネル統合。
-- 抽出結果の可視化 UI（レイアウト差分ヒートマップ、警告 dashboard）。
-- `tpl-extract` / `layout-validate` の CI 統合パイプライン（複数テンプレの一括検証）。
-- ゴールデンサンプル自動生成と回帰失敗時の自動 Issue 起票。

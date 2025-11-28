@@ -1,4 +1,4 @@
-# stage 2 コンテンツ準備 (HITL) 設計
+# stage 2 Prepare (HITL) 設計
 
 ## 目的
 - プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、後続 stage が直接利用できる構造化データを提供する。
@@ -9,11 +9,7 @@
 | レイヤ | コンポーネント | 概要 |
 | --- | --- | --- |
 | CLI | `pptx prepare` | Prepare ソースを読み込み、PrepareCard 生成・評価・監査ログ出力を実行 |
-<<<<<<< HEAD
 | サービス層 | `PrepareAIOrchestrator` (`src/pptx_generator/prepare_ai/orchestrator.py`) + `SlideAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
-=======
-| サービス層 | `PrepareAIOrchestrator` + `SlideAIOrchestrator` | 章単位で LLM を呼び出し、カードを生成。AI ログと統計を返す |
->>>>>>> origin/main
 | モデル層 | `PrepareDocument` / `PrepareCard` | Pydantic モデルで JSON スキーマを表現 |
 | ストレージ | Prepare Store | `.pptx/prepare/prepare_card.json` など成果物一式を保存 |
 

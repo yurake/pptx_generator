@@ -20,7 +20,7 @@
   - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・段落前後余白・インデント）を定義。
     - インデントはインチ単位で `left_indent_in` / `right_indent_in` / `first_line_indent_in` を指定し、Renderer が段落レベルに応じた余白を正しく適用できるようにする。
 - `layouts` にレイアウト名ごとの `placements` を登録すると、アンカー未指定時に要素 ID 単位で配置やフォントを上書きできる。
-- 詳細な設計背景と運用ルールは [docs/design/layout-style-governance.md](../design/layout-style-governance.md) を参照する。
+- 詳細な設計背景と運用ルールは [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md) を参照する。
 
 ## rules.json の構成
 - タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング stage での警告に委譲する。

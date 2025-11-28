@@ -6,15 +6,15 @@ roadmap_item: RM-011 レイアウトスタイル統一
 ---
 
 - [x] ブランチ作成と初期コミット
-  - メモ: docs/layout-style-governance の作成と初期差分を記録する
+  - メモ: docs/design/initiatives/template-style-governance の作成と初期差分を記録する
 - [x] 計画策定（スコープ・前提・担当の整理）
   - メモ: RM-010 抽出結果を踏まえた設計レビュー内容とブランド整合性の課題を整理する
   - メモ: レイアウト設定項目とブランド整合性のギャップを洗い出す
-  - メモ: docs/design/layout-style-governance.md にスキーマ設計とリスク整理を記録
+  - メモ: docs/design/initiatives/template-style-governance.md にスキーマ設計とリスク整理を記録
 - [x] 設計・実装方針の確定
   - メモ: レイアウト設定スキーマ案と CLI 反映方針、テスト更新計画を決定する
   - メモ: テーブル・チャート・画像の適用項目を洗い出し、サンプル更新計画をまとめる
-  - メモ: docs/design/layout-style-governance.md でテーマ構造・コンポーネント・レイアウト設定の整合を定義
+  - メモ: docs/design/initiatives/template-style-governance.md でテーマ構造・コンポーネント・レイアウト設定の整合を定義
 - [x] ドキュメント更新（要件・設計）
   - メモ: 要件・設計の合意内容を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - [x] docs/requirements 配下

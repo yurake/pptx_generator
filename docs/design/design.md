@@ -5,6 +5,13 @@
 - stage ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
 - JSON スキーマやバリデーションルールなど詳細仕様は必要に応じて後半の章（4〜7 章）を確認する構成にしています。
 
+## 関連設計ドキュメント
+- **CLI**: `docs/design/cli/cli-command-reference.md`
+- **ブランド・スタイル**: `docs/design/initiatives/template-style-governance.md`
+- **ストーリー整備**: `docs/design/initiatives/story-modeler.md`
+- **テンプレ構造スキーマ**: `docs/design/schema/README.md`
+- **過去の検討メモ（アーカイブ）**: `docs/design/archive/`
+
 ## 既存AIサービス比較・本プロジェクト選定理由
 
 - 代表的なAI PowerPoint自動生成サービス（Copilot, Canva, Gamma, Autoppt, SlidesAI, Presentations.ai等）は、デザインや構成支援に強みがある一方、社内ブランド・日本語対応・細かなレイアウト調整・禁則処理などに制約がある。
@@ -34,17 +41,17 @@
 
 README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
-1. **テンプレ stage**（自動＋HITL）  
+1. **テンプレ**（自動＋HITL）  
    テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
-2. **コンテンツ準備**（HITL）  
+2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  
   Prepare 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
 4. **PPTX レンダリング**（自動）  
   `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後 stage は従来どおり。
 
-stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-content-normalization.md` / `docs/design/stages/stage-03-mapping.md` にまとめている。
+stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-prepare.md` / `docs/design/stages/stage-03-compose.md` にまとめている。
 
 ### 3.1 状態遷移と中間ファイル
 | ステージ | 入力 | 出力 | 備考 |
@@ -56,10 +63,12 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 ### 3.2 stage 別設計ドキュメント
 | stage | 設計ドキュメント | 主な設計観点 |
 | --- | --- | --- |
-| 1 テンプレ stage | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
-| 2 コンテンツ準備 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビュー、監査ログ |
-| 3 マッピング (HITL + 自動) | [stage-03-mapping.md](./stages/stage-03-mapping.md) | `generate_ready` 構築、HITL 承認ログ、レイアウト候補スコアリング、フォールバック制御 |
-| 4 PPTX レンダリング | [stage-04-rendering.md](./stages/stage-04-rendering.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+| 1 テンプレ | [stage-01-template.md](./stages/stage-01-template.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
+| 2 コンテンツ準備 (Prepare) | [stage-02-prepare.md](./stages/stage-02-prepare.md) | 承認 API、AI レビュー、監査ログ |
+| 3 Compose | [stage-03-compose.md](./stages/stage-03-compose.md) | `generate_ready` 構築、承認ログ、レイアウト候補スコアリング、フォールバック制御 |
+| 4 PPTX 生成 | [stage-04-gen.md](./stages/stage-04-gen.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+
+> 過去 stage の検討内容は各設計ドキュメント内に統合済み。参照時は上記 4 ファイルを起点に確認する。
 
 ### 3.3 stage 別入出力一覧
 | ファイル名 | 必須区分 | 概要 | 使用する stage |

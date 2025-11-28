@@ -20,7 +20,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
 - [x] 設計・実装方針の確定
   - メモ: jobspec へ `auto_draw` 付与＋Blueprint から除外する設計を採用、レンダラー側でフラグを解釈する前提に調整
 - [x] ドキュメント更新（要件・設計）
-  - メモ: 要件面はテンプレ抽出仕様 (`docs/requirements/stages/stage-01-template-pipeline.md`) と整合していることを確認し、追加更新不要と判断。設計ドキュメントは `auto_draw` 追記済み。
+  - メモ: 要件面はテンプレ抽出仕様 (`docs/requirements/stages/stage-01-template.md`) と整合していることを確認し、追加更新不要と判断。設計ドキュメントは `auto_draw` 追記済み。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

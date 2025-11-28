@@ -34,8 +34,8 @@
   2. `pptx mapping` 内部で `draft_output` ディレクトリに既存ファイルがある場合は警告を表示し、上書き前にバックアップする。
      - 少なくとも README に「再生成される」旨を明示し、HITL で編集したファイルを避難する手順を提案する。
 - ドキュメント対応
-  - README の stage 説明に「stage 5 実行時に `.pptx/draft/` は上書きされる」旨を記載済み。より詳しい運用フローは `docs/design/cli-command-reference.md` や stage 別ガイドへの追記を検討する。
-  - `docs/requirements/stages/stage-05-mapping.md` にも仕様ギャップを明記し、将来の改善策を TODO として記録すると良い。
+- README の stage 説明に「stage 5 実行時に `.pptx/draft/` は上書きされる」旨を記載済み。より詳しい運用フローは `docs/design/cli/cli-command-reference.md` や stage 別ガイドへの追記を検討する。
+  - `docs/requirements/stages/stage-03-compose.md` にも仕様ギャップを明記し、将来の改善策を TODO として記録すると良い。
 
 ## 次のアクション（案）
 1. CLI 側で既存ドラフトを入力できるオプション追加のタスクを起票（要 ToDo / Issue）。

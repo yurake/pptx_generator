@@ -12,7 +12,7 @@ roadmap_item: RM-071 Template AI マルチプロバイダ対応
     - 対象整理（スコープ、対象ファイル、前提）: Template AI クライアント（`src/pptx_generator/template_ai/client.py`）を Content/Layout AI と同じプロバイダ構成に拡張し、policy / diagnostics / ドキュメントを更新する。既存の `mock` / `openai` は互換維持。
     - ドキュメント／コード修正方針: 共通 LLM クライアントを抽象化し、Azure OpenAI→Anthropic→Bedrock の順に対応を追加。README・requirements・design に設定手順を追記し、`config/template_ai_policies.json` の schema を調整する。
     - 確認・共有方法（レビュー、ToDo 更新など）: Plan 承認、ノート更新、PR コメントで進捗報告。`docs/notes/20251123-template-ai-provider-expansion.md` に決定事項を追記。
-    - 想定影響ファイル: `src/pptx_generator/template_ai/client.py`, 共通 LLM クライアントモジュール, `config/template_ai_policies.json`, `docs/design/stages/stage-01-template-pipeline.md`, `README.md`, `tests/test_template_ai.py` ほか。
+    - 想定影響ファイル: `src/pptx_generator/template_ai/client.py`, 共通 LLM クライアントモジュール, `config/template_ai_policies.json`, `docs/design/stages/stage-01-template.md`, `README.md`, `tests/test_template_ai.py` ほか。
     - リスク: プロバイダ間の応答形式差異、既存環境変数との衝突、Azure/Anthropic SDK の依存追加。
     - テスト方針: 単体テスト（モック）でプロバイダ解決を検証、Azure など外部依存は環境変数を用いたスキップ条件付きテストを整備。既存回帰テストを実行。
     - ロールバック方法: Template AI クライアントの変更をリバートし、policy / ドキュメントを元に戻す。

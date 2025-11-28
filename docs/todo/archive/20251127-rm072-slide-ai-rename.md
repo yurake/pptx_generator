@@ -12,7 +12,7 @@ roadmap_item: RM-072 slide_alignment 命名と責務の再整理
     - 対象整理（スコープ、対象ファイル、前提）: 旧 `src/pptx_generator/content_ai/**` を `slide_ai/**` へ改名し、関連 import／公開 API／ロガー名／成果物を刷新。`config/content_ai_policies.json` は `config/slide_ai_policies.json` へ置換し、CLI・パイプライン・テスト・ドキュメントの参照を全て追従する。Slide ID 整合関連（`pipeline/slide_alignment.py` など）は新名称へ統一し、docstring やエラー文面も整理する。
     - ドキュメント／コード修正方針: コードと設定を段階的に rename しながら import 循環を抑止。成果物名やログが変わる箇所は運用ドキュメントも更新し、旧名称の痕跡を排除する。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo 更新、Plan 承認メッセージの記録、PR で差分共有。必要に応じて docs/AGENTS.md ほか参照ドキュメントへリンクを追記。
-    - 想定影響ファイル: `src/pptx_generator/content_ai/**` → `src/pptx_generator/slide_ai/**`, `src/pptx_generator/pipeline/slide_alignment.py`, `src/pptx_generator/cli.py`, `config/content_ai_policies.json` → `config/slide_ai_policies.json`, `tests/content_ai/**` → `tests/slide_ai/**`, `tests/test_slide_alignment.py`, 関連 docs (`docs/design/schema/stage-03-mapping.md`, `docs/notes/20251122-layout-ai-policy-review.md` 等)。
+    - 想定影響ファイル: `src/pptx_generator/content_ai/**` → `src/pptx_generator/slide_ai/**`, `src/pptx_generator/pipeline/slide_alignment.py`, `src/pptx_generator/cli.py`, `config/content_ai_policies.json` → `config/slide_ai_policies.json`, `tests/content_ai/**` → `tests/slide_ai/**`, `tests/test_slide_alignment.py`, 関連 docs (`docs/design/schema/stage-03-compose.md`, `docs/notes/20251122-layout-ai-policy-review.md` 等)。
     - リスク: import 置換漏れで CLI や pytest が失敗、ポリシー JSON 名変更による既存ジョブとの不整合、監査ログの名称変更で運用が混乱する可能性。
     - テスト方針: `uv run --extra dev pytest tests/slide_ai`（rename 後のテスト群）、`uv run --extra dev pytest tests/test_slide_alignment.py`、必要に応じて `uv run --extra dev pytest tests/test_cli_integration.py -k slide`。
     - ロールバック方法: ブランチ `chore/rm072-slide-ai-rename` を破棄し、リモートブランチも削除して main を再取得する。

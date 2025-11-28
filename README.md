@@ -29,23 +29,18 @@
   PowerPoint テンプレートと資料データ（プレーンテキストや PDF など）を取り込み、テンプレートに沿ったプレゼン資料を生成する CLI ツールです。
 </p>
 
-## 主な機能
-- PPTX テンプレートからレイアウト構造とブランド設定を抽出し、再利用可能な プレゼン仕様 JSON を自動生成する。
-- 資料データ（プレーンテキストや PDF など）とプレゼン仕様 JSON を取り込み、PPTX を生成し、必要に応じて LibreOffice 経由で PDF を併産する。
+## 概要
+- テンプレート PPTX からレイアウト構造・ブランド設定を抽出し、再利用可能な仕様 JSON を生成します。
+- 抽出した仕様と資料データを組み合わせ、監査ログ付きの PPTX／PDF を生成します（LibreOffice を利用することで PDF 変換も可能）。
 
-## アーキテクチャ概要
-本プロジェクトは 4 stage 構成で資料を生成します。詳細は `docs/design/design.md` を参照してください。
+## クイックスタート
+1. Python 3.12 系の仮想環境を用意し、`uv sync` で依存を同期する。
+2. `uv run --help` を実行して CLI エントリーポイントが利用可能であることを確認する。
+3. 生成パイプラインを実行する。
 
-| stage | 入力 | 出力 | 主な出力先 | 概要 |
-| --- | --- | --- | --- | --- |
-| 1. テンプレ | テンプレートPPTX(`templates.pptx`) | テンプレ仕様(`jobspec.json`) | `.pptx/extract/` | テンプレ整備・抽出・検証・リリースメタ生成をワンフローで実施し、後続 stage の基盤データを用意 |
-| 2. コンテンツ準備 | 資料データ(text,PDFなど)、<br>テンプレ仕様(`jobspec.json`)  | ドラフト(`prepare_card.json`) | `.pptx/prepare/` | 入力データをスライド候補へ整形し、生成AIを併用しながら正規化を行う |
-| 3. マッピング | テンプレ仕様(`jobspec.json`)、<br>ドラフト(`prepare_card.json`) | パワポ生成input(`generate_ready.json`) | `.pptx/draft/`, `.pptx/compose/` | 章構成承認とレイアウト割付をまとめて実施し、ドラフトとマッピング成果物を生成 |
-| 4. PPTX生成 | パワポ生成input(`generate_ready.json`)  | `proposal.pptx`、`proposal.pdf` | `.pptx/gen/` | テンプレ適用と最終出力を生成し、整合チェックと監査メタを記録（デフォルト出力先は `.pptx/gen/`） |
-
-モード別の処理フローは Dynamic（従来の可変スライド指向）と Static（Blueprint 指向）の 2 系統を用意しています。
-
-#### Dynamic モード
+## 生成パイプライン概要
+### 動的生成 (dynamic mode)
+テンプレートから抽出したレイアウト情報を使い、資料データを仮スライドにまとめ、コンテンツの順番や配置を調整しながら何度でも出し直せる柔軟なモードです。資料データから柔軟にスライドを作成したい場合に向きます。
 
 ```mermaid
 flowchart TD
@@ -72,7 +67,6 @@ flowchart TD
   %% ======= Stage 4 =======
   Ready --> S4["**stage 4 PPTX生成**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
-  S4 --> PDF["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
@@ -84,7 +78,15 @@ flowchart TD
   end
 ```
 
-#### Static モード
+| stage | 概要 | コマンド例 |
+| --- | --- | --- |
+| 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/extract/` に出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
+| 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
+| 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
+| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
+
+### 静的生成 (static mode)
+テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
 
 ```mermaid
 flowchart TD
@@ -112,7 +114,6 @@ flowchart TD
   %% ======= Stage 4 =======
   ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
-  S4Static --> PDFStatic["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph LegendStatic[凡例]
@@ -124,135 +125,34 @@ flowchart TD
   end
 ```
 
-
-
-### セットアップ
-1. Python 3.12 系の仮想環境を用意し、有効化します。
-2. 依存パッケージを同期します。
-   ```bash
-   uv sync
-   ```
-3. CLI が動作することを確認します。
-   ```bash
-   uv run --help
-   ```
-4. (任意)パワポのPDF出力を実施したい場合は、LibreOffice を導入し headless 実行を確認します。
-   ```bash
-   soffice --headless --version
-   ```
-5. (任意、基本不要)パワポの仕上げツールを利用する場合は .NET 8 SDK をインストールします。
-
-## CLI チートシート
-
-| stage | コマンド例 | 主な出力 | 補足 |
-| --- | --- | --- | --- |
-| 1. テンプレ | `uv run pptx template samples/templates/templates.pptx` | `.pptx/extract/template_spec.json`, `.pptx/extract/jobspec.json`, `.pptx/extract/branding.json` | テンプレ抽出と検証を一括実行。usage_tags は Template AI が既定で推定し、`PPTX_TEMPLATE_LLM_PROVIDER`（未指定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などのプロバイダを切り替える。`--with-release --brand demo --version v1` を付与するとテンプレのメタ情報を生成。 |
-| 2. コンテンツ準備 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` | `.pptx/prepare/prepare_card.json` | プレーンテキスト等の非構造化データを取り込み正規化 |
-| 3. マッピング| `uv run pptx compose .pptx/extract/jobspec.json` | `.pptx/compose/generate_ready.json` | `.pptx/prepare/` 配下の既定成果物を参照し、jobspec の `meta.template_path` / `meta.layouts_path` からテンプレートとレイアウトを自動解決 |
-| 4. PPTX生成 | `uv run pptx gen .pptx/compose/generate_ready.json` | `.pptx/gen/proposal.pptx` | `generate_ready.json` に埋め込まれたテンプレ／ブランド設定を利用して最終成果物を生成（PDF も出力したい場合は `--export-pdf` を追加）。 |
-
-補足:
-- 要件は `docs/requirements/requirements.md`、アーキテクチャは `docs/design/design.md`、CLI 詳細は `docs/design/cli-command-reference.md`、運用メモは `docs/runbooks/` を参照してください。
-- 1.テンプレの個別サブコマンド（`tpl-extract` / `layout-validate` / `tpl-release`）や中間成果物の詳細は `docs/design/cli-command-reference.md` を参照してください。
-- 3.マッピンングの個別サブコマンド（ `outline` / `mapping` ）の詳細は `docs/runbooks/story-outline-ops.md` を参照してください。
-
-
-## stage 別ガイド概要
-ここでは各 stage の目的と主要な参照ドキュメントをまとめます。詳細な手順やチェックリストはリンク先を参照してください。
-
-### 原則
-- CLI の詳細なオプションは各サブコマンドに対して `uv run pptx <cmd> --help` を参照してください。
-- `pptx` ルートコマンドには `-v/--verbose`（INFO レベル）と `--debug`（DEBUG レベル）のログオプションがあります。生成AIモードのプロンプト／レスポンス詳細はこれらのオプションを付与した場合に出力されます。
-
-### stage 1: テンプレ stage
-- テンプレ資産は `templates/` で管理し、命名規約や更新手順は `docs/policies/config-and-templates.md` を参照します。
-- 抽出と検証は `uv run pptx template` で一括実行します。リリースメタが必要な場合は `--with-release --brand <brand> --version <ver>` を付与してください。
-  ```bash
-  uv run pptx template templates/libraries/<brand>/<version>/template.pptx \
-    --output .pptx/extract/<brand>_<version> \
-    --with-release --brand <brand> --version <version>
-  ```
-  - 既定の出力先は `.pptx/extract/` です。抽出成果物に加え、`--with-release` 指定時は `.pptx/release/` に `template_release.json` や `release_report.json` が生成されます。
-- 個別コマンド（`tpl-extract` / `layout-validate` / `tpl-release`）やゴールデンサンプル運用は `docs/design/cli-command-reference.md` の「テンプレ stage 詳細オプション」を参照してください。
-- 要件と品質ゲートは `docs/requirements/stages/stage-01-template-pipeline.md` に集約しています。
-
-### stage 2: コンテンツ準備
-- プレペア入力（Markdown / JSON）を `PrepareCard` モデルへ整形し、AI ログや監査メタ付きの成果物一式を `.pptx/prepare/` 配下に生成します。生成カード枚数は `-p/--page-limit` で制御可能です。
-- ガイドラインは `docs/requirements/stages/stage-02-content-normalization.md` を参照してください。
-- 代表的な実行例:
-- `.pptx/prepare/` 配下に `prepare_card.json`、`prepare_log.json`、`prepare_ai_log.json` などを出力します。CLI はこれらのパスを `prepare_card.json.meta.*` に書き込み、後続 stage はメタ情報から自動的に解決します。
-- Dynamic モードでは `prepare_card.json.cards[*].order` の昇順で `pptx compose` / `pptx outline` がスライドを生成し、HITL の並び替えをそのまま反映します。Static モードはテンプレ Blueprint / JobSpec の順序を優先し、`ai_generation_meta.mode` が未設定・未知値の場合はエラーになります。
-  ```bash
-  uv run pptx prepare samples/contents/sample_import_content_summary.txt \
-    --output .pptx/prepare
-  ```
-  - 主な生成物: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`
-  - 既存の承認済み Prepare ドキュメントを再利用する場合は `--prepare-cards` のみ指定すれば十分です（ログ・メタは `prepare_card.json.meta` から自動参照されます）。
-
-### stage 3: マッピング (HITL + 自動)
-- 章構成承認とレイアウト割付を同一 stage で扱い、ドラフト成果物（`.pptx/draft/` 配下の `draft_draft.json`・`draft_approved.json`・`draft_review_log.json`）とマッピング成果物（`.pptx/compose/` 配下の `generate_ready.json`・`mapping_log.json`）を同時に更新します。
-- 推奨コマンドは `pptx compose` で、HITL 差戻しや再実行時も一貫した出力ディレクトリ（ドラフトは `.pptx/draft/`、マッピング成果物は `.pptx/compose/`）を維持します。
-  ```bash
-  uv run pptx compose .pptx/extract/jobspec.json \
-    --prepare-cards .pptx/prepare/prepare_card.json \
-    --draft-output .pptx/draft \
-    --output .pptx/compose
-  # 完了後に `.pptx/compose/generate_ready.json` や `mapping_log.json` を確認
-  ```
-- jobspec にはテンプレートとレイアウトのパスを `meta.template_path` / `meta.layouts_path` として保存しておきます。CLI はこれらのメタ情報を必須とし、欠落している場合はエラーになります。
-- JobSpec と PrepareCard の Slide ID が一致しない場合は `DraftStructuringError` を送出し stage 3 を停止します。CLI の exit code は 6 で、エラーメッセージに列挙された ID を修正してから再実行してください。原因分析と復旧手順は `docs/runbooks/story-outline-ops.md` を参照します。
-- `pptx gen` は stage 4 のレンダリングコマンドであり、ここで生成した `generate_ready.json` を入力として利用します。
-
-### stage 4: PPTX レンダリング
-- `pptx gen` サブコマンドで `generate_ready.json` を入力し、PPTX／PDF（任意）と監査ログを生成します。
-  ```bash
-  uv run pptx gen .pptx/compose/generate_ready.json \
-    --output .pptx/gen \
-    --branding config/branding.json \
-    --export-pdf
-  ```
-- `generate_ready.json` に `meta.template_path` が記録されていることが前提です（Compose / Mapping が自動で埋め込みます）。
-- 詳細ガイド: `docs/requirements/stages/stage-04-rendering.md` と `docs/design/stages/stage-04-rendering.md`
-
-## 主な成果物
-- 最終成果物（`proposal.pptx` や任意の `proposal.pdf`）および中間ファイルの一覧は `docs/design/design.md` を参照してください。
-
-## 詳細コマンドリファレンス
-- 4 stage パイプラインと各コマンドの責務・主要オプションは `docs/design/cli-command-reference.md` を参照してください。
-
-## テスト・検証
-- 全体テスト: `uv run --extra dev pytest`
-- CLI 統合テストのみ: `uv run --extra dev pytest tests/test_cli_integration.py`
-- テスト実行後は `.pptx/compose/` や `.pptx/gen/`、`.pptx/extract/` の成果物を確認し、期待する PPTX／PDF／ログが生成されているかをチェックします。テスト方針の詳細は `tests/AGENTS.md` を参照してください。
-
-## 設定リファレンス
-| ファイル | 役割 | 変更時に参照するドキュメント |
+| stage | 概要 | コマンド例 |
 | --- | --- | --- |
-| `config/rules.json` | 文字数上限・段落レベル・禁止ワードなど検証ルールを定義 | `docs/policies/config-and-templates.md` |
-| `config/branding.json` | フォント・配色・レイアウト個別設定を管理する `layout-style-v1` スキーマ | `config/AGENTS.md` |
-| `config/usage_tags.json` | Template AI が参照する canonical usage_tags と説明、静的ルールを管理 | `docs/requirements/stages/stage-01-template-pipeline.md`, `docs/design/stages/stage-01-template-pipeline.md` |
+| 1. テンプレ | Blueprint 情報を含めたテンプレ構造を抽出 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
+| 2. コンテンツ準備 | Blueprint のスロット定義に合わせて仮スライドを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
+| 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
+| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-テンプレ抽出やリリースの詳細な運用フローは `docs/design/cli-command-reference.md` および `docs/design/design.md` のテンプレ関連節を参照してください。
+各 stage の CLI コマンドと主要オプションは `docs/design/cli/cli-command-reference.md`。
 
-## 開発ガイドライン
-- コントリビューション規約は `CONTRIBUTING.md` にまとめています。
-- `docs/AGENTS.md`（ドキュメント更新ルール）や `src/AGENTS.md`（実装ガイド）を併読してください。
-- 主な静的解析コマンド:
+## テスト
+- テスト実行:
   ```bash
-  uv tool run --package ruff ruff check .
-  uv tool run --package black black --check .
-  uv tool run --package mypy mypy src
+  uv run --extra dev pytest
   ```
-- .NET 関連の整形は `dotnet format` を利用します。
+- テスト後は `.pptx/compose/` や `.pptx/gen/` などの出力ディレクトリを確認し、期待する成果物が生成されたかをチェックしてください。
+- 詳細なテスト方針は `tests/AGENTS.md` を参照してください。
 
-## 参考ドキュメント
-- `docs/design/design.md`: アーキテクチャ全体像
-- `docs/design/schema/README.md`: 中間 JSON スキーマと AI レビュー仕様
-- `docs/requirements/requirements.md`: ビジネス／機能要件
-- `docs/requirements/stages/stage-0x-*.md`: 各 stage の詳細要件
-- `docs/notes/20251012-readme-refactor.md`: README リファクタリングの検討メモ
-- `docs/roadmap/roadmap.md`: ロードマップとテーマ一覧
+## ドキュメントガイド
+- `AGENTS.md`: コーディングエージェントが守るべき共通ルールと関連ドキュメントへのリンク。
+- `docs/README.md`: `docs/` 配下のカテゴリと詳細資料への導線。
+- `docs/requirements/requirements.md`: 現行のビジネス／機能要件。
+- `docs/design/design.md`: 4 stage パイプラインや主要コンポーネントの設計概要。
+- `docs/runbooks/runbooks.md`: 運用・リリース・トラブル対応などの手順書。
+- `docs/policies/policies.md`: ポリシードキュメント全体の更新手順と参照順をまとめた索引。
+- `tests/AGENTS.md`: テスト階層ごとの追加ルールとケース設計の指針。
 
-## ライセンス / サポート
-- ライセンス: 社内利用を前提としており、公開ライセンスは未定です。
-- 運用・問い合わせフローは `docs/runbooks/support.md` を参照してください。
+## サポートと問い合わせ
+- リリース・サポート・ストーリー骨子運用など、個別の手順は `docs/runbooks/` 配下を参照してください。
+
+## ライセンス
+- 本プロジェクトは MIT License の下で提供されています。詳細は `LICENSE` を参照してください。

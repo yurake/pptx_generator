@@ -17,7 +17,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
     - 対象整理（スコープ、対象ファイル、前提）: Stage3 DraftStructuringStep の ID 突合処理と関連ログ出力、PrepareNormalization から連携される互換 `content_approved` データを前提にする。
     - ドキュメント／コード修正方針: DraftStructuringStep の ID 確認を例外化し、必要に応じて CLI メッセージとドキュメント（stage-03 requirements など）を更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo メモで進捗共有し、PR 説明で影響範囲とテスト結果を報告する。
-    - 想定影響ファイル: `src/pptx_generator/pipeline/draft_structuring.py`, `tests/test_draft_structuring_step.py`, `docs/requirements/stages/stage-03-mapping.md` など関連ドキュメント。
+    - 想定影響ファイル: `src/pptx_generator/pipeline/draft_structuring.py`, `tests/test_draft_structuring_step.py`, `docs/requirements/stages/stage-03-compose.md` など関連ドキュメント。
     - リスク: 既存データに ID 抜けがある場合にパイプラインが停止するため、エラーメッセージの可読性確保とサンプル更新が必要。
     - テスト方針: 単体テストで ID 不整合時の例外発生を検証し、`uv run --extra dev pytest` で回帰確認する。
     - ロールバック方法: 例外化部分を元のログ出力に戻し、テスト／ドキュメントの追加分を revert する。

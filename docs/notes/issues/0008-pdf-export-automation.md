@@ -20,4 +20,4 @@
 ## リンク
 - ToDo: [docs/todo/20251005-pdf-export-automation.md](../../todo/20251005-pdf-export-automation.md)
 - ブランチ: `feat/pdf-export-automation`
-- 参考資料: [docs/qa/pdf-export-checklist.md](../../qa/pdf-export-checklist.md)
+- 参考資料: [docs/notes/qa/pdf-export-checklist.md](../qa/pdf-export-checklist.md)
