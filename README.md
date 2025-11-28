@@ -39,8 +39,8 @@
 3. 生成パイプラインを実行する。
 
 ## 生成パイプライン概要
-### 動的生成(dynamic mode)
-(--- 概要を記載 ---)
+### 動的生成 (dynamic mode)
+テンプレ抽出後に得られるカード群へレイアウトを割り当てつつ、HITL 承認結果をそのまま反映して再生成できる可変フローです。章構成やスライド順の調整を繰り返す案件に向いています。
 
 ```mermaid
 flowchart TD
@@ -79,14 +79,15 @@ flowchart TD
   end
 ```
 
-| stage | 概要 | コマンド |
+| stage | 概要 | コマンド例 |
 | --- | --- | --- |
-| 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/extract/` に出力 | uv run pptx template samples/templates/templates.pptx --layout-mode dynamic |
+| 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/extract/` に出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
+| 2. コンテンツ準備 | 入力資料をカードへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
+| 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
+| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` |
 
-(--- 続きを記載 ---)
-
-### 静的生成(statoc mode)
-(--- 概要を記載 ---)
+### 静的生成 (static mode)
+Blueprint に沿った固定スロット構成でレンダリングするフローです。テンプレート側でスライド配置が厳密に決まっており、カード割り当てを自動検証したいケースに適しています。
 
 ```mermaid
 flowchart TD
@@ -126,9 +127,12 @@ flowchart TD
   end
 ```
 
-| stage | 概要 | コマンド |
+| stage | 概要 | コマンド例 |
 | --- | --- | --- |
-(--- 続きを記載 ---)
+| 1. テンプレ | Blueprint 情報を含めたテンプレ構造を抽出 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
+| 2. コンテンツ準備 | Blueprint のスロット定義に合わせてカードを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
+| 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
+| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` |
 
 各 stage の CLI コマンドと主要オプションは `docs/design/cli-command-reference.md`。
 
@@ -147,8 +151,8 @@ flowchart TD
 - `docs/requirements/requirements.md`: 現行のビジネス／機能要件。
 - `docs/design/design.md`: 4 stage パイプラインや主要コンポーネントの設計概要。
 - `docs/runbooks/runbooks.md`: 運用・リリース・トラブル対応などの手順書。
-- `docs/policies/policies.md`: (--- 概要を記載 ---)
-- `tests/AGENTS.md`: (--- 概要を記載 ---)
+- `docs/policies/policies.md`: ポリシードキュメント全体の更新手順と参照順をまとめた索引。
+- `tests/AGENTS.md`: テスト階層ごとの追加ルールとケース設計の指針。
 
 ## サポートと問い合わせ
 - リリース・サポート・ストーリー骨子運用など、個別の手順は `docs/runbooks/` 配下を参照してください。
