@@ -6,12 +6,16 @@
 - 言語は日本語で統一する。
 - コメントやメモで過去の変更に言及しない。
 
-# 2 主要参照ドキュメント
-- `docs/policies/context-engineering.md`: コンテキスト設計ポリシーと文書階層。
-- `CONTRIBUTING.md`: 開発プロセス全体のガイドライン。
-- `docs/policies/task-management.md`: Approval-First Development Policy と ToDo 運用。
-- `docs/design/cli/cli-command-reference.md`: CLI コマンドとパイプライン詳細。
-- `docs/requirements/requirements.md` / `docs/design/design.md`: 要件・設計の全体像。
+# 2 作業前必読チェックリスト
+- [ ] `docs/policies/context-engineering.md`: 文書階層とコンテキスト設計の全体像を確認し、参照すべき下位資料を把握する。
+- [ ] `CONTRIBUTING.md`: 開発プロセス・ブランチ戦略・ツール運用の基本ルールを再確認する。
+- [ ] `docs/policies/task-management.md`: タスク管理のプロセスを明確にする。
+
+以下はタスク内容に応じて参照し、必要なもののみ Plan に記録する。
+- [ ] `docs/design/cli/cli-command-reference.md`: CLI コマンド群とステージ別パイプラインの手順を確認する。
+- [ ] `docs/requirements/requirements.md` / `docs/design/design.md`: 要件と設計の全体像を把握し、対象機能の責務・前提条件を整理する。
+
+各チェックが完了したら Plan の「参照済みドキュメント」欄に記録し、ユーザー承認後は ToDo の計画メモへ転記する。参照抜けが判明した場合は作業を中断し、必ず再確認してから再開する。
 
 # 3 環境セットアップ概要
 - Python 3.12 系仮想環境で `uv sync` を実行し依存を整える（詳細: `CONTRIBUTING.md`）。
