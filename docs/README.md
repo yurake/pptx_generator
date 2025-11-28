@@ -4,9 +4,7 @@
 
 ## policies
 - プロジェクト運用やルールをまとめたドキュメントを配置。
-- `docs/policies/config-and-templates.md`: 設定ファイルとテンプレートの変更手順。
-- `docs/policies/task-management.md`: タスク管理フローと ToDo 運用方針。
-- `docs/policies/github-label-governance.md`: GitHub ラベル体系と自動付与ワークフローの運用ガイド。
+- `docs/policies/policies.md`: ポリシードキュメント全体の参照順と更新手順をまとめた索引。各ポリシーを読む前に確認する。
 
 ## requirements
 - 要件定義・期待する振る舞いを整理した資料を格納。
@@ -15,21 +13,13 @@
 ## design
 - システム構成やアーキテクチャを説明する資料群。
 - `docs/design/design.md`: PPTX 生成基盤の設計概要。
-- `docs/design/cli-command-reference.md`: CLI パイプライン設計と主要オプションの一覧。
-- `docs/design/stages/stage1-stage3-metadata-interface.md`: Stage1 から Stage3 へ渡すメタデータ項目と利用箇所の整理。
 
 ## notes
 - 議事メモや調査結果などのラフな情報を置く場所。
-- `docs/notes/20251004-initial-deiscussion.txt`: 初期ディスカッションのメモ。
-- `docs/notes/20251010-test-coverage-alignment.md`: 要件とテストケースの対応を生成 AI に整理させる依頼テンプレートと出力例。
-- `docs/notes/20251011-branding-config-mapping.md`: PPTX テンプレートからブランド設定を抽出する際の項目マッピングと実装選択肢。
 
 ## runbooks
 - リリースや問い合わせ対応など、実務手順をまとめたドキュメント。
-- `docs/runbooks/release.md`: リリース計画からロールバックまでの手順。
-- `docs/runbooks/support.md`: 緊急連絡と問い合わせ対応フロー。
-- `docs/runbooks/story-outline-ops.md`: ストーリー骨子の適用・レビュー・ロールバック手順。
-- `docs/runbooks/pptx-analyzer.md`: `analysis.json` の活用を含む PPTX アナライザー運用手順。
+- `docs/runbooks/runbooks.md`: runbook 全体の索引。作業前に参照して対象手順を確認する。
 
 ## roadmap
 - 開発テーマ単位の大項目 ToDo を整理する場所。

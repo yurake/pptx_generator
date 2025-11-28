@@ -17,7 +17,7 @@
 
 ## カテゴリと配置ルール
 - `README.md`: リポジトリの入口。環境セットアップ、主要 CLI のクイックスタート（`tpl-extract`, `tpl-release`, `gen` など）の使い方と出力例を掲載し、詳細仕様は専門ドキュメントへリンクする。
-- `docs/policies/`: 運用ルール・手順。設定変更やタスク運用のような規約レベルの改訂はここにまとめ、README の一覧も更新する。
+- `docs/policies/`: 運用ルール・手順。まず `docs/policies/policies.md` で参照順と更新手順を確認し、個別ポリシー（例: `context-engineering.md`, `task-management.md`, `config-and-templates.md`）へ進む。設定変更やタスク運用を改訂した際は README の一覧も更新する。
 - `docs/requirements/`: ビジネス要件や期待機能。スキーマ変更など仕様に関わる内容を追加する。
 - `docs/design/`: アーキテクチャ・実装方針。図表や構成案を含める場合は、関連箇所からリンクする。
   - `docs/runbooks/`: リリース・サポートなどの実務手順。チェックリストを更新した場合は該当 ToDo にメモを残す。ストーリー骨子運用は `docs/runbooks/story-outline-ops.md` に手順を追記し、stage 3/4 ドキュメントと整合させる。Polisher / PDF 連携やレンダリング監査ログ（`rendering_log.json` / `audit_log.json`）のトラブルシューティングは `docs/runbooks/support.md` に集約し、CLI オプションの変更と同期する。Analyzer 連携の運用手順は `docs/runbooks/pptx-analyzer.md` を参照し、`mapping_log.json` の Analyzer サマリ確認も実施する。
