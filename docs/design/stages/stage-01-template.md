@@ -40,6 +40,10 @@
 - 成果物: `template_release.json`, `release_report.json`, `golden_runs.json`, `golden_runs/<spec_stem>/`
 - CI Hook (予定): PR 時に CLI を実行し、失敗時はレビューをブロック。
 
+### 抽出・検証 CLI 補助
+- `uv run pptx tpl-extract`: テンプレ PPTX から `template_spec.json`・`layouts.jsonl`・`jobspec.json` を抽出し、後続 stage が参照するメタデータを更新する。
+- `uv run pptx layout-validate --template <path>`: レイアウトごとのプレースホルダー構造や禁則チェックを実行し、`diagnostics.json` と差分レポートを生成する。Golden Sample や Analyzer と組み合わせて品質ゲートを設計する。
+
 ## 監視・ログ
 - Release CLI: 生成時刻、操作者、テンプレパス、検出エラーを構造化ログに記録。
 - Golden Sample: 成功/失敗、LibreOffice exit code、差分件数。

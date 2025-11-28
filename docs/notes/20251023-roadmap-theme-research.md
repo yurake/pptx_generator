@@ -47,7 +47,7 @@
 
 ### 6. ドラフト構成インテリジェンス拡張
 - 概要: 章テンプレプリセット、AI layout hint 補助、差戻し理由テンプレートを組み込み構成調整の手戻りを削減。
-- 根拠: stage 4 未解決事項（`docs/design/stages/stage-04-draft-structuring.md`）と Analyzer 連携の提案（`docs/notes/20251016-pptx-analyzer-integration-opportunities.md`）。
+- 根拠: stage 3 未解決事項（`docs/design/stages/stage-03-compose.md`）と Analyzer 連携の提案（`docs/notes/20251016-pptx-analyzer-integration-opportunities.md`）。
 - 提案成果物: 章テンプレ管理モジュール、layout hint AI 補完 PoC、差戻し理由テンプレ集。
 - 依存/前提: Layout Hint Engine、Analyzer メトリクス活用基盤。
 - 優先度メモ: 中（HITL 効率化に寄与、他テーマの前提は少ない）。
@@ -96,7 +96,7 @@
 
 ### 13. レイアウト生成AI＋HITL ハイブリッド
 - 概要: stage 4 で生成AIが章立て・レイアウトを提案し、テキスト形式の可視化と自然言語指示による修正ループを提供する。
-- 根拠: 新規要望（AI 章立て・可視化・自然言語指示）、`docs/design/stages/stage-04-draft-structuring.md`。
+- 根拠: 新規要望（AI 章立て・可視化・自然言語指示）、`docs/design/stages/stage-03-compose.md`。
 - 提案成果物: AI レイアウト提案 API、テキストサマリ出力、指示パースと差分適用、HITL UI/CLI 拡張。
 - 依存/前提: Draft Service API、Layout Hint Engine、LLM 対話基盤。
 - 優先度メモ: 高（HITL stage の生産性向上効果が大きい）。

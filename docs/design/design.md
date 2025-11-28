@@ -37,7 +37,7 @@ README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化�
 1. **テンプレ**（自動＋HITL）  
    テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
-2. **コンテンツ準備**（HITL）  
+2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  
   Prepare 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
@@ -56,10 +56,12 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 ### 3.2 stage 別設計ドキュメント
 | stage | 設計ドキュメント | 主な設計観点 |
 | --- | --- | --- |
-| 1 テンプレ | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
-| 2 コンテンツ準備 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API、AI レビュー、監査ログ |
+| 1 テンプレ | [stage-01-template.md](./stages/stage-01-template.md) | Template CLI、抽出・検証・リリース統合、ゴールデンサンプル運用 |
+| 2 コンテンツ準備 (Prepare) | [stage-02-prepare.md](./stages/stage-02-prepare.md) | 承認 API、AI レビュー、監査ログ |
 | 3 Compose | [stage-03-compose.md](./stages/stage-03-compose.md) | `generate_ready` 構築、承認ログ、レイアウト候補スコアリング、フォールバック制御 |
 | 4 PPTX 生成 | [stage-04-gen.md](./stages/stage-04-gen.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+
+> 過去 stage の検討内容は各設計ドキュメント内に統合済み。参照時は上記 4 ファイルを起点に確認する。
 
 ### 3.3 stage 別入出力一覧
 | ファイル名 | 必須区分 | 概要 | 使用する stage |

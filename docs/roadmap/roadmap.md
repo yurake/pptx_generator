@@ -314,9 +314,9 @@ flowchart TB
 
 <a id="rm-024"></a>
 ### RM-024 ドラフト構成承認フロー整備
-- ゴール: stage 4 の構成管理 API と `layout_hint` 管理を実装し、章立て承認を CLI / API ベースで確実化する。
-- 対象 stage: 4（ドラフト構成設計）
-- 参照ドキュメント: [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-04-draft-structuring.md)
+- ゴール: stage 3 の構成管理 API と `layout_hint` 管理を実装し、章立て承認を CLI / API ベースで確実化する。
+- 対象 stage: 3（Compose）
+- 参照ドキュメント: [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md)
 - 参照 ToDo: [docs/todo/archive/20251012-draft-structuring-workbench.md](../todo/archive/20251012-draft-structuring-workbench.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: layout_hint 候補スコアリング、付録操作履歴、章承認ログを備えた CLI / API。現行運用では `generate_ready.json`／`generate_ready_meta.json` へ統合済み（legacy `draft_*` 出力は参照のみ）。
@@ -441,7 +441,7 @@ flowchart TB
 ### RM-036 ドラフト構成インテリジェンス拡張
 - ゴール: layout_hint 候補提示・章テンプレ・差戻し理由テンプレートを体系化し、HITL 構成作業の判断と手戻りを最小化する。
 - 対象 stage: 4（ドラフト構成設計）
-- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md), [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/notes/20251016-pptx-analyzer-integration-opportunities.md](../notes/20251016-pptx-analyzer-integration-opportunities.md), [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
 - 参照 ToDo: [docs/todo/archive/20251023-rm036-draft-intelligence.md](../todo/archive/20251023-rm036-draft-intelligence.md)
 - 状況: 完了（2025-10-23 更新）
 - 進捗メモ: [docs/notes/20251023-rm036-draft-intelligence.md](../notes/20251023-rm036-draft-intelligence.md)
@@ -508,7 +508,7 @@ flowchart TB
 ### RM-041 レイアウト生成AI＋HITL ハイブリッド
 - ゴール: stage 4 で生成AIが章立て・レイアウト配置を提案し、テキストサマリ出力と自然言語指示による修正ループを提供する。
 - 対象 stage: 4（ドラフト構成設計）
-- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-04-draft-structuring.md](../design/stages/stage-04-draft-structuring.md)
+- 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 未着手（2025-10-23 追加）
 - 期待成果:
