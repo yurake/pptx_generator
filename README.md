@@ -40,7 +40,7 @@
 
 ## 生成パイプライン概要
 ### 動的生成 (dynamic mode)
-テンプレ抽出後に得られるカード群へレイアウトを割り当てつつ、HITL 承認結果をそのまま反映して再生成できる可変フローです。章構成やスライド順の調整を繰り返す案件に向いています。
+テンプレートから抽出したレイアウト情報を使い、資料データを仮スライドにまとめ、コンテンツの順番や配置を調整しながら何度でも出し直せる柔軟なモードです。資料データから柔軟にスライドを作成したい場合に向きます。
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,6 @@ flowchart TD
   %% ======= Stage 4 =======
   Ready --> S4["**stage 4 PPTX生成**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
-  S4 --> PDF["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
@@ -82,12 +81,12 @@ flowchart TD
 | stage | 概要 | コマンド例 |
 | --- | --- | --- |
 | 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/extract/` に出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
-| 2. コンテンツ準備 | 入力資料をカードへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
+| 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 ### 静的生成 (static mode)
-Blueprint に沿った固定スロット構成でレンダリングするフローです。テンプレート側でスライド配置が厳密に決まっており、カード割り当てを自動検証したいケースに適しています。
+テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
 
 ```mermaid
 flowchart TD
@@ -115,7 +114,6 @@ flowchart TD
   %% ======= Stage 4 =======
   ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
-  S4Static --> PDFStatic["**proposal.pdf**"]:::final
 
   %% ======= Legend =======
   subgraph LegendStatic[凡例]
@@ -130,7 +128,7 @@ flowchart TD
 | stage | 概要 | コマンド例 |
 | --- | --- | --- |
 | 1. テンプレ | Blueprint 情報を含めたテンプレ構造を抽出 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
-| 2. コンテンツ準備 | Blueprint のスロット定義に合わせてカードを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
+| 2. コンテンツ準備 | Blueprint のスロット定義に合わせて仮スライドを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
 | 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
