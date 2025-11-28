@@ -10,7 +10,7 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
     - スコープ: stage 2 の `pptx tpl-extract` 実行時にテンプレ由来の `jobspec.json` を生成し、レイアウト名・アンカー・図形タイプなどテンプレ依存情報のみを catalog 化する。章構成や本文は含めず、stage 3/4でのマージを前提とする。
-    - 対象変更: `src/pptx_generator/models.py` に雛形用モデルを追加し、`src/pptx_generator/pipeline/template_extractor.py` で抽出結果を jobspec に変換、`src/pptx_generator/cli.py` で出力処理を実装。`samples/json/` に `jobspec.json` サンプルを追加し、`README.md`・`docs/requirements/stages/stage-02-template-structure-extraction.md`・`docs/design/design.md` を更新。必要に応じて CLI 統合テストを拡張する。
+    - 対象変更: `src/pptx_generator/models.py` に雛形用モデルを追加し、`src/pptx_generator/pipeline/template_extractor.py` で抽出結果を jobspec に変換、`src/pptx_generator/cli.py` で出力処理を実装。`samples/json/` に `jobspec.json` サンプルを追加し、`README.md`・`docs/requirements/stages/stage-01-template.md`・`docs/design/design.md` を更新。必要に応じて CLI 統合テストを拡張する。
     - リスク/前提: 既存 `template_spec.json`・`branding.json` の出力互換を維持し、テンプレから取得できない情報は空欄とする。stage 5 の品質ゲートや監査ログの役割は変えない。ドキュメントで stage 3 以降とのインターフェースを明記して誤用を防ぐ。
     - テスト: TemplateExtractor ユニットテストで雛形生成を検証し、`uv run pptx tpl-extract samples/templates/templates.pptx` を用いた CLI 統合テストで `jobspec.json` 出力とスキーマ整合、既存成果物への影響がないことを確認する。
     - ロールバック: 追加したモデル・生成処理・ CLI ログ出力・サンプル・ドキュメントを削除し、`pptx tpl-extract` の出力を従来のファイル構成へ戻す。
@@ -25,7 +25,7 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
 - [x] テスト・検証
   - メモ: `uv run pptx tpl-extract` で `.tmp/extract-sample` を生成し、`uv run pytest tests/test_template_extractor.py tests/test_cli_integration.py::test_cli_tpl_extract_basic` を実行して新規ジョブスペック出力と CLI 統合テストを確認。
 - [x] ドキュメント更新
-  - メモ: `docs/requirements/stages/stage-02-template-structure-extraction.md`・`docs/design/design.md`・`docs/requirements/requirements.md`・`docs/runbooks/release.md`・`README.md`・`AGENTS.md`・`samples/AGENTS.md` を更新し、新サンプル `samples/extract/jobspec.json` を追加。`docs/roadmap` は stage 定義の整合が取れており更新不要と判断。
+  - メモ: `docs/requirements/stages/stage-01-template.md`・`docs/design/design.md`・`docs/requirements/requirements.md`・`docs/runbooks/release.md`・`README.md`・`AGENTS.md`・`samples/AGENTS.md` を更新し、新サンプル `samples/extract/jobspec.json` を追加。`docs/roadmap` は stage 定義の整合が取れており更新不要と判断。
   - メモ: RM-044 の責務範囲では stage 2 で `jobspec.json` を生成できることを確認済み。stage 3 以降での活用はロードマップ後続（例: RM-046 以降）で対応予定のため、今回の検証では範囲外とする。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）

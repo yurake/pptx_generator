@@ -12,7 +12,7 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
     - 対象整理（スコープ、対象ファイル、前提）:
       - CLI `pptx prepare` の承認モード／旧 `--approved` 系オプション残存有無を確認し、必要であれば実装を整理する。
       - 利用者向けドキュメント（`README.md`, `docs/design/cli-command-reference.md`, `docs/runbooks/story-outline-ops.md` など）から CLI で承認状態を扱う旨の記述を排除し、PrepareStore/prepare_log へ誘導する。
-      - 現状仕様がドキュメントと乖離していないかを棚卸し、補足が必要な設計メモ（例: `docs/design/schema/stage-02-content-normalization.md`）を確認する。
+      - 現状仕様がドキュメントと乖離していないかを棚卸し、補足が必要な設計メモ（例: `docs/design/schema/stage-02-prepare.md`）を確認する。
     - ドキュメント／コード修正方針:
       - CLI `--help` 表記と実装コメントを最新仕様（承認は Store 側）にそろえる。
       - ドキュメントの CLI 解説／運用手順から承認モードに関する記述を更新し、必要なら PrepareStore 連携フローを追記する。
@@ -25,7 +25,7 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
       - `README.md`
       - `docs/design/cli-command-reference.md`
       - `docs/runbooks/story-outline-ops.md`
-      - `docs/design/schema/stage-02-content-normalization.md`（必要に応じて）
+      - `docs/design/schema/stage-02-prepare.md`（必要に応じて）
       - その他 CLI 周辺ドキュメント
     - リスク:
       - 旧 CLI オプションを削除する場合、既存スクリプトとの互換性低下。
@@ -46,7 +46,7 @@ roadmap_item: RM-062 pptx prepare 承認モード整備
 - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: 方針は本 ToDo 内に集約。追加メモは不要と判断（2025-11-24）。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `README.md`, `docs/design/cli-command-reference.md`, `docs/design/stages/stage-03-mapping.md`, `docs/requirements/stages/stage-02-content-normalization.md` ほか関連ファイルを最新仕様へ更新済み。
+  - メモ: `README.md`, `docs/design/cli-command-reference.md`, `docs/design/stages/stage-03-compose.md`, `docs/requirements/stages/stage-02-prepare.md` ほか関連ファイルを最新仕様へ更新済み。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

@@ -2,9 +2,9 @@
 
 ## 対象
 - `docs/design/rm005-story-modeler.md`
-- `docs/requirements/stages/stage-02-content-normalization.md`
-- `docs/requirements/stages/stage-03-mapping.md`
-- `docs/requirements/stages/stage-04-draft-structuring.md`
+- `docs/requirements/stages/stage-02-prepare.md`
+- `docs/requirements/stages/stage-03-compose.md`
+- `docs/requirements/stages/stage-04-gen.md`
 - `docs/runbooks/story-outline-ops.md`
 
 ## チェックリスト

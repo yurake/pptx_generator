@@ -12,7 +12,7 @@ roadmap_item: RM-054 静的テンプレ構成統合
     - 対象整理（スコープ、対象ファイル、前提）: prepare_card.json の構造そのものを見直し、テンプレート非依存なスライド下書きとして再定義する。関連する読み込み処理（PrepareNormalizationStepなど）とサンプルも整合させる。
     - ドキュメント／コード修正方針: スキーマ案に沿って `src/pptx_generator/prepare` と `pipeline/prepare_normalization.py`、および `samples/prepare/*.json` を刷新し、仕様ドキュメント（requirements/design）を更新する。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗管理し、スキーマ案・実装結果をユーザーと擦り合わせる。
-    - 想定影響ファイル: `src/pptx_generator/prepare/*.py`, `src/pptx_generator/pipeline/prepare_normalization.py`, `tests/test_cli_prepare.py`, `samples/prepare/*.json`, `docs/requirements/stages/stage-02-content-normalization.md`, `docs/design/schema/stage-02-content-normalization.md`。
+    - 想定影響ファイル: `src/pptx_generator/prepare/*.py`, `src/pptx_generator/pipeline/prepare_normalization.py`, `tests/test_cli_prepare.py`, `samples/prepare/*.json`, `docs/requirements/stages/stage-02-prepare.md`, `docs/design/schema/stage-02-prepare.md`。
     - リスク: compose/mapping 等の後段 stage が旧スキーマを前提としており、合わせて修正する必要がある。移行期間中の互換性は担保しない。
     - テスト方針: CLI prepare のモック／Azure 実行、関連 pytest を更新して実行する。
     - ロールバック方法: 新スキーマに起因する問題があれば該当変更を元に戻し、旧スキーマへ復元する。

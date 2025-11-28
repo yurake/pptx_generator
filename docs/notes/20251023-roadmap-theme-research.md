@@ -12,7 +12,7 @@
 
 ### 1. テンプレートリリース監査強化
 - 概要: テンプレ資産の差分検出・ゴールデンサンプル管理・LibreOffice/Polisher バージョン固定を体系化し、Analyzer 指標を Release レポートに取り込む。
-- 根拠: テンプレ stage の未解決事項（`docs/design/stages/stage-01-template-preparation.md`）と Analyzer 活用メモの追加要件。
+- 根拠: テンプレ の未解決事項（`docs/design/stages/stage-01-template-preparation.md`）と Analyzer 活用メモの追加要件。
 - 提案成果物: 差分アルゴリズム設計書、ゴールデンサンプル自動生成ガイド、LibreOffice/Polisher バージョン管理ポリシー、Analyzer 指標集計の runbook。
 - 依存/前提: Analyzer 出力の集計仕様、テンプレ配布フローの既存スクリプト。
 - 優先度メモ: 高（テンプレ更新ごとに手戻りリスクが高いため）。
@@ -40,7 +40,7 @@
 
 ### 5. HITL 承認 UX / オフライン運用整備
 - 概要: CLI ベース承認の UX、欠損テーブル編集ハンドリング、Review Engine のスケーリング設計を固める。
-- 根拠: stage 3 未解決事項（`docs/design/stages/stage-03-content-normalization.md`）と承認プラットフォーム設計メモ（`docs/notes/20251017-content-approval-platform.md`）。
+- 根拠: stage 3 未解決事項（`docs/design/stages/stage-02-prepare.md`）と承認プラットフォーム設計メモ（`docs/notes/20251017-content-approval-platform.md`）。
 - 提案成果物: オフライン承認フロー仕様、テーブル編集 UX ガイド、Review Engine ワーカー構成案。
 - 依存/前提: Approval API/CLI、既存 Review Engine 実装。
 - 優先度メモ: 中（HITL 運用の安定化が前提だが直ちに障害にはならない）。
@@ -61,7 +61,7 @@
 
 ### 8. レンダリング観測性と互換性ガード
 - 概要: Polisher 差分ログの標準化、LibreOffice バージョン互換検証、表画像化フォールバック・軽量整合チェック拡張を推進。
-- 根拠: stage 5 未解決事項（`docs/design/stages/stage-05-rendering.md`）と Monitoring 統合メモ。
+- 根拠: stage 5 未解決事項（`docs/design/stages/stage-04-gen.md`）と Monitoring 統合メモ。
 - 提案成果物: 差分ログスキーマ、バージョン互換テスト手順、表トラブル時のフォールバック設計。
 - 依存/前提: Polisher 実行環境、Monitoring Step、Analyzer before/after 指標。
 - 優先度メモ: 中〜高（本番事故防止に重要）。
@@ -89,7 +89,7 @@
 
 ### 12. コンテンツ生成AIオーケストレーション
 - 概要: stage 3 で生成AIを活用し、スライド候補生成ポリシーを外部から注入可能にする仕組みを整える。
-- 根拠: 新規要望（ポリシー注入・AI整形）、`docs/design/stages/stage-03-content-normalization.md`。
+- 根拠: 新規要望（ポリシー注入・AI整形）、`docs/design/stages/stage-02-prepare.md`。
 - 提案成果物: ポリシー定義スキーマ、AI プロンプト管理、ヒューマンレビュー連携。
 - 依存/前提: Review Engine / Content Service API、LLM 基盤、認可設定。
 - 優先度メモ: 中〜高（提案／報告などユースケース差異に対応する鍵）。

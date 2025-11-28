@@ -12,7 +12,7 @@ roadmap_item: RM-033 パイプライン stage 3/4独立化準備
 - [x] 設計・実装方針の確定
   - メモ: `docs/design/20251019-stage3-4-cli.md` に stage 3/4 CLI のコマンド仕様・テスト戦略・ドキュメント更新方針を整理。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/requirements/stages/stage-03-content-normalization.md` と `stage-04-draft-structuring.md` に CLI 連携を追記し、`docs/design/20251019-stage3-4-cli.md` を追加。
+  - メモ: `docs/requirements/stages/stage-02-prepare.md` と `stage-04-draft-structuring.md` に CLI 連携を追記し、`docs/design/20251019-stage3-4-cli.md` を追加。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

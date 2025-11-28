@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | `release.md` | テンプレ／CLI のリリース手順とロールバック。環境メタの記録方法やチェックリストを含む。 | `docs/policies/task-management.md`, `docs/policies/config-and-templates.md` |
 | `support.md` | 問い合わせ対応や障害時の一次対応フロー。連絡先・ログ採取手順・恒久対応メモの残し方を定義。 | `docs/policies/task-management.md`, `docs/notes/*` |
-| `story-outline-ops.md` | ストーリー骨子（stage 3/4）の運用と承認プロセス。差戻しや巻き戻しの手順を含む。 | `docs/design/stages/stage-03-mapping.md`, `docs/policies/context-engineering.md` |
+| `story-outline-ops.md` | ストーリー骨子の運用と承認プロセス。差戻しや巻き戻しの手順を含む。 | `docs/design/stages/stage-03-compose.md`, `docs/policies/context-engineering.md` |
 | `pptx-analyzer.md` | Analyzer を使ったレンダリング確認と監査ログ分析。`analysis.json` や `mapping_log.json` の読み解き方法を説明。 | `docs/design/cli-command-reference.md`, `docs/policies/config-and-templates.md` |
 
 ## 更新時チェック

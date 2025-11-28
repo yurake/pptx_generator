@@ -1,6 +1,6 @@
 # （レガシー）stage 4 ドラフト構成設計 (HITL) 設計
 
-> **注記**: RM-047 以降、ドラフト構成設計は stage 3「マッピング」に統合され、`generate_ready.json` を出力する最新仕様は [stage-03-mapping.md](./stage-03-mapping.md) を参照する。本ドキュメントは旧 `draft_*` フローの履歴を保持する目的で残している。
+> **注記**: RM-047 以降、ドラフト構成設計は stage 3「マッピング」に統合され、`generate_ready.json` を出力する最新仕様は [stage-03-compose.md](./stage-03-compose.md) を参照する。本ドキュメントは旧 `draft_*` フローの履歴を保持する目的で残している。
 
 ## 目的
 - 承認済みコンテンツを章立て・ページ順へ並べ、`layout_hint` を確定する。

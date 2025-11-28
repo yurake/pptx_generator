@@ -4,12 +4,12 @@
 stage 別の利用シーンに応じてファイルを分割し、仕様変更の追跡とテスト連携を容易にする。
 
 ## ファイル構成
-- `stage-01-template-preparation.md`: （旧構成）テンプレ受け渡しメタ。現行仕様は `stage-01-template-pipeline.md` を参照。
-- `stage-01-template-pipeline.md`: テンプレ抽出・検証・リリースメタ (`template_release.json` など)。
+- `stage-01-template-preparation.md`: （旧構成）テンプレ受け渡しメタ。現行仕様は `stage-01-template.md` を参照。
+- `stage-01-template.md`: テンプレ抽出・検証・リリースメタ (`template_release.json` など)。
 - `stage-02-template-structure-extraction.md`: （統合済み）抽出時代の資料。現行は Stage 1 に集約。
-- `stage-02-content-normalization.md`: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`。
-- `stage-03-mapping.md`: `draft_*`, `generate_ready.json`, `mapping_log.json`, フォールバック履歴。
-- `stage-04-rendering.md`: `rendering_log.json`, `audit_log.json`, `monitoring_report.json`。
+- `stage-02-prepare.md`: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`。
+- `stage-03-compose.md`: `draft_*`, `generate_ready.json`, `mapping_log.json`, フォールバック履歴。
+- `stage-04-gen.md`: `rendering_log.json`, `audit_log.json`, `monitoring_report.json`。
 - `samples/`: 代表的な JSON サンプル（`.jsonc`）。
 
 ## 運用ルール

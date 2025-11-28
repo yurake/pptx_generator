@@ -25,7 +25,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `layout_description` を要件・設計ドキュメントに追記する。
   - メモ: Stage1 Template の LLM 出力要件として layout_description を位置づけ、設計/要件ドキュメントへ明記する。
   - [x] docs/requirements 配下
-    - メモ: `docs/requirements/stages/stage-01-template-pipeline.md` に layout_description 必須化を追記。
+    - メモ: `docs/requirements/stages/stage-01-template.md` に layout_description 必須化を追記。
   - [x] docs/design 配下
     - メモ: `docs/design/schema/stage-02-template-structure-extraction.md` / `docs/design/stages/stage1-stage3-metadata-interface.md` へ説明文フィールドと LLM 要件を反映。
 - [x] 実装

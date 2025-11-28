@@ -133,7 +133,7 @@
 ## 11. stage 別詳細ドキュメント
 | stage | 詳細設計ドキュメント | 主な未実装項目の例 |
 | --- | --- | --- |
-| 1 テンプレ stage | [stage-01-template-pipeline.md](./stages/stage-01-template-pipeline.md) | テンプレ差分レポート、抽出・検証ジョブの自動化、ゴールデンサンプル自動検証 |
-| 2 コンテンツ準備 | [stage-02-content-normalization.md](./stages/stage-02-content-normalization.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
-| 3 マッピング (HITL + 自動) | [stage-03-mapping.md](./stages/stage-03-mapping.md) | layout_hint 管理、テンプレ適合率、スコアリング/フォールバック制御、AI 補完監査 |
-| 4 PPTX 生成 | [stage-04-rendering.md](./stages/stage-04-rendering.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |
+| 1 テンプレ | [stage-01-template.md](./stages/stage-01-template.md) | テンプレ差分レポート、抽出・検証ジョブの自動化、ゴールデンサンプル自動検証 |
+| 2 Prepare (HITL) | [stage-02-prepare.md](./stages/stage-02-prepare.md) | 承認 API（UI はバックログ）、AI レビューと Auto-fix、禁則チェック |
+| 3 Compose (HITL + 自動) | [stage-03-compose.md](./stages/stage-03-compose.md) | layout_hint 管理、テンプレ適合率、スコアリング/フォールバック制御、AI 補完監査 |
+| 4 PPTX 生成 | [stage-04-gen.md](./stages/stage-04-gen.md) | 軽量整合チェック、監査メタ拡張、PDF/Polisher 統合 |

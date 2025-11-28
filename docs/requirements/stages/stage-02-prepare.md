@@ -1,8 +1,8 @@
-# stage 2 コンテンツ準備 (HITL) 要件詳細
+# stage 2 Prepare 要件詳細
 
 ## 概要
 - プレペア入力を PrepareCard へ正規化し、stage 3 で直接利用できる JSON 群を `.pptx/prepare/` に出力する。
-- 生成 AI とポリシー設定を切り替えられるようにしつつ、HITL による承認・差戻しの記録を残す。
+- 生成 AI とポリシー設定を切り替えられるようにしつつ、人による承認・差戻しの記録を残す。
 - 監査証跡と再現性を担保するため、生成結果・統計・成果物パスを `audit_log.json` にまとめる。
 
 ## 入力
@@ -12,7 +12,7 @@
 
 ## 出力
 - `prepare_card.json`: テンプレート非依存のスライド下書き。各カードは `card_id` / `order` / `role.story_phase` / `role.intent_tags` と、`content` セクション（`title` または `headline` のどちらか一方、`subtitle`、`body`、`notes`）で構成する。`title` はタイトルページ専用であり、通常スライドでは `headline` のみを保持する。`subtitle` は章名やまとまり表示に利用し、`body` は `type` 付きブロック（例: `paragraph` / `bullets` / `table` / `media`）配列として PowerPoint 本文を表現する。`notes` はノート欄に転記する補足情報として利用する。
-- `prepare_log.json`: 承認・差戻し操作の履歴（HITL で編集した場合に追記）。
+- `prepare_log.json`: 承認・差戻し操作の履歴（手動更新時に追記）。
 - `prepare_ai_log.json`: 生成 AI の呼び出しログ。モデル名、プロンプトテンプレート、警告、トークン使用量を含む。
 - 動的モードでは呼び出しを 1 回に集約し、`prepare_ai_log.json` にはバッチ単位のレコードを出力する。
 - `ai_generation_meta.json`: ポリシー ID、入力ハッシュ、カードごとの `content_hash`・`story_phase`・意図タグ・行数、統計値、`mode`（`dynamic` / `static`）、静的モード時は Blueprint 情報（`blueprint_path` / `blueprint_hash` / `slot_coverage`）。
@@ -50,9 +50,3 @@
 - Blueprint が指定されても `--mode=dynamic` の場合は従来どおりの動作とし、slot 情報は出力しない。
 - `jobspec.meta.template_spec_path` が欠落している場合はテンプレ抽出を再実行するようエラー案内する。
 - `--mode=static` 選択時は `--page-limit` を併用できない。
-
-## 今後の拡張
-- プレペア差分比較（再生成時の変更可視化）機能。
-- 営業メモや CRM からの直接インポート（Markdown 自動生成）機能。
-- 承認 UI と PrepareCard 編集 API。差戻しフローとの統合は RM-051 で管理。
-- 生成 AI のプロバイダーを CLI オプション化（現状は環境変数 `PPTX_LLM_PROVIDER` で切替）。

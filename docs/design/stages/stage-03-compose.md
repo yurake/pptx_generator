@@ -1,4 +1,4 @@
-# stage 3 マッピング (HITL + 自動) 設計
+# stage 3 Compose (HITL + 自動) 設計
 
 ## 目的
 - stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。

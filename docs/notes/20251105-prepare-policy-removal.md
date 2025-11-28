@@ -7,7 +7,7 @@
 - CLI の `prepare` コマンドは `DEFAULT_PREPARE_POLICY_PATH = config/prepare_policies/default.json` を固定参照し、`load_prepare_policy_set` で読み込んだポリシーを `PrepareAIOrchestrator.generate_document()` に渡している（`src/pptx_generator/cli.py:55`, `src/pptx_generator/cli.py:1395-1415`）。
 - `PrepareAIOrchestrator` はポリシーに基づいて `resolve_story_phase`／`resolve_chapter_title` を実行し、`PrepareCard` の章タイトル・ストーリーフェーズを決定するとともに `PrepareStoryContext` を生成する（`src/pptx_generator/prepare/orchestrator.py:54-137`）。stage 3 以降はこの `story_context` を前提に章順を扱う。
 - `--prepare-policy` オプションは削除済みで、CLI からポリシーを切り替える手段は存在しない。現状は「固定ファイルを必ず読み込み、骨子を決める」挙動となっている。
-- ドキュメント上でも `config/prepare_policies/default.json` が stage 2 の前提として記載されており、CLI 仕様・要件ドキュメント双方が依存している（例: `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-content-normalization.md`）。
+- ドキュメント上でも `config/prepare_policies/default.json` が stage 2 の前提として記載されており、CLI 仕様・要件ドキュメント双方が依存している（例: `docs/design/cli-command-reference.md`, `docs/requirements/stages/stage-02-prepare.md`）。
 - RM-054（静的テンプレ統合）では Blueprint から slot 単位の骨子を扱う構想があるが、現時点では stage 2 への具体的な組み込みが未実装。Blueprint を導入しない限り、`prepare` はポリシーに頼って章順・story_phase を決定している。
 
 ## 代替案・課題

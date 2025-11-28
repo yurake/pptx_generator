@@ -10,11 +10,11 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
       1. **前提調査と要件整理**  
-         - `docs/requirements/stages/stage-04-draft-structuring.md`、`docs/design/design.md`、`docs/notes/20251102-stage2-jobspec-overview.md` を読み合わせ、stage 2 出力（`jobspec.json`）と stage 3 出力（`prepare_card.json` など）の項目を洗い出す。  
+         - `docs/requirements/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/notes/20251102-stage2-jobspec-overview.md` を読み合わせ、stage 2 出力（`jobspec.json`）と stage 3 出力（`prepare_card.json` など）の項目を洗い出す。  
          - `feat/rm049-pptx-gen-scope` ブランチの Stage5 実装（`generate_ready.json` など）を確認し、stage 4 で追加すべきフィールドやメタ情報を整理する。stage 2 由来で `jobspec.json` 以外の参照が必要と判明した場合は ToDo / docs/notes で報告する。  
       2. **設計ドキュメントの整備**  
          - `docs/design/draft-structuring-RM047.md`（新規）を作成し、カード単位 AI マッピングのフロー、AI 呼び出しインターフェース（stage 3 資産との連携）、`generate_ready.json`／承認ログ／メタ情報の構成を詳細化する。  
-         - `docs/design/design.md` と `docs/requirements/stages/stage-04-draft-structuring.md` に要点を反映し、stage 4 の入出力・品質ゲートを `generate_ready` ベースへ更新する。  
+         - `docs/design/design.md` と `docs/requirements/stages/stage-03-compose.md` に要点を反映し、stage 4 の入出力・品質ゲートを `generate_ready` ベースへ更新する。  
          - `docs/roadmap/roadmap.md` の RM-047 セクションを進行中へ更新し、新設ドキュメントへのリンクを追加する。  
       3. **モデル・ユーティリティ追加**  
          - `src/pptx_generator/models.py` に `GenerateReadyDocument` 系モデルを追加し、旧 `Draft*`/`RenderingReady` 系に依存しない構造へ刷新する。  
@@ -34,13 +34,13 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
       8. **フォローアップ**  
          - stage 2 から追加で必要となった情報があれば docs/notes と ToDo メモに記録し、ユーザーへ報告する。  
       - スコープ: stage 4 全体を `generate_ready` 基盤へ全面置換し、既存 `draft_*` および `rendering_ready` 系の入出力は廃止する。後方互換の考慮は不要、完全新規置換で進める。  
-      - 想定影響ファイル: `docs/design/draft-structuring-RM047.md`（新規）、`docs/design/design.md`、`docs/requirements/stages/stage-04-draft-structuring.md`、`docs/roadmap/roadmap.md`、`src/pptx_generator/models.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/generate_ready.py`（新規）、`src/pptx_generator/pipeline/prepare_normalization.py`、`src/pptx_generator/pipeline/draft_structuring.py`、`src/pptx_generator/pipeline/mapping.py`、該当テストファイル。  
+      - 想定影響ファイル: `docs/design/draft-structuring-RM047.md`（新規）、`docs/design/design.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/roadmap/roadmap.md`、`src/pptx_generator/models.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/generate_ready.py`（新規）、`src/pptx_generator/pipeline/prepare_normalization.py`、`src/pptx_generator/pipeline/draft_structuring.py`、`src/pptx_generator/pipeline/mapping.py`、該当テストファイル。  
       - リスク: PrepareCard 仕様変更の波及、AI 推薦精度の不確実性による再調整、CLI 引数廃止に伴うドキュメント更新漏れ。  
       - テスト方針: 上記テスト更新に加え、`uv run --extra dev pytest` を実行して全体整合を確認する。  
       - ロールバック方法: 変更・追加した Markdown および Python ファイルを個別に戻すことで復旧可能。  
       - 承認メッセージ: ユーザー発言「ではtodoに計画を転記し、作業に取り掛かってください。」（2025-11-04）。
 - [x] 設計・実装方針の確定
-  - メモ: `generate_ready` 基盤への移行設計はユーザー承認済み（2025-11-04）。関連ドキュメントは `docs/design/stages/stage-03-mapping.md`、`docs/design/design.md`、`docs/requirements/stages/stage-04-draft-structuring.md` で整合を確認済み。
+  - メモ: `generate_ready` 基盤への移行設計はユーザー承認済み（2025-11-04）。関連ドキュメントは `docs/design/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/requirements/stages/stage-03-compose.md` で整合を確認済み。
 - [x] ドキュメント更新（要件・設計）
   - メモ: Stage3/4 関連ドキュメントを `generate_ready` 基盤へ更新済み（commit `edfabde`）。追加の設計補足は今後の実装ブランチで反映予定。
   - [x] docs/requirements 配下

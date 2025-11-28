@@ -27,7 +27,7 @@
 
 ### stage 3 コンテンツ準備 (HITL)
 - 既存ドキュメント  
-  - `docs/design/stages/stage-03-content-normalization.md` では Review Engine の診断と Auto-fix を中心に説明しているが、Analyzer 連携には触れていない。
+  - `docs/design/stages/stage-02-prepare.md` では Review Engine の診断と Auto-fix を中心に説明しているが、Analyzer 連携には触れていない。
 - 追加アイデア  
   - `analysis.json` の `issues` / `fixes` を Review Engine が参照し、Auto-fix 提案やレビュー優先度の指標に利用。
   - `severity` に基づく差戻し優先度タグを UI に表示し、HITL レビューの効率化を図る。

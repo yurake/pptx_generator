@@ -9,9 +9,9 @@ roadmap_item: RM-082 Prepare AI パッケージ再編
   - メモ: ブランチ `feat/rm082-prepare-ai-package` を作成し、コミット `refactor(prepare): extract ai modules into subpackage`（933d3b9）を作成して push 済み。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 対象整理（スコープ、対象ファイル、前提）: Stage2 のうち生成 AI に関わる実装（`prepare/orchestrator.py`, `prepare/llm_client.py`, `prepare/prompts.py`）を新設する `pptx_generator.prepare_ai` サブパッケージへ移設し、`pptx_generator.prepare` にはステージ共通モデル (`models.py`, `policy.py`, `source.py`) を残す。CLI や既存コードからの import は互換ラッパーで保持する。  
-    ドキュメント／コード修正方針: 新ディレクトリを追加し、旧モジュールは薄いラッパーへ変更。`__init__.py` の公開 API を `prepare_ai` 由来へ向け直し、`docs/design/stage-02-content-normalization.md` 等で構成図を更新。`docs/policies/github-label-governance.md` に `prepare_ai` を追記。  
+    ドキュメント／コード修正方針: 新ディレクトリを追加し、旧モジュールは薄いラッパーへ変更。`__init__.py` の公開 API を `prepare_ai` 由来へ向け直し、`docs/design/stage-02-prepare.md` 等で構成図を更新。`docs/policies/github-label-governance.md` に `prepare_ai` を追記。  
     確認・共有方法: 変更後の差分を ToDo に反映し、Plan 承認メッセージ（ユーザー「ok」 2025-11-27）を記録。必要箇所は docs で更新内容を明記。  
-    想定影響ファイル: `src/pptx_generator/prepare/__init__.py`, `src/pptx_generator/prepare/{orchestrator,llm_client,prompts}.py`, 新規 `src/pptx_generator/prepare_ai/**`, `docs/design/stages/stage-02-content-normalization.md`, `docs/policies/github-label-governance.md`, 関連テスト。  
+    想定影響ファイル: `src/pptx_generator/prepare/__init__.py`, `src/pptx_generator/prepare/{orchestrator,llm_client,prompts}.py`, 新規 `src/pptx_generator/prepare_ai/**`, `docs/design/stages/stage-02-prepare.md`, `docs/policies/github-label-governance.md`, 関連テスト。  
     リスク: モジュール移設に伴う循環 import・互換パス崩れ・テストの import 失敗。互換ラッパーと `__all__` を整備し検出。  
     テスト方針: `uv run --extra dev pytest tests/test_cli_prepare.py tests/test_prepare_llm_client.py`。  
     ロールバック方法: 移設コミットを撤回し、旧 `prepare` ディレクトリ構成へ戻す。

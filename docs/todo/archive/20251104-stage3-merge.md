@@ -2,7 +2,7 @@
 目的: mainの stage 3 大型変更をfeat/rm-051-template-integrationへ取り込む
 関連ブランチ: feat/rm-051-template-integration
 関連Issue: #265
-roadmap_item: RM-051 テンプレ stage 統合集約
+roadmap_item: RM-051 テンプレ 統合集約
 ---
 
 - [x] ブランチ作成と初期コミット
@@ -19,13 +19,13 @@ roadmap_item: RM-051 テンプレ stage 統合集約
     - ロールバック方法: マージコミットを取り消して HEAD を `f8ce68a` へ戻し再検討する。部分的に問題がある場合は差分コミット単位で revert して調整する。
     - 承認メッセージ ID／リンク: user-20251104-plan-approval
 - [x] 設計・実装方針の確定
-  - メモ: テンプレ stage コマンドの統合仕様を main 側へ追従し、プレペア正規化導入後の CLI フローを branch 内で再確認済み。
+  - メモ: テンプレ コマンドの統合仕様を main 側へ追従し、プレペア正規化導入後の CLI フローを branch 内で再確認済み。
 - [x] ドキュメント更新（要件・設計）
   - メモ: README・design/cli-command-reference ほか stage 表記を最新仕様へ同期。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
-  - メモ: origin/main のプレペア統合差分をマージし、`cli.py` の競合解消とテンプレ stage コマンドの統合動作を調整。
+  - メモ: origin/main のプレペア統合差分をマージし、`cli.py` の競合解消とテンプレ コマンドの統合動作を調整。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest` を実施し 162 件成功。CLI 統合テストを新仕様に合わせて更新済み。2025-11-04 に再マージ差分を確認し、`tests/test_cli_integration.py` の import 整合性を調整後に再実行して全件成功を確認。
 - [x] ドキュメント更新

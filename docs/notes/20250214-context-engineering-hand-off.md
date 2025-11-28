@@ -142,7 +142,7 @@ coding agent で実務に落とすなら、もう少し実装寄りに：
 
 2. **ドメイン別・stage 別の仕様／設計**
 
-   * pptx_generator でいうと、テンプレ stage / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
+   * pptx_generator でいうと、テンプレ / コンテンツ準備 / マッピング / レンダリングごとの要件・設計文書
    * → `docs/requirements/stages/*` `docs/design/stages/*` など
 
 3. **タスクローカルな情報**
@@ -212,7 +212,7 @@ Claude Code では、**custom subagents がコンテキスト管理の最強機�
 
 3. **Subsystem / Stage レイヤ**
 
-   * 「テンプレ stage」「コンテンツ準備」「マッピング」「レンダリング」など、stage 別の仕様・設計・運用ガイド。
+   * 「テンプレ」「コンテンツ準備」「マッピング」「レンダリング」など、stage 別の仕様・設計・運用ガイド。
    * → `docs/requirements/stages/*`, `docs/design/stages/*`, `docs/runbooks/*`。
 
 4. **Task レイヤ（PR / Issue / ローカルノート）**
@@ -301,18 +301,18 @@ Datacamp や LLM コスト最適化の記事では、コンテキスト設計と
 
    * 例：
 
-     * テンプレ stage タスク
-       → `docs/requirements/stages/stage-01-template-pipeline.md`
+     * テンプレ タスク
+       → `docs/requirements/stages/stage-01-template.md`
        → `docs/design/layout-style-governance.md`
        → `templates/libraries/**/`
      * コンテンツ準備タスク
-       → `docs/requirements/stages/stage-02-content-normalization.md`
+       → `docs/requirements/stages/stage-02-prepare.md`
        → `samples/contents/`
      * マッピングタスク
-       → `docs/requirements/stages/stage-03-mapping.md` / `stage-05-mapping.md`
+       → `docs/requirements/stages/stage-03-compose.md` / `stage-03-compose.md`
        → `src/pptx_generator/mapping/**` `templates/**`
      * レンダリングタスク
-       → `docs/design/stages/stage-04-rendering.md`
+       → `docs/design/stages/stage-04-gen.md`
        → `src/pptx_generator/render/**` `dotnet/**`
 
    * coding agent には、
@@ -376,7 +376,7 @@ Claude Code の best practices やサブエージェント活用記事をベー�
    * スコープ:
 
      * `docs/requirements/stages/stage-03-*`, `stage-05-*`
-     * `docs/design/stages/stage-05-mapping.md`
+     * `docs/design/stages/stage-03-compose.md`
      * `src/pptx_generator/compose/**`, `mapping/**`
    * 役割:
 
@@ -386,8 +386,8 @@ Claude Code の best practices やサブエージェント活用記事をベー�
 
    * スコープ:
 
-     * `docs/requirements/stages/stage-04-rendering.md`
-     * `docs/design/stages/stage-04-rendering.md`
+     * `docs/requirements/stages/stage-04-gen.md`
+     * `docs/design/stages/stage-04-gen.md`
      * `src/pptx_generator/render/**`, `dotnet/`, `config/branding.json`
    * 役割:
 
