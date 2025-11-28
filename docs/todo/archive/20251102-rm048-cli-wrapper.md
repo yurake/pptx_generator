@@ -40,7 +40,7 @@ roadmap_item: RM-048 stage 4+5 統合CLI整備
 - [x] 設計・実装方針の確定
   - メモ: `compose` サブコマンドで stage 4 のドラフト生成と stage 5 のマッピングを連続実行する。`cli.py` にアウトライン／マッピング共通の内部ヘルパー（`_execute_outline` / `_execute_mapping`）を追加し、既存コマンドからも再利用することで挙動の一貫性を担保する。ドラフト成果物のメタ出力と layout スコア表示は共通化し、エラーコードは既存 CLI と同一になるよう整理する。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/design/20251019-stage3-4-cli.md` に compose CLI 追加方針を追記。要件定義への影響はなく `docs/requirements` は現状維持。
+  - メモ: `docs/design/archive/20251019-stage3-4-cli.md` に compose CLI 追加方針を追記。要件定義への影響はなく `docs/requirements` は現状維持。
   - [x] docs/requirements 配下（変更なしを確認）
   - [x] docs/design 配下
 - [x] 実装
@@ -81,7 +81,7 @@ roadmap_item: RM-048 stage 4+5 統合CLI整備
       - 統合前のドキュメント（旧 stage-04/05）を git revert で復元し、README 等の stage 数表記を 6 stage に戻す。
     - 調査メモ
       - README.md: stage 数紹介、Mermaid 図、CLI チートシート、stage 別ガイド概要、補足コメント。
-      - docs/design/design.md / cli-command-reference.md / 20251019-stage3-4-cli.md / rm005-story-modeler.md など、stage 3/4/5 を明記している設計資料。
+      - docs/design/design.md / cli/cli-command-reference.md / archive/20251019-stage3-4-cli.md / initiatives/story-modeler.md など、stage 3/4/5 を明記している設計資料。
       - docs/requirements/stages/stage-04-mapping.md および対応する design/stages ファイル。
       - docs/runbooks/story-outline-ops.md、support.md、pptx-analyzer.md など stage を参照する運用手順。
       - docs/notes/20251011-roadmap-refresh.md、20251012-readme-refactor.md、20251019-rm033-scope.md 等、6 stage を前提としたノート。

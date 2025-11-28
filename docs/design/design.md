@@ -5,6 +5,13 @@
 - stage ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
 - JSON スキーマやバリデーションルールなど詳細仕様は必要に応じて後半の章（4〜7 章）を確認する構成にしています。
 
+## 関連設計ドキュメント
+- **CLI**: `docs/design/cli/cli-command-reference.md`
+- **ブランド・スタイル**: `docs/design/initiatives/template-style-governance.md`
+- **ストーリー整備**: `docs/design/initiatives/story-modeler.md`
+- **テンプレ構造スキーマ**: `docs/design/schema/README.md`
+- **過去の検討メモ（アーカイブ）**: `docs/design/archive/`
+
 ## 既存AIサービス比較・本プロジェクト選定理由
 
 - 代表的なAI PowerPoint自動生成サービス（Copilot, Canva, Gamma, Autoppt, SlidesAI, Presentations.ai等）は、デザインや構成支援に強みがある一方、社内ブランド・日本語対応・細かなレイアウト調整・禁則処理などに制約がある。

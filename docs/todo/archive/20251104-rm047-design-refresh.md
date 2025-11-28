@@ -29,7 +29,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] docs/requirements 配下
     - 対象: `docs/requirements/stages/stage-03-compose.md`, `docs/requirements/stages/stage-03-compose.md`, `docs/requirements/requirements.md` を更新し、`generate_ready` 前提とレガシーノートを反映。
   - [x] docs/design 配下
-    - 対象: `docs/design/stages/stage-03-compose.md`, `docs/design/design.md`, `docs/design/cli-command-reference.md`, `docs/design/20251019-stage3-4-cli.md` を更新し、stage 3 の成果物・CLI オプション・legacy 注意書きを整理。
+    - 対象: `docs/design/stages/stage-03-compose.md`, `docs/design/design.md`, `docs/design/cli/cli-command-reference.md`, `docs/design/archive/20251019-stage3-4-cli.md` を更新し、stage 3 の成果物・CLI オプション・legacy 注意書きを整理。
 - [x] 実装
   - メモ: ドキュメント再配置・レガシー注記追加などの反映を完了（commit `edfabde` ほか）。
 - [x] テスト・検証

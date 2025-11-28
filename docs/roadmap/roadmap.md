@@ -406,7 +406,7 @@ flowchart TB
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）。
 - 目的: stage 3/4を独立CLIとして提供できるよう、インターフェース・テスト観点・運用手順を整理する。
 - 状況: 完了（2025-10-19 更新）
-- 参照ドキュメント: [docs/design/20251019-stage3-4-cli.md](../design/20251019-stage3-4-cli.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
+- 参照ドキュメント: [docs/design/archive/20251019-stage3-4-cli.md](../design/archive/20251019-stage3-4-cli.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
 - マイルストーン:
   1. stage 3/4 CLI 分離要件の調査と設計方針整理（ToDo: フォローアップタスク）。
   2. テスト観点棚卸しと再実行手順のドキュメント化。
@@ -583,7 +583,7 @@ flowchart TB
 ### RM-047 テンプレ統合構成生成AI連携
 - 対象 stage: 3（Compose）
 - ゴール: stage 3 の `prepare_card.json` と stage 2 の `jobspec.json` を統合し、stage 5 が利用する `generate_ready.json`・メタ・ログ群を生成できる状態にする。
-- 参照ドキュメント: [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/design/draft-structuring-RM047.md](../design/draft-structuring-RM047.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/design/design.md](../design/design.md), [docs/notes/20251102-stage2-jobspec-overview.md](../notes/20251102-stage2-jobspec-overview.md)
 - 参照 ToDo: [docs/todo/archive/20251104-rm047-draft-structuring.md](../todo/archive/20251104-rm047-draft-structuring.md)
 - 依存: RM-044（テンプレ雛形生成）・RM-046（生成AIプレペア）
 - 状況: 完了（2025-11-09 更新）
