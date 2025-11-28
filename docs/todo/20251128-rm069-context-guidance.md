@@ -50,3 +50,4 @@ roadmap_item: RM-069 コンテキスト設計ガイド整備
   - メモ: 
 
 ## メモ
+- 2025-11-29: `docs/design/` を CLI / initiatives / archive / stages へ整理し、関連ドキュメントの参照リンクを最新構成へ更新済み。
