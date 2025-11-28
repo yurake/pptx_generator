@@ -1,30 +1,36 @@
 # ストーリー骨子運用手順
 
 ## 目的
-- RM-005 で定義したストーリー骨子 (`story_outline.json`) を stage 3/4で確実に参照し、章構成とストーリーフェーズの整合を維持する。
+- RM-005 で定義したストーリー骨子 (`story_outline.json`) を stage 3/4 で確実に参照し、章構成とフェーズの整合を維持する。
 - HITL 承認者がストーリー情報を確認・更新する際の手順を標準化し、差戻しコストを抑える。
 
 ## 事前準備
-- `docs/requirements/stories/story-outline.md` と `docs/design/rm005-story-modeler.md` を読み、対象案件で利用すべきフェーズ・章構造とメタ項目を確認する。
-- `story_outline.json` のバージョンと発行元 ToDo / Issue を確認し、最新の骨子が共有済みであることを担保する。
-- stage 2 要件（`docs/requirements/stages/stage-02-content-normalization.md`）と stage 3 要件（`docs/requirements/stages/stage-03-mapping.md`）を参照し、アウトライン項目の受け渡しポイントを把握する。
+- 仕様把握: `docs/requirements/stages/stage-02-content-normalization.md`、`docs/requirements/stages/stage-03-mapping.md`、`docs/requirements/stages/stage-04-draft-structuring.md` と設計メモ `docs/design/rm005-story-modeler.md` を確認し、骨子メタの流れを把握する。
+- アセット確認: `story_outline.json` をリポジトリ内（または案件共有ストレージ）に配置し、`title`・`version`・発行元 ToDo / Issue を最新化しておく。
+- 入力前チェック: stage 2 のカード生成設定に骨子パスが渡せる状態か確認し、`prepare_card.json` のサンプルで `story.phase` / `story.chapter_id` / `story.angle` などが付与されていることを確かめる。
 
 ## 手順
-1. ストーリー骨子ファイルをリポジトリに配置し、案件メタと紐づく `title`・`version` を更新する。
-2. stage 3 のカード生成設定に骨子ファイルのパスを渡し、`story.phase` / `story.chapter_id` / `story.angle` がカード単位で埋まることを確認する。
-3. HITL 承認 API を利用するツール（CLI など）で章・フェーズ表示を確認し、必要に応じて再割当を行う。差分はレビューコメントとして記録する。
-4. 承認後の `prepare_card.json` を確認し、全カードにストーリー情報が保存されていること、章ごとのカード数が骨子の想定範囲内であることをチェックする。
-5. `uv run pptx compose ... --draft-output .pptx/draft` を実行し、Slide ID 整合性チェックで `DraftStructuringError: JobSpec に存在するが content_approved に存在しないスライド ID が見つかりました` が発生しないことを確認する。エラーが出た場合はメッセージに列挙された ID を基に `prepare_card.json` と `jobspec.json` を照合し、カード ID の再割当または JobSpec 側の修正を行った上で再実行する。
-6. stage 3 へ引き渡す前に `uv run pptx prepare <prepare_source> --output .pptx/prepare` でプレペア成果物を検証し、続けて `uv run pptx outline ... --prepare-cards .pptx/prepare/prepare_card.json --draft-output .pptx/draft --chapter-template <template_id> --show-layout-reasons` を実行して章テンプレ適合率と layout_hint 候補スコアを確認する。カード生成時に CLI が `prepare_card.json.meta.*` へログ／AIメタのパスを保存するため、追加の引数は不要。必要に応じて `generate_ready_meta.json` の章統計と `draft_review_log.json` を参照し、齟齬があれば `--return-reasons` で差戻しテンプレ一覧を確認しつつ理由を明示する。`ai_generation_meta.mode` が `dynamic` の場合は `prepare_card.json.cards[*].order` を更新した順序で `generate_ready.slides[*]` が生成されるため、HITL の章構成変更後は `order` の連番と欠番を確認する。`static` の場合は Blueprint / JobSpec の順序が優先されることに留意し、slot 未充足は `draft_mapping_log.json.static_slot_checks` を確認する。モード値が不明なまま渡ってきた場合は `DraftStructuringError` で停止するため、stage 2 で必ず補正する。HITL 承認直後に成果物をまとめて更新する場合は `uv run pptx compose ... --draft-output .pptx/draft` を用いると、stage 3 を一括で再実行できる。レンダリングのみをやり直す場合は `pptx gen` のみを実行する。
-7. stage 4 完了後は `.pptx/gen/audit_log.json` の `mapping` セクションと `hashes.draft_mapping_log` を確認し、`.pptx/draft/generate_ready.json`／`draft_mapping_log.json` のパスと SHA-256 が記録されているかをチェックする。フォールバックが発生した場合は `draft_mapping_log.json.fallback` の履歴と `generate_ready_meta.sections[*]` を参照し、差戻しや再分配の対象スライドを追跡する。
+1. **骨子の適用**  
+   `story_outline.json` を stage 2 のカード生成処理に指定し、`prepare_card.json`・`prepare_story_outline.json` へストーリーメタが反映されているか確認する。骨子の章数・フェーズ数とカード枚数が著しく乖離している場合は、生成前に骨子を見直す。
+2. **HITL レビュー**  
+   承認ツール（CLI や UI）で章・フェーズ情報を表示し、再割当が必要な場合は `prepare_card.json.cards[*].story` を更新する。差戻し理由や再割当ログは ToDo／ノートに残す。
+3. **Compose 実行**  
+   Stage 3/4 の再構成は `uv run pptx compose <jobspec.json> --prepare-cards .pptx/prepare/prepare_card.json --draft-output .pptx/draft` を使用する。実行後に以下を確認する:
+   - `.pptx/draft/draft_review_log.json` に章ごとの承認履歴が残っている。
+   - `.pptx/draft/generate_ready_meta.json.sections[*].story_phase` と `status` が骨子と一致している。
+   - `DraftStructuringError` が発生した場合はメッセージに記載されたカード ID を `prepare_card.json` と照合し、欠番や重複がないか見直す。
+4. **成果物の整合チェック**  
+   `generate_ready.json` のスライド順と `story.phase` の整合を確認し、必要に応じて `draft_mapping_log.json` の `fallback` / `slot_checks` / `layout_hint` 情報を参照する。付録送りや統合が発生した場合は `generate_ready_meta.sections[*].fallback_reason` で骨子との齟齬を確認し、差戻しを検討する。
+5. **レンダリング前の最終確認**  
+   `.pptx/gen/audit_log.json.mapping` に `generate_ready` と `draft_mapping_log` の SHA-256 が記録されているかをチェックし、骨子バージョンや ToDo 番号を `mapping_meta.story_outline` （未実装の場合はメモ欄）に記録する。
 
 ## レビュー観点
-- フェーズ必須項目（導入／課題／解決）は欠落していないか。
-- 骨子の `default_slide_count` と実際のカード数が大きく乖離していないか。
-- 付録送りや統合を行ったスライドの章情報が `draft_review_log.json` と `generate_ready_meta.sections[*]` に反映されており、章承認後は `status=approved` になっているか。
-- ストーリー骨子の更新履歴・レビュー記録が `docs/todo/` や関連 Issue に残っているか。
+- フェーズ必須項目（導入／課題／解決など）が欠落していないか。
+- `story_outline.json` の `default_slide_count` と実際のカード数の差が許容範囲か。
+- 付録送り・統合を行ったスライドの章情報が `draft_review_log.json` と `generate_ready_meta.sections[*]` に反映されているか。
+- 骨子の更新履歴・レビュー記録が ToDo や関連ノートに残っているか。
 
 ## ロールバックとエスカレーション
-- 骨子に重大な誤りが見つかった場合は、該当 ToDo を差戻しステータスに更新し、承認済みカードを一旦凍結する。
-- 調整が間に合わない場合は、直近安定版の `story_outline.json` を復元し、変更理由と影響範囲を `docs/notes/` へ記録する。
-- API クライアント側の再割当機能で致命的な不具合が発生した際は、stage 3・4 の担当へ即時共有し、暫定措置として骨子メタの手動編集手順を `docs/notes/` に追記する。
+- 骨子に重大な誤りが見つかった場合は、該当 ToDo を差戻しステータスに更新し、承認済みカードを凍結する。
+- 緊急で元に戻す場合は直近安定版の `story_outline.json` を復元し、再適用後に Compose を再実行する。
+- 再割当機能に不具合が発生した場合は stage 3/4 の担当へ連絡し、暫定措置として `prepare_card.json` の手動編集手順をノートに追記する。
