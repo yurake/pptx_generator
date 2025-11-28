@@ -1033,3 +1033,15 @@ flowchart TB
   - `TemplateExtractor` と `layout_validation` で文字数・行数の推定値を算出し、`JobSpecScaffoldPlaceholder`／`SlideTextbox` に `text_capacity` 情報を追加する。
   - Mapping/Renderer が許容量を参照してオーバーフロー検知や警告出力を行えるよう、モデルとテストを整合させる。
   - サンプル `jobspec.json`・テストケースを更新し、推定方法と誤差範囲をドキュメントに記載する。
+
+<a id="rm-082"></a>
+### RM-082 Prepare AI パッケージ再編
+- 対象 stage: Stage 2（コンテンツ準備）
+- ゴール: `pptx_generator.prepare` 内の生成 AI コンポーネントを `prepare_ai` サブパッケージへ分離し、ステージ名と AI 実装の責務を切り分ける。
+- 参照ドキュメント: [docs/design/stages/stage-02-content-normalization.md](../design/stages/stage-02-content-normalization.md), [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
+- 参照 ToDo: [docs/todo/archive/20251127-rm082-prepare-ai-package.md](../todo/archive/20251127-rm082-prepare-ai-package.md)
+- 状況: 完了（2025-11-27 更新）
+- 期待成果:
+  - `pptx_generator.prepare` の公開 API を維持したまま、LLM クライアントやプロンプトを `prepare_ai` 以下へ移設し、後方互換を確保する。
+  - Stage 2 のドキュメントと CLI リファレンスを更新し、ステージ名とパッケージ構造の対応を明示する。
+  - `tests` と設定ファイルを調整し、パッケージ構成変更後も `pptx prepare` と関連テストが正常に動作することを確認する。
