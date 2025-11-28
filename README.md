@@ -132,7 +132,7 @@ flowchart TD
 | 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-各 stage の CLI コマンドと主要オプションは `docs/design/cli-command-reference.md`。
+各 stage の CLI コマンドと主要オプションは `docs/design/cli/cli-command-reference.md`。
 
 ## テスト
 - テスト実行:

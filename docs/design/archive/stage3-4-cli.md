@@ -1,6 +1,6 @@
 # stage 2/3 CLI 分離設計（RM-033）
 
-> **注記 (2025-11)**: RM-047 により stage 3 の成果物は `generate_ready.json` 系へ移行した。本メモは `draft_*` 出力を前提とした当時の設計記録であり、最新仕様は `docs/design/stages/stage-03-compose.md` および `docs/design/cli-command-reference.md` を参照すること。
+> **注記 (2025-11)**: RM-047 により stage 3 の成果物は `generate_ready.json` 系へ移行した。本メモは `draft_*` 出力を前提とした当時の設計記録であり、最新仕様は `docs/design/stages/stage-03-compose.md` および `docs/design/cli/cli-command-reference.md` を参照すること。
 
 ## 目的
 - HITL stage（stage 2: プレペア正規化 / stage 3: マッピング）の入出力を CLI 経由で個別に扱えるようにし、stage 4（レンダリング）と疎結合にする。

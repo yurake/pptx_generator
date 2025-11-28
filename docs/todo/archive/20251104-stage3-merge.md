@@ -13,7 +13,7 @@ roadmap_item: RM-051 テンプレ 統合集約
     - 対象整理（スコープ、対象ファイル、前提）: `feat/rm-051-template-integration` に origin/main の stage 3（プレペア統合）変更を取り込み、CLI・パイプライン・tests・docs を最新化する。stage 1 統合実装との整合を維持する。origin/main を最新取得済み。`gh issue list` は TLS エラーで確認不可。
     - ドキュメント／コード修正方針: まず `git merge origin/main` で Stage3 プレペア機能の差分を取り込み、`src/pptx_generator/cli.py` を中心に競合を解消する。`src/pptx_generator/prepare/*` と `pipeline/prepare_normalization.py` の追加を正しく統合し、テストや README・requirements/design/notes 等の stage 表記も反映させる。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo へ進捗を逐次記録し、Plan 承認メッセージ ID を記録。作業完了時に README と docs 更新内容を自己チェックし、必要に応じて user へ共有する。
-    - 想定影響ファイル: `src/pptx_generator/cli.py`、`src/pptx_generator/prepare/**/*`、`src/pptx_generator/pipeline/prepare_normalization.py`、`tests/test_cli_integration.py`、`tests/test_cli_content.py`、`tests/test_cli_outline.py`、`tests/test_mapping_step.py`、`README.md`、`docs/requirements/stages/*`、`docs/design/cli-command-reference.md` ほか stage 3 関連ドキュメント。
+    - 想定影響ファイル: `src/pptx_generator/cli.py`、`src/pptx_generator/prepare/**/*`、`src/pptx_generator/pipeline/prepare_normalization.py`、`tests/test_cli_integration.py`、`tests/test_cli_content.py`、`tests/test_cli_outline.py`、`tests/test_mapping_step.py`、`README.md`、`docs/requirements/stages/*`、`docs/design/cli/cli-command-reference.md` ほか stage 3 関連ドキュメント。
     - リスク: CLI 競合の取り込み漏れによる regressions、プレペア素材追加によるテスト環境依存、stage 番号の不整合。段階的に検証し、必要に応じて個別テストを追加する。
     - テスト方針: `uv run --extra dev pytest` を基本とし、CLI の主要テスト（`tests/test_cli_integration.py` など）を重点確認。必要に応じて `uv run pptx template ...` や `uv run pptx prepare ...` を実行し成果物のハッシュ・ログで確認する。
     - ロールバック方法: マージコミットを取り消して HEAD を `f8ce68a` へ戻し再検討する。部分的に問題がある場合は差分コミット単位で revert して調整する。

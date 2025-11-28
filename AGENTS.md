@@ -10,7 +10,7 @@
 - `docs/policies/context-engineering.md`: コンテキスト設計ポリシーと文書階層。
 - `CONTRIBUTING.md`: 開発プロセス全体のガイドライン。
 - `docs/policies/task-management.md`: Approval-First Development Policy と ToDo 運用。
-- `docs/design/cli-command-reference.md`: CLI コマンドとパイプライン詳細。
+- `docs/design/cli/cli-command-reference.md`: CLI コマンドとパイプライン詳細。
 - `docs/requirements/requirements.md` / `docs/design/design.md`: 要件・設計の全体像。
 
 # 3 環境セットアップ概要

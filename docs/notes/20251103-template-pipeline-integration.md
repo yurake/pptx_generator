@@ -9,7 +9,7 @@
 - **CLI**: `src/pptx_generator/cli.py` に `template` サブコマンドを追加。抽出と検証を一括実行し、`--with-release` 指定時はリリース成果物も生成。既存 `tpl-extract` / `layout-validate` / `tpl-release` は共通ヘルパーを共有する形で維持。
 - **テスト**: `tests/test_cli_integration.py` と `tests/test_cli_cheatsheet_flow.py` に `template` コマンドのケースを追加し、旧フローの期待値を更新。
 - **ドキュメント**:
-  - `README.md`、`docs/design/design.md`、`docs/design/cli-command-reference.md`、`docs/requirements/requirements.md` を 4 stage 構成へ改訂。
+  - `README.md`、`docs/design/design.md`、`docs/design/cli/cli-command-reference.md`、`docs/requirements/requirements.md` を 4 stage 構成へ改訂。
   - `docs/requirements/stages/` および `docs/design/stages/` のステージファイルを新番号へリネームし、旧 stage 2 ドキュメントは統合済みの旨を stub 化。
   - ロードマップ・ToDo 参照用に本メモを追加。
 - **ToDo**: `docs/todo/20251103-rm-051-template-integration.md` に Plan を反映し、関連ブランチを更新。
@@ -21,5 +21,5 @@
 
 ## 関連参照
 - `docs/requirements/stages/stage-01-template.md`
-- `docs/design/cli-command-reference.md`
+- `docs/design/cli/cli-command-reference.md`
 - `tests/test_cli_cheatsheet_flow.py`

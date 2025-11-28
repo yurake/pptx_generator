@@ -13,7 +13,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
          - `docs/requirements/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/notes/20251102-stage2-jobspec-overview.md` を読み合わせ、stage 2 出力（`jobspec.json`）と stage 3 出力（`prepare_card.json` など）の項目を洗い出す。  
          - `feat/rm049-pptx-gen-scope` ブランチの Stage5 実装（`generate_ready.json` など）を確認し、stage 4 で追加すべきフィールドやメタ情報を整理する。stage 2 由来で `jobspec.json` 以外の参照が必要と判明した場合は ToDo / docs/notes で報告する。  
       2. **設計ドキュメントの整備**  
-         - `docs/design/archive/draft-structuring-RM047.md` を参照し、カード単位 AI マッピングのフロー、AI 呼び出しインターフェース（stage 3 資産との連携）、`generate_ready.json`／承認ログ／メタ情報の構成を詳細化する。  
+         - `docs/design/archive/draft-structuring.md` を参照し、カード単位 AI マッピングのフロー、AI 呼び出しインターフェース（stage 3 資産との連携）、`generate_ready.json`／承認ログ／メタ情報の構成を詳細化する。  
          - `docs/design/design.md` と `docs/requirements/stages/stage-03-compose.md` に要点を反映し、stage 4 の入出力・品質ゲートを `generate_ready` ベースへ更新する。  
          - `docs/roadmap/roadmap.md` の RM-047 セクションを進行中へ更新し、新設ドキュメントへのリンクを追加する。  
       3. **モデル・ユーティリティ追加**  

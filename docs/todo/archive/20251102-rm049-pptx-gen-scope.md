@@ -16,7 +16,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
     - 想定影響ファイル
       - `src/pptx_generator/cli.py`、`src/pptx_generator/pipeline/` 配下の関連モジュール。
       - `tests/test_cli_integration.py` ほか `generate_ready` を前提としたテストケース。
-      - `README.md`、`docs/design/cli-command-reference.md`、`docs/requirements/stages/stage-04-gen.md`、`docs/runbooks/support.md`、関連ノート類。
+      - `README.md`、`docs/design/cli/cli-command-reference.md`、`docs/requirements/stages/stage-04-gen.md`、`docs/runbooks/support.md`、関連ノート類。
     - リスク
       - ファイル名変更に伴う参照漏れ（コード・テスト・ドキュメント・監査ログ）が発生する可能性。
       - `audit_log.json` やモニタリングメタのキー名変更による整合性崩れ。
@@ -74,7 +74,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
         1. main ブランチから `template` 関連の実装（`src/pptx_generator/cli.py` の共通ヘルパー、`_run_template_extraction`／`_run_template_release` など）を取り込み、`feat/rm049-pptx-gen-scope` で削除された差分を整理する。
         2. generate_ready 専用化で導入したテンプレ参照メタやアーティファクト管理と整合するよう CLI 実装を調整し、`tpl-extract` / `layout-validate` / `tpl-release` と重複する処理を共通化する。
         3. `tests/test_cli_integration.py` ほかテンプレ に関する統合テストを復元・更新し、テンプレ抽出・リリースの期待値が現行成果物に一致することを検証する。
-        4. README・`docs/design/cli-command-reference.md` などテンプレ を案内する資料を再確認し、`template` サブコマンドを前提とした説明へ整合させる。
+        4. README・`docs/design/cli/cli-command-reference.md` などテンプレ を案内する資料を再確認し、`template` サブコマンドを前提とした説明へ整合させる。
       - **テスト戦略**: `uv run --extra dev pytest tests/test_cli_integration.py::test_cli_template_basic` を中心にテンプレ の統合テストを実行し、余力があれば CLI 全体テストを追加実行する。
       - **ロールバック方法**: `template` 復元に関するコミットを revert し、テンプレ を個別サブコマンド前提へ戻す。
       - **承認メッセージ ID**: _pending approval_
@@ -156,7 +156,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 - `src/pptx_generator/cli.py`: `pptx gen` を `generate_ready.json` 専用入力へ統一し、テンプレートパス欠落時にエラーを返す。`pptx mapping` は `--template` 指定を必須化し、監査メタ `mapping_meta` に `template_path` を確実に記録。
 - `src/pptx_generator/pipeline/mapping.py`、`src/pptx_generator/generate_ready.py`: `GenerateReadyDocument.meta.template_path` を埋め込み、`mapping_meta` と監査ログにテンプレート情報を反映。
 - `tests/test_cli_integration.py` / `tests/test_cli_cheatsheet_flow.py` / `tests/test_mapping_step.py`: generate_ready 専用フローに合わせてテンプレート必須化と新エラーハンドリングを検証。
-- README・`docs/design/cli-command-reference.md`・`docs/runbooks/story-outline-ops.md` ほか関連ドキュメントを更新し、`pptx gen` の入力仕様と `--template` 必須化を明記。
+- README・`docs/design/cli/cli-command-reference.md`・`docs/runbooks/story-outline-ops.md` ほか関連ドキュメントを更新し、`pptx gen` の入力仕様と `--template` 必須化を明記。
 - `docs/notes/20251109-generate-ready-meta.md`: Prepare 正規化後も generate_ready メタ方針を維持する旨を追記。
 - **テスト**
   - `uv run --extra dev pytest`（143 件成功、2025-11-10 実行）

@@ -14,7 +14,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
         - 対象: `docs/requirements/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/requirements/requirements.md`、`docs/todo/20251104-rm047-design-refresh.md`。  
         - 前提: main の最新状態ではテンプレ が統合され、stage 2 成果物は `prepare_card.json` へ名称統一され、CLI `pptx outline` が新構成へ再設計済み。  
       - **実施手順**  
-        1. 現行 Stage2〜4 関連ドキュメントとテスト解説を精査し、削除済み `docs/design/draft-structuring-RM047.md` 由来で補うべき情報を棚卸しする。  
+        1. 現行 Stage2〜4 関連ドキュメントとテスト解説を精査し、`docs/design/archive/draft-structuring.md` 由来で補うべき情報を棚卸しする。  
         2. Stage2→Stage3→Stage4 の新構成を前提に、`generate_ready` 置換方針（CLI／モデル／パイプライン視点）を整理し、再配置ドキュメントの構成案をまとめる。  
         3. 更新が必要なドキュメント・テスト範囲を決定し、今後の編集手順と ToDo チェック項目を整備する。  
       - **想定影響ファイル**: `docs/design/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/requirements/requirements.md`、関連テストドキュメント。  
@@ -29,7 +29,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
   - [x] docs/requirements 配下
     - 対象: `docs/requirements/stages/stage-03-compose.md`, `docs/requirements/stages/stage-03-compose.md`, `docs/requirements/requirements.md` を更新し、`generate_ready` 前提とレガシーノートを反映。
   - [x] docs/design 配下
-    - 対象: `docs/design/stages/stage-03-compose.md`, `docs/design/design.md`, `docs/design/cli/cli-command-reference.md`, `docs/design/archive/20251019-stage3-4-cli.md` を更新し、stage 3 の成果物・CLI オプション・legacy 注意書きを整理。
+    - 対象: `docs/design/stages/stage-03-compose.md`, `docs/design/design.md`, `docs/design/cli/cli-command-reference.md`, `docs/design/archive/stage3-4-cli.md` を更新し、stage 3 の成果物・CLI オプション・legacy 注意書きを整理。
 - [x] 実装
   - メモ: ドキュメント再配置・レガシー注記追加などの反映を完了（commit `edfabde` ほか）。
 - [x] テスト・検証
