@@ -84,7 +84,7 @@ flowchart TD
 | 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/extract/` に出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
 | 2. コンテンツ準備 | 入力資料をカードへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
-| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` |
+| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 ### 静的生成 (static mode)
 Blueprint に沿った固定スロット構成でレンダリングするフローです。テンプレート側でスライド配置が厳密に決まっており、カード割り当てを自動検証したいケースに適しています。
@@ -132,18 +132,17 @@ flowchart TD
 | 1. テンプレ | Blueprint 情報を含めたテンプレ構造を抽出 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
 | 2. コンテンツ準備 | Blueprint のスロット定義に合わせてカードを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
 | 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
-| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` |
+| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 各 stage の CLI コマンドと主要オプションは `docs/design/cli-command-reference.md`。
 
 ## テスト
-- CLI 実行例やオプションは `docs/design/cli-command-reference.md` に集約しています。コマンドヘルプは `uv run pptx <subcommand> --help` で参照可能です。
 - テスト実行:
   ```bash
   uv run --extra dev pytest
-  uv run --extra dev pytest tests/test_cli_integration.py
   ```
-  テスト後は `.pptx/compose/` や `.pptx/gen/` などの出力ディレクトリを確認し、期待する成果物が生成されたかをチェックしてください。詳細なテスト方針は `tests/AGENTS.md` を参照します。
+- テスト後は `.pptx/compose/` や `.pptx/gen/` などの出力ディレクトリを確認し、期待する成果物が生成されたかをチェックしてください。
+- 詳細なテスト方針は `tests/AGENTS.md` を参照してください。
 
 ## ドキュメントガイド
 - `AGENTS.md`: コーディングエージェントが守るべき共通ルールと関連ドキュメントへのリンク。
@@ -158,4 +157,4 @@ flowchart TD
 - リリース・サポート・ストーリー骨子運用など、個別の手順は `docs/runbooks/` 配下を参照してください。
 
 ## ライセンス
-- 本リポジトリは社内利用を前提としており、公開ライセンスは未定です。詳細は `LICENSE` を参照してください。
+- 本プロジェクトは MIT License の下で提供されています。詳細は `LICENSE` を参照してください。
