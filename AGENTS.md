@@ -1,117 +1,46 @@
 # このドキュメントについて
-- coding agent が共通で参照するルールを要約しています。詳細な手順や背景は各種ポリシー・Runbook・設計資料を参照してください。
-- Upfront 文書として、概要を把握したら `docs/policies/context-engineering.md` を起点に階層下のドキュメントへ進んでください。
+- coding agent が作業前に確認すべき共通ルールを要約した Upfront ガイドです。
+- 詳細手順や背景は `docs/policies/context-engineering.md`、各種ポリシー、Runbook、設計ドキュメントを参照してください。
 
 # 1 基本原則
-- 言語は日本語で統一
-- コメントで過去の変更に言及しない
+- 言語は日本語で統一する。
+- コメントやメモで過去の変更に言及しない。
 
-# 2 ポリシーと記録
-- 開発手順は `CONTRIBUTING.md` を参照する
-- 実施したことや検討した内容は `docs/` に記録する
-- スキーマや成果物を更新した場合は後方互換を維持しない。旧形式は破棄し、再抽出・再生成した上で進める
+# 2 主要参照ドキュメント
+- `docs/policies/context-engineering.md`: コンテキスト設計ポリシーと文書階層。
+- `CONTRIBUTING.md`: 開発プロセス全体のガイドライン。
+- `docs/policies/task-management.md`: Approval-First Development Policy と ToDo 運用。
+- `docs/design/cli-command-reference.md`: CLI コマンドとパイプライン詳細。
+- `docs/requirements/requirements.md` / `docs/design/design.md`: 要件・設計の全体像。
 
-# 3 開発環境セットアップ
-- Python 3.12 系の仮想環境を用意し、`uv sync` で依存を同期する。
-- .NET 8 SDK と LibreOffice (headless 実行可能) をインストールし、Open XML SDK ベースの仕上げツールと PDF 変換が動作することを確認する。
-- `uv` コマンドが利用できない場合は <https://docs.astral.sh/uv/getting-started/installation/> を参照し導入する。
-- サンドボックスなどで権限エラーが出る場合は `UV_CACHE_DIR=.uv-cache` を付けて `uv` を実行し、作業ツリー内のキャッシュを使う。
+# 3 環境セットアップ概要
+- Python 3.12 系仮想環境で `uv sync` を実行し依存を整える（詳細: `CONTRIBUTING.md`）。
+- LibreOffice（PDF 出力時）や .NET 8 SDK（仕上げツール利用時）など外部ツール要件は `docs/policies/config-and-templates.md` を確認する。
+- `UV_CACHE_DIR=.uv-cache` など環境依存の回避策は Runbook／ポリシー側に記載。
 
-## セットアップコマンド
-- 依存同期: `uv sync`
-- CLI 実行準備: `uv run --help` でエントリーポイントが認識されているか確認する
-- PDF 変換確認 (任意): `soffice --headless --version`
+# 4 CLI・テストの参照先
+- Stage 別の CLI 実行手順やオプションは 2 章で挙げた CLI リファレンスを参照する。
+- テスト戦略とコマンドは `tests/AGENTS.md` に集約。README では `uv run --extra dev pytest` を起点とした最小サマリのみ参照する。
 
-# 4 CLI 実行の基本
-- 入力 JSON を `samples/extract/jobspec.json` など Stage1 で抽出した JobSpec から派生させ、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。ブランド設定 JSON (`config/branding.json`) は必要に応じて差し替える。
-- PPTX と解析結果を生成する基本コマンド例:
-  ```bash
-  uv run pptx compose samples/extract/jobspec.json \
-    --output .pptx/compose --draft-output .pptx/draft
+# 5 タスク・ドキュメント運用
+- ToDo 作成・更新、Plan 承認、ドキュメント反映は 2 章で挙げたタスク管理ポリシーと `docs/todo/README.md` に従う。
+- ロードマップ管理やカテゴリ別ドキュメント更新手順は `docs/roadmap/roadmap.md`・`docs/README.md` を参照。
 
-  uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen
-  ```
-  - `samples/extract/jobspec.json` にはテンプレート／レイアウトへの参照パスが含まれる。独自 JobSpec を利用する場合も `meta.template_path` / `meta.layouts_path` を設定する。
-  - `generate_ready.json` にテンプレートパスが埋め込まれるため、`pptx gen` に `--template` を指定する必要はない。
-  - 出力先は既定で `.pptx/gen/`。`--output` で変更可能。
-  - ブランド設定を差し替える場合は `--branding <path>` を指定する。
-  - `--export-pdf` で LibreOffice 経由の PDF 生成を有効化できる。
-- テンプレ構造の抽出は `uv run pptx tpl-extract --template <path>` を利用し、`template_spec.json` / `jobspec.json` / `branding.json` が `.pptx/extract/` に出力される。サンプルは `samples/extract/jobspec.json` に収録している。
+# 6 コミット / PR 方針
+- Conventional Commits を採用し、小さな単位で履歴を残す。
+- 作業ブランチは `feat|fix|chore|docs/rmxxx-<slug>` 形式。PR 作成時はテンプレート必須。
+- 承認メッセージ ID・参照資料を PR と ToDo に記録する（具体的な手順はタスク管理ポリシーを参照）。
 
-# 5 テスト・検証
-- 単体・統合テストを含む全体テスト:
-  ```bash
-  uv run --extra dev pytest
-  ```
-- CLI 統合テストのみを実施する場合:
-  ```bash
-  uv run --extra dev pytest tests/test_cli_integration.py
-  ```
-- テスト実行後は出力ディレクトリ (例: `.pptx/gen/`) を確認し、期待する PPTX / PDF が生成されているか確認する。
-- テスト階層やケース追加の方針は `tests/AGENTS.md` を参照する。統合テストでは `samples/` のデータを活用し、バイナリ差分はハッシュやメタ情報で検証する。
+# 7 セキュリティ・外部ツール
+- 機微情報は公開リポジトリに持ち込まない。必要に応じて `samples/` へ匿名化して配置する。
+- `.env` は読み込まない。ツールバージョン差異の取り扱いは `docs/policies/config-and-templates.md` と関連 Runbook を参照。
 
-# 6 コードスタイルと静的解析
-- Python: `ruff`, `black --check`, `mypy` を利用する。未導入の場合は `uv tool install <package>` で単体インストールしてから以下を実行する。
-  ```bash
-  uv tool run --package ruff ruff check .
-  uv tool run --package black black --check .
-  uv tool run --package mypy mypy src
-  ```
-- C#: `dotnet format` を実行し、Open XML SDK を含むプロジェクトでフォーマット崩れがないか確認する。
-- シェルスクリプトが対象の場合は `shellcheck` を使用する。
+# 8 Approval-First Development Policy
+- すべての実装前に Plan を提示し、ユーザー承認を得る。
+- scope / 影響ファイル / リスク / テスト / ロールバックを箇条書きにまとめ、承認後は ToDo の計画メモへ転記する。
+- 詳細なチェックリストと例外対応はタスク管理ポリシーに記載されている。
 
-# 7 タスク管理とドキュメント更新
-- 作業開始前に `docs/todo/` に `YYYYMMDD-<slug>.md` 形式で ToDo を作成し、進捗状況を適宜更新する。テンプレートは `docs/todo/template.md` を使用し、`roadmap_item` にはロードマップ番号（例: `RM-069 開発プロセス運用ルール見直し`）を記載する。`RM-000` はロードマップ整備など横断タスク専用とし、実装テーマは必ず固有の `RM-xxx` を割り当てる。未登録テーマへ着手する場合は、ToDo 作成と同一ブランチで `docs/roadmap/roadmap.md` に新規 RM を追加し、その番号を `roadmap_item` に記入する。ブランチ作成後はフロントマターの `関連ブランチ` を即座に更新し、`関連Issue` も `gh issue list --limit 50` 等で確認した番号（例: `#165`）に差し替える。ロードマップ由来タスクでは、チェックリストを「ブランチ→計画→設計→実装→テスト→関連Issue→PR」で構成し、各項目に完了条件を明記する。子タスクを全て完了した際は、親タスクのチェック状態も必ず `[x]` へ更新し、親側メモに完了内容を残す。
-- ただし、コードに影響しない整備タスクでユーザーが ToDo 不要と明示した場合のみ省略できる。不明なときは必ずユーザーへ相談する。
-- 大項目やロードマップ更新が必要な場合は `docs/roadmap/roadmap.md` も併せて調整する。
-- ロードマップのステータス「保留」は、ユーザーが「未着手」や「検討中」へ変更しない限り実施対象外として扱う。再開する際はユーザー指示を受けてステータスと ToDo を更新し直す。
-- 調査結果や検討事項は `docs/` 配下の適切なカテゴリ (例: `notes/`, `policies/`, `runbooks/`) に記録する。
-- 「転記」「メモ」といった全文記録の指示を受けた場合は、要約せず提示された内容をそのまま記録する。
-- ドキュメントカテゴリと更新手順の詳細は `docs/AGENTS.md` を参照。追加資料を作成した際はカテゴリ README を更新し、ToDo にメモを残す。
-- Plan を提示する前に、対象作業の ToDo に目的・関連ブランチ・roadmap_item が記録され、ブランチ作成と初期コミットが完了していること、およびチェックリストが各 stage を網羅していることを確認する。Plan 承認後は内容を ToDo の「計画策定」チェック項目のメモ欄へ全文転記し、Plan と ToDo の整合を維持する。計画のみで完了する判断をする場合は、判断者・判断日・次の判断条件を ToDo のメモ欄に追記し、再開時に stage チェックをやり直す。PR 前には `gh issue list --limit 50` 等で関連 Issue 番号を確認し、ToDo の「関連Issueの更新」チェックで最新状況を記録する。
-- 実装に着手する前に ToDo の「設計・実装方針の確定」で方針メモを更新し、必要に応じて `docs/notes/` などへ詳細を記録してリンクする。方針メモが未記入の状態で実装 stage へ進まないこと。
-- 方針が確定した後は、`docs/requirements/` や `docs/design/` の対象ドキュメントを必ず確認し、変更内容を反映する。変更不要と判断した場合でも、その理由を ToDo の「ドキュメント更新（要件・設計）」欄に明記する。
-- Plan 承認メッセージの ID（またはリンク）は ToDo と PR の両方に記載する。Plan を更新した際は再承認を得て ToDo の計画欄も上書きする。
-- PR 作成（またはドラフト解除）時に `todo-auto-complete` ワークフローが「PR 作成」チェックのみを完了させ、ToDo アーカイブとロードマップ反映を head ブランチへ適用する。PR テンプレートの「ToDo」欄に対象ファイルを必ず記載し、ワークフロー未実行時は手動対応し原因をメモに残す。
-
-# 8 コミット・PR 運用
-- コミットメッセージは Conventional Commits (`type(scope): subject`) に従う。例: `docs: update agents guidance`
-- 変更は粒度の細かいコミットに分割し、意図が追跡しやすい履歴を残す。
-- 作業ブランチは `feat|fix|chore|docs/rmxxx-<slug>` 形式で作成し、`rmxxx` には対象ロードマップ番号（例: `docs/rm069-dev-process-guidance`）を含める。`main` への直接 push は禁止。
-- PR はテンプレートに沿って作成し、目的・影響範囲・テスト結果・ロールバック手順を必ず明記する。本文中の `Close #<番号>` や `docs/todo/<ファイル名>.md` といったプレースホルダは提出前に必ず具体値へ置き換える。
-- マージ前に CI 緑化、最新 `main` への追従、コンフリクト解消を完了させる。
-- PR 説明では「変更内容」「背景」「破壊的変更の有無」「関連 ToDo / ドキュメント」を明示し、レビュー観点に応じて `tests/AGENTS.md` や `docs/AGENTS.md` のガイドに沿った更新を確認する。
-- 事前承認で得たユーザーのメッセージリンクまたは ID を PR 説明と必要なコミット本文に記録する。
-
-# 9 設定・テンプレートの注意点
-- テンプレートとして使用できるのは `.pptx` のみ。`.potx` を使う場合は PowerPoint で `.pptx` に書き出す。
-- JSON 仕様の `layout` はテンプレートのレイアウト名と一致させる。アンカー指定が必要な図形にはユニークな名前を設定し、JSON の `anchor` に同名を記述する。
-- 配色・フォントは `config/branding.json` を参照して適用されるため、テンプレート側で変更しても自動反映されない点に注意する。
-- 設定やテンプレートを更新した際は、理由と影響範囲を ToDo および関連ドキュメント (`docs/policies/config-and-templates.md` 等) に記録する。
-
-# 10 サブディレクトリ専用ガイド
-- `docs/`: ドキュメントカテゴリと更新手順は `docs/AGENTS.md` を参照。
-- `docs/runbooks/`: リリース・サポート・PPTX アナライザーなど運用手順を管理。
-- `src/`: コード構成とテスト方針は `src/AGENTS.md` を参照。
-- `tests/`: テストケースの追加規則は `tests/AGENTS.md` を参照。
-- `scripts/`: GitHub 連携スクリプトの実行条件は `scripts/AGENTS.md` を参照。
-- `samples/`: サンプルデータの更新ルールは `samples/AGENTS.md` を参照。
-- `config/`: ブランド・ルール設定の変更手順は `config/AGENTS.md` を参照。
-- 他ディレクトリに専用の AGENTS.md を追加した場合は、このリストを更新してリンクを追記する。
-
-# 11 データ・セキュリティと外部ツール
-- 案件固有のデータやブランド設定 JSON には機微情報が含まれるため、公開リポジトリへコミットしない。サンプル化が必要な場合は匿名化して `samples/` へ配置する。
-- `.env` ファイルは絶対に読み込まず、必要な環境変数は個別に設定する。
-- LibreOffice や .NET など外部ツールのバージョン差異で動作が変わる場合は `docs/policies/config-and-templates.md` に追記し、必要なら `docs/runbooks/` にフォールバック手順を記録する。
-- 追加で API キーや認証情報が必要な処理は、必ず環境変数経由で読み込み、ドキュメントに必要な前提条件を明記する。
-
-# 12 Approval-First Development Policy
-- すべての開発作業は実装前に計画（Plan）をまとめ、ユーザーの明示的な承認を得てから着手する。承認前にコード・設定・ドキュメントを変更しない。
-- Plan には scope、影響ファイル、リスクや前提、テスト戦略（単体／統合）、ロールバック方法を箇条書きで含める。緊急対応時も最小限の Plan を提示し、承認を待つ。
-- 承認を得たメッセージ ID やリンクを PR 説明およびコミット本文に記録する。Plan の内容を変更する際は作業を中断し、更新版 Plan への再承認を得る。
-- 詳細な運用手順とチェック項目は `docs/policies/task-management.md` の「Approval-First Development Policy」を参照する。
-
-# 13 個別ガイドの運用
-- 個別要件がある場合は、本ファイルに加えて補助ガイド `AGENTS_PRIVATE.md` を用意する。
-- `AGENTS_PRIVATE.md` は対象ディレクトリ直下に配置し、共通ガイドと異なる運用のみを記載する。
-- 読み順は「共通 (AGENTS.md) → 個別 (AGENTS_PRIVATE.md)」とし、矛盾がある場合は個別ガイドの記載を優先する。
+# 9 サブディレクトリガイド
+- `docs/` 系: `docs/README.md`（カテゴリ索引）、`docs/runbooks/`（運用手順）、`docs/policies/`（ルール）。
+- コード系: `src/AGENTS.md`（実装ガイド）、`tests/AGENTS.md`（テスト設計）、`scripts/AGENTS.md`（スクリプト運用）。
+- その他: `samples/AGENTS.md`、`config/AGENTS.md` など各ディレクトリ固有のガイドを参照。
