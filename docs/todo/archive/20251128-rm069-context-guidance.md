@@ -46,8 +46,8 @@ roadmap_item: RM-069 コンテキスト設計ガイド整備
   - メモ: #332 を参照し、ToDo フロントマターを更新済み。
 - [x] チェックリスト整合確認
   - メモ: 全チェック項目に対応し、親子関係の整合も確認済み。PR 作成待ち。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #333 https://github.com/yurake/pptx_generator/pull/333（2025-11-28 完了）
 
 ## メモ
 - 2025-11-29: `docs/design/` を CLI / initiatives / archive / stages へ整理し、関連ドキュメントの参照リンクを最新構成へ更新済み。

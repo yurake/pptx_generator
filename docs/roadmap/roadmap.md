@@ -30,7 +30,6 @@ flowchart TB
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
-        RM069["RM-069<br/>コンテキスト設計ガイド整備<br/>(未着手)"]
         RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
     end
 
@@ -871,7 +870,7 @@ flowchart TB
 - 参照ドキュメント: [docs/notes/20250214-context-engineering-hand-off.md](../notes/20250214-context-engineering-hand-off.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-002（エージェント運用ガイド整備）・RM-052（ドキュメント可読性向上）
-- 状況: 未着手（2025-02-14 追加）
+- 状況: 完了（2025-11-28 更新）
 - 期待成果:
   - `docs/policies/context-engineering.md`（仮称）を新設し、README / AGENTS / Runbook の記述テンプレートと参照順を定義する。
   - トップレベル README / AGENTS をサマリ中心の構成へ見直し、詳細は下位ドキュメントへ誘導するリンクを整備する。
