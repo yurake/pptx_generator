@@ -17,7 +17,7 @@ from pptx_generator.pipeline.template_extractor import (
 )
 
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 TEMPLATE_PATH = ROOT_DIR / "samples" / "templates" / "templates.pptx"
 
 

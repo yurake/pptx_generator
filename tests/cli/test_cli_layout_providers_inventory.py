@@ -45,7 +45,7 @@ def _load_env_keys(env_path: Path) -> set[str]:
 @pytest.mark.integration
 @pytest.mark.parametrize("provider", PROVIDERS)
 def test_layout_provider_script_runs_when_env_present(provider: str) -> None:
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parents[2]
     env_file = project_root / ".env"
     if not env_file.exists():
         pytest.skip(".env が存在しないためレイアウトプロバイダ検証をスキップします")
