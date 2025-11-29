@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from pptx_generator.cli import (
+    DEFAULT_PREPARE_POLICY_PATH,
     PROMPT_TEMPLATE_DIRNAME,
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
@@ -22,6 +24,10 @@ from pptx_generator.models import (
     TemplateBlueprintSlot,
     TemplateSpec,
 )
+from pptx_generator.prepare.policy import load_prepare_policy_set
+from pptx_generator.prepare.source import PrepareSourceDocument
+from pptx_generator.prepare_ai.llm_client import MockPrepareLLMClient
+from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator
 
 
 def _build_static_template_spec() -> TemplateSpec:
@@ -196,3 +202,44 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
     assert result.exit_code == 0
     assert "プロンプト雛形を出力しました" in result.output
     assert "2 件のスライド雛形を生成しました" in result.output
+
+
+def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
+    source_path = Path("samples/contents/sample_import_content.txt")
+    source = PrepareSourceDocument.parse_file(source_path)
+    policy_set = load_prepare_policy_set(Path(DEFAULT_PREPARE_POLICY_PATH))
+    template_spec = _build_static_template_spec()
+
+    class CaptureClient(MockPrepareLLMClient):
+        def __init__(self) -> None:  # noqa: D401
+            super().__init__()
+            self.prompts: list[str] = []
+
+        def generate(self, prompt: str, *, model_hint: str | None = None):  # noqa: ANN001, D401
+            self.prompts.append(prompt)
+            return super().generate(prompt, model_hint=model_hint)
+
+    client = CaptureClient()
+    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=client)
+
+    orchestrator.generate_document(
+        source,
+        mode="static",
+        blueprint=template_spec.blueprint,
+        blueprint_ref={"path": "template_spec.json", "hash": "deadbeef"},
+        prompt_overrides=[],
+    )
+
+    prompt_text = client.prompts[0]
+    payload_text = prompt_text.split("# 入力", 1)[1]
+    payload_text = payload_text.split("# 出力", 1)[0]
+    json_part = payload_text[payload_text.index("{") : payload_text.rfind("}") + 1]
+    payload = json.loads(json_part)
+
+    raw_fragment = payload["raw_context"]["content"]
+    slot_contexts = [slot.get("context", "") for slot in payload["slot_specs"]]
+
+    assert raw_fragment.startswith("-")  # sanity check
+    for context in slot_contexts:
+        assert "ブランド統一" not in context
+        assert context != raw_fragment

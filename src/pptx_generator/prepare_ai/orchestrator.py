@@ -624,18 +624,21 @@ class PrepareAIOrchestrator:
                         if isinstance(note.text, str) and note.text.strip()
                     )
                 context_text = "\n".join(context_lines).strip()
-                if not context_text:
-                    context_text = base_context or f"{blueprint_slide.layout} / {slot.anchor}"
-                slot_specs_payload.append(
-                    {
-                        "slot_id": slot.slot_id,
-                        "anchor": slot.anchor,
-                        "required": slot.required,
-                        "intent_tags": slot.intent_tags,
-                        "content_type": slot.content_type,
-                        "context": context_text,
-                    }
-                )
+                if context_text:
+                    context_value = context_text
+                else:
+                    labels = [blueprint_slide.layout or "", slot.anchor or ""]
+                    context_value = " / ".join(part for part in labels if part).strip()
+                entry = {
+                    "slot_id": slot.slot_id,
+                    "anchor": slot.anchor,
+                    "required": slot.required,
+                    "intent_tags": slot.intent_tags,
+                    "content_type": slot.content_type,
+                }
+                if context_value:
+                    entry["context"] = context_value
+                slot_specs_payload.append(entry)
 
             payload: dict[str, Any] = {
                 "raw_context": {
