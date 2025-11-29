@@ -31,7 +31,6 @@ flowchart TB
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
         RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
         RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
-        RM083["RM-083<br/>テストディレクトリ整備<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -1051,8 +1050,8 @@ flowchart TB
 - 対象 stage: 横断（品質基盤）
 - ゴール: `tests/` 配下のテストケースをドメイン責務に沿って階層化し、命名規約とフィクスチャ構成を統一して保守性を高める。
 - 参照ドキュメント: [tests/AGENTS.md](../tests/AGENTS.md)
-- 参照 ToDo: [docs/todo/20251129-rm083-tests-structure.md](../todo/20251129-rm083-tests-structure.md)
-- 状況: 未着手（2025-11-29 追加）
+- 参照 ToDo: [docs/todo/archive/20251129-rm083-tests-structure.md](../todo/archive/20251129-rm083-tests-structure.md)
+- 状況: 完了（2025-11-29 更新）
 - 期待成果:
   - `tests` 直下に残るフラットなモジュールを各ドメインサブディレクトリへ移動し、`tests/AGENTS.md` の設計方針へ整合させる。
   - テストモジュール・クラス・関数名をガイドラインの命名規則（`test_<対象>_<シナリオ>` 等）へ合わせ、pytest コレクションの安定性を維持する。
