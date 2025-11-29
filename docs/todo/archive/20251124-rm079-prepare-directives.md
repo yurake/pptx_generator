@@ -45,7 +45,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: 本 ToDo の各項目と実装内容を突合。未対応は PR 作成のみ。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #338 https://github.com/yurake/pptx_generator/pull/338（2025-11-29 完了）
 
 ## メモ

@@ -43,7 +43,6 @@ flowchart TB
     subgraph ST2["Stage 2: コンテンツ準備"]
         direction TB
         ST2_ANCHOR(( ))
-        RM079["RM-079<br/>pptx prepare directive 拡張<br/>(未着手)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
         RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
@@ -1002,8 +1001,8 @@ flowchart TB
 - 対象 stage: Stage 2（コンテンツ準備）
 - ゴール: `pptx prepare` で LLM プロンプトへ外部要望を安全に注入できる仕組みを提供し、柔軟なドラフト生成を可能にする。
 - 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
-- 参照 ToDo: [docs/todo/20251124-rm079-prepare-directives.md](../todo/20251124-rm079-prepare-directives.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm079-prepare-directives.md](../todo/archive/20251124-rm079-prepare-directives.md)
+- 状況: 完了（2025-11-29 更新）
 - 期待成果:
   - CLI に `--prompt-directive` および `--prompt-directive-file` を追加し、複数ディレクティブを順序通りに渡せるようにする。
   - `PrepareAIOrchestrator` とプロンプト生成ロジックで directives を統合し、生成メタ・AI ログへ記録する。
