@@ -25,7 +25,8 @@ from pptx_generator.layout_validation import (LayoutValidationResult,
                                               LayoutValidationSuite)
 from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
                                    TemplateReleaseGoldenRun,
-                                   TemplateReleaseReport, TemplateSpec)
+                                   TemplateReleaseReport, TemplateSpec,
+                                   TemplateStyle)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
 
@@ -220,7 +221,6 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 show_layout_reasons=False,
                 output_dir=tmp_path / "compose",
                 rules=tmp_path / "rules.json",
-                branding=None,
                 prepare_cards=tmp_path / "prepare_card.json",
             )
 
@@ -267,10 +267,10 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
 
     monkeypatch.setattr(cli.RulesConfig, "load", classmethod(fake_rules_load))
     monkeypatch.setattr(
-        cli, "_prepare_branding", lambda template, branding: (object(), {})
+        cli, "_prepare_template_style", lambda template: (TemplateStyle.default(), {})
     )
     monkeypatch.setattr(
-        cli, "_build_refiner_options", lambda rules_config, branding_config: object()
+        cli, "_build_refiner_options", lambda rules_config, template_style: object()
     )
 
     def mapping_boom(**_: object) -> None:
@@ -292,7 +292,6 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 show_layout_reasons=False,
                 output_dir=tmp_path / "compose",
                 rules=rules_path,
-                branding=None,
                 prepare_cards=tmp_path / "prepare_card.json",
             )
 
@@ -921,7 +920,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
         prepare_paths=prepare_paths,
     )
 
-    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (
+    monkeypatch.setattr("pptx_generator.template_style.extract_branding_config", lambda _: (
         _ for _ in ()).throw(BrandingExtractionError("boom")))
 
     result = runner.invoke(
@@ -938,9 +937,9 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     assert result.exit_code == 0
     audit_payload = json.loads(
         (output_dir / "audit_log.json").read_text(encoding="utf-8"))
-    branding_info = audit_payload.get("branding")
-    assert branding_info is not None
-    source_info = branding_info.get("source", {})
+    style_info = audit_payload.get("template_style")
+    assert style_info is not None
+    source_info = style_info.get("source", {})
     assert source_info.get("type") == "default"
     assert "error" in source_info
 
@@ -984,9 +983,9 @@ def test_cli_gen_template_uses_template_branding(tmp_path: Path) -> None:
     assert result.exit_code == 0
     audit_payload = json.loads(
         (output_dir / "audit_log.json").read_text(encoding="utf-8"))
-    branding_info = audit_payload.get("branding")
-    assert branding_info is not None
-    source_info = branding_info.get("source", {})
+    style_info = audit_payload.get("template_style")
+    assert style_info is not None
+    source_info = style_info.get("source", {})
     assert source_info.get("type") == "template"
     assert Path(source_info.get("template", "")).resolve() == template_path.resolve()
 

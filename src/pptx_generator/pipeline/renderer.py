@@ -28,9 +28,12 @@ from ..models import (
     SlideBullet,
     SlideBulletGroup,
     SlideTextbox,
+    TemplateStyle,
+    TemplateChartDefaults,
+    TemplateTableDefaults,
     TextboxParagraph,
+    TextboxPosition,
 )
-from ..settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -69,8 +72,7 @@ class AnchorResolution:
 class RenderingOptions:
     template_path: Path | None = None
     output_filename: str = "proposal.pptx"
-    branding: BrandingConfig | None = None
-    branding: BrandingConfig | None = None
+    template_style: TemplateStyle | None = None
 
 
 class SimpleRendererStep:
@@ -80,9 +82,9 @@ class SimpleRendererStep:
 
     def __init__(self, options: RenderingOptions | None = None) -> None:
         self.options = options or RenderingOptions()
-        if self.options.branding is None:
-            self.options.branding = BrandingConfig.default()
-        self._branding: BrandingConfig = self.options.branding
+        if self.options.template_style is None:
+            self.options.template_style = TemplateStyle.default()
+        self._style: TemplateStyle = self.options.template_style
         self._temp_files: list[Path] = []
 
     def run(self, context: PipelineContext) -> None:
@@ -144,7 +146,7 @@ class SimpleRendererStep:
             text_frame.clear()
             paragraph = text_frame.paragraphs[0]
             paragraph.text = slide_spec.title
-            self._apply_brand_font(paragraph, self._branding.heading_font)
+            self._set_font(paragraph, self._style.heading_font)
             return
         textbox = slide.shapes.add_textbox(
             Inches(0.8), Inches(0.5), Inches(8.0), Inches(1.0)
@@ -153,7 +155,7 @@ class SimpleRendererStep:
         text_frame.clear()
         paragraph = text_frame.paragraphs[0]
         paragraph.text = slide_spec.title
-        self._apply_brand_font(paragraph, self._branding.heading_font)
+        self._set_font(paragraph, self._style.heading_font)
 
     def _apply_bullets(self, slide, slide_spec: Slide) -> None:
         groups = slide_spec.bullets
@@ -162,7 +164,8 @@ class SimpleRendererStep:
 
         fallback_items: list[SlideBullet] = []
         used_anchors: set[str] = set()
-        default_paragraph_style = self._branding.components.textbox.paragraph
+        default_paragraph_style = self._style.textbox.paragraph or TextboxParagraph()
+        default_font = self._style.textbox.font or self._style.body_font
 
         for group in groups:
             anchor_name = group.anchor
@@ -173,16 +176,11 @@ class SimpleRendererStep:
                         "図形名はグループごとに一意にしてください。"
                     )
                 used_anchors.add(anchor_name)
-                paragraph_style = self._branding.resolve_layout_paragraph(
-                    layout=slide_spec.layout,
-                    placement_key=anchor_name,
-                    default=default_paragraph_style,
-                )
                 self._render_bullet_group_to_anchor(
                     slide,
                     anchor_name,
                     group.items,
-                    paragraph_style=paragraph_style,
+                    paragraph_style=default_paragraph_style,
                 )
             else:
                 fallback_items.extend(group.items)
@@ -193,6 +191,7 @@ class SimpleRendererStep:
                 target_shape.text_frame,
                 fallback_items,
                 paragraph_style=default_paragraph_style,
+                default_font=default_font,
             )
 
     def _render_bullet_group_to_anchor(
@@ -201,15 +200,22 @@ class SimpleRendererStep:
         anchor_name: str,
         bullets: list[SlideBullet],
         *,
-        paragraph_style: ParagraphStyle,
+        paragraph_style: TextboxParagraph,
     ) -> None:
-        fallback_box = self._box_spec_to_layout_box(
-            self._branding.components.textbox.fallback_box
-        )
+        fallback_box = self._style.textbox.fallback_box
+        if fallback_box is not None:
+            box = LayoutBox(
+                fallback_box.left_in,
+                fallback_box.top_in,
+                fallback_box.width_in,
+                fallback_box.height_in,
+            )
+        else:
+            box = LayoutBox(1.0, 1.0, 8.0, 3.0)
         text_frame = self._obtain_text_frame(
             slide=slide,
             anchor_name=anchor_name,
-            fallback_box=fallback_box,
+            fallback_box=box,
             strict_anchor=True,
         )
 
@@ -222,6 +228,7 @@ class SimpleRendererStep:
             text_frame,
             bullets,
             paragraph_style=paragraph_style,
+            default_font=self._style.textbox.font or self._style.body_font,
         )
 
     def _apply_subtitle(self, slide, slide_spec: Slide) -> None:
@@ -239,7 +246,7 @@ class SimpleRendererStep:
             text_frame.clear()
             paragraph = text_frame.paragraphs[0]
             paragraph.text = slide_spec.subtitle
-            self._apply_brand_font(paragraph, self._branding.body_font)
+            self._set_font(paragraph, self._style.body_font)
             return
 
         textbox = slide.shapes.add_textbox(
@@ -249,7 +256,7 @@ class SimpleRendererStep:
         text_frame.clear()
         paragraph = text_frame.paragraphs[0]
         paragraph.text = slide_spec.subtitle
-        self._apply_brand_font(paragraph, self._branding.body_font)
+        self._set_font(paragraph, self._style.body_font)
 
     def _apply_notes(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.notes:
@@ -264,7 +271,7 @@ class SimpleRendererStep:
                 text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
             )
             paragraph.text = line
-            self._apply_brand_font(paragraph, self._branding.body_font)
+            self._set_font(paragraph, self._style.body_font)
             paragraph.level = 0
 
     def _apply_auto_draw(self, slide, slide_spec: Slide, page_number: int) -> None:
@@ -294,7 +301,7 @@ class SimpleRendererStep:
             paragraph = text_frame.paragraphs[0]
             paragraph.text = str(page_number)
             paragraph.alignment = PP_ALIGN.RIGHT
-            self._apply_brand_font(paragraph, self._branding.body_font)
+            self._set_font(paragraph, self._style.body_font)
 
     def _apply_textboxes(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.textboxes:
@@ -329,7 +336,8 @@ class SimpleRendererStep:
         text_frame,
         bullets: list[SlideBullet],
         *,
-        paragraph_style: ParagraphStyle,
+        paragraph_style: TextboxParagraph,
+        default_font: FontSpec,
     ) -> None:
         text_frame.clear()
         text_frame.word_wrap = True
@@ -342,7 +350,7 @@ class SimpleRendererStep:
             self._apply_font(
                 paragraph,
                 bullet.font,
-                fallback=self._branding.body_font,
+                fallback=default_font,
             )
             self._apply_paragraph_style(
                 paragraph,
@@ -356,16 +364,8 @@ class SimpleRendererStep:
     ) -> None:
         text_frame.clear()
         text_frame.word_wrap = True
-        default_font = self._branding.resolve_layout_font(
-            layout=slide_spec.layout,
-            placement_key=textbox_spec.id,
-            default=self._branding.components.textbox.font,
-        )
-        default_paragraph = self._branding.resolve_layout_paragraph(
-            layout=slide_spec.layout,
-            placement_key=textbox_spec.id,
-            default=self._branding.components.textbox.paragraph,
-        )
+        default_font = self._style.textbox.font or self._style.body_font
+        default_paragraph = self._style.textbox.paragraph or TextboxParagraph()
 
         lines = textbox_spec.text.splitlines() or [""]
         for index, line in enumerate(lines):
@@ -396,15 +396,21 @@ class SimpleRendererStep:
                 position.width_in,
                 position.height_in,
             )
-        box_spec = self._branding.resolve_fallback_box(
-            "textbox", layout=slide_spec.layout, placement_key=textbox_spec.id
-        )
-        return self._box_spec_to_layout_box(box_spec)
+        fallback_box = self._style.textbox.fallback_box
+        if fallback_box is not None:
+            return LayoutBox(
+                fallback_box.left_in,
+                fallback_box.top_in,
+                fallback_box.width_in,
+                fallback_box.height_in,
+            )
+        return LayoutBox(1.0, 1.0, 8.0, 3.0)
 
     def _apply_tables(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.tables:
             return
 
+        table_defaults = self._style.table
         for table_spec in slide_spec.tables:
             header = list(table_spec.columns)
             rows = [list(row) for row in table_spec.rows]
@@ -418,11 +424,16 @@ class SimpleRendererStep:
                 logger.debug("テーブル '%s' にデータがないためスキップ", table_spec.id)
                 continue
 
-            fallback_box = self._box_spec_to_layout_box(
-                self._branding.resolve_fallback_box(
-                    "table", layout=slide_spec.layout, placement_key=table_spec.id
+            fallback_position = table_defaults.fallback_box
+            if fallback_position is not None:
+                fallback_box = LayoutBox(
+                    fallback_position.left_in,
+                    fallback_position.top_in,
+                    fallback_position.width_in,
+                    fallback_position.height_in,
                 )
-            )
+            else:
+                fallback_box = LayoutBox(1.0, 1.5, 8.5, 3.0)
             element_label = table_spec.id or (table_spec.anchor or "table")
             resolution = self._resolve_anchor(
                 slide,
@@ -450,6 +461,7 @@ class SimpleRendererStep:
                     header,
                     is_header=True,
                     table_spec=table_spec,
+                    defaults=table_defaults,
                 )
                 start_row = 1
 
@@ -461,6 +473,7 @@ class SimpleRendererStep:
                     padded,
                     is_header=False,
                     table_spec=table_spec,
+                    defaults=table_defaults,
                     zebra_index=offset,
                 )
 
@@ -471,12 +484,18 @@ class SimpleRendererStep:
         if not slide_spec.images:
             return
 
+        image_defaults = self._style.image
         for image_spec in slide_spec.images:
-            fallback_box = self._box_spec_to_layout_box(
-                self._branding.resolve_fallback_box(
-                    "image", layout=slide_spec.layout, placement_key=image_spec.id
+            default_box = image_defaults.fallback_box
+            if default_box is not None:
+                fallback_box = LayoutBox(
+                    default_box.left_in,
+                    default_box.top_in,
+                    default_box.width_in,
+                    default_box.height_in,
                 )
-            )
+            else:
+                fallback_box = LayoutBox(1.0, 1.75, 8.0, 4.5)
             element_label = image_spec.id or (image_spec.anchor or "image")
             resolution = self._resolve_anchor(
                 slide,
@@ -494,7 +513,10 @@ class SimpleRendererStep:
             target_height = self._override_emu(resolution.height, image_spec.height_in)
             picture = slide.shapes.add_picture(str(image_path), left, top)
             self._resize_picture(
-                picture, target_width, target_height, image_spec.sizing
+                picture,
+                target_width,
+                target_height,
+                image_spec.sizing or image_defaults.sizing,
             )
             target_name = image_spec.anchor or image_spec.id
             if target_name:
@@ -510,6 +532,7 @@ class SimpleRendererStep:
         if not slide_spec.charts:
             return
 
+        chart_defaults = self._style.chart
         for chart_spec in slide_spec.charts:
             if not chart_spec.series:
                 logger.debug("チャート '%s' に系列がないためスキップ", chart_spec.id)
@@ -524,11 +547,16 @@ class SimpleRendererStep:
                 data.add_series(series.name, series.values)
 
             chart_type = self._resolve_chart_type(chart_spec.type)
-            fallback_box = self._box_spec_to_layout_box(
-                self._branding.resolve_fallback_box(
-                    "chart", layout=slide_spec.layout, placement_key=chart_spec.id
+            default_box = chart_defaults.fallback_box
+            if default_box is not None:
+                fallback_box = LayoutBox(
+                    default_box.left_in,
+                    default_box.top_in,
+                    default_box.width_in,
+                    default_box.height_in,
                 )
-            )
+            else:
+                fallback_box = LayoutBox(1.0, 1.5, 8.5, 4.0)
             element_label = chart_spec.id or (chart_spec.anchor or "chart")
             resolution = self._resolve_anchor(
                 slide,
@@ -545,8 +573,10 @@ class SimpleRendererStep:
             )
             chart = chart_shape.chart
 
-            self._apply_chart_series_colors(chart.series, chart_spec.series)
-            self._style_chart(chart, chart_spec.options)
+            self._apply_chart_series_colors(
+                chart.series, chart_spec.series, chart_defaults
+            )
+            self._style_chart(chart, chart_spec.options, chart_defaults)
 
             if anchor_shape is not None:
                 self._remove_shape(anchor_shape)
@@ -564,38 +594,37 @@ class SimpleRendererStep:
             Inches(1.0), Inches(1.5), Inches(8.0), Inches(4.5)
         )
 
+    def _set_font(self, paragraph, font_spec: FontSpec) -> None:
+        font = paragraph.font
+        font.name = font_spec.name
+        font.size = Pt(font_spec.size_pt)
+        font.bold = font_spec.bold
+        font.italic = font_spec.italic
+        font.color.rgb = RGBColor.from_string(font_spec.color_hex.lstrip("#"))
+
     def _apply_font(
         self,
         paragraph,
-        font_spec: FontSpec | BrandingFont | None,
+        font_spec: FontSpec | None,
         *,
-        fallback: BrandingFont,
+        fallback: FontSpec,
     ) -> None:
-        if isinstance(font_spec, BrandingFont):
-            self._apply_brand_font(paragraph, font_spec)
-            return
-        if isinstance(font_spec, FontSpec):
-            font = paragraph.font
-            font.name = font_spec.name
-            font.size = Pt(font_spec.size_pt)
-            font.bold = font_spec.bold
-            font.italic = font_spec.italic
-            font.color.rgb = RGBColor.from_string(font_spec.color_hex.lstrip("#"))
-            return
-        self._apply_brand_font(paragraph, fallback)
+        target = font_spec or fallback
+        self._set_font(paragraph, target)
 
     def _apply_paragraph_style(
         self,
         paragraph,
         paragraph_spec: TextboxParagraph | None,
         *,
-        fallback: ParagraphStyle,
+        fallback: TextboxParagraph | None,
         preserve_level: bool,
     ) -> None:
+        base = fallback or TextboxParagraph()
         level = (
             paragraph_spec.level
             if paragraph_spec and paragraph_spec.level is not None
-            else fallback.level
+            else base.level
         )
         if not preserve_level or paragraph.level is None:
             paragraph.level = level if level is not None else (paragraph.level or 0)
@@ -603,7 +632,7 @@ class SimpleRendererStep:
         align = (
             paragraph_spec.align
             if paragraph_spec and paragraph_spec.align
-            else fallback.align
+            else base.align
         )
         if align:
             paragraph.alignment = self._resolve_alignment(align)
@@ -611,7 +640,7 @@ class SimpleRendererStep:
         line_spacing = (
             paragraph_spec.line_spacing_pt
             if paragraph_spec and paragraph_spec.line_spacing_pt is not None
-            else fallback.line_spacing_pt
+            else base.line_spacing_pt
         )
         if line_spacing is not None:
             paragraph.line_spacing = Pt(line_spacing)
@@ -619,7 +648,7 @@ class SimpleRendererStep:
         space_before = (
             paragraph_spec.space_before_pt
             if paragraph_spec and paragraph_spec.space_before_pt is not None
-            else fallback.space_before_pt
+            else base.space_before_pt
         )
         if space_before is not None:
             paragraph.space_before = Pt(space_before)
@@ -627,7 +656,7 @@ class SimpleRendererStep:
         space_after = (
             paragraph_spec.space_after_pt
             if paragraph_spec and paragraph_spec.space_after_pt is not None
-            else fallback.space_after_pt
+            else base.space_after_pt
         )
         if space_after is not None:
             paragraph.space_after = Pt(space_after)
@@ -636,7 +665,7 @@ class SimpleRendererStep:
         left_indent = (
             paragraph_spec.left_indent_in
             if paragraph_spec and paragraph_spec.left_indent_in is not None
-            else fallback.left_indent_in
+            else base.left_indent_in
         )
         if left_indent is not None:
             paragraph_properties.set("marL", str(int(Inches(left_indent))))
@@ -644,7 +673,7 @@ class SimpleRendererStep:
         right_indent = (
             paragraph_spec.right_indent_in
             if paragraph_spec and paragraph_spec.right_indent_in is not None
-            else fallback.right_indent_in
+            else base.right_indent_in
         )
         if right_indent is not None:
             paragraph_properties.set("marR", str(int(Inches(right_indent))))
@@ -652,7 +681,7 @@ class SimpleRendererStep:
         first_line_indent = (
             paragraph_spec.first_line_indent_in
             if paragraph_spec and paragraph_spec.first_line_indent_in is not None
-            else fallback.first_line_indent_in
+            else base.first_line_indent_in
         )
         if first_line_indent is not None:
             paragraph_properties.set("indent", str(int(Inches(first_line_indent))))
@@ -667,22 +696,11 @@ class SimpleRendererStep:
         }
         return mapping.get(align.lower(), PP_ALIGN.LEFT)
 
-    def _box_spec_to_layout_box(self, spec: BoxSpec) -> LayoutBox:
-        return LayoutBox(spec.left_in, spec.top_in, spec.width_in, spec.height_in)
-
     def _save(self, presentation: Presentation, workdir: Path) -> Path:
         workdir.mkdir(parents=True, exist_ok=True)
         output_path = workdir / self.options.output_filename
         presentation.save(output_path)
         return output_path
-
-    def _apply_brand_font(self, paragraph, branding_font: BrandingFont) -> None:
-        font = paragraph.font
-        font.name = branding_font.name
-        font.size = Pt(branding_font.size_pt)
-        font.color.rgb = RGBColor.from_string(branding_font.color_hex.lstrip("#"))
-        font.bold = branding_font.bold
-        font.italic = branding_font.italic
 
     def _find_shape_by_name(self, slide, name: str):
         for shape in slide.shapes:
@@ -809,10 +827,19 @@ class SimpleRendererStep:
         *,
         is_header: bool,
         table_spec: SlideTable,
+        defaults: TemplateTableDefaults,
         zebra_index: int | None = None,
     ) -> None:
-        table_style = self._branding.components.table
         spec_style = table_spec.style
+        header_font = defaults.header_font or self._style.body_font
+        body_font = defaults.body_font or self._style.body_font
+        header_fill_color = (
+            spec_style.header_fill
+            if spec_style and spec_style.header_fill
+            else defaults.header_fill_color
+        )
+        body_fill_color = defaults.body_fill_color or "#FFFFFF"
+        zebra_fill_color = defaults.zebra_fill_color
 
         for idx, value in enumerate(values):
             cell = row.cells[idx]
@@ -821,32 +848,25 @@ class SimpleRendererStep:
             paragraph = text_frame.paragraphs[0]
             paragraph.text = str(value)
             if is_header:
-                self._apply_font(
-                    paragraph,
-                    None,
-                    fallback=table_style.header.font,
-                )
-                header_color = (
-                    spec_style.header_fill if spec_style and spec_style.header_fill else table_style.header.fill_color
-                )
-                fill_color = header_color
+                self._set_font(paragraph, header_font)
+                fill_color = header_fill_color or body_fill_color
             else:
                 self._apply_font(
                     paragraph,
                     None,
-                    fallback=table_style.body.font,
+                    fallback=body_font,
                 )
                 zebra_enabled = bool(spec_style and spec_style.zebra)
                 use_zebra = (
                     zebra_enabled
-                    and table_style.body.zebra_fill_color
+                    and zebra_fill_color
                     and zebra_index is not None
                     and zebra_index % 2 == 1
                 )
                 fill_color = (
-                    table_style.body.zebra_fill_color
+                    zebra_fill_color
                     if use_zebra
-                    else table_style.body.fill_color
+                    else body_fill_color
                 )
 
             fill = cell.fill
@@ -916,15 +936,18 @@ class SimpleRendererStep:
             picture.top += (target_height - picture.height) // 2
 
     def _apply_chart_series_colors(
-        self, chart_series, series_specs: list[ChartSeries]
+        self,
+        chart_series,
+        series_specs: list[ChartSeries],
+        defaults: TemplateChartDefaults,
     ) -> None:
-        palette = self._branding.components.chart.palette
+        palette = list(defaults.palette)
         if not palette:
-            palette = (
-                self._branding.accent_color,
-                self._branding.primary_color,
-                self._branding.secondary_color,
-            )
+            palette = [
+                self._style.colors.accent,
+                self._style.colors.primary,
+                self._style.colors.secondary,
+            ]
         for index, (series, spec) in enumerate(
             zip(chart_series, series_specs, strict=False)
         ):
@@ -933,10 +956,11 @@ class SimpleRendererStep:
             color = spec.color_hex or palette[index % len(palette)]
             fill.fore_color.rgb = RGBColor.from_string(color.lstrip("#"))
 
-    def _style_chart(self, chart, options) -> None:
-        component = self._branding.components.chart
-        labels_enabled = component.data_labels.enabled
-        labels_format = component.data_labels.format
+    def _style_chart(
+        self, chart, options, defaults: TemplateChartDefaults
+    ) -> None:
+        labels_enabled = defaults.data_labels_enabled
+        labels_format = defaults.data_labels_format
 
         if options is not None:
             labels_enabled = options.data_labels
@@ -957,7 +981,7 @@ class SimpleRendererStep:
             if chart.has_legend:
                 chart.legend.include_in_layout = False
 
-        axis_font = component.axis.font
+        axis_font = defaults.axis_font or self._style.body_font
         if hasattr(chart, "category_axis"):
             font = chart.category_axis.tick_labels.font
             font.name = axis_font.name

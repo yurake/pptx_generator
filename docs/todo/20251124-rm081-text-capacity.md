@@ -24,15 +24,15 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
     - `generate_ready.meta` へテンプレ既定スタイル（heading/body フォント、段落既定、配色）を埋め込む案を検討し、Renderer/Analyzer で参照する。テンプレ内にスタイルが欠落するケースは TemplateExtractor でのフォールバック値（テーマ or デフォルト）を利用。
     - CLI の `--branding` オプションと `_prepare_branding` 系導線を段階的に削除し、テンプレからの自動抽出結果のみに統一。旧 `config/branding.json` 参照が不可欠な箇所は ToDo へ記録しつつ、必要なら段階的に廃止する方針をユーザーと擦り合わせる。
     - 依存調査メモ:
-      - CLI: `pptx compose` / `pptx mapping` / `pptx gen` は `_prepare_branding` → `_load_branding_for_template` で `BrandingConfig` を構築し、Renderer/Analyzer/Refiner へ渡すと同時に `branding` アーティファクトを監査ログへ保存している。`pptx template` では抽出物として `branding.json` を常時出力。
-      - Renderer (`src/pptx_generator/pipeline/renderer.py`): タイトル・本文・箇条書きのフォント適用、段落スタイル、テーブル／チャートの配色、アンカー別スタイル解決をすべて `BrandingConfig` 経由で行っている。`resolve_layout_font` / `resolve_layout_paragraph` で `layouts.*.placements.*` を参照。
-      - Analyzer (`_build_analyzer_options`)・Refiner (`_build_refiner_options`): `BrandingConfig` の body フォントとテーマカラーを既定値として読み取り、フォントサイズしきい値やカラー調整の初期値を決定。Analyzer の背景色・コントラスト判定、Refiner のフォント補正に直結。
-      - 設定ファイル・テスト: `settings.BrandingConfig.load` を前提とする経路（`config/branding.json`、`tests/config/test_settings_loading.py` 等）が存在。移行後はテンプレ抽出メタをモックする形に差し替える必要あり。
-      - branding 抽出: `src/pptx_generator/branding_extractor.py` はテンプレートのテーマ／スライドマスターから配色とフォントを解析し `BrandingExtractionResult` を返す。`BrandingConfig` へ変換する前提なので、テンプレ由来メタへ直結する軽量スキーマに合わせて再設計する。
+      - CLI: `pptx compose` / `pptx mapping` / `pptx gen` は `_prepare_template_style` で `TemplateStyle` を抽出し、Analyzer/Refiner/Renderer へ渡すと同時に `template_style` アーティファクトを監査ログへ保存している。`pptx template` では参考用の `branding.json` を引き続き出力。
+      - Renderer (`src/pptx_generator/pipeline/renderer.py`): タイトル・本文・箇条書きのフォント適用、段落スタイル、テーブル／チャートの配色、アンカー未指定時のフォールバック座標を `TemplateStyle` のデフォルト値から解決している。
+      - Analyzer (`_build_analyzer_options`)・Refiner (`_build_refiner_options`): `TemplateStyle` の body フォントおよびカラーを既定値として取り込み、フォントサイズしきい値やカラー調整の初期値を決定している。
+      - 設定ファイル・テスト: `settings.BrandingConfig` はテンプレ抽出結果を `TemplateStyle` に変換するための互換レイヤとして残存。ユニットテスト（`tests/config/test_settings_loading.py`）は引き続き旧スキーマ検証を担う。
+      - テンプレートスタイル抽出: `src/pptx_generator/template_style.py` で `BrandingExtractionResult` を `TemplateStyle`/アーティファクトへ変換する。今後は `branding_extractor` 依存を段階的に薄め、テンプレ由来メタに一本化する。
     - 移行論点:
       - Slide.title / subtitle には現状フォント情報が載らないため、テンプレ抽出時に `SlideTextbox` へ転記するか `generate_ready.meta` 側でヘッダ用スタイルを保持する仕組みが必要。
-      - 監査ログ (`audit_log.json`) では `branding.source` にテンプレパスと抽出エラーを記録している。BrandingConfig 廃止後もテンプレ由来スタイルと抽出エラー情報を保持できるよう新メタ形式を用意する。
-      - `BrandingConfig.default()` をフォールバックに使っていた箇所は、テンプレテーマ解決が失敗した場合に TemplateExtractor で作成する `theme` 相当値（heading/body フォント、主要カラー）で代替する。
+      - 監査ログ (`audit_log.json`) では `template_style.source` にテンプレパスと抽出エラーを記録している。BrandingConfig 廃止後もテンプレ由来スタイルと抽出エラー情報を保持できるよう新メタ形式を用意する。
+      - `TemplateStyle.default()` をフォールバックに使っていた箇所は、テンプレテーマ解決が失敗した場合に TemplateExtractor で作成する `theme` 相当値（heading/body フォント、主要カラー）で代替する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
