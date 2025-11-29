@@ -127,8 +127,8 @@ flowchart TD
 
 | stage | 概要 | コマンド例 |
 | --- | --- | --- |
-| 1. テンプレ | Blueprint 情報を含めたテンプレ構造を抽出 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
-| 2. コンテンツ準備 | Blueprint のスロット定義に合わせて仮スライドを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --blueprint .pptx/extract/template_spec.json` |
+| 1. テンプレ | Blueprint 情報とあわせて `.pptx/extract/prompts/` にスライド別プロンプト雛形を出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
+| 2. コンテンツ準備 | 必要な雛形 (`.pptx/extract/prompts/01_*.md`) を編集したうえで Blueprint の slot 定義に沿って仮スライドを整形 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt --mode static` |
 | 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 

@@ -51,6 +51,8 @@ uv run pptx template samples/templates/templates.pptx
 
 `pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
 
+> static モードでテンプレを抽出した場合、`.pptx/extract/prompts/` にスライド単位のプロンプト雛形 (`01_<layout>.md`) を同時出力する。`<<<user-editable:*>` ブロックのみ編集すると、stage 2 の `pptx prepare --mode static` が自動的に LLM プロンプトへ取り込み、AI ログ (`prepare_ai_log.json`) と `ai_generation_meta.json` に適用結果が記録される。
+
 #### 詳細: 個別コマンド
 
 ##### `pptx tpl-extract`
@@ -99,6 +101,7 @@ uv run pptx template samples/templates/templates.pptx
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
 - 静的モードでは `jobspec.meta.template_spec_path` に記録された Blueprint を参照する。`jobspec` が見つからない場合は `.pptx/extract/jobspec.json` を自動探索し、`--jobspec` で明示指定も可能。`--mode=static` と `--page-limit` の併用はできない。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
+- static モードで `.pptx/extract/prompts/` 配下の Markdown を編集すると、該当スライドの user-editable 節が LLM プロンプトへ注入される（雛形は `pptx template` 実行時に自動生成され、未編集ファイルは既定プロンプトを保持する）。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |

@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal, Sequence
 
@@ -28,6 +29,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_ID = "prepare.default"
 ALLOWED_STORY_PHASES = {"introduction", "problem", "solution", "impact", "next"}
+
+
+@dataclass(slots=True)
+class StaticPromptOverride:
+    slide_id: str
+    slide_index: int
+    instructions: str
+    template_path: str | None = None
 
 
 class PrepareAIOrchestrationError(RuntimeError):
@@ -55,6 +64,7 @@ class PrepareAIOrchestrator:
         mode: Literal["dynamic", "static"] = "dynamic",
         blueprint: TemplateBlueprint | None = None,
         blueprint_ref: dict[str, str] | None = None,
+        prompt_overrides: Sequence[StaticPromptOverride] | None = None,
     ) -> tuple[PrepareDocument, PrepareGenerationMeta, list[PrepareAIRecord]]:
         try:
             policy = self._policy_set.get_policy(policy_id)
@@ -67,14 +77,17 @@ class PrepareAIOrchestrator:
 
         include_title_page = normalized_mode == "dynamic" and page_limit is None
 
+        prompt_usage: list[dict[str, Any]] | None = None
+
         if normalized_mode == "static":
             if blueprint is None:
                 raise PrepareAIOrchestrationError("static モードには Blueprint が必要です")
-            cards, slot_summary, ai_records = self._build_cards_static(
+            cards, slot_summary, ai_records, prompt_usage = self._build_cards_static(
                 source=source,
                 policy=policy,
                 blueprint=blueprint,
                 page_limit=page_limit,
+                prompt_overrides=prompt_overrides or (),
             )
         else:
             cards, ai_records = self._build_cards_dynamic(
@@ -84,6 +97,7 @@ class PrepareAIOrchestrator:
                 include_title_page=include_title_page,
             )
             slot_summary = None
+            prompt_usage = None
 
         story_context = self._build_story_context(cards=cards, source=source, policy=policy)
         prepare_id = source.meta.prepare_id or f"prepare-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
@@ -107,6 +121,7 @@ class PrepareAIOrchestrator:
             blueprint_hash=blueprint_ref.get("hash") if blueprint_ref else None,
             slot_summary=slot_summary,
             constraints=constraints,
+            prompt_templates=prompt_usage,
         )
         return document, meta, ai_records
 
@@ -518,12 +533,13 @@ class PrepareAIOrchestrator:
         policy: PreparePolicy,
         blueprint: TemplateBlueprint,
         page_limit: int | None,
-    ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord]]:
+        prompt_overrides: Sequence[StaticPromptOverride],
+    ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord], list[dict[str, Any]]]:
         if page_limit is not None:
             raise PrepareAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
 
         slot_entries: list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]] = []
-        for slide_index, blueprint_slide in enumerate(blueprint.slides):
+        for slide_index, blueprint_slide in enumerate(blueprint.slides, start=1):
             for slot_index, slot in enumerate(blueprint_slide.slots):
                 slot_entries.append((len(slot_entries), blueprint_slide, slot))
 
@@ -562,15 +578,29 @@ class PrepareAIOrchestrator:
         base_context = source.raw_text or self._compose_raw_text(source)
         base_context = base_context.strip() if isinstance(base_context, str) else ""
 
+        overrides_by_slide_id: dict[str, StaticPromptOverride] = {}
+        overrides_by_index: dict[int, StaticPromptOverride] = {}
+        for override in prompt_overrides:
+            if override.slide_id:
+                overrides_by_slide_id[override.slide_id] = override
+            overrides_by_index[override.slide_index] = override
+
         entries_by_slide: dict[str, list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]]] = {}
         for entry in slot_entries:
             slide_id = entry[1].slide_id
             entries_by_slide.setdefault(slide_id, []).append(entry)
 
-        for blueprint_slide in blueprint.slides:
+        prompt_usage: list[dict[str, Any]] = []
+
+        for slide_index, blueprint_slide in enumerate(blueprint.slides, start=1):
             slide_entries = entries_by_slide.get(blueprint_slide.slide_id, [])
             if not slide_entries:
                 continue
+
+            override = overrides_by_slide_id.get(blueprint_slide.slide_id)
+            if override is None:
+                override = overrides_by_index.get(slide_index)
+            override_instructions = override.instructions.strip() if override else ""
 
             slot_specs_payload: list[dict[str, Any]] = []
             for order, _, slot in slide_entries:
@@ -620,6 +650,9 @@ class PrepareAIOrchestrator:
                 },
                 "slot_specs": slot_specs_payload,
             }
+
+            if override and override_instructions:
+                payload["user_directives"] = override_instructions
 
             prompt = build_prepare_prompt_static(payload)
             try:
@@ -723,9 +756,19 @@ class PrepareAIOrchestrator:
                         prompt_fragment=prompt[:200],
                         response_digest=json.dumps(slots_payload, ensure_ascii=False)[:200],
                         warnings=list(llm_result.warnings),
+                        prompt_template_path=override.template_path if override else None,
+                        prompt_template_instructions=override_instructions if override_instructions else None,
                         tokens=llm_result.tokens,
                     )
                 )
+                if override and override_instructions:
+                    prompt_usage.append(
+                        {
+                            "slide_id": blueprint_slide.slide_id,
+                            "slide_index": slide_index,
+                            "template_path": override.template_path,
+                        }
+                    )
 
         slot_summary = {
             "required_total": len(required_entries),
@@ -733,7 +776,7 @@ class PrepareAIOrchestrator:
             "optional_total": len(optional_entries),
             "optional_used": optional_used,
         }
-        return cards, slot_summary, ai_records
+        return cards, slot_summary, ai_records, prompt_usage
 
     def _build_card_from_blueprint_slot(
         self,
