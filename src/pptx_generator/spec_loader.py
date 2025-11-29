@@ -156,6 +156,10 @@ def _apply_text_placeholder(
             text=sample_text,
             anchor=placeholder.anchor or None,
             position=position,
+            font=placeholder.font,
+            paragraph=placeholder.paragraph,
+            text_frame_padding=placeholder.text_frame_padding,
+            text_capacity=placeholder.text_capacity,
         )
     )
     return title, subtitle, textboxes

@@ -55,7 +55,6 @@ from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
-DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
@@ -335,42 +334,26 @@ def app(verbose: bool, debug: bool) -> None:
     _configure_file_logging()
 
 
-def _prepare_branding(
-    template: Optional[Path], branding: Optional[Path]
-) -> tuple[BrandingConfig, dict[str, object]]:
-    def _load_default_branding() -> tuple[BrandingConfig, dict[str, object]]:
-        try:
-            config = BrandingConfig.load(DEFAULT_BRANDING_PATH)
-            return config, {"type": "default", "path": str(DEFAULT_BRANDING_PATH)}
-        except FileNotFoundError:
-            click.echo(
-                f"デフォルトのブランド設定が見つかりません: {DEFAULT_BRANDING_PATH}. 内蔵設定を使用します。",
-                err=True,
-            )
-            return BrandingConfig.default(), {"type": "builtin"}
+def _prepare_branding(template: Path) -> tuple[BrandingConfig, dict[str, object]]:
+    try:
+        extraction = extract_branding_config(template)
+    except BrandingExtractionError as exc:
+        click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
+        config = BrandingConfig.default()
+        artifact = {
+            "source": {
+                "type": "default",
+                "error": str(exc),
+            }
+        }
+        return config, artifact
 
-    branding_payload: dict[str, object] | None = None
-    if branding is not None:
-        branding_config = BrandingConfig.load(branding)
-        branding_source = {"type": "file", "path": str(branding)}
-    elif template is not None:
-        try:
-            extraction = extract_branding_config(template)
-        except BrandingExtractionError as exc:
-            click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
-            branding_config, branding_source = _load_default_branding()
-            branding_source["error"] = str(exc)
-        else:
-            branding_config = extraction.to_branding_config()
-            branding_payload = extraction.to_branding_payload()
-            branding_source = {"type": "template", "template": str(template)}
-    else:
-        branding_config, branding_source = _load_default_branding()
-
-    artifact = {"source": branding_source}
-    if branding_payload is not None:
-        artifact["config"] = branding_payload
-    return branding_config, artifact
+    config = extraction.to_branding_config()
+    artifact = {
+        "source": {"type": "template", "template": str(template)},
+        "config": extraction.to_branding_payload(),
+    }
+    return config, artifact
 
 
 def _resolve_template_path(
@@ -1764,14 +1747,6 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル",
-)
-@click.option(
     "--export-pdf",
     is_flag=True,
     help="LibreOffice を利用して PDF を追加出力する",
@@ -1860,7 +1835,6 @@ def gen(  # noqa: PLR0913
     output_dir: Path,
     pptx_name: str,
     rules: Path,
-    branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
     pdf_output: str,
@@ -1904,8 +1878,7 @@ def gen(  # noqa: PLR0913
         raise click.exceptions.Exit(code=4)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        template_path, branding)
+    branding_config, branding_artifact = _prepare_branding(template_path)
     analyzer_options = _build_analyzer_options(
         rules_config, branding_config, emit_structure_snapshot
     )
@@ -2453,14 +2426,6 @@ def outline(
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル（任意）",
-)
-@click.option(
     "--prepare-cards",
     "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
@@ -2481,7 +2446,6 @@ def compose(  # noqa: PLR0913
     show_layout_reasons: bool,
     output_dir: Path,
     rules: Path,
-    branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
     """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
@@ -2542,9 +2506,7 @@ def compose(  # noqa: PLR0913
     _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        resolved_template, branding
-    )
+    branding_config, branding_artifact = _prepare_branding(resolved_template)
     refiner_options = _build_refiner_options(rules_config, branding_config)
 
     try:
@@ -2620,14 +2582,6 @@ def compose(  # noqa: PLR0913
     help="draft_draft.json / draft_approved.json の出力先",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル（任意）",
-)
-@click.option(
     "--prepare-cards",
     "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
@@ -2641,7 +2595,6 @@ def mapping(  # noqa: PLR0913
     output_dir: Path,
     rules: Path,
     draft_output: Path,
-    branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
     """stage 5 マッピングを実行し generate_ready.json を生成する。"""
@@ -2670,9 +2623,7 @@ def mapping(  # noqa: PLR0913
         raise click.exceptions.Exit(code=2) from exc
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        resolved_template, branding
-    )
+    branding_config, branding_artifact = _prepare_branding(resolved_template)
     refiner_options = _build_refiner_options(rules_config, branding_config)
 
     try:

@@ -130,9 +130,23 @@ class TextboxParagraph(BaseModel):
     left_indent_in: float | None = None
     right_indent_in: float | None = None
     first_line_indent_in: float | None = None
-    left_indent_in: float | None = None
-    right_indent_in: float | None = None
-    first_line_indent_in: float | None = None
+
+
+class TextFramePadding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    left_in: float | None = None
+    right_in: float | None = None
+    top_in: float | None = None
+    bottom_in: float | None = None
+
+
+class TextCapacity(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total_chars: int = 0
+    chars_per_line: int = 0
+    max_lines: int = 0
 
 
 class SlideTextbox(BaseModel):
@@ -144,6 +158,8 @@ class SlideTextbox(BaseModel):
     position: TextboxPosition | None = None
     font: FontSpec | None = None
     paragraph: TextboxParagraph | None = None
+    text_frame_padding: TextFramePadding | None = None
+    text_capacity: TextCapacity | None = None
 
 
 class Slide(BaseModel):
@@ -232,6 +248,10 @@ class JobSpecScaffoldPlaceholder(BaseModel):
     sample_text: str | None = None
     notes: list[str] = Field(default_factory=list)
     auto_draw: bool = False
+    font: FontSpec | None = None
+    paragraph: TextboxParagraph | None = None
+    text_frame_padding: TextFramePadding | None = None
+    text_capacity: TextCapacity | None = None
 
 
 class JobSpecScaffoldSlide(BaseModel):
@@ -715,6 +735,10 @@ class ShapeInfo(BaseModel):
     error: str | None = Field(None, description="抽出時のエラー")
     missing_fields: list[str] = Field(default_factory=list, description="欠落フィールド")
     conflict: str | None = Field(None, description="SlideBullet拡張仕様との競合")
+    font: FontSpec | None = Field(None, description="テンプレートが指定するフォント情報")
+    paragraph: TextboxParagraph | None = Field(None, description="段落設定")
+    text_frame_padding: TextFramePadding | None = Field(None, description="テキスト枠の余白")
+    text_capacity: TextCapacity | None = Field(None, description="推定文字許容量")
 
 
 class LayoutInfo(BaseModel):

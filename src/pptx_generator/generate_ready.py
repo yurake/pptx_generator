@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from itertools import count
 import textwrap
-from typing import Any
+from typing import Any, TypeVar, Type
 
-from .models import (ChartOptions, ChartSeries, JobAuth, JobMeta, JobSpec,
-                     GenerateReadyDocument, GenerateReadySlide, Slide,
+from pydantic import ValidationError
+
+from .models import (ChartOptions, ChartSeries, FontSpec, GenerateReadyDocument,
+                     GenerateReadySlide, JobAuth, JobMeta, JobSpec, Slide,
                      SlideBullet, SlideBulletGroup, SlideChart, SlideImage,
-                     SlideTable, SlideTextbox, TextboxPosition)
+                     SlideTable, SlideTextbox, TextCapacity, TextFramePadding,
+                     TextboxParagraph, TextboxPosition)
 
 
 def generate_ready_to_jobspec(document: GenerateReadyDocument) -> JobSpec:
@@ -109,13 +112,7 @@ def _build_slide(index: int, slide: GenerateReadySlide) -> Slide:
                 )
                 continue
             if _looks_like_textbox(value):
-                textboxes.append(
-                    SlideTextbox(
-                        id=key,
-                        anchor=key,
-                        text=_value_as_str(value.get("text")) or "",
-                    )
-                )
+                textboxes.append(_build_textbox(key, value))
                 continue
 
     layout_name = slide.layout_name or slide.layout_id
@@ -257,7 +254,7 @@ def _build_chart_options(payload: Any) -> ChartOptions | None:
 
 
 def _looks_like_textbox(value: dict[str, Any]) -> bool:
-    return "text" in value
+    return "text" in value or "font" in value or "paragraph" in value
 
 
 def _coerce_number(value: Any) -> float | int:
@@ -267,3 +264,51 @@ def _coerce_number(value: Any) -> float | int:
         return float(value)
     except (TypeError, ValueError):
         return 0
+
+
+T = TypeVar("T")
+
+
+def _build_textbox(anchor: str, payload: dict[str, Any]) -> SlideTextbox:
+    text = _value_as_str(payload.get("text")) or ""
+    position = _load_textbox_position(payload.get("position"))
+    font = _load_model(FontSpec, payload.get("font"))
+    paragraph = _load_model(TextboxParagraph, payload.get("paragraph"))
+    padding = _load_model(TextFramePadding, payload.get("text_frame_padding"))
+    capacity = _load_model(TextCapacity, payload.get("text_capacity"))
+
+    return SlideTextbox(
+        id=anchor,
+        anchor=anchor,
+        text=text,
+        position=position,
+        font=font,
+        paragraph=paragraph,
+        text_frame_padding=padding,
+        text_capacity=capacity,
+    )
+
+
+def _load_textbox_position(payload: Any) -> TextboxPosition | None:
+    if not isinstance(payload, dict):
+        return None
+    try:
+        return TextboxPosition(
+            left_in=float(payload.get("left_in", 0.0)),
+            top_in=float(payload.get("top_in", 0.0)),
+            width_in=float(payload.get("width_in", 0.0)),
+            height_in=float(payload.get("height_in", 0.0)),
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def _load_model(model_cls: Type[T], payload: Any) -> T | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    try:
+        return model_cls.model_validate(payload)
+    except ValidationError:
+        return None
