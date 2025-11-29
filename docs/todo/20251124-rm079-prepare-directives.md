@@ -17,9 +17,10 @@ roadmap_item: RM-079 pptx prepare directive 拡張
     - テスト方針: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/prepare_ai/test_prepare_ai_orchestrator_flow.py` を中心に static フローと雛形適用の有無を検証。必要に応じて integration テストも追加実行。
     - ロールバック方法: CLI/オーケストレーター/モデル変更と docs 追記をまとめて revert。`.pptx/extract/prompts/` を削除し、AI メタの追加フィールドを除去する。
     - 承認メッセージ ID／リンク: ユーザー承認「ok」（本スレッド）
-- [ ] 設計・実装方針の確定
-  - メモ: 
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針の確定
+  - メモ: テンプレ雛形生成＋ static prepare 反映で合意済み。実装内容は `docs/notes/20251127-rm079-static-prompt-discussion.md` に整理。
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: 上記ノートで会話ログと決定内容を共有済み。
 - [ ] ドキュメント更新（要件・設計）
   - メモ: 確定した設計・実装方針を要件／設計ドキュメントへ反映し、変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [ ] docs/requirements 配下
@@ -42,8 +43,8 @@ roadmap_item: RM-079 pptx prepare directive 拡張
     - メモ: README の stage 概要を更新。AGENTS 系は変更不要。
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] チェックリスト整合確認
-  - メモ: 
+- [x] チェックリスト整合確認
+  - メモ: 本 ToDo の各項目と実装内容を突合。未対応は PR 作成のみ。
 - [ ] PR 作成
   - メモ: 
 
