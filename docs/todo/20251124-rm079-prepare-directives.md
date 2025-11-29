@@ -24,7 +24,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
 - [x] ドキュメント更新（要件・設計）
   - メモ: CLI リファレンス・stage 2 設計・README を更新済み。要件ドキュメントは既存記述で整合が取れているため変更不要として記録。
   - [x] docs/requirements 配下
-  - [ ] docs/design 配下
+  - [x] docs/design 配下
 - [x] 実装
   - メモ: `cli.template` で `.pptx/extract/prompts/` を生成、`prepare` static で雛形を読み込み。`PrepareAIOrchestrator` / `PrepareGenerationMeta` / `PrepareAIRecord` に新フィールド追加。
 - [x] テスト・検証
