@@ -5,8 +5,8 @@
 roadmap_item: RM-079 pptx prepare directive 拡張
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: 
+- [x] ブランチ作成・初期コミット・push
+  - メモ: feat/rm079-directives (ローカル作成、push これから)
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/cli.py` の `prepare` サブコマンド、`pptx_generator/prepare/orchestrator.py`、`prepare/prompts.py`、`prepare/models.py`、`pptx_generator/prepare/llm_client.py` を対象に directive 取扱いを拡張。生成メタ・AI ログへの記録が前提。
