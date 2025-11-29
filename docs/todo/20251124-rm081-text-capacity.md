@@ -18,7 +18,7 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
     - テスト方針: `uv run --extra dev pytest tests/template_audit/test_template_extractor_jobspec_output.py`, `uv run --extra dev pytest tests/layout_validation`, 主要レンダリング／CLI 統合テスト（例: `tests/pipeline/render/test_renderer_rich_content.py`, `tests/integration/test_cli_generate_pipeline_flow.py`）。
     - ロールバック方法: 関連コミットを `git revert` し、branding.json へのフォント参照を復元して旧仕様へ戻す。必要なら `text_capacity` 新フィールドを無視するコードパスに切り替え。
     - 承認メッセージ ID／リンク: ユーザー「承認します。この内容をtodoに書いてね。また、ここまでのディスカッションをnoteに要約せず全文そのまま転記してほしい。」
-- [ ] 設計・実装方針の確定
+- [x] 設計・実装方針の確定
   - メモ: 
     - TemplateExtractor で取得した `font`/`paragraph`/`text_capacity` を JobSpec/GenerateReady/Renderer 全体へ伝搬済み。ここからは Renderer・Analyzer・CLI で `branding.json` 依存を撤廃し、テンプレ抽出値と JobSpec メタを唯一のスタイル情報源とする。
     - `generate_ready.meta` へテンプレ既定スタイル（heading/body フォント、段落既定、配色）を埋め込む案を検討し、Renderer/Analyzer で参照する。テンプレ内にスタイルが欠落するケースは TemplateExtractor でのフォールバック値（テーマ or デフォルト）を利用。
@@ -35,10 +35,10 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
       - `TemplateStyle.default()` をフォールバックに使っていた箇所は、テンプレテーマ解決が失敗した場合に TemplateExtractor で作成する `theme` 相当値（heading/body フォント、主要カラー）で代替する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
+- [x] 実装
+  - メモ: TemplateStyle モデル追加と CLI / Renderer / Mapping の依存置換、テンプレ起点のスタイル抽出ユーティリティ導入済み。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py` / `tests/integration/test_cli_generate_pipeline_flow.py` を実行し成功。レンダリング・CLI 両経路の回帰確認済み。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
