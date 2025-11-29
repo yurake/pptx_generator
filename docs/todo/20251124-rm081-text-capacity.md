@@ -19,7 +19,20 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
     - ロールバック方法: 関連コミットを `git revert` し、branding.json へのフォント参照を復元して旧仕様へ戻す。必要なら `text_capacity` 新フィールドを無視するコードパスに切り替え。
     - 承認メッセージ ID／リンク: ユーザー「承認します。この内容をtodoに書いてね。また、ここまでのディスカッションをnoteに要約せず全文そのまま転記してほしい。」
 - [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
+  - メモ: 
+    - TemplateExtractor で取得した `font`/`paragraph`/`text_capacity` を JobSpec/GenerateReady/Renderer 全体へ伝搬済み。ここからは Renderer・Analyzer・CLI で `branding.json` 依存を撤廃し、テンプレ抽出値と JobSpec メタを唯一のスタイル情報源とする。
+    - `generate_ready.meta` へテンプレ既定スタイル（heading/body フォント、段落既定、配色）を埋め込む案を検討し、Renderer/Analyzer で参照する。テンプレ内にスタイルが欠落するケースは TemplateExtractor でのフォールバック値（テーマ or デフォルト）を利用。
+    - CLI の `--branding` オプションと `_prepare_branding` 系導線を段階的に削除し、テンプレからの自動抽出結果のみに統一。旧 `config/branding.json` 参照が不可欠な箇所は ToDo へ記録しつつ、必要なら段階的に廃止する方針をユーザーと擦り合わせる。
+    - 依存調査メモ:
+      - CLI: `pptx compose` / `pptx mapping` / `pptx gen` は `_prepare_branding` → `_load_branding_for_template` で `BrandingConfig` を構築し、Renderer/Analyzer/Refiner へ渡すと同時に `branding` アーティファクトを監査ログへ保存している。`pptx template` では抽出物として `branding.json` を常時出力。
+      - Renderer (`src/pptx_generator/pipeline/renderer.py`): タイトル・本文・箇条書きのフォント適用、段落スタイル、テーブル／チャートの配色、アンカー別スタイル解決をすべて `BrandingConfig` 経由で行っている。`resolve_layout_font` / `resolve_layout_paragraph` で `layouts.*.placements.*` を参照。
+      - Analyzer (`_build_analyzer_options`)・Refiner (`_build_refiner_options`): `BrandingConfig` の body フォントとテーマカラーを既定値として読み取り、フォントサイズしきい値やカラー調整の初期値を決定。Analyzer の背景色・コントラスト判定、Refiner のフォント補正に直結。
+      - 設定ファイル・テスト: `settings.BrandingConfig.load` を前提とする経路（`config/branding.json`、`tests/config/test_settings_loading.py` 等）が存在。移行後はテンプレ抽出メタをモックする形に差し替える必要あり。
+      - branding 抽出: `src/pptx_generator/branding_extractor.py` はテンプレートのテーマ／スライドマスターから配色とフォントを解析し `BrandingExtractionResult` を返す。`BrandingConfig` へ変換する前提なので、テンプレ由来メタへ直結する軽量スキーマに合わせて再設計する。
+    - 移行論点:
+      - Slide.title / subtitle には現状フォント情報が載らないため、テンプレ抽出時に `SlideTextbox` へ転記するか `generate_ready.meta` 側でヘッダ用スタイルを保持する仕組みが必要。
+      - 監査ログ (`audit_log.json`) では `branding.source` にテンプレパスと抽出エラーを記録している。BrandingConfig 廃止後もテンプレ由来スタイルと抽出エラー情報を保持できるよう新メタ形式を用意する。
+      - `BrandingConfig.default()` をフォールバックに使っていた箇所は、テンプレテーマ解決が失敗した場合に TemplateExtractor で作成する `theme` 相当値（heading/body フォント、主要カラー）で代替する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装

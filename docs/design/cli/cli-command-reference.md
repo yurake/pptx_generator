@@ -147,7 +147,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
 | `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
-| `--branding <path>` | ブランド設定ファイルを明示指定する |  |  | `config/branding.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
 
@@ -177,7 +176,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
 | `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
 | `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
-| `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
 ### stage 4: レンダリング
@@ -185,7 +183,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 
 #### `pptx gen`
 - `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。
+- スタイルはテンプレート内のテーマ／スライドマスターから自動抽出されるため、追加のブランド設定ファイルは不要。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
@@ -193,7 +191,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
 | `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `config/rules.json` |
-| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
 | `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
 | `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
@@ -221,7 +218,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<generate_ready.json>` | レンダリング対象の generate_ready | ✅ | ✅ | - |
-| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
 | `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `config/rules.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |

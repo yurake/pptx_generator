@@ -17,14 +17,13 @@
     --draft-output .pptx/draft \
     --output .pptx/compose
 ```
-- ブランド設定は既定の `config/branding.json` を利用。
+- ブランド設定はテンプレートのテーマを参照（`config/branding.json` は参考用）。
 
 ## 手順
 1. 仮想環境をアクティブ化し、`uv sync` で依存をインストール。
 2. 以下コマンドを実行。
    ```bash
    uv run pptx gen .pptx/compose/generate_ready.json \
-     --branding config/branding.json \
      --export-pdf \
      --output .pptx/gen/rehearsal
    ```
@@ -43,7 +42,7 @@
 - 2025-10-06 (午後): ユーザー端末で同コマンドを実行し、`proposal.pptx` / `proposal.pdf` / `analysis.json` / `audit_log.json` の生成を確認。`audit_log.json` の `pdf_export` には `attempts: 1`, `converter: libreoffice`, `elapsed_sec: 6.43s` が記録された。
 - 2025-10-06 (夕方): `--libreoffice-path /Applications/LibreOffice.app/Contents/MacOS/soffice` を指定して同コマンドを再実行し、当環境でも PPTX / PDF / analysis / audit の各成果物を生成できることを確認。`audit_log.json` の `pdf_export` には `attempts: 1`, `converter: libreoffice`, `elapsed_sec: ~9.3s` が記録された。
 - 2025-10-06: 自動化環境では依然として `soffice` が見つからないため、CI では `PPTXGEN_SKIP_PDF_CONVERT=1` を用いる想定。営業チーム端末での追加リハーサルは継続検討。
-- 2025-11-03 (夕方): 開発端末 (LibreOffice 24.2.3.2) で `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf --output .pptx/gen/rehearsal` を再実行し、`proposal.pdf` を含む成果物一式と `audit_log.json.pdf_export.status=success` を確認。
+- 2025-11-03 (夕方): 開発端末 (LibreOffice 24.2.3.2) で `uv run pptx gen .pptx/compose/generate_ready.json --export-pdf --output .pptx/gen/rehearsal` を再実行し、`proposal.pdf` を含む成果物一式と `audit_log.json.pdf_export.status=success` を確認。
 
 ## 次のアクション
 - LibreOffice 実機でのリハーサル後、結果とスクリーンショットを本ドキュメントに追記。

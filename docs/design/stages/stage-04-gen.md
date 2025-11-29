@@ -2,7 +2,7 @@
 
 ## 目的
 - `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。stage 3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
-- CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を前提とし、stage 4 の成果物確認には `pptx compose` / `pptx mapping` を用いる。`--output` 未指定時の出力先は `.pptx/gen/`。
+- CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` を前提とし、stage 4 の成果物確認には `pptx compose` / `pptx mapping` を用いる。テンプレートからスタイルを自動抽出するため、追加のブランド設定ファイルは不要。
 - LibreOffice PDF 変換や Open XML Polisher との統合を考慮した拡張性を持たせる。
 
 ## コンポーネント

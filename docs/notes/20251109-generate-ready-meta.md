@@ -20,7 +20,7 @@ tags:
 ## CLI (`pptx gen`) 側の対応
 - `GenerateReadyDocument` をロードして `template_path` が欠落している場合は Exit Code 2 で警告、再マッピングを促す。
 - `mapping_log.json` が存在する場合は `meta` セクションを監査メタに統合し、`maps` のフェールバック回数や AI 修正件数を記録。
-- 旧 `--template` / `--content-approved` 系オプションを削除し、`generate_ready` と `--branding` のみで stage 5 を完結させる。
+- 旧 `--template` / `--content-approved` / `--branding` 系オプションを削除し、`generate_ready` とテンプレート内スタイル情報のみで stage 5 を完結させる。
 
 ## 監査ログへの反映
 - `mapping_meta` をベースアーティファクトとしてレンダリングパイプラインに渡し、`mapping` セクションに以下を確保：

@@ -3383,13 +3383,7 @@ def _load_branding_for_template(
         warnings.append(
             f"テンプレートからブランド設定を抽出できなかったためデフォルト設定を使用します: {exc}"
         )
-        try:
-            return BrandingConfig.load(DEFAULT_BRANDING_PATH)
-        except FileNotFoundError:
-            warnings.append(
-                f"デフォルトのブランド設定が見つからないため内蔵設定を使用します: {DEFAULT_BRANDING_PATH}"
-            )
-            return BrandingConfig.default()
+        return BrandingConfig.default()
     else:
         return extraction.to_branding_config()
 
