@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def test_template_extraction_script_runs_successfully() -> None:
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
     env.setdefault("UV_CACHE_DIR", ".uv-cache")
 

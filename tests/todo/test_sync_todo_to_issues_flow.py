@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 if "requests" not in sys.modules:
     stub = types.SimpleNamespace()

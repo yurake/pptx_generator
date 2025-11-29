@@ -8,6 +8,9 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+
 @pytest.fixture()
 def runner() -> CliRunner:
     return CliRunner()
@@ -51,7 +54,7 @@ def sample_spec(tmp_path: Path) -> Path:
         },
     )
 
-    template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_src = ROOT_DIR / "samples" / "templates" / "templates.pptx"
     template_dst = spec_path.parent / "templates" / "templates.pptx"
     template_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(template_src, template_dst)
@@ -239,7 +242,7 @@ def test_compose_resolves_paths_from_jobspec_meta(
         },
     )
 
-    template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_src = ROOT_DIR / "samples" / "templates" / "templates.pptx"
     template_dst = spec_path.parent / "templates" / "templates.pptx"
     template_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(template_src, template_dst)
@@ -352,7 +355,7 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
         },
     )
 
-    template_src = Path(__file__).resolve().parent.parent / "samples" / "templates" / "templates.pptx"
+    template_src = ROOT_DIR / "samples" / "templates" / "templates.pptx"
     template_dst = spec_path.parent / "templates" / "templates.pptx"
     template_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(template_src, template_dst)

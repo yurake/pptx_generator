@@ -11,7 +11,7 @@ import pytest
 
 @pytest.mark.integration
 def test_template_ai_script_runs_successfully(tmp_path) -> None:
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parents[2]
     script_path = project_root / "scripts" / "test_template_ai.sh"
     if not script_path.exists():
         pytest.skip("scripts/test_template_ai.sh が存在しないためスキップします")

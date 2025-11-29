@@ -4,7 +4,7 @@ import sys
 import datetime as dt
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from scripts import auto_complete_todo
 from scripts.auto_complete_todo import process_todo, update_roadmap
