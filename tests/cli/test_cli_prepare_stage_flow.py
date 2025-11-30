@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
 from pptx_generator.prepare.llm_client import MockPrepareLLMClient, PrepareLLMResult
-from pptx_generator.prepare.orchestrator import PrepareAIOrchestrator
+from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
 from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument, PrepareSourceMeta
 from pptx_generator.prepare.models import (
@@ -204,11 +204,14 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
     )
 
     policy = policy_set.get_policy(None)
-    cards, slot_summary, ai_records = orchestrator._build_cards_static(
+    cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
         source=source,
         policy=policy,
         blueprint=blueprint,
         page_limit=None,
+        prompt_overrides=[],
+        slide_sources=None,
+        slide_input_refs=None,
     )
 
     assert len(cards) == 2
@@ -218,6 +221,7 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
     # fallback経路でも LLM 呼び出しが slot 数分行われる
     assert len(ai_records) == 1
     assert ai_records[0].batch_card_ids == ["blueprint-01-title", "blueprint-01-body"]
+    assert prompt_usage == []
 
 
 class SlotDroppingPrepareMock(MockPrepareLLMClient):
@@ -271,17 +275,82 @@ def test_prepare_static_slot_missing_response(monkeypatch) -> None:
     )
 
     policy = policy_set.get_policy(None)
-    cards, slot_summary, _ = orchestrator._build_cards_static(
+    cards, slot_summary, _, prompt_usage = orchestrator._build_cards_static(
         source=source,
         policy=policy,
         blueprint=blueprint,
         page_limit=None,
+        prompt_overrides=[],
+        slide_sources=None,
+        slide_input_refs=None,
     )
 
     assert len(cards) == 2
     assert cards[1].meta["blueprint"]["fulfilled"] is False
     assert slot_summary["optional_total"] == 1
     assert slot_summary["optional_used"] == 0
+    assert prompt_usage == []
+
+
+def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
+    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
+
+    source = PrepareSourceDocument(
+        meta=PrepareSourceMeta(title="Override テスト", prepare_id="override-test"),
+        chapters=[],
+        raw_text="概要のみ",
+    )
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="override-slide",
+                layout="OverrideLayout",
+                required=True,
+                intent_tags=["overview"],
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="override-slide.title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        intent_tags=["headline"],
+                    )
+                ],
+            )
+        ]
+    )
+
+    override = StaticPromptOverride(
+        slide_id="override-slide",
+        slide_index=1,
+        instructions="- ROI を 2 行で列挙",
+        template_path=".pptx/extract/prompts/01_override.md",
+    )
+
+    policy = policy_set.get_policy(None)
+    cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
+        source=source,
+        policy=policy,
+        blueprint=blueprint,
+        page_limit=None,
+        prompt_overrides=[override],
+        slide_sources=None,
+        slide_input_refs=None,
+    )
+
+    assert cards, "カードが生成されること"
+    assert slot_summary["required_total"] == 1
+    assert ai_records[0].prompt_template_path == override.template_path
+    assert ai_records[0].prompt_template_instructions == override.instructions
+    assert prompt_usage == [
+        {
+            "slide_id": "override-slide",
+            "slide_index": 1,
+            "template_path": override.template_path,
+        }
+    ]
 
 
 def _build_prepare_card(
