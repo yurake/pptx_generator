@@ -326,135 +326,132 @@ class PrepareAIOrchestrator:
         )
 
     def _build_body_blocks(self, payload: Any) -> list[PrepareBodyBlock]:
-        blocks: list[PrepareBodyBlock] = []
-
-        def normalize_bullet_items(raw_items: Any, fallback_text: str | None) -> list[dict[str, Any]]:
-            normalized: list[dict[str, Any]] = []
-            if isinstance(raw_items, list):
-                for entry in raw_items:
-                    if isinstance(entry, str):
-                        line = entry.strip()
-                        if not line:
-                            continue
-                        normalized.append({"text": line, "level": 0})
-                        continue
-                    if isinstance(entry, dict):
-                        line = str(entry.get("text") or "").strip()
-                        if not line:
-                            continue
-                        level_raw = entry.get("level", 0)
-                        try:
-                            level = max(int(level_raw), 0)
-                        except (TypeError, ValueError):
-                            level = 0
-                        bullet_entry: dict[str, Any] = {"text": line, "level": level}
-                        for key, value in entry.items():
-                            if key in {"text", "level"}:
-                                continue
-                            bullet_entry[key] = value
-                        normalized.append(bullet_entry)
-            if not normalized and isinstance(fallback_text, str):
-                for line in fallback_text.splitlines():
-                    stripped = line.strip()
-                    if stripped.startswith("-"):
-                        stripped = stripped.lstrip("-").strip()
-                    if stripped:
-                        normalized.append({"text": stripped, "level": 0})
-            return normalized
+        blocks: list[PrepareBodyBlock]
 
         if isinstance(payload, list):
+            blocks = []
             for item in payload:
-                if isinstance(item, dict):
-                    block_type = str(item.get("type") or "paragraph").strip() or "paragraph"
-                    text = item.get("text")
-                    headers = item.get("headers")
-                    rows = item.get("rows")
-                    ref = item.get("ref")
-                    description = item.get("description")
-                    data = item.get("data")
-                    items = item.get("items")
-                    normalized_items: list[dict[str, Any]] = []
-                    if block_type == "bullets":
-                        normalized_items = normalize_bullet_items(items, text if isinstance(text, str) else None)
-                        if normalized_items:
-                            text = None
-
-                    has_content = any(
-                        [
-                            isinstance(text, str) and text.strip(),
-                            isinstance(headers, list) and any(str(h).strip() for h in headers),
-                            isinstance(rows, list) and any(row for row in rows),
-                            isinstance(description, str) and description.strip(),
-                            isinstance(data, dict) and data,
-                            bool(normalized_items),
-                        ]
-                    )
-                    if not has_content:
-                        continue
-                    data_dict: dict[str, Any] | None = data if isinstance(data, dict) else None
-                    if normalized_items:
-                        if data_dict is None:
-                            data_dict = {}
-                        data_dict["items"] = normalized_items
-                    block = PrepareBodyBlock(
-                        type=block_type,
-                        text=text,
-                        headers=headers,
-                        rows=rows,
-                        ref=ref,
-                        description=description,
-                        data=data_dict,
-                    )
-                    blocks.append(block)
-                elif isinstance(item, str) and item.strip():
-                    blocks.append(PrepareBodyBlock(type="paragraph", text=item.strip()))
+                blocks.extend(self._build_blocks_from_collection_item(item))
         elif isinstance(payload, dict):
-            block_type = str(payload.get("type") or "paragraph").strip() or "paragraph"
-            text = payload.get("text")
-            headers = payload.get("headers")
-            rows = payload.get("rows")
-            ref = payload.get("ref")
-            description = payload.get("description")
-            data = payload.get("data")
-            items = payload.get("items")
-            normalized_items: list[dict[str, Any]] = []
-            if block_type == "bullets":
-                normalized_items = normalize_bullet_items(items, text if isinstance(text, str) else None)
-                if normalized_items:
-                    text = None
-            has_content = any(
-                [
-                    isinstance(text, str) and text.strip(),
-                    isinstance(headers, list) and any(str(h).strip() for h in headers),
-                    isinstance(rows, list) and any(row for row in rows),
-                    isinstance(description, str) and description.strip(),
-                    isinstance(data, dict) and data,
-                    bool(normalized_items),
-                ]
-            )
-            if has_content:
-                data_dict: dict[str, Any] | None = data if isinstance(data, dict) else None
-                if normalized_items:
-                    if data_dict is None:
-                        data_dict = {}
-                    data_dict["items"] = normalized_items
-                blocks.append(
-                    PrepareBodyBlock(
-                        type=block_type,
-                        text=text,
-                        headers=headers,
-                        rows=rows,
-                        ref=ref,
-                        description=description,
-                        data=data_dict,
-                    )
-                )
-        elif isinstance(payload, str) and payload.strip():
-            blocks.append(PrepareBodyBlock(type="paragraph", text=payload.strip()))
+            block = self._build_block_from_mapping(payload)
+            blocks = [block] if block else []
+        elif isinstance(payload, str):
+            text = payload.strip()
+            blocks = [PrepareBodyBlock(type="paragraph", text=text)] if text else []
+        else:
+            blocks = []
 
-        if not blocks:
-            blocks.append(PrepareBodyBlock(type="placeholder", text="内容を確認中"))
-        return blocks
+        return blocks or [self._make_placeholder_block()]
+
+    def _build_blocks_from_collection_item(self, item: Any) -> list[PrepareBodyBlock]:
+        if isinstance(item, dict):
+            block = self._build_block_from_mapping(item)
+            return [block] if block else []
+        if isinstance(item, str):
+            text = item.strip()
+            if text:
+                return [PrepareBodyBlock(type="paragraph", text=text)]
+        return []
+
+    def _build_block_from_mapping(self, payload: dict[str, Any]) -> PrepareBodyBlock | None:
+        block_type = str(payload.get("type") or "paragraph").strip() or "paragraph"
+        text = payload.get("text")
+        headers = payload.get("headers")
+        rows = payload.get("rows")
+        ref = payload.get("ref")
+        description = payload.get("description")
+        data = payload.get("data")
+        items = payload.get("items")
+
+        normalized_items = self._normalize_bullet_items(items, text)
+        if normalized_items:
+            text = None
+
+        if not self._has_block_content(text, headers, rows, description, data, normalized_items):
+            return None
+
+        data_dict: dict[str, Any] | None = data if isinstance(data, dict) else None
+        if normalized_items:
+            if data_dict is None:
+                data_dict = {}
+            data_dict["items"] = normalized_items
+
+        return PrepareBodyBlock(
+            type=block_type,
+            text=text,
+            headers=headers,
+            rows=rows,
+            ref=ref,
+            description=description,
+            data=data_dict,
+        )
+
+    @staticmethod
+    def _make_placeholder_block() -> PrepareBodyBlock:
+        return PrepareBodyBlock(type="placeholder", text="内容を確認中")
+
+    @staticmethod
+    def _normalize_bullet_items(raw_items: Any, fallback_text: Any) -> list[dict[str, Any]]:
+        fallback = str(fallback_text).strip() if isinstance(fallback_text, str) else None
+        normalized: list[dict[str, Any]] = []
+
+        if isinstance(raw_items, list):
+            for entry in raw_items:
+                bullet = PrepareAIOrchestrator._normalize_single_bullet_entry(entry)
+                if bullet:
+                    normalized.append(bullet)
+
+        if not normalized and isinstance(fallback, str):
+            for line in fallback.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("-"):
+                    stripped = stripped.lstrip("-").strip()
+                if stripped:
+                    normalized.append({"text": stripped, "level": 0})
+
+        return normalized
+
+    @staticmethod
+    def _normalize_single_bullet_entry(entry: Any) -> dict[str, Any] | None:
+        if isinstance(entry, str):
+            line = entry.strip()
+            return {"text": line, "level": 0} if line else None
+        if isinstance(entry, dict):
+            line = str(entry.get("text") or "").strip()
+            if not line:
+                return None
+            level_raw = entry.get("level", 0)
+            try:
+                level = max(int(level_raw), 0)
+            except (TypeError, ValueError):
+                level = 0
+            bullet_entry: dict[str, Any] = {"text": line, "level": level}
+            for key, value in entry.items():
+                if key in {"text", "level"}:
+                    continue
+                bullet_entry[key] = value
+            return bullet_entry
+        return None
+
+    @staticmethod
+    def _has_block_content(
+        text: Any,
+        headers: Any,
+        rows: Any,
+        description: Any,
+        data: Any,
+        normalized_items: list[dict[str, Any]],
+    ) -> bool:
+        return any(
+            [
+                isinstance(text, str) and text.strip(),
+                isinstance(headers, list) and any(str(h).strip() for h in headers),
+                isinstance(rows, list) and any(row for row in rows),
+                isinstance(description, str) and description.strip(),
+                isinstance(data, dict) and data,
+                bool(normalized_items),
+            ]
+        )
 
     def _build_note_entries(self, entry: dict[str, Any]) -> list[PrepareNoteEntry]:
         notes: list[PrepareNoteEntry] = []
