@@ -33,7 +33,8 @@ roadmap_item: RM-073 README 多言語展開整備
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
     - メモ: `docs/runbooks/readme-i18n.md` を新規追加し、自動翻訳スクリプトの運用手順と CI 連携の要点を記載。
-  - [ ] README.md / AGENTS.md
+  - [x] README.md / AGENTS.md
+    - メモ: README 日本語版・英語版・中国語版のヘッダブロックを統一し Language switcher を追加。英語／中国語版の mermaid 図ラベルと凡例を各言語へ更新済み。
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
