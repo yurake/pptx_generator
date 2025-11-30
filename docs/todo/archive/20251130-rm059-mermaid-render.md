@@ -28,8 +28,8 @@ roadmap_item: RM-059 Mermaid 図自動レンダリング
   - メモ: `#347` を設定済み。
 - [x] チェックリスト整合確認
   - メモ: 本 ToDo の各項目がレビュー対応のみで完了していることを確認。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #348 https://github.com/yurake/pptx_generator/pull/348（2025-11-30 完了）
 
 ## メモ
 - PR 未作成。README 更新は別 PR で管理予定。
