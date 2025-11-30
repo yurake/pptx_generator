@@ -44,7 +44,7 @@ uv run pptx template samples/templates/templates.pptx
 主要成果物:
 - `.pptx/extract/template_spec.json` / `template_spec.yaml`
 - `.pptx/extract/jobspec.json`
-- `.pptx/extract/branding.json`
+- `.pptx/extract/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
 - `.pptx/extract/layouts.jsonl`
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
@@ -183,7 +183,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 
 #### `pptx gen`
 - `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- スタイルはテンプレート内のテーマ／スライドマスターから自動抽出されるため、追加のブランド設定ファイルは不要。
+- スタイル情報は CLI がテンプレートから抽出した `template_style` メタ（`generate_ready.meta.template_style`）を基準に適用し、抽出に失敗した場合のみ既定スタイルへフォールバックする。追加のブランド設定ファイルは不要。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
@@ -248,7 +248,8 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 - `analysis.json` / `review_engine_analyzer.json`: レンダリング結果の解析・レビュー用メタ。
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
 - `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、PDF/Polisher のメタ情報。
-- `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存されるブランド設定。
+- `generate_ready_meta.json.template_style`: レンダリングや Analyzer が参照するテンプレートスタイルスナップショット。
+- `branding.json`: `pptx template` 実行時に出力される参考用スタイル記録（テンプレ設計資料向け）。
 
 
 ## 運用上のポイント

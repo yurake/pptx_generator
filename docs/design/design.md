@@ -42,7 +42,7 @@
 README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
 1. **テンプレ**（自動＋HITL）  
-   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
+   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
@@ -57,8 +57,8 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 | ステージ | 入力 | 出力 | 備考 |
 | --- | --- | --- | --- |
 | コンテンツ準備 | プレペア入力（Markdown / JSON） | `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json` | PrepareCard 生成、AI レビュー結果・監査メタを保存 |
-| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `layouts.jsonl`, `branding.json`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
-| レンダリング | `generate_ready.json`, `template.pptx`, `branding.json` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | 軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
+| マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `layouts.jsonl`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
+| レンダリング | `generate_ready.json`, `template.pptx` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | `generate_ready.meta.template_style` を基にテンプレートスタイルを適用。軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
 
 ### 3.2 stage 別設計ドキュメント
 | stage | 設計ドキュメント | 主な設計観点 |
@@ -79,7 +79,8 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 | golden_runs/* | 任意 | ゴールデンテスト実行結果。テンプレ検証用。 | S1 出 |
 | template_spec.json | 任意 | テンプレートの構造仕様。 | S1 出 / S3 入 |
 | jobspec.json | 必須 | テンプレ依存のスライド仕様カタログ。 | S1 出 / S3 入 / S4 入 |
-| branding.json | 準必須 | テンプレから抽出したブランド設定。スタイル適用に使用。 | S1 出 / S3 入 / S4 入 |
+| branding.json | 参考 | `pptx template` が出力するテンプレートスタイルスナップショット。運用メモ・レビュー資料向け。 | S1 出 |
+| generate_ready_meta.template_style | 必須（S3 出口） | レンダリングで使用するテンプレートスタイル定義。抽出に失敗した場合は CLI が既定スタイルを補完。 | S3 出 / S4 入 |
 | layouts.jsonl | 任意（推奨） | テンプレのレイアウト構造。ヒント/検証に使用。 | S1 出 / S3 入 |
 | diagnostics.json / diff_report.json | 任意 | 抽出/検証時の診断および差分レポート。 | S1 出 |
 | prepare_card.json | 必須（stage 2 出口） | PrepareCard の配列。章構成・マッピングの基礎データ。 | S2 出 / S3 入 |

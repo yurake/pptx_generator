@@ -8,6 +8,7 @@
 ## 入力
 - stage 4 の `generate_ready.json`（`job_meta` / `job_auth` を内包）。
 - stage 1 のテンプレ PPTX、および任意のロゴアセット（テンプレートからフォント・カラー・段落スタイルを自動抽出）。
+- `generate_ready.meta.template_style`（stage 3 で CLI が埋め込むテンプレートスタイル定義。抽出失敗時は CLI が既定値にフォールバック）
 - 任意: レンダリング構成（フォント置換、行間調整など追加ポリシー）。
 - Polisher ルール (`config/polisher-rules.json` など任意ファイル)。有効化時に必須。
 
