@@ -11,7 +11,7 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 from ..models import LayoutInfo, ShapeInfo, TemplateBlueprint, TemplateSpec
 from ..utils.usage_tags import normalize_usage_tags_with_unknown
@@ -330,196 +330,62 @@ class LayoutValidationSuite:
                         "detail": layout.error,
                     }
                 )
-
-            placeholder_records: list[dict[str, Any]] = []
-            placeholder_names: list[str] = []
-
-            for shape in layout.anchors:
-                if not self._should_include_shape(shape):
-                    continue
-
-                normalised_type = self._normalise_placeholder_type(shape)
-                bbox = self._shape_bbox(shape)
-                style_hint = self._build_style_hint(shape)
-                flags = self._build_flags(shape, normalised_type)
-
-                if bbox["x"] < 0 or bbox["y"] < 0:
-                    warnings.append(
-                        {
-                            "code": "placeholder_negative_origin",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                            "detail": f"x={bbox['x']} y={bbox['y']}",
-                        }
-                    )
-
-                capacity_payload = (
-                    shape.text_capacity.model_dump()
-                    if getattr(shape, "text_capacity", None)
-                    else None
+            placeholder_records, placeholder_names, placeholder_warnings, placeholder_errors = self._collect_placeholder_records(
+                layout=layout,
+                layout_id=layout_id,
+            )
+            warnings.extend(placeholder_warnings)
+            errors.extend(placeholder_errors)
+            warnings.extend(
+                self._detect_duplicate_placeholder_warnings(
+                    layout_id=layout_id,
+                    placeholder_names=placeholder_names,
                 )
-
-                placeholder_records.append(
-                    {
-                        "name": shape.name,
-                        "type": normalised_type,
-                        "bbox": bbox,
-                        "style_hint": style_hint,
-                        "shape_type": shape.shape_type,
-                        "flags": flags,
-                        "text_capacity": capacity_payload,
-                    }
-                )
-                placeholder_names.append(shape.name)
-
-                if shape.missing_fields:
-                    errors.append(
-                        {
-                            "code": "missing_fields",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                            "detail": ", ".join(shape.missing_fields),
-                        }
-                    )
-                if shape.error:
-                    errors.append(
-                        {
-                            "code": "shape_extract_error",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                            "detail": shape.error,
-                        }
-                    )
-
-                if normalised_type == "unknown":
-                    warnings.append(
-                        {
-                            "code": "placeholder_unknown_type",
-                            "layout_id": layout_id,
-                            "name": shape.name,
-                        }
-                    )
-
-            duplicates = [
-                name
-                for name, count in Counter(placeholder_names).items()
-                if count > 1
-            ]
-            for name in duplicates:
-                warnings.append(
-                    {
-                        "code": "duplicate_placeholder",
-                        "layout_id": layout_id,
-                        "name": name,
-                    }
-                )
+            )
 
             text_hint = self._derive_text_hint(placeholder_records)
             media_hint = self._derive_media_hint(placeholder_records)
+            placeholder_summary = layout.placeholder_summary or summarize_placeholders(placeholder_records)
 
-            placeholder_summary = (
-                layout.placeholder_summary or summarize_placeholders(placeholder_records)
-            )
-
-            if layout.heuristic:
-                heuristic_result = HeuristicUsageTagsResult(
-                    tags=set(layout.heuristic.get("tags") or []),
-                    has_title_placeholder=bool(layout.heuristic.get("has_title_placeholder")),
-                    has_body_placeholder=bool(layout.heuristic.get("has_body_placeholder")),
-                    title_from_name=bool(layout.heuristic.get("title_from_name")),
-                    reasons=list(layout.heuristic.get("reasons") or []),
-                )
-            else:
-                heuristic_result = derive_usage_tags(layout.name or "", placeholder_records)
-            heuristic_tags = heuristic_result.tags
-            has_title_placeholder = heuristic_result.has_title_placeholder
-            has_body_placeholder = heuristic_result.has_body_placeholder
-            title_from_name = heuristic_result.title_from_name
-
-            raw_usage_tags = set(heuristic_tags)
+            heuristic_result = self._build_heuristic_usage_result(layout, placeholder_records)
+            raw_usage_tags = set(heuristic_result.tags)
             base_meta_reasons = list(dict.fromkeys(heuristic_result.reasons))
-            meta_payload_for_ai: dict[str, Any] = {}
-            if base_meta_reasons:
-                meta_payload_for_ai["heuristic_reason"] = "; ".join(base_meta_reasons)
-            if layout.layout_description:
-                meta_payload_for_ai["layout_description"] = layout.layout_description
+            meta_payload_for_ai = self._build_template_ai_meta_payload(
+                layout=layout,
+                base_meta_reasons=base_meta_reasons,
+            )
             blueprint_info = blueprint_lookup.get(layout.name)
-            ai_error = False
 
-            ai_result = self._invoke_template_ai(
+            (
+                raw_usage_tags,
+                ai_result,
+                ai_error,
+                ai_warnings,
+                ai_errors,
+            ) = self._apply_template_ai(
                 template_id=template_id,
                 layout_id=layout_id,
-                layout_name=layout.name or layout_id,
-                placeholders=placeholder_records,
+                layout=layout,
+                placeholder_records=placeholder_records,
                 text_hint=text_hint,
                 media_hint=media_hint,
-                heuristic_usage_tags=sorted(heuristic_tags),
+                heuristic_tags=heuristic_result.tags,
                 placeholder_summary=placeholder_summary,
-                blueprint=blueprint_info,
-                meta=meta_payload_for_ai or None,
+                blueprint_info=blueprint_info,
+                meta_payload=meta_payload_for_ai,
             )
+            warnings.extend(ai_warnings)
+            errors.extend(ai_errors)
 
-            if ai_result and ai_result.success and ai_result.usage_tags:
-                raw_usage_tags = set(ai_result.usage_tags)
-                if ai_result.source == "static":
-                    raw_usage_tags.update(heuristic_tags)
-            else:
-                if ai_result:
-                    if ai_result.error:
-                        ai_error = True
-                        raw_usage_tags = set()
-                        errors.append(
-                            {
-                                "code": "usage_tag_ai_error",
-                                "layout_id": layout_id,
-                                "name": layout.name,
-                                "detail": ai_result.error,
-                            }
-                        )
-                    elif ai_result.source != "static":
-                        warnings.append(
-                            {
-                                "code": "usage_tag_ai_fallback",
-                                "layout_id": layout_id,
-                                "name": layout.name,
-                                "detail": "生成AIが使用できなかったためヒューリスティックへフォールバックしました",
-                            }
-                        )
-
-            usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
-            usage_tags_set = set(usage_tags_tuple)
-
-            title_conflict_removed = False
-            if "title" in usage_tags_set and has_body_placeholder and not title_from_name:
-                usage_tags_set.discard("title")
-                title_conflict_removed = True
-
-            if ai_error:
-                usage_tags = sorted(usage_tags_set)
-            else:
-                if not usage_tags_set:
-                    usage_tags_set.add("generic")
-                usage_tags = sorted(usage_tags_set)
-
-            if ai_result and ai_result.success:
-                if ai_result.unknown_tags:
-                    warnings.append(
-                        {
-                            "code": "usage_tag_ai_unknown",
-                            "layout_id": layout_id,
-                            "name": layout.name,
-                            "detail": ", ".join(ai_result.unknown_tags),
-                        }
-                    )
-            elif unknown_tags:
-                warnings.append(
-                    {
-                        "code": "usage_tag_unknown",
-                        "layout_id": layout_id,
-                        "name": layout.name,
-                        "detail": ", ".join(sorted(unknown_tags)),
-                    }
-                )
+            usage_tags, usage_tag_warnings = self._normalize_usage_tags_for_layout(
+                layout_id=layout_id,
+                layout_name=layout.name,
+                raw_usage_tags=raw_usage_tags,
+                heuristic_result=heuristic_result,
+                ai_result=ai_result,
+                ai_error=ai_error,
+            )
+            warnings.extend(usage_tag_warnings)
 
             meta_reasons: list[str] = list(base_meta_reasons)
             if ai_result is None or not ai_result.success:
@@ -537,7 +403,7 @@ class LayoutValidationSuite:
                 "media_hint": media_hint,
                 "placeholder_summary": placeholder_summary,
                 "heuristic": {
-                    "tags": sorted(heuristic_tags),
+                    "tags": sorted(heuristic_result.tags),
                     "reasons": heuristic_result.reasons,
                     "has_title_placeholder": heuristic_result.has_title_placeholder,
                     "has_body_placeholder": heuristic_result.has_body_placeholder,
@@ -548,6 +414,7 @@ class LayoutValidationSuite:
             }
             if blueprint_info:
                 record_entry["blueprint"] = blueprint_info
+
             meta_entry: dict[str, Any] = {}
             if layout.layout_description:
                 meta_entry["layout_description"] = layout.layout_description
@@ -580,6 +447,235 @@ class LayoutValidationSuite:
             )
 
         return records, warnings, errors
+
+    def _collect_placeholder_records(
+        self,
+        *,
+        layout: LayoutInfo,
+        layout_id: str,
+    ) -> tuple[list[dict[str, Any]], list[str], list[dict[str, Any]], list[dict[str, Any]]]:
+        records: list[dict[str, Any]] = []
+        names: list[str] = []
+        warnings: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
+
+        for shape in layout.anchors:
+            if not self._should_include_shape(shape):
+                continue
+
+            normalised_type = self._normalise_placeholder_type(shape)
+            bbox = self._shape_bbox(shape)
+            style_hint = self._build_style_hint(shape)
+            flags = self._build_flags(shape, normalised_type)
+
+            if bbox["x"] < 0 or bbox["y"] < 0:
+                warnings.append(
+                    {
+                        "code": "placeholder_negative_origin",
+                        "layout_id": layout_id,
+                        "name": shape.name,
+                        "detail": f"x={bbox['x']} y={bbox['y']}",
+                    }
+                )
+
+            capacity_payload = (
+                shape.text_capacity.model_dump()
+                if getattr(shape, "text_capacity", None)
+                else None
+            )
+
+            records.append(
+                {
+                    "name": shape.name,
+                    "type": normalised_type,
+                    "bbox": bbox,
+                    "style_hint": style_hint,
+                    "shape_type": shape.shape_type,
+                    "flags": flags,
+                    "text_capacity": capacity_payload,
+                }
+            )
+            names.append(shape.name)
+
+            if shape.missing_fields:
+                errors.append(
+                    {
+                        "code": "missing_fields",
+                        "layout_id": layout_id,
+                        "name": shape.name,
+                        "detail": ", ".join(shape.missing_fields),
+                    }
+                )
+            if shape.error:
+                errors.append(
+                    {
+                        "code": "shape_extract_error",
+                        "layout_id": layout_id,
+                        "name": shape.name,
+                        "detail": shape.error,
+                    }
+                )
+
+            if normalised_type == "unknown":
+                warnings.append(
+                    {
+                        "code": "placeholder_unknown_type",
+                        "layout_id": layout_id,
+                        "name": shape.name,
+                    }
+                )
+
+        return records, names, warnings, errors
+
+    @staticmethod
+    def _detect_duplicate_placeholder_warnings(
+        *,
+        layout_id: str,
+        placeholder_names: Sequence[str],
+    ) -> list[dict[str, Any]]:
+        duplicates = [name for name, count in Counter(placeholder_names).items() if count > 1]
+        return [
+            {
+                "code": "duplicate_placeholder",
+                "layout_id": layout_id,
+                "name": name,
+            }
+            for name in duplicates
+        ]
+
+    def _build_heuristic_usage_result(
+        self,
+        layout: LayoutInfo,
+        placeholder_records: Sequence[dict[str, Any]],
+    ) -> HeuristicUsageTagsResult:
+        if layout.heuristic:
+            return HeuristicUsageTagsResult(
+                tags=set(layout.heuristic.get("tags") or []),
+                has_title_placeholder=bool(layout.heuristic.get("has_title_placeholder")),
+                has_body_placeholder=bool(layout.heuristic.get("has_body_placeholder")),
+                title_from_name=bool(layout.heuristic.get("title_from_name")),
+                reasons=list(layout.heuristic.get("reasons") or []),
+            )
+        return derive_usage_tags(layout.name or "", placeholder_records)
+
+    @staticmethod
+    def _build_template_ai_meta_payload(
+        *,
+        layout: LayoutInfo,
+        base_meta_reasons: Sequence[str],
+    ) -> dict[str, Any]:
+        meta: dict[str, Any] = {}
+        if base_meta_reasons:
+            meta["heuristic_reason"] = "; ".join(base_meta_reasons)
+        if layout.layout_description:
+            meta["layout_description"] = layout.layout_description
+        return meta
+
+    def _apply_template_ai(
+        self,
+        *,
+        template_id: str,
+        layout_id: str,
+        layout: LayoutInfo,
+        placeholder_records: Sequence[dict[str, Any]],
+        text_hint: dict[str, Any],
+        media_hint: dict[str, Any],
+        heuristic_tags: Iterable[str],
+        placeholder_summary: dict[str, Any],
+        blueprint_info: dict[str, Any] | None,
+        meta_payload: dict[str, Any],
+    ) -> tuple[set[str], TemplateAIResult | None, bool, list[dict[str, Any]], list[dict[str, Any]]]:
+        raw_usage_tags = set(heuristic_tags)
+        warnings: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
+        ai_error = False
+
+        ai_result = self._invoke_template_ai(
+            template_id=template_id,
+            layout_id=layout_id,
+            layout_name=layout.name or layout_id,
+            placeholders=list(placeholder_records),
+            text_hint=text_hint,
+            media_hint=media_hint,
+            heuristic_usage_tags=sorted(heuristic_tags),
+            placeholder_summary=placeholder_summary,
+            blueprint=blueprint_info,
+            meta=meta_payload or None,
+        )
+
+        if ai_result and ai_result.success and ai_result.usage_tags:
+            raw_usage_tags = set(ai_result.usage_tags)
+            if ai_result.source == "static":
+                raw_usage_tags.update(heuristic_tags)
+        elif ai_result:
+            if ai_result.error:
+                ai_error = True
+                raw_usage_tags = set()
+                errors.append(
+                    {
+                        "code": "usage_tag_ai_error",
+                        "layout_id": layout_id,
+                        "name": layout.name,
+                        "detail": ai_result.error,
+                    }
+                )
+            elif ai_result.source != "static":
+                warnings.append(
+                    {
+                        "code": "usage_tag_ai_fallback",
+                        "layout_id": layout_id,
+                        "name": layout.name,
+                        "detail": "生成AIが使用できなかったためヒューリスティックへフォールバックしました",
+                    }
+                )
+
+        return raw_usage_tags, ai_result, ai_error, warnings, errors
+
+    def _normalize_usage_tags_for_layout(
+        self,
+        *,
+        layout_id: str,
+        layout_name: str | None,
+        raw_usage_tags: set[str],
+        heuristic_result: HeuristicUsageTagsResult,
+        ai_result: TemplateAIResult | None,
+        ai_error: bool,
+    ) -> tuple[list[str], list[dict[str, Any]]]:
+        usage_tags_tuple, unknown_tags = normalize_usage_tags_with_unknown(raw_usage_tags)
+        usage_tags_set = set(usage_tags_tuple)
+
+        if "title" in usage_tags_set and heuristic_result.has_body_placeholder and not heuristic_result.title_from_name:
+            usage_tags_set.discard("title")
+
+        if ai_error:
+            usage_tags = sorted(usage_tags_set)
+        else:
+            if not usage_tags_set:
+                usage_tags_set.add("generic")
+            usage_tags = sorted(usage_tags_set)
+
+        warnings: list[dict[str, Any]] = []
+        if ai_result and ai_result.success:
+            if ai_result.unknown_tags:
+                warnings.append(
+                    {
+                        "code": "usage_tag_ai_unknown",
+                        "layout_id": layout_id,
+                        "name": layout_name,
+                        "detail": ", ".join(ai_result.unknown_tags),
+                    }
+                )
+        elif unknown_tags:
+            warnings.append(
+                {
+                    "code": "usage_tag_unknown",
+                    "layout_id": layout_id,
+                    "name": layout_name,
+                    "detail": ", ".join(sorted(unknown_tags)),
+                }
+            )
+
+        return usage_tags, warnings
 
     @staticmethod
     def _should_include_shape(shape: ShapeInfo) -> bool:

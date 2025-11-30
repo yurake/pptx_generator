@@ -92,6 +92,12 @@
   - 静的モードでは `_resolve_static_template_spec_path`・`_validate_static_template_spec`・`_write_static_outputs` を新設し、テンプレート解決と成果物出力の責務を整理。
 - テスト: `tests/pipeline/compose/test_draft_structuring_step.py` ほか関連ケースを通過。
 
+## 2025-11-30 Static Prepare/Layout/API リファクタ実装メモ
+- 静的 Prepare: `_build_cards_static` をワークアイテム化し、`_build_static_slot_entries` → `_assign_static_chapters` → `_process_static_slide` 相当のヘルパー群に分割。プロンプト生成とカード構築を `_invoke_static_prompt`・`_build_static_card_from_slot` で整理し、既存メタデータと統計を維持。
+- レイアウト検証: `_build_layout_records` をプレースホルダー収集 `_collect_placeholder_records`、AI 呼び出し `_apply_template_ai`、タグ正規化 `_normalize_usage_tags_for_layout` に分解。警告・エラー生成をヘルパーに集約し、副作用を局所化。
+- API: `create_app` を router ベースの構造へ再編し、`_build_cards_router` と `_build_logs_router` にカード／ログエンドポイントを分離。共通依存（トークン検証・ETag チェックなど）はクロージャで共有しつつ、FastAPI ルート実装をコンパクト化。
+- テスト: `uv run --extra dev pytest tests/prepare_ai/test_prepare_ai_orchestrator_flow.py`, `uv run --extra dev pytest tests/layout_validation/test_layout_validation_suite_execution.py`, `uv run --extra dev pytest tests/api/test_draft_api_revision_flow.py`, `uv run --extra dev pytest` を実行しすべて成功。
+
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI
