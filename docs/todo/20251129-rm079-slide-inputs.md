@@ -36,7 +36,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
   - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: GitHub API 経由でコメント投稿を試行したが 404 応答で失敗。ユーザーに確認予定。
 - [ ] チェックリスト整合確認
   - メモ: 
