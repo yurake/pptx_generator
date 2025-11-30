@@ -53,6 +53,7 @@
 テンプレートから抽出したレイアウト情報を使い、資料データを仮スライドにまとめ、コンテンツの順番や配置を調整しながら何度でも出し直せる柔軟なモードです。資料データから柔軟にスライドを作成したい場合に向きます。
 
 ```mermaid
+%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
@@ -107,6 +108,7 @@ Blueprint（テンプレ全体の設計図）
 ```
 
 ```mermaid
+%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;

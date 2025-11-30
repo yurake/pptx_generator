@@ -53,6 +53,7 @@
 Using layout information extracted from the templates, it assembles the presentation data into provisional slides and, by adjusting the content order and placement, can be produced again and again—a flexible mode. It is suitable when you want to flexibly create slides from presentation data.
 
 ```mermaid
+%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
@@ -99,6 +100,7 @@ flowchart TD
 A mode that automatically maps data to the slide structure defined by the template and produces the final output. It is useful when slide layout and rules are fixed.
 
 ```mermaid
+%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
