@@ -2,7 +2,7 @@
 
 ## 目的
 - `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。stage 3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
-- CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json` を前提とし、stage 4 の成果物確認には `pptx compose` / `pptx mapping` を用いる。`--output` 未指定時の出力先は `.pptx/gen/`。
+- CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` を前提とし、stage 4 の成果物確認には `pptx compose` / `pptx mapping` を用いる。テンプレートからスタイルを自動抽出するため、追加のブランド設定ファイルは不要。
 - LibreOffice PDF 変換や Open XML Polisher との統合を考慮した拡張性を持たせる。
 
 ## コンポーネント
@@ -33,6 +33,7 @@
 - `audit_log.json`: テンプレ版、生成物ハッシュ、`rendering_log.json` パス、整合チェックサマリ、`polisher` / `pdf_export` メタ（実行可否、ステータス、実行時間、リトライ回数）を保持。
 - `monitoring_report.json`: レンダリング監査と Analyzer before/after の突合結果、改善度メトリクス、通知向けアラート一覧を保持。
 - `stdout`: 主要な処理ステップと警告を INFO レベルで出力。Polisher 有効時は `Polisher: success` と JSON サマリを表示し、無効時は `Polisher: disabled` を表示。レンダリング監査の警告件数と `rendering_log.json` のパスを出力。
+- `generate_ready_meta.template_style`: テンプレートから抽出したスタイル情報。Renderer／Analyzer が共通のフォント・配色・段落既定を参照する。
 
 ## エラーハンドリング
 - 要素挿入失敗 → スライド番号と PH を特定してログ化、exit code 1。

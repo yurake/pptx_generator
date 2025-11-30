@@ -25,7 +25,8 @@ from pptx_generator.layout_validation import (LayoutValidationResult,
                                               LayoutValidationSuite)
 from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
                                    TemplateReleaseGoldenRun,
-                                   TemplateReleaseReport, TemplateSpec)
+                                   TemplateReleaseReport, TemplateSpec,
+                                   TemplateStyle)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
 
@@ -220,7 +221,6 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 show_layout_reasons=False,
                 output_dir=tmp_path / "compose",
                 rules=tmp_path / "rules.json",
-                branding=None,
                 prepare_cards=tmp_path / "prepare_card.json",
             )
 
@@ -267,10 +267,10 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
 
     monkeypatch.setattr(cli.RulesConfig, "load", classmethod(fake_rules_load))
     monkeypatch.setattr(
-        cli, "_prepare_branding", lambda template, branding: (object(), {})
+        cli, "_prepare_template_style", lambda template: (TemplateStyle.default(), {})
     )
     monkeypatch.setattr(
-        cli, "_build_refiner_options", lambda rules_config, branding_config: object()
+        cli, "_build_refiner_options", lambda rules_config, template_style: object()
     )
 
     def mapping_boom(**_: object) -> None:
@@ -292,7 +292,6 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 show_layout_reasons=False,
                 output_dir=tmp_path / "compose",
                 rules=rules_path,
-                branding=None,
                 prepare_cards=tmp_path / "prepare_card.json",
             )
 
@@ -905,27 +904,52 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     assert polisher_meta.get("status") == "success"
 
 
-def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
+def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
+    mapping_dir = tmp_path / "mapping"
+    draft_dir = tmp_path / "draft"
+    output_dir = tmp_path / "gen-template-fallback"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        draft_dir=draft_dir,
+        prepare_paths=prepare_paths,
+    )
+
+    monkeypatch.setattr("pptx_generator.template_style.extract_branding_config", lambda _: (
+        _ for _ in ()).throw(BrandingExtractionError("boom")))
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    style_info = audit_payload.get("template_style")
+    assert style_info is not None
+    source_info = style_info.get("source", {})
+    assert source_info.get("type") == "default"
+    assert "error" in source_info
+
+
+def test_cli_gen_template_uses_template_branding(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
     draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-template-branding"
     template_path = tmp_path / "template.pptx"
-    branding_path = tmp_path / "custom-branding.json"
     shutil.copyfile(SAMPLE_TEMPLATE, template_path)
-
-    branding_payload = {
-        "fonts": {
-            "heading": {"name": "Test Font", "size_pt": 30, "color_hex": "#123456"},
-            "body": {"name": "Test Font", "size_pt": 16, "color_hex": "#654321"},
-        },
-        "colors": {
-            "primary": "#111111",
-            "secondary": "#222222",
-            "accent": "#333333",
-            "background": "#FFFFFF",
-        },
-    }
-    branding_path.write_text(json.dumps(branding_payload), encoding="utf-8")
 
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -952,8 +976,6 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
             str(ready_path),
             "--output",
             str(output_dir),
-            "--branding",
-            str(branding_path),
         ],
         catch_exceptions=False,
     )
@@ -961,54 +983,11 @@ def test_cli_gen_template_with_explicit_branding(tmp_path: Path) -> None:
     assert result.exit_code == 0
     audit_payload = json.loads(
         (output_dir / "audit_log.json").read_text(encoding="utf-8"))
-    branding_info = audit_payload.get("branding")
-    assert branding_info is not None
-    assert branding_info.get("source", {}).get("type") == "file"
-    ready_payload = json.loads(ready_path.read_text(encoding="utf-8"))
-    stored_template = ready_payload.get("meta", {}).get("template_path")
-    assert stored_template is not None
-    resolved_template = (ready_path.parent / Path(stored_template)).resolve()
-    assert resolved_template == template_path.resolve()
-
-
-def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
-    mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
-    output_dir = tmp_path / "gen-template-fallback"
-    runner = CliRunner()
-    prepare_paths = _prepare_inputs(runner, tmp_path)
-    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
-
-    ready_path = _prepare_generate_ready(
-        runner,
-        spec_path,
-        mapping_dir,
-        draft_dir=draft_dir,
-        prepare_paths=prepare_paths,
-    )
-
-    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _: (
-        _ for _ in ()).throw(BrandingExtractionError("boom")))
-
-    result = runner.invoke(
-        app,
-        [
-            "gen",
-            str(ready_path),
-            "--output",
-            str(output_dir),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-    audit_payload = json.loads(
-        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
-    branding_info = audit_payload.get("branding")
-    assert branding_info is not None
-    source_info = branding_info.get("source", {})
-    assert source_info.get("type") == "default"
-    assert "error" in source_info
+    style_info = audit_payload.get("template_style")
+    assert style_info is not None
+    source_info = style_info.get("source", {})
+    assert source_info.get("type") == "template"
+    assert Path(source_info.get("template", "")).resolve() == template_path.resolve()
 
 
 def test_cli_gen_default_output_directory(tmp_path) -> None:

@@ -44,7 +44,7 @@ uv run pptx template samples/templates/templates.pptx
 主要成果物:
 - `.pptx/extract/template_spec.json` / `template_spec.yaml`
 - `.pptx/extract/jobspec.json`
-- `.pptx/extract/branding.json`
+- `.pptx/extract/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
 - `.pptx/extract/layouts.jsonl`
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
@@ -151,7 +151,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
 | `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
-| `--branding <path>` | ブランド設定ファイルを明示指定する |  |  | `config/branding.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
 
@@ -181,7 +180,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
 | `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
 | `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
-| `--branding <path>` | ブランド設定ファイル |  |  | `config/branding.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
 ### stage 4: レンダリング
@@ -189,7 +187,7 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 
 #### `pptx gen`
 - `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- `--branding` を省略した場合はテンプレートからの抽出結果または既定ブランドを使用する。
+- スタイル情報は CLI がテンプレートから抽出した `template_style` メタ（`generate_ready.meta.template_style`）を基準に適用し、抽出に失敗した場合のみ既定スタイルへフォールバックする。追加のブランド設定ファイルは不要。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
@@ -197,7 +195,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
 | `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `config/rules.json` |
-| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
 | `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
 | `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
@@ -225,7 +222,6 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<generate_ready.json>` | レンダリング対象の generate_ready | ✅ | ✅ | - |
-| `--branding <path>` | ブランド設定 JSON を差し替える |  |  | `config/branding.json` |
 | `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `config/rules.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
@@ -256,7 +252,8 @@ uv run pptx prepare samples/contents/sample_import_content_summary.txt \
 - `analysis.json` / `review_engine_analyzer.json`: レンダリング結果の解析・レビュー用メタ。
 - `analysis_snapshot.json`: `--emit-structure-snapshot` 利用時に生成されるアンカー構造スナップショット。
 - `outputs/audit_log.json`: 生成時刻や成果物ハッシュ、PDF/Polisher のメタ情報。
-- `branding.json`: テンプレ抽出時に `.pptx/extract/` へ保存されるブランド設定。
+- `generate_ready_meta.json.template_style`: レンダリングや Analyzer が参照するテンプレートスタイルスナップショット。
+- `branding.json`: `pptx template` 実行時に出力される参考用スタイル記録（テンプレ設計資料向け）。
 
 
 ## 運用上のポイント

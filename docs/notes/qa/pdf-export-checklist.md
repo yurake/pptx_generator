@@ -1,8 +1,8 @@
 # PDF 出力 QA チェックリスト
 
 - 実行コマンド（stage 4 で生成した `generate_ready.json` を前提）:
-- `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf`（出力先は既定で `.pptx/gen/`）
-- `uv run pptx gen .pptx/compose/generate_ready.json --branding config/branding.json --export-pdf --pdf-mode only`
+- `uv run pptx gen .pptx/compose/generate_ready.json --export-pdf`（出力先は既定で `.pptx/gen/`）
+- `uv run pptx gen .pptx/compose/generate_ready.json --export-pdf --pdf-mode only`
 - 期待アウトプット:
   - `outputs/proposal.pptx`（`--pdf-mode only` 時は未生成）
   - `outputs/proposal.pdf` または指定ファイル名

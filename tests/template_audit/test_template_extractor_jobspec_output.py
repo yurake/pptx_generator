@@ -78,6 +78,11 @@ class TestTemplateExtractorStep:
         shape1.__class__.__name__ = "SlidePlaceholder"
         shape1.text_frame = Mock()
         shape1.text_frame.text = "タイトルをここに入力"
+        shape1.text_frame.paragraphs = []
+        shape1.text_frame.margin_left = 0
+        shape1.text_frame.margin_right = 0
+        shape1.text_frame.margin_top = 0
+        shape1.text_frame.margin_bottom = 0
         shape1.placeholder_format = Mock()
         shape1.placeholder_format.type = "TITLE"
         
@@ -90,6 +95,11 @@ class TestTemplateExtractorStep:
         shape2.__class__.__name__ = "SlidePlaceholder"
         shape2.text_frame = Mock()
         shape2.text_frame.text = "サブタイトルをここに入力"
+        shape2.text_frame.paragraphs = []
+        shape2.text_frame.margin_left = 0
+        shape2.text_frame.margin_right = 0
+        shape2.text_frame.margin_top = 0
+        shape2.text_frame.margin_bottom = 0
         shape2.placeholder_format = Mock()
         shape2.placeholder_format.type = "SUBTITLE"
         

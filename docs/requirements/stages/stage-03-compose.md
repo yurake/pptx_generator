@@ -6,7 +6,7 @@
 - CLI (`pptx compose` / `pptx outline`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
 ## 入力
-- Stage1: `jobspec.json`, `layouts.jsonl`, `branding.json`, `template_spec.json`。
+- Stage1: `jobspec.json`, `layouts.jsonl`, `template_spec.json`（テンプレートのスタイル情報を直接参照）。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
 - Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし stage 3 を停止する。
 - 章テンプレート辞書 `config/chapter_templates/*.json`。

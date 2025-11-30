@@ -8,13 +8,13 @@
 ## 前提条件
 - Python 3.12 系の仮想環境で `uv sync` 済み。
 - LibreOffice（PDF 変換時）および .NET 8 SDK（仕上げツール連携時）がインストール済み。
-- `config/branding.json` とテンプレートが最新化され、レンダラーが図形 ID／アンカー名を付与できる状態。
+- テンプレート（スライドマスター／テーマ）が最新化され、レンダラーが図形 ID／アンカー名を付与できる状態。（`config/branding.json` は必要に応じて設計共有にのみ利用）
 - `docs/notes/20251015-pptx-analyzer.md` に記録された実装メモを参照し、対象バージョンに差異がないことを確認する。
 - プロジェクト全体の stage 配置は README の「アーキテクチャ概要」に掲載している stage 図で事前に確認しておく。
 
 ## 実行手順
 1. 解析対象 JSON を用意する  
-   - Stage1 の抽出成果物（例: `samples/extract/jobspec.json`）をベースに案件仕様を整備し、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。ブランド設定 (`config/branding.json`) は必要に応じて差し替える。
+  - Stage1 の抽出成果物（例: `samples/extract/jobspec.json`）をベースに案件仕様を整備し、`meta.template_path` / `meta.layouts_path` にテンプレートとレイアウトのパスを必ず設定する。
 2. CLI でレンダリングと解析を実行する  
   - まず stage 3 のラッパーで `generate_ready.json` を用意する（未実施の場合）:
     ```bash
@@ -27,7 +27,6 @@
   - stage 4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \
-      --branding config/branding.json \
       --output .pptx/gen \
       --export-pdf
     ```

@@ -37,7 +37,6 @@ flowchart TB
         direction TB
         ST1_ANCHOR(( ))
         RM080["RM-080<br/>テンプレ実スライド<br/>スナップショット強化<br/>(未着手)"]
-        RM081["RM-081<br/>文字数許容量算出と<br/>スキーマ反映<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
@@ -1025,8 +1024,8 @@ flowchart TB
 - 対象 stage: Stage 1（テンプレ）・Stage 3（マッピング）
 - ゴール: プレースホルダーの寸法から許容文字数を推定し、`jobspec`・`generate_ready` で利用できるメタ情報として提供する。
 - 参照ドキュメント: [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/design/schema/stage-03-compose.md](../design/schema/stage-03-compose.md)
-- 参照 ToDo: [docs/todo/20251124-rm081-text-capacity.md](../todo/20251124-rm081-text-capacity.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm081-text-capacity.md](../todo/archive/20251124-rm081-text-capacity.md)
+- 状況: 完了（2025-11-30 更新）
 - 期待成果:
   - `TemplateExtractor` と `layout_validation` で文字数・行数の推定値を算出し、`JobSpecScaffoldPlaceholder`／`SlideTextbox` に `text_capacity` 情報を追加する。
   - Mapping/Renderer が許容量を参照してオーバーフロー検知や警告出力を行えるよう、モデルとテストを整合させる。

@@ -20,19 +20,16 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pydantic import BaseModel, ValidationError
 
-from .branding_extractor import (BrandingExtractionError,
-                                 extract_branding_config)
+from .branding_extractor import extract_branding_config
 from .draft_intel import load_return_reasons
 from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
-from .models import (ContentApprovalDocument, DraftDocument,
-                     GenerateReadyDocument, JobSpec, JobSpecScaffold,
-                     SpecValidationError, TemplateBlueprint,
-                     TemplateBlueprintSlide, TemplateBlueprintSlot,
-                     TemplateRelease, TemplateReleaseDiagnostics,
-                     TemplateReleaseGoldenRun, TemplateReleaseReport,
-                     TemplateSpec)
+from .models import (ContentApprovalDocument, DraftDocument, GenerateReadyDocument,
+                     JobMeta, JobSpec, JobSpecScaffold, SpecValidationError,
+                     TemplateBlueprint, TemplateBlueprintSlide, TemplateRelease,
+                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
+                     TemplateReleaseReport, TemplateSpec, TemplateStyle)
 from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        ContentApprovalStep, DraftStructuringOptions,
                        DraftStructuringStep, MappingOptions, MappingStep,
@@ -48,7 +45,7 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
-from .prepare import (PrepareDocument, PreparePolicyError,
+from .prepare import (PrepareCard, PrepareDocument, PreparePolicyError,
                       PrepareSourceDocument, load_prepare_policy_set)
 from .prepare_ai import (
     PrepareAIOrchestrationError,
@@ -56,13 +53,13 @@ from .prepare_ai import (
     StaticPromptOverride,
 )
 from .review_engine import AnalyzerReviewEngineAdapter
-from .settings import BrandingConfig, RulesConfig
+from .settings import RulesConfig
 from .spec_loader import load_jobspec_from_path
 from .template_audit import (build_release_report, build_template_release,
                              load_template_release)
+from .template_style import extract_template_style
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
-DEFAULT_BRANDING_PATH = Path("config/branding.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
@@ -114,12 +111,20 @@ class MappingPipelineConfig:
     spec_source_path: Path
     rules_config: RulesConfig
     refiner_options: RefinerOptions
-    branding_artifact: dict[str, object]
+    template_style: "TemplateStylePayload"
     prepare_cards: Path | None
     require_prepare: bool
     layouts: Path | None
     draft_output: Path
     template: Path | None
+
+
+@dataclass(frozen=True)
+class TemplateStylePayload:
+    """テンプレートスタイル本体とアーティファクトをまとめたバンドル。"""
+
+    style: TemplateStyle
+    artifact: dict[str, object]
 
 
 _DEFAULT_DRAFT_OPTIONS = DraftStructuringOptions()
@@ -368,42 +373,13 @@ def app(verbose: bool, debug: bool) -> None:
     _configure_file_logging()
 
 
-def _prepare_branding(
-    template: Optional[Path], branding: Optional[Path]
-) -> tuple[BrandingConfig, dict[str, object]]:
-    def _load_default_branding() -> tuple[BrandingConfig, dict[str, object]]:
-        try:
-            config = BrandingConfig.load(DEFAULT_BRANDING_PATH)
-            return config, {"type": "default", "path": str(DEFAULT_BRANDING_PATH)}
-        except FileNotFoundError:
-            click.echo(
-                f"デフォルトのブランド設定が見つかりません: {DEFAULT_BRANDING_PATH}. 内蔵設定を使用します。",
-                err=True,
-            )
-            return BrandingConfig.default(), {"type": "builtin"}
-
-    branding_payload: dict[str, object] | None = None
-    if branding is not None:
-        branding_config = BrandingConfig.load(branding)
-        branding_source = {"type": "file", "path": str(branding)}
-    elif template is not None:
-        try:
-            extraction = extract_branding_config(template)
-        except BrandingExtractionError as exc:
-            click.echo(f"ブランド設定の抽出に失敗しました: {exc}", err=True)
-            branding_config, branding_source = _load_default_branding()
-            branding_source["error"] = str(exc)
-        else:
-            branding_config = extraction.to_branding_config()
-            branding_payload = extraction.to_branding_payload()
-            branding_source = {"type": "template", "template": str(template)}
-    else:
-        branding_config, branding_source = _load_default_branding()
-
-    artifact = {"source": branding_source}
-    if branding_payload is not None:
-        artifact["config"] = branding_payload
-    return branding_config, artifact
+def _prepare_template_style(template: Path) -> tuple[TemplateStyle, dict[str, object]]:
+    style, artifact = extract_template_style(template)
+    if artifact.get("source", {}).get("type") == "default":
+        error = artifact["source"].get("error")
+        if error:
+            click.echo(f"テンプレートスタイルの抽出に失敗しました: {error}", err=True)
+    return style, artifact
 
 
 def _resolve_template_path(
@@ -1188,15 +1164,15 @@ def _build_reference_text(document: ContentApprovalDocument) -> tuple[str | None
 
 def _build_analyzer_options(
     rules_config: RulesConfig,
-    branding_config: BrandingConfig,
+    template_style: TemplateStyle,
     emit_structure_snapshot: bool,
 ) -> AnalyzerOptions:
     analyzer_rules = rules_config.analyzer
     analyzer_defaults = AnalyzerOptions()
-    body_font_size = branding_config.body_font.size_pt
-    body_font_color = branding_config.body_font.color_hex
-    primary_color = branding_config.primary_color
-    background_color = branding_config.background_color
+    body_font_size = template_style.body_font.size_pt
+    body_font_color = template_style.body_font.color_hex
+    primary_color = template_style.colors.primary
+    background_color = template_style.colors.background
 
     max_bullet_level = (
         rules_config.max_bullet_level
@@ -1240,13 +1216,13 @@ def _build_analyzer_options(
 
 
 def _build_refiner_options(
-    rules_config: RulesConfig, branding_config: BrandingConfig
+    rules_config: RulesConfig, template_style: TemplateStyle
 ) -> RefinerOptions:
     analyzer_rules = rules_config.analyzer
     refiner_rules = rules_config.refiner
-    body_font_size = branding_config.body_font.size_pt
-    body_font_color = branding_config.body_font.color_hex
-    primary_color = branding_config.primary_color
+    body_font_size = template_style.body_font.size_pt
+    body_font_color = template_style.body_font.color_hex
+    primary_color = template_style.colors.primary
 
     refiner_defaults = RefinerOptions()
     max_bullet_level = (
@@ -1267,7 +1243,7 @@ def _build_refiner_options(
         or analyzer_rules.preferred_text_color
         or primary_color,
         fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
-        default_font_name=branding_config.body_font.name,
+        default_font_name=template_style.body_font.name,
     )
 
 
@@ -1698,13 +1674,12 @@ def _run_mapping_pipeline(
                 spec_source_path=params.spec_source_path,
             ),
         )
-    else:
-        if draft_context.workdir != params.draft_output:
-            logger.debug(
-                "draft_context.workdir と draft_output が一致しません: %s != %s",
-                draft_context.workdir,
-                params.draft_output,
-            )
+    elif draft_context.workdir != params.draft_output:
+        logger.debug(
+            "draft_context.workdir と draft_output が一致しません: %s != %s",
+            draft_context.workdir,
+            params.draft_output,
+        )
 
     draft_generate_ready = draft_context.artifacts.get("generate_ready")
     if isinstance(draft_generate_ready, GenerateReadyDocument) and draft_generate_ready.meta.layout_mode == "static":
@@ -1718,7 +1693,8 @@ def _run_mapping_pipeline(
     context = PipelineContext(
         spec=params.spec, workdir=params.output_dir, artifacts=dict(draft_context.artifacts)
     )
-    context.add_artifact("branding", params.branding_artifact)
+    context.add_artifact("template_style", params.template_style.artifact)
+    context.add_artifact("template_style_data", params.template_style.style)
 
     spec_validator = SpecValidatorStep(
         max_title_length=params.rules_config.max_title_length,
@@ -1742,7 +1718,7 @@ def _run_mapping_pipeline(
                     shutil.copy2(source_path, destination)
                 context.add_artifact(
                     "generate_ready_meta_path", str(destination))
-        except OSError as exc:  # noqa: PERF203 - unexpected copy failure should bubble up later
+        except OSError as exc:  # noqa: PERF203
             raise RuntimeError(
                 f"generate_ready_meta.json のコピーに失敗しました: {exc}"
             ) from exc
@@ -1883,8 +1859,8 @@ def _run_render_pipeline(
     output_dir: Path,
     template: Optional[Path],
     pptx_name: str,
-    branding_config: BrandingConfig,
-    branding_artifact: dict[str, object],
+    template_style: TemplateStyle,
+    template_style_artifact: dict[str, object],
     analyzer_options: AnalyzerOptions,
     pdf_options: PdfExportOptions,
     polisher_options: PolisherOptions | None = None,
@@ -1900,7 +1876,8 @@ def _run_render_pipeline(
         workdir=output_dir,
         artifacts=artifacts,
     )
-    context.add_artifact("branding", branding_artifact)
+    context.add_artifact("template_style", template_style_artifact)
+    context.add_artifact("template_style_data", template_style)
     context.add_artifact("generate_ready", generate_ready)
     if generate_ready_path is not None:
         context.add_artifact("generate_ready_path", str(generate_ready_path))
@@ -1909,7 +1886,7 @@ def _run_render_pipeline(
         RenderingOptions(
             template_path=template,
             output_filename=pptx_name,
-            branding=branding_config,
+            template_style=template_style,
         )
     )
     baseline_analyzer_options = replace(
@@ -2060,14 +2037,6 @@ def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> N
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル",
-)
-@click.option(
     "--export-pdf",
     is_flag=True,
     help="LibreOffice を利用して PDF を追加出力する",
@@ -2156,7 +2125,6 @@ def gen(  # noqa: PLR0913
     output_dir: Path,
     pptx_name: str,
     rules: Path,
-    branding: Optional[Path],
     export_pdf: bool,
     pdf_mode: str,
     pdf_output: str,
@@ -2200,10 +2168,9 @@ def gen(  # noqa: PLR0913
         raise click.exceptions.Exit(code=4)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        template_path, branding)
+    template_style, template_style_artifact = _prepare_template_style(template_path)
     analyzer_options = _build_analyzer_options(
-        rules_config, branding_config, emit_structure_snapshot
+        rules_config, template_style, emit_structure_snapshot
     )
     pdf_options = PdfExportOptions(
         enabled=export_pdf,
@@ -2260,8 +2227,8 @@ def gen(  # noqa: PLR0913
             output_dir=output_dir,
             template=template_path,
             pptx_name=pptx_name,
-            branding_config=branding_config,
-            branding_artifact=branding_artifact,
+            template_style=template_style,
+            template_style_artifact=template_style_artifact,
             analyzer_options=analyzer_options,
             pdf_options=pdf_options,
             polisher_options=polisher_options,
@@ -2818,14 +2785,6 @@ def outline(
     help="検証ルール設定ファイル",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル（任意）",
-)
-@click.option(
     "--prepare-cards",
     "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
@@ -2846,7 +2805,6 @@ def compose(  # noqa: PLR0913
     show_layout_reasons: bool,
     output_dir: Path,
     rules: Path,
-    branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
     """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
@@ -2907,10 +2865,12 @@ def compose(  # noqa: PLR0913
     _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        resolved_template, branding
+    template_style, template_style_artifact = _prepare_template_style(resolved_template)
+    refiner_options = _build_refiner_options(rules_config, template_style)
+    template_style_payload = TemplateStylePayload(
+        style=template_style,
+        artifact=template_style_artifact,
     )
-    refiner_options = _build_refiner_options(rules_config, branding_config)
 
     mapping_params = MappingPipelineConfig(
         spec=spec,
@@ -2918,7 +2878,7 @@ def compose(  # noqa: PLR0913
         spec_source_path=spec_path,
         rules_config=rules_config,
         refiner_options=refiner_options,
-        branding_artifact=branding_artifact,
+        template_style=template_style_payload,
         prepare_cards=prepare_cards,
         require_prepare=True,
         layouts=resolved_layouts,
@@ -2989,14 +2949,6 @@ def compose(  # noqa: PLR0913
     help="draft_draft.json / draft_approved.json の出力先",
 )
 @click.option(
-    "--branding",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    show_default=str(DEFAULT_BRANDING_PATH),
-    help="ブランド設定ファイル（任意）",
-)
-@click.option(
     "--prepare-cards",
     "prepare_cards",
     type=click.Path(exists=True, dir_okay=False,
@@ -3010,7 +2962,6 @@ def mapping(  # noqa: PLR0913
     output_dir: Path,
     rules: Path,
     draft_output: Path,
-    branding: Optional[Path],
     prepare_cards: Path,
 ) -> None:
     """stage 5 マッピングを実行し generate_ready.json を生成する。"""
@@ -3039,10 +2990,12 @@ def mapping(  # noqa: PLR0913
         raise click.exceptions.Exit(code=2) from exc
 
     rules_config = RulesConfig.load(rules)
-    branding_config, branding_artifact = _prepare_branding(
-        resolved_template, branding
+    template_style, template_style_artifact = _prepare_template_style(resolved_template)
+    refiner_options = _build_refiner_options(rules_config, template_style)
+    template_style_payload = TemplateStylePayload(
+        style=template_style,
+        artifact=template_style_artifact,
     )
-    refiner_options = _build_refiner_options(rules_config, branding_config)
 
     mapping_params = MappingPipelineConfig(
         spec=spec,
@@ -3050,7 +3003,7 @@ def mapping(  # noqa: PLR0913
         spec_source_path=spec_path,
         rules_config=rules_config,
         refiner_options=refiner_options,
-        branding_artifact=branding_artifact,
+        template_style=template_style_payload,
         prepare_cards=prepare_cards,
         require_prepare=True,
         layouts=resolved_layouts,
@@ -3059,9 +3012,7 @@ def mapping(  # noqa: PLR0913
     )
 
     try:
-        context = _run_mapping_pipeline(
-            params=mapping_params,
-        )
+        context = _run_mapping_pipeline(params=mapping_params)
     except ValueError as exc:
         click.echo(str(exc), err=True)
         raise click.exceptions.Exit(code=2) from exc
@@ -3628,7 +3579,7 @@ def _run_golden_specs(
         return results, warnings, errors
 
     rules_config = RulesConfig.load(DEFAULT_RULES_PATH)
-    branding_config = _load_branding_for_template(template_path, warnings)
+    template_style = _load_template_style_for_template(template_path, warnings)
 
     golden_root = output_dir / "golden_runs"
 
@@ -3667,7 +3618,7 @@ def _run_golden_specs(
             RenderingOptions(
                 template_path=template_path,
                 output_filename=f"{spec_path.stem}.pptx",
-                branding=branding_config,
+                template_style=template_style,
             )
         )
         refiner_bullet_level = (
@@ -3682,17 +3633,17 @@ def _run_golden_specs(
         )
         analyzer = SimpleAnalyzerStep(
             AnalyzerOptions(
-                min_font_size=branding_config.body_font.size_pt,
-                default_font_size=branding_config.body_font.size_pt,
-                default_font_color=branding_config.body_font.color_hex,
-                preferred_text_color=branding_config.primary_color,
-                background_color=branding_config.background_color,
+                min_font_size=template_style.body_font.size_pt,
+                default_font_size=template_style.body_font.size_pt,
+                default_font_color=template_style.body_font.color_hex,
+                preferred_text_color=template_style.colors.primary,
+                background_color=template_style.colors.background,
                 max_bullet_level=(
                     rules_config.max_bullet_level
                     if rules_config.max_bullet_level is not None
                     else AnalyzerOptions().max_bullet_level
                 ),
-                large_text_threshold_pt=branding_config.body_font.size_pt,
+                large_text_threshold_pt=template_style.body_font.size_pt,
             )
         )
 
@@ -3808,24 +3759,18 @@ def _resolve_golden_spec_path(spec_path: str, base_dir: Path) -> Path | None:
     return None
 
 
-def _load_branding_for_template(
+def _load_template_style_for_template(
     template_path: Path, warnings: list[str]
-) -> BrandingConfig:
-    try:
-        extraction = extract_branding_config(template_path)
-    except BrandingExtractionError as exc:
-        warnings.append(
-            f"テンプレートからブランド設定を抽出できなかったためデフォルト設定を使用します: {exc}"
-        )
-        try:
-            return BrandingConfig.load(DEFAULT_BRANDING_PATH)
-        except FileNotFoundError:
+) -> TemplateStyle:
+    style, artifact = extract_template_style(template_path)
+    source = artifact.get("source", {}) if isinstance(artifact, dict) else {}
+    if source.get("type") == "default":
+        error = source.get("error")
+        if error:
             warnings.append(
-                f"デフォルトのブランド設定が見つからないため内蔵設定を使用します: {DEFAULT_BRANDING_PATH}"
+                f"テンプレートからスタイル情報を抽出できなかったため既定値を使用します: {error}"
             )
-            return BrandingConfig.default()
-    else:
-        return extraction.to_branding_config()
+    return style
 
 
 def _resolve_template_id(
@@ -3977,7 +3922,7 @@ def _write_audit_log(context: PipelineContext) -> Path:
         "rendering": context.artifacts.get("rendering_summary"),
         "pdf_export": pdf_payload,
         "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
-        "branding": context.artifacts.get("branding"),
+        "template_style": context.artifacts.get("template_style"),
         "polisher": polisher_payload,
     }
     monitoring_summary = context.artifacts.get("monitoring_summary")
