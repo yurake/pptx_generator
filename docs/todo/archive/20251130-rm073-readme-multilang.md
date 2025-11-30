@@ -25,9 +25,8 @@ roadmap_item: RM-073 README 多言語展開整備
   - メモ: `.github/workflows/translate-readme.yml` を追加し README 更新時に自動翻訳＆コミットするパイプラインを整備。`scripts/translate_readme.py` を実装して auto/full 両モード・ブロック差分翻訳・末尾改行維持・`--mode auto` 未指定時エラー化を対応。README（ja/en/zh）に Language switcher と各言語のヘッダ統一、mermaid 図の用語ローカライズを適用。
 - [x] テスト・検証
   - メモ: ローカルで `translate_readme.py --mode full` を実行して LLM 呼び出しを確認（時間がかかるケースあり）。GitHub Actions からの実行はリポジトリ上で要確認として残し、手動検証の手順を runbook に記載。
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
+- [x] ドキュメント更新
+  - メモ: 対象ドキュメントの更新有無を確認済み。必要箇所（runbook 追加、README 多言語版更新）を反映し、不要箇所は確認結果を記録した。
   - [x] docs/roadmap 配下
     - メモ: RM-073 のロードマップ記載は現行のままで要更新なしのため確認のみ。
   - [x] docs/requirements 配下（実装結果との整合再確認）
