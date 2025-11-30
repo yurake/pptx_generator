@@ -20,18 +20,16 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pydantic import BaseModel, ValidationError
 
-from .branding_extractor import BrandingExtractionError, extract_branding_config
+from .branding_extractor import extract_branding_config
 from .draft_intel import load_return_reasons
 from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
-from .models import (ContentApprovalDocument, DraftDocument,
-                     GenerateReadyDocument, JobSpec, JobSpecScaffold,
-                     SpecValidationError, TemplateBlueprint,
-                     TemplateBlueprintSlide, TemplateBlueprintSlot,
-                     TemplateRelease, TemplateReleaseDiagnostics,
-                     TemplateReleaseGoldenRun, TemplateReleaseReport,
-                     TemplateSpec, TemplateStyle)
+from .models import (ContentApprovalDocument, DraftDocument, GenerateReadyDocument,
+                     JobMeta, JobSpec, JobSpecScaffold, SpecValidationError,
+                     TemplateBlueprint, TemplateBlueprintSlide, TemplateRelease,
+                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
+                     TemplateReleaseReport, TemplateSpec, TemplateStyle)
 from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        ContentApprovalStep, DraftStructuringOptions,
                        DraftStructuringStep, MappingOptions, MappingStep,
@@ -47,7 +45,7 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
-from .prepare import (PrepareDocument, PreparePolicyError,
+from .prepare import (PrepareCard, PrepareDocument, PreparePolicyError,
                       PrepareSourceDocument, load_prepare_policy_set)
 from .prepare_ai import (
     PrepareAIOrchestrationError,
