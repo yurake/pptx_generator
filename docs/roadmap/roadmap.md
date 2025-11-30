@@ -507,7 +507,7 @@ flowchart TB
 - 対象 stage: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 保留（2025-02-18 更新）
+- 状況: 保留（2025-11-30 更新）
 - 期待成果:
   - 生成AIによる章立て・ページ順・layout_hint 提案と、ページ内配置を文章化したサマリ出力。
   - ユーザーが自然言語で修正指示を出し、AI がレイアウト差分を適用する対話 API／UI。
@@ -520,7 +520,7 @@ flowchart TB
 - 対象 stage: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 保留（2025-02-18 更新）
+- 状況: 保留（2025-11-30 更新）
 - 期待成果:
   - 必須情報チェックリストと生成AIによる質問テンプレートの実装、回答を `content_draft.json` へ反映するフロー。
   - ヒアリング履歴・再問い合わせ管理と承認ログとの連携、ユーザー通知チャネルの整備。
