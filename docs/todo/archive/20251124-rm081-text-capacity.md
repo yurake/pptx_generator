@@ -57,8 +57,8 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: ToDo の親子チェックとメモ整合を再確認（2025-11-30）
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #341 https://github.com/yurake/pptx_generator/pull/341（2025-11-30 完了）
 
 ## メモ
 - 2025-11-30 静的モード UAT 生成物を確認し、`.pptx/gen/audit_log.json.template_style.config` へテンプレスタイルが記録されていること、`mapping.template_version` が `null`（テンプレ側バージョン情報未定義）であることを把握。
