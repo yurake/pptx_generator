@@ -10,6 +10,9 @@ from pydantic import (BaseModel, ConfigDict, Field, HttpUrl, ValidationError,
                       ValidationInfo, field_validator)
 
 
+DEFAULT_JP_FONT = "Meiryo UI"
+
+
 class FontSpec(BaseModel):
     name: str = Field(..., description="フォントファミリ名")
     size_pt: float = Field(..., ge=6.0, description="フォントサイズ")
@@ -207,8 +210,8 @@ class TemplateStyle(BaseModel):
 
     @classmethod
     def default(cls) -> "TemplateStyle":
-        heading = FontSpec(name="Meiryo UI", size_pt=32.0, color_hex="#1A1A1A", bold=False, italic=False)
-        body = FontSpec(name="Meiryo UI", size_pt=18.0, color_hex="#333333", bold=False, italic=False)
+        heading = FontSpec(name=DEFAULT_JP_FONT, size_pt=32.0, color_hex="#1A1A1A", bold=False, italic=False)
+        body = FontSpec(name=DEFAULT_JP_FONT, size_pt=18.0, color_hex="#333333", bold=False, italic=False)
         textbox_paragraph = TextboxParagraph(
             align="left",
             line_spacing_pt=22.0,
@@ -222,9 +225,9 @@ class TemplateStyle(BaseModel):
         )
         table_defaults = TemplateTableDefaults(
             fallback_box=TextboxPosition(left_in=1.0, top_in=1.5, width_in=8.5, height_in=3.0),
-            header_font=FontSpec(name="Meiryo UI", size_pt=18.0, color_hex="#FFFFFF", bold=True, italic=False),
+            header_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=18.0, color_hex="#FFFFFF", bold=True, italic=False),
             header_fill_color="#005BAC",
-            body_font=FontSpec(name="Meiryo UI", size_pt=16.0, color_hex="#333333", bold=False, italic=False),
+            body_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=16.0, color_hex="#333333", bold=False, italic=False),
             body_fill_color="#FFFFFF",
             zebra_fill_color="#F4F7FB",
         )
@@ -238,7 +241,7 @@ class TemplateStyle(BaseModel):
                 "#7E57C2",
                 "#8D6E63",
             ],
-            axis_font=FontSpec(name="Meiryo UI", size_pt=14.0, color_hex="#333333", bold=False, italic=False),
+            axis_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=14.0, color_hex="#333333", bold=False, italic=False),
             data_labels_enabled=True,
             data_labels_format="0",
         )
