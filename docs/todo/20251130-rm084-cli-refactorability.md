@@ -1,7 +1,7 @@
 ---
 目的: RM-084 CLI/Pipeline リファクタビリティ向上に向けた初期計画と着手準備
 関連ブランチ: chore/rm084-cli-refactorability
-関連Issue: 未作成
+関連Issue: #343
 roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 ---
 
@@ -38,7 +38,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - メモ: 運用手順変更なし。更新不要。
   - [x] README.md / AGENTS.md
     - メモ: Upfront 情報の更新不要。
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
   - メモ: 今回は関連 Issue 未発行のため引き続き `未作成`。
 - [ ] チェックリスト整合確認
