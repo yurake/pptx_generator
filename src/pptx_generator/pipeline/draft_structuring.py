@@ -975,15 +975,43 @@ class DraftStructuringStep:
         generate_ready: GenerateReadyDocument,
         ai_summary: dict[str, Any],
     ) -> dict[str, Any]:
+        sections_payload, main_slides_total, appendix_slides_total = self._summarize_sections(draft)
+        template_info = self._build_template_info(draft)
+        statistics = self._build_statistics_block(
+            generate_ready=generate_ready,
+            main_slides=main_slides_total,
+            appendix_slides=appendix_slides_total,
+            ai_summary=ai_summary,
+        )
+
+        payload = {
+            "generated_at": generate_ready.meta.generated_at,
+            "sections": sections_payload,
+            "statistics": statistics,
+            "template": template_info,
+            "analyzer_summary": draft.meta.analyzer_summary,
+            "return_reason_stats": draft.meta.return_reason_stats,
+            "ai_recommendation": self._build_ai_recommendation_block(ai_summary),
+        }
+        self._apply_optional_generate_ready_meta(
+            payload=payload,
+            generate_ready=generate_ready,
+        )
+        return payload
+
+    @staticmethod
+    def _summarize_sections(
+        draft: DraftDocument,
+    ) -> tuple[list[dict[str, Any]], int, int]:
         sections_payload: list[dict[str, Any]] = []
-        main_slides_total = 0
-        appendix_slides_total = 0
+        main_total = 0
+        appendix_total = 0
 
         for section in draft.sections:
             main_count = sum(1 for card in section.slides if not card.appendix)
             appendix_count = sum(1 for card in section.slides if card.appendix)
-            main_slides_total += main_count
-            appendix_slides_total += appendix_count
+            main_total += main_count
+            appendix_total += appendix_count
             sections_payload.append(
                 {
                     "name": section.name,
@@ -996,7 +1024,11 @@ class DraftStructuringStep:
                 }
             )
 
-        template_info = {
+        return sections_payload, main_total, appendix_total
+
+    @staticmethod
+    def _build_template_info(draft: DraftDocument) -> dict[str, Any]:
+        return {
             "template_id": draft.meta.template_id,
             "structure_pattern": draft.meta.structure_pattern,
             "target_length": draft.meta.target_length,
@@ -1005,25 +1037,37 @@ class DraftStructuringStep:
             "mismatch": [item.model_dump(mode="json") for item in draft.meta.template_mismatch],
         }
 
-        payload = {
-            "generated_at": generate_ready.meta.generated_at,
-            "sections": sections_payload,
-            "statistics": {
-                "total_slides": len(generate_ready.slides),
-                "main_slides": main_slides_total,
-                "appendix_slides": appendix_slides_total,
-            },
-            "template": template_info,
-            "analyzer_summary": draft.meta.analyzer_summary,
-            "return_reason_stats": draft.meta.return_reason_stats,
-            "ai_recommendation": {
-                "invoked": ai_summary.get("invoked", 0),
-                "used": ai_summary.get("used", 0),
-                "simulated": ai_summary.get("simulated", 0),
-                "models": ai_summary.get("models", {}),
-            },
+    @staticmethod
+    def _build_ai_recommendation_block(ai_summary: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "invoked": ai_summary.get("invoked", 0),
+            "used": ai_summary.get("used", 0),
+            "simulated": ai_summary.get("simulated", 0),
+            "models": ai_summary.get("models", {}),
         }
-        payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
+
+    def _build_statistics_block(
+        self,
+        *,
+        generate_ready: GenerateReadyDocument,
+        main_slides: int,
+        appendix_slides: int,
+        ai_summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        statistics = {
+            "total_slides": len(generate_ready.slides),
+            "main_slides": main_slides,
+            "appendix_slides": appendix_slides,
+            "ai_recommendation_used": ai_summary.get("used", 0),
+        }
+        return statistics
+
+    @staticmethod
+    def _apply_optional_generate_ready_meta(
+        *,
+        payload: dict[str, Any],
+        generate_ready: GenerateReadyDocument,
+    ) -> None:
         payload["mode"] = generate_ready.meta.layout_mode
         if generate_ready.meta.slot_summary:
             payload["slot_summary"] = generate_ready.meta.slot_summary
@@ -1031,7 +1075,6 @@ class DraftStructuringStep:
             payload["blueprint_path"] = generate_ready.meta.blueprint_path
         if generate_ready.meta.blueprint_hash:
             payload["blueprint_hash"] = generate_ready.meta.blueprint_hash
-        return payload
 
     def _merge_slide_elements(
         self,
@@ -1197,44 +1240,9 @@ class DraftStructuringStep:
             msg = "static モードでは prepare_document が必要です"
             raise DraftStructuringError(msg)
 
-        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
-        template_spec_candidate: Path | None = None
-
-        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
-        if template_spec_meta:
-            candidate = Path(template_spec_meta)
-            if not candidate.is_absolute() and spec_source_path is not None:
-                candidate = (spec_source_path.parent / candidate).resolve()
-            elif not candidate.is_absolute():
-                candidate = candidate.resolve()
-            template_spec_candidate = candidate
-
-        if template_spec_candidate is None:
-            blueprint_path_str = prepare_meta.blueprint_path
-            if blueprint_path_str:
-                candidate = Path(blueprint_path_str)
-                if not candidate.is_absolute():
-                    candidate = candidate.resolve()
-                template_spec_candidate = candidate
-
-        if template_spec_candidate is None:
-            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
-            raise DraftStructuringError(msg)
-
-        if not template_spec_candidate.exists():
-            msg = f"template_spec が見つかりません: {template_spec_candidate}"
-            raise DraftStructuringError(msg)
-
-        template_spec = self._load_template_spec(template_spec_candidate)
-        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
-            msg = "template_spec が static Blueprint を含んでいません"
-            raise DraftStructuringError(msg)
-
-        if prepare_meta.blueprint_hash:
-            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
-            if prepare_meta.blueprint_hash != computed_hash:
-                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
-                raise DraftStructuringError(msg)
+        template_spec_path = self._resolve_static_template_spec_path(context, prepare_meta)
+        template_spec = self._load_template_spec(template_spec_path)
+        self._validate_static_template_spec(template_spec, prepare_meta)
 
         self._layout_name_lookup = {layout.name: layout.name for layout in template_spec.layouts}
 
@@ -1246,6 +1254,60 @@ class DraftStructuringStep:
             prepare_meta=prepare_meta,
         )
 
+        self._write_static_outputs(context=context, artifacts=artifacts)
+
+    def _resolve_static_template_spec_path(
+        self,
+        context: PipelineContext,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> Path:
+        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
+        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
+        candidate: Path | None = None
+
+        if template_spec_meta:
+            candidate = Path(template_spec_meta)
+            if not candidate.is_absolute():
+                if spec_source_path is not None:
+                    candidate = (spec_source_path.parent / candidate).resolve()
+                else:
+                    candidate = candidate.resolve()
+
+        if candidate is None and prepare_meta.blueprint_path:
+            blueprint_path = Path(prepare_meta.blueprint_path)
+            candidate = blueprint_path.resolve() if not blueprint_path.is_absolute() else blueprint_path
+
+        if candidate is None:
+            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
+            raise DraftStructuringError(msg)
+
+        if not candidate.exists():
+            msg = f"template_spec が見つかりません: {candidate}"
+            raise DraftStructuringError(msg)
+
+        return candidate
+
+    def _validate_static_template_spec(
+        self,
+        template_spec: TemplateSpec,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> None:
+        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
+            msg = "template_spec が static Blueprint を含んでいません"
+            raise DraftStructuringError(msg)
+
+        if prepare_meta.blueprint_hash:
+            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
+            if prepare_meta.blueprint_hash != computed_hash:
+                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
+                raise DraftStructuringError(msg)
+
+    def _write_static_outputs(
+        self,
+        *,
+        context: PipelineContext,
+        artifacts: StaticArtifacts,
+    ) -> None:
         output_dir = self.options.output_dir or context.workdir
         output_dir.mkdir(parents=True, exist_ok=True)
 

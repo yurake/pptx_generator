@@ -22,7 +22,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: `DraftStructuringStep.run` / `_build_document` をヘルパー分割し、`DraftWorkItem`・`DraftAccumulator`・`_finalize_draft_document` を追加。既存出力と例外を維持。
+  - メモ: `DraftStructuringStep.run` / `_build_document` をヘルパー分割し、`DraftWorkItem`・`DraftAccumulator`・`_finalize_draft_document` を追加。`_build_generate_ready_meta_payload` もセクション集計・統計ヘルパーへ分解し、既存出力と例外を維持。静的モードは `_resolve_static_template_spec_path`・`_validate_static_template_spec`・`_write_static_outputs` で責務分離。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py` を実行し 7 ケース成功。
 - [x] ドキュメント更新

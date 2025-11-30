@@ -85,6 +85,13 @@
   - 非静的モード／静的モードで共通化できる GenerateReady 出力処理を `_write_generate_ready_outputs`（仮）として再利用。
   - 既存の JSON スキーマ・ログ構造・例外メッセージを保持し、ユニット＋ compose パイプラインテストで差分を検証する。
 
+## 2025-11-30 DraftStructuringStep 実装メモ
+- 実装内容:
+  - `DraftWorkItem` / `DraftAccumulator` 導入、`_build_work_items`・`_process_work_item`・`_finalize_draft_document` を追加し、`run`／`_build_document` を三段フロー化。
+  - `_build_generate_ready_meta_payload` を `_summarize_sections`・`_build_template_info`・`_build_statistics_block`・`_build_ai_recommendation_block`・`_apply_optional_generate_ready_meta` に分割。
+  - 静的モードでは `_resolve_static_template_spec_path`・`_validate_static_template_spec`・`_write_static_outputs` を新設し、テンプレート解決と成果物出力の責務を整理。
+- テスト: `tests/pipeline/compose/test_draft_structuring_step.py` ほか関連ケースを通過。
+
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI
