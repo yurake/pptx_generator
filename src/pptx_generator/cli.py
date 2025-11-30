@@ -102,6 +102,14 @@ class OutlineResult:
     generate_ready_meta_path: Path
 
 
+@dataclass(frozen=True)
+class TemplateStylePayload:
+    """テンプレートスタイル本体とアーティファクトをまとめたバンドル。"""
+
+    style: TemplateStyle
+    artifact: dict[str, object]
+
+
 _DEFAULT_DRAFT_OPTIONS = DraftStructuringOptions()
 DEFAULT_DRAFT_FILENAME = _DEFAULT_DRAFT_OPTIONS.draft_filename
 DEFAULT_APPROVED_FILENAME = _DEFAULT_DRAFT_OPTIONS.approved_filename
@@ -1624,8 +1632,7 @@ def _run_mapping_pipeline(
     spec_source_path: Path,
     rules_config: RulesConfig,
     refiner_options: RefinerOptions,
-    template_style_artifact: dict[str, object],
-    template_style: TemplateStyle,
+    template_style_payload: TemplateStylePayload,
     prepare_cards: Path | None,
     require_prepare: bool,
     layouts: Optional[Path],
@@ -1679,8 +1686,8 @@ def _run_mapping_pipeline(
 
     context = PipelineContext(
         spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
-    context.add_artifact("template_style", template_style_artifact)
-    context.add_artifact("template_style_data", template_style)
+    context.add_artifact("template_style", template_style_payload.artifact)
+    context.add_artifact("template_style_data", template_style_payload.style)
 
     spec_validator = SpecValidatorStep(
         max_title_length=rules_config.max_title_length,
@@ -2853,6 +2860,10 @@ def compose(  # noqa: PLR0913
     rules_config = RulesConfig.load(rules)
     template_style, template_style_artifact = _prepare_template_style(resolved_template)
     refiner_options = _build_refiner_options(rules_config, template_style)
+    template_style_payload = TemplateStylePayload(
+        style=template_style,
+        artifact=template_style_artifact,
+    )
 
     try:
         mapping_context = _run_mapping_pipeline(
@@ -2861,8 +2872,7 @@ def compose(  # noqa: PLR0913
             spec_source_path=spec_path,
             rules_config=rules_config,
             refiner_options=refiner_options,
-            template_style_artifact=template_style_artifact,
-            template_style=template_style,
+            template_style_payload=template_style_payload,
             prepare_cards=prepare_cards,
             require_prepare=True,
             layouts=resolved_layouts,
@@ -2971,6 +2981,10 @@ def mapping(  # noqa: PLR0913
     rules_config = RulesConfig.load(rules)
     template_style, template_style_artifact = _prepare_template_style(resolved_template)
     refiner_options = _build_refiner_options(rules_config, template_style)
+    template_style_payload = TemplateStylePayload(
+        style=template_style,
+        artifact=template_style_artifact,
+    )
 
     try:
         context = _run_mapping_pipeline(
@@ -2979,8 +2993,7 @@ def mapping(  # noqa: PLR0913
             spec_source_path=spec_path,
             rules_config=rules_config,
             refiner_options=refiner_options,
-            template_style_artifact=template_style_artifact,
-            template_style=template_style,
+            template_style_payload=template_style_payload,
             prepare_cards=prepare_cards,
             require_prepare=True,
             layouts=resolved_layouts,
