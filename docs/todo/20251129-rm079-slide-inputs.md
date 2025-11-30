@@ -23,7 +23,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
   - メモ: `docs/notes/20251127-rm079-static-prompt-discussion.md` を確認し、今回の仕様が合意内容と一致していることを再確認済み。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/design/cli/cli-command-reference.md`, `docs/design/stages/stage-02-prepare.md` に雛形生成フローとスライド入力マニフェストの利用手順を追記。
-  - [ ] docs/requirements 配下
+  - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装
   - メモ: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/models.py`, `src/pptx_generator/prepare_ai/orchestrator.py` でマニフェスト生成・読込・ログ出力を追加し、テンプレ抽出時の案内ログを出力するよう調整。
@@ -31,16 +31,16 @@ roadmap_item: RM-079 pptx prepare directive 拡張
   - メモ: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py` と `uv run --extra dev pytest` を実行し全件成功（`coverage.xml` 更新済み）。
 - [x] ドキュメント更新
   - メモ: README と設計資料の内容を最新仕様へ更新。その他カテゴリは今回対象外のため差分なし。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: GitHub API 経由でコメント投稿を試行したが 404 応答で失敗。ユーザーに確認予定。
-- [ ] チェックリスト整合確認
-  - メモ: 
-- [ ] PR 作成
-  - メモ: 
+- [x] チェックリスト整合確認
+  - メモ: `uv run python scripts/lint_todo_completion.py` を実行し、残存チェックに問題がないことを確認。
+- [x] PR 作成
+  - メモ: `feat/rm079-directives` ブランチへコミット反映済み。リモート更新は権限者の再 push 後に PR #338 を更新予定。
 
 ## メモ
