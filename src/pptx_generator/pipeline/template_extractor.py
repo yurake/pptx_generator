@@ -32,7 +32,7 @@ from ..utils.layout_metadata import (derive_usage_tags,
                                      normalise_placeholder_type,
                                      summarize_placeholders)
 from ..utils.text_capacity import estimate_text_capacity
-from .base import PipelineContext, PipelineStep
+from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
 
@@ -450,43 +450,72 @@ class TemplateExtractorStep:
     def _font_overrides_from_paragraph(self, paragraph) -> dict[str, Any]:
         if paragraph is None:
             return {}
-        font = getattr(paragraph, "font", None)
-        name = getattr(font, "name", None)
-        size = _length_to_pt(getattr(font, "size", None)) if font else None
-        color = _color_to_hex(getattr(font, "color", None)) if font else None
-        bold = bool(font.bold) if font and font.bold is not None else None
-        italic = bool(font.italic) if font and font.italic is not None else None
 
-        if (name is None or not name.strip()) or size is None or color is None or bold is None or italic is None:
-            for run in getattr(paragraph, "runs", []):
-                run_font = getattr(run, "font", None)
-                if run_font is None:
-                    continue
-                if name is None and getattr(run_font, "name", None):
-                    name = run_font.name
-                if size is None:
-                    size = _length_to_pt(getattr(run_font, "size", None)) or size
-                if color is None:
-                    color = _color_to_hex(getattr(run_font, "color", None)) or color
-                if bold is None and run_font.bold is not None:
-                    bold = bool(run_font.bold)
-                if italic is None and run_font.italic is not None:
-                    italic = bool(run_font.italic)
-                if name and size and color and bold is not None and italic is not None:
-                    break
+        attributes = self._collect_font_attributes(getattr(paragraph, "font", None))
+        if not self._font_attributes_complete(attributes):
+            attributes = self._fill_font_attributes_from_runs(paragraph, attributes)
 
         overrides: dict[str, Any] = {}
-        if name:
-            overrides["name"] = name
-        if size:
-            overrides["size_pt"] = size
-        if color:
-            overrides["color_hex"] = color
-        if bold is not None:
-            overrides["bold"] = bold
-        if italic is not None:
-            overrides["italic"] = italic
+        if attributes["name"]:
+            overrides["name"] = attributes["name"]
+        if attributes["size"] is not None:
+            overrides["size_pt"] = attributes["size"]
+        if attributes["color"]:
+            overrides["color_hex"] = attributes["color"]
+        if attributes["bold"] is not None:
+            overrides["bold"] = attributes["bold"]
+        if attributes["italic"] is not None:
+            overrides["italic"] = attributes["italic"]
         return overrides
+
+    @staticmethod
+    def _collect_font_attributes(font) -> dict[str, Any]:
+        attributes = {
+            "name": None,
+            "size": None,
+            "color": None,
+            "bold": None,
+            "italic": None,
+        }
+        if font is None:
+            return attributes
+        name = getattr(font, "name", None)
+        attributes["name"] = name.strip() if isinstance(name, str) else name
+        attributes["size"] = _length_to_pt(getattr(font, "size", None))
+        attributes["color"] = _color_to_hex(getattr(font, "color", None))
+        if font.bold is not None:
+            attributes["bold"] = bool(font.bold)
+        if font.italic is not None:
+            attributes["italic"] = bool(font.italic)
+        return attributes
+
+    @staticmethod
+    def _font_attributes_complete(attributes: dict[str, Any]) -> bool:
+        return all(
+            [
+                bool(attributes["name"]),
+                attributes["size"] is not None,
+                bool(attributes["color"]),
+                attributes["bold"] is not None,
+                attributes["italic"] is not None,
+            ]
+        )
+
+    def _fill_font_attributes_from_runs(
+        self, paragraph, base_attributes: dict[str, Any]
+    ) -> dict[str, Any]:
+        attributes = dict(base_attributes)
+        for run in getattr(paragraph, "runs", []):
+            run_font = getattr(run, "font", None)
+            if run_font is None:
+                continue
+            run_attributes = self._collect_font_attributes(run_font)
+            for key in ("name", "size", "color", "bold", "italic"):
+                if attributes[key] is None and run_attributes[key] is not None:
+                    attributes[key] = run_attributes[key]
+            if self._font_attributes_complete(attributes):
+                break
+        return attributes
 
     def _convert_paragraph(self, paragraph) -> TextboxParagraph | None:
         if paragraph is None:

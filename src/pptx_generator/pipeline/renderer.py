@@ -20,9 +20,10 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
 from ..models import (ChartSeries, FontSpec, JobSpec, PipelineFallbackError,
-                      Slide, SlideBullet, SlideImage, SlideTable, SlideTextbox,
-                      TemplateChartDefaults, TemplateImageDefaults,
-                      TemplateStyle, TemplateTableDefaults, TextboxParagraph)
+                      Slide, SlideBullet, SlideChart, SlideImage, SlideTable,
+                      SlideTextbox, TemplateChartDefaults,
+                      TemplateImageDefaults, TemplateStyle,
+                      TemplateTableDefaults, TextboxParagraph)
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -541,52 +542,74 @@ class SimpleRendererStep:
 
         chart_defaults = self._style.chart
         for chart_spec in slide_spec.charts:
-            if not chart_spec.series:
-                logger.debug("チャート '%s' に系列がないためスキップ", chart_spec.id)
-                continue
+            self._render_single_chart(slide, slide_spec, chart_spec, chart_defaults)
 
-            data = CategoryChartData()
-            categories = chart_spec.categories or [
+    def _render_single_chart(
+        self,
+        slide,
+        slide_spec: Slide,
+        chart_spec: SlideChart,
+        chart_defaults: TemplateChartDefaults,
+    ) -> None:
+        if not chart_spec.series:
+            logger.debug("チャート '%s' に系列がないためスキップ", chart_spec.id)
+            return
+
+        data = self._build_chart_data(chart_spec)
+        chart_type = self._resolve_chart_type(chart_spec.type)
+        fallback_box = self._determine_chart_fallback_box(chart_defaults)
+        element_label = chart_spec.id or (chart_spec.anchor or "chart")
+        resolution = self._resolve_anchor(
+            slide,
+            chart_spec.anchor,
+            fallback_box,
+            owner_description=f"チャート要素 '{element_label}' (slide_id='{slide_spec.id}')",
+        )
+        anchor_shape = resolution.shape
+        if resolution.is_placeholder:
+            self._prepare_placeholder(anchor_shape)
+
+        left, top, width, height = resolution.as_box()
+        chart_shape = slide.shapes.add_chart(
+            chart_type,
+            left,
+            top,
+            width,
+            height,
+            data,
+        )
+        chart = chart_shape.chart
+
+        self._apply_chart_series_colors(chart.series, chart_spec.series, chart_defaults)
+        self._style_chart(chart, chart_spec.options, chart_defaults)
+
+        if anchor_shape is not None:
+            self._remove_shape(anchor_shape)
+
+    def _build_chart_data(self, chart_spec: SlideChart) -> CategoryChartData:
+        data = CategoryChartData()
+        categories = chart_spec.categories
+        if not categories and chart_spec.series:
+            categories = [
                 str(index + 1) for index in range(len(chart_spec.series[0].values))
             ]
-            data.categories = categories
-            for series in chart_spec.series:
-                data.add_series(series.name, series.values)
+        data.categories = categories or []
+        for series in chart_spec.series:
+            data.add_series(series.name, series.values)
+        return data
 
-            chart_type = self._resolve_chart_type(chart_spec.type)
-            default_box = chart_defaults.fallback_box
-            if default_box is not None:
-                fallback_box = LayoutBox(
-                    default_box.left_in,
-                    default_box.top_in,
-                    default_box.width_in,
-                    default_box.height_in,
-                )
-            else:
-                fallback_box = LayoutBox(1.0, 1.5, 8.5, 4.0)
-            element_label = chart_spec.id or (chart_spec.anchor or "chart")
-            resolution = self._resolve_anchor(
-                slide,
-                chart_spec.anchor,
-                fallback_box,
-                owner_description=f"チャート要素 '{element_label}' (slide_id='{slide_spec.id}')",
+    def _determine_chart_fallback_box(
+        self, chart_defaults: TemplateChartDefaults
+    ) -> LayoutBox:
+        default_box = chart_defaults.fallback_box
+        if default_box is not None:
+            return LayoutBox(
+                default_box.left_in,
+                default_box.top_in,
+                default_box.width_in,
+                default_box.height_in,
             )
-            anchor_shape = resolution.shape
-            if resolution.is_placeholder:
-                self._prepare_placeholder(anchor_shape)
-            left, top, width, height = resolution.as_box()
-            chart_shape = slide.shapes.add_chart(
-                chart_type, left, top, width, height, data
-            )
-            chart = chart_shape.chart
-
-            self._apply_chart_series_colors(
-                chart.series, chart_spec.series, chart_defaults
-            )
-            self._style_chart(chart, chart_spec.options, chart_defaults)
-
-            if anchor_shape is not None:
-                self._remove_shape(anchor_shape)
+        return LayoutBox(1.0, 1.5, 8.5, 4.0)
 
     def _find_body_placeholder(self, slide):
         for shape in slide.placeholders:
@@ -966,43 +989,71 @@ class SimpleRendererStep:
     def _style_chart(
         self, chart, options, defaults: TemplateChartDefaults
     ) -> None:
+        labels_enabled, labels_format = self._resolve_chart_label_settings(
+            options, defaults
+        )
+        self._apply_chart_data_labels(chart, labels_enabled, labels_format)
+        self._apply_chart_axis_number_format(chart, labels_format)
+        self._apply_chart_axes_font(chart, defaults.axis_font or self._style.body_font)
+        self._configure_chart_legend(chart)
+
+    def _resolve_chart_label_settings(
+        self, options, defaults: TemplateChartDefaults
+    ) -> tuple[bool, str | None]:
         labels_enabled = defaults.data_labels_enabled
         labels_format = defaults.data_labels_format
-
         if options is not None:
             labels_enabled = options.data_labels
             labels_format = options.y_axis_format or labels_format
+        return bool(labels_enabled), labels_format
 
+    def _apply_chart_data_labels(
+        self,
+        chart,
+        labels_enabled: bool,
+        labels_format: str | None,
+    ) -> None:
         for plot in chart.plots:
-            plot.has_data_labels = bool(labels_enabled)
-            if plot.has_data_labels:
-                data_labels = plot.data_labels
-                data_labels.show_value = True
-                if labels_format:
-                    data_labels.number_format = labels_format
+            plot.has_data_labels = labels_enabled
+            if not plot.has_data_labels:
+                continue
+            data_labels = plot.data_labels
+            data_labels.show_value = True
+            if labels_format:
+                data_labels.number_format = labels_format
 
-        if labels_format and hasattr(chart, "value_axis"):
+    @staticmethod
+    def _apply_chart_axis_number_format(chart, labels_format: str | None) -> None:
+        if not labels_format:
+            return
+        if hasattr(chart, "value_axis"):
             chart.value_axis.tick_labels.number_format = labels_format
 
-        if getattr(chart, "has_legend", False):
-            if chart.has_legend:
-                chart.legend.include_in_layout = False
-
-        axis_font = defaults.axis_font or self._style.body_font
+    @staticmethod
+    def _apply_chart_axes_font(chart, axis_font: FontSpec) -> None:
         if hasattr(chart, "category_axis"):
-            font = chart.category_axis.tick_labels.font
-            font.name = axis_font.name
-            font.size = Pt(axis_font.size_pt)
-            font.color.rgb = RGBColor.from_string(axis_font.color_hex.lstrip("#"))
-            font.bold = axis_font.bold
-            font.italic = axis_font.italic
+            SimpleRendererStep._apply_single_axis_font(
+                chart.category_axis.tick_labels.font,
+                axis_font,
+            )
         if hasattr(chart, "value_axis"):
-            font = chart.value_axis.tick_labels.font
-            font.name = axis_font.name
-            font.size = Pt(axis_font.size_pt)
-            font.color.rgb = RGBColor.from_string(axis_font.color_hex.lstrip("#"))
-            font.bold = axis_font.bold
-            font.italic = axis_font.italic
+            SimpleRendererStep._apply_single_axis_font(
+                chart.value_axis.tick_labels.font,
+                axis_font,
+            )
+
+    @staticmethod
+    def _apply_single_axis_font(target_font, source: FontSpec) -> None:
+        target_font.name = source.name
+        target_font.size = Pt(source.size_pt)
+        target_font.color.rgb = RGBColor.from_string(source.color_hex.lstrip("#"))
+        target_font.bold = source.bold
+        target_font.italic = source.italic
+
+    @staticmethod
+    def _configure_chart_legend(chart) -> None:
+        if getattr(chart, "has_legend", False) and chart.has_legend:
+            chart.legend.include_in_layout = False
 
     def _resolve_chart_type(self, chart_type: str) -> XL_CHART_TYPE:
         mapping = {
