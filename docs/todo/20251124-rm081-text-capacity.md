@@ -40,12 +40,15 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py` / `tests/integration/test_cli_generate_pipeline_flow.py` を実行し成功。レンダリング・CLI 両経路の回帰確認済み。
 - [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+  - メモ: TemplateStyle への移行を CLI/設計ドキュメントへ反映済み。未更新の領域は要否検討のうえコメントを残す。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: stage-04-gen 要件に TemplateStyle の入力を追記（fce14ad）
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: CLI リファレンス、全体設計、stage 3/4 資料を TemplateStyle 基準へ更新（fce14ad）
   - [ ] docs/runbook 配下
+    - メモ: Analyzer runbook は参考用途のみで変更不要（branding.json 参照は情報共有目的）
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: 
