@@ -1,0 +1,105 @@
+name: Translate README (auto-diff)
+
+on:
+  push:
+    paths:
+      - "README.md"
+    branches-ignore:
+      - "main"
+
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Translation mode: auto or full"
+        required: false
+        default: "auto"
+      base_ref:
+        description: "Base ref for auto mode (optional). If empty, HEAD^ is used."
+        required: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          echo "BEFORE=${BEFORE}"
+          echo "AFTER=${AFTER}"
+
+          # 新規ブランチなど before が存在しないケース
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "needs-translate=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # before のコミットを取得（存在しない場合はスキップしないよう）
+          git fetch origin "$BEFORE" --depth=1 || true
+
+          CHANGED_FILES=$(git diff --name-only "$BEFORE" "$AFTER" || true)
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # README.md が変わっていなければ翻訳不要
+          if ! echo "$CHANGED_FILES" | grep -qx "README.md"; then
+            echo "needs-translate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 今回の push で README.md, README.en.md, README.zh.md がすべて変更されているなら、
+          # 「手動3ファイル更新」と判断して翻訳スキップ
+          if echo "$CHANGED_FILES" | grep -qx "README.en.md" && \
+             echo "$CHANGED_FILES" | grep -qx "README.zh.md"; then
+            echo "Detected manual update for all README translations. Skip."
+            echo "needs-translate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "needs-translate=true" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        if: steps.changes.outputs.needs-translate == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.changes.outputs.needs-translate == 'true'
+        run: |
+          pip install openai python-dotenv
+
+      - name: Translate README (auto diff)
+        if: steps.changes.outputs.needs-translate == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/translate_readme.py \
+            --mode auto \
+            --base-ref "${{ github.event.before }}"
+
+      - name: Commit updated translations
+        if: steps.changes.outputs.needs-translate == 'true'
+        run: |
+          if ! git diff --quiet; then
+            echo "Translation updates detected. Committing..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.en.md README.zh.md
+            git commit -m "chore: auto-update README translations"
+            git push
+          else
+            echo "No translation changes. Skip commit."
+          fi
