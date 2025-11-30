@@ -298,7 +298,7 @@ class SimpleRendererStep:
             return
 
         for textbox_spec in slide_spec.textboxes:
-            fallback_box = self._resolve_textbox_fallback(slide_spec, textbox_spec)
+            fallback_box = self._resolve_textbox_fallback(textbox_spec)
             text_frame = self._obtain_text_frame(
                 slide=slide,
                 anchor_name=textbox_spec.anchor,
@@ -375,9 +375,7 @@ class SimpleRendererStep:
                 preserve_level=False,
             )
 
-    def _resolve_textbox_fallback(
-        self, slide_spec: Slide, textbox_spec: SlideTextbox
-    ) -> LayoutBox:
+    def _resolve_textbox_fallback(self, textbox_spec: SlideTextbox) -> LayoutBox:
         position = textbox_spec.position
         if position is not None:
             return LayoutBox(
