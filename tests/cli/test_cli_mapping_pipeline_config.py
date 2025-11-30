@@ -5,20 +5,25 @@ from types import SimpleNamespace
 from typing import cast
 
 import pptx_generator.cli as cli
-from pptx_generator.models import GenerateReadyDocument, GenerateReadyMeta
+from pptx_generator.models import (GenerateReadyDocument, GenerateReadyMeta,
+                                   TemplateStyle)
 from pptx_generator.pipeline import PipelineContext
 from pptx_generator.pipeline.refiner import RefinerOptions
 from pptx_generator.settings import RulesConfig
 
 
 def _make_params(tmp_path) -> cli.MappingPipelineConfig:
+    style_payload = cli.TemplateStylePayload(
+        style=TemplateStyle.default(),
+        artifact={"source": "test-template"},
+    )
     return cli.MappingPipelineConfig(
         spec=cast(object, SimpleNamespace(slides=[], meta=None)),
         output_dir=tmp_path / "out",
         spec_source_path=tmp_path / "spec.json",
         rules_config=RulesConfig(),
         refiner_options=RefinerOptions(),
-        branding_artifact={"brand": "primary"},
+        template_style=style_payload,
         prepare_cards=None,
         require_prepare=True,
         layouts=tmp_path / "layouts.jsonl",
@@ -72,7 +77,8 @@ def test_run_mapping_pipeline_builds_context_from_config(monkeypatch, tmp_path):
     result = cli._run_mapping_pipeline(params=params)
 
     assert result.workdir == params.output_dir
-    assert result.artifacts["branding"] == params.branding_artifact
+    assert result.artifacts["template_style"] == params.template_style.artifact
+    assert result.artifacts["template_style_data"] == params.template_style.style
     assert result.artifacts["runner_executed"] is True
 
     copied_meta = params.output_dir / cli.DEFAULT_GENERATE_READY_META_FILENAME

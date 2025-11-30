@@ -16,6 +16,7 @@ from pptx.util import Inches, Pt
 from pptx_generator.models import (
     ChartOptions,
     ChartSeries,
+    FontSpec,
     JobAuth,
     JobMeta,
     JobSpec,
@@ -30,10 +31,10 @@ from pptx_generator.models import (
     TableStyle,
     TextboxParagraph,
     TextboxPosition,
+    TemplateStyle,
 )
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.renderer import RenderingOptions, SimpleRendererStep
-from pptx_generator.settings import BrandingConfig, BrandingFont
 from pydantic import ValidationError
 
 
@@ -130,24 +131,45 @@ def test_renderer_renders_rich_content(tmp_path: Path) -> None:
         ],
     )
 
-    branding = BrandingConfig.default()
-    branding.theme.heading = BrandingFont(
-        name="HeadingBrand", size_pt=30.0, color_hex="#101010"
+    template_style = TemplateStyle.default()
+    heading_font = FontSpec(
+        name="HeadingBrand",
+        size_pt=30.0,
+        color_hex="#101010",
+        bold=False,
+        italic=False,
     )
-    branding.theme.body = BrandingFont(
-        name="BodyBrand", size_pt=20.0, color_hex="#202020"
+    body_font = FontSpec(
+        name="BodyBrand",
+        size_pt=20.0,
+        color_hex="#202020",
+        bold=False,
+        italic=False,
     )
-    branding.theme.colors = branding.theme.colors.__class__(
-        primary="#445566",
-        secondary="#DDEEFF",
-        accent="#CC5500",
-        background="#FFFFFF",
+    template_style = template_style.model_copy(
+        update={
+            "heading_font": heading_font,
+            "body_font": body_font,
+            "colors": template_style.colors.model_copy(
+                update={
+                    "primary": "#445566",
+                    "secondary": "#DDEEFF",
+                    "accent": "#CC5500",
+                    "background": "#FFFFFF",
+                }
+            ),
+            "table": template_style.table.model_copy(
+                update={"zebra_fill_color": "#EFEFEF"}
+            ),
+            "textbox": template_style.textbox.model_copy(
+                update={"font": body_font}
+            ),
+        }
     )
-    branding.components.table.body.zebra_fill_color = "#EFEFEF"
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
-        RenderingOptions(output_filename="out.pptx", branding=branding)
+        RenderingOptions(output_filename="out.pptx", template_style=template_style)
     )
     renderer.run(context)
 
@@ -247,7 +269,7 @@ def test_renderer_renders_subtitle_notes_and_textboxes(tmp_path: Path) -> None:
     notes_frame = slide.notes_slide.notes_text_frame
     assert [p.text for p in notes_frame.paragraphs] == ["ノート本文"]
     for paragraph in notes_frame.paragraphs:
-        assert paragraph.font.name == renderer._branding.body_font.name
+        assert paragraph.font.name == renderer._style.body_font.name
 
     textboxes = [
         shape
@@ -459,7 +481,7 @@ def test_renderer_placeholder_centering_tolerance(tmp_path: Path) -> None:
         RenderingOptions(
             template_path=template_path,
             output_filename="tolerance.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
     renderer.run(context)
@@ -616,7 +638,7 @@ def test_renderer_uses_layout_placeholder_names_for_anchors(tmp_path: Path) -> N
         RenderingOptions(
             template_path=template_path,
             output_filename="placeholders.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
     renderer.run(context)
@@ -858,7 +880,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
         RenderingOptions(
             template_path=template_path,
             output_filename="object-placeholder.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
     renderer.run(context)
@@ -998,7 +1020,7 @@ def test_renderer_removes_bullet_placeholder_when_anchor_specified(
         RenderingOptions(
             template_path=template_path,
             output_filename="bullet-placeholder-removal.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
     renderer.run(context)
@@ -1060,21 +1082,31 @@ def test_renderer_applies_brand_paragraph_style_to_bullets(tmp_path: Path) -> No
         ],
     )
 
-    branding = BrandingConfig.default()
-    bullet_paragraph = branding.components.textbox.paragraph
-    bullet_paragraph.left_indent_in = 0.5
-    bullet_paragraph.right_indent_in = 0.1
-    bullet_paragraph.first_line_indent_in = -0.25
-    bullet_paragraph.line_spacing_pt = 24.0
-    bullet_paragraph.space_before_pt = 3.0
-    bullet_paragraph.space_after_pt = 2.5
+    template_style = TemplateStyle.default()
+    bullet_paragraph = (template_style.textbox.paragraph or TextboxParagraph()).model_copy(
+        update={
+            "left_indent_in": 0.5,
+            "right_indent_in": 0.1,
+            "first_line_indent_in": -0.25,
+            "line_spacing_pt": 24.0,
+            "space_before_pt": 3.0,
+            "space_after_pt": 2.5,
+        }
+    )
+    template_style = template_style.model_copy(
+        update={
+            "textbox": template_style.textbox.model_copy(
+                update={"paragraph": bullet_paragraph}
+            )
+        }
+    )
 
     context = PipelineContext(spec=spec, workdir=tmp_path)
     renderer = SimpleRendererStep(
         RenderingOptions(
             template_path=template_path,
             output_filename="bullet-style.pptx",
-            branding=branding,
+            template_style=template_style,
         )
     )
     renderer.run(context)
@@ -1209,7 +1241,7 @@ def test_renderer_renders_multiple_bullet_groups(tmp_path: Path) -> None:
         RenderingOptions(
             template_path=template_path,
             output_filename="grouped-bullets.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
     renderer.run(context)
@@ -1282,7 +1314,7 @@ def test_renderer_raises_error_for_duplicate_group_anchor(tmp_path: Path) -> Non
         RenderingOptions(
             template_path=template_path,
             output_filename="duplicate-anchors.pptx",
-            branding=BrandingConfig.default(),
+            template_style=TemplateStyle.default(),
         )
     )
 

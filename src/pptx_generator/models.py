@@ -10,6 +10,9 @@ from pydantic import (BaseModel, ConfigDict, Field, HttpUrl, ValidationError,
                       ValidationInfo, field_validator)
 
 
+DEFAULT_JP_FONT = "Meiryo UI"
+
+
 class FontSpec(BaseModel):
     name: str = Field(..., description="フォントファミリ名")
     size_pt: float = Field(..., ge=6.0, description="フォントサイズ")
@@ -130,9 +133,137 @@ class TextboxParagraph(BaseModel):
     left_indent_in: float | None = None
     right_indent_in: float | None = None
     first_line_indent_in: float | None = None
-    left_indent_in: float | None = None
-    right_indent_in: float | None = None
-    first_line_indent_in: float | None = None
+
+
+class TextFramePadding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    left_in: float | None = None
+    right_in: float | None = None
+    top_in: float | None = None
+    bottom_in: float | None = None
+
+
+class TextCapacity(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total_chars: int = 0
+    chars_per_line: int = 0
+    max_lines: int = 0
+
+
+class TemplateColorPalette(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    primary: str
+    secondary: str
+    accent: str
+    background: str
+
+
+class TemplateTextboxDefaults(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fallback_box: TextboxPosition | None = None
+    font: FontSpec | None = None
+    paragraph: TextboxParagraph | None = None
+
+
+class TemplateTableDefaults(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fallback_box: TextboxPosition | None = None
+    header_font: FontSpec | None = None
+    header_fill_color: str | None = None
+    body_font: FontSpec | None = None
+    body_fill_color: str | None = None
+    zebra_fill_color: str | None = None
+
+
+class TemplateChartDefaults(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fallback_box: TextboxPosition | None = None
+    palette: list[str] = Field(default_factory=list)
+    axis_font: FontSpec | None = None
+    data_labels_enabled: bool = True
+    data_labels_format: str | None = None
+
+
+class TemplateImageDefaults(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fallback_box: TextboxPosition | None = None
+    sizing: Literal["fit", "fill", "stretch"] = "fit"
+
+
+class TemplateStyle(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    heading_font: FontSpec
+    body_font: FontSpec
+    colors: TemplateColorPalette
+    textbox: TemplateTextboxDefaults
+    table: TemplateTableDefaults
+    chart: TemplateChartDefaults
+    image: TemplateImageDefaults
+
+    @classmethod
+    def default(cls) -> "TemplateStyle":
+        heading = FontSpec(name=DEFAULT_JP_FONT, size_pt=32.0, color_hex="#1A1A1A", bold=False, italic=False)
+        body = FontSpec(name=DEFAULT_JP_FONT, size_pt=18.0, color_hex="#333333", bold=False, italic=False)
+        textbox_paragraph = TextboxParagraph(
+            align="left",
+            line_spacing_pt=22.0,
+            left_indent_in=0.3,
+            first_line_indent_in=-0.2,
+        )
+        textbox_defaults = TemplateTextboxDefaults(
+            fallback_box=TextboxPosition(left_in=1.0, top_in=1.0, width_in=8.0, height_in=1.5),
+            font=body,
+            paragraph=textbox_paragraph,
+        )
+        table_defaults = TemplateTableDefaults(
+            fallback_box=TextboxPosition(left_in=1.0, top_in=1.5, width_in=8.5, height_in=3.0),
+            header_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=18.0, color_hex="#FFFFFF", bold=True, italic=False),
+            header_fill_color="#005BAC",
+            body_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=16.0, color_hex="#333333", bold=False, italic=False),
+            body_fill_color="#FFFFFF",
+            zebra_fill_color="#F4F7FB",
+        )
+        chart_defaults = TemplateChartDefaults(
+            fallback_box=TextboxPosition(left_in=1.0, top_in=1.5, width_in=8.5, height_in=4.0),
+            palette=[
+                "#005BAC",
+                "#0097A7",
+                "#FF7043",
+                "#4CAF50",
+                "#7E57C2",
+                "#8D6E63",
+            ],
+            axis_font=FontSpec(name=DEFAULT_JP_FONT, size_pt=14.0, color_hex="#333333", bold=False, italic=False),
+            data_labels_enabled=True,
+            data_labels_format="0",
+        )
+        image_defaults = TemplateImageDefaults(
+            fallback_box=TextboxPosition(left_in=1.0, top_in=1.75, width_in=8.0, height_in=4.5),
+            sizing="fit",
+        )
+        colors = TemplateColorPalette(
+            primary="#005BAC",
+            secondary="#0097A7",
+            accent="#FF7043",
+            background="#FFFFFF",
+        )
+        return cls(
+            heading_font=heading,
+            body_font=body,
+            colors=colors,
+            textbox=textbox_defaults,
+            table=table_defaults,
+            chart=chart_defaults,
+            image=image_defaults,
+        )
 
 
 class SlideTextbox(BaseModel):
@@ -144,6 +275,8 @@ class SlideTextbox(BaseModel):
     position: TextboxPosition | None = None
     font: FontSpec | None = None
     paragraph: TextboxParagraph | None = None
+    text_frame_padding: TextFramePadding | None = None
+    text_capacity: TextCapacity | None = None
 
 
 class Slide(BaseModel):
@@ -232,6 +365,10 @@ class JobSpecScaffoldPlaceholder(BaseModel):
     sample_text: str | None = None
     notes: list[str] = Field(default_factory=list)
     auto_draw: bool = False
+    font: FontSpec | None = None
+    paragraph: TextboxParagraph | None = None
+    text_frame_padding: TextFramePadding | None = None
+    text_capacity: TextCapacity | None = None
 
 
 class JobSpecScaffoldSlide(BaseModel):
@@ -599,6 +736,7 @@ class GenerateReadyMeta(BaseModel):
     blueprint_path: str | None = None
     blueprint_hash: str | None = None
     slot_summary: dict[str, int] | None = None
+    template_style: TemplateStyle | None = None
 
 
 class GenerateReadyDocument(BaseModel):
@@ -715,6 +853,10 @@ class ShapeInfo(BaseModel):
     error: str | None = Field(None, description="抽出時のエラー")
     missing_fields: list[str] = Field(default_factory=list, description="欠落フィールド")
     conflict: str | None = Field(None, description="SlideBullet拡張仕様との競合")
+    font: FontSpec | None = Field(None, description="テンプレートが指定するフォント情報")
+    paragraph: TextboxParagraph | None = Field(None, description="段落設定")
+    text_frame_padding: TextFramePadding | None = Field(None, description="テキスト枠の余白")
+    text_capacity: TextCapacity | None = Field(None, description="推定文字許容量")
 
 
 class LayoutInfo(BaseModel):

@@ -34,7 +34,7 @@
     "converter": "libreoffice"
   },
   "refiner_adjustments": null,
-  "branding": {
+  "template_style": {
     "source": {
       "type": "file",
       "path": "config/branding.json"

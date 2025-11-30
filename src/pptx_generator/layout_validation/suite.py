@@ -353,6 +353,12 @@ class LayoutValidationSuite:
                         }
                     )
 
+                capacity_payload = (
+                    shape.text_capacity.model_dump()
+                    if getattr(shape, "text_capacity", None)
+                    else None
+                )
+
                 placeholder_records.append(
                     {
                         "name": shape.name,
@@ -361,6 +367,7 @@ class LayoutValidationSuite:
                         "style_hint": style_hint,
                         "shape_type": shape.shape_type,
                         "flags": flags,
+                        "text_capacity": capacity_payload,
                     }
                 )
                 placeholder_names.append(shape.name)
@@ -838,6 +845,12 @@ class LayoutValidationSuite:
         for placeholder in placeholders:
             p_type = placeholder.get("type")
             if p_type not in TEXT_PLACEHOLDER_TYPES:
+                continue
+
+            capacity = placeholder.get("text_capacity")
+            if capacity:
+                max_lines += int(capacity.get("max_lines") or 0)
+                max_chars += int(capacity.get("total_chars") or 0)
                 continue
 
             bbox = placeholder["bbox"]

@@ -31,6 +31,7 @@ from ..models import (
     JsonPatchOperation,
     Slide,
     JobSpec,
+    TemplateStyle,
 )
 from ..utils.usage_tags import normalize_usage_tag_value, normalize_usage_tags
 from .base import PipelineContext
@@ -299,6 +300,9 @@ class MappingStep:
             job_meta=context.spec.meta,
             job_auth=context.spec.auth,
         )
+        style_data = context.artifacts.get("template_style_data")
+        if isinstance(style_data, TemplateStyle):
+            generate_ready_meta.template_style = style_data
         generate_ready_document = GenerateReadyDocument(
             slides=generate_ready_slides,
             meta=generate_ready_meta,
@@ -672,9 +676,9 @@ class MappingStep:
                 return str(template_path)
 
     def _resolve_template_version(self, context: PipelineContext) -> str | None:
-        branding = context.artifacts.get("branding")
-        if isinstance(branding, dict):
-            source = branding.get("source")
+        style_artifact = context.artifacts.get("template_style")
+        if isinstance(style_artifact, dict):
+            source = style_artifact.get("source")
             if isinstance(source, dict):
                 template = source.get("template")
                 if isinstance(template, str):

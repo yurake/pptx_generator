@@ -13,19 +13,26 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 from pptx import Presentation
+from pptx.dml.color import ColorFormat
+from pptx.enum.text import PP_ALIGN
 from pptx.shapes.base import BaseShape
 from pptx.shapes.placeholder import PlaceholderPicture, SlidePlaceholder
+from zipfile import BadZipFile
 
-from ..models import (JobSpecScaffold, JobSpecScaffoldBounds,
+from ..branding_extractor import (BrandingExtractionError,
+                                  extract_branding_config)
+from ..models import (FontSpec, JobSpecScaffold, JobSpecScaffoldBounds,
                       JobSpecScaffoldMeta, JobSpecScaffoldPlaceholder,
                       JobSpecScaffoldSlide, LayoutInfo, ShapeInfo,
                       TemplateBlueprint, TemplateBlueprintSlide,
-                      TemplateBlueprintSlot, TemplateSpec)
+                      TemplateBlueprintSlot, TemplateSpec, TextCapacity,
+                      TextFramePadding, TextboxParagraph)
 from ..utils.layout_metadata import (derive_usage_tags,
                                      generate_layout_description,
                                      normalise_placeholder_type,
                                      summarize_placeholders)
-from .base import PipelineContext, PipelineStep
+from ..utils.text_capacity import estimate_text_capacity
+from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +73,12 @@ class TemplateExtractorStep:
         self.options = options
         self._slide_width_emu: int | None = None
         self._slide_height_emu: int | None = None
+        self._heading_font_default = FontSpec(
+            name="Meiryo UI", size_pt=32.0, color_hex="#1A1A1A"
+        )
+        self._body_font_default = FontSpec(
+            name="Meiryo UI", size_pt=18.0, color_hex="#333333"
+        )
     
     def run(self, context: PipelineContext) -> None:
         """テンプレート抽出を実行する。"""
@@ -94,6 +107,8 @@ class TemplateExtractorStep:
         """テンプレートファイルから仕様を抽出する。"""
         if not self.options.template_path.exists():
             raise FileNotFoundError(f"テンプレートファイルが見つかりません: {self.options.template_path}")
+
+        self._load_font_defaults()
 
         try:
             presentation = Presentation(self.options.template_path)
@@ -286,6 +301,24 @@ class TemplateExtractorStep:
             elif placeholder_kind is not None:
                 placeholder_type = str(placeholder_kind)
         
+        # テキスト属性（フォント/段落/余白/容量）
+        font_spec: FontSpec | None = None
+        paragraph_spec: TextboxParagraph | None = None
+        frame_padding: TextFramePadding | None = None
+        text_capacity: TextCapacity | None = None
+        if self._is_text_shape(placeholder_type, shape):
+            (
+                font_spec,
+                paragraph_spec,
+                frame_padding,
+                text_capacity,
+            ) = self._extract_text_attributes(
+                text_frame,
+                placeholder_type,
+                width_in,
+                height_in,
+            )
+
         # SlideBullet拡張仕様との競合チェック
         conflict = None
         if name.lower() in SLIDE_BULLET_ANCHORS:
@@ -312,6 +345,10 @@ class TemplateExtractorStep:
             is_placeholder=is_placeholder,
             conflict=conflict,
             missing_fields=missing_fields,
+            font=font_spec,
+            paragraph=paragraph_spec,
+            text_frame_padding=frame_padding,
+            text_capacity=text_capacity,
         )
 
     @staticmethod
@@ -356,6 +393,187 @@ class TemplateExtractorStep:
         if record["shape_type"] is None:
             record.pop("shape_type")
         return record
+
+    def _is_text_shape(self, placeholder_type: str | None, shape: BaseShape) -> bool:
+        placeholder = (placeholder_type or "").upper()
+        if placeholder in {"TITLE", "CENTER_TITLE", "SUBTITLE", "BODY", "CONTENT", "TEXT"}:
+            return True
+        text_frame = getattr(shape, "text_frame", None)
+        if text_frame is None:
+            return False
+        text_value = getattr(text_frame, "text", None) or getattr(shape, "text", None) or ""
+        return bool(text_value.strip())
+
+    def _extract_text_attributes(
+        self,
+        text_frame,
+        placeholder_type: str | None,
+        width_in: float,
+        height_in: float,
+    ) -> tuple[FontSpec | None, TextboxParagraph | None, TextFramePadding | None, TextCapacity | None]:
+        if text_frame is None:
+            font_spec = self._resolve_font_spec(placeholder_type, None)
+            text_capacity = estimate_text_capacity(
+                width_in=width_in,
+                height_in=height_in,
+                font=font_spec,
+                paragraph=None,
+                padding=None,
+            )
+            return font_spec, None, None, text_capacity
+
+        paragraph_obj = text_frame.paragraphs[0] if text_frame.paragraphs else None
+        paragraph_spec = self._convert_paragraph(paragraph_obj)
+        font_spec = self._resolve_font_spec(placeholder_type, paragraph_obj)
+        padding = self._convert_text_frame_padding(text_frame)
+        text_capacity = estimate_text_capacity(
+            width_in=width_in,
+            height_in=height_in,
+            font=font_spec,
+            paragraph=paragraph_spec,
+            padding=padding,
+        )
+        return font_spec, paragraph_spec, padding, text_capacity
+
+    def _resolve_font_spec(self, placeholder_type: str | None, paragraph) -> FontSpec:
+        placeholder = (placeholder_type or "").upper()
+        base = (
+            self._heading_font_default
+            if placeholder in {"TITLE", "CENTER_TITLE", "SUBTITLE"}
+            else self._body_font_default
+        )
+        overrides = self._font_overrides_from_paragraph(paragraph)
+        if not overrides:
+            return base
+        return base.model_copy(update=overrides)
+
+    def _font_overrides_from_paragraph(self, paragraph) -> dict[str, Any]:
+        if paragraph is None:
+            return {}
+
+        attributes = self._collect_font_attributes(getattr(paragraph, "font", None))
+        if not self._font_attributes_complete(attributes):
+            attributes = self._fill_font_attributes_from_runs(paragraph, attributes)
+
+        overrides: dict[str, Any] = {}
+        if attributes["name"]:
+            overrides["name"] = attributes["name"]
+        if attributes["size"] is not None:
+            overrides["size_pt"] = attributes["size"]
+        if attributes["color"]:
+            overrides["color_hex"] = attributes["color"]
+        if attributes["bold"] is not None:
+            overrides["bold"] = attributes["bold"]
+        if attributes["italic"] is not None:
+            overrides["italic"] = attributes["italic"]
+        return overrides
+
+    @staticmethod
+    def _collect_font_attributes(font) -> dict[str, Any]:
+        attributes = {
+            "name": None,
+            "size": None,
+            "color": None,
+            "bold": None,
+            "italic": None,
+        }
+        if font is None:
+            return attributes
+        name = getattr(font, "name", None)
+        attributes["name"] = name.strip() if isinstance(name, str) else name
+        attributes["size"] = _length_to_pt(getattr(font, "size", None))
+        attributes["color"] = _color_to_hex(getattr(font, "color", None))
+        if font.bold is not None:
+            attributes["bold"] = bool(font.bold)
+        if font.italic is not None:
+            attributes["italic"] = bool(font.italic)
+        return attributes
+
+    @staticmethod
+    def _font_attributes_complete(attributes: dict[str, Any]) -> bool:
+        return all(
+            [
+                bool(attributes["name"]),
+                attributes["size"] is not None,
+                bool(attributes["color"]),
+                attributes["bold"] is not None,
+                attributes["italic"] is not None,
+            ]
+        )
+
+    def _fill_font_attributes_from_runs(
+        self, paragraph, base_attributes: dict[str, Any]
+    ) -> dict[str, Any]:
+        attributes = dict(base_attributes)
+        for run in getattr(paragraph, "runs", []):
+            run_font = getattr(run, "font", None)
+            if run_font is None:
+                continue
+            run_attributes = self._collect_font_attributes(run_font)
+            for key in ("name", "size", "color", "bold", "italic"):
+                if attributes[key] is None and run_attributes[key] is not None:
+                    attributes[key] = run_attributes[key]
+            if self._font_attributes_complete(attributes):
+                break
+        return attributes
+
+    def _convert_paragraph(self, paragraph) -> TextboxParagraph | None:
+        if paragraph is None:
+            return None
+        fmt = getattr(paragraph, "paragraph_format", None)
+        return TextboxParagraph(
+            level=max(paragraph.level if paragraph.level is not None else 0, 0),
+            line_spacing_pt=self._line_spacing_to_pt(paragraph),
+            space_before_pt=_length_to_pt(getattr(fmt, "space_before", None)) if fmt else None,
+            space_after_pt=_length_to_pt(getattr(fmt, "space_after", None)) if fmt else None,
+            align=self._alignment_to_str(paragraph.alignment),
+            left_indent_in=_length_to_inches(getattr(fmt, "left_margin", None)) if fmt else None,
+            right_indent_in=_length_to_inches(getattr(fmt, "right_margin", None)) if fmt else None,
+            first_line_indent_in=_length_to_inches(getattr(fmt, "first_line_indent", None)) if fmt else None,
+        )
+
+    @staticmethod
+    def _alignment_to_str(value) -> str | None:
+        if value is None:
+            return None
+        try:
+            align = PP_ALIGN(value)
+        except ValueError:
+            return None
+        return {
+            PP_ALIGN.LEFT: "left",
+            PP_ALIGN.CENTER: "center",
+            PP_ALIGN.RIGHT: "right",
+            PP_ALIGN.JUSTIFY: "justify",
+            PP_ALIGN.DISTRIBUTE: "distributed",
+        }.get(align, None)
+
+    def _convert_text_frame_padding(self, text_frame) -> TextFramePadding | None:
+        if text_frame is None:
+            return None
+        padding = TextFramePadding(
+            left_in=_length_to_inches(getattr(text_frame, "margin_left", None)),
+            right_in=_length_to_inches(getattr(text_frame, "margin_right", None)),
+            top_in=_length_to_inches(getattr(text_frame, "margin_top", None)),
+            bottom_in=_length_to_inches(getattr(text_frame, "margin_bottom", None)),
+        )
+        if all(value in (None, 0.0) for value in padding.model_dump().values()):
+            return None
+        return padding
+
+    def _line_spacing_to_pt(self, paragraph) -> float | None:
+        if paragraph is None:
+            return None
+        value = getattr(paragraph, "line_spacing", None)
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            font = getattr(paragraph, "font", None)
+            base_size = _length_to_pt(getattr(font, "size", None)) if font else None
+            if base_size is None:
+                base_size = self._body_font_default.size_pt
+            return float(value) * float(base_size)
+        return _length_to_pt(value)
 
     @staticmethod
     def _matches_filter(value: str, keyword: str) -> bool:
@@ -440,6 +658,10 @@ class TemplateExtractorStep:
                     sample_text=self._sanitize_sample_text(anchor.text),
                     notes=self._collect_placeholder_notes(anchor),
                     auto_draw=is_auto_draw,
+                    font=anchor.font,
+                    paragraph=anchor.paragraph,
+                    text_frame_padding=anchor.text_frame_padding,
+                    text_capacity=anchor.text_capacity,
                 )
                 placeholders.append(placeholder)
 
@@ -618,6 +840,41 @@ class TemplateExtractorStep:
         stem = re.sub(r"[^0-9A-Za-z_\-一-龯ぁ-んァ-ンー]+", "", stem)
         return stem or "template"
 
+    def _load_font_defaults(self) -> None:
+        try:
+            branding = extract_branding_config(self.options.template_path)
+        except (BrandingExtractionError, BadZipFile, FileNotFoundError) as exc:
+            logger.debug("branding 設定の抽出に失敗したため既定フォントを使用: %s", exc)
+            return
+
+        heading_payload = branding.fonts.get("heading") if branding.fonts else None
+        body_payload = branding.fonts.get("body") if branding.fonts else None
+        if heading_payload:
+            self._heading_font_default = self._font_spec_from_payload(
+                heading_payload, self._heading_font_default
+            )
+        if body_payload:
+            self._body_font_default = self._font_spec_from_payload(
+                body_payload, self._body_font_default
+            )
+
+    @staticmethod
+    def _font_spec_from_payload(payload: dict[str, Any], fallback: FontSpec) -> FontSpec:
+        name = payload.get("name") or fallback.name
+        size_pt = payload.get("size_pt") or fallback.size_pt
+        color_hex = _normalize_hex(payload.get("color_hex")) or fallback.color_hex
+        bold = payload.get("bold")
+        italic = payload.get("italic")
+        return fallback.model_copy(
+            update={
+                "name": str(name),
+                "size_pt": float(size_pt),
+                "color_hex": color_hex,
+                "bold": bool(bold) if bold is not None else fallback.bold,
+                "italic": bool(italic) if italic is not None else fallback.italic,
+            }
+        )
+
 
 class TemplateExtractor:
     """スタンドアロンでテンプレート抽出を行うクラス。"""
@@ -657,3 +914,49 @@ class TemplateExtractor:
         jobspec_path = self.step._determine_jobspec_path(resolved_output)
         self.step._save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
         return resolved_output
+
+
+def _length_to_pt(value) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value.pt)
+    except AttributeError:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+
+def _length_to_inches(value) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value.inches)
+    except AttributeError:
+        try:
+            return float(value) / EMU_PER_INCH
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
+
+
+def _color_to_hex(color: ColorFormat | None) -> str | None:
+    if color is None:
+        return None
+    rgb = getattr(color, "rgb", None)
+    if rgb is None:
+        return None
+    try:
+        components = tuple(rgb)
+    except TypeError:
+        return None
+    return "#" + "".join(f"{component:02X}" for component in components)
+
+
+def _normalize_hex(value) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text if text.startswith("#") else f"#{text}"

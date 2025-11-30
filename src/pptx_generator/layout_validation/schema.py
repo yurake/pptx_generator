@@ -54,6 +54,15 @@ LAYOUT_RECORD_SCHEMA: dict[str, object] = {
                         "type": "array",
                         "items": {"type": "string"},
                     },
+                    "text_capacity": {
+                        "type": ["object", "null"],
+                        "properties": {
+                            "total_chars": {"type": "integer", "minimum": 0},
+                            "chars_per_line": {"type": "integer", "minimum": 0},
+                            "max_lines": {"type": "integer", "minimum": 0},
+                        },
+                        "additionalProperties": False,
+                    },
                 },
                 "additionalProperties": False,
             },
