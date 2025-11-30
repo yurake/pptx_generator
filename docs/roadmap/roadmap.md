@@ -43,7 +43,6 @@ flowchart TB
     subgraph ST2["Stage 2: コンテンツ準備"]
         direction TB
         ST2_ANCHOR(( ))
-        RM079["RM-079<br/>pptx prepare directive 拡張<br/>(未着手)"]
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
         RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
@@ -1002,8 +1001,8 @@ flowchart TB
 - 対象 stage: Stage 2（コンテンツ準備）
 - ゴール: `pptx prepare` で LLM プロンプトへ外部要望を安全に注入できる仕組みを提供し、柔軟なドラフト生成を可能にする。
 - 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
-- 参照 ToDo: [docs/todo/20251124-rm079-prepare-directives.md](../todo/20251124-rm079-prepare-directives.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm079-prepare-directives.md](../todo/archive/20251124-rm079-prepare-directives.md)
+- 状況: 完了（2025-11-29 更新）
 - 期待成果:
   - CLI に `--prompt-directive` および `--prompt-directive-file` を追加し、複数ディレクティブを順序通りに渡せるようにする。
   - `PrepareAIOrchestrator` とプロンプト生成ロジックで directives を統合し、生成メタ・AI ログへ記録する。
@@ -1057,3 +1056,15 @@ flowchart TB
   - テストモジュール・クラス・関数名をガイドラインの命名規則（`test_<対象>_<シナリオ>` 等）へ合わせ、pytest コレクションの安定性を維持する。
   - 共有／ドメイン別フィクスチャの配置を見直し、`conftest.py` の責務と依存関係を整理する。
   - 再構成後のテストスイートを `uv run --extra dev pytest` で検証し、必要なドキュメントやスクリプトを更新する。
+
+<a id="rm-084"></a>
+### RM-084 CLI/Pipeline リファクタビリティ向上
+- 対象 stage: ステージ横断（CLI、Stage 2〜4 パイプライン）
+- ゴール: 長大化した CLI コマンド実装とパイプライン各ステップの単一責務化を進め、保守性とテスト容易性を高める。
+- 参照ドキュメント: [docs/notes/rm084-refactorability-assessment.md](../notes/rm084-refactorability-assessment.md)
+- 状況: 未着手（2025-02-16 追加）
+- 期待成果:
+  - `cli.py` のサブコマンド処理を orchestration レイヤーへ切り出し、ステージ別ハンドラ構造を定義する。
+  - `MappingStep.run`・`DraftStructuring._build_document`・`PrepareAIOrchestrator._build_cards_static` など長大メソッドを段階的に分割し、データクラスやヘルパー関数でロジックを整理する。
+  - `layout_validation.suite` と `api.app` の責務分離（ビルダークラス／router 切り出し）を進め、再利用性とテスト可能性を確保する。
+  - リファクタリング後の構成を反映したテストおよびドキュメント更新計画を策定し、ToDo/PR テンプレートでトレーサビリティを確保する。

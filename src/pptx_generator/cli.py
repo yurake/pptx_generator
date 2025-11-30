@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -27,9 +28,11 @@ from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument,
                      GenerateReadyDocument, JobSpec, JobSpecScaffold,
-                     SpecValidationError, TemplateRelease,
-                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
-                     TemplateReleaseReport, TemplateSpec)
+                     SpecValidationError, TemplateBlueprint,
+                     TemplateBlueprintSlide, TemplateBlueprintSlot,
+                     TemplateRelease, TemplateReleaseDiagnostics,
+                     TemplateReleaseGoldenRun, TemplateReleaseReport,
+                     TemplateSpec)
 from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        ContentApprovalStep, DraftStructuringOptions,
                        DraftStructuringStep, MappingOptions, MappingStep,
@@ -47,7 +50,11 @@ from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
 from .prepare import (PrepareDocument, PreparePolicyError,
                       PrepareSourceDocument, load_prepare_policy_set)
-from .prepare_ai import (PrepareAIOrchestrationError, PrepareAIOrchestrator)
+from .prepare_ai import (
+    PrepareAIOrchestrationError,
+    PrepareAIOrchestrator,
+    StaticPromptOverride,
+)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import BrandingConfig, RulesConfig
 from .spec_loader import load_jobspec_from_path
@@ -61,6 +68,15 @@ DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
+PROMPT_TEMPLATE_DIRNAME = Path("prompts")
+PROMPT_USER_SECTION_START = "<<<user-editable:start"
+PROMPT_USER_SECTION_END = "<<<user-editable:end"
+PROMPT_TEMPLATE_FILENAME_PATTERN = re.compile(r"^(?P<index>\d{2})_(?P<slug>[a-z0-9\-]+)\.md$", re.IGNORECASE)
+SLIDE_INPUTS_FILENAME = Path("slide_inputs.md")
+PROMPT_DEFAULT_LINES = {
+    "- 例: このスライドでは ROI の定量値を箇条書きで入れる",
+    "- 例: リスクを最低 2 点列挙する",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -481,6 +497,9 @@ class TemplateExtractionResult:
     validation_result: LayoutValidationResult | None
     output_dir: Path
     slide_snapshot_path: Path | None
+    prompt_templates_dir: Path | None
+    prompt_templates_created: int
+    slide_inputs_path: Path | None
 
 
 @dataclass(slots=True)
@@ -618,6 +637,30 @@ def _run_template_extraction(
             output_dir=output_dir,
         )
 
+    prompt_templates_dir: Path | None = None
+    prompt_templates_created = 0
+    if template_spec.layout_mode == "static" and template_spec.blueprint:
+        try:
+            prompt_templates_dir, prompt_templates_created = _ensure_prompt_templates(
+                output_dir=output_dir,
+                template_spec=template_spec,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("プロンプト雛形の生成に失敗しました: %s", exc)
+            prompt_templates_dir = None
+            prompt_templates_created = 0
+
+    slide_inputs_path: Path | None = None
+    if template_spec.layout_mode == "static" and template_spec.blueprint:
+        try:
+            slide_inputs_path = _ensure_slide_inputs_manifest(
+                output_dir=output_dir,
+                template_spec=template_spec,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("スライド入力マニフェストの生成に失敗しました: %s", exc)
+            slide_inputs_path = None
+
     return TemplateExtractionResult(
         template_spec=template_spec,
         jobspec_scaffold=jobspec_scaffold,
@@ -627,6 +670,9 @@ def _run_template_extraction(
         validation_result=validation_result,
         output_dir=output_dir,
         slide_snapshot_path=slide_snapshot_path,
+        prompt_templates_dir=prompt_templates_dir,
+        prompt_templates_created=prompt_templates_created,
+        slide_inputs_path=slide_inputs_path,
     )
 
 
@@ -750,6 +796,18 @@ def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
 
     if result.slide_snapshot_path is not None:
         click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")
+    if result.prompt_templates_dir is not None:
+        click.echo(
+            f"カスタムプロンプト雛形フォルダ: {result.prompt_templates_dir}"
+        )
+        if result.prompt_templates_created:
+            click.echo(
+                f"  -> {result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて Markdown の user-editable 節を編集してください。"
+            )
+        else:
+            click.echo("  -> 既存雛形を保持しました。変更が不要な場合はそのままご利用ください。")
+    if result.slide_inputs_path is not None:
+        click.echo(f"スライド入力マニフェストを出力しました: {result.slide_inputs_path}")
 
     if template_spec.warnings:
         click.echo(f"警告: {len(template_spec.warnings)} 件")
@@ -853,6 +911,236 @@ def _run_template_release(
         golden_runs_path=golden_runs_path,
         baseline_release=baseline_release,
     )
+
+
+def _ensure_prompt_templates(*, output_dir: Path, template_spec: TemplateSpec) -> tuple[Path, int]:
+    prompts_dir = output_dir / PROMPT_TEMPLATE_DIRNAME
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+
+    blueprint: TemplateBlueprint | None = template_spec.blueprint
+    if blueprint is None:
+        return prompts_dir, 0
+
+    created = 0
+    for index, slide in enumerate(blueprint.slides, start=1):
+        slug_source = slide.layout or slide.slide_id or f"slide{index:02}"
+        slug = _slugify_prompt_layout(slug_source)
+        filename = prompts_dir / f"{index:02}_{slug}.md"
+        if filename.exists():
+            logger.debug("Prompt template already exists, skipping: %s", filename)
+            continue
+        content = _render_prompt_template(slide=slide, index=index)
+        filename.write_text(content, encoding="utf-8")
+        created += 1
+
+    return prompts_dir, created
+
+
+def _render_prompt_template(*, slide: TemplateBlueprintSlide, index: int) -> str:
+    layout_label = slide.layout or "Unnamed Layout"
+    slide_id = slide.slide_id or f"slide-{index:02}"
+    required_marker = "必須" if slide.required else "任意"
+    intent_tags = ", ".join(slide.intent_tags) if slide.intent_tags else "(なし)"
+
+    slot_lines: list[str] = []
+    for slot in slide.slots:
+        slot_required = "必須" if slot.required else "任意"
+        slot_tags = ", ".join(slot.intent_tags) if slot.intent_tags else "(なし)"
+        slot_lines.append(
+            f"- `{slot.slot_id}` (anchor: {slot.anchor or '-'}, type: {slot.content_type}, {slot_required}, intent_tags: {slot_tags})"
+        )
+    if not slot_lines:
+        slot_lines.append("- (slot 未定義)")
+
+    fixed_section = "\n".join(
+        [
+            f"# Slide {index:02d}: {layout_label}",
+            "",
+            "## システム指定 (編集不可)",
+            f"- slide_id: {slide_id}",
+            f"- layout: {layout_label}",
+            f"- スライド必須: {required_marker}",
+            f"- intent_tags: {intent_tags}",
+            "",
+            "### slot 一覧",
+            *slot_lines,
+            "",
+            "## 編集方法",
+            "以下の user-editable セクションのみ編集してください。Markdown の構造を壊さないよう注意してください。",
+            "",
+        ]
+    )
+
+    user_section = "\n".join(
+        [
+            PROMPT_USER_SECTION_START,
+            "- 例: このスライドでは ROI の定量値を箇条書きで入れる",
+            "- 例: リスクを最低 2 点列挙する",
+            PROMPT_USER_SECTION_END,
+            "",
+            "<!-- 編集しない場合は user-editable セクションを空のままにしてください -->",
+        ]
+    )
+
+    return f"{fixed_section}\n{user_section}\n"
+
+
+def _slugify_prompt_layout(source: str) -> str:
+    lowered = source.strip().lower()
+    if not lowered:
+        lowered = "layout"
+    normalized = re.sub(r"[^a-z0-9]+", "-", lowered)
+    normalized = normalized.strip("-") or "layout"
+    return normalized[:48]
+
+
+def _build_prompt_identifier(index: int, slide: TemplateBlueprintSlide) -> str:
+    slug_source = slide.layout or slide.slide_id or f"slide{index:02}"
+    slug = _slugify_prompt_layout(slug_source)
+    return f"{index:02}_{slug}"
+
+
+def _ensure_slide_inputs_manifest(*, output_dir: Path, template_spec: TemplateSpec) -> Path | None:
+    blueprint = template_spec.blueprint
+    if blueprint is None:
+        return None
+
+    base_dir = output_dir.parent if output_dir.parent != output_dir else output_dir
+    manifest_path = base_dir / SLIDE_INPUTS_FILENAME
+    if manifest_path.exists():
+        logger.debug("Slide inputs manifest already exists: %s", manifest_path)
+        return manifest_path
+
+    lines = [
+        "# Slide Inputs Manifest",
+        "# 記法: <01_system-layout>: <data file path>",
+        "# 例: 01_system-layout: samples/contents/sample_import_content.txt",
+        "",
+    ]
+    for index, slide in enumerate(blueprint.slides, start=1):
+        identifier = _build_prompt_identifier(index, slide)
+        lines.append(f"{identifier}: <data file path>")
+
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    logger.info("Saved slide inputs manifest to %s", manifest_path.resolve())
+    return manifest_path
+
+
+def _load_slide_inputs_manifest(
+    *,
+    manifest_path: Path,
+    blueprint: TemplateBlueprint,
+) -> dict[str, Path]:
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"slide_inputs ファイルが見つかりません: {manifest_path}")
+
+    raw_lines = manifest_path.read_text(encoding="utf-8").splitlines()
+    mapping: dict[str, Path] = {}
+    for line in raw_lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if ":" not in stripped:
+            raise ValueError(f"slide_inputs の行を解析できません: '{line}'")
+        key, value = stripped.split(":", 1)
+        identifier = key.strip()
+        path_value = value.strip()
+        if not identifier or not path_value:
+            raise ValueError(f"slide_inputs の行に空の値があります: '{line}'")
+        resolved = Path(path_value)
+        if not resolved.is_absolute():
+            default_path = (manifest_path.parent / resolved).resolve()
+            project_path = (Path.cwd() / resolved).resolve()
+            if project_path.exists():
+                resolved = project_path
+            else:
+                resolved = default_path
+        mapping[identifier] = resolved
+
+    expected: dict[str, Path] = {}
+    missing: list[str] = []
+    for index, slide in enumerate(blueprint.slides, start=1):
+        identifier = _build_prompt_identifier(index, slide)
+        if identifier not in mapping:
+            missing.append(identifier)
+            continue
+        expected[slide.slide_id or identifier] = mapping[identifier]
+
+    if missing:
+        missing_list = ", ".join(missing)
+        raise ValueError(
+            "slide_inputs.md に不足しているスライドがあります: " + missing_list
+        )
+
+    return expected
+
+
+def _load_prompt_overrides(
+    *,
+    prompts_dir: Path,
+    blueprint: TemplateBlueprint,
+) -> list[StaticPromptOverride]:
+    if not prompts_dir.exists() or not prompts_dir.is_dir():
+        return []
+
+    slides = list(enumerate(blueprint.slides, start=1))
+    overrides: list[StaticPromptOverride] = []
+
+    for path in sorted(prompts_dir.glob("*.md")):
+        match = PROMPT_TEMPLATE_FILENAME_PATTERN.match(path.name)
+        if not match:
+            logger.debug("Prompts: ファイル名が規約に一致しないためスキップします: %s", path)
+            continue
+        index = int(match.group("index"))
+        if index < 1 or index > len(slides):
+            logger.debug("Prompts: インデックス %d が Blueprint の範囲外です", index)
+            continue
+
+        slide = slides[index - 1][1]
+        instructions = _extract_prompt_instructions(path)
+        if not instructions:
+            continue
+
+        slide_id = slide.slide_id or f"slide-{index:02d}"
+        override = StaticPromptOverride(
+            slide_id=slide_id,
+            slide_index=index,
+            instructions=instructions,
+            template_path=str(path),
+        )
+        overrides.append(override)
+
+    return overrides
+
+
+def _extract_prompt_instructions(path: Path) -> str:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        logger.warning("Prompts: ファイルが存在しません: %s", path)
+        return ""
+
+    start_idx = text.find(PROMPT_USER_SECTION_START)
+    end_idx = text.find(PROMPT_USER_SECTION_END)
+    if start_idx == -1 or end_idx == -1 or end_idx <= start_idx:
+        logger.debug("Prompts: user-editable セクションが見つかりません: %s", path)
+        return ""
+
+    start_idx += len(PROMPT_USER_SECTION_START)
+    section = text[start_idx:end_idx]
+    lines = [line.rstrip() for line in section.splitlines()]
+
+    cleaned: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped in PROMPT_DEFAULT_LINES:
+            continue
+        cleaned.append(stripped)
+
+    return "\n".join(cleaned).strip()
 
 
 def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
@@ -1995,6 +2283,7 @@ def gen(  # noqa: PLR0913
     "prepare_path",
     type=click.Path(exists=True, dir_okay=False,
                     readable=True, path_type=Path),
+    required=False,
 )
 @click.option(
     "--output",
@@ -2027,7 +2316,7 @@ def gen(  # noqa: PLR0913
     help="生成するカード枚数の上限",
 )
 def prepare(
-    prepare_path: Path,
+    prepare_path: Path | None,
     output_dir: Path,
     jobspec: Path | None,
     mode: str,
@@ -2035,14 +2324,16 @@ def prepare(
 ) -> None:
     """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
-    try:
-        source = PrepareSourceDocument.parse_file(prepare_path)
-    except FileNotFoundError as exc:
-        click.echo(f"プレペア入力ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=2) from exc
-    except (json.JSONDecodeError, ValidationError) as exc:
-        click.echo(f"プレペア入力の解析に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=2) from exc
+    source: PrepareSourceDocument | None = None
+    if prepare_path is not None:
+        try:
+            source = PrepareSourceDocument.parse_file(prepare_path)
+        except FileNotFoundError as exc:
+            click.echo(f"プレペア入力ファイルが見つかりません: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
+        except (json.JSONDecodeError, ValidationError) as exc:
+            click.echo(f"プレペア入力の解析に失敗しました: {exc}", err=True)
+            raise click.exceptions.Exit(code=2) from exc
 
     policy_path = DEFAULT_PREPARE_POLICY_PATH
     try:
@@ -2052,6 +2343,9 @@ def prepare(
         raise click.exceptions.Exit(code=4) from exc
 
     blueprint_spec: TemplateSpec | None = None
+    prompt_overrides: list[StaticPromptOverride] = []
+    slide_input_sources: dict[str, PrepareSourceDocument] | None = None
+    slide_input_refs: dict[str, str] | None = None
     blueprint_ref: dict[str, str] | None = None
     template_spec_path: Path | None = None
     jobspec_path: Path | None = jobspec
@@ -2059,6 +2353,10 @@ def prepare(
     if normalized_mode not in {"dynamic", "static"}:
         raise click.exceptions.BadParameter(
             "--mode には dynamic か static を指定してください")
+
+    if normalized_mode != "static" and prepare_path is None:
+        click.echo("dynamic モードではプレペア入力ファイルを指定する必要があります", err=True)
+        raise click.exceptions.Exit(code=2)
 
     if normalized_mode == "static":
         if page_limit is not None:
@@ -2134,6 +2432,62 @@ def prepare(
             "hash": f"sha256:{blueprint_hash}",
         }
 
+        prompts_dir = template_spec_path.parent / PROMPT_TEMPLATE_DIRNAME
+        prompt_overrides = _load_prompt_overrides(
+            prompts_dir=prompts_dir,
+            blueprint=blueprint_spec.blueprint,
+        )
+        if prompt_overrides:
+            applied_names = ", ".join(
+                Path(override.template_path).name if override.template_path else f"slide{override.slide_index:02d}"
+                for override in prompt_overrides
+            )
+            click.echo(f"カスタムプロンプトを適用します: {applied_names}")
+
+        manifest_path = template_spec_path.parent.parent / SLIDE_INPUTS_FILENAME
+        if manifest_path.exists():
+            try:
+                slide_input_paths = _load_slide_inputs_manifest(
+                    manifest_path=manifest_path,
+                    blueprint=blueprint_spec.blueprint,
+                )
+            except (FileNotFoundError, ValueError) as exc:
+                click.echo(f"slide_inputs の読み込みに失敗しました: {exc}", err=True)
+                raise click.exceptions.Exit(code=2) from exc
+
+            slide_input_sources = {}
+            slide_input_refs = {}
+            first_source: PrepareSourceDocument | None = None
+            for slide_id, data_path in slide_input_paths.items():
+                try:
+                    parsed = PrepareSourceDocument.parse_file(data_path)
+                except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
+                    click.echo(f"{data_path} の読み込みに失敗しました: {exc}", err=True)
+                    raise click.exceptions.Exit(code=2) from exc
+                slide_input_sources[slide_id] = parsed
+                slide_input_refs[slide_id] = str(data_path)
+                if first_source is None:
+                    first_source = parsed
+
+            if prepare_path is None:
+                if first_source is None:
+                    click.echo("slide_inputs.md に有効な入力がありません", err=True)
+                    raise click.exceptions.Exit(code=2)
+                source = first_source
+            click.echo(f"スライド入力マニフェストを利用します: {manifest_path}")
+        else:
+            if prepare_path is None:
+                click.echo(
+                    ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
+                    err=True,
+                )
+                raise click.exceptions.Exit(code=2)
+    else:
+        blueprint_ref = None
+        prompt_overrides = []
+        slide_input_sources = None
+        slide_input_refs = None
+
     orchestrator = PrepareAIOrchestrator(policy_set)
     try:
         document, meta, ai_logs = orchestrator.generate_document(
@@ -2143,6 +2497,9 @@ def prepare(
             mode=normalized_mode,  # type: ignore[arg-type]
             blueprint=blueprint_spec.blueprint if blueprint_spec else None,
             blueprint_ref=blueprint_ref,
+            prompt_overrides=prompt_overrides,
+            slide_sources=slide_input_sources,
+            slide_input_refs=slide_input_refs,
         )
     except PrepareAIOrchestrationError as exc:
         click.echo(f"プレペアカードの生成に失敗しました: {exc}", err=True)
@@ -2904,8 +3261,20 @@ def template(  # noqa: PLR0913
         )
         raise click.exceptions.Exit(code=6)
 
+    if extraction_result.prompt_templates_dir is not None:
+        click.echo(
+            "プロンプト雛形を出力しました: %s"
+            % extraction_result.prompt_templates_dir,
+        )
+        if extraction_result.prompt_templates_created:
+            click.echo(
+                f"  -> {extraction_result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて編集し、static prepare で反映してください。"
+            )
+        else:
+            click.echo("  -> 既存の雛形を保持しました。変更があればファイルを手動で更新してください。")
+    click.echo("テンプレ stage（抽出＋検証）が完了しました。")
+
     if not with_release:
-        click.echo("テンプレ stage（抽出＋検証）が完了しました。")
         return
 
     if brand is None or version is None:

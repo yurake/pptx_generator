@@ -11,7 +11,7 @@ from pptx_generator.prepare.source import (
     PrepareSourceSupportingPoint,
 )
 from pptx_generator.prepare_ai.llm_client import MockPrepareLLMClient
-from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator
+from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
 
 
 def _build_policy_set() -> PreparePolicySet:
@@ -108,6 +108,35 @@ def test_generate_document_static_resolves_slots() -> None:
     assert any(card.meta.get("blueprint") for card in document.cards)
     assert meta.mode == "static"
     assert records and records[0].batch_card_ids, "static mode should record batch responses"
+
+
+def test_generate_document_static_records_prompt_overrides() -> None:
+    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    blueprint = _build_blueprint()
+    override = StaticPromptOverride(
+        slide_id=blueprint.slides[0].slide_id,
+        slide_index=1,
+        instructions="- 重要メッセージを先頭に配置",
+        template_path=".pptx/extract/prompts/01_intro.md",
+    )
+
+    document, meta, records = orchestrator.generate_document(
+        _build_source(),
+        mode="static",
+        blueprint=blueprint,
+        blueprint_ref={"path": "blueprint.json", "hash": "deadbeef"},
+        prompt_overrides=[override],
+    )
+
+    assert meta.prompt_templates == [
+        {
+            "slide_id": blueprint.slides[0].slide_id,
+            "slide_index": 1,
+            "template_path": override.template_path,
+        }
+    ]
+    assert records[0].prompt_template_path == override.template_path
+    assert records[0].prompt_template_instructions == override.instructions
 
 
 def test_build_body_blocks_variations() -> None:

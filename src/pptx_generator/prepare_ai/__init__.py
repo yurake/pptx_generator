@@ -16,6 +16,7 @@ from .orchestrator import (
     DEFAULT_PROMPT_ID,
     PrepareAIOrchestrationError,
     PrepareAIOrchestrator,
+    StaticPromptOverride,
 )
 from .prompts import (
     PREPARE_DYNAMIC_PROMPT,
@@ -29,6 +30,7 @@ __all__ = [
     "DEFAULT_PROMPT_ID",
     "PrepareAIOrchestrationError",
     "PrepareAIOrchestrator",
+    "StaticPromptOverride",
     "AzureOpenAIPrepareLLMClient",
     "MockPrepareLLMClient",
     "OpenAIPrepareLLMClient",
