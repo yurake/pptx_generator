@@ -475,12 +475,12 @@ class SimpleRendererStep:
             return
 
         for image_spec in slide_spec.images:
-            self._render_single_image(slide, slide_spec, image_spec)
+            self._render_single_image(slide, slide_spec.id, image_spec)
 
     def _render_single_image(
         self,
         slide,
-        slide_spec: Slide,
+        slide_id: str,
         image_spec: SlideImage,
     ) -> None:
         image_defaults = self._style.image
@@ -490,7 +490,7 @@ class SimpleRendererStep:
             slide,
             image_spec.anchor,
             fallback_box,
-            owner_description=f"画像要素 '{element_label}' (slide_id='{slide_spec.id}')",
+            owner_description=f"画像要素 '{element_label}' (slide_id='{slide_id}')",
         )
         anchor_shape = resolution.shape
         if resolution.is_placeholder:
