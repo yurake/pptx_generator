@@ -19,21 +19,10 @@ from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
-from ..models import (
-    ChartSeries,
-    FontSpec,
-    JobSpec,
-    PipelineFallbackError,
-    Slide,
-    SlideBullet,
-    SlideBulletGroup,
-    SlideTextbox,
-    TemplateStyle,
-    TemplateChartDefaults,
-    TemplateTableDefaults,
-    TextboxParagraph,
-    TextboxPosition,
-)
+from ..models import (ChartSeries, FontSpec, JobSpec, PipelineFallbackError,
+                      Slide, SlideBullet, SlideImage, SlideTable, SlideTextbox,
+                      TemplateChartDefaults, TemplateImageDefaults,
+                      TemplateStyle, TemplateTableDefaults, TextboxParagraph)
 from .base import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -484,49 +473,67 @@ class SimpleRendererStep:
         if not slide_spec.images:
             return
 
-        image_defaults = self._style.image
         for image_spec in slide_spec.images:
-            default_box = image_defaults.fallback_box
-            if default_box is not None:
-                fallback_box = LayoutBox(
-                    default_box.left_in,
-                    default_box.top_in,
-                    default_box.width_in,
-                    default_box.height_in,
-                )
-            else:
-                fallback_box = LayoutBox(1.0, 1.75, 8.0, 4.5)
-            element_label = image_spec.id or (image_spec.anchor or "image")
-            resolution = self._resolve_anchor(
-                slide,
-                image_spec.anchor,
-                fallback_box,
-                owner_description=f"画像要素 '{element_label}' (slide_id='{slide_spec.id}')",
-            )
-            anchor_shape = resolution.shape
-            if resolution.is_placeholder:
-                self._prepare_placeholder(anchor_shape)
-            image_path = self._resolve_image_source(image_spec.source, image_spec.id)
-            left = self._override_emu(resolution.left, image_spec.left_in)
-            top = self._override_emu(resolution.top, image_spec.top_in)
-            target_width = self._override_emu(resolution.width, image_spec.width_in)
-            target_height = self._override_emu(resolution.height, image_spec.height_in)
-            picture = slide.shapes.add_picture(str(image_path), left, top)
-            self._resize_picture(
-                picture,
-                target_width,
-                target_height,
-                image_spec.sizing or image_defaults.sizing,
-            )
-            target_name = image_spec.anchor or image_spec.id
-            if target_name:
-                try:
-                    picture.name = target_name
-                except ValueError:
-                    logger.debug("画像図形名 '%s' の設定に失敗", target_name, exc_info=True)
+            self._render_single_image(slide, slide_spec, image_spec)
 
-            if anchor_shape is not None:
-                self._remove_shape(anchor_shape)
+    def _render_single_image(
+        self,
+        slide,
+        slide_spec: Slide,
+        image_spec: SlideImage,
+    ) -> None:
+        image_defaults = self._style.image
+        fallback_box = self._determine_image_fallback_box(image_defaults)
+        element_label = image_spec.id or (image_spec.anchor or "image")
+        resolution = self._resolve_anchor(
+            slide,
+            image_spec.anchor,
+            fallback_box,
+            owner_description=f"画像要素 '{element_label}' (slide_id='{slide_spec.id}')",
+        )
+        anchor_shape = resolution.shape
+        if resolution.is_placeholder:
+            self._prepare_placeholder(anchor_shape)
+
+        image_path = self._resolve_image_source(image_spec.source, image_spec.id)
+        left = self._override_emu(resolution.left, image_spec.left_in)
+        top = self._override_emu(resolution.top, image_spec.top_in)
+        target_width = self._override_emu(resolution.width, image_spec.width_in)
+        target_height = self._override_emu(resolution.height, image_spec.height_in)
+
+        picture = slide.shapes.add_picture(str(image_path), left, top)
+        self._resize_picture(
+            picture,
+            target_width,
+            target_height,
+            image_spec.sizing or image_defaults.sizing,
+        )
+        self._assign_picture_name(picture, image_spec)
+
+        if anchor_shape is not None:
+            self._remove_shape(anchor_shape)
+
+    @staticmethod
+    def _determine_image_fallback_box(image_defaults: TemplateImageDefaults) -> LayoutBox:
+        default_box = image_defaults.fallback_box
+        if default_box is not None:
+            return LayoutBox(
+                default_box.left_in,
+                default_box.top_in,
+                default_box.width_in,
+                default_box.height_in,
+            )
+        return LayoutBox(1.0, 1.75, 8.0, 4.5)
+
+    @staticmethod
+    def _assign_picture_name(picture, image_spec: SlideImage) -> None:
+        target_name = image_spec.anchor or image_spec.id
+        if not target_name:
+            return
+        try:
+            picture.name = target_name
+        except ValueError:
+            logger.debug("画像図形名 '%s' の設定に失敗", target_name, exc_info=True)
 
     def _apply_charts(self, slide, slide_spec: Slide) -> None:
         if not slide_spec.charts:
