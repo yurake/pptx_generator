@@ -42,14 +42,16 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
 - [ ] ドキュメント更新
   - メモ: TemplateStyle への移行を CLI/設計ドキュメントへ反映済み。未更新の領域は要否検討のうえコメントを残す。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下
+    - メモ: TemplateStyle 移行で追加整備不要（RM-081 として別途更新なし）
   - [x] docs/requirements 配下（実装結果との整合再確認）
     - メモ: stage-04-gen 要件に TemplateStyle の入力を追記（fce14ad）
   - [x] docs/design 配下（実装結果との整合再確認）
     - メモ: CLI リファレンス、全体設計、stage 3/4 資料を TemplateStyle 基準へ更新（fce14ad）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
     - メモ: Analyzer runbook は参考用途のみで変更不要（branding.json 参照は情報共有目的）
-  - [ ] README.md / AGENTS.md
+  - [x] README.md / AGENTS.md
+    - メモ: 現行 README/AGENTS にテンプレスタイル固有の記述はなく追加変更不要
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
