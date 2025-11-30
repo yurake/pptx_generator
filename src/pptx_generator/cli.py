@@ -102,6 +102,23 @@ class OutlineResult:
     generate_ready_meta_path: Path
 
 
+@dataclass(slots=True)
+class MappingPipelineConfig:
+    """マッピング stage の実行に必要な入力値をひとまとめにした設定。"""
+
+    spec: JobSpec
+    output_dir: Path
+    spec_source_path: Path
+    rules_config: RulesConfig
+    refiner_options: RefinerOptions
+    template_style: "TemplateStylePayload"
+    prepare_cards: Path | None
+    require_prepare: bool
+    layouts: Path | None
+    draft_output: Path
+    template: Path | None
+
+
 @dataclass(frozen=True)
 class TemplateStylePayload:
     """テンプレートスタイル本体とアーティファクトをまとめたバンドル。"""
@@ -1627,75 +1644,65 @@ def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -
 
 def _run_mapping_pipeline(
     *,
-    spec: JobSpec,
-    output_dir: Path,
-    spec_source_path: Path,
-    rules_config: RulesConfig,
-    refiner_options: RefinerOptions,
-    template_style_payload: TemplateStylePayload,
-    prepare_cards: Path | None,
-    require_prepare: bool,
-    layouts: Optional[Path],
-    draft_output: Path,
-    template: Optional[Path],
+    params: MappingPipelineConfig,
     draft_context: PipelineContext | None = None,
     draft_options: DraftStructuringOptions | None = None,
 ) -> PipelineContext:
-    if template is None:
+    if params.template is None:
         msg = "jobspec.meta.template_path を設定し、テンプレートパスを埋め込んでください。"
         raise ValueError(msg)
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    draft_output.mkdir(parents=True, exist_ok=True)
+    params.output_dir.mkdir(parents=True, exist_ok=True)
+    params.draft_output.mkdir(parents=True, exist_ok=True)
 
     mapping_options = MappingOptions(
-        layouts_path=layouts,
-        output_dir=output_dir,
-        template_path=template,
+        layouts_path=params.layouts,
+        output_dir=params.output_dir,
+        template_path=params.template,
     )
 
     if draft_context is None:
         draft_context = _run_draft_pipeline(
-            spec=spec,
-            output_dir=draft_output,
-            prepare_cards=prepare_cards,
-            require_prepare=require_prepare,
+            spec=params.spec,
+            output_dir=params.draft_output,
+            prepare_cards=params.prepare_cards,
+            require_prepare=params.require_prepare,
             draft_options=draft_options
             or DraftStructuringOptions(
-                layouts_path=layouts,
-                output_dir=draft_output,
-                spec_source_path=spec_source_path,
+                layouts_path=params.layouts,
+                output_dir=params.draft_output,
+                spec_source_path=params.spec_source_path,
             ),
         )
-    else:
-        if draft_context.workdir != draft_output:
-            logger.debug(
-                "draft_context.workdir と draft_output が一致しません: %s != %s",
-                draft_context.workdir,
-                draft_output,
-            )
+    elif draft_context.workdir != params.draft_output:
+        logger.debug(
+            "draft_context.workdir と draft_output が一致しません: %s != %s",
+            draft_context.workdir,
+            params.draft_output,
+        )
 
     draft_generate_ready = draft_context.artifacts.get("generate_ready")
     if isinstance(draft_generate_ready, GenerateReadyDocument) and draft_generate_ready.meta.layout_mode == "static":
         return _pass_through_static_generate_ready(
-            spec=spec,
+            spec=params.spec,
             draft_context=draft_context,
-            output_dir=output_dir,
+            output_dir=params.output_dir,
             mapping_options=mapping_options,
         )
 
     context = PipelineContext(
-        spec=spec, workdir=output_dir, artifacts=dict(draft_context.artifacts))
-    context.add_artifact("template_style", template_style_payload.artifact)
-    context.add_artifact("template_style_data", template_style_payload.style)
+        spec=params.spec, workdir=params.output_dir, artifacts=dict(draft_context.artifacts)
+    )
+    context.add_artifact("template_style", params.template_style.artifact)
+    context.add_artifact("template_style_data", params.template_style.style)
 
     spec_validator = SpecValidatorStep(
-        max_title_length=rules_config.max_title_length,
-        max_bullet_length=rules_config.max_bullet_length,
-        max_bullet_level=rules_config.max_bullet_level,
-        forbidden_words=rules_config.forbidden_words,
+        max_title_length=params.rules_config.max_title_length,
+        max_bullet_length=params.rules_config.max_bullet_length,
+        max_bullet_level=params.rules_config.max_bullet_level,
+        forbidden_words=params.rules_config.forbidden_words,
     )
-    refiner = SimpleRefinerStep(refiner_options)
+    refiner = SimpleRefinerStep(params.refiner_options)
     mapping = MappingStep(mapping_options)
 
     PipelineRunner([spec_validator, refiner, mapping]).execute(context)
@@ -1703,7 +1710,7 @@ def _run_mapping_pipeline(
     meta_source = context.artifacts.get("generate_ready_meta_path")
     if isinstance(meta_source, str):
         source_path = Path(meta_source)
-        destination = output_dir / DEFAULT_GENERATE_READY_META_FILENAME
+        destination = params.output_dir / DEFAULT_GENERATE_READY_META_FILENAME
         try:
             if source_path.exists():
                 if destination.resolve() != source_path.resolve():
@@ -1711,7 +1718,7 @@ def _run_mapping_pipeline(
                     shutil.copy2(source_path, destination)
                 context.add_artifact(
                     "generate_ready_meta_path", str(destination))
-        except OSError as exc:  # noqa: PERF203 - unexpected copy failure should bubble up later
+        except OSError as exc:  # noqa: PERF203
             raise RuntimeError(
                 f"generate_ready_meta.json のコピーに失敗しました: {exc}"
             ) from exc
@@ -2865,19 +2872,23 @@ def compose(  # noqa: PLR0913
         artifact=template_style_artifact,
     )
 
+    mapping_params = MappingPipelineConfig(
+        spec=spec,
+        output_dir=output_dir,
+        spec_source_path=spec_path,
+        rules_config=rules_config,
+        refiner_options=refiner_options,
+        template_style=template_style_payload,
+        prepare_cards=prepare_cards,
+        require_prepare=True,
+        layouts=resolved_layouts,
+        draft_output=draft_output,
+        template=resolved_template,
+    )
+
     try:
         mapping_context = _run_mapping_pipeline(
-            spec=spec,
-            output_dir=output_dir,
-            spec_source_path=spec_path,
-            rules_config=rules_config,
-            refiner_options=refiner_options,
-            template_style_payload=template_style_payload,
-            prepare_cards=prepare_cards,
-            require_prepare=True,
-            layouts=resolved_layouts,
-            draft_output=draft_output,
-            template=resolved_template,
+            params=mapping_params,
             draft_context=outline_result.context,
             draft_options=DraftStructuringOptions(
                 layouts_path=resolved_layouts,
@@ -2986,20 +2997,22 @@ def mapping(  # noqa: PLR0913
         artifact=template_style_artifact,
     )
 
+    mapping_params = MappingPipelineConfig(
+        spec=spec,
+        output_dir=output_dir,
+        spec_source_path=spec_path,
+        rules_config=rules_config,
+        refiner_options=refiner_options,
+        template_style=template_style_payload,
+        prepare_cards=prepare_cards,
+        require_prepare=True,
+        layouts=resolved_layouts,
+        draft_output=draft_output,
+        template=resolved_template,
+    )
+
     try:
-        context = _run_mapping_pipeline(
-            spec=spec,
-            output_dir=output_dir,
-            spec_source_path=spec_path,
-            rules_config=rules_config,
-            refiner_options=refiner_options,
-            template_style_payload=template_style_payload,
-            prepare_cards=prepare_cards,
-            require_prepare=True,
-            layouts=resolved_layouts,
-            draft_output=draft_output,
-            template=resolved_template,
-        )
+        context = _run_mapping_pipeline(params=mapping_params)
     except ValueError as exc:
         click.echo(str(exc), err=True)
         raise click.exceptions.Exit(code=2) from exc
