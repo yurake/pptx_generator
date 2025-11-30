@@ -1,7 +1,7 @@
 ---
 目的: RM-059 Mermaid 図自動レンダリングの自動生成フロー整備
 関連ブランチ: docs/rm059-mermaid-render
-関連Issue: 未作成
+関連Issue: #347
 roadmap_item: RM-059 Mermaid 図自動レンダリング
 ---
 
@@ -24,7 +24,7 @@ roadmap_item: RM-059 Mermaid 図自動レンダリング
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 作成時に更新する。
 - [ ] チェックリスト整合確認
   - メモ: 
