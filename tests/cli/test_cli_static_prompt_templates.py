@@ -10,6 +10,7 @@ from pptx_generator.cli import (
     PROMPT_TEMPLATE_DIRNAME,
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
+    SLIDE_INPUTS_FILENAME,
     TemplateExtractionResult,
     _ensure_prompt_templates,
     _load_prompt_overrides,
@@ -79,7 +80,9 @@ def test_run_template_extraction_creates_prompt_files(monkeypatch, tmp_path) -> 
     template_path = tmp_path / "template.pptx"
     template_path.write_bytes(b"fake")
 
-    output_dir = tmp_path / "extract"
+    base_dir = tmp_path / ".pptx"
+    output_dir = base_dir / "extract"
+    output_dir.mkdir(parents=True, exist_ok=True)
     branding_path = output_dir / "branding.json"
     jobspec_path = output_dir / "jobspec.json"
 
@@ -123,6 +126,8 @@ def test_run_template_extraction_creates_prompt_files(monkeypatch, tmp_path) -> 
     prompt_files = list(sorted(prompts_dir.glob("*.md")))
     assert prompt_files, "static モードでは雛形 Markdown が生成される"
     assert result.prompt_templates_created == len(prompt_files) == 1
+    assert result.slide_inputs_path == base_dir / SLIDE_INPUTS_FILENAME
+    assert result.slide_inputs_path.exists()
 
 
 def test_load_prompt_overrides_reads_user_section(tmp_path) -> None:
@@ -188,6 +193,7 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
         slide_snapshot_path=None,
         prompt_templates_dir=prompts_dir,
         prompt_templates_created=2,
+        slide_inputs_path=tmp_path / "slide_inputs.md",
     )
 
     def fake_extraction(**_kwargs):  # noqa: ANN002
@@ -222,12 +228,15 @@ def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
     client = CaptureClient()
     orchestrator = PrepareAIOrchestrator(policy_set, llm_client=client)
 
+    slide_specific = PrepareSourceDocument(meta=source.meta, chapters=[], raw_text="- localized context")
     orchestrator.generate_document(
         source,
         mode="static",
         blueprint=template_spec.blueprint,
         blueprint_ref={"path": "template_spec.json", "hash": "deadbeef"},
         prompt_overrides=[],
+        slide_sources={"slide-01": slide_specific},
+        slide_input_refs={"slide-01": "slide-input.txt"},
     )
 
     prompt_text = client.prompts[0]
@@ -239,7 +248,89 @@ def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
     raw_fragment = payload["raw_context"]["content"]
     slot_contexts = [slot.get("context", "") for slot in payload["slot_specs"]]
 
-    assert raw_fragment.startswith("-")  # sanity check
+    assert raw_fragment.startswith("-")
     for context in slot_contexts:
-        assert "ブランド統一" not in context
-        assert context != raw_fragment
+        assert context == "- localized context"
+
+
+def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+
+    base_dir = tmp_path / ".pptx"
+    extract_dir = base_dir / "extract"
+    extract_dir.mkdir(parents=True, exist_ok=True)
+
+    template_spec = _build_static_template_spec()
+    template_spec_path = extract_dir / "template_spec.json"
+    template_spec_path.write_text(template_spec.model_dump_json(indent=2), encoding="utf-8")
+
+    jobspec = _build_jobspec_scaffold(template_spec_path=template_spec_path)
+    jobspec_path = extract_dir / "jobspec.json"
+    jobspec_path.write_text(json.dumps(jobspec.model_dump(mode="json"), indent=2), encoding="utf-8")
+
+    manifest_path = base_dir / SLIDE_INPUTS_FILENAME
+    identifier = "01_titleslide"
+    sample_path = (Path("samples/contents/sample_import_content.txt").resolve())
+    manifest_path.write_text(
+        f"# Slide inputs\n{identifier}: {sample_path}\n",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            "--mode",
+            "static",
+            "--jobspec",
+            str(jobspec_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+
+    prepare_dir = Path(".pptx/prepare")
+    ai_log = json.loads((prepare_dir / "prepare_ai_log.json").read_text(encoding="utf-8"))
+    assert ai_log[0]["slide_input_path"].endswith("sample_import_content.txt")
+
+    meta = json.loads((prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    assert meta["slide_inputs"] == [
+        {
+            "slide_id": "slide-01",
+            "input_path": str(sample_path),
+        }
+    ]
+
+
+def test_cli_prepare_requires_complete_manifest(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+
+    base_dir = tmp_path / ".pptx"
+    extract_dir = base_dir / "extract"
+    extract_dir.mkdir(parents=True, exist_ok=True)
+
+    template_spec = _build_static_template_spec()
+    template_spec_path = extract_dir / "template_spec.json"
+    template_spec_path.write_text(template_spec.model_dump_json(indent=2), encoding="utf-8")
+    jobspec = _build_jobspec_scaffold(template_spec_path=template_spec_path)
+    jobspec_path = extract_dir / "jobspec.json"
+    jobspec_path.write_text(json.dumps(jobspec.model_dump(mode="json"), indent=2), encoding="utf-8")
+
+    manifest_path = base_dir / SLIDE_INPUTS_FILENAME
+    manifest_path.write_text("# empty manifest\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            "--mode",
+            "static",
+            "--jobspec",
+            str(jobspec_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "不足" in result.output

@@ -210,6 +210,8 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
         blueprint=blueprint,
         page_limit=None,
         prompt_overrides=[],
+        slide_sources=None,
+        slide_input_refs=None,
     )
 
     assert len(cards) == 2
@@ -279,6 +281,8 @@ def test_prepare_static_slot_missing_response(monkeypatch) -> None:
         blueprint=blueprint,
         page_limit=None,
         prompt_overrides=[],
+        slide_sources=None,
+        slide_input_refs=None,
     )
 
     assert len(cards) == 2
@@ -332,6 +336,8 @@ def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
         blueprint=blueprint,
         page_limit=None,
         prompt_overrides=[override],
+        slide_sources=None,
+        slide_input_refs=None,
     )
 
     assert cards, "カードが生成されること"

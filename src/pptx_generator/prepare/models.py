@@ -269,6 +269,7 @@ class PrepareAIRecord(BaseModel):
     batch_card_ids: list[str] | None = None
     prompt_template_path: str | None = None
     prompt_template_instructions: str | None = None
+    slide_input_path: str | None = None
 
 
 class PrepareGenerationMeta(BaseModel):
@@ -286,6 +287,7 @@ class PrepareGenerationMeta(BaseModel):
     slot_coverage: dict[str, int] = Field(default_factory=dict)
     constraints: dict[str, Any] = Field(default_factory=dict)
     prompt_templates: list[dict[str, Any]] = Field(default_factory=list)
+    slide_inputs: list[dict[str, Any]] = Field(default_factory=list)
 
     @classmethod
     def from_document(
@@ -301,6 +303,7 @@ class PrepareGenerationMeta(BaseModel):
         slot_summary: dict[str, int] | None = None,
         constraints: dict[str, Any] | None = None,
         prompt_templates: list[dict[str, Any]] | None = None,
+        slide_inputs: list[dict[str, Any]] | None = None,
     ) -> "PrepareGenerationMeta":
         normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
@@ -329,4 +332,5 @@ class PrepareGenerationMeta(BaseModel):
             slot_coverage=slot_coverage,
             constraints=constraints or {},
             prompt_templates=prompt_templates or [],
+            slide_inputs=slide_inputs or [],
         )

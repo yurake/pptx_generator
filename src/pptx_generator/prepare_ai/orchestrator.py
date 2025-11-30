@@ -65,6 +65,8 @@ class PrepareAIOrchestrator:
         blueprint: TemplateBlueprint | None = None,
         blueprint_ref: dict[str, str] | None = None,
         prompt_overrides: Sequence[StaticPromptOverride] | None = None,
+        slide_sources: dict[str, PrepareSourceDocument] | None = None,
+        slide_input_refs: dict[str, str] | None = None,
     ) -> tuple[PrepareDocument, PrepareGenerationMeta, list[PrepareAIRecord]]:
         try:
             policy = self._policy_set.get_policy(policy_id)
@@ -88,6 +90,8 @@ class PrepareAIOrchestrator:
                 blueprint=blueprint,
                 page_limit=page_limit,
                 prompt_overrides=prompt_overrides or (),
+                slide_sources=slide_sources,
+                slide_input_refs=slide_input_refs,
             )
         else:
             cards, ai_records = self._build_cards_dynamic(
@@ -122,6 +126,10 @@ class PrepareAIOrchestrator:
             slot_summary=slot_summary,
             constraints=constraints,
             prompt_templates=prompt_usage,
+            slide_inputs=[
+                {"slide_id": key, "input_path": value}
+                for key, value in (slide_input_refs or {}).items()
+            ],
         )
         return document, meta, ai_records
 
@@ -534,6 +542,8 @@ class PrepareAIOrchestrator:
         blueprint: TemplateBlueprint,
         page_limit: int | None,
         prompt_overrides: Sequence[StaticPromptOverride],
+        slide_sources: dict[str, PrepareSourceDocument] | None,
+        slide_input_refs: dict[str, str] | None,
     ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord], list[dict[str, Any]]]:
         if page_limit is not None:
             raise PrepareAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
@@ -590,6 +600,8 @@ class PrepareAIOrchestrator:
             slide_id = entry[1].slide_id
             entries_by_slide.setdefault(slide_id, []).append(entry)
 
+        slide_sources = slide_sources or {}
+        slide_input_refs = slide_input_refs or {}
         prompt_usage: list[dict[str, Any]] = []
 
         for slide_index, blueprint_slide in enumerate(blueprint.slides, start=1):
@@ -597,14 +609,22 @@ class PrepareAIOrchestrator:
             if not slide_entries:
                 continue
 
+            slide_source = slide_sources.get(blueprint_slide.slide_id)
             override = overrides_by_slide_id.get(blueprint_slide.slide_id)
             if override is None:
                 override = overrides_by_index.get(slide_index)
             override_instructions = override.instructions.strip() if override else ""
 
             slot_specs_payload: list[dict[str, Any]] = []
+            slide_base_context = base_context
+            if slide_source is not None:
+                candidate = slide_source.raw_text or self._compose_raw_text(slide_source)
+                if isinstance(candidate, str) and candidate.strip():
+                    slide_base_context = candidate.strip()
             for order, _, slot in slide_entries:
                 chapter = chapter_assignments.get(order)
+                if slide_source is not None:
+                    chapter = None
                 context_lines: list[str] = []
                 if chapter is not None:
                     body_blocks = self._build_chapter_body_blocks(chapter)
@@ -627,8 +647,11 @@ class PrepareAIOrchestrator:
                 if context_text:
                     context_value = context_text
                 else:
-                    labels = [blueprint_slide.layout or "", slot.anchor or ""]
-                    context_value = " / ".join(part for part in labels if part).strip()
+                    if slide_base_context:
+                        context_value = slide_base_context
+                    else:
+                        labels = [blueprint_slide.layout or "", slot.anchor or ""]
+                        context_value = " / ".join(part for part in labels if part).strip()
                 entry = {
                     "slot_id": slot.slot_id,
                     "anchor": slot.anchor,
@@ -643,7 +666,7 @@ class PrepareAIOrchestrator:
             payload: dict[str, Any] = {
                 "raw_context": {
                     "format": "markdown",
-                    "content": base_context,
+                    "content": slide_base_context,
                 },
                 "blueprint_slide": {
                     "slide_id": blueprint_slide.slide_id,
@@ -759,6 +782,7 @@ class PrepareAIOrchestrator:
                         prompt_fragment=prompt[:200],
                         response_digest=json.dumps(slots_payload, ensure_ascii=False)[:200],
                         warnings=list(llm_result.warnings),
+                        slide_input_path=slide_input_refs.get(blueprint_slide.slide_id),
                         prompt_template_path=override.template_path if override else None,
                         prompt_template_instructions=override_instructions if override_instructions else None,
                         tokens=llm_result.tokens,
