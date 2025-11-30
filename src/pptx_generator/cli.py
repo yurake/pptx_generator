@@ -21,6 +21,16 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import extract_branding_config
+from .cli_handlers import (
+    PROMPT_USER_SECTION_END,
+    PROMPT_USER_SECTION_START,
+    SLIDE_INPUTS_FILENAME,
+    PrepareCommandConfig,
+    PrepareCommandError,
+    build_prompt_identifier,
+    run_prepare_command,
+    slugify_prompt_layout,
+)
 from .draft_intel import load_return_reasons
 from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
@@ -45,13 +55,6 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        TemplateExtractor, TemplateExtractorOptions)
 from .pipeline.analyzer import SlideSnapshot
 from .pipeline.draft_structuring import DraftStructuringError
-from .prepare import (PrepareCard, PrepareDocument, PreparePolicyError,
-                      PrepareSourceDocument, load_prepare_policy_set)
-from .prepare_ai import (
-    PrepareAIOrchestrationError,
-    PrepareAIOrchestrator,
-    StaticPromptOverride,
-)
 from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import RulesConfig
 from .spec_loader import load_jobspec_from_path
@@ -66,14 +69,6 @@ DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 PROMPT_TEMPLATE_DIRNAME = Path("prompts")
-PROMPT_USER_SECTION_START = "<<<user-editable:start"
-PROMPT_USER_SECTION_END = "<<<user-editable:end"
-PROMPT_TEMPLATE_FILENAME_PATTERN = re.compile(r"^(?P<index>\d{2})_(?P<slug>[a-z0-9\-]+)\.md$", re.IGNORECASE)
-SLIDE_INPUTS_FILENAME = Path("slide_inputs.md")
-PROMPT_DEFAULT_LINES = {
-    "- 例: このスライドでは ROI の定量値を箇条書きで入れる",
-    "- 例: リスクを最低 2 点列挙する",
-}
 
 logger = logging.getLogger(__name__)
 
@@ -917,7 +912,7 @@ def _ensure_prompt_templates(*, output_dir: Path, template_spec: TemplateSpec) -
     created = 0
     for index, slide in enumerate(blueprint.slides, start=1):
         slug_source = slide.layout or slide.slide_id or f"slide{index:02}"
-        slug = _slugify_prompt_layout(slug_source)
+        slug = slugify_prompt_layout(slug_source)
         filename = prompts_dir / f"{index:02}_{slug}.md"
         if filename.exists():
             logger.debug("Prompt template already exists, skipping: %s", filename)
@@ -978,21 +973,6 @@ def _render_prompt_template(*, slide: TemplateBlueprintSlide, index: int) -> str
     return f"{fixed_section}\n{user_section}\n"
 
 
-def _slugify_prompt_layout(source: str) -> str:
-    lowered = source.strip().lower()
-    if not lowered:
-        lowered = "layout"
-    normalized = re.sub(r"[^a-z0-9]+", "-", lowered)
-    normalized = normalized.strip("-") or "layout"
-    return normalized[:48]
-
-
-def _build_prompt_identifier(index: int, slide: TemplateBlueprintSlide) -> str:
-    slug_source = slide.layout or slide.slide_id or f"slide{index:02}"
-    slug = _slugify_prompt_layout(slug_source)
-    return f"{index:02}_{slug}"
-
-
 def _ensure_slide_inputs_manifest(*, output_dir: Path, template_spec: TemplateSpec) -> Path | None:
     blueprint = template_spec.blueprint
     if blueprint is None:
@@ -1011,129 +991,13 @@ def _ensure_slide_inputs_manifest(*, output_dir: Path, template_spec: TemplateSp
         "",
     ]
     for index, slide in enumerate(blueprint.slides, start=1):
-        identifier = _build_prompt_identifier(index, slide)
+        identifier = build_prompt_identifier(index, slide)
         lines.append(f"{identifier}: <data file path>")
 
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     logger.info("Saved slide inputs manifest to %s", manifest_path.resolve())
     return manifest_path
-
-
-def _load_slide_inputs_manifest(
-    *,
-    manifest_path: Path,
-    blueprint: TemplateBlueprint,
-) -> dict[str, Path]:
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"slide_inputs ファイルが見つかりません: {manifest_path}")
-
-    raw_lines = manifest_path.read_text(encoding="utf-8").splitlines()
-    mapping: dict[str, Path] = {}
-    for line in raw_lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if ":" not in stripped:
-            raise ValueError(f"slide_inputs の行を解析できません: '{line}'")
-        key, value = stripped.split(":", 1)
-        identifier = key.strip()
-        path_value = value.strip()
-        if not identifier or not path_value:
-            raise ValueError(f"slide_inputs の行に空の値があります: '{line}'")
-        resolved = Path(path_value)
-        if not resolved.is_absolute():
-            default_path = (manifest_path.parent / resolved).resolve()
-            project_path = (Path.cwd() / resolved).resolve()
-            if project_path.exists():
-                resolved = project_path
-            else:
-                resolved = default_path
-        mapping[identifier] = resolved
-
-    expected: dict[str, Path] = {}
-    missing: list[str] = []
-    for index, slide in enumerate(blueprint.slides, start=1):
-        identifier = _build_prompt_identifier(index, slide)
-        if identifier not in mapping:
-            missing.append(identifier)
-            continue
-        expected[slide.slide_id or identifier] = mapping[identifier]
-
-    if missing:
-        missing_list = ", ".join(missing)
-        raise ValueError(
-            "slide_inputs.md に不足しているスライドがあります: " + missing_list
-        )
-
-    return expected
-
-
-def _load_prompt_overrides(
-    *,
-    prompts_dir: Path,
-    blueprint: TemplateBlueprint,
-) -> list[StaticPromptOverride]:
-    if not prompts_dir.exists() or not prompts_dir.is_dir():
-        return []
-
-    slides = list(enumerate(blueprint.slides, start=1))
-    overrides: list[StaticPromptOverride] = []
-
-    for path in sorted(prompts_dir.glob("*.md")):
-        match = PROMPT_TEMPLATE_FILENAME_PATTERN.match(path.name)
-        if not match:
-            logger.debug("Prompts: ファイル名が規約に一致しないためスキップします: %s", path)
-            continue
-        index = int(match.group("index"))
-        if index < 1 or index > len(slides):
-            logger.debug("Prompts: インデックス %d が Blueprint の範囲外です", index)
-            continue
-
-        slide = slides[index - 1][1]
-        instructions = _extract_prompt_instructions(path)
-        if not instructions:
-            continue
-
-        slide_id = slide.slide_id or f"slide-{index:02d}"
-        override = StaticPromptOverride(
-            slide_id=slide_id,
-            slide_index=index,
-            instructions=instructions,
-            template_path=str(path),
-        )
-        overrides.append(override)
-
-    return overrides
-
-
-def _extract_prompt_instructions(path: Path) -> str:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        logger.warning("Prompts: ファイルが存在しません: %s", path)
-        return ""
-
-    start_idx = text.find(PROMPT_USER_SECTION_START)
-    end_idx = text.find(PROMPT_USER_SECTION_END)
-    if start_idx == -1 or end_idx == -1 or end_idx <= start_idx:
-        logger.debug("Prompts: user-editable セクションが見つかりません: %s", path)
-        return ""
-
-    start_idx += len(PROMPT_USER_SECTION_START)
-    section = text[start_idx:end_idx]
-    lines = [line.rstrip() for line in section.splitlines()]
-
-    cleaned: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if stripped in PROMPT_DEFAULT_LINES:
-            continue
-        cleaned.append(stripped)
-
-    return "\n".join(cleaned).strip()
 
 
 def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
@@ -1289,52 +1153,6 @@ def _dump_json(path: Path, payload: object) -> None:
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     path.write_text(text, encoding="utf-8")
     logger.info("Saved JSON to %s", path.resolve())
-
-
-def _build_prepare_story_outline(document: PrepareDocument) -> dict[str, Any]:
-    chapter_cards: dict[str, list[str]] = {}
-
-    def resolve_bucket(card: PrepareCard) -> str:
-        if isinstance(card.meta, dict):
-            source_chapter = card.meta.get("source_chapter")
-            if isinstance(source_chapter, dict):
-                source_id = source_chapter.get("id")
-                source_title = source_chapter.get("title")
-                if isinstance(source_id, str) and source_id.strip():
-                    return source_id.strip()
-                if isinstance(source_title, str) and source_title.strip():
-                    return source_title.strip()
-        blueprint = card.blueprint_meta()
-        if blueprint and blueprint.get("slide_id"):
-            return str(blueprint.get("slide_id"))
-        return card.role.story_phase
-
-    for card in document.cards:
-        bucket = resolve_bucket(card)
-        chapter_cards.setdefault(bucket, []).append(card.card_id)
-
-    chapters_payload: list[dict[str, Any]] = []
-    for chapter in document.story_context.chapters:
-        cards = chapter_cards.pop(chapter.id, [])
-        if not cards:
-            cards = chapter_cards.pop(chapter.title, [])
-        chapters_payload.append(
-            {
-                "id": chapter.id,
-                "title": chapter.title,
-                "cards": cards,
-            }
-        )
-
-    for title, cards in chapter_cards.items():
-        chapters_payload.append({"id": title, "title": title, "cards": cards})
-
-    return {
-        "prepare_id": document.prepare_id,
-        "chapters": chapters_payload,
-        "narrative_theme": None,
-        "summary": None,
-    }
 
 
 def _load_jobspec(path: Path) -> JobSpec:
@@ -2299,255 +2117,32 @@ def prepare(
 ) -> None:
     """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
-    source: PrepareSourceDocument | None = None
-    if prepare_path is not None:
-        try:
-            source = PrepareSourceDocument.parse_file(prepare_path)
-        except FileNotFoundError as exc:
-            click.echo(f"プレペア入力ファイルが見つかりません: {exc}", err=True)
-            raise click.exceptions.Exit(code=2) from exc
-        except (json.JSONDecodeError, ValidationError) as exc:
-            click.echo(f"プレペア入力の解析に失敗しました: {exc}", err=True)
-            raise click.exceptions.Exit(code=2) from exc
-
-    policy_path = DEFAULT_PREPARE_POLICY_PATH
-    try:
-        policy_set = load_prepare_policy_set(policy_path)
-    except PreparePolicyError as exc:
-        click.echo(f"プレペアポリシーの読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-
-    blueprint_spec: TemplateSpec | None = None
-    prompt_overrides: list[StaticPromptOverride] = []
-    slide_input_sources: dict[str, PrepareSourceDocument] | None = None
-    slide_input_refs: dict[str, str] | None = None
-    blueprint_ref: dict[str, str] | None = None
-    template_spec_path: Path | None = None
-    jobspec_path: Path | None = jobspec
-    normalized_mode = mode.lower()
-    if normalized_mode not in {"dynamic", "static"}:
-        raise click.exceptions.BadParameter(
-            "--mode には dynamic か static を指定してください")
-
-    if normalized_mode != "static" and prepare_path is None:
-        click.echo("dynamic モードではプレペア入力ファイルを指定する必要があります", err=True)
-        raise click.exceptions.Exit(code=2)
-
-    if normalized_mode == "static":
-        if page_limit is not None:
-            click.echo("static モードでは --page-limit を利用できません", err=True)
-            raise click.exceptions.Exit(code=2)
-        resolved_jobspec = jobspec_path or DEFAULT_JOBSPEC_PATH
-        if not resolved_jobspec.exists():
-            click.echo(
-                "static モードでは --jobspec で jobspec.json のパスを指定するか、.pptx/extract/jobspec.json を用意してください",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=2)
-        try:
-            spec_for_static = load_jobspec_from_path(resolved_jobspec)
-        except (FileNotFoundError, ValidationError, SpecValidationError) as exc:
-            click.echo(f"jobspec.json の読み込みに失敗しました: {exc}", err=True)
-            raise click.exceptions.Exit(code=2) from exc
-
-        template_spec_ref = getattr(
-            spec_for_static.meta, "template_spec_path", None)
-        if not template_spec_ref:
-            click.echo(
-                "jobspec.meta.template_spec_path が設定されていません。テンプレ抽出を再実行してください",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=2)
-
-        template_spec_path = Path(template_spec_ref)
-        if not template_spec_path.is_absolute():
-            template_spec_path = (
-                resolved_jobspec.parent / template_spec_path).resolve()
-
-        if not template_spec_path.exists():
-            click.echo(
-                f"template_spec.json が見つかりません: {template_spec_path}",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=2)
-
-        try:
-            template_spec_text = template_spec_path.read_text(encoding="utf-8")
-        except FileNotFoundError as exc:
-            click.echo(f"template_spec の読み込みに失敗しました: {exc}", err=True)
-            raise click.exceptions.Exit(code=2) from exc
-        try:
-            if template_spec_path.suffix.lower() in {".yaml", ".yml"}:
-                import yaml
-
-                payload = yaml.safe_load(template_spec_text)
-                blueprint_spec = TemplateSpec.model_validate(payload)
-            else:
-                blueprint_spec = TemplateSpec.model_validate_json(
-                    template_spec_text)
-        except ValueError as exc:
-            click.echo(f"template_spec の検証に失敗しました: {exc}", err=True)
-            raise click.exceptions.Exit(code=2) from exc
-        if blueprint_spec.layout_mode != "static":
-            click.echo("template_spec の layout_mode が static ではありません", err=True)
-            raise click.exceptions.Exit(code=2)
-        if blueprint_spec.blueprint is None:
-            click.echo("template_spec に blueprint が含まれていません", err=True)
-            raise click.exceptions.Exit(code=2)
-
-        blueprint_hash = hashlib.sha256(
-            json.dumps(
-                blueprint_spec.blueprint.model_dump(mode="json"),
-                ensure_ascii=False,
-                sort_keys=True,
-            ).encode("utf-8")
-        ).hexdigest()
-        blueprint_ref = {
-            "path": str(template_spec_path),
-            "hash": f"sha256:{blueprint_hash}",
-        }
-
-        prompts_dir = template_spec_path.parent / PROMPT_TEMPLATE_DIRNAME
-        prompt_overrides = _load_prompt_overrides(
-            prompts_dir=prompts_dir,
-            blueprint=blueprint_spec.blueprint,
-        )
-        if prompt_overrides:
-            applied_names = ", ".join(
-                Path(override.template_path).name if override.template_path else f"slide{override.slide_index:02d}"
-                for override in prompt_overrides
-            )
-            click.echo(f"カスタムプロンプトを適用します: {applied_names}")
-
-        manifest_path = template_spec_path.parent.parent / SLIDE_INPUTS_FILENAME
-        if manifest_path.exists():
-            try:
-                slide_input_paths = _load_slide_inputs_manifest(
-                    manifest_path=manifest_path,
-                    blueprint=blueprint_spec.blueprint,
-                )
-            except (FileNotFoundError, ValueError) as exc:
-                click.echo(f"slide_inputs の読み込みに失敗しました: {exc}", err=True)
-                raise click.exceptions.Exit(code=2) from exc
-
-            slide_input_sources = {}
-            slide_input_refs = {}
-            first_source: PrepareSourceDocument | None = None
-            for slide_id, data_path in slide_input_paths.items():
-                try:
-                    parsed = PrepareSourceDocument.parse_file(data_path)
-                except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
-                    click.echo(f"{data_path} の読み込みに失敗しました: {exc}", err=True)
-                    raise click.exceptions.Exit(code=2) from exc
-                slide_input_sources[slide_id] = parsed
-                slide_input_refs[slide_id] = str(data_path)
-                if first_source is None:
-                    first_source = parsed
-
-            if prepare_path is None:
-                if first_source is None:
-                    click.echo("slide_inputs.md に有効な入力がありません", err=True)
-                    raise click.exceptions.Exit(code=2)
-                source = first_source
-            click.echo(f"スライド入力マニフェストを利用します: {manifest_path}")
-        else:
-            if prepare_path is None:
-                click.echo(
-                    ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
-                    err=True,
-                )
-                raise click.exceptions.Exit(code=2)
-    else:
-        blueprint_ref = None
-        prompt_overrides = []
-        slide_input_sources = None
-        slide_input_refs = None
-
-    orchestrator = PrepareAIOrchestrator(policy_set)
-    try:
-        document, meta, ai_logs = orchestrator.generate_document(
-            source,
-            policy_id=None,
-            page_limit=page_limit,
-            mode=normalized_mode,  # type: ignore[arg-type]
-            blueprint=blueprint_spec.blueprint if blueprint_spec else None,
-            blueprint_ref=blueprint_ref,
-            prompt_overrides=prompt_overrides,
-            slide_sources=slide_input_sources,
-            slide_input_refs=slide_input_refs,
-        )
-    except PrepareAIOrchestrationError as exc:
-        click.echo(f"プレペアカードの生成に失敗しました: {exc}", err=True)
-        exit_code = 6 if normalized_mode == "static" else 4
-        raise click.exceptions.Exit(code=exit_code) from exc
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    cards_path = output_dir / "prepare_card.json"
-    log_path = output_dir / "prepare_log.json"
-    ai_log_path = output_dir / "prepare_ai_log.json"
-    meta_path = output_dir / "ai_generation_meta.json"
-    story_outline_path = output_dir / "prepare_story_outline.json"
-    audit_path = output_dir / "audit_log.json"
-
-    def _relativize(path: Path) -> str:
-        try:
-            return str(path.relative_to(output_dir))
-        except ValueError:
-            return str(path)
-
-    document.meta = dict(document.meta or {})
-    document.meta.update(
-        {
-            "prepare_card_path": _relativize(cards_path),
-            "prepare_log_path": _relativize(log_path),
-            "prepare_ai_log_path": _relativize(ai_log_path),
-            "ai_generation_meta_path": _relativize(meta_path),
-            "prepare_story_outline_path": _relativize(story_outline_path),
-            "prepare_audit_log_path": _relativize(audit_path),
-        }
+    config = PrepareCommandConfig(
+        prepare_path=prepare_path,
+        output_dir=output_dir,
+        jobspec_path=jobspec,
+        mode=mode,
+        page_limit=page_limit,
+        policy_path=DEFAULT_PREPARE_POLICY_PATH,
+        default_jobspec_path=DEFAULT_JOBSPEC_PATH,
+        prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
+        slide_inputs_filename=SLIDE_INPUTS_FILENAME,
     )
+    try:
+        result = run_prepare_command(config, dump_json=_dump_json)
+    except PrepareCommandError as exc:
+        click.echo(str(exc), err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-    _dump_json(cards_path, document.model_dump(mode="json", exclude_none=True))
-    _dump_json(log_path, [])
-    _dump_json(
-        ai_log_path,
-        [record.model_dump(mode="json", exclude_none=True)
-         for record in ai_logs],
-    )
-    _dump_json(meta_path, meta.model_dump(mode="json", exclude_none=True))
-    _dump_json(story_outline_path, _build_prepare_story_outline(document))
+    for message in result.messages:
+        click.echo(message)
 
-    audit_payload = {
-        "prepare_normalization": {
-            "generated_at": meta.generated_at.isoformat(),
-            "policy_id": meta.policy_id,
-            "input_hash": meta.input_hash,
-            "mode": meta.mode,
-            "outputs": {
-                "prepare_card": str(cards_path.resolve()),
-                "prepare_log": str(log_path.resolve()),
-                "prepare_ai_log": str(ai_log_path.resolve()),
-                "ai_generation_meta": str(meta_path.resolve()),
-                "prepare_story_outline": str(story_outline_path.resolve()),
-            },
-            "statistics": meta.statistics,
-        }
-    }
-    if template_spec_path is not None:
-        audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(
-            template_spec_path)
-    if blueprint_ref:
-        audit_payload["prepare_normalization"]["blueprint"] = blueprint_ref
-    if meta.slot_coverage:
-        audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
-    _dump_json(audit_path, audit_payload)
-
-    click.echo(f"Prepare Card: {cards_path}")
-    click.echo(f"Prepare Log: {log_path}")
-    click.echo(f"Prepare AI Log: {ai_log_path}")
-    click.echo(f"AI Generation Meta: {meta_path}")
-    click.echo(f"Prepare Story Outline: {story_outline_path}")
-    click.echo(f"Audit Log: {audit_path}")
+    click.echo(f"Prepare Card: {result.cards_path}")
+    click.echo(f"Prepare Log: {result.log_path}")
+    click.echo(f"Prepare AI Log: {result.ai_log_path}")
+    click.echo(f"AI Generation Meta: {result.meta_path}")
+    click.echo(f"Prepare Story Outline: {result.story_outline_path}")
+    click.echo(f"Audit Log: {result.audit_path}")
 
 
 @app.command("outline")

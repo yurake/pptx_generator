@@ -30,6 +30,24 @@
 2. Mapping / Draft Structuring / Prepare AI 周辺の長大メソッドを段階的に分割し、テスト観点を整備する。
 3. FastAPI ルートを cards・logs など機能単位の router へ切り出し、共通処理をユーティリティ化する。
 
+## 2025-11-30 CLI prepare ハンドラ分離方針メモ
+- 対象: `src/pptx_generator/cli.py` 内 `prepare` コマンド（約 320 行）。
+- 現状責務:
+  - Click オプション検証（入力ファイル、モード、jobspec、page-limit）。
+  - Blueprint / jobspec / template_spec 解決とハッシュ計算。
+  - プロンプトテンプレート・スライド入力マニフェストの読込。
+  - Orchestrator 呼び出し、成果物書き出し、監査ログ生成、標準出力メッセージ表示、エラーコード決定。
+- 分割方針:
+  - CLI 層: 引数解析、例外 → exit code 変換、ユーザー向けメッセージの一元化。
+  - ハンドラ層: ドメイン入力構築（blueprint, prompts, slide inputs）と `PrepareAIOrchestrator` 呼び出し、成果物保存。戻り値で生成パス・メタ情報をまとめ、CLI が echo。
+  - 例外: ハンドラで専用例外（例: `PrepareCommandError`）を送出し、エラー分類（入力/IO/AI/設定）を enum で保持→ CLI 側の exit code 互換性を担保。
+- 実装メモ:
+  - `src/pptx_generator/cli_handlers/prepare.py` を新設。`PrepareCommandConfig`（入力値 struct）、`PrepareCommandResult`（成果物パスと監査メタ）を定義。
+  - ハンドラ内でファイル生成を集約、`_dump_json` 等のユーティリティを再利用できるよう CLI 側ヘルパーを共有化（必要なら `utils/io.py` へ移動検討）。
+  - CLI からは `invoke_prepare_command(config)` を呼び出し、結果を標準出力に整形。
+  - 静的モード制約（page-limit 禁止など）はハンドラに集約し、CLI では `mode` 変換後に config 生成のみ行う。
+  - 既存テスト `tests/cli/test_cli_prepare_stage_flow.py` が通るよう出力パスとメッセージを変えない。新設ハンドラの単体テストで `PrepareCommandConfig` → ファイル生成を検証予定。
+
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI
