@@ -17,24 +17,24 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - テスト方針: `uv run --extra dev pytest tests/pipeline`（マッピング関連テスト中心）と必要に応じて CLI 統合テストを実行し、出力 JSON の互換性を確認する。
     - ロールバック方法: `mapping.py` の差分を revert すれば元の構成に戻せる。ドキュメント変更は同一コミットで巻き戻し可能。
     - 承認メッセージ ID／リンク: ユーザー返信「ok, 対応内容が全く違うため、新規にtodoファイルを作成して対応してほしい」（本会話 2025-11-30）。
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針の確定
+  - メモ: `docs/notes/rm084-refactorability-assessment.md` に MappingStep.run リファクタ設計メモを追記済み（2025-11-30）。`MappingWorkItem` / `MappingAccumulator` 導入とフロー 3 分割案を確定。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+    - メモ: `docs/notes/rm084-refactorability-assessment.md#L33` 付近に詳細を記載。
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 実装
+  - メモ: `MappingStep.run` を `MappingWorkItem` / `MappingAccumulator` / `_finalize_outputs` などのヘルパーへ分割し、ループ内のロジックを `_process_work_item` に集約。既存の出力・統計フォーマットは維持。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py` を実行し 7 ケース成功。
+- [x] ドキュメント更新
+  - メモ: 設計メモは `docs/notes/rm084-refactorability-assessment.md` を更新済み。その他ドキュメントは仕様変更がなく更新不要。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+  - メモ: フロントマター `関連Issue` に `#344` を設定済み。進捗報告は issue 側ではなく本 ToDo で管理する。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成

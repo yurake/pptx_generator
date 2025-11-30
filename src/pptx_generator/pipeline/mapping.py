@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -81,6 +81,29 @@ class LayoutProfile:
             return None
 
 
+@dataclass(slots=True)
+class MappingWorkItem:
+    """マッピング処理対象の入力一式。"""
+
+    page_no: int
+    section_name: str | None
+    spec_slide: Slide | None
+    card: DraftSlideCard | None
+    content_slide: ContentSlide | None
+
+
+@dataclass(slots=True)
+class MappingAccumulator:
+    """マッピング処理中に蓄積する生成結果・統計。"""
+
+    generate_ready_slides: list[GenerateReadySlide] = field(default_factory=list)
+    log_slides: list[MappingLogSlide] = field(default_factory=list)
+    fallback_records: list[dict[str, Any]] = field(default_factory=list)
+    fallback_slide_ids: set[str] = field(default_factory=set)
+    ai_patch_count: int = 0
+    ai_patch_slide_ids: set[str] = field(default_factory=set)
+
+
 class MappingStep:
     """承認済みドラフトを基に generate_ready.json を生成するステップ。"""
 
@@ -107,172 +130,23 @@ class MappingStep:
         )
         spec_lookup = {slide.id: slide for slide in context.spec.slides}
 
-        generate_ready_slides: list[GenerateReadySlide] = []
-        log_slides: list[MappingLogSlide] = []
-        fallback_records: list[dict[str, Any]] = []
-        fallback_slide_ids: set[str] = set()
-        ai_patch_count = 0
-        ai_patch_slide_ids: set[str] = set()
+        work_items = self._build_work_items(
+            draft_document=draft_document,
+            section_lookup=section_lookup,
+            card_lookup=card_lookup,
+            content_lookup=content_lookup,
+            spec_lookup=spec_lookup,
+            spec_slides=context.spec.slides,
+        )
+
+        accumulator = MappingAccumulator()
         previous_layout: str | None = None
-
-        ordered_cards: list[tuple[str | None, DraftSlideCard]] = []
-        for section in draft_document.sections:
-            for card in section.slides:
-                ordered_cards.append((section.name, card))
-
-        if ordered_cards:
-            work_items = [
-                (
-                    index,
-                    section_name,
-                    spec_lookup.get(card.ref_id),
-                    card,
-                    content_lookup.get(card.ref_id),
-                )
-                for index, (section_name, card) in enumerate(ordered_cards, start=1)
-            ]
-        else:
-            work_items = [
-                (
-                    index,
-                    section_lookup.get(slide.id),
-                    slide,
-                    card_lookup.get(slide.id),
-                    content_lookup.get(slide.id),
-                )
-                for index, slide in enumerate(context.spec.slides, start=1)
-            ]
-
-        for page_no, section_name, spec_slide, card, content_slide in work_items:
-            slide_id = (
-                spec_slide.id
-                if spec_slide is not None
-                else (card.ref_id if card is not None else f"page-{page_no}")
-            )
-            candidates = self._score_candidates(
-                slide_id=slide_id,
-                content_slide=content_slide,
+        for item in work_items:
+            previous_layout = self._process_work_item(
+                item=item,
                 layout_catalog=layout_catalog,
+                accumulator=accumulator,
                 previous_layout=previous_layout,
-            )
-            if card and card.layout_candidates:
-                merged = {candidate.layout_id: candidate.score for candidate in candidates}
-                for candidate in card.layout_candidates:
-                    merged.setdefault(candidate.layout_id, candidate.score)
-                candidates = [
-                    MappingCandidate(layout_id=layout_id, score=score)
-                    for layout_id, score in merged.items()
-                ]
-                candidates.sort(key=lambda candidate: candidate.score, reverse=True)
-                candidates = candidates[: self.options.max_candidates]
-
-            default_layout = ""
-            if spec_slide is not None:
-                default_layout = spec_slide.layout
-            elif card is not None:
-                default_layout = card.layout_hint
-            base_layout = default_layout or "title"
-            selected_layout = self._select_layout(base_layout, card, candidates)
-            previous_layout = selected_layout
-
-            selected_profile = layout_catalog.get(selected_layout)
-            table_payload: dict[str, Any] | None = None
-            if (
-                content_slide is not None
-                and content_slide.elements is not None
-                and content_slide.elements.table_data is not None
-            ):
-                table_payload = build_table_payload(content_slide.elements.table_data)
-
-            elements = self._build_elements(spec_slide, content_slide)
-            if table_payload is not None:
-                placeholders = selected_profile.placeholders if selected_profile else ()
-                anchor, anchor_reasons = resolve_table_anchor(spec_slide, placeholders)
-                target_key = anchor or "table"
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(
-                        "mapping table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
-                        slide_id,
-                        selected_layout,
-                        target_key,
-                        ", ".join(anchor_reasons) if anchor_reasons else "none",
-                    )
-                elements.pop("table", None)
-                for key in list(elements.keys()):
-                    if key == target_key:
-                        continue
-                    if is_table_payload(elements[key]):
-                        elements.pop(key, None)
-                elements[target_key] = table_payload
-
-            fallback_state, ai_patches, warnings = self._apply_capacity_controls(
-                slide_id=slide_id,
-                layout=selected_profile,
-                elements=elements,
-            )
-
-            if fallback_state.applied:
-                fallback_slide_ids.add(slide_id)
-                fallback_records.append(
-                    {
-                        "slide_id": slide_id,
-                        "history": list(fallback_state.history),
-                        "reason": fallback_state.reason,
-                    }
-                )
-            if ai_patches:
-                ai_patch_count += len(ai_patches)
-                ai_patch_slide_ids.add(slide_id)
-
-            sources = [slide_id]
-            if spec_slide is not None:
-                sources = [spec_slide.id]
-
-            layout_name = selected_profile.layout_name if selected_profile else selected_layout
-            layout_description = (
-                selected_profile.layout_description if selected_profile else None
-            )
-            auto_draw_payload: list[dict[str, float]] = []
-            if spec_slide is not None:
-                auto_draw_payload = [
-                    {
-                        "anchor": anchor,
-                        "left_in": box.left_in,
-                        "top_in": box.top_in,
-                        "width_in": box.width_in,
-                        "height_in": box.height_in,
-                    }
-                    for anchor, box in spec_slide.auto_draw_boxes.items()
-                ]
-
-            generate_ready_slides.append(
-                GenerateReadySlide(
-                    layout_id=selected_layout,
-                    layout_name=layout_name,
-                    elements=elements,
-                    meta=MappingSlideMeta(
-                        section=section_name,
-                        page_no=page_no,
-                        sources=sources,
-                        fallback=fallback_state.history[-1]
-                        if fallback_state.applied and fallback_state.history
-                        else "none",
-                        layout_description=layout_description,
-                        auto_draw=auto_draw_payload,
-                    ),
-                )
-            )
-
-            log_slides.append(
-                MappingLogSlide(
-                    ref_id=slide_id,
-                    selected_layout=selected_layout,
-                    candidates=candidates[: self.options.max_candidates],
-                    fallback=fallback_state,
-                    ai_patch=ai_patches,
-                    warnings=warnings,
-                    layout_description=layout_description,
-                )
             )
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
@@ -304,78 +178,34 @@ class MappingStep:
         if isinstance(style_data, TemplateStyle):
             generate_ready_meta.template_style = style_data
         generate_ready_document = GenerateReadyDocument(
-            slides=generate_ready_slides,
+            slides=accumulator.generate_ready_slides,
             meta=generate_ready_meta,
         )
         mapping_log = MappingLog(
-            slides=log_slides,
+            slides=accumulator.log_slides,
             meta=MappingLogMeta(
                 mapping_time_ms=elapsed_ms,
-                fallback_count=len(fallback_slide_ids),
-                ai_patch_count=ai_patch_count,
+                fallback_count=len(accumulator.fallback_slide_ids),
+                ai_patch_count=accumulator.ai_patch_count,
             ),
         )
 
-        generate_ready_path = output_dir / self.options.generate_ready_filename
-        generate_ready_path.write_text(
-            json.dumps(
-                generate_ready_document.model_dump(mode="json"),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
+        self._finalize_outputs(
+            context=context,
+            output_dir=output_dir,
+            generate_ready_document=generate_ready_document,
+            mapping_log=mapping_log,
+            accumulator=accumulator,
+            template_path_str=template_path_str,
+            generate_ready_meta=generate_ready_meta,
+            elapsed_ms=elapsed_ms,
         )
-
-        mapping_log_path = output_dir / self.options.mapping_log_filename
-        mapping_log_path.write_text(
-            json.dumps(
-                mapping_log.model_dump(mode="json"),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-
-        if fallback_records and self.options.fallback_report_filename:
-            fallback_path = output_dir / self.options.fallback_report_filename
-            fallback_path.write_text(
-                json.dumps(
-                    {
-                        "generated_at": generate_ready_meta.generated_at,
-                        "slides": fallback_records,
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
-            context.add_artifact("mapping_fallback_report_path", str(fallback_path))
-
-        context.add_artifact("generate_ready", generate_ready_document)
-        context.add_artifact("generate_ready_path", str(generate_ready_path))
-        context.add_artifact("mapping_log", mapping_log)
-        context.add_artifact("mapping_log_path", str(mapping_log_path))
-        mapping_meta = {
-            "elapsed_ms": elapsed_ms,
-            "slides": len(generate_ready_slides),
-            "fallback_count": len(fallback_slide_ids),
-            "fallback_slide_ids": sorted(fallback_slide_ids),
-            "ai_patch_count": ai_patch_count,
-            "ai_patch_slide_ids": sorted(ai_patch_slide_ids),
-            "generate_ready_generated_at": generate_ready_meta.generated_at,
-            "template_version": generate_ready_meta.template_version,
-            "content_hash": generate_ready_meta.content_hash,
-            "generate_ready_path": str(generate_ready_path),
-        }
-        if template_path_str is not None:
-            mapping_meta["template_path"] = template_path_str
-        context.add_artifact("mapping_meta", mapping_meta)
 
         logger.info(
             "generate_ready.json を生成しました: slides=%d fallback=%d ai_patch=%d",
-            len(generate_ready_slides),
-            len(fallback_slide_ids),
-            ai_patch_count,
+            len(accumulator.generate_ready_slides),
+            len(accumulator.fallback_slide_ids),
+            accumulator.ai_patch_count,
         )
 
     # ------------------------------------------------------------------ #
@@ -483,6 +313,256 @@ class MappingStep:
             for card in section.slides:
                 lookup[card.ref_id] = card
         return lookup
+
+    def _build_work_items(
+        self,
+        *,
+        draft_document: DraftDocument,
+        section_lookup: dict[str, str],
+        card_lookup: dict[str, DraftSlideCard],
+        content_lookup: dict[str, ContentSlide],
+        spec_lookup: dict[str, Slide],
+        spec_slides: Sequence[Slide],
+    ) -> list[MappingWorkItem]:
+        ordered_cards: list[tuple[str | None, DraftSlideCard]] = []
+        for section in draft_document.sections:
+            for card in section.slides:
+                ordered_cards.append((section.name, card))
+
+        if ordered_cards:
+            return [
+                MappingWorkItem(
+                    page_no=index,
+                    section_name=section_name,
+                    spec_slide=spec_lookup.get(card.ref_id),
+                    card=card,
+                    content_slide=content_lookup.get(card.ref_id),
+                )
+                for index, (section_name, card) in enumerate(ordered_cards, start=1)
+            ]
+
+        items: list[MappingWorkItem] = []
+        for index, spec_slide in enumerate(spec_slides, start=1):
+            items.append(
+                MappingWorkItem(
+                    page_no=index,
+                    section_name=section_lookup.get(spec_slide.id),
+                    spec_slide=spec_slide,
+                    card=card_lookup.get(spec_slide.id),
+                    content_slide=content_lookup.get(spec_slide.id),
+                )
+            )
+        return items
+
+    def _process_work_item(
+        self,
+        *,
+        item: MappingWorkItem,
+        layout_catalog: Mapping[str, LayoutProfile],
+        accumulator: MappingAccumulator,
+        previous_layout: str | None,
+    ) -> str | None:
+        slide_id = (
+            item.spec_slide.id
+            if item.spec_slide is not None
+            else (item.card.ref_id if item.card is not None else f"page-{item.page_no}")
+        )
+        candidates = self._score_candidates(
+            slide_id=slide_id,
+            content_slide=item.content_slide,
+            layout_catalog=layout_catalog,
+            previous_layout=previous_layout,
+        )
+        if item.card and item.card.layout_candidates:
+            merged = {candidate.layout_id: candidate.score for candidate in candidates}
+            for candidate in item.card.layout_candidates:
+                merged.setdefault(candidate.layout_id, candidate.score)
+            candidates = [
+                MappingCandidate(layout_id=layout_id, score=score)
+                for layout_id, score in merged.items()
+            ]
+            candidates.sort(key=lambda candidate: candidate.score, reverse=True)
+            candidates = candidates[: self.options.max_candidates]
+
+        default_layout = ""
+        if item.spec_slide is not None:
+            default_layout = item.spec_slide.layout
+        elif item.card is not None:
+            default_layout = item.card.layout_hint
+        base_layout = default_layout or "title"
+        selected_layout = self._select_layout(base_layout, item.card, candidates)
+
+        selected_profile = layout_catalog.get(selected_layout)
+        table_payload: dict[str, Any] | None = None
+        if (
+            item.content_slide is not None
+            and item.content_slide.elements is not None
+            and item.content_slide.elements.table_data is not None
+        ):
+            table_payload = build_table_payload(item.content_slide.elements.table_data)
+
+        elements = self._build_elements(item.spec_slide, item.content_slide)
+        if table_payload is not None:
+            placeholders = selected_profile.placeholders if selected_profile else ()
+            anchor, anchor_reasons = resolve_table_anchor(item.spec_slide, placeholders)
+            target_key = anchor or "table"
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "mapping table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
+                    slide_id,
+                    selected_layout,
+                    target_key,
+                    ", ".join(anchor_reasons) if anchor_reasons else "none",
+                )
+            elements.pop("table", None)
+            for key in list(elements.keys()):
+                if key == target_key:
+                    continue
+                if is_table_payload(elements[key]):
+                    elements.pop(key, None)
+            elements[target_key] = table_payload
+
+        fallback_state, ai_patches, warnings = self._apply_capacity_controls(
+            slide_id=slide_id,
+            layout=selected_profile,
+            elements=elements,
+        )
+
+        if fallback_state.applied:
+            accumulator.fallback_slide_ids.add(slide_id)
+            accumulator.fallback_records.append(
+                {
+                    "slide_id": slide_id,
+                    "history": list(fallback_state.history),
+                    "reason": fallback_state.reason,
+                }
+            )
+        if ai_patches:
+            accumulator.ai_patch_count += len(ai_patches)
+            accumulator.ai_patch_slide_ids.update((slide_id,))
+
+        sources = [slide_id] if item.spec_slide is None else [item.spec_slide.id]
+
+        layout_name = selected_profile.layout_name if selected_profile else selected_layout
+        layout_description = (
+            selected_profile.layout_description if selected_profile else None
+        )
+        auto_draw_payload: list[dict[str, float]] = []
+        if item.spec_slide is not None:
+            auto_draw_payload = [
+                {
+                    "anchor": anchor,
+                    "left_in": box.left_in,
+                    "top_in": box.top_in,
+                    "width_in": box.width_in,
+                    "height_in": box.height_in,
+                }
+                for anchor, box in item.spec_slide.auto_draw_boxes.items()
+            ]
+
+        fallback_marker = (
+            fallback_state.history[-1]
+            if fallback_state.applied and fallback_state.history
+            else "none"
+        )
+
+        accumulator.generate_ready_slides.append(
+            GenerateReadySlide(
+                layout_id=selected_layout,
+                layout_name=layout_name,
+                elements=elements,
+                meta=MappingSlideMeta(
+                    section=item.section_name,
+                    page_no=item.page_no,
+                    sources=sources,
+                    fallback=fallback_marker,
+                    layout_description=layout_description,
+                    auto_draw=auto_draw_payload,
+                ),
+            )
+        )
+
+        accumulator.log_slides.append(
+            MappingLogSlide(
+                ref_id=slide_id,
+                selected_layout=selected_layout,
+                candidates=candidates[: self.options.max_candidates],
+                fallback=fallback_state,
+                ai_patch=ai_patches,
+                warnings=warnings,
+                layout_description=layout_description,
+            )
+        )
+
+        return selected_layout
+
+    def _finalize_outputs(
+        self,
+        *,
+        context: PipelineContext,
+        output_dir: Path,
+        generate_ready_document: GenerateReadyDocument,
+        mapping_log: MappingLog,
+        accumulator: MappingAccumulator,
+        template_path_str: str | None,
+        generate_ready_meta: GenerateReadyMeta,
+        elapsed_ms: int,
+    ) -> None:
+        generate_ready_path = output_dir / self.options.generate_ready_filename
+        generate_ready_path.write_text(
+            json.dumps(
+                generate_ready_document.model_dump(mode="json"),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        mapping_log_path = output_dir / self.options.mapping_log_filename
+        mapping_log_path.write_text(
+            json.dumps(
+                mapping_log.model_dump(mode="json"),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        if accumulator.fallback_records and self.options.fallback_report_filename:
+            fallback_path = output_dir / self.options.fallback_report_filename
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "generated_at": generate_ready_meta.generated_at,
+                        "slides": accumulator.fallback_records,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            context.add_artifact("mapping_fallback_report_path", str(fallback_path))
+
+        context.add_artifact("generate_ready", generate_ready_document)
+        context.add_artifact("generate_ready_path", str(generate_ready_path))
+        context.add_artifact("mapping_log", mapping_log)
+        context.add_artifact("mapping_log_path", str(mapping_log_path))
+
+        mapping_meta = {
+            "elapsed_ms": elapsed_ms,
+            "slides": len(accumulator.generate_ready_slides),
+            "fallback_count": len(accumulator.fallback_slide_ids),
+            "fallback_slide_ids": sorted(accumulator.fallback_slide_ids),
+            "ai_patch_count": accumulator.ai_patch_count,
+            "ai_patch_slide_ids": sorted(accumulator.ai_patch_slide_ids),
+            "generate_ready_generated_at": generate_ready_meta.generated_at,
+            "template_version": generate_ready_meta.template_version,
+            "content_hash": generate_ready_meta.content_hash,
+            "generate_ready_path": str(generate_ready_path),
+        }
+        if template_path_str is not None:
+            mapping_meta["template_path"] = template_path_str
+        context.add_artifact("mapping_meta", mapping_meta)
 
     def _score_candidates(
         self,

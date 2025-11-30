@@ -48,6 +48,26 @@
   - 静的モード制約（page-limit 禁止など）はハンドラに集約し、CLI では `mode` 変換後に config 生成のみ行う。
   - 既存テスト `tests/cli/test_cli_prepare_stage_flow.py` が通るよう出力パスとメッセージを変えない。新設ハンドラの単体テストで `PrepareCommandConfig` → ファイル生成を検証予定。
 
+## 2025-11-30 MappingStep.run リファクタ設計メモ
+- 対象: `src/pptx_generator/pipeline/mapping.py` の `MappingStep.run`（約 280 行）。
+- 現状フローと責務:
+  1. **入力読み込み**: draft/context アーティファクト確保、レイアウトカタログ読込。
+  2. **ワークアイテム構築**: セクション順カードを並べ替え、spec との付き合わせを行う。
+  3. **スライド処理ループ**: 候補スコア計算 → card ヒューリスティック適用 → レイアウト選択 → テーブルアンカー解決 → 容量制御 → GenerateReady/ログの生成。
+  4. **成果物書き出し**: `generate_ready.json`、`mapping_log.json`、fallback レポートの保存とアーティファクト登録。
+  5. **統計集計**: フォールバック件数、AI パッチ件数、テンプレートメタなどを `mapping_meta` へ記録。
+- 分割方針:
+  - `MappingAccumulator` で出力リスト／統計情報／コンテキスト共通値を保持し、副作用を局所化。
+  - `_build_work_items(context, draft_document, content_lookup)` でループ入力を前処理。
+  - `_process_work_item(item, accumulator, previous_layout)` で単一スライド処理（候補スコア→レイアウト選定→要素組み立て→容量制御→ログ構築）を実施。
+  - `_finalize_outputs(...)` で JSON 書き出しとアーティファクト登録を一括実行。
+  - 既存 helper（`_score_candidates`, `_build_elements`, `_apply_capacity_controls` 等）はそのまま利用しつつ、戻り値を新しいデータクラスで受ける。
+- 実装メモ:
+  - `MappingWorkItem`（page_no, section_name, spec_slide, card, content_slide）を dataclass 化。
+  - フォールバック／AI パッチ統計は `MappingAccumulator` で一元管理し、ループ外で整形する。
+  - `run` 本体は `work_items` 構築 → `for item in work_items: _process_work_item(...)` → `_finalize_outputs(...)` の 3 段構成を目指す。
+  - 既存のログ／メタ出力内容が変わらないことを unit/integration テストで確認する。
+
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI
