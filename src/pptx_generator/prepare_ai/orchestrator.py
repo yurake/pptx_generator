@@ -392,23 +392,34 @@ class PrepareAIOrchestrator:
 
     @staticmethod
     def _normalize_bullet_items(raw_items: Any, fallback_text: Any) -> list[dict[str, Any]]:
+        normalized = PrepareAIOrchestrator._normalize_bullet_list(raw_items)
+        if normalized:
+            return normalized
+        return PrepareAIOrchestrator._normalize_bullet_fallback(fallback_text)
+
+    @staticmethod
+    def _normalize_bullet_list(raw_items: Any) -> list[dict[str, Any]]:
+        if not isinstance(raw_items, list):
+            return []
+        result: list[dict[str, Any]] = []
+        for entry in raw_items:
+            bullet = PrepareAIOrchestrator._normalize_single_bullet_entry(entry)
+            if bullet:
+                result.append(bullet)
+        return result
+
+    @staticmethod
+    def _normalize_bullet_fallback(fallback_text: Any) -> list[dict[str, Any]]:
         fallback = str(fallback_text).strip() if isinstance(fallback_text, str) else None
+        if not fallback:
+            return []
         normalized: list[dict[str, Any]] = []
-
-        if isinstance(raw_items, list):
-            for entry in raw_items:
-                bullet = PrepareAIOrchestrator._normalize_single_bullet_entry(entry)
-                if bullet:
-                    normalized.append(bullet)
-
-        if not normalized and isinstance(fallback, str):
-            for line in fallback.splitlines():
-                stripped = line.strip()
-                if stripped.startswith("-"):
-                    stripped = stripped.lstrip("-").strip()
-                if stripped:
-                    normalized.append({"text": stripped, "level": 0})
-
+        for line in fallback.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("-"):
+                stripped = stripped.lstrip("-").strip()
+            if stripped:
+                normalized.append({"text": stripped, "level": 0})
         return normalized
 
     @staticmethod
