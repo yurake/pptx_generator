@@ -1050,7 +1050,12 @@ def _load_slide_inputs_manifest(
             raise ValueError(f"slide_inputs の行に空の値があります: '{line}'")
         resolved = Path(path_value)
         if not resolved.is_absolute():
-            resolved = (manifest_path.parent / resolved).resolve()
+            default_path = (manifest_path.parent / resolved).resolve()
+            project_path = (Path.cwd() / resolved).resolve()
+            if project_path.exists():
+                resolved = project_path
+            else:
+                resolved = default_path
         mapping[identifier] = resolved
 
     expected: dict[str, Path] = {}
