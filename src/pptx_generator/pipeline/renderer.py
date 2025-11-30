@@ -319,7 +319,7 @@ class SimpleRendererStep:
                         shape.name = target_name
                     except ValueError:
                         logger.debug("テキストボックス名 '%s' の設定に失敗", target_name, exc_info=True)
-            self._write_textbox_content(slide_spec, textbox_spec, text_frame)
+            self._write_textbox_content(textbox_spec, text_frame)
 
     def _write_bullets_to_text_frame(
         self,
@@ -350,7 +350,7 @@ class SimpleRendererStep:
             )
 
     def _write_textbox_content(
-        self, slide_spec: Slide, textbox_spec: SlideTextbox, text_frame
+        self, textbox_spec: SlideTextbox, text_frame
     ) -> None:
         text_frame.clear()
         text_frame.word_wrap = True
