@@ -2,22 +2,17 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
 import re
 import shutil
-from dataclasses import dataclass, replace
-from datetime import datetime, timezone
-from importlib import resources as importlib_resources
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
 import click
 from dotenv import load_dotenv
-from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pydantic import BaseModel, ValidationError
 
 from .branding_extractor import extract_branding_config
@@ -33,18 +28,15 @@ from .cli_handlers import (
     slugify_prompt_layout,
 )
 from .draft_intel import load_return_reasons
-from .generate_ready import generate_ready_to_jobspec
 from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
                                 LayoutValidationResult, LayoutValidationSuite)
 from .models import (ContentApprovalDocument, DraftDocument, GenerateReadyDocument,
-                     JobMeta, JobSpec, JobSpecScaffold, SpecValidationError,
-                     TemplateBlueprint, TemplateBlueprintSlide, TemplateRelease,
-                     TemplateReleaseDiagnostics, TemplateReleaseGoldenRun,
-                     TemplateReleaseReport, TemplateSpec, TemplateStyle)
+                     JobSpec, JobSpecScaffold, SpecValidationError,
+                     TemplateBlueprint, TemplateBlueprintSlide, TemplateSpec,
+                     TemplateStyle)
 from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        ContentApprovalStep, DraftStructuringOptions,
-                       DraftStructuringStep, MappingOptions, MappingStep,
-                       MonitoringIntegrationOptions, MonitoringIntegrationStep,
+                       DraftStructuringStep, MonitoringIntegrationOptions, MonitoringIntegrationStep,
                        PdfExportError, PdfExportOptions, PdfExportStep,
                        PipelineContext, PipelineRunner, PipelineStep,
                        PolisherError, PolisherOptions, PolisherStep,
@@ -52,15 +44,46 @@ from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
                        PrepareNormalizationStep, RefinerOptions,
                        RenderingAuditOptions, RenderingAuditStep,
                        RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep,
-                       TemplateExtractor, TemplateExtractorOptions)
-from .pipeline.analyzer import SlideSnapshot
+                       SimpleRendererStep, SpecValidatorStep)
 from .pipeline.draft_structuring import DraftStructuringError
-from .review_engine import AnalyzerReviewEngineAdapter
 from .settings import RulesConfig
-from .spec_loader import load_jobspec_from_path
-from .template_audit import (build_release_report, build_template_release,
-                             load_template_release)
+from .cli_handlers.common import dump_json, load_jobspec, resolve_layouts_path
+from .cli_handlers.mapping import (
+    MappingPipelineConfig,
+    TemplateStylePayload,
+    build_refiner_options,
+    echo_mapping_outputs,
+    prepare_template_style,
+    run_mapping_pipeline,
+)
+from .cli_handlers.outline import (
+    OutlineCommandConfig,
+    OutlineResult,
+    execute_outline,
+    print_outline_result,
+    run_draft_pipeline,
+    run_outline_command,
+)
+from .cli_handlers.template_release import (
+    TemplateReleaseExecutionResult,
+    echo_template_release_result,
+    resolve_template_id,
+    run_template_release,
+)
+from .cli_handlers.template_extraction import (
+    PROMPT_TEMPLATE_DIRNAME,
+    TemplateExtractionResult,
+    echo_template_extraction_result,
+    run_template_extraction,
+)
+from .cli_handlers.rendering import (
+    build_analyzer_options,
+    build_polisher_options,
+    echo_render_outputs,
+    emit_review_engine_analysis,
+    run_render_pipeline,
+    write_audit_log,
+)
 from .template_style import extract_template_style
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
@@ -69,7 +92,6 @@ DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
 DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
-PROMPT_TEMPLATE_DIRNAME = Path("prompts")
 
 logger = logging.getLogger(__name__)
 
@@ -83,44 +105,6 @@ _LOG_LEVEL_ALIASES = {
     "fatal": logging.CRITICAL,
     "critical": logging.CRITICAL,
 }
-
-
-@dataclass(slots=True)
-class OutlineResult:
-    """アウトライン stage の実行結果。"""
-
-    context: PipelineContext
-    draft_path: Path
-    approved_path: Path
-    log_path: Path
-    meta_path: Path
-    generate_ready_path: Path
-    generate_ready_meta_path: Path
-
-
-@dataclass(slots=True)
-class MappingPipelineConfig:
-    """マッピング stage の実行に必要な入力値をひとまとめにした設定。"""
-
-    spec: JobSpec
-    output_dir: Path
-    spec_source_path: Path
-    rules_config: RulesConfig
-    refiner_options: RefinerOptions
-    template_style: "TemplateStylePayload"
-    prepare_cards: Path | None
-    require_prepare: bool
-    layouts: Path | None
-    draft_output: Path
-    template: Path | None
-
-
-@dataclass(frozen=True)
-class TemplateStylePayload:
-    """テンプレートスタイル本体とアーティファクトをまとめたバンドル。"""
-
-    style: TemplateStyle
-    artifact: dict[str, object]
 
 
 _DEFAULT_DRAFT_OPTIONS = DraftStructuringOptions()
@@ -181,51 +165,6 @@ def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[in
         )
 
     return logging.WARNING, deferred_logs
-
-
-def _discover_template_ai_policy() -> Path | None:
-    """Return the default template AI policy path if available."""
-
-    env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
-    if env_policy:
-        candidate = Path(env_policy)
-        if candidate.is_file():
-            return candidate.resolve()
-
-    cwd_candidate = Path.cwd() / "config" / "template_ai_policies.json"
-    if cwd_candidate.exists():
-        logger.info("Detected default template AI policy: %s", cwd_candidate)
-        return cwd_candidate.resolve()
-
-    try:
-        resource = importlib_resources.files("pptx_generator").joinpath(
-            "config/template_ai_policies.json"
-        )
-        if resource.is_file():
-            try:
-                text = resource.read_text(encoding="utf-8")
-            except FileNotFoundError:
-                text = None
-            if text is not None:
-                cache_dir = Path(".pptx/cache")
-                cache_dir.mkdir(parents=True, exist_ok=True)
-                cache_path = cache_dir / "template_ai_policies.json"
-                cache_path.write_text(text, encoding="utf-8")
-                logger.info(
-                    "Detected default template AI policy (package resource cached to %s)",
-                    cache_path,
-                )
-                return cache_path.resolve()
-    except (ModuleNotFoundError, FileNotFoundError):
-        pass
-
-    for parent in Path(__file__).resolve().parents:
-        candidate = parent / "config" / "template_ai_policies.json"
-        if candidate.exists():
-            logger.info("Detected default template AI policy: %s", candidate)
-            return candidate.resolve()
-
-    return None
 
 
 def _configure_llm_logger() -> None:
@@ -328,23 +267,13 @@ def _configure_file_logging() -> None:
         root_logger.addHandler(handler)
 
 
-def _resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
-    """設定ファイルで指定されたパスを解決する。"""
-    candidate = Path(value)
-    if candidate.is_absolute():
-        resolved = candidate
-    else:
-        if candidate.parts and candidate.parts[0] == "config":
-            resolved = Path.cwd() / candidate
-        elif base_dir is not None:
-            resolved = base_dir / candidate
-        else:
-            resolved = Path.cwd() / candidate
-    resolved = resolved.resolve()
-    if not resolved.exists():
-        msg = f"設定ファイルで指定されたパスが見つかりません: {resolved}"
-        raise FileNotFoundError(msg)
-    return resolved
+def _prepare_template_style(template: Path) -> tuple[TemplateStyle, dict[str, object]]:
+    style, artifact = extract_template_style(template)
+    if artifact.get("source", {}).get("type") == "default":
+        error = artifact["source"].get("error")
+        if error:
+            click.echo(f"テンプレートスタイルの抽出に失敗しました: {error}", err=True)
+    return style, artifact
 
 
 @click.group(
@@ -367,17 +296,6 @@ def app(verbose: bool, debug: bool) -> None:
         cli_logger.log(message_level, message)
     _configure_llm_logger()
     _configure_file_logging()
-
-
-def _prepare_template_style(template: Path) -> tuple[TemplateStyle, dict[str, object]]:
-    style, artifact = extract_template_style(template)
-    if artifact.get("source", {}).get("type") == "default":
-        error = artifact["source"].get("error")
-        if error:
-            click.echo(f"テンプレートスタイルの抽出に失敗しました: {error}", err=True)
-    return style, artifact
-
-
 def _resolve_template_path(
     *,
     spec: JobSpec,
@@ -428,688 +346,23 @@ def _resolve_template_path(
     return resolved
 
 
-def _resolve_layouts_path(
-    *,
-    spec: JobSpec,
-    spec_source: Path,
-) -> Path | None:
-    """ジョブスペックとオプションから layouts.jsonl のパスを決定する。"""
-
-    layouts_path_value: str | None = None
-    meta = getattr(spec, "meta", None)
-    if meta is not None:
-        layouts_path_value = getattr(meta, "layouts_path", None)
-        if layouts_path_value is None and isinstance(meta, BaseModel):
-            extra = getattr(meta, "model_extra", None)
-            if isinstance(extra, dict):
-                layouts_path_value = extra.get("layouts_path")
-        if layouts_path_value is None and isinstance(meta, dict):
-            layouts_path_value = meta.get("layouts_path")
-
-    if layouts_path_value is None:
-        try:
-            raw_spec = json.loads(spec_source.read_text(encoding="utf-8"))
-            layouts_path_value = raw_spec.get("meta", {}).get("layouts_path")
-        except Exception:  # noqa: BLE001
-            layouts_path_value = None
-
-    if not layouts_path_value:
-        return None
-
-    candidate_raw = Path(layouts_path_value)
-    candidates: list[Path]
-    if candidate_raw.is_absolute():
-        candidates = [candidate_raw]
-    else:
-        spec_relative = (spec_source.parent / candidate_raw).resolve()
-        cwd_relative = (Path.cwd() / candidate_raw).resolve()
-        candidates = [spec_relative, cwd_relative]
-
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-
-    message = (
-        "jobspec.meta.layouts_path に有効なパスを設定してください。"
-        f"（確認したパス: {', '.join(str(path) for path in candidates)}）"
-    )
-    raise ValueError(message)
-
-
-@dataclass(slots=True)
-class TemplateExtractionResult:
-    template_spec: TemplateSpec
-    jobspec_scaffold: JobSpecScaffold
-    template_spec_path: Path
-    branding_path: Path
-    jobspec_path: Path
-    validation_result: LayoutValidationResult | None
-    output_dir: Path
-    slide_snapshot_path: Path | None
-    prompt_templates_dir: Path | None
-    prompt_templates_created: int
-    slide_inputs_path: Path | None
-
-
-@dataclass(slots=True)
-class TemplateReleaseExecutionResult:
-    release: TemplateRelease
-    report: TemplateReleaseReport
-    release_path: Path
-    report_path: Path
-    golden_runs_path: Path | None
-    baseline_release: Path | None
-
-
-def _run_template_extraction(
-    *,
-    template_path: Path,
-    output_dir: Path,
-    layout: str | None,
-    anchor: str | None,
-    output_format: str,
-    template_ai_policy: Path | None,
-    template_ai_policy_id: str | None,
-    disable_template_ai: bool,
-    layout_mode: str,
-    skip_validation: bool = False,
-    emit_slide_snapshot: bool = False,
-) -> TemplateExtractionResult:
-    fmt = output_format.lower()
-    extractor_options = TemplateExtractorOptions(
-        template_path=template_path,
-        output_path=None,
-        layout_filter=layout,
-        anchor_filter=anchor,
-        format=fmt,
-        layout_mode=layout_mode,
-    )
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    ai_policy_path = template_ai_policy
-    if ai_policy_path is None and not disable_template_ai:
-        env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
-        if env_policy:
-            ai_policy_path = Path(env_policy)
-        else:
-            ai_policy_path = _discover_template_ai_policy()
-    ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
-    effective_disable = disable_template_ai or ai_policy_path is None
-    if effective_disable:
-        ai_policy_path = None
-        if not disable_template_ai:
-            logger.info("Template AI validation disabled: no policy file available")
-
-    extractor = TemplateExtractor(extractor_options)
-    template_spec = extractor.extract()
-    jobspec_scaffold = extractor.build_jobspec_scaffold(template_spec)
-    branding_result = extract_branding_config(template_path)
-
-    if fmt == "yaml":
-        import yaml
-
-        spec_path = output_dir / "template_spec.yaml"
-        spec_content = yaml.dump(
-            template_spec.model_dump(mode="json", exclude_none=True),
-            allow_unicode=True,
-            default_flow_style=False,
-            indent=2,
-        )
-    else:
-        spec_path = output_dir / "template_spec.json"
-        spec_content = json.dumps(
-            template_spec.model_dump(mode="json", exclude_none=True),
-            indent=2,
-            ensure_ascii=False,
-        )
-
-    spec_path.write_text(spec_content, encoding="utf-8")
-    logger.info("Saved template spec to %s", spec_path.resolve())
-
-    branding_path = output_dir / "branding.json"
-    branding_payload = branding_result.to_branding_payload()
-    branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
-    branding_path.write_text(branding_text, encoding="utf-8")
-    logger.info("Saved branding payload to %s", branding_path.resolve())
-
-    validation_result: LayoutValidationResult | None = None
-    if not skip_validation:
-        logger.info("Starting layout validation for %s", template_path)
-        validation_options = LayoutValidationOptions(
-            template_path=template_path,
-            output_dir=output_dir,
-            template_ai_policy_path=ai_policy_path,
-            template_ai_policy_id=ai_policy_id,
-            disable_template_ai=effective_disable,
-        )
-        validation_suite = LayoutValidationSuite(validation_options)
-        validation_result = validation_suite.run()
-        logger.info(
-            "Layout validation finished: warnings=%d errors=%d",
-            validation_result.warnings_count,
-            validation_result.errors_count,
-        )
-
-        try:
-            layouts_relative = str(
-                validation_result.layouts_path.relative_to(output_dir)
-            )
-        except ValueError:
-            layouts_relative = str(validation_result.layouts_path)
-    else:
-        validation_result = None
-        layouts_relative = None
-
-    template_spec_relative: str | None = None
-    try:
-        template_spec_relative = str(spec_path.relative_to(output_dir))
-    except ValueError:
-        template_spec_relative = str(spec_path)
-
-    meta_update: dict[str, str | None] = {
-        "template_spec_path": template_spec_relative,
-    }
-    if layouts_relative is not None:
-        meta_update["layouts_path"] = layouts_relative
-
-    jobspec_scaffold.meta = jobspec_scaffold.meta.model_copy(update=meta_update)
-
-    jobspec_path = output_dir / "jobspec.json"
-    extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
-    logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
-
-    slide_snapshot_path: Path | None = None
-    if emit_slide_snapshot:
-        slide_snapshot_path = _generate_slide_snapshot(
-            template_path=template_path,
-            output_dir=output_dir,
-        )
-
-    prompt_templates_dir: Path | None = None
-    prompt_templates_created = 0
-    if template_spec.layout_mode == "static" and template_spec.blueprint:
-        try:
-            prompt_templates_dir, prompt_templates_created = _ensure_prompt_templates(
-                output_dir=output_dir,
-                template_spec=template_spec,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("プロンプト雛形の生成に失敗しました: %s", exc)
-            prompt_templates_dir = None
-            prompt_templates_created = 0
-
-    slide_inputs_path: Path | None = None
-    if template_spec.layout_mode == "static" and template_spec.blueprint:
-        try:
-            slide_inputs_path = _ensure_slide_inputs_manifest(
-                output_dir=output_dir,
-                template_spec=template_spec,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("スライド入力マニフェストの生成に失敗しました: %s", exc)
-            slide_inputs_path = None
-
-    return TemplateExtractionResult(
-        template_spec=template_spec,
-        jobspec_scaffold=jobspec_scaffold,
-        template_spec_path=spec_path,
-        branding_path=branding_path,
-        jobspec_path=jobspec_path,
-        validation_result=validation_result,
-        output_dir=output_dir,
-        slide_snapshot_path=slide_snapshot_path,
-        prompt_templates_dir=prompt_templates_dir,
-        prompt_templates_created=prompt_templates_created,
-        slide_inputs_path=slide_inputs_path,
-    )
-
-
-def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path | None:
-    logger.info("Generating slide snapshot for %s", template_path)
-    try:
-        presentation = Presentation(template_path)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("スライドスナップショットの生成に失敗しました: %s", exc)
-        return None
-
-    slides_payload: list[dict[str, Any]] = []
-    for index, slide in enumerate(presentation.slides):
-        snapshot = SlideSnapshot.from_slide(slide, index)
-        slides_payload.append(_serialize_slide_snapshot(slide, snapshot))
-
-    if not slides_payload:
-        logger.info("スライドが存在しないためスナップショットを出力しません: %s", template_path)
-        return None
-
-    payload = {
-        "template_path": str(template_path),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "slides": slides_payload,
-    }
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / "slide_snapshot.json"
-    path.write_text(json.dumps(payload, ensure_ascii=False,
-                    indent=2), encoding="utf-8")
-    logger.info("Saved slide snapshot to %s", path.resolve())
-    return path
-
-
-def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
-    layout_name = getattr(getattr(slide, "slide_layout", None), "name", None)
-    slide_identifier = getattr(slide, "slide_id", None)
-
-    shapes_payload: list[dict[str, Any]] = []
-    for shape in snapshot.shapes:
-        paragraphs = [
-            {
-                "index": paragraph.paragraph_index,
-                "text": paragraph.text,
-                "level": paragraph.level,
-                "font_size_pt": paragraph.font_size_pt,
-                "color_hex": paragraph.color_hex,
-            }
-            for paragraph in shape.paragraphs
-        ]
-        shapes_payload.append(
-            {
-                "shape_id": shape.shape_id,
-                "name": shape.name or "",
-                "shape_type": _shape_type_name(shape.shape_type),
-                "left_in": shape.left_in,
-                "top_in": shape.top_in,
-                "width_in": shape.width_in,
-                "height_in": shape.height_in,
-                "is_placeholder": shape.is_placeholder,
-                "placeholder_type": _placeholder_type_name(shape.placeholder_type),
-                "paragraphs": paragraphs,
-            }
-        )
-
-    return {
-        "index": snapshot.index,
-        "slide_id": slide_identifier,
-        "layout": layout_name,
-        "shapes": shapes_payload,
-    }
-
-
-def _shape_type_name(shape_type: int | None) -> str:
-    if shape_type is None:
-        return "unknown"
-    try:
-        return MSO_SHAPE_TYPE(shape_type).name
-    except ValueError:
-        return str(shape_type)
-
-
-def _placeholder_type_name(placeholder_type: int | None) -> str | None:
-    if placeholder_type is None:
-        return None
-    try:
-        return PP_PLACEHOLDER(placeholder_type).name
-    except ValueError:
-        return str(placeholder_type)
-
-
-def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
-    template_spec = result.template_spec
-    jobspec_scaffold = result.jobspec_scaffold
-    validation_result = result.validation_result
-
-    click.echo(f"テンプレート抽出が完了しました: {result.template_spec_path}")
-    click.echo(f"ブランド設定を出力しました: {result.branding_path}")
-    click.echo(f"ジョブスペック雛形を出力しました: {result.jobspec_path}")
-    click.echo(f"抽出されたレイアウト数: {len(template_spec.layouts)}")
-    click.echo(f"Layout Mode: {template_spec.layout_mode}")
-    if template_spec.blueprint:
-        click.echo(f"Blueprint Slides: {len(template_spec.blueprint.slides)}")
-
-    total_anchors = sum(len(layout.anchors)
-                        for layout in template_spec.layouts)
-    click.echo(f"抽出された図形・アンカー数: {total_anchors}")
-    click.echo(f"ジョブスペックのスライド数: {len(jobspec_scaffold.slides)}")
-
-    if validation_result is not None:
-        click.echo(f"Layouts: {validation_result.layouts_path}")
-        click.echo(f"Diagnostics: {validation_result.diagnostics_path}")
-        if validation_result.diff_report_path is not None:
-            click.echo(f"Diff: {validation_result.diff_report_path}")
-        click.echo(
-            "検出結果: warnings=%d, errors=%d"
-            % (validation_result.warnings_count, validation_result.errors_count)
-        )
-    else:
-        click.echo("検証をスキップしました (--force)")
-
-    if result.slide_snapshot_path is not None:
-        click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")
-    if result.prompt_templates_dir is not None:
-        click.echo(
-            f"カスタムプロンプト雛形フォルダ: {result.prompt_templates_dir}"
-        )
-        if result.prompt_templates_created:
-            click.echo(
-                f"  -> {result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて Markdown の user-editable 節を編集してください。"
-            )
-        else:
-            click.echo("  -> 既存雛形を保持しました。変更が不要な場合はそのままご利用ください。")
-    if result.slide_inputs_path is not None:
-        click.echo(f"スライド入力マニフェストを出力しました: {result.slide_inputs_path}")
-
-    if template_spec.warnings:
-        click.echo(f"警告: {len(template_spec.warnings)} 件")
-        for warning in template_spec.warnings:
-            click.echo(f"  - {warning}", err=True)
-
-    if template_spec.errors:
-        click.echo(f"エラー: {len(template_spec.errors)} 件")
-        for error in template_spec.errors:
-            click.echo(f"  - {error}", err=True)
-
-
-def _run_template_release(
-    *,
-    template_path: Path,
-    brand: str,
-    version: str,
-    template_id: str | None,
-    output_dir: Path,
-    generated_by: str | None,
-    reviewed_by: str | None,
-    baseline_release: Path | None,
-    golden_specs: tuple[Path, ...],
-    layout_mode: str,
-) -> TemplateReleaseExecutionResult:
-    resolved_template_id = _resolve_template_id(template_id, brand, version)
-
-    extractor = TemplateExtractor(
-        TemplateExtractorOptions(template_path=template_path, layout_mode=layout_mode))
-    spec = extractor.extract()
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    baseline = load_template_release(
-        baseline_release) if baseline_release else None
-
-    resolved_golden_specs, auto_golden_warnings = _resolve_golden_specs(
-        user_specs=list(golden_specs),
-        baseline=baseline,
-        baseline_release=baseline_release,
-    )
-
-    golden_runs: list[TemplateReleaseGoldenRun] = []
-    golden_warnings: list[str] = []
-    golden_errors: list[str] = []
-    if resolved_golden_specs:
-        golden_runs, golden_warnings, golden_errors = _run_golden_specs(
-            template_path=template_path,
-            golden_specs=resolved_golden_specs,
-            output_dir=output_dir,
-        )
-
-    combined_warnings = golden_warnings + auto_golden_warnings
-
-    release = build_template_release(
-        template_path=template_path,
-        spec=spec,
-        template_id=resolved_template_id,
-        brand=brand,
-        version=version,
-        generated_by=generated_by,
-        reviewed_by=reviewed_by,
-        golden_runs=golden_runs,
-        extra_warnings=combined_warnings,
-        extra_errors=golden_errors,
-    )
-    release_path = output_dir / "template_release.json"
-    release_path.write_text(
-        json.dumps(release.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    logger.info("Saved template release to %s", release_path.resolve())
-
-    golden_runs_path: Path | None = None
-    if golden_runs:
-        golden_runs_path = output_dir / "golden_runs.json"
-        golden_runs_path.write_text(
-            json.dumps(
-                [run.model_dump() for run in golden_runs],
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        logger.info("Saved golden run log to %s", golden_runs_path.resolve())
-
-    baseline_model = baseline
-    report = build_release_report(current=release, baseline=baseline_model)
-    report_path = output_dir / "release_report.json"
-    report_path.write_text(
-        json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    logger.info("Saved release report to %s", report_path.resolve())
-
-    return TemplateReleaseExecutionResult(
-        release=release,
-        report=report,
-        release_path=release_path,
-        report_path=report_path,
-        golden_runs_path=golden_runs_path,
-        baseline_release=baseline_release,
-    )
-
-
-def _ensure_prompt_templates(*, output_dir: Path, template_spec: TemplateSpec) -> tuple[Path, int]:
-    prompts_dir = output_dir / PROMPT_TEMPLATE_DIRNAME
-    prompts_dir.mkdir(parents=True, exist_ok=True)
-
-    blueprint: TemplateBlueprint | None = template_spec.blueprint
-    if blueprint is None:
-        return prompts_dir, 0
-
-    created = 0
-    for index, slide in enumerate(blueprint.slides, start=1):
-        slug_source = slide.layout or slide.slide_id or f"slide{index:02}"
-        slug = slugify_prompt_layout(slug_source)
-        filename = prompts_dir / f"{index:02}_{slug}.md"
-        if filename.exists():
-            logger.debug("Prompt template already exists, skipping: %s", filename)
-            continue
-        content = _render_prompt_template(slide=slide, index=index)
-        filename.write_text(content, encoding="utf-8")
-        created += 1
-
-    return prompts_dir, created
-
-
-def _render_prompt_template(*, slide: TemplateBlueprintSlide, index: int) -> str:
-    layout_label = slide.layout or "Unnamed Layout"
-    slide_id = slide.slide_id or f"slide-{index:02}"
-    required_marker = "必須" if slide.required else "任意"
-    intent_tags = ", ".join(slide.intent_tags) if slide.intent_tags else "(なし)"
-
-    slot_lines: list[str] = []
-    for slot in slide.slots:
-        slot_required = "必須" if slot.required else "任意"
-        slot_tags = ", ".join(slot.intent_tags) if slot.intent_tags else "(なし)"
-        slot_lines.append(
-            f"- `{slot.slot_id}` (anchor: {slot.anchor or '-'}, type: {slot.content_type}, {slot_required}, intent_tags: {slot_tags})"
-        )
-    if not slot_lines:
-        slot_lines.append("- (slot 未定義)")
-
-    fixed_section = "\n".join(
-        [
-            f"# Slide {index:02d}: {layout_label}",
-            "",
-            "## システム指定 (編集不可)",
-            f"- slide_id: {slide_id}",
-            f"- layout: {layout_label}",
-            f"- スライド必須: {required_marker}",
-            f"- intent_tags: {intent_tags}",
-            "",
-            "### slot 一覧",
-            *slot_lines,
-            "",
-            "## 編集方法",
-            "以下の user-editable セクションのみ編集してください。Markdown の構造を壊さないよう注意してください。",
-            "",
-        ]
-    )
-
-    user_section = "\n".join(
-        [
-            PROMPT_USER_SECTION_START,
-            "- 例: このスライドでは ROI の定量値を箇条書きで入れる",
-            "- 例: リスクを最低 2 点列挙する",
-            PROMPT_USER_SECTION_END,
-            "",
-            "<!-- 編集しない場合は user-editable セクションを空のままにしてください -->",
-        ]
-    )
-
-    return f"{fixed_section}\n{user_section}\n"
-
-
-def _ensure_slide_inputs_manifest(*, output_dir: Path, template_spec: TemplateSpec) -> Path | None:
-    blueprint = template_spec.blueprint
-    if blueprint is None:
-        return None
-
-    base_dir = output_dir.parent if output_dir.parent != output_dir else output_dir
-    manifest_path = base_dir / SLIDE_INPUTS_FILENAME
-    if manifest_path.exists():
-        logger.debug("Slide inputs manifest already exists: %s", manifest_path)
-        return manifest_path
-
-    lines = [
-        "# Slide Inputs Manifest",
-        "# 記法: <01_system-layout>: <data file path>",
-        "# 例: 01_system-layout: samples/contents/sample_import_content.txt",
-        "",
-    ]
-    for index, slide in enumerate(blueprint.slides, start=1):
-        identifier = build_prompt_identifier(index, slide)
-        lines.append(f"{identifier}: <data file path>")
-
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    logger.info("Saved slide inputs manifest to %s", manifest_path.resolve())
-    return manifest_path
-
-
-def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
-    click.echo(f"テンプレートリリースメタを出力しました: {result.release_path}")
-    click.echo(f"差分レポートを出力しました: {result.report_path}")
-    if result.golden_runs_path is not None:
-        click.echo(f"ゴールデンサンプル結果を出力しました: {result.golden_runs_path}")
-    if result.baseline_release is not None:
-        click.echo(f"比較対象: {result.baseline_release}")
-    _print_diagnostics(result.release.diagnostics)
-
-
-def _build_reference_text(document: ContentApprovalDocument) -> tuple[str | None, bool]:
-    lines: list[str] = []
-    for slide in document.slides:
-        if slide.elements.title:
-            lines.append(str(slide.elements.title))
-        lines.extend(str(item) for item in slide.elements.body)
-        if slide.elements.note:
-            lines.append(str(slide.elements.note))
-
-    reference_text = "\n".join(line.strip() for line in lines if line.strip())
-    if not reference_text:
-        return None, False
-
-    return reference_text, False
-
-
 def _build_analyzer_options(
     rules_config: RulesConfig,
-    template_style: TemplateStyle,
-    emit_structure_snapshot: bool,
+   template_style: TemplateStyle,
+   emit_structure_snapshot: bool,
 ) -> AnalyzerOptions:
-    analyzer_rules = rules_config.analyzer
-    analyzer_defaults = AnalyzerOptions()
-    body_font_size = template_style.body_font.size_pt
-    body_font_color = template_style.body_font.color_hex
-    primary_color = template_style.colors.primary
-    background_color = template_style.colors.background
-
-    max_bullet_level = (
-        rules_config.max_bullet_level
-        if rules_config.max_bullet_level is not None
-        else analyzer_defaults.max_bullet_level
-    )
-
-    return AnalyzerOptions(
-        min_font_size=analyzer_rules.min_font_size
-        if analyzer_rules.min_font_size is not None
-        else body_font_size,
-        default_font_size=analyzer_rules.default_font_size
-        if analyzer_rules.default_font_size is not None
-        else body_font_size,
-        default_font_color=analyzer_rules.default_font_color or body_font_color,
-        preferred_text_color=analyzer_rules.preferred_text_color or primary_color,
-        background_color=analyzer_rules.background_color or background_color,
-        min_contrast_ratio=analyzer_rules.min_contrast_ratio
-        if analyzer_rules.min_contrast_ratio is not None
-        else analyzer_defaults.min_contrast_ratio,
-        large_text_min_contrast=analyzer_rules.large_text_min_contrast
-        if analyzer_rules.large_text_min_contrast is not None
-        else analyzer_defaults.large_text_min_contrast,
-        large_text_threshold_pt=analyzer_rules.large_text_threshold_pt
-        if analyzer_rules.large_text_threshold_pt is not None
-        else body_font_size,
-        margin_in=analyzer_rules.margin_in
-        if analyzer_rules.margin_in is not None
-        else analyzer_defaults.margin_in,
-        slide_width_in=analyzer_rules.slide_width_in
-        if analyzer_rules.slide_width_in is not None
-        else analyzer_defaults.slide_width_in,
-        slide_height_in=analyzer_rules.slide_height_in
-        if analyzer_rules.slide_height_in is not None
-        else analyzer_defaults.slide_height_in,
-        max_bullet_level=max_bullet_level,
-        snapshot_output_filename="analysis_snapshot.json"
-        if emit_structure_snapshot
-        else None,
+    return build_analyzer_options(
+        rules_config,
+        template_style,
+        emit_structure_snapshot=emit_structure_snapshot,
     )
 
 
 def _build_refiner_options(
-    rules_config: RulesConfig, template_style: TemplateStyle
+    rules_config: RulesConfig,
+    template_style: TemplateStyle,
 ) -> RefinerOptions:
-    analyzer_rules = rules_config.analyzer
-    refiner_rules = rules_config.refiner
-    body_font_size = template_style.body_font.size_pt
-    body_font_color = template_style.body_font.color_hex
-    primary_color = template_style.colors.primary
-
-    refiner_defaults = RefinerOptions()
-    max_bullet_level = (
-        rules_config.max_bullet_level
-        if rules_config.max_bullet_level is not None
-        else refiner_defaults.max_bullet_level
-    )
-
-    return RefinerOptions(
-        max_bullet_level=max_bullet_level,
-        enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
-        enable_font_raise=refiner_rules.enable_font_raise,
-        min_font_size=refiner_rules.min_font_size
-        if refiner_rules.min_font_size is not None
-        else body_font_size,
-        enable_color_adjust=refiner_rules.enable_color_adjust,
-        preferred_text_color=refiner_rules.preferred_text_color
-        or analyzer_rules.preferred_text_color
-        or primary_color,
-        fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
-        default_font_name=template_style.body_font.name,
-    )
+    return build_refiner_options(rules_config, template_style)
 
 
 def _build_polisher_options(
@@ -1123,42 +376,18 @@ def _build_polisher_options(
     polisher_cwd: Optional[Path],
     rules_path: Path,
 ) -> PolisherOptions:
-    config = rules_config.polisher
-    enabled = polisher_toggle if polisher_toggle is not None else config.enabled
-
-    executable: Path | None = polisher_path
-    if executable is None and config.executable:
-        executable = _resolve_config_path(
-            config.executable, base_dir=rules_path.parent)
-
-    rules_file: Path | None = polisher_rules
-    if rules_file is None and config.rules_path:
-        rules_file = _resolve_config_path(
-            config.rules_path, base_dir=rules_path.parent)
-
-    timeout_sec = polisher_timeout or config.timeout_sec
-    arguments = tuple(config.arguments) + tuple(polisher_args)
-
-    return PolisherOptions(
-        enabled=enabled,
-        executable=executable,
-        rules_path=rules_file,
-        timeout_sec=timeout_sec,
-        arguments=arguments,
-        working_dir=polisher_cwd,
+    return build_polisher_options(
+        rules_config,
+        polisher_toggle=polisher_toggle,
+        polisher_path=polisher_path,
+        polisher_rules=polisher_rules,
+        polisher_timeout=polisher_timeout,
+        polisher_args=polisher_args,
+        polisher_cwd=polisher_cwd,
+        rules_path=rules_path,
     )
 
 
-def _dump_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, ensure_ascii=False, indent=2)
-    path.write_text(text, encoding="utf-8")
-    logger.info("Saved JSON to %s", path.resolve())
-
-
-def _load_jobspec(path: Path) -> JobSpec:
-    logger.info("Loading JobSpec from %s", path.resolve())
-    return load_jobspec_from_path(path)
 
 
 def _run_content_approval_pipeline(
@@ -1196,13 +425,13 @@ def _write_content_outputs(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     spec_path = output_dir / spec_filename
-    _dump_json(spec_path, context.spec.model_dump(mode="json"))
+    dump_json(spec_path, context.spec.model_dump(mode="json"))
 
     content_document = context.artifacts.get("content_approved")
     content_path: Path | None = None
     if isinstance(content_document, ContentApprovalDocument):
         content_path = output_dir / content_filename
-        _dump_json(content_path, content_document.model_dump(mode="json"))
+        dump_json(content_path, content_document.model_dump(mode="json"))
 
     review_logs = context.artifacts.get("content_review_log")
     review_path: Path | None = None
@@ -1215,7 +444,7 @@ def _write_content_outputs(
             else:
                 review_payload.append(entry)
         review_path = output_dir / review_filename
-        _dump_json(review_path, review_payload)
+        dump_json(review_path, review_payload)
 
     content_meta = context.artifacts.get("content_approved_meta")
     review_meta = context.artifacts.get("content_review_log_meta")
@@ -1237,207 +466,9 @@ def _write_content_outputs(
         }
 
     meta_path = output_dir / meta_filename
-    _dump_json(meta_path, meta_payload)
+    dump_json(meta_path, meta_payload)
 
     return spec_path, content_path, review_path, meta_path
-
-
-def _run_draft_pipeline(
-    *,
-    spec: JobSpec,
-    output_dir: Path,
-    prepare_cards: Path | None,
-    require_prepare: bool,
-    draft_options: DraftStructuringOptions,
-) -> PipelineContext:
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if prepare_cards is not None:
-        resolved_cards = prepare_cards if prepare_cards.is_absolute() else (
-            Path.cwd() / prepare_cards
-        )
-        resolved_cards = resolved_cards.resolve()
-        try:
-            display_path = resolved_cards.relative_to(Path.cwd())
-        except ValueError:
-            display_path = resolved_cards
-        logger.info("prepare_card.json を読み込みます: %s", display_path)
-
-    steps: list[PipelineStep] = []
-    steps.append(
-        PrepareNormalizationStep(
-            PrepareNormalizationOptions(
-                cards_path=prepare_cards,
-                require_document=require_prepare,
-            )
-        )
-    )
-    steps.append(DraftStructuringStep(draft_options))
-
-    context = PipelineContext(spec=spec, workdir=output_dir)
-    PipelineRunner(steps).execute(context)
-    return context
-
-
-def _write_draft_meta(
-    *,
-    context: PipelineContext,
-    output_dir: Path,
-    meta_filename: str,
-    draft_filename: str,
-    approved_filename: str,
-    log_filename: str,
-) -> Path:
-    draft_document = context.artifacts.get("draft_document")
-    sections = 0
-    slides = 0
-    approved_sections: list[str] = []
-    section_status: dict[str, str] = {}
-    appendix_limit: int | None = None
-    structure_pattern: str | None = None
-    target_length: int | None = None
-    template_id: str | None = None
-    template_match_score: float | None = None
-    template_mismatch: list[dict[str, object]] = []
-    analyzer_summary: dict[str, int] = {}
-    return_reason_stats: dict[str, int] = {}
-
-    if isinstance(draft_document, DraftDocument):
-        sections = len(draft_document.sections)
-        for section in draft_document.sections:
-            section_status[section.name] = section.status
-            if section.status == "approved":
-                approved_sections.append(section.name)
-            slides += len(section.slides)
-        appendix_limit = draft_document.meta.appendix_limit
-        structure_pattern = draft_document.meta.structure_pattern
-        target_length = draft_document.meta.target_length
-        template_id = draft_document.meta.template_id
-        template_match_score = draft_document.meta.template_match_score
-        template_mismatch = [item.model_dump(
-            mode="json") for item in draft_document.meta.template_mismatch]
-        analyzer_summary = draft_document.meta.analyzer_summary
-        return_reason_stats = draft_document.meta.return_reason_stats
-
-    paths = {
-        "draft_draft": str((output_dir / draft_filename).resolve()),
-        "draft_approved": str((output_dir / approved_filename).resolve()),
-        "draft_review_log": str((output_dir / log_filename).resolve()),
-    }
-
-    approved_path = context.artifacts.get("draft_document_path")
-    if isinstance(approved_path, str):
-        paths["draft_approved"] = str(Path(approved_path).resolve())
-    log_path = context.artifacts.get("draft_review_log_path")
-    if isinstance(log_path, str):
-        paths["draft_review_log"] = str(Path(log_path).resolve())
-    ready_path = context.artifacts.get("generate_ready_path")
-    if isinstance(ready_path, str):
-        paths["generate_ready"] = str(Path(ready_path).resolve())
-    ready_meta_path = context.artifacts.get("generate_ready_meta_path")
-    if isinstance(ready_meta_path, str):
-        paths["generate_ready_meta"] = str(Path(ready_meta_path).resolve())
-
-    meta_payload = {
-        "spec_id": context.artifacts.get("draft_spec_id"),
-        "sections": sections,
-        "slides": slides,
-        "approved_sections": approved_sections,
-        "section_status": section_status,
-        "appendix_limit": appendix_limit,
-        "structure_pattern": structure_pattern,
-        "target_length": target_length,
-        "paths": paths,
-        "template": {
-            "template_id": template_id,
-            "match_score": template_match_score,
-            "mismatch": template_mismatch,
-        },
-        "analyzer_summary": analyzer_summary,
-        "return_reason_stats": return_reason_stats,
-    }
-
-    meta_path = output_dir / meta_filename
-    _dump_json(meta_path, meta_payload)
-    return meta_path
-
-
-def _execute_outline(
-    *,
-    spec: JobSpec,
-    layouts: Path | None,
-    output_dir: Path,
-    spec_source_path: Path,
-    target_length: int | None,
-    structure_pattern: str | None,
-    appendix_limit: int,
-    chapter_templates_dir: Path | None,
-    chapter_template: str | None,
-    analysis_summary_path: Path | None,
-    prepare_cards: Path | None,
-    require_prepare: bool,
-) -> OutlineResult:
-    draft_options = DraftStructuringOptions(
-        layouts_path=layouts,
-        output_dir=output_dir,
-        spec_source_path=spec_source_path,
-        target_length=target_length,
-        structure_pattern=structure_pattern,
-        appendix_limit=appendix_limit,
-        chapter_templates_dir=chapter_templates_dir,
-        chapter_template_id=chapter_template,
-        analysis_summary_path=analysis_summary_path,
-    )
-
-    context = _run_draft_pipeline(
-        spec=spec,
-        output_dir=output_dir,
-        prepare_cards=prepare_cards,
-        require_prepare=require_prepare,
-        draft_options=draft_options,
-    )
-
-    meta_path = _write_draft_meta(
-        context=context,
-        output_dir=output_dir,
-        meta_filename=DEFAULT_DRAFT_META_FILENAME,
-        draft_filename=DEFAULT_DRAFT_FILENAME,
-        approved_filename=DEFAULT_APPROVED_FILENAME,
-        log_filename=DEFAULT_DRAFT_LOG_FILENAME,
-    )
-
-    ready_artifact = context.artifacts.get("generate_ready_path")
-    ready_meta_artifact = context.artifacts.get("generate_ready_meta_path")
-    ready_path = (
-        Path(ready_artifact)
-        if isinstance(ready_artifact, str)
-        else (output_dir / DEFAULT_GENERATE_READY_FILENAME)
-    )
-    ready_meta_path = (
-        Path(ready_meta_artifact)
-        if isinstance(ready_meta_artifact, str)
-        else (output_dir / DEFAULT_GENERATE_READY_META_FILENAME)
-    )
-
-    return OutlineResult(
-        context=context,
-        draft_path=output_dir / DEFAULT_DRAFT_FILENAME,
-        approved_path=output_dir / DEFAULT_APPROVED_FILENAME,
-        log_path=output_dir / DEFAULT_DRAFT_LOG_FILENAME,
-        meta_path=meta_path,
-        generate_ready_path=ready_path,
-        generate_ready_meta_path=ready_meta_path,
-    )
-
-
-def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -> None:
-    click.echo(f"Outline Draft: {result.draft_path}")
-    click.echo(f"Outline Approved: {result.approved_path}")
-    click.echo(f"Outline Review Log: {result.log_path}")
-    click.echo(f"Outline Meta: {result.meta_path}")
-    click.echo(f"Outline Generate Ready: {result.generate_ready_path}")
-    click.echo(f"Outline Ready Meta: {result.generate_ready_meta_path}")
-
     if not show_layout_reasons:
         return
 
@@ -1461,216 +492,6 @@ def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -
 
 
 
-def _run_mapping_pipeline(
-    *,
-    params: MappingPipelineConfig,
-    draft_context: PipelineContext | None = None,
-    draft_options: DraftStructuringOptions | None = None,
-) -> PipelineContext:
-    if params.template is None:
-        msg = "jobspec.meta.template_path を設定し、テンプレートパスを埋め込んでください。"
-        raise ValueError(msg)
-
-    params.output_dir.mkdir(parents=True, exist_ok=True)
-    params.draft_output.mkdir(parents=True, exist_ok=True)
-
-    mapping_options = MappingOptions(
-        layouts_path=params.layouts,
-        output_dir=params.output_dir,
-        template_path=params.template,
-    )
-
-    if draft_context is None:
-        draft_context = _run_draft_pipeline(
-            spec=params.spec,
-            output_dir=params.draft_output,
-            prepare_cards=params.prepare_cards,
-            require_prepare=params.require_prepare,
-            draft_options=draft_options
-            or DraftStructuringOptions(
-                layouts_path=params.layouts,
-                output_dir=params.draft_output,
-                spec_source_path=params.spec_source_path,
-            ),
-        )
-    elif draft_context.workdir != params.draft_output:
-        logger.debug(
-            "draft_context.workdir と draft_output が一致しません: %s != %s",
-            draft_context.workdir,
-            params.draft_output,
-        )
-
-    draft_generate_ready = draft_context.artifacts.get("generate_ready")
-    if isinstance(draft_generate_ready, GenerateReadyDocument) and draft_generate_ready.meta.layout_mode == "static":
-        return _pass_through_static_generate_ready(
-            spec=params.spec,
-            draft_context=draft_context,
-            output_dir=params.output_dir,
-            mapping_options=mapping_options,
-        )
-
-    context = PipelineContext(
-        spec=params.spec, workdir=params.output_dir, artifacts=dict(draft_context.artifacts)
-    )
-    context.add_artifact("template_style", params.template_style.artifact)
-    context.add_artifact("template_style_data", params.template_style.style)
-
-    spec_validator = SpecValidatorStep(
-        max_title_length=params.rules_config.max_title_length,
-        max_bullet_length=params.rules_config.max_bullet_length,
-        max_bullet_level=params.rules_config.max_bullet_level,
-        forbidden_words=params.rules_config.forbidden_words,
-    )
-    refiner = SimpleRefinerStep(params.refiner_options)
-    mapping = MappingStep(mapping_options)
-
-    PipelineRunner([spec_validator, refiner, mapping]).execute(context)
-
-    meta_source = context.artifacts.get("generate_ready_meta_path")
-    if isinstance(meta_source, str):
-        source_path = Path(meta_source)
-        destination = params.output_dir / DEFAULT_GENERATE_READY_META_FILENAME
-        try:
-            if source_path.exists():
-                if destination.resolve() != source_path.resolve():
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(source_path, destination)
-                context.add_artifact(
-                    "generate_ready_meta_path", str(destination))
-        except OSError as exc:  # noqa: PERF203
-            raise RuntimeError(
-                f"generate_ready_meta.json のコピーに失敗しました: {exc}"
-            ) from exc
-
-    return context
-
-
-def _pass_through_static_generate_ready(
-    *,
-    spec: JobSpec,
-    draft_context: PipelineContext,
-    output_dir: Path,
-    mapping_options: MappingOptions,
-) -> PipelineContext:
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    artifacts = dict(draft_context.artifacts)
-    context = PipelineContext(
-        spec=spec, workdir=output_dir, artifacts=artifacts)
-
-    generate_ready = artifacts.get("generate_ready")
-    if not isinstance(generate_ready, GenerateReadyDocument):
-        raise RuntimeError("static モードの成果物に generate_ready が存在しません")
-
-    template_path = None
-    if mapping_options.template_path is not None:
-        template_path = str(mapping_options.template_path)
-    elif isinstance(spec.meta, JobMeta) and spec.meta.template_path:
-        template_path = spec.meta.template_path
-    else:
-        raw_meta = getattr(spec, "meta", None)
-        if isinstance(raw_meta, dict):
-            template_path = raw_meta.get("template_path")
-    if template_path:
-        updated_job_meta = None
-        if generate_ready.meta.job_meta:
-            job_meta = generate_ready.meta.job_meta
-            if not job_meta.template_path:
-                updated_job_meta = job_meta.model_copy(
-                    update={"template_path": template_path})
-            else:
-                updated_job_meta = job_meta
-        meta_updates = {"template_path": template_path}
-        if updated_job_meta is not None:
-            meta_updates["job_meta"] = updated_job_meta
-        generate_ready = generate_ready.model_copy(
-            update={"meta": generate_ready.meta.model_copy(
-                update=meta_updates)}
-        )
-        artifacts["generate_ready"] = generate_ready
-        logger.debug(
-            "static pass-through: template_path set to %s", template_path)
-
-    ready_dest = output_dir / mapping_options.generate_ready_filename
-    ready_dest.parent.mkdir(parents=True, exist_ok=True)
-    ready_dest.write_text(
-        json.dumps(
-            generate_ready.model_dump(mode="json", exclude_none=True),
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-    context.add_artifact("generate_ready", generate_ready)
-    context.add_artifact("generate_ready_path", str(ready_dest))
-
-    meta_dest = output_dir / DEFAULT_GENERATE_READY_META_FILENAME
-    meta_src_value = artifacts.get("generate_ready_meta_path")
-    meta_dest.parent.mkdir(parents=True, exist_ok=True)
-    meta_payload: dict[str, object] | None = None
-    if isinstance(meta_src_value, str):
-        meta_src = Path(meta_src_value)
-        if meta_src.exists():
-            try:
-                meta_payload = json.loads(meta_src.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
-                meta_payload = None
-    if meta_payload is None:
-        meta_payload = {
-            "mode": generate_ready.meta.layout_mode,
-            "slot_summary": generate_ready.meta.slot_summary or {},
-            "generate_ready_generated_at": generate_ready.meta.generated_at,
-            "template_path": generate_ready.meta.template_path,
-            "blueprint_path": generate_ready.meta.blueprint_path,
-            "blueprint_hash": generate_ready.meta.blueprint_hash,
-        }
-    else:
-        if template_path:
-            meta_payload["template_path"] = template_path
-        if "mode" not in meta_payload and generate_ready.meta.layout_mode:
-            meta_payload["mode"] = generate_ready.meta.layout_mode
-        if generate_ready.meta.slot_summary:
-            meta_payload.setdefault(
-                "slot_summary", generate_ready.meta.slot_summary)
-        meta_payload.setdefault(
-            "generate_ready_generated_at", generate_ready.meta.generated_at)
-    meta_dest.write_text(json.dumps(
-        meta_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    context.add_artifact("generate_ready_meta_path", str(meta_dest))
-
-    mapping_log_dest = output_dir / mapping_options.mapping_log_filename
-    draft_mapping_log_path = artifacts.get("draft_mapping_log_path")
-    mapping_src = Path(draft_mapping_log_path) if isinstance(
-        draft_mapping_log_path, str) else None
-    if mapping_src and mapping_src.exists() and mapping_src.resolve() != mapping_log_dest.resolve():
-        shutil.copy2(mapping_src, mapping_log_dest)
-    elif mapping_src and mapping_src.exists():
-        # same path, nothing to copy
-        pass
-    else:
-        mapping_log_dest.write_text(
-            json.dumps(
-                artifacts.get("draft_mapping_log", {}),
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-    context.add_artifact("mapping_log_path", str(mapping_log_dest))
-
-    mapping_meta = {
-        "mode": "static",
-        "slot_summary": generate_ready.meta.slot_summary or {},
-        "generate_ready_generated_at": generate_ready.meta.generated_at,
-        "template_path": generate_ready.meta.template_path,
-        "blueprint_path": generate_ready.meta.blueprint_path,
-        "blueprint_hash": generate_ready.meta.blueprint_hash,
-    }
-    context.add_artifact("mapping_meta", mapping_meta)
-
-    return context
-
-
 def _run_render_pipeline(
     *,
     generate_ready: GenerateReadyDocument,
@@ -1685,145 +506,23 @@ def _run_render_pipeline(
     polisher_options: PolisherOptions | None = None,
     base_artifacts: dict[str, object] | None = None,
 ) -> PipelineContext:
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    render_spec = generate_ready_to_jobspec(generate_ready)
-    artifacts = dict(base_artifacts or {})
-
-    context = PipelineContext(
-        spec=render_spec,
-        workdir=output_dir,
-        artifacts=artifacts,
+    return run_render_pipeline(
+        generate_ready=generate_ready,
+        generate_ready_path=generate_ready_path,
+        output_dir=output_dir,
+        template=template,
+        pptx_name=pptx_name,
+        template_style=template_style,
+        template_style_artifact=template_style_artifact,
+        analyzer_options=analyzer_options,
+        pdf_options=pdf_options,
+        polisher_options=polisher_options,
+        base_artifacts=base_artifacts,
     )
-    context.add_artifact("template_style", template_style_artifact)
-    context.add_artifact("template_style_data", template_style)
-    context.add_artifact("generate_ready", generate_ready)
-    if generate_ready_path is not None:
-        context.add_artifact("generate_ready_path", str(generate_ready_path))
-
-    renderer = SimpleRendererStep(
-        RenderingOptions(
-            template_path=template,
-            output_filename=pptx_name,
-            template_style=template_style,
-        )
-    )
-    baseline_analyzer_options = replace(
-        analyzer_options,
-        output_filename="analysis_pre_polisher.json",
-        snapshot_output_filename=None,
-    )
-    baseline_analyzer = SimpleAnalyzerStep(
-        baseline_analyzer_options,
-        artifact_key="analysis_pre_polisher_path",
-        register_default_artifact=False,
-        allow_missing_artifact=True,
-    )
-    analyzer = SimpleAnalyzerStep(analyzer_options)
-
-    polisher_step = PolisherStep(polisher_options or PolisherOptions())
-    audit_step = RenderingAuditStep(RenderingAuditOptions())
-
-    monitoring_step = MonitoringIntegrationStep(MonitoringIntegrationOptions())
-
-    steps: list[PipelineStep] = [
-        renderer,
-        baseline_analyzer,
-        polisher_step,
-        audit_step,
-    ]
-    if pdf_options.enabled:
-        steps.append(PdfExportStep(pdf_options))
-    steps.extend([analyzer, monitoring_step])
-
-    PipelineRunner(steps).execute(context)
-    return context
-
-
-def _echo_mapping_outputs(context: PipelineContext) -> None:
-    draft_path = context.artifacts.get("draft_document_path")
-    if draft_path is not None:
-        click.echo(f"Draft: {draft_path}")
-    draft_log_path = context.artifacts.get("draft_review_log_path")
-    if draft_log_path is not None:
-        click.echo(f"Draft Log: {draft_log_path}")
-    generate_ready_path = context.artifacts.get("generate_ready_path")
-    if generate_ready_path is not None:
-        click.echo(f"Generate Ready: {generate_ready_path}")
-    generate_ready_meta_path = context.artifacts.get(
-        "generate_ready_meta_path")
-    if generate_ready_meta_path is not None:
-        click.echo(f"Generate Ready Meta: {generate_ready_meta_path}")
-    mapping_log_path = context.artifacts.get("mapping_log_path")
-    if mapping_log_path is not None:
-        click.echo(f"Mapping Log: {mapping_log_path}")
-    fallback_report_path = context.artifacts.get(
-        "mapping_fallback_report_path")
-    if fallback_report_path is not None:
-        click.echo(f"Fallback Report: {fallback_report_path}")
 
 
 def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> None:
-    pptx_path = context.artifacts.get("pptx_path")
-    if pptx_path is not None:
-        click.echo(f"PPTX: {pptx_path}")
-    else:
-        click.echo("PPTX: --pdf-mode=only のため保存しませんでした")
-    analysis_path = context.artifacts.get("analysis_path")
-    click.echo(f"Analysis: {analysis_path}")
-    baseline_analysis_path = context.artifacts.get(
-        "analysis_pre_polisher_path")
-    if baseline_analysis_path is not None:
-        click.echo(f"Analysis (Pre-Polisher): {baseline_analysis_path}")
-    rendering_log_path = context.artifacts.get("rendering_log_path")
-    if rendering_log_path is not None:
-        click.echo(f"Rendering Log: {rendering_log_path}")
-    rendering_summary = context.artifacts.get("rendering_summary")
-    if isinstance(rendering_summary, dict):
-        click.echo(
-            "Rendering Warnings: %s" % rendering_summary.get(
-                "warnings_total", 0)
-        )
-    review_engine_path = context.artifacts.get("review_engine_analysis_path")
-    if review_engine_path is not None:
-        click.echo(f"ReviewEngine Analysis: {review_engine_path}")
-    snapshot_path = context.artifacts.get("analyzer_snapshot_path")
-    if snapshot_path is not None:
-        click.echo(f"Analyzer Snapshot: {snapshot_path}")
-    pdf_path = context.artifacts.get("pdf_path")
-    if pdf_path is not None:
-        click.echo(f"PDF: {pdf_path}")
-    polisher_meta = context.artifacts.get("polisher_metadata")
-    if isinstance(polisher_meta, dict):
-        status = polisher_meta.get("status", "unknown")
-        click.echo(f"Polisher: {status}")
-        summary = polisher_meta.get("summary")
-        if isinstance(summary, dict) and summary:
-            click.echo(
-                "Polisher Summary: "
-                + json.dumps(summary, ensure_ascii=False, sort_keys=True)
-            )
-    draft_path = context.artifacts.get("draft_document_path")
-    if draft_path is not None:
-        click.echo(f"Draft: {draft_path}")
-    draft_log_path = context.artifacts.get("draft_review_log_path")
-    if draft_log_path is not None:
-        click.echo(f"Draft Log: {draft_log_path}")
-    generate_ready_path = context.artifacts.get("generate_ready_path")
-    if generate_ready_path is not None:
-        click.echo(f"Generate Ready: {generate_ready_path}")
-    mapping_log_path = context.artifacts.get("mapping_log_path")
-    if mapping_log_path is not None:
-        click.echo(f"Mapping Log: {mapping_log_path}")
-    fallback_report_path = context.artifacts.get(
-        "mapping_fallback_report_path")
-    if fallback_report_path is not None:
-        click.echo(f"Fallback Report: {fallback_report_path}")
-    monitoring_report_path = context.artifacts.get("monitoring_report_path")
-    if monitoring_report_path is not None:
-        click.echo(f"Monitoring Report: {monitoring_report_path}")
-    if audit_path is not None:
-        click.echo(f"Audit: {audit_path}")
+    echo_render_outputs(context, audit_path)
 
 
 @app.command("gen")
@@ -2130,7 +829,7 @@ def prepare(
         slide_inputs_filename=SLIDE_INPUTS_FILENAME,
     )
     try:
-        result = run_prepare_command(config, dump_json=_dump_json)
+        result = run_prepare_command(config, dump_json=dump_json)
     except PrepareCommandError as exc:
         click.echo(str(exc), err=True)
         raise click.exceptions.Exit(code=exc.exit_code) from exc
@@ -2244,64 +943,36 @@ def outline(
 ) -> None:
     """stage 4 ドラフト構成（アウトライン）を生成する。"""
 
-    if return_reasons:
-        reasons = load_return_reasons(return_reasons_path)
-        if not reasons:
-            click.echo(f"差戻し理由テンプレートが見つかりません: {return_reasons_path}")
-        else:
-            click.echo("差戻し理由テンプレート一覧:")
-            for reason in reasons:
-                label = f"{reason.code} ({reason.severity})"
-                if reason.label and reason.label != reason.code:
-                    label += f" - {reason.label}"
-                click.echo(f"- {label}")
-        return
+    config = OutlineCommandConfig(
+        spec_path=spec_path,
+        output_dir=output_dir,
+        target_length=target_length,
+        structure_pattern=structure_pattern,
+        appendix_limit=appendix_limit,
+        chapter_templates_dir=chapter_templates_dir,
+        chapter_template=chapter_template,
+        analysis_summary_path=analysis_summary_path,
+        prepare_cards=prepare_cards,
+        require_prepare=True,
+        return_reasons_path=return_reasons_path,
+        return_reasons=return_reasons,
+        show_layout_reasons=show_layout_reasons,
+        draft_filename=DEFAULT_DRAFT_FILENAME,
+        approved_filename=DEFAULT_APPROVED_FILENAME,
+        log_filename=DEFAULT_DRAFT_LOG_FILENAME,
+        generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
+        generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
+        meta_filename=DEFAULT_DRAFT_META_FILENAME,
+    )
 
     try:
-        spec = _load_jobspec(spec_path)
-    except SpecValidationError as exc:
-        _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=2) from exc
-
-    templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
-
-    try:
-        resolved_layouts = _resolve_layouts_path(
-            spec=spec,
-            spec_source=spec_path,
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-
-    try:
-        result = _execute_outline(
-            spec=spec,
-            layouts=resolved_layouts,
-            output_dir=output_dir,
-            spec_source_path=spec_path,
-            target_length=target_length,
-            structure_pattern=structure_pattern,
-            appendix_limit=appendix_limit,
-            chapter_templates_dir=templates_dir,
-            chapter_template=chapter_template,
-            analysis_summary_path=analysis_summary_path,
-            prepare_cards=prepare_cards,
-            require_prepare=True,
-        )
+        run_outline_command(config)
     except PrepareNormalizationError as exc:
         click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
     except DraftStructuringError as exc:
         click.echo(f"ドラフト構成の生成に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("outline 実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-    _print_outline_result(result, show_layout_reasons=show_layout_reasons)
 
 
 @app.command("compose")
@@ -2444,6 +1115,12 @@ def compose(  # noqa: PLR0913
             analysis_summary_path=analysis_summary_path,
             prepare_cards=prepare_cards,
             require_prepare=True,
+            draft_filename=DEFAULT_DRAFT_FILENAME,
+            approved_filename=DEFAULT_APPROVED_FILENAME,
+            log_filename=DEFAULT_DRAFT_LOG_FILENAME,
+            generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
+            generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
+            meta_filename=DEFAULT_DRAFT_META_FILENAME,
         )
     except PrepareNormalizationError as exc:
         click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
@@ -2461,12 +1138,9 @@ def compose(  # noqa: PLR0913
     _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
 
     rules_config = RulesConfig.load(rules)
-    template_style, template_style_artifact = _prepare_template_style(resolved_template)
-    refiner_options = _build_refiner_options(rules_config, template_style)
-    template_style_payload = TemplateStylePayload(
-        style=template_style,
-        artifact=template_style_artifact,
-    )
+    style, artifact = _prepare_template_style(resolved_template)
+    template_style_payload = TemplateStylePayload(style=style, artifact=artifact)
+    refiner_options = _build_refiner_options(rules_config, template_style_payload.style)
 
     mapping_params = MappingPipelineConfig(
         spec=spec,
@@ -2511,7 +1185,7 @@ def compose(  # noqa: PLR0913
         logging.exception("compose 実行中にマッピング stage でエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
-    _echo_mapping_outputs(mapping_context)
+    echo_mapping_outputs(mapping_context)
 
 
 @app.command("mapping")
@@ -2586,12 +1260,9 @@ def mapping(  # noqa: PLR0913
         raise click.exceptions.Exit(code=2) from exc
 
     rules_config = RulesConfig.load(rules)
-    template_style, template_style_artifact = _prepare_template_style(resolved_template)
-    refiner_options = _build_refiner_options(rules_config, template_style)
-    template_style_payload = TemplateStylePayload(
-        style=template_style,
-        artifact=template_style_artifact,
-    )
+    style, artifact = _prepare_template_style(resolved_template)
+    template_style_payload = TemplateStylePayload(style=style, artifact=artifact)
+    refiner_options = _build_refiner_options(rules_config, template_style_payload.style)
 
     mapping_params = MappingPipelineConfig(
         spec=spec,
@@ -2622,7 +1293,7 @@ def mapping(  # noqa: PLR0913
         logging.exception("マッピング実行中にエラーが発生しました")
         raise click.exceptions.Exit(code=1) from exc
 
-    _echo_mapping_outputs(context)
+    echo_mapping_outputs(context)
 
 
 @app.command("template")
@@ -3164,231 +1835,6 @@ def tpl_release(
             raise click.exceptions.Exit(code=6)
 
 
-def _run_golden_specs(
-    *, template_path: Path, golden_specs: list[Path], output_dir: Path
-) -> tuple[list[TemplateReleaseGoldenRun], list[str], list[str]]:
-    results: list[TemplateReleaseGoldenRun] = []
-    warnings: list[str] = []
-    errors: list[str] = []
-
-    if not golden_specs:
-        return results, warnings, errors
-
-    rules_config = RulesConfig.load(DEFAULT_RULES_PATH)
-    template_style = _load_template_style_for_template(template_path, warnings)
-
-    golden_root = output_dir / "golden_runs"
-
-    for spec_path in golden_specs:
-        run_dir = golden_root / spec_path.stem
-        result = TemplateReleaseGoldenRun(
-            spec_path=str(spec_path),
-            status="passed",
-            output_dir=str(run_dir),
-        )
-
-        try:
-            spec = _load_jobspec(spec_path)
-        except SpecValidationError as exc:
-            detail = json.dumps(exc.errors, ensure_ascii=False)
-            message = (
-                f"golden spec {spec_path} のスキーマ検証に失敗しました"
-            )
-            result.status = "failed"
-            result.errors.extend([message, detail])
-            errors.append(message)
-            results.append(result)
-            continue
-        except Exception as exc:  # noqa: BLE001
-            message = f"golden spec {spec_path} の読み込みに失敗しました: {exc}"
-            result.status = "failed"
-            result.errors.append(message)
-            errors.append(message)
-            results.append(result)
-            continue
-
-        run_dir.mkdir(parents=True, exist_ok=True)
-        context = PipelineContext(spec=spec, workdir=run_dir)
-
-        renderer = SimpleRendererStep(
-            RenderingOptions(
-                template_path=template_path,
-                output_filename=f"{spec_path.stem}.pptx",
-                template_style=template_style,
-            )
-        )
-        refiner_bullet_level = (
-            rules_config.max_bullet_level
-            if rules_config.max_bullet_level is not None
-            else RefinerOptions().max_bullet_level
-        )
-        refiner = SimpleRefinerStep(
-            RefinerOptions(
-                max_bullet_level=refiner_bullet_level,
-            )
-        )
-        analyzer = SimpleAnalyzerStep(
-            AnalyzerOptions(
-                min_font_size=template_style.body_font.size_pt,
-                default_font_size=template_style.body_font.size_pt,
-                default_font_color=template_style.body_font.color_hex,
-                preferred_text_color=template_style.colors.primary,
-                background_color=template_style.colors.background,
-                max_bullet_level=(
-                    rules_config.max_bullet_level
-                    if rules_config.max_bullet_level is not None
-                    else AnalyzerOptions().max_bullet_level
-                ),
-                large_text_threshold_pt=template_style.body_font.size_pt,
-            )
-        )
-
-        steps = [
-            SpecValidatorStep(
-                max_title_length=rules_config.max_title_length,
-                max_bullet_length=rules_config.max_bullet_length,
-                max_bullet_level=rules_config.max_bullet_level,
-                forbidden_words=rules_config.forbidden_words,
-            ),
-            refiner,
-            renderer,
-            analyzer,
-        ]
-        runner = PipelineRunner(steps)
-
-        try:
-            runner.execute(context)
-        except SpecValidationError as exc:
-            detail = json.dumps(exc.errors, ensure_ascii=False)
-            message = (
-                f"golden spec {spec_path} の業務ルール検証に失敗しました"
-            )
-            result.status = "failed"
-            result.errors.extend([message, detail])
-            errors.append(message)
-        except Exception as exc:  # noqa: BLE001
-            logging.exception(
-                "ゴールデンサンプル実行中にエラーが発生しました: %s", spec_path
-            )
-            message = f"golden spec {spec_path} の実行に失敗しました: {exc}"
-            result.status = "failed"
-            result.errors.append(message)
-            errors.append(message)
-        else:
-            pptx_path = context.artifacts.get("pptx_path")
-            if pptx_path is not None:
-                result.pptx_path = str(pptx_path)
-            analysis_path = context.artifacts.get("analysis_path")
-            if analysis_path is not None:
-                result.analysis_path = str(analysis_path)
-            pdf_path = context.artifacts.get("pdf_path")
-            if pdf_path is not None:
-                result.pdf_path = str(pdf_path)
-
-            analyzer_warnings = context.artifacts.get("analyzer_warnings")
-            if isinstance(analyzer_warnings, list):
-                new_warnings = [str(item) for item in analyzer_warnings]
-                result.warnings.extend(new_warnings)
-                for warning in new_warnings:
-                    warnings.append(f"golden spec {spec_path}: {warning}")
-
-        results.append(result)
-
-    return results, warnings, errors
-
-
-def _resolve_golden_specs(
-    *,
-    user_specs: list[Path],
-    baseline: TemplateRelease | None,
-    baseline_release: Path | None,
-) -> tuple[list[Path], list[str]]:
-    resolved: list[Path] = []
-    warnings: list[str] = []
-    seen: set[Path] = set()
-
-    def _add_spec(path: Path) -> None:
-        try:
-            normalized = path.resolve()
-        except OSError:
-            normalized = path
-        if normalized in seen:
-            return
-        resolved.append(path)
-        seen.add(normalized)
-
-    for spec in user_specs:
-        _add_spec(spec)
-
-    if baseline is None:
-        return resolved, warnings
-
-    if user_specs:
-        return resolved, warnings
-
-    base_dir = baseline_release.parent if baseline_release is not None else Path.cwd()
-    for run in baseline.golden_runs:
-        candidate = _resolve_golden_spec_path(run.spec_path, base_dir)
-        if candidate is None:
-            warnings.append(
-                f"baseline のゴールデンスペックを解決できませんでした: {run.spec_path}"
-            )
-            continue
-        _add_spec(candidate)
-
-    return resolved, warnings
-
-
-def _resolve_golden_spec_path(spec_path: str, base_dir: Path) -> Path | None:
-    candidate = Path(spec_path)
-    if candidate.is_absolute() and candidate.exists():
-        return candidate
-
-    cwd_candidate = Path.cwd() / candidate
-    if cwd_candidate.exists():
-        return cwd_candidate
-
-    fallback = base_dir / candidate
-    if fallback.exists():
-        return fallback
-
-    return None
-
-
-def _load_template_style_for_template(
-    template_path: Path, warnings: list[str]
-) -> TemplateStyle:
-    style, artifact = extract_template_style(template_path)
-    source = artifact.get("source", {}) if isinstance(artifact, dict) else {}
-    if source.get("type") == "default":
-        error = source.get("error")
-        if error:
-            warnings.append(
-                f"テンプレートからスタイル情報を抽出できなかったため既定値を使用します: {error}"
-            )
-    return style
-
-
-def _resolve_template_id(
-    template_id: Optional[str], brand: str, version: str
-) -> str:
-    if template_id and template_id.strip():
-        return template_id.strip()
-    base = f"{brand}_{version}"
-    return base.replace(" ", "_")
-
-
-def _print_diagnostics(diagnostics: TemplateReleaseDiagnostics) -> None:
-    if diagnostics.warnings:
-        click.echo(f"警告: {len(diagnostics.warnings)} 件", err=True)
-        for warning in diagnostics.warnings:
-            click.echo(f"  - {warning}", err=True)
-    if diagnostics.errors:
-        click.echo(f"エラー: {len(diagnostics.errors)} 件", err=True)
-        for error in diagnostics.errors:
-            click.echo(f"  - {error}", err=True)
-
-
 def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
     click.echo(message, err=True)
     if not errors:
@@ -3400,169 +1846,101 @@ def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
 def _emit_review_engine_analysis(
     context: PipelineContext, analysis_path: object | None
 ) -> Path | None:
-    if analysis_path is None:
-        return None
-
-    path = Path(str(analysis_path))
-    if not path.exists():
-        logger.warning(
-            "Review Engine 連携ファイル生成のため analysis.json が見つかりません: %s", path
-        )
-        return None
-
-    adapter = AnalyzerReviewEngineAdapter()
-    try:
-        logger.info("Loading analysis payload from %s", path.resolve())
-        analysis_payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(
-            "analysis.json の読み込みに失敗したため Review Engine 連携ファイルを生成しません: %s",
-            exc,
-        )
-        return None
-
-    try:
-        payload = adapter.build_payload(analysis_payload, context.spec)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(
-            "Review Engine 連携ペイロードの生成に失敗しました: %s",
-            exc,
-        )
-        return None
-
-    output_path = path.with_name("review_engine_analyzer.json")
-    output_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    logger.info("Saved review engine payload to %s", output_path.resolve())
-    context.add_artifact("review_engine_analysis_path", output_path)
-    return output_path
+    return emit_review_engine_analysis(context, analysis_path)
 
 
 def _write_audit_log(context: PipelineContext) -> Path:
-    outputs_dir = context.workdir
-    outputs_dir.mkdir(parents=True, exist_ok=True)
-    artifacts_payload = {
-        "pptx": _artifact_str(context.artifacts.get("pptx_path")),
-        "analysis": _artifact_str(context.artifacts.get("analysis_path")),
-        "analysis_pre_polisher": _artifact_str(
-            context.artifacts.get("analysis_pre_polisher_path")
-        ),
-        "review_engine_analysis": _artifact_str(
-            context.artifacts.get("review_engine_analysis_path")
-        ),
-        "pdf": _artifact_str(context.artifacts.get("pdf_path")),
-        "generate_ready": _artifact_str(
-            context.artifacts.get("generate_ready_path")
-        ),
-        "rendering_log": _artifact_str(
-            context.artifacts.get("rendering_log_path")
-        ),
-        "mapping_log": _artifact_str(context.artifacts.get("mapping_log_path")),
-        "mapping_fallback_report": _artifact_str(
-            context.artifacts.get("mapping_fallback_report_path")
-        ),
-        "monitoring_report": _artifact_str(
-            context.artifacts.get("monitoring_report_path")
-        ),
-    }
-
-    pdf_meta = context.artifacts.get("pdf_export_metadata")
-    if isinstance(pdf_meta, dict):
-        pdf_payload = {
-            "enabled": True,
-            "status": pdf_meta.get("status", "success"),
-            "attempts": pdf_meta.get("attempts", 0),
-            "elapsed_ms": int(pdf_meta.get("elapsed_sec", 0.0) * 1000),
-            "converter": pdf_meta.get("converter"),
-        }
-    else:
-        pdf_payload = None
-
-    polisher_meta = context.artifacts.get("polisher_metadata")
-    if isinstance(polisher_meta, dict):
-        polisher_payload = {
-            "enabled": bool(polisher_meta.get("enabled")),
-            "status": polisher_meta.get("status"),
-            "elapsed_ms": int(polisher_meta.get("elapsed_sec", 0.0) * 1000)
-            if polisher_meta.get("elapsed_sec") is not None
-            else None,
-            "rules_path": polisher_meta.get("rules_path"),
-            "summary": polisher_meta.get("summary"),
-        }
-    else:
-        polisher_payload = None
-
-    hashes: dict[str, str] = {}
-    for label, key in (
-        ("generate_ready", "generate_ready_path"),
-        ("pptx", "pptx_path"),
-        ("analysis", "analysis_path"),
-        ("analysis_pre_polisher", "analysis_pre_polisher_path"),
-        ("pdf", "pdf_path"),
-        ("rendering_log", "rendering_log_path"),
-        ("monitoring_report", "monitoring_report_path"),
-        ("mapping_log", "mapping_log_path"),
-        ("mapping_fallback_report", "mapping_fallback_report_path"),
-    ):
-        digest = _sha256_of(context.artifacts.get(key))
-        if digest:
-            hashes[label] = digest
-
-    audit_payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "spec_meta": context.spec.meta.model_dump(),
-        "slides": len(context.spec.slides),
-        "artifacts": artifacts_payload,
-        "rendering": context.artifacts.get("rendering_summary"),
-        "pdf_export": pdf_payload,
-        "refiner_adjustments": context.artifacts.get("refiner_adjustments"),
-        "template_style": context.artifacts.get("template_style"),
-        "polisher": polisher_payload,
-    }
-    monitoring_summary = context.artifacts.get("monitoring_summary")
-    if monitoring_summary is not None:
-        audit_payload["monitoring"] = monitoring_summary
-    if hashes:
-        audit_payload["hashes"] = hashes
-    content_meta = context.artifacts.get("content_approved_meta")
-    if content_meta is not None:
-        audit_payload["content_approval"] = content_meta
-    review_meta = context.artifacts.get("content_review_log_meta")
-    if review_meta is not None:
-        audit_payload["content_review_log"] = review_meta
-    mapping_meta = context.artifacts.get("mapping_meta")
-    if mapping_meta is not None:
-        audit_payload["mapping"] = mapping_meta
-    audit_path = outputs_dir / "audit_log.json"
-    audit_path.write_text(json.dumps(
-        audit_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("Saved audit log to %s", audit_path.resolve())
-    context.add_artifact("audit_path", audit_path)
-    return audit_path
-
-
-def _artifact_str(value: object | None) -> str | None:
-    if value is None:
-        return None
-    return str(value)
-
-
-def _sha256_of(value: object | None) -> str | None:
-    if value is None:
-        return None
-    path = Path(str(value))
-    if not path.exists():
-        return None
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(8192), b""):
-            if not chunk:
-                break
-            digest.update(chunk)
-    return f"sha256:{digest.hexdigest()}"
+    return write_audit_log(context)
 
 
 if __name__ == "__main__":
     app()
+
+
+def _execute_outline(**kwargs: object) -> OutlineResult:
+    return execute_outline(**kwargs)
+
+
+def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -> None:
+    print_outline_result(result, show_layout_reasons=show_layout_reasons)
+
+
+def _run_template_release(**kwargs: object) -> TemplateReleaseExecutionResult:
+    return run_template_release(**kwargs)
+
+
+def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
+    echo_template_release_result(result)
+
+
+def _run_template_extraction(
+    *,
+    template_path: Path,
+    output_dir: Path,
+    layout: str | None,
+    anchor: str | None,
+    output_format: str,
+    template_ai_policy: Path | None,
+    template_ai_policy_id: str | None,
+    disable_template_ai: bool,
+    layout_mode: str,
+    skip_validation: bool = False,
+    emit_slide_snapshot: bool = False,
+) -> TemplateExtractionResult:
+    return run_template_extraction(
+        template_path=template_path,
+        output_dir=output_dir,
+        layout=layout,
+        anchor=anchor,
+        output_format=output_format,
+        template_ai_policy=template_ai_policy,
+        template_ai_policy_id=template_ai_policy_id,
+        disable_template_ai=disable_template_ai,
+        layout_mode=layout_mode,
+        skip_validation=skip_validation,
+        emit_slide_snapshot=emit_slide_snapshot,
+    )
+
+
+def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
+    echo_template_extraction_result(result)
+
+
+def _run_mapping_pipeline(
+    *,
+    params: MappingPipelineConfig,
+    draft_context: PipelineContext | None = None,
+    draft_options: DraftStructuringOptions | None = None,
+) -> PipelineContext:
+    return run_mapping_pipeline(
+        params=params,
+        draft_context=draft_context,
+        draft_options=draft_options,
+        generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
+        generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
+    )
+
+
+def _run_draft_pipeline(
+    *,
+    spec: JobSpec,
+    output_dir: Path,
+    prepare_cards: Path | None,
+    require_prepare: bool,
+    draft_options: DraftStructuringOptions,
+) -> PipelineContext:
+    return run_draft_pipeline(
+        spec=spec,
+        output_dir=output_dir,
+        prepare_cards=prepare_cards,
+        require_prepare=require_prepare,
+        draft_options=draft_options,
+    )
+
+
+def _load_jobspec(path: Path) -> JobSpec:
+    return load_jobspec(path)
+
+
+def _resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
+    return resolve_layouts_path(spec=spec, spec_source=spec_source)
