@@ -68,6 +68,23 @@
   - `run` 本体は `work_items` 構築 → `for item in work_items: _process_work_item(...)` → `_finalize_outputs(...)` の 3 段構成を目指す。
   - 既存のログ／メタ出力内容が変わらないことを unit/integration テストで確認する。
 
+## 2025-11-30 DraftStructuringStep リファクタ検討メモ
+- 対象: `src/pptx_generator/pipeline/draft_structuring.py` の `DraftStructuringStep.run`（約 180 行）と `_build_document`（約 220 行）。
+- 現状フローと責務:
+  1. **前処理**: content_approved の検証、slide alignment、テンプレート／レイアウト読込、AI リコメンダ準備。
+  2. **ドキュメント構築** (`_build_document`): Draft セクション生成、AI 推薦・候補ログ生成、GenerateReady meta 用統計集計。
+  3. **成果物出力**: draft/approved/log/mapping_log/generate_ready/generate_ready_meta の書き出しと DraftStore 連携。
+  4. **静的モード** (`_run_static_mode`): Blueprint slot 充足チェック、GenerateReady 生成、ログ整備。
+- 分割方針:
+  - ランタイム状態を `DraftAccumulator`（仮）で管理し、セクション一覧・マッピングログ・AI 統計を集約。
+  - `_build_work_items`（alignment 後の content/spec ペアリング）→ `_process_slide`（カード生成と候補ログ）→ `_finalize_outputs`（ファイル書き出し／DraftStore 登録）へ分割。
+  - 静的モードは `_run_static_mode` 内のカード割付と GenerateReady 生成をヘルパーに切り出し、slot チェックとログ構築の分離を検討。
+- 検討事項:
+  - AI 推薦集計（invoked/used/simulated, models）を accumulator で一貫管理し `_build_generate_ready_meta_payload` へ渡す。
+  - Slide alignment 結果や content_alignment メタの登録ロジックは run 入口付近に残し、以降の処理と責務を分離。
+  - 非静的モード／静的モードで共通化できる GenerateReady 出力処理を `_write_generate_ready_outputs`（仮）として再利用。
+  - 既存の JSON スキーマ・ログ構造・例外メッセージを保持し、ユニット＋ compose パイプラインテストで差分を検証する。
+
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI

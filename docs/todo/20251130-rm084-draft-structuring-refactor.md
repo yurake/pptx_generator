@@ -1,0 +1,44 @@
+---
+目的: RM-084 CLI/Pipeline リファクタビリティ向上 - `DraftStructuringStep` の責務分離とメソッド整理
+関連ブランチ: chore/rm084-cli-refactorability
+関連Issue: #344
+roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
+---
+
+- [x] ブランチ作成・初期コミット・push
+  - メモ: chore/rm084-cli-refactorability を main から作成済み。mapping リファクタに続き本タスクでも利用する。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
+    - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/pipeline/draft_structuring.py` の `DraftStructuringStep.run` および `_build_document` を中心に、入力整形・スライド処理・成果物出力の責務を分割する。静的モード `_run_static_mode` についてもカード割付と GenerateReady 書き出しのヘルパー化を検討する。既存 JSON 出力・例外ポリシーは維持。
+    - ドキュメント／コード修正方針: ランタイムデータを `DraftAccumulator` で一元管理し、`_build_work_items`・`_process_work_item`・`_finalize_draft_document` などのヘルパーを追加。`docs/notes/rm084-refactorability-assessment.md` に設計メモを追記済み。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo と PR で設計方針とテスト結果を共有。必要に応じて差分ログを添付。
+    - 想定影響ファイル: `src/pptx_generator/pipeline/draft_structuring.py`, `docs/notes/rm084-refactorability-assessment.md`, `docs/todo/20251130-rm084-draft-structuring-refactor.md`, `tests/pipeline/compose/test_draft_structuring_step.py`（および関連テスト）。
+    - リスク: レイアウト推薦ログや AI 統計の整合性が崩れる可能性。GenerateReady 出力の差分による downstream 影響。
+    - テスト方針: `uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py` を中心に、必要なら compose/CLI 経由の統合テストも実行する。
+    - ロールバック方法: `draft_structuring.py` の差分を revert すれば元の挙動へ戻せる。ドキュメント更新は同一コミットで巻き戻し可能。
+    - 承認メッセージ ID／リンク: ユーザー返信「ok」（2025-11-30）。
+- [x] 設計・実装方針の確定
+  - メモ: `docs/notes/rm084-refactorability-assessment.md` に DraftStructuringStep リファクタ設計メモを追記。ワークアイテム／アキュムレータ導入と静的モード見直し案を整理済み。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: `DraftStructuringStep.run` / `_build_document` をヘルパー分割し、`DraftWorkItem`・`DraftAccumulator`・`_finalize_draft_document` を追加。既存出力と例外を維持。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py` を実行し 7 ケース成功。
+- [x] ドキュメント更新
+  - メモ: 設計メモは `docs/notes/rm084-refactorability-assessment.md` を更新済み。他ドキュメントは影響なし。
+  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+  - メモ: フロントマター `関連Issue` を `#344` に更新済み。issue への進捗書き込みは不要。
+- [ ] チェックリスト整合確認
+  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [ ] PR 作成
+  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+
+## メモ
+-
