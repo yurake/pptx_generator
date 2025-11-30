@@ -25,10 +25,10 @@
   - `create_app`（280 行超）が FastAPI ルート定義を 1 関数内に保持し、依存取得とエラーハンドリングが重複している。
   - 機能別ルーター分割や共通レスポンス生成ユーティリティ化による分離が望ましい。
 
-## 次のアクション（案）
-1. CLI とパイプライン各 Stage の責務分割案を設計し、orchestrator インターフェイスを整理する。
-2. Mapping / Draft Structuring / Prepare AI 周辺の長大メソッドを段階的に分割し、テスト観点を整備する。
-3. FastAPI ルートを cards・logs など機能単位の router へ切り出し、共通処理をユーティリティ化する。
+## 次のアクション（2025-11-30 時点の対応状況）
+1. CLI / パイプライン各 Stage の責務分割案 → `prepare` コマンドはハンドラへ委譲済み。Mapping / Draft Structuring / Static Prepare / Layout / API もヘルパー化を完了。
+2. 長大メソッドの段階的分割とテスト整備 → 上記各モジュールでワークアイテム／アキュムレータ導入とユニットテスト実行を完了。
+3. FastAPI ルートの router 分割 → `create_app` を cards/logs 向け router へ分解済み。
 
 ## 2025-11-30 CLI prepare ハンドラ分離方針メモ
 - 対象: `src/pptx_generator/cli.py` 内 `prepare` コマンド（約 320 行）。
@@ -47,6 +47,13 @@
   - CLI からは `invoke_prepare_command(config)` を呼び出し、結果を標準出力に整形。
   - 静的モード制約（page-limit 禁止など）はハンドラに集約し、CLI では `mode` 変換後に config 生成のみ行う。
   - 既存テスト `tests/cli/test_cli_prepare_stage_flow.py` が通るよう出力パスとメッセージを変えない。新設ハンドラの単体テストで `PrepareCommandConfig` → ファイル生成を検証予定。
+
+## 2025-11-30 CLI prepare ハンドラ実装メモ
+- 実装内容:
+  - `prepare` コマンド本体を `PrepareCommandConfig`／`run_prepare_command` で委譲し、CLI 層は引数検証と結果表示に限定。
+  - 静的モードの前提チェック（page-limit 禁止、テンプレート spec の解決など）を `_resolve_static_context` へ分離し、エラー種別を `PrepareCommandError` で表現。
+  - ハンドラ内で成果物パス・監査ログをまとめて生成し、CLI では result メッセージを echo するのみ。
+- テスト: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py`, `tests/cli/test_cli_static_prompt_templates.py` を通過済み。
 
 ## 2025-11-30 MappingStep.run リファクタ設計メモ
 - 対象: `src/pptx_generator/pipeline/mapping.py` の `MappingStep.run`（約 280 行）。
@@ -67,6 +74,13 @@
   - フォールバック／AI パッチ統計は `MappingAccumulator` で一元管理し、ループ外で整形する。
   - `run` 本体は `work_items` 構築 → `for item in work_items: _process_work_item(...)` → `_finalize_outputs(...)` の 3 段構成を目指す。
   - 既存のログ／メタ出力内容が変わらないことを unit/integration テストで確認する。
+
+## 2025-11-30 MappingStep.run 実装メモ
+- 実装内容:
+  - `MappingWorkItem`／`MappingAccumulator` を導入し、`_build_work_items` → `_process_work_item` → `_finalize_outputs` の三段構成で `run` を再構築。
+  - 候補スコアリングやテーブルアンカー解決など既存ヘルパーを維持しつつ、副作用をアキュムレータへ集約。
+  - fallback／AI パッチ統計を `MappingAccumulator` から整形し、`MappingLogMeta` のメトリクスを維持。
+- テスト: `uv run --extra dev pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py`, `uv run --extra dev pytest` を実行済み。
 
 ## 2025-11-30 DraftStructuringStep リファクタ検討メモ
 - 対象: `src/pptx_generator/pipeline/draft_structuring.py` の `DraftStructuringStep.run`（約 180 行）と `_build_document`（約 220 行）。
@@ -103,6 +117,4 @@
 - 調査担当: Codex CLI
 
 ## 今後の検討候補（DraftStructuring 以外）
-- `_build_generate_ready_meta_payload` の統計組み立てを専用ビルダーへ移し、ペイロード生成と集計ロジックを分離する。
-- `_run_static_mode` のカード割付ロジックと GenerateReady 書き出しをヘルパー化し、動的モードとの共通処理を統一する。
-- `MappingStep` リファクタ後のメタ統計（fallback / ai_patch）を `mapping_meta` テンプレートと照合し、不足メトリクスを洗い出す。
+- 2025-11-30 時点で追加の優先事項なし。新たな要件が発生した際に本メモへ追記する。
