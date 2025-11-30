@@ -1056,3 +1056,15 @@ flowchart TB
   - テストモジュール・クラス・関数名をガイドラインの命名規則（`test_<対象>_<シナリオ>` 等）へ合わせ、pytest コレクションの安定性を維持する。
   - 共有／ドメイン別フィクスチャの配置を見直し、`conftest.py` の責務と依存関係を整理する。
   - 再構成後のテストスイートを `uv run --extra dev pytest` で検証し、必要なドキュメントやスクリプトを更新する。
+
+<a id="rm-084"></a>
+### RM-084 CLI/Pipeline リファクタビリティ向上
+- 対象 stage: ステージ横断（CLI、Stage 2〜4 パイプライン）
+- ゴール: 長大化した CLI コマンド実装とパイプライン各ステップの単一責務化を進め、保守性とテスト容易性を高める。
+- 参照ドキュメント: [docs/notes/rm084-refactorability-assessment.md](../notes/rm084-refactorability-assessment.md)
+- 状況: 未着手（2025-02-16 追加）
+- 期待成果:
+  - `cli.py` のサブコマンド処理を orchestration レイヤーへ切り出し、ステージ別ハンドラ構造を定義する。
+  - `MappingStep.run`・`DraftStructuring._build_document`・`PrepareAIOrchestrator._build_cards_static` など長大メソッドを段階的に分割し、データクラスやヘルパー関数でロジックを整理する。
+  - `layout_validation.suite` と `api.app` の責務分離（ビルダークラス／router 切り出し）を進め、再利用性とテスト可能性を確保する。
+  - リファクタリング後の構成を反映したテストおよびドキュメント更新計画を策定し、ToDo/PR テンプレートでトレーサビリティを確保する。
