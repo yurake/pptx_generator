@@ -62,12 +62,12 @@ class PrepareSourceDocument(BaseModel):
 
     @classmethod
     def parse_file(cls, path: str | Path) -> "PrepareSourceDocument":
-        path = Path(path)
-        text = path.read_text(encoding="utf-8")
-        if path.suffix.lower() in {".json", ".jsonc"}:
+        source_path = Path(path)
+        text = Path.read_text(source_path, encoding="utf-8")
+        if source_path.suffix.lower() in {".json", ".jsonc"}:
             payload = json.loads(text)
             return cls.from_payload(payload)
-        return cls._from_markdown(text, prepare_id=path.stem)
+        return cls._from_markdown(text, prepare_id=source_path.stem)
 
     @classmethod
     def _from_markdown(cls, text: str, *, prepare_id: str | None = None) -> "PrepareSourceDocument":

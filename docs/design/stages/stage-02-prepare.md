@@ -16,7 +16,8 @@
 ## データモデル
 - `PrepareDocument`: `prepare_id`, `cards[]`, `meta`。
 - `PrepareCard`: `card_id`, `order`, `role.story_phase`, `role.intent_tags`, `content.title`, `content.headline`, `content.body[]`, `content.notes[]`, `meta`。
-- `PrepareGenerationMeta`: `policy_id`, `generated_at`, `input_hash`, `cards[]`, `statistics`。
+- `PrepareGenerationMeta`: `policy_id`, `generated_at`, `input_hash`, `cards[]`, `statistics`, `prompt_templates[]`（static モードで適用された雛形ファイルを追跡）、`slide_inputs[]`（スライドごとの入力ファイルパスを記録）。
+- `PrepareAIRecord`: `prompt_template`, `model`, `warnings`, `tokens` に加え、static モードでは `prompt_template_path` / `prompt_template_instructions` / `slide_input_path` を保持し、LLM 入力に差し込んだ追加指示とデータを監査できる。
 - `PrepareAuditLog`: 生成時刻・成果物パス・統計値をまとめた監査メタ。
 
 ## ワークフロー
@@ -30,7 +31,7 @@
 - パラメータ
   | オプション | 説明 | 既定値 |
   | --- | --- | --- |
-  | `<prepare_path>` | 入力プレペア（Markdown / JSON） | 必須 |
+  | `<prepare_path>` | 入力プレペア（Markdown / JSON）。`.pptx/slide_inputs.md` が全スライド分揃っている場合は省略可 | 必須 |
   | `--output <dir>` | 成果物ディレクトリ | `.pptx/prepare` |
   | `-p/--page-limit <int>` | 生成するカード枚数の上限 | 指定なし |
 - 代表的な出力
@@ -42,8 +43,8 @@
   - `audit_log.json`
 
 ## ログと監査
-- `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`response_not_json` や `body_not_array` など）、トークン消費量を記録。
-- `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、stage 3 での差分検出に利用。
+- `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`response_not_json` や `body_not_array` など）、トークン消費量を記録。static モードで雛形を適用した場合は `prompt_template_path` / `prompt_template_instructions` に差し込み元を残し、スライド別入力を利用した場合は `slide_input_path` も記録する。
+- `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、stage 3 での差分検出に利用。static モードでは `prompt_templates[]` にスライド番号と雛形パス、`slide_inputs[]` にスライド別の入力ファイルを収録する。
 - `audit_log.json`: 生成時刻・ポリシー ID・成果物のパスをまとめる。今後ハッシュ値を追加し改ざん検知を強化する。
 
 ## エラーハンドリング
