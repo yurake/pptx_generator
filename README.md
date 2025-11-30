@@ -98,6 +98,14 @@ flowchart TD
 ### 静的生成 (static mode)
 テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
 
+静的モードで登場する構造は下記のような階層になっています。
+
+```
+Blueprint（テンプレ全体の設計図）
+└─ Slide（スライドごとの枠組み）
+    └─ Slot（コンテンツ差し込み枠）
+```
+
 ```mermaid
 flowchart TD
   %% ======= Styles =======
@@ -111,7 +119,7 @@ flowchart TD
   S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (slot 生成)**"]:::stage
+  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (Slot 生成)**"]:::stage
   SpecStatic --> S2Static
   S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
@@ -138,8 +146,8 @@ flowchart TD
 | stage | 概要 | コマンド例 |
 | --- | --- | --- |
 | 1. テンプレ | Blueprint 情報とあわせて `.pptx/extract/prompts/`（プロンプト雛形）と `.pptx/slide_inputs.md`（スライド入力マニフェスト）を出力 | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
-| 2. コンテンツ準備 | 雛形 (`.pptx/extract/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` |
-| 3. マッピング | スロット充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
+| 2. コンテンツ準備 | 雛形 (`.pptx/extract/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の Slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` |
+| 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 各 stage の CLI コマンドと主要オプションは `docs/design/cli/cli-command-reference.md`。
