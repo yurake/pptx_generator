@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM059["RM-059<br/>Mermaid 図自動レンダリング<br/>(未着手)"]
         RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
     end
 
@@ -730,7 +729,7 @@ flowchart TB
 - 参照ドキュメント: [docs/notes/20251105-mermaid-render-automation.md](../notes/20251105-mermaid-render-automation.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-002（エージェント運用ガイド整備）・RM-050（ロードマップ参照整備）
-- 状況: 未着手（2025-11-05 追加）
+- 状況: 完了（2025-11-30 更新）
 - 期待成果:
   - `diagrams/` にソースを管理し、生成 PNG/SVG を `assets/diagrams/` 配下へ出力する構成を整備する。
   - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
