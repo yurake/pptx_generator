@@ -20,7 +20,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 - [x] 設計・実装方針の確定
   - メモ: `docs/notes/rm084-refactorability-assessment.md` に DraftStructuringStep リファクタ設計メモを追記。ワークアイテム／アキュムレータ導入と静的モード見直し案を整理済み。
   - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+    - メモ: `docs/notes/rm084-refactorability-assessment.md` に DraftStructuring リファクタの構成・静的モード方針を反映済み（2025-11-30 時点で最新）。
 - [x] 実装
   - メモ: `DraftStructuringStep.run` / `_build_document` をヘルパー分割し、`DraftWorkItem`・`DraftAccumulator`・`_finalize_draft_document` を追加。`_build_generate_ready_meta_payload` もセクション集計・統計ヘルパーへ分解し、既存出力と例外を維持。静的モードは `_resolve_static_template_spec_path`・`_validate_static_template_spec`・`_write_static_outputs` で責務分離。
 - [x] テスト・検証
@@ -35,8 +36,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマター `関連Issue` を `#344` に更新済み。issue への進捗書き込みは不要。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: 2025-11-30 確認時点で未完タスクは「PR 作成」のみ。その他の子タスクは親タスクと整合している。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
