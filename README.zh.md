@@ -35,7 +35,7 @@
   </p>
 
   <p>
-  PowerPoint テンプレートと資料データ（プレーンテキストや PDF など）を取り込み、テンプレートに沿ったプレゼン資料を生成する CLI ツールです。
+  这是一个 CLI 工具，用于导入 PowerPoint 模板和资料数据（纯文本或 PDF 等），并按模板生成演示文稿。
   </p>
 </div>
 
@@ -61,30 +61,30 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 テンプレ**"]:::stage
-  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
+  Tmpl["**模板 PPTX (templates.pptx)**"]:::userfile --> S1["**Stage 1 模板**"]:::stage
+  S1 --> Jobspec["**模板规格 (jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 コンテンツ準備**"]:::stage
-  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  Prepare["**资料数据 (prepare_source.md / .json)**"]:::userfile --> S2["**Stage 2 内容准备**"]:::stage
+  S2 --> PrepareCards["**草稿 (prepare_card.json)**"]:::file
   PrepareCards --> S3
 
   %% ======= Stage 3 =======
-  S3["**stage 3 マッピング**"]:::stage
+  S3["**Stage 3 映射**"]:::stage
   Jobspec --> S3
-  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
+  S3 --> Ready["**PPTX JSON (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**stage 4 PPTX生成**"]:::stage
+  Ready --> S4["**Stage 4 PPTX 生成**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
-  subgraph Legend[凡例]
+  subgraph Legend[图例]
     direction LR
-    A1["**stage（自動/HITL）**"]:::stage
-    A2["**システム生成ファイル**"]:::file
-    A3["**ユーザー準備ファイル**"]:::userfile
-    A4["**最終成果物**"]:::final
+    A1["**阶段（自动/HITL）**"]:::stage
+    A2["**系统生成文件**"]:::file
+    A3["**用户准备文件**"]:::userfile
+    A4["**最终成果物**"]:::final
   end
 ```
 
@@ -107,35 +107,35 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 テンプレ**"]:::stage
-  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+  TmplStatic["**模板 PPTX (templates.pptx)**"]:::userfile --> S1Static["**Stage 1 模板**"]:::stage
+  S1Static --> SpecStatic["**模板规格 (jobspec.json)**<br/>**模板结构 (template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (slot 生成)**"]:::stage
+  PrepareStatic["**资料数据 (prepare_source.md / .json)**"]:::userfile --> S2Static["**Stage 2 内容准备（Slot 生成）**"]:::stage
   SpecStatic --> S2Static
-  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  S2Static --> PrepareCardsStatic["**草稿 (prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
 
   %% ======= Stage 3 =======
-  S3Static["**stage 3 マッピング (Blueprint 検証)**"]:::stage
+  S3Static["**Stage 3 映射（Blueprint 校验）**"]:::stage
   SpecStatic --> S3Static
-  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+  S3Static --> ReadyStatic["**PPTX JSON (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
+  ReadyStatic --> S4Static["**Stage 4 PPTX 生成**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
-  subgraph LegendStatic[凡例]
+  subgraph LegendStatic[图例]
     direction LR
-    B1["**stage（自動/HITL）**"]:::stage
-    B2["**テンプレ仕様 / 構造ファイル**"]:::file
-    B3["**ユーザー準備ファイル**"]:::userfile
-    B4["**最終成果物**"]:::final
+    B1["**阶段（自动/HITL）**"]:::stage
+    B2["**模板规格 / 结构文件**"]:::file
+    B3["**用户准备文件**"]:::userfile
+    B4["**最终成果物**"]:::final
   end
 ```
 
-| 阶段 | 概要 | 命令示例 |
+| 阶段 | 概述 | 命令示例 |
 | --- | --- | --- |
 | 1. 模板 | 与 Blueprint 信息一起输出 `.pptx/extract/prompts/`（提示词模板）和 `.pptx/slide_inputs.md`（幻灯片输入清单） | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
 | 2. 内容准备 | 模板 (`.pptx/extract/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`) 进行编辑；如有需要，可以省略 `<data file path>`，并按照 Blueprint 的 slot 定义整理占位幻灯片 | `uv run pptx prepare --mode static` |

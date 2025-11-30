@@ -35,7 +35,7 @@
 </p>
 
   <p>
-  PowerPoint テンプレートと資料データ（プレーンテキストや PDF など）を取り込み、テンプレートに沿ったプレゼン資料を生成する CLI ツールです。
+  This CLI tool ingests PowerPoint templates and material data (plain text, PDFs, etc.) to generate presentation materials that conform to the template.
   </p>
 </div>
 
@@ -61,34 +61,34 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 テンプレ**"]:::stage
-  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
+  Tmpl["**Template PPTX (templates.pptx)**"]:::userfile --> S1["**Stage 1 Template**"]:::stage
+  S1 --> Jobspec["**Template spec (jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 コンテンツ準備**"]:::stage
-  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  Prepare["**Source data (prepare_source.md / .json)**"]:::userfile --> S2["**Stage 2 Content preparation**"]:::stage
+  S2 --> PrepareCards["**Draft (prepare_card.json)**"]:::file
   PrepareCards --> S3
 
   %% ======= Stage 3 =======
-  S3["**stage 3 マッピング**"]:::stage
+  S3["**Stage 3 Mapping**"]:::stage
   Jobspec --> S3
-  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
+  S3 --> Ready["**PPTX JSON (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**stage 4 PPTX生成**"]:::stage
+  Ready --> S4["**Stage 4 PPTX generation**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
-  subgraph Legend[凡例]
+  subgraph Legend[Legend]
     direction LR
-    A1["**stage（自動/HITL）**"]:::stage
-    A2["**システム生成ファイル**"]:::file
-    A3["**ユーザー準備ファイル**"]:::userfile
-    A4["**最終成果物**"]:::final
+    A1["**Stage (automated/HITL)**"]:::stage
+    A2["**System-generated files**"]:::file
+    A3["**User-prepared files**"]:::userfile
+    A4["**Final deliverables**"]:::final
   end
 ```
 
-| Stage | Overview | Command Examples |
+| Stage | Overview | Command examples |
 | --- | --- | --- |
 | 1. Template | Extract and validate the template PPTX, and output foundational data such as `jobspec.json` to `.pptx/extract/` | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
 | 2. Content preparation | Normalize input materials into tentative slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
@@ -107,31 +107,31 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 テンプレ**"]:::stage
-  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+  TmplStatic["**Template PPTX (templates.pptx)**"]:::userfile --> S1Static["**Stage 1 Template**"]:::stage
+  S1Static --> SpecStatic["**Template spec (jobspec.json)**<br/>**Template structure (template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (slot 生成)**"]:::stage
+  PrepareStatic["**Source data (prepare_source.md / .json)**"]:::userfile --> S2Static["**Stage 2 Content preparation (slot generation)**"]:::stage
   SpecStatic --> S2Static
-  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  S2Static --> PrepareCardsStatic["**Draft (prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
 
   %% ======= Stage 3 =======
-  S3Static["**stage 3 マッピング (Blueprint 検証)**"]:::stage
+  S3Static["**Stage 3 Mapping (Blueprint validation)**"]:::stage
   SpecStatic --> S3Static
-  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+  S3Static --> ReadyStatic["**PPTX JSON (generate_ready.json)**"]:::file
 
   %% ======= Stage 4 =======
-  ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
+  ReadyStatic --> S4Static["**Stage 4 PPTX generation**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
-  subgraph LegendStatic[凡例]
+  subgraph LegendStatic[Legend]
     direction LR
-    B1["**stage（自動/HITL）**"]:::stage
-    B2["**テンプレ仕様 / 構造ファイル**"]:::file
-    B3["**ユーザー準備ファイル**"]:::userfile
-    B4["**最終成果物**"]:::final
+    B1["**Stage (automated/HITL)**"]:::stage
+    B2["**Template spec / structure files**"]:::file
+    B3["**User-prepared files**"]:::userfile
+    B4["**Final deliverables**"]:::final
   end
 ```
 
