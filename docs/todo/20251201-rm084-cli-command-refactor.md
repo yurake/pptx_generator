@@ -36,7 +36,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号更新は必要に応じて実施する。
 - [ ] チェックリスト整合確認
   - メモ: 子タスク完了後に親タスクの状態を確認する。
