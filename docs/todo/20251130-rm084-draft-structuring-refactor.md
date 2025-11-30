@@ -24,7 +24,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 - [x] 実装
   - メモ: `DraftStructuringStep.run` / `_build_document` をヘルパー分割し、`DraftWorkItem`・`DraftAccumulator`・`_finalize_draft_document` を追加。`_build_generate_ready_meta_payload` もセクション集計・統計ヘルパーへ分解し、既存出力と例外を維持。静的モードは `_resolve_static_template_spec_path`・`_validate_static_template_spec`・`_write_static_outputs` で責務分離。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py` を実行し 7 ケース成功。
+  - メモ: `uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py` と `uv run --extra dev pytest` を実行し、いずれも成功。
 - [x] ドキュメント更新
   - メモ: 設計メモは `docs/notes/rm084-refactorability-assessment.md` を更新済み。他ドキュメントは影響なし。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -41,4 +41,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
--
+- CLI から `_load_prompt_overrides` を再エクスポートし、`tests/cli/test_cli_static_prompt_templates.py` の import 互換性を確保。
+- 次フェーズでは `prepare_ai/orchestrator.py` `_build_cards_static` の章割当・LLM 呼び出し・結果検証を個別ヘルパーへ分割する ToDo を起票予定。チャプター割当生成→プロンプト構築→LLM 応答整形の 3 段構成を Plan に落とし込む。
+- `layout_validation/suite.py` `_build_layout_records` はアンカー解析・ヒューリスティック評価・警告集計をデータクラス化するリファクタ ToDo を新設し、Slot 評価ループを小関数へ切り出す方針で整理する。
+- `api/app.py` `create_app` の FastAPI ルートは cards/logs など機能別 router へ移し、依存取得と例外処理を shared util へ抽出する Plan を準備する。
