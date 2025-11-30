@@ -53,7 +53,6 @@
 使用从模板中提取的布局信息，将资料数据整理成临时幻灯片，在调整内容的顺序和排布的同时，可以多次重新生成，是一种灵活的模式。适合希望从资料数据灵活地创建幻灯片的场景。
 
 ```mermaid
-%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
@@ -100,7 +99,6 @@ flowchart TD
 这是根据模板设定的幻灯片结构自动分配资料数据并完成排版的模式。在幻灯片的布局和规则已确定的场景中非常有用。
 
 ```mermaid
-%%{init: {"look": "handDrawn", "handDrawnSeed": 1, "theme": "neutral"}}%%
 flowchart TD
   %% ======= Styles =======
   classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e,font-weight:bold;
