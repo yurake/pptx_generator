@@ -88,3 +88,8 @@
 ## 参照ログ
 - 収集日: 2025-02-16
 - 調査担当: Codex CLI
+
+## 今後の検討候補（DraftStructuring 以外）
+- `_build_generate_ready_meta_payload` の統計組み立てを専用ビルダーへ移し、ペイロード生成と集計ロジックを分離する。
+- `_run_static_mode` のカード割付ロジックと GenerateReady 書き出しをヘルパー化し、動的モードとの共通処理を統一する。
+- `MappingStep` リファクタ後のメタ統計（fallback / ai_patch）を `mapping_meta` テンプレートと照合し、不足メトリクスを洗い出す。
