@@ -31,7 +31,8 @@ roadmap_item: RM-073 README 多言語展開整備
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
+  - [x] docs/runbook 配下
+    - メモ: `docs/runbooks/readme-i18n.md` を新規追加し、自動翻訳スクリプトの運用手順と CI 連携の要点を記載。
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
