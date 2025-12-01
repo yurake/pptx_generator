@@ -18,7 +18,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - メモ: 同ノートの「2025-12-02 Pipeline 大規模モジュール再分割計画」節に整理。
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
-  - メモ: 各モジュールの分解を段階的に進める。詳細は Plan 承認後に記載。
+  - メモ: 第1段階として `draft_structuring` をパッケージ化し、`types.py` / `dynamic_flow.py` へ分割。`DraftStructuringStep` は `build_dynamic_document` を利用する構成へ変更済み。以降は mapping → layout_validation → prepare_ai の順で進める。
 - [ ] テスト・検証
   - メモ: 対象モジュールのユニット／統合テスト（CLI flow 含む）を網羅的に再実行する。
 - [ ] ドキュメント更新
