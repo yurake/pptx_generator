@@ -153,7 +153,10 @@ class PrepareCard(BaseModel):
                     yield segment_stripped
 
     def _iter_block_text(self, block: PrepareBodyBlock) -> Iterable[str]:
-        text = (block.text or "").strip() if block.text else ""
+        value = block.text
+        if not isinstance(value, str):
+            return []
+        text = value.strip()
         if not text:
             return []
         return self._yield_segments(text)
@@ -189,7 +192,10 @@ class PrepareCard(BaseModel):
                 yield from self._yield_segments(row_text)
 
     def _iter_block_description(self, block: PrepareBodyBlock) -> Iterable[str]:
-        desc = (block.description or "").strip() if block.description else ""
+        value = block.description
+        if not isinstance(value, str):
+            return []
+        desc = value.strip()
         if not desc:
             return []
         return self._yield_segments(desc)
