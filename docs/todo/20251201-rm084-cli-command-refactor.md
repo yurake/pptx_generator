@@ -19,6 +19,13 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 承認メッセージ ID／リンク: ユーザー返信「ok」（2025-12-01）。
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認後に詳細方針を追記する。
+    - 2025-12-01 Codex CLI: `prepare` コマンド整理案（ドラフト）
+      - `cli_handlers/prepare.py` は config 正規化、静的コンテキスト解決、AI 実行、成果物書き出しが 1 関数 (`run_prepare_command`) に集中しており（同ファイル 78-193 行）、責務分離と再利用性に課題。
+      - `_StaticPrepareContext`（同 196-205 行）と `_resolve_static_context`（同 208-330 行）を公開 API 化し、`resolve_static_context` (+ dataclass `PrepareStaticContext`) へ改称。静的モード専用チェック群を専用モジュール/クラスに移し、CLI 以外からも再利用できるようにする。
+      - 出力ファイル定義・書き出しを `PrepareCommandArtifacts`（仮称）クラスへ分離し、`prepare_card.json` 等のパス構築と `dump_json` 呼び出しをメソッド化。`run_prepare_command` は orchestrator 実行と結果整形に専念させ、副作用をテストしやすくする。
+      - CLI 側 (`src/pptx_generator/cli.py:335-368`) は `prepare` コマンドの引数検証後に `build_prepare_config()`（新規ヘルパー）で `PrepareCommandConfig` を生成し、メッセージ出力や exit code 変換を薄いラッパーとして保持。将来的に API 化・他ツール連携しやすい構造へ刷新する。
+      - 追加テスト: (1) `resolve_static_context` 単体テストで jobspec 不備や manifest 不整合を網羅。(2) `PrepareCommandArtifacts` 用のファイル生成スナップショットテスト。(3) CLI 回帰テストは既存 `tests/cli/test_cli_prepare_stage_flow.py` をベースに dynamic/static ケースを維持。
+      - ドキュメント: `docs/design/cli/cli-command-reference.md` に prepare ハンドラ分離と新 API 公開範囲を追記し、ToDo 完了時に整理メモを `docs/notes/rm084-refactorability-assessment.md` へ反映。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
@@ -28,6 +35,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 2025-12-01 Codex CLI: テンプレート抽出ロジックを `cli_handlers/template_extraction.py` へ移動し、`template`/`tpl-extract` から委譲する構成に変更。
     - 2025-12-01 Codex CLI: `gen`/`compose`/`mapping`/`template`/`tpl-extract`/`layout-validate` を新設ハンドラ（`cli_handlers/{rendering,compose,mapping,template_commands,layout_validation}.py`）へ移管し、`cli.py` から互換ラッパを削除。対応テストの参照先も新モジュールに更新。
     - 2025-12-01 Codex CLI: LLM ログ設定とファイルロギング初期化を `cli_handlers/common.py` へ移設し、未使用ヘルパー（`_run_content_approval_pipeline` 等）を削除。`tpl-release` コマンドは `TemplateReleaseCommandConfig` を介して実装を統一。
+    - 2025-12-01 Codex CLI: `prepare` コマンドの静的モード正規化を `resolve_static_context`（公開 API）へ分離し、成果物書き出しを `PrepareCommandArtifacts` で一元化。CLI は `build_prepare_config` で設定生成のみに専念する構成へ変更。
 - [ ] テスト・検証
   - メモ: 実施テストと結果を記載する。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_outline_generation.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` いずれも成功。

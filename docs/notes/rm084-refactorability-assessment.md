@@ -122,3 +122,4 @@
 ## 2025-12-01 CLI ハンドラ再編メモ
 - `gen`/`compose`/`mapping`/`template`/`tpl-extract`/`layout-validate` を `cli_handlers/{rendering,compose,mapping,template_commands,layout_validation}.py` へ移行し、`cli.py` から旧 `_run_*` ラッパーを削除。テストは新モジュールへ monkeypatch 先を更新済み。
 - 新設ハンドラ間の依存（特に `compose`→`mapping`）は `TemplateStylePayload` や default ファイル名を共通化する方向で整理。今後は `prepare`/`tpl-release` の委譲と `cli.py` 内に残る共通関数の移設を検討する。
+- `prepare` コマンドは `PrepareCommandArtifacts` と `resolve_static_context` を公開化し、成果物書き出し・静的モード前処理を責務分離。CLI からは `build_prepare_config` で設定構築のみを行い、ハンドラが AI 実行と成果物生成を担う構成へ整理済み。

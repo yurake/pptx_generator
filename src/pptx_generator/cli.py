@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 import shutil
 from pathlib import Path
@@ -21,6 +20,7 @@ from .cli_handlers import (
     PrepareCommandConfig,
     PrepareCommandError,
     build_prompt_identifier,
+    load_prompt_overrides,
     _load_prompt_overrides,
     run_prepare_command,
     slugify_prompt_layout,
@@ -28,6 +28,7 @@ from .cli_handlers import (
 from .cli_handlers.common import (
     configure_file_logging,
     configure_llm_logger,
+    determine_log_level,
     dump_json,
     log_current_llm_provider,
 )
@@ -86,16 +87,7 @@ DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 
 logger = logging.getLogger(__name__)
 
-_LOG_LEVEL_ALIASES = {
-    "debug": logging.DEBUG,
-    "info": logging.INFO,
-    "warning": logging.WARNING,
-    "warn": logging.WARNING,
-    "error": logging.ERROR,
-    "err": logging.ERROR,
-    "fatal": logging.CRITICAL,
-    "critical": logging.CRITICAL,
-}
+_determine_log_level = determine_log_level
 
 
 _DEFAULT_DRAFT_OPTIONS = DraftStructuringOptions()
@@ -107,57 +99,28 @@ DEFAULT_GENERATE_READY_META_FILENAME = _DEFAULT_DRAFT_OPTIONS.generate_ready_met
 DEFAULT_DRAFT_META_FILENAME = "draft_meta.json"
 
 
+def build_prepare_config(
+    *,
+    prepare_path: Path | None,
+    output_dir: Path,
+    jobspec: Path | None,
+    mode: str,
+    page_limit: int | None,
+) -> PrepareCommandConfig:
+    return PrepareCommandConfig(
+        prepare_path=prepare_path,
+        output_dir=output_dir,
+        jobspec_path=jobspec,
+        mode=mode,
+        page_limit=page_limit,
+        policy_path=DEFAULT_PREPARE_POLICY_PATH,
+        default_jobspec_path=DEFAULT_JOBSPEC_PATH,
+        prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
+        slide_inputs_filename=SLIDE_INPUTS_FILENAME,
+    )
+
+
 load_dotenv()
-
-
-def _parse_log_level(value: str | None) -> int | None:
-    if value is None:
-        return None
-    candidate = value.strip()
-    if not candidate:
-        return None
-    lowered = candidate.lower()
-    if lowered in _LOG_LEVEL_ALIASES:
-        return _LOG_LEVEL_ALIASES[lowered]
-    try:
-        numeric_level = int(candidate)
-    except ValueError:
-        return None
-    return numeric_level
-
-
-def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int, str]]]:
-    """CLI 全体のログレベルを決定する。"""
-    deferred_logs: list[tuple[int, str]] = []
-
-    if debug:
-        return logging.DEBUG, deferred_logs
-    if verbose:
-        return logging.INFO, deferred_logs
-
-    env_level = os.getenv("LOG_LEVEL")
-    parsed_level = _parse_log_level(env_level)
-    if env_level:
-        if parsed_level is not None:
-            return parsed_level, deferred_logs
-        deferred_logs.append(
-            (
-                logging.WARNING,
-                f"LOG_LEVEL='{env_level}' を解釈できません。WARNING レベルにフォールバックします。",
-            )
-        )
-
-    if os.getenv("OPENAI_LOG"):
-        deferred_logs.append(
-            (
-                logging.WARNING,
-                "OPENAI_LOG 環境変数は廃止されました。LOG_LEVEL を利用してください。",
-            )
-        )
-
-    return logging.WARNING, deferred_logs
-
-
 @click.group(
     help="JSON 仕様から PPTX を生成する CLI",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -166,7 +129,7 @@ def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[in
 @click.option("--debug", is_flag=True, help="DEBUG レベルで詳細ログを出力する")
 def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
-    level, deferred_logs = _determine_log_level(verbose, debug)
+    level, deferred_logs = determine_log_level(verbose, debug)
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
@@ -390,16 +353,12 @@ def prepare(
 ) -> None:
     """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
-    config = PrepareCommandConfig(
+    config = build_prepare_config(
         prepare_path=prepare_path,
         output_dir=output_dir,
-        jobspec_path=jobspec,
+        jobspec=jobspec,
         mode=mode,
         page_limit=page_limit,
-        policy_path=DEFAULT_PREPARE_POLICY_PATH,
-        default_jobspec_path=DEFAULT_JOBSPEC_PATH,
-        prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
-        slide_inputs_filename=SLIDE_INPUTS_FILENAME,
     )
     try:
         result = run_prepare_command(config, dump_json=dump_json)

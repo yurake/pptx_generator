@@ -14,6 +14,65 @@ from pptx_generator.spec_loader import load_jobspec_from_path
 logger = logging.getLogger(__name__)
 
 
+LOG_LEVEL_ALIASES = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "warn": logging.WARNING,
+    "error": logging.ERROR,
+    "err": logging.ERROR,
+    "fatal": logging.CRITICAL,
+    "critical": logging.CRITICAL,
+}
+
+
+def parse_log_level(value: str | None) -> int | None:
+    if value is None:
+        return None
+    candidate = value.strip()
+    if not candidate:
+        return None
+    lowered = candidate.lower()
+    if lowered in LOG_LEVEL_ALIASES:
+        return LOG_LEVEL_ALIASES[lowered]
+    try:
+        numeric_level = int(candidate)
+    except ValueError:
+        return None
+    return numeric_level
+
+
+def determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int, str]]]:
+    deferred_logs: list[tuple[int, str]] = []
+
+    if debug:
+        return logging.DEBUG, deferred_logs
+    if verbose:
+        return logging.INFO, deferred_logs
+
+    env_level = os.getenv("LOG_LEVEL")
+    parsed_level = parse_log_level(env_level)
+    if env_level:
+        if parsed_level is not None:
+            return parsed_level, deferred_logs
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                f"LOG_LEVEL='{env_level}' を解釈できません。WARNING レベルにフォールバックします。",
+            )
+        )
+
+    if os.getenv("OPENAI_LOG"):
+        deferred_logs.append(
+            (
+                logging.WARNING,
+                "OPENAI_LOG 環境変数は廃止されました。LOG_LEVEL を利用してください。",
+            )
+        )
+
+    return logging.WARNING, deferred_logs
+
+
 def load_jobspec(path: Path) -> JobSpec:
     logger.info("Loading JobSpec from %s", path.resolve())
     return load_jobspec_from_path(path)

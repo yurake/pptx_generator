@@ -6,7 +6,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from pydantic import ValidationError
 
@@ -24,6 +24,7 @@ from pptx_generator.prepare import (
     PrepareSourceDocument,
     load_prepare_policy_set,
 )
+from pptx_generator.prepare.models import PrepareGenerationMeta
 from pptx_generator.prepare_ai import (
     PrepareAIOrchestrationError,
     PrepareAIOrchestrator,
@@ -96,7 +97,7 @@ def run_prepare_command(
 
     policy_set = _load_prepare_policy(config.policy_path)
 
-    static_context = _resolve_static_context(
+    static_context = resolve_static_context(
         jobspec_path=config.jobspec_path,
         default_jobspec_path=config.default_jobspec_path,
         prompts_dirname=config.prompts_dirname,
@@ -125,76 +126,19 @@ def run_prepare_command(
         exit_code = 6 if normalized_mode == "static" else 4
         raise PrepareCommandError(f"プレペアカードの生成に失敗しました: {exc}", exit_code=exit_code) from exc
 
-    output_dir = config.output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    cards_path = output_dir / "prepare_card.json"
-    log_path = output_dir / "prepare_log.json"
-    ai_log_path = output_dir / "prepare_ai_log.json"
-    meta_path = output_dir / "ai_generation_meta.json"
-    story_outline_path = output_dir / "prepare_story_outline.json"
-    audit_path = output_dir / "audit_log.json"
-
-    document.meta = dict(document.meta or {})
-    document.meta.update(
-        {
-            "prepare_card_path": _relativize(cards_path, output_dir),
-            "prepare_log_path": _relativize(log_path, output_dir),
-            "prepare_ai_log_path": _relativize(ai_log_path, output_dir),
-            "ai_generation_meta_path": _relativize(meta_path, output_dir),
-            "prepare_story_outline_path": _relativize(story_outline_path, output_dir),
-            "prepare_audit_log_path": _relativize(audit_path, output_dir),
-        }
-    )
-
-    dump_json(cards_path, document.model_dump(mode="json", exclude_none=True))
-    dump_json(log_path, [])
-    dump_json(
-        ai_log_path,
-        [record.model_dump(mode="json", exclude_none=True) for record in ai_logs],
-    )
-    dump_json(meta_path, meta.model_dump(mode="json", exclude_none=True))
-    dump_json(story_outline_path, _build_prepare_story_outline(document))
-
-    audit_payload: dict[str, Any] = {
-        "prepare_normalization": {
-            "generated_at": meta.generated_at.isoformat(),
-            "policy_id": meta.policy_id,
-            "input_hash": meta.input_hash,
-            "mode": meta.mode,
-            "outputs": {
-                "prepare_card": str(cards_path.resolve()),
-                "prepare_log": str(log_path.resolve()),
-                "prepare_ai_log": str(ai_log_path.resolve()),
-                "ai_generation_meta": str(meta_path.resolve()),
-                "prepare_story_outline": str(story_outline_path.resolve()),
-            },
-            "statistics": meta.statistics,
-        }
-    }
-    if static_context.template_spec_path is not None:
-        audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(
-            static_context.template_spec_path
-        )
-    if static_context.blueprint_ref is not None:
-        audit_payload["prepare_normalization"]["blueprint"] = static_context.blueprint_ref
-    if meta.slot_coverage:
-        audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
-    dump_json(audit_path, audit_payload)
-
-    return PrepareCommandResult(
-        cards_path=cards_path,
-        log_path=log_path,
-        ai_log_path=ai_log_path,
-        meta_path=meta_path,
-        story_outline_path=story_outline_path,
-        audit_path=audit_path,
+    artifacts = PrepareCommandArtifacts.initialize(config.output_dir)
+    return artifacts.write_outputs(
+        document=document,
+        meta=meta,
+        ai_logs=ai_logs,
+        dump_json=dump_json,
+        static_context=static_context,
         messages=static_context.messages,
     )
 
 
 @dataclass(slots=True)
-class _StaticPrepareContext:
+class PrepareStaticContext:
     blueprint_spec: TemplateSpec | None
     blueprint_ref: dict[str, str] | None
     template_spec_path: Path | None
@@ -205,7 +149,98 @@ class _StaticPrepareContext:
     messages: list[str]
 
 
-def _resolve_static_context(
+@dataclass(slots=True)
+class PrepareCommandArtifacts:
+    output_dir: Path
+    cards_path: Path
+    log_path: Path
+    ai_log_path: Path
+    meta_path: Path
+    story_outline_path: Path
+    audit_path: Path
+
+    @classmethod
+    def initialize(cls, output_dir: Path) -> "PrepareCommandArtifacts":
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return cls(
+            output_dir=output_dir,
+            cards_path=output_dir / "prepare_card.json",
+            log_path=output_dir / "prepare_log.json",
+            ai_log_path=output_dir / "prepare_ai_log.json",
+            meta_path=output_dir / "ai_generation_meta.json",
+            story_outline_path=output_dir / "prepare_story_outline.json",
+            audit_path=output_dir / "audit_log.json",
+        )
+
+    def write_outputs(
+        self,
+        *,
+        document: PrepareDocument,
+        meta: PrepareGenerationMeta,
+        ai_logs: Sequence[Any],
+        dump_json: Callable[[Path, object], None],
+        static_context: PrepareStaticContext,
+        messages: list[str],
+    ) -> PrepareCommandResult:
+        document.meta = dict(document.meta or {})
+        document.meta.update(
+            {
+                "prepare_card_path": _relativize(self.cards_path, self.output_dir),
+                "prepare_log_path": _relativize(self.log_path, self.output_dir),
+                "prepare_ai_log_path": _relativize(self.ai_log_path, self.output_dir),
+                "ai_generation_meta_path": _relativize(self.meta_path, self.output_dir),
+                "prepare_story_outline_path": _relativize(self.story_outline_path, self.output_dir),
+                "prepare_audit_log_path": _relativize(self.audit_path, self.output_dir),
+            }
+        )
+
+        dump_json(self.cards_path, document.model_dump(mode="json", exclude_none=True))
+        dump_json(self.log_path, [])
+        dump_json(
+            self.ai_log_path,
+            [record.model_dump(mode="json", exclude_none=True) for record in ai_logs],
+        )
+        dump_json(self.meta_path, meta.model_dump(mode="json", exclude_none=True))
+        dump_json(self.story_outline_path, _build_prepare_story_outline(document))
+
+        audit_payload: dict[str, Any] = {
+            "prepare_normalization": {
+                "generated_at": meta.generated_at.isoformat(),
+                "policy_id": meta.policy_id,
+                "input_hash": meta.input_hash,
+                "mode": meta.mode,
+                "outputs": {
+                    "prepare_card": str(self.cards_path.resolve()),
+                    "prepare_log": str(self.log_path.resolve()),
+                    "prepare_ai_log": str(self.ai_log_path.resolve()),
+                    "ai_generation_meta": str(self.meta_path.resolve()),
+                    "prepare_story_outline": str(self.story_outline_path.resolve()),
+                },
+                "statistics": meta.statistics,
+            }
+        }
+        if static_context.template_spec_path is not None:
+            audit_payload["prepare_normalization"]["outputs"]["template_spec"] = str(
+                static_context.template_spec_path
+            )
+        if static_context.blueprint_ref is not None:
+            audit_payload["prepare_normalization"]["blueprint"] = static_context.blueprint_ref
+        if meta.slot_coverage:
+            audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
+        dump_json(self.audit_path, audit_payload)
+
+        return PrepareCommandResult(
+            cards_path=self.cards_path,
+            log_path=self.log_path,
+            ai_log_path=self.ai_log_path,
+            meta_path=self.meta_path,
+            story_outline_path=self.story_outline_path,
+            audit_path=self.audit_path,
+            messages=messages,
+        )
+
+
+def resolve_static_context(
     *,
     jobspec_path: Path | None,
     default_jobspec_path: Path,
@@ -213,9 +248,9 @@ def _resolve_static_context(
     slide_inputs_filename: Path,
     mode: str,
     prepare_path: Path | None,
-) -> _StaticPrepareContext:
+) -> PrepareStaticContext:
     if mode != "static":
-        return _StaticPrepareContext(
+        return PrepareStaticContext(
             blueprint_spec=None,
             blueprint_ref=None,
             template_spec_path=None,
@@ -274,7 +309,7 @@ def _resolve_static_context(
         "hash": f"sha256:{blueprint_hash}",
     }
 
-    prompt_overrides = _load_prompt_overrides(
+    prompt_overrides = load_prompt_overrides(
         prompts_dir=template_spec_path.parent / prompts_dirname,
         blueprint=blueprint_spec.blueprint,
     )
@@ -318,7 +353,7 @@ def _resolve_static_context(
             exit_code=2,
         )
 
-    return _StaticPrepareContext(
+    return PrepareStaticContext(
         blueprint_spec=blueprint_spec,
         blueprint_ref=blueprint_ref,
         template_spec_path=template_spec_path,
@@ -368,7 +403,7 @@ def _load_template_spec(path: Path) -> TemplateSpec:
         raise PrepareCommandError(f"template_spec の検証に失敗しました: {exc}", exit_code=2) from exc
 
 
-def _load_prompt_overrides(
+def load_prompt_overrides(
     *,
     prompts_dir: Path,
     blueprint: TemplateBlueprint,
@@ -404,6 +439,12 @@ def _load_prompt_overrides(
         overrides.append(override)
 
     return overrides
+
+
+_load_prompt_overrides = load_prompt_overrides
+
+
+_resolve_static_context = resolve_static_context
 
 
 def _extract_prompt_instructions(path: Path) -> str:

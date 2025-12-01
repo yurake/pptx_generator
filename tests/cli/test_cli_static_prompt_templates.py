@@ -23,7 +23,7 @@ from pptx_generator.cli_handlers.template_extraction import (
     _ensure_slide_inputs_manifest,
     run_template_extraction,
 )
-from pptx_generator.cli_handlers.prepare import _load_prompt_overrides
+from pptx_generator.cli_handlers.prepare import load_prompt_overrides
 from pptx_generator.models import (
     JobSpecScaffold,
     JobSpecScaffoldMeta,
@@ -163,7 +163,7 @@ def test_load_prompt_overrides_reads_user_section(tmp_path) -> None:
     )
 
     template_spec = _build_static_template_spec()
-    overrides = _load_prompt_overrides(prompts_dir=prompts_dir, blueprint=template_spec.blueprint)
+    overrides = load_prompt_overrides(prompts_dir=prompts_dir, blueprint=template_spec.blueprint)
 
     assert overrides, "user-editable セクションを編集すると override が検出される"
     assert overrides[0].instructions == "- 章構成に沿って3点まとめる"
