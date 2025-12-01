@@ -126,60 +126,73 @@ class PrepareCard(BaseModel):
         return None
 
     def iter_body_text(self) -> Iterable[str]:
-        def _yield_segments(value: str) -> Iterable[str]:
-            if "\n" in value:
-                lines = value.splitlines()
-            else:
-                lines = [value]
-            for line in lines:
-                chunk = line.strip()
-                if not chunk:
-                    continue
-                if len(chunk) <= 200:
-                    yield chunk
-                    continue
-                for segment in textwrap.wrap(
-                    chunk, width=200, drop_whitespace=True, break_long_words=True
-                ):
-                    segment_stripped = segment.strip()
-                    if segment_stripped:
-                        yield segment_stripped
-
         for block in self.content.body:
-            if block.text:
-                text = block.text.strip()
-                if text:
-                    for segment in _yield_segments(text):
-                        yield segment
-            if block.data:
-                items = block.data.get("items")
-                if isinstance(items, list):
-                    for item in items:
-                        if isinstance(item, str) and item.strip():
-                            for segment in _yield_segments(item):
-                                yield segment
-                        elif isinstance(item, dict):
-                            line = str(item.get("text") or "").strip()
-                            if line:
-                                level_raw = item.get("level", 0)
-                                try:
-                                    level = max(int(level_raw), 0)
-                                except (TypeError, ValueError):
-                                    level = 0
-                                indent = "  " * level
-                                for segment in _yield_segments(line):
-                                    yield f"{indent}{segment}"
-            if block.rows:
-                for row in block.rows:
-                    row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
-                    if row_text:
-                        for segment in _yield_segments(row_text):
-                            yield segment
-            if block.description:
-                desc = block.description.strip()
-                if desc:
-                    for segment in _yield_segments(desc):
-                        yield segment
+            yield from self._iter_block_text(block)
+            yield from self._iter_block_data(block)
+            yield from self._iter_block_rows(block)
+            yield from self._iter_block_description(block)
+
+    @staticmethod
+    def _yield_segments(value: str) -> Iterable[str]:
+        if "\n" in value:
+            lines = value.splitlines()
+        else:
+            lines = [value]
+        for line in lines:
+            chunk = line.strip()
+            if not chunk:
+                continue
+            if len(chunk) <= 200:
+                yield chunk
+                continue
+            for segment in textwrap.wrap(
+                chunk, width=200, drop_whitespace=True, break_long_words=True
+            ):
+                segment_stripped = segment.strip()
+                if segment_stripped:
+                    yield segment_stripped
+
+    def _iter_block_text(self, block: PrepareBodyBlock) -> Iterable[str]:
+        text = (block.text or "").strip() if block.text else ""
+        if not text:
+            return []
+        return self._yield_segments(text)
+
+    def _iter_block_data(self, block: PrepareBodyBlock) -> Iterable[str]:
+        items = block.data.get("items") if isinstance(block.data, dict) else None
+        if not isinstance(items, list):
+            return []
+
+        for item in items:
+            if isinstance(item, str) and item.strip():
+                yield from self._yield_segments(item)
+            elif isinstance(item, dict):
+                line = str(item.get("text") or "").strip()
+                if not line:
+                    continue
+                level_raw = item.get("level", 0)
+                try:
+                    level = max(int(level_raw), 0)
+                except (TypeError, ValueError):
+                    level = 0
+                indent = "  " * level
+                for segment in self._yield_segments(line):
+                    yield f"{indent}{segment}"
+
+    def _iter_block_rows(self, block: PrepareBodyBlock) -> Iterable[str]:
+        if not isinstance(block.rows, list):
+            return []
+
+        for row in block.rows:
+            row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
+            if row_text:
+                yield from self._yield_segments(row_text)
+
+    def _iter_block_description(self, block: PrepareBodyBlock) -> Iterable[str]:
+        desc = (block.description or "").strip() if block.description else ""
+        if not desc:
+            return []
+        return self._yield_segments(desc)
 
     def notes_text(self) -> list[str]:
         return [note.text.strip() for note in self.content.notes if note.text.strip()]
