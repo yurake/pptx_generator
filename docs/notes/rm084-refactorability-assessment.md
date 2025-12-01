@@ -118,3 +118,7 @@
 
 ## 今後の検討候補（DraftStructuring 以外）
 - 2025-11-30 時点で追加の優先事項なし。新たな要件が発生した際に本メモへ追記する。
+
+## 2025-12-01 CLI ハンドラ再編メモ
+- `gen`/`compose`/`mapping`/`template`/`tpl-extract`/`layout-validate` を `cli_handlers/{rendering,compose,mapping,template_commands,layout_validation}.py` へ移行し、`cli.py` から旧 `_run_*` ラッパーを削除。テストは新モジュールへ monkeypatch 先を更新済み。
+- 新設ハンドラ間の依存（特に `compose`→`mapping`）は `TemplateStylePayload` や default ファイル名を共通化する方向で整理。今後は `prepare`/`tpl-release` の委譲と `cli.py` 内に残る共通関数の移設を検討する。

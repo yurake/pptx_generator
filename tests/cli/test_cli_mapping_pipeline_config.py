@@ -4,7 +4,7 @@ import json
 from types import SimpleNamespace
 from typing import cast
 
-import pptx_generator.cli as cli
+import pptx_generator.cli_handlers.mapping as mapping
 from pptx_generator.models import (GenerateReadyDocument, GenerateReadyMeta,
                                    TemplateStyle)
 from pptx_generator.pipeline import PipelineContext
@@ -12,12 +12,12 @@ from pptx_generator.pipeline.refiner import RefinerOptions
 from pptx_generator.settings import RulesConfig
 
 
-def _make_params(tmp_path) -> cli.MappingPipelineConfig:
-    style_payload = cli.TemplateStylePayload(
+def _make_params(tmp_path) -> mapping.MappingPipelineConfig:
+    style_payload = mapping.TemplateStylePayload(
         style=TemplateStyle.default(),
         artifact={"source": "test-template"},
     )
-    return cli.MappingPipelineConfig(
+    return mapping.MappingPipelineConfig(
         spec=cast(object, SimpleNamespace(slides=[], meta=None)),
         output_dir=tmp_path / "out",
         spec_source_path=tmp_path / "spec.json",
@@ -48,7 +48,7 @@ def test_run_mapping_pipeline_builds_context_from_config(monkeypatch, tmp_path):
             artifacts={"generate_ready_meta_path": str(meta_src)},
         )
 
-    monkeypatch.setattr(cli, "_run_draft_pipeline", fake_run_draft_pipeline)
+    monkeypatch.setattr(mapping, "run_draft_pipeline", fake_run_draft_pipeline)
 
     def fake_spec_validator(**kwargs):
         captured["validator_kwargs"] = kwargs
@@ -69,19 +69,23 @@ def test_run_mapping_pipeline_builds_context_from_config(monkeypatch, tmp_path):
         def execute(self, context: PipelineContext) -> None:
             context.add_artifact("runner_executed", True)
 
-    monkeypatch.setattr(cli, "SpecValidatorStep", fake_spec_validator)
-    monkeypatch.setattr(cli, "SimpleRefinerStep", fake_refiner)
-    monkeypatch.setattr(cli, "MappingStep", fake_mapping)
-    monkeypatch.setattr(cli, "PipelineRunner", DummyRunner)
+    monkeypatch.setattr(mapping, "SpecValidatorStep", fake_spec_validator)
+    monkeypatch.setattr(mapping, "SimpleRefinerStep", fake_refiner)
+    monkeypatch.setattr(mapping, "MappingStep", fake_mapping)
+    monkeypatch.setattr(mapping, "PipelineRunner", DummyRunner)
 
-    result = cli._run_mapping_pipeline(params=params)
+    result = mapping.run_mapping_pipeline(
+        params=params,
+        generate_ready_filename="generate_ready.json",
+        generate_ready_meta_filename="generate_ready_meta.json",
+    )
 
     assert result.workdir == params.output_dir
     assert result.artifacts["template_style"] == params.template_style.artifact
     assert result.artifacts["template_style_data"] == params.template_style.style
     assert result.artifacts["runner_executed"] is True
 
-    copied_meta = params.output_dir / cli.DEFAULT_GENERATE_READY_META_FILENAME
+    copied_meta = params.output_dir / "generate_ready_meta.json"
     assert copied_meta.exists()
 
     assert captured["draft_kwargs"]["require_prepare"] is True
@@ -100,8 +104,8 @@ def test_run_mapping_pipeline_static_pass_through(monkeypatch, tmp_path):
         def __init__(self, _steps):
             raise AssertionError("pipeline runner should not run for static output")
 
-    monkeypatch.setattr(cli, "_run_draft_pipeline", fail_run_draft_pipeline)
-    monkeypatch.setattr(cli, "PipelineRunner", FailRunner)
+    monkeypatch.setattr(mapping, "run_draft_pipeline", fail_run_draft_pipeline)
+    monkeypatch.setattr(mapping, "PipelineRunner", FailRunner)
 
     meta_src = tmp_path / "draft" / "generate_ready_meta.json"
     meta_src.parent.mkdir(parents=True, exist_ok=True)
@@ -124,7 +128,12 @@ def test_run_mapping_pipeline_static_pass_through(monkeypatch, tmp_path):
         },
     )
 
-    result = cli._run_mapping_pipeline(params=params, draft_context=draft_context)
+    result = mapping.run_mapping_pipeline(
+        params=params,
+        draft_context=draft_context,
+        generate_ready_filename="generate_ready.json",
+        generate_ready_meta_filename="generate_ready_meta.json",
+    )
 
     ready_artifact = result.artifacts["generate_ready"]
     assert ready_artifact.meta.template_path == str(params.template)
@@ -132,5 +141,5 @@ def test_run_mapping_pipeline_static_pass_through(monkeypatch, tmp_path):
     ready_path = params.output_dir / "generate_ready.json"
     assert ready_path.exists()
 
-    meta_path = params.output_dir / cli.DEFAULT_GENERATE_READY_META_FILENAME
+    meta_path = params.output_dir / "generate_ready_meta.json"
     assert meta_path.exists()

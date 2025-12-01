@@ -10,7 +10,13 @@ from typing import Optional
 import click
 
 from pptx_generator.generate_ready import generate_ready_to_jobspec
-from pptx_generator.models import GenerateReadyDocument, JobMeta, JobSpec, TemplateStyle
+from pptx_generator.models import (
+    GenerateReadyDocument,
+    JobMeta,
+    JobSpec,
+    SpecValidationError,
+    TemplateStyle,
+)
 from pptx_generator.pipeline import (
     DraftStructuringOptions,
     MappingOptions,
@@ -18,16 +24,25 @@ from pptx_generator.pipeline import (
     PipelineContext,
     PipelineRunner,
     PipelineStep,
+    PrepareNormalizationError,
     RefinerOptions,
     SimpleRefinerStep,
     SpecValidatorStep,
 )
 from pptx_generator.settings import RulesConfig
 
-from .common import dump_json
+from .common import (
+    dump_json,
+    load_jobspec,
+    resolve_layouts_path,
+    resolve_template_path,
+)
 from .outline import run_draft_pipeline
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_GENERATE_READY_FILENAME = "generate_ready.json"
+DEFAULT_GENERATE_READY_META_FILENAME = "generate_ready_meta.json"
 
 
 @dataclass(slots=True)
@@ -49,6 +64,37 @@ class MappingPipelineConfig:
     layouts: Path | None
     draft_output: Path
     template: Path | None
+
+
+@dataclass(slots=True)
+class MappingCommandConfig:
+    spec_path: Path
+    output_dir: Path
+    rules_path: Path
+    draft_output: Path
+    prepare_cards: Path
+    generate_ready_filename: str = DEFAULT_GENERATE_READY_FILENAME
+    generate_ready_meta_filename: str = DEFAULT_GENERATE_READY_META_FILENAME
+
+
+@dataclass(slots=True)
+class MappingCommandResult:
+    context: PipelineContext
+
+
+class MappingCommandError(Exception):
+    """mapping コマンド実行時の失敗を表す例外。"""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        exit_code: int,
+        errors: list[dict[str, object]] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
+        self.errors = errors
 
 
 def prepare_template_style(template: Path) -> TemplateStylePayload:
@@ -78,6 +124,63 @@ def build_refiner_options(
         if rules_config.max_bullet_level is not None
         else defaults.max_bullet_level
     )
+
+
+def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
+    try:
+        spec = load_jobspec(config.spec_path)
+    except SpecValidationError as exc:
+        raise MappingCommandError(
+            "スキーマ検証に失敗しました",
+            exit_code=2,
+            errors=exc.errors,
+        ) from exc
+
+    try:
+        resolved_template = resolve_template_path(spec=spec, spec_source=config.spec_path)
+    except ValueError as exc:
+        raise MappingCommandError(str(exc), exit_code=2) from exc
+
+    try:
+        resolved_layouts = resolve_layouts_path(spec=spec, spec_source=config.spec_path)
+    except ValueError as exc:
+        raise MappingCommandError(str(exc), exit_code=2) from exc
+
+    rules_config = RulesConfig.load(config.rules_path)
+    template_style_payload = prepare_template_style(resolved_template)
+    refiner_options = build_refiner_options(rules_config, template_style_payload.style)
+
+    pipeline_config = MappingPipelineConfig(
+        spec=spec,
+        output_dir=config.output_dir,
+        spec_source_path=config.spec_path,
+        rules_config=rules_config,
+        refiner_options=refiner_options,
+        template_style=template_style_payload,
+        prepare_cards=config.prepare_cards,
+        require_prepare=True,
+        layouts=resolved_layouts,
+        draft_output=config.draft_output,
+        template=resolved_template,
+    )
+
+    try:
+        context = run_mapping_pipeline(
+            params=pipeline_config,
+            generate_ready_filename=config.generate_ready_filename,
+            generate_ready_meta_filename=config.generate_ready_meta_filename,
+        )
+    except ValueError as exc:
+        raise MappingCommandError(str(exc), exit_code=2) from exc
+    except SpecValidationError as exc:
+        raise MappingCommandError("業務ルール検証に失敗しました", exit_code=3) from exc
+    except PrepareNormalizationError as exc:
+        raise MappingCommandError(f"プレペア成果物の読み込みに失敗しました: {exc}", exit_code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("マッピング実行中にエラーが発生しました")
+        raise MappingCommandError("マッピング実行中にエラーが発生しました", exit_code=1) from exc
+
+    return MappingCommandResult(context=context)
 
     return RefinerOptions(
         max_bullet_level=max_bullet_level,

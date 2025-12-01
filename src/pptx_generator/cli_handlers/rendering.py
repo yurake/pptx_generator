@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -12,15 +12,65 @@ import click
 
 from pptx_generator.generate_ready import generate_ready_to_jobspec
 from pptx_generator.models import GenerateReadyDocument, TemplateStyle
-from pptx_generator.pipeline import (AnalyzerOptions, MonitoringIntegrationOptions,
-                                     MonitoringIntegrationStep, PdfExportOptions,
-                                     PdfExportStep, PipelineContext, PipelineRunner,
-                                     PolisherOptions, PolisherStep, RenderingOptions,
-                                     RenderingAuditOptions, RenderingAuditStep,
-                                     SimpleAnalyzerStep, SimpleRendererStep)
+from pptx_generator.pipeline import (
+    AnalyzerOptions,
+    MonitoringIntegrationOptions,
+    MonitoringIntegrationStep,
+    PdfExportError,
+    PdfExportOptions,
+    PdfExportStep,
+    PipelineContext,
+    PipelineRunner,
+    PolisherError,
+    PolisherOptions,
+    PolisherStep,
+    RenderingOptions,
+    RenderingAuditOptions,
+    RenderingAuditStep,
+    SimpleAnalyzerStep,
+    SimpleRendererStep,
+)
 from pptx_generator.review_engine import AnalyzerReviewEngineAdapter
+from pptx_generator.settings import RulesConfig
+from pptx_generator.template_style import extract_template_style
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class GenerateCommandConfig:
+    generate_ready_path: Path
+    output_dir: Path
+    pptx_name: str
+    rules_path: Path
+    export_pdf: bool
+    pdf_mode: str
+    pdf_output: str
+    libreoffice_path: Optional[Path]
+    pdf_timeout: int
+    pdf_retries: int
+    polisher_toggle: bool | None
+    polisher_path: Optional[Path]
+    polisher_rules: Optional[Path]
+    polisher_timeout: Optional[int]
+    polisher_args: tuple[str, ...]
+    polisher_cwd: Optional[Path]
+    emit_structure_snapshot: bool
+
+
+@dataclass(slots=True)
+class GenerateCommandResult:
+    context: PipelineContext
+    audit_path: Path
+    review_engine_path: Path | None
+
+
+class GenerateCommandError(Exception):
+    """gen コマンドの実行失敗を表す例外。"""
+
+    def __init__(self, message: str, *, exit_code: int) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 def build_analyzer_options(
@@ -111,6 +161,133 @@ def build_polisher_options(
         timeout_sec=timeout_sec,
         arguments=arguments,
         working_dir=polisher_cwd,
+    )
+
+
+def prepare_template_style(template: Path) -> tuple[TemplateStyle, dict[str, object]]:
+    style, artifact = extract_template_style(template)
+    if artifact.get("source", {}).get("type") == "default":
+        error = artifact["source"].get("error")
+        if error:
+            click.echo(f"テンプレートスタイルの抽出に失敗しました: {error}", err=True)
+    return style, artifact
+
+
+def run_generate_command(config: GenerateCommandConfig) -> GenerateCommandResult:
+    if not config.export_pdf and config.pdf_mode != "both":
+        raise GenerateCommandError("--pdf-mode は --export-pdf と併用してください", exit_code=2)
+
+    try:
+        generate_ready = GenerateReadyDocument.parse_file(config.generate_ready_path)
+    except Exception as exc:  # noqa: BLE001
+        raise GenerateCommandError(
+            f"generate_ready.json の読み込みに失敗しました: {exc}",
+            exit_code=4,
+        ) from exc
+
+    template_path_value = generate_ready.meta.template_path
+    if not template_path_value:
+        raise GenerateCommandError(
+            "generate_ready.json に template_path が含まれていません。stage 4 を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
+            exit_code=2,
+        )
+
+    template_path = Path(template_path_value)
+    if not template_path.is_absolute():
+        candidate = (config.generate_ready_path.parent / template_path).resolve()
+        template_path = candidate if candidate.exists() else template_path
+    if not template_path.exists():
+        raise GenerateCommandError(
+            f"テンプレートファイルが見つかりません: {template_path}",
+            exit_code=4,
+        )
+
+    rules_config = RulesConfig.load(config.rules_path)
+    template_style, template_style_artifact = prepare_template_style(template_path)
+    analyzer_options = build_analyzer_options(
+        rules_config,
+        template_style,
+        emit_structure_snapshot=config.emit_structure_snapshot,
+    )
+    pdf_options = PdfExportOptions(
+        enabled=config.export_pdf,
+        mode=config.pdf_mode,
+        output_filename=config.pdf_output,
+        soffice_path=config.libreoffice_path,
+        timeout_sec=config.pdf_timeout,
+        max_retries=config.pdf_retries,
+    )
+    polisher_options = build_polisher_options(
+        rules_config,
+        polisher_toggle=config.polisher_toggle,
+        polisher_path=config.polisher_path,
+        polisher_rules=config.polisher_rules,
+        polisher_timeout=config.polisher_timeout,
+        polisher_args=config.polisher_args,
+        polisher_cwd=config.polisher_cwd,
+        rules_path=config.rules_path,
+    )
+
+    mapping_meta: dict[str, object] = {
+        "generate_ready_path": str(config.generate_ready_path),
+        "generate_ready_generated_at": generate_ready.meta.generated_at,
+        "template_version": generate_ready.meta.template_version,
+        "template_path": str(template_path),
+    }
+
+    base_artifacts: dict[str, object] = {
+        "generate_ready": generate_ready,
+        "generate_ready_path": str(config.generate_ready_path),
+        "mapping_meta": mapping_meta,
+    }
+
+    mapping_log_path = config.generate_ready_path.with_name("mapping_log.json")
+    if mapping_log_path.exists():
+        base_artifacts["mapping_log_path"] = str(mapping_log_path)
+        try:
+            mapping_log = json.loads(mapping_log_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("mapping_log.json の読み込みに失敗しました: %s", exc)
+        else:
+            meta_payload = mapping_log.get("meta")
+            if isinstance(meta_payload, dict):
+                mapping_meta.update(meta_payload)
+    fallback_path = config.generate_ready_path.with_name("fallback_report.json")
+    if fallback_path.exists():
+        base_artifacts["mapping_fallback_report_path"] = str(fallback_path)
+
+    try:
+        render_context = run_render_pipeline(
+            generate_ready=generate_ready,
+            generate_ready_path=config.generate_ready_path,
+            output_dir=config.output_dir,
+            template=template_path,
+            pptx_name=config.pptx_name,
+            template_style=template_style,
+            template_style_artifact=template_style_artifact,
+            analyzer_options=analyzer_options,
+            pdf_options=pdf_options,
+            polisher_options=polisher_options,
+            base_artifacts=base_artifacts,
+        )
+    except PdfExportError as exc:
+        raise GenerateCommandError(f"PDF 出力に失敗しました: {exc}", exit_code=5) from exc
+    except PolisherError as exc:
+        raise GenerateCommandError(f"Polisher の実行に失敗しました: {exc}", exit_code=6) from exc
+    except FileNotFoundError as exc:
+        raise GenerateCommandError(f"ファイルが見つかりません: {exc}", exit_code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("パイプライン実行中にエラーが発生しました")
+        raise GenerateCommandError("パイプライン実行中にエラーが発生しました", exit_code=1) from exc
+
+    analysis_path = render_context.artifacts.get("analysis_path")
+    review_engine_path = emit_review_engine_analysis(render_context, analysis_path)
+    audit_path = write_audit_log(render_context)
+
+    return GenerateCommandResult(
+        context=render_context,
+        audit_path=audit_path,
+        review_engine_path=review_engine_path,
     )
 
 

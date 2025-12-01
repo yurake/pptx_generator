@@ -26,9 +26,11 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 2025-12-01 Codex CLI: `outline`/`mapping` コマンドのハンドラ分離と `cli_handlers/{common,mapping,outline}.py` 作成、`cli.py` は委譲と互換ラッパ維持に整理。
     - 2025-12-01 Codex CLI: `tpl_release` とリリース関連ヘルパーを `cli_handlers/template_release.py` へ移管し、`template`/`tpl-release` コマンドは薄い委譲に刷新。
     - 2025-12-01 Codex CLI: テンプレート抽出ロジックを `cli_handlers/template_extraction.py` へ移動し、`template`/`tpl-extract` から委譲する構成に変更。
+    - 2025-12-01 Codex CLI: `gen`/`compose`/`mapping`/`template`/`tpl-extract`/`layout-validate` を新設ハンドラ（`cli_handlers/{rendering,compose,mapping,template_commands,layout_validation}.py`）へ移管し、`cli.py` から互換ラッパを削除。対応テストの参照先も新モジュールに更新。
 - [ ] テスト・検証
   - メモ: 実施テストと結果を記載する。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_outline_generation.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` いずれも成功。
+    - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_mapping_pipeline_config.py tests/integration/test_cli_generate_pipeline_flow.py` 成功（委譲モジュール化後の回帰確認）。
 - [ ] ドキュメント更新
   - メモ: 変更点の影響を整理し、不要の場合も理由を記載する。
   - [ ] docs/roadmap 配下

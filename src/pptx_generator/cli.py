@@ -7,7 +7,6 @@ import logging
 import os
 import re
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -15,7 +14,6 @@ import click
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-from .branding_extractor import extract_branding_config
 from .cli_handlers import (
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
@@ -27,64 +25,60 @@ from .cli_handlers import (
     run_prepare_command,
     slugify_prompt_layout,
 )
+from .cli_handlers.common import dump_json, log_current_llm_provider
+from .cli_handlers.compose import (
+    ComposeCommandConfig,
+    ComposeCommandError,
+    run_compose_command,
+)
+from .cli_handlers.layout_validation import (
+    LayoutValidateCommandConfig,
+    LayoutValidateCommandError,
+    echo_layout_validation_result,
+    run_layout_validate_command,
+)
+from .cli_handlers.mapping import (
+    MappingCommandConfig,
+    MappingCommandError,
+    echo_mapping_outputs,
+    run_mapping_command,
+)
 from .draft_intel import load_return_reasons
-from .layout_validation import (LayoutValidationError, LayoutValidationOptions,
-                                LayoutValidationResult, LayoutValidationSuite)
-from .models import (ContentApprovalDocument, DraftDocument, GenerateReadyDocument,
-                     JobSpec, JobSpecScaffold, SpecValidationError,
-                     TemplateBlueprint, TemplateBlueprintSlide, TemplateSpec,
-                     TemplateStyle)
-from .pipeline import (AnalyzerOptions, ContentApprovalOptions,
-                       ContentApprovalStep, DraftStructuringOptions,
-                       DraftStructuringStep, MonitoringIntegrationOptions, MonitoringIntegrationStep,
-                       PdfExportError, PdfExportOptions, PdfExportStep,
+from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
+                     JobSpecScaffold, SpecValidationError, TemplateBlueprint,
+                     TemplateBlueprintSlide, TemplateSpec, TemplateStyle)
+from .pipeline import (ContentApprovalOptions, ContentApprovalStep,
+                       DraftStructuringOptions, DraftStructuringStep,
+                       MonitoringIntegrationOptions, MonitoringIntegrationStep,
                        PipelineContext, PipelineRunner, PipelineStep,
-                       PolisherError, PolisherOptions, PolisherStep,
                        PrepareNormalizationError, PrepareNormalizationOptions,
-                       PrepareNormalizationStep, RefinerOptions,
-                       RenderingAuditOptions, RenderingAuditStep,
-                       RenderingOptions, SimpleAnalyzerStep, SimpleRefinerStep,
-                       SimpleRendererStep, SpecValidatorStep)
+                       PrepareNormalizationStep, RenderingAuditOptions,
+                       RenderingAuditStep, RenderingOptions,
+                       SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
+                       SpecValidatorStep)
 from .pipeline.draft_structuring import DraftStructuringError
 from .settings import RulesConfig
-from .cli_handlers.common import dump_json, load_jobspec, resolve_layouts_path
-from .cli_handlers.mapping import (
-    MappingPipelineConfig,
-    TemplateStylePayload,
-    build_refiner_options,
-    echo_mapping_outputs,
-    prepare_template_style,
-    run_mapping_pipeline,
-)
 from .cli_handlers.outline import (
     OutlineCommandConfig,
-    OutlineResult,
-    execute_outline,
-    print_outline_result,
-    run_draft_pipeline,
     run_outline_command,
 )
-from .cli_handlers.template_release import (
-    TemplateReleaseExecutionResult,
-    echo_template_release_result,
-    resolve_template_id,
-    run_template_release,
+from .cli_handlers.rendering import (
+    GenerateCommandConfig,
+    GenerateCommandError,
+    echo_render_outputs,
+    run_generate_command,
+)
+from .cli_handlers.template_commands import (
+    TemplateCommandConfig,
+    TemplateCommandError,
+    TemplateExtractCommandConfig,
+    run_template_command,
+    run_template_extract_command,
 )
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
-    TemplateExtractionResult,
-    echo_template_extraction_result,
-    run_template_extraction,
 )
-from .cli_handlers.rendering import (
-    build_analyzer_options,
-    build_polisher_options,
-    echo_render_outputs,
-    emit_review_engine_analysis,
-    run_render_pipeline,
-    write_audit_log,
-)
-from .template_style import extract_template_style
+from .cli_handlers.template_release import echo_template_release_result, run_template_release
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
@@ -241,15 +235,6 @@ def _configure_llm_logger() -> None:
     llm_logger.propagate = False
 
 
-def _log_current_llm_provider(context: str) -> None:
-    provider_env = os.getenv("PPTX_LLM_PROVIDER")
-    provider = provider_env.strip().lower() if provider_env else "mock"
-    source = "env" if provider_env else "default"
-    logging.getLogger("pptx_generator.cli.llm").info(
-        "LLM provider (%s): %s (source=%s)", context, provider, source
-    )
-
-
 def _configure_file_logging() -> None:
     log_dir = Path("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -265,15 +250,6 @@ def _configure_file_logging() -> None:
             "%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
-
-
-def _prepare_template_style(template: Path) -> tuple[TemplateStyle, dict[str, object]]:
-    style, artifact = extract_template_style(template)
-    if artifact.get("source", {}).get("type") == "default":
-        error = artifact["source"].get("error")
-        if error:
-            click.echo(f"テンプレートスタイルの抽出に失敗しました: {error}", err=True)
-    return style, artifact
 
 
 @click.group(
@@ -296,98 +272,6 @@ def app(verbose: bool, debug: bool) -> None:
         cli_logger.log(message_level, message)
     _configure_llm_logger()
     _configure_file_logging()
-def _resolve_template_path(
-    *,
-    spec: JobSpec,
-    spec_source: Path,
-) -> Path:
-    """ジョブスペックとオプションからテンプレートパスを決定する。"""
-
-    template_path_value: str | None = None
-    meta = getattr(spec, "meta", None)
-    if meta is not None:
-        template_path_value = getattr(meta, "template_path", None)
-        if template_path_value is None and isinstance(meta, BaseModel):
-            extra = getattr(meta, "model_extra", None)
-            if isinstance(extra, dict):
-                template_path_value = extra.get("template_path")
-        if template_path_value is None and isinstance(meta, dict):
-            template_path_value = meta.get("template_path")
-
-    if not template_path_value:
-        try:
-            raw_spec = json.loads(spec_source.read_text(encoding="utf-8"))
-            template_path_value = raw_spec.get("meta", {}).get("template_path")
-        except Exception:  # noqa: BLE001
-            template_path_value = None
-
-    if not template_path_value:
-        raise ValueError(
-            "jobspec.meta.template_path にテンプレートパスを設定してください。"
-        )
-
-    candidate_raw = Path(template_path_value)
-    if candidate_raw.is_absolute():
-        resolved = candidate_raw
-    else:
-        spec_relative = (spec_source.parent / candidate_raw).resolve()
-        cwd_relative = (Path.cwd() / candidate_raw).resolve()
-        if spec_relative.exists():
-            resolved = spec_relative
-        elif cwd_relative.exists():
-            resolved = cwd_relative
-        else:
-            raise ValueError(
-                "jobspec.meta.template_path にテンプレートパスを設定してください。"
-                f"（確認したパス: {spec_relative}, {cwd_relative}）"
-            )
-    if not resolved.exists():
-        raise ValueError(f"テンプレートファイルが見つかりません: {resolved}")
-    return resolved
-
-
-def _build_analyzer_options(
-    rules_config: RulesConfig,
-   template_style: TemplateStyle,
-   emit_structure_snapshot: bool,
-) -> AnalyzerOptions:
-    return build_analyzer_options(
-        rules_config,
-        template_style,
-        emit_structure_snapshot=emit_structure_snapshot,
-    )
-
-
-def _build_refiner_options(
-    rules_config: RulesConfig,
-    template_style: TemplateStyle,
-) -> RefinerOptions:
-    return build_refiner_options(rules_config, template_style)
-
-
-def _build_polisher_options(
-    rules_config: RulesConfig,
-    *,
-    polisher_toggle: bool | None,
-    polisher_path: Optional[Path],
-    polisher_rules: Optional[Path],
-    polisher_timeout: Optional[int],
-    polisher_args: tuple[str, ...],
-    polisher_cwd: Optional[Path],
-    rules_path: Path,
-) -> PolisherOptions:
-    return build_polisher_options(
-        rules_config,
-        polisher_toggle=polisher_toggle,
-        polisher_path=polisher_path,
-        polisher_rules=polisher_rules,
-        polisher_timeout=polisher_timeout,
-        polisher_args=polisher_args,
-        polisher_cwd=polisher_cwd,
-        rules_path=rules_path,
-    )
-
-
 
 
 def _run_content_approval_pipeline(
@@ -659,116 +543,34 @@ def gen(  # noqa: PLR0913
 ) -> None:
     """generate_ready.json から PPTX / PDF / 監査ログを生成する。"""
 
-    if not export_pdf and pdf_mode != "both":
-        click.echo("--pdf-mode は --export-pdf と併用してください", err=True)
-        raise click.exceptions.Exit(code=2)
-
-    try:
-        generate_ready = GenerateReadyDocument.parse_file(generate_ready_path)
-    except Exception as exc:  # noqa: BLE001
-        click.echo(f"generate_ready.json の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-
-    template_path_str = generate_ready.meta.template_path
-    if not template_path_str:
-        click.echo(
-            "generate_ready.json に template_path が含まれていません。stage 4 を最新仕様で再実行するか、テンプレート情報を埋め込んでください。",
-            err=True,
-        )
-        raise click.exceptions.Exit(code=2)
-
-    template_path = Path(template_path_str)
-    if not template_path.is_absolute():
-        candidate = (generate_ready_path.parent / template_path).resolve()
-        template_path = candidate if candidate.exists() else template_path
-    if not template_path.exists():
-        click.echo(f"テンプレートファイルが見つかりません: {template_path}", err=True)
-        raise click.exceptions.Exit(code=4)
-
-    rules_config = RulesConfig.load(rules)
-    template_style, template_style_artifact = _prepare_template_style(template_path)
-    analyzer_options = _build_analyzer_options(
-        rules_config, template_style, emit_structure_snapshot
-    )
-    pdf_options = PdfExportOptions(
-        enabled=export_pdf,
-        mode=pdf_mode,
-        output_filename=pdf_output,
-        soffice_path=libreoffice_path,
-        timeout_sec=pdf_timeout,
-        max_retries=pdf_retries,
-    )
-    polisher_options = _build_polisher_options(
-        rules_config,
+    config = GenerateCommandConfig(
+        generate_ready_path=generate_ready_path,
+        output_dir=output_dir,
+        pptx_name=pptx_name,
+        rules_path=rules,
+        export_pdf=export_pdf,
+        pdf_mode=pdf_mode,
+        pdf_output=pdf_output,
+        libreoffice_path=libreoffice_path,
+        pdf_timeout=pdf_timeout,
+        pdf_retries=pdf_retries,
         polisher_toggle=polisher_toggle,
         polisher_path=polisher_path,
         polisher_rules=polisher_rules,
         polisher_timeout=polisher_timeout,
         polisher_args=polisher_args,
         polisher_cwd=polisher_cwd,
-        rules_path=rules,
+        emit_structure_snapshot=emit_structure_snapshot,
     )
-
-    mapping_meta: dict[str, object] = {
-        "generate_ready_path": str(generate_ready_path),
-        "generate_ready_generated_at": generate_ready.meta.generated_at,
-        "template_version": generate_ready.meta.template_version,
-        "template_path": str(template_path),
-    }
-
-    base_artifacts: dict[str, object] = {
-        "generate_ready": generate_ready,
-        "generate_ready_path": str(generate_ready_path),
-        "mapping_meta": mapping_meta,
-    }
-
-    mapping_log_path = generate_ready_path.with_name("mapping_log.json")
-    if mapping_log_path.exists():
-        base_artifacts["mapping_log_path"] = str(mapping_log_path)
-        try:
-            mapping_log = json.loads(
-                mapping_log_path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("mapping_log.json の読み込みに失敗しました: %s", exc)
-        else:
-            meta_payload = mapping_log.get("meta")
-            if isinstance(meta_payload, dict):
-                mapping_meta.update(meta_payload)
-    fallback_path = generate_ready_path.with_name("fallback_report.json")
-    if fallback_path.exists():
-        base_artifacts["mapping_fallback_report_path"] = str(fallback_path)
-
     try:
-        render_context = _run_render_pipeline(
-            generate_ready=generate_ready,
-            generate_ready_path=generate_ready_path,
-            output_dir=output_dir,
-            template=template_path,
-            pptx_name=pptx_name,
-            template_style=template_style,
-            template_style_artifact=template_style_artifact,
-            analyzer_options=analyzer_options,
-            pdf_options=pdf_options,
-            polisher_options=polisher_options,
-            base_artifacts=base_artifacts,
-        )
-    except PdfExportError as exc:
-        click.echo(f"PDF 出力に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=5) from exc
-    except PolisherError as exc:
-        click.echo(f"Polisher の実行に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("パイプライン実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
+        result = run_generate_command(config)
+    except GenerateCommandError as exc:
+        message = str(exc)
+        if message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-    analysis_path = render_context.artifacts.get("analysis_path")
-    _emit_review_engine_analysis(render_context, analysis_path)
-    audit_path = _write_audit_log(render_context)
-    _echo_render_outputs(render_context, audit_path)
+    echo_render_outputs(result.context, result.audit_path)
 
 
 @app.command("prepare")
@@ -1076,116 +878,35 @@ def compose(  # noqa: PLR0913
 ) -> None:
     """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
-    try:
-        spec = _load_jobspec(spec_path)
-    except SpecValidationError as exc:
-        _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=2) from exc
-
-    try:
-        resolved_template = _resolve_template_path(
-            spec=spec,
-            spec_source=spec_path,
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-    try:
-        resolved_layouts = _resolve_layouts_path(
-            spec=spec,
-            spec_source=spec_path,
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-
-    templates_dir = chapter_templates_dir if chapter_templates_dir.exists() else None
-
-    try:
-        outline_result = _execute_outline(
-            spec=spec,
-            layouts=resolved_layouts,
-            output_dir=draft_output,
-            spec_source_path=spec_path,
-            target_length=target_length,
-            structure_pattern=structure_pattern,
-            appendix_limit=appendix_limit,
-            chapter_templates_dir=templates_dir,
-            chapter_template=chapter_template,
-            analysis_summary_path=analysis_summary_path,
-            prepare_cards=prepare_cards,
-            require_prepare=True,
-            draft_filename=DEFAULT_DRAFT_FILENAME,
-            approved_filename=DEFAULT_APPROVED_FILENAME,
-            log_filename=DEFAULT_DRAFT_LOG_FILENAME,
-            generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
-            generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
-            meta_filename=DEFAULT_DRAFT_META_FILENAME,
-        )
-    except PrepareNormalizationError as exc:
-        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except DraftStructuringError as exc:
-        click.echo(f"ドラフト構成の生成に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("compose 実行中にアウトライン stage でエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-
-    _print_outline_result(outline_result, show_layout_reasons=show_layout_reasons)
-
-    rules_config = RulesConfig.load(rules)
-    style, artifact = _prepare_template_style(resolved_template)
-    template_style_payload = TemplateStylePayload(style=style, artifact=artifact)
-    refiner_options = _build_refiner_options(rules_config, template_style_payload.style)
-
-    mapping_params = MappingPipelineConfig(
-        spec=spec,
-        output_dir=output_dir,
-        spec_source_path=spec_path,
-        rules_config=rules_config,
-        refiner_options=refiner_options,
-        template_style=template_style_payload,
-        prepare_cards=prepare_cards,
-        require_prepare=True,
-        layouts=resolved_layouts,
+    config = ComposeCommandConfig(
+        spec_path=spec_path,
         draft_output=draft_output,
-        template=resolved_template,
+        target_length=target_length,
+        structure_pattern=structure_pattern,
+        appendix_limit=appendix_limit,
+        chapter_templates_dir=chapter_templates_dir,
+        chapter_template=chapter_template,
+        analysis_summary_path=analysis_summary_path,
+        show_layout_reasons=show_layout_reasons,
+        output_dir=output_dir,
+        rules_path=rules,
+        prepare_cards=prepare_cards,
+        draft_filename=DEFAULT_DRAFT_FILENAME,
+        approved_filename=DEFAULT_APPROVED_FILENAME,
+        log_filename=DEFAULT_DRAFT_LOG_FILENAME,
+        meta_filename=DEFAULT_DRAFT_META_FILENAME,
+        generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
+        generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
     )
-
     try:
-        mapping_context = _run_mapping_pipeline(
-            params=mapping_params,
-            draft_context=outline_result.context,
-            draft_options=DraftStructuringOptions(
-                layouts_path=resolved_layouts,
-                output_dir=draft_output,
-                spec_source_path=spec_path,
-                target_length=target_length,
-                structure_pattern=structure_pattern,
-                appendix_limit=appendix_limit,
-                chapter_templates_dir=chapter_templates_dir,
-                chapter_template_id=chapter_template,
-                analysis_summary_path=analysis_summary_path,
-            ),
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-    except SpecValidationError as exc:
-        _echo_errors("業務ルール検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=3) from exc
-    except PrepareNormalizationError as exc:
-        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("compose 実行中にマッピング stage でエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
-
-    echo_mapping_outputs(mapping_context)
+        run_compose_command(config)
+    except ComposeCommandError as exc:
+        message = str(exc)
+        if exc.errors:
+            _echo_errors(message or "エラーが発生しました", exc.errors)
+        elif message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
 
 @app.command("mapping")
@@ -1235,65 +956,25 @@ def mapping(  # noqa: PLR0913
     prepare_cards: Path,
 ) -> None:
     """stage 5 マッピングを実行し generate_ready.json を生成する。"""
-    try:
-        spec = _load_jobspec(spec_path)
-    except SpecValidationError as exc:
-        _echo_errors("スキーマ検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=2) from exc
-
-    try:
-        resolved_template = _resolve_template_path(
-            spec=spec,
-            spec_source=spec_path,
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-
-    try:
-        resolved_layouts = _resolve_layouts_path(
-            spec=spec,
-            spec_source=spec_path,
-        )
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-
-    rules_config = RulesConfig.load(rules)
-    style, artifact = _prepare_template_style(resolved_template)
-    template_style_payload = TemplateStylePayload(style=style, artifact=artifact)
-    refiner_options = _build_refiner_options(rules_config, template_style_payload.style)
-
-    mapping_params = MappingPipelineConfig(
-        spec=spec,
+    config = MappingCommandConfig(
+        spec_path=spec_path,
         output_dir=output_dir,
-        spec_source_path=spec_path,
-        rules_config=rules_config,
-        refiner_options=refiner_options,
-        template_style=template_style_payload,
-        prepare_cards=prepare_cards,
-        require_prepare=True,
-        layouts=resolved_layouts,
+        rules_path=rules,
         draft_output=draft_output,
-        template=resolved_template,
+        prepare_cards=prepare_cards,
     )
 
     try:
-        context = _run_mapping_pipeline(params=mapping_params)
-    except ValueError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=2) from exc
-    except SpecValidationError as exc:
-        _echo_errors("業務ルール検証に失敗しました", exc.errors)
-        raise click.exceptions.Exit(code=3) from exc
-    except PrepareNormalizationError as exc:
-        click.echo(f"プレペア成果物の読み込みに失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("マッピング実行中にエラーが発生しました")
-        raise click.exceptions.Exit(code=1) from exc
+        result = run_mapping_command(config)
+    except MappingCommandError as exc:
+        message = str(exc)
+        if exc.errors:
+            _echo_errors(message or "エラーが発生しました", exc.errors)
+        elif message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-    echo_mapping_outputs(context)
+    echo_mapping_outputs(result.context)
 
 
 @app.command("template")
@@ -1446,101 +1127,55 @@ def template(  # noqa: PLR0913
     force: bool,
 ) -> None:
     """テンプレ stage（抽出・検証・必要に応じてリリース）を実行する。"""
-    _log_current_llm_provider("template")
+    log_current_llm_provider("template")
+
+    config = TemplateCommandConfig(
+        template_path=template_path,
+        output_dir=output,
+        format=format,
+        layout=layout,
+        anchor=anchor,
+        layout_mode=layout_mode,
+        template_ai_policy=template_ai_policy,
+        template_ai_policy_id=template_ai_policy_id,
+        disable_template_ai=disable_template_ai,
+        with_release=with_release,
+        brand=brand,
+        version=version,
+        template_id=template_id,
+        release_output=release_output,
+        generated_by=generated_by,
+        reviewed_by=reviewed_by,
+        baseline_release=baseline_release,
+        golden_specs=golden_specs,
+        slide_snapshot=slide,
+        force=force,
+    )
+
     try:
-        extraction_result = _run_template_extraction(
-            template_path=template_path,
-            output_dir=output,
-            layout=layout,
-            anchor=anchor,
-            output_format=format,
-            template_ai_policy=template_ai_policy,
-            template_ai_policy_id=template_ai_policy_id,
-            disable_template_ai=disable_template_ai,
-            layout_mode=layout_mode,
-            skip_validation=force,
-            emit_slide_snapshot=slide,
-        )
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except LayoutValidationError as exc:
-        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("テンプレート抽出中にエラーが発生しました")
-        click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=1) from exc
+        result = run_template_command(config)
+    except TemplateCommandError as exc:
+        message = str(exc)
+        if message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-    _echo_template_extraction_result(extraction_result)
-
+    extraction_result = result.extraction
     validation_result = extraction_result.validation_result
-    if validation_result is not None and validation_result.errors_count > 0:
-        click.echo(
-            "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
-            err=True,
-        )
-        raise click.exceptions.Exit(code=6)
-    if validation_result is None and not force:
-        click.echo(
-            "レイアウト検証を実施できませんでした。--force を使用しない場合は出力を確認してください。",
-            err=True,
-        )
-        raise click.exceptions.Exit(code=6)
-
-    if extraction_result.template_spec.errors:
-        click.echo(
-            "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
-            err=True,
-        )
-        raise click.exceptions.Exit(code=6)
 
     if extraction_result.prompt_templates_dir is not None:
-        click.echo(
-            "プロンプト雛形を出力しました: %s"
-            % extraction_result.prompt_templates_dir,
-        )
+        click.echo(f"プロンプト雛形を出力しました: {extraction_result.prompt_templates_dir}")
         if extraction_result.prompt_templates_created:
             click.echo(
                 f"  -> {extraction_result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて編集し、static prepare で反映してください。"
             )
         else:
             click.echo("  -> 既存の雛形を保持しました。変更があればファイルを手動で更新してください。")
+
     click.echo("テンプレ stage（抽出＋検証）が完了しました。")
 
-    if not with_release:
+    if not result.release:
         return
-
-    if brand is None or version is None:
-        raise click.UsageError(
-            "--with-release を使用する場合は --brand と --version を指定してください。")
-
-    try:
-        release_result = _run_template_release(
-            template_path=template_path,
-            brand=brand,
-            version=version,
-            template_id=template_id,
-            output_dir=release_output,
-            generated_by=generated_by,
-            reviewed_by=reviewed_by,
-            baseline_release=baseline_release,
-            golden_specs=golden_specs,
-            layout_mode=layout_mode,
-        )
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except click.exceptions.Exit:
-        raise
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("テンプレートリリース生成中にエラーが発生しました")
-        click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=1) from exc
-
-    _echo_template_release_result(release_result)
-    if release_result.release.diagnostics.errors:
-        raise click.exceptions.Exit(code=6)
 
     click.echo("テンプレ stage（抽出＋検証＋リリース）が完了しました。")
 
@@ -1619,45 +1254,25 @@ def tpl_extract(
     disable_template_ai: bool,
 ) -> None:
     """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
+    config = TemplateExtractCommandConfig(
+        template_path=template_path,
+        output_dir=output_dir,
+        format=format,
+        layout=layout,
+        anchor=anchor,
+        layout_mode=layout_mode,
+        template_ai_policy=template_ai_policy,
+        template_ai_policy_id=template_ai_policy_id,
+        disable_template_ai=disable_template_ai,
+    )
+
     try:
-        extraction_result = _run_template_extraction(
-            template_path=template_path,
-            output_dir=output_dir,
-            layout=layout,
-            anchor=anchor,
-            output_format=format,
-            template_ai_policy=template_ai_policy,
-            template_ai_policy_id=template_ai_policy_id,
-            disable_template_ai=disable_template_ai,
-            layout_mode=layout_mode,
-        )
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except LayoutValidationError as exc:
-        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
-    except Exception as exc:  # noqa: BLE001
-        if isinstance(exc, click.exceptions.Exit):
-            raise
-        logging.exception("テンプレート抽出中にエラーが発生しました")
-        click.echo(f"テンプレート抽出に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=1) from exc
-    else:
-        _echo_template_extraction_result(extraction_result)
-        validation_result = extraction_result.validation_result
-        if validation_result is not None and validation_result.errors_count > 0:
-            click.echo(
-                "レイアウト検証でエラーが検出されました。Diagnostics を確認してください。",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=6)
-        if extraction_result.template_spec.errors:
-            click.echo(
-                "テンプレート仕様にエラーが含まれています。出力ファイルを確認してください。",
-                err=True,
-            )
-            raise click.exceptions.Exit(code=6)
+        run_template_extract_command(config)
+    except TemplateCommandError as exc:
+        message = str(exc)
+        if message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
 
 @app.command("layout-validate")
@@ -1708,29 +1323,23 @@ def layout_validate(
 ) -> None:
     """テンプレート構造の検証スイートを実行する。"""
 
-    options = LayoutValidationOptions(
+    config = LayoutValidateCommandConfig(
         template_path=template_path,
         output_dir=output_dir,
         template_id=template_id,
-        baseline_path=baseline,
-        analyzer_snapshot_path=analyzer_snapshot,
+        baseline=baseline,
+        analyzer_snapshot=analyzer_snapshot,
     )
-    suite = LayoutValidationSuite(options)
 
     try:
-        result = suite.run()
-    except LayoutValidationError as exc:
-        click.echo(f"レイアウト検証に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=6) from exc
+        result = run_layout_validate_command(config)
+    except LayoutValidateCommandError as exc:
+        message = str(exc)
+        if message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-    click.echo(f"Layouts: {result.layouts_path}")
-    click.echo(f"Diagnostics: {result.diagnostics_path}")
-    if result.diff_report_path is not None:
-        click.echo(f"Diff: {result.diff_report_path}")
-    click.echo(
-        "検出結果: warnings=%d, errors=%d" % (
-            result.warnings_count, result.errors_count)
-    )
+    echo_layout_validation_result(result)
 
 
 @app.command("tpl-release")
@@ -1808,7 +1417,7 @@ def tpl_release(
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
     try:
-        result = _run_template_release(
+        result = run_template_release(
             template_path=template_path,
             brand=brand,
             version=version,
@@ -1820,8 +1429,6 @@ def tpl_release(
             golden_specs=golden_specs,
             layout_mode=layout_mode,
         )
-    except click.exceptions.Exit:
-        raise
     except FileNotFoundError as exc:
         click.echo(f"ファイルが見つかりません: {exc}", err=True)
         raise click.exceptions.Exit(code=4) from exc
@@ -1830,7 +1437,7 @@ def tpl_release(
         click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
         raise click.exceptions.Exit(code=1) from exc
     else:
-        _echo_template_release_result(result)
+        echo_template_release_result(result)
         if result.release.diagnostics.errors:
             raise click.exceptions.Exit(code=6)
 
@@ -1843,104 +1450,5 @@ def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
     click.echo(formatted, err=True)
 
 
-def _emit_review_engine_analysis(
-    context: PipelineContext, analysis_path: object | None
-) -> Path | None:
-    return emit_review_engine_analysis(context, analysis_path)
-
-
-def _write_audit_log(context: PipelineContext) -> Path:
-    return write_audit_log(context)
-
-
 if __name__ == "__main__":
     app()
-
-
-def _execute_outline(**kwargs: object) -> OutlineResult:
-    return execute_outline(**kwargs)
-
-
-def _print_outline_result(result: OutlineResult, *, show_layout_reasons: bool) -> None:
-    print_outline_result(result, show_layout_reasons=show_layout_reasons)
-
-
-def _run_template_release(**kwargs: object) -> TemplateReleaseExecutionResult:
-    return run_template_release(**kwargs)
-
-
-def _echo_template_release_result(result: TemplateReleaseExecutionResult) -> None:
-    echo_template_release_result(result)
-
-
-def _run_template_extraction(
-    *,
-    template_path: Path,
-    output_dir: Path,
-    layout: str | None,
-    anchor: str | None,
-    output_format: str,
-    template_ai_policy: Path | None,
-    template_ai_policy_id: str | None,
-    disable_template_ai: bool,
-    layout_mode: str,
-    skip_validation: bool = False,
-    emit_slide_snapshot: bool = False,
-) -> TemplateExtractionResult:
-    return run_template_extraction(
-        template_path=template_path,
-        output_dir=output_dir,
-        layout=layout,
-        anchor=anchor,
-        output_format=output_format,
-        template_ai_policy=template_ai_policy,
-        template_ai_policy_id=template_ai_policy_id,
-        disable_template_ai=disable_template_ai,
-        layout_mode=layout_mode,
-        skip_validation=skip_validation,
-        emit_slide_snapshot=emit_slide_snapshot,
-    )
-
-
-def _echo_template_extraction_result(result: TemplateExtractionResult) -> None:
-    echo_template_extraction_result(result)
-
-
-def _run_mapping_pipeline(
-    *,
-    params: MappingPipelineConfig,
-    draft_context: PipelineContext | None = None,
-    draft_options: DraftStructuringOptions | None = None,
-) -> PipelineContext:
-    return run_mapping_pipeline(
-        params=params,
-        draft_context=draft_context,
-        draft_options=draft_options,
-        generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
-        generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
-    )
-
-
-def _run_draft_pipeline(
-    *,
-    spec: JobSpec,
-    output_dir: Path,
-    prepare_cards: Path | None,
-    require_prepare: bool,
-    draft_options: DraftStructuringOptions,
-) -> PipelineContext:
-    return run_draft_pipeline(
-        spec=spec,
-        output_dir=output_dir,
-        prepare_cards=prepare_cards,
-        require_prepare=require_prepare,
-        draft_options=draft_options,
-    )
-
-
-def _load_jobspec(path: Path) -> JobSpec:
-    return load_jobspec(path)
-
-
-def _resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
-    return resolve_layouts_path(spec=spec, spec_source=spec_source)
