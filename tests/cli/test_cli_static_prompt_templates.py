@@ -19,7 +19,6 @@ from pptx_generator.cli import (
 )
 from pptx_generator.cli_handlers.template_extraction import (
     TemplateExtractionResult,
-    _ensure_prompt_templates,
     _ensure_slide_inputs_manifest,
     run_template_extraction,
 )

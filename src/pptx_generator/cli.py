@@ -4,24 +4,19 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-import shutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import click
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
 
 from .cli_handlers import (
-    PROMPT_USER_SECTION_END,
-    PROMPT_USER_SECTION_START,
+    PROMPT_USER_SECTION_END,  # noqa: F401 - re-exported for downstream usage
+    PROMPT_USER_SECTION_START,  # noqa: F401 - re-exported for downstream usage
     SLIDE_INPUTS_FILENAME,
     PrepareCommandConfig,
     PrepareCommandError,
-    build_prompt_identifier,
     run_prepare_command,
-    slugify_prompt_layout,
 )
 from .cli_handlers.common import (
     configure_file_logging,
@@ -47,11 +42,9 @@ from .cli_handlers.mapping import (
     echo_mapping_outputs,
     run_mapping_command,
 )
-from .draft_intel import load_return_reasons
-from .models import JobSpec, SpecValidationError
 from .pipeline import DraftStructuringOptions, PrepareNormalizationError
 from .pipeline.draft_structuring import DraftStructuringError
-from .settings import RulesConfig
+from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
 from .cli_handlers.outline import (
     OutlineCommandConfig,
     run_outline_command,
@@ -74,7 +67,7 @@ from .cli_handlers.template_commands import (
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
 )
-from .cli_handlers.template_release import echo_template_release_result, run_template_release
+from .cli_handlers.template_release import echo_template_release_result
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
