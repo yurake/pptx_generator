@@ -130,3 +130,26 @@
 - `gen`/`outline`/`compose`/`mapping`/`tpl-extract`/`layout-validate`/`tpl-release` を `cli_commands/create_*` ファクトリへ移行し、`cli.py` はコマンド登録とデフォルト値の保持に限定。
 - 共通のエラー出力処理を `cli_commands/utils.echo_command_errors` で集約し、Compose/Mapping など複数コマンドでの JSON メッセージ整形を再利用化。
 - `cli.compose` や `cli.mapping` など既存のコマンドオブジェクト参照を維持しつつ、CLI 単体・統合テストを実行して挙動互換性を確認。
+
+## 2025-12-02 Pipeline 大規模モジュール再分割計画
+- **対象**: `pipeline/draft_structuring.py`（1723 行）、`pipeline/mapping.py`（777 行）、`layout_validation/suite.py`（1177 行）、`prepare_ai/orchestrator.py`（1136 行）。
+- **共通方針**:
+  - モジュール直下にサブパッケージを新設し、トップレベルは `__init__.py` で公開 API のみを re-export。
+  - ワークアイテムやアキュムレータは `types.py`（仮称）に集約。処理フローは `builder.py` / `processor.py` / `io.py` など役割別モジュールで構成する。
+  - 静的処理や AI 呼び出しなど副作用の大きい処理は専用クラス化し、テスト可能なインターフェースに切り出す。
+  - 既存テスト群（pipeline・layout_validation・prepare_ai・CLI 統合）を引き続き利用し、出力 JSON / ログ互換性を担保。
+- **draft_structuring リファクタ案**:
+  - ディレクトリ `pipeline/draft_structuring/` を作成し、`options.py`（`DraftStructuringOptions`）、`types.py`（WorkItem/Accumulator/StaticArtifacts）、`dynamic_flow.py`（非静的 run 処理）、`static_flow.py`（静的モード）、`io.py`（成果物書き出し）へ分割。
+  - `DraftStructuringStep` は orchestrator として残し、内部で `DynamicDraftBuilder`／`StaticDraftBuilder` を委譲。`DraftStore` や `SlideIdAligner` との依存はコンストラクタで注入可能に再設計。
+- **mapping リファクタ案**:
+  - `pipeline/mapping/` サブパッケージを新設し、`types.py`（WorkItem/Accumulator/Result DTO）、`builder.py`（入力調整）、`processors.py`（スライド変換ロジック）、`outputs.py`（ファイル保存とログ出力）に分解。
+  - `_process_work_item` の責務を `MappingSlideProcessor` クラスへ集約し、fallback 判定・AI パッチ統計をメソッド分割。テーブルアンカー関連ユーティリティは `table_anchor.py` からの依存を明確にする。
+- **layout_validation リファクタ案**:
+  - `layout_validation/` 配下に `records` サブパッケージを設け、`collector.py`（プレースホルダー抽出）、`heuristics.py`（ヒューリスティック評価）、`ai.py`（AI 呼び出しと usage_tags 正規化）、`results.py`（警告集計とエクスポート）へ分ける。
+  - `LayoutValidationSuite` は orchestrator として残し、個別コンポーネントへ依存注入。既存の diff / diagnostics 出力を `results.py` 側で一元管理する。
+- **prepare_ai 静的モード リファクタ案**:
+  - `prepare_ai/static_mode/` を作成し、`slot_assignment.py`（Blueprint slot 構築）、`prompt_builder.py`、`llm_executor.py`、`card_factory.py`、`analysis.py`（AI 応答検証・統計集計）を定義。
+  - `_build_cards_static` は `StaticCardPipeline`（コンフィグ＋依存を束ねた orchestrator）に置き換え、テーブルアンカーや usage tag 依存を小さなユーティリティ関数へ切り出す。
+- **次ステップ**:
+  - それぞれの分割案を ToDo（`docs/todo/20251202-rm084-pipeline-large-module-refactor.md`）へ反映し、実装前にユーザー承認を得る。
+  - 実装時は段階的コミットで進め、各段階ごとに対象テストを実行して回帰有無を確認する。
