@@ -1,7 +1,7 @@
 ---
 目的: RM-084 CLI/Pipeline リファクタビリティ向上 - `MappingStep.run` の責務分離とヘルパー抽出
 関連ブランチ: chore/rm084-cli-refactorability
-関連Issue: 未作成
+関連Issue: #352
 roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 ---
 
@@ -33,7 +33,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 2025-12-02 時点で未作成。`todo-sync` で発行された番号を反映すること。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
