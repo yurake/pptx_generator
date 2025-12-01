@@ -15,14 +15,11 @@ from .cli_handlers import (
     PROMPT_USER_SECTION_START,  # noqa: F401 - re-exported for downstream usage
     SLIDE_INPUTS_FILENAME,
     PrepareCommandConfig,
-    PrepareCommandError,
-    run_prepare_command,
 )
 from .cli_handlers.common import (
     configure_file_logging,
     configure_llm_logger,
     determine_log_level,
-    dump_json,
     log_current_llm_provider,
 )
 from .cli_handlers.compose import (
@@ -42,6 +39,7 @@ from .cli_handlers.mapping import (
     echo_mapping_outputs,
     run_mapping_command,
 )
+from .cli_commands import build_prepare_config as _build_prepare_config, create_prepare_command
 from .pipeline import DraftStructuringOptions, PrepareNormalizationError
 from .pipeline.draft_structuring import DraftStructuringError
 from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
@@ -98,13 +96,13 @@ def build_prepare_config(
     mode: str,
     page_limit: int | None,
 ) -> PrepareCommandConfig:
-    return PrepareCommandConfig(
+    return _build_prepare_config(
         prepare_path=prepare_path,
         output_dir=output_dir,
-        jobspec_path=jobspec,
+        jobspec=jobspec,
         mode=mode,
         page_limit=page_limit,
-        policy_path=DEFAULT_PREPARE_POLICY_PATH,
+        default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
         default_jobspec_path=DEFAULT_JOBSPEC_PATH,
         prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
         slide_inputs_filename=SLIDE_INPUTS_FILENAME,
@@ -132,6 +130,16 @@ def app(verbose: bool, debug: bool) -> None:
         cli_logger.log(message_level, message)
     configure_llm_logger()
     configure_file_logging()
+
+
+prepare = create_prepare_command(
+    default_output_dir=DEFAULT_PREPARE_OUTPUT_DIR,
+    default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
+    default_jobspec_path=DEFAULT_JOBSPEC_PATH,
+    prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
+    slide_inputs_filename=SLIDE_INPUTS_FILENAME,
+)
+app.add_command(prepare)
 
 
 @app.command("gen")
@@ -296,76 +304,6 @@ def gen(  # noqa: PLR0913
         raise click.exceptions.Exit(code=exc.exit_code) from exc
 
     echo_render_outputs(result.context, result.audit_path)
-
-
-@app.command("prepare")
-@click.argument(
-    "prepare_path",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    required=False,
-)
-@click.option(
-    "--output",
-    "-o",
-    "output_dir",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default=DEFAULT_PREPARE_OUTPUT_DIR,
-    show_default=True,
-    help="コンテンツ準備成果物を保存するディレクトリ",
-)
-@click.option(
-    "--mode",
-    type=click.Choice(["dynamic", "static"], case_sensitive=False),
-    required=True,
-    help="カード生成モード。static は Blueprint を利用する",
-)
-@click.option(
-    "--jobspec",
-    type=click.Path(exists=True, dir_okay=False,
-                    readable=True, path_type=Path),
-    default=None,
-    help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
-)
-@click.option(
-    "-p",
-    "--page-limit",
-    "--card-limit",
-    type=click.IntRange(1, None),
-    default=None,
-    help="生成するカード枚数の上限",
-)
-def prepare(
-    prepare_path: Path | None,
-    output_dir: Path,
-    jobspec: Path | None,
-    mode: str,
-    page_limit: int | None,
-) -> None:
-    """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
-
-    config = build_prepare_config(
-        prepare_path=prepare_path,
-        output_dir=output_dir,
-        jobspec=jobspec,
-        mode=mode,
-        page_limit=page_limit,
-    )
-    try:
-        result = run_prepare_command(config, dump_json=dump_json)
-    except PrepareCommandError as exc:
-        click.echo(str(exc), err=True)
-        raise click.exceptions.Exit(code=exc.exit_code) from exc
-
-    for message in result.messages:
-        click.echo(message)
-
-    click.echo(f"Prepare Card: {result.cards_path}")
-    click.echo(f"Prepare Log: {result.log_path}")
-    click.echo(f"Prepare AI Log: {result.ai_log_path}")
-    click.echo(f"AI Generation Meta: {result.meta_path}")
-    click.echo(f"Prepare Story Outline: {result.story_outline_path}")
-    click.echo(f"Audit Log: {result.audit_path}")
 
 
 @app.command("outline")
