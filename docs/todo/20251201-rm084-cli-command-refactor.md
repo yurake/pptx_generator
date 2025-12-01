@@ -47,6 +47,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_mapping_pipeline_config.py tests/integration/test_cli_generate_pipeline_flow.py` 成功（委譲モジュール化後の回帰確認）。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_logging_configuration.py` 成功（prepare ハンドラ再編の回帰確認）。
     - 2025-12-02 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_outline_generation.py tests/cli/test_cli_logging_configuration.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` 成功（CLI コマンドモジュール化後の回帰確認）。
+    - 2025-12-02 Codex CLI: `uv run --extra dev pytest --cov=src/pptx_generator/cli_commands tests/cli/test_cli_command_wrappers.py tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_outline_generation.py tests/cli/test_cli_logging_configuration.py tests/integration/test_cli_generate_pipeline_flow.py` 成功（`cli_commands/` 配下の新規テスト追加およびカバレッジ確認、全体 97%）。
 - [x] ドキュメント更新
   - メモ: 変更点の影響を整理し、不要の場合も理由を記載する。
   - [x] docs/roadmap 配下（影響なしのため変更不要 / 2025-12-01 確認）
