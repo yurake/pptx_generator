@@ -17,21 +17,21 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] 設計・実装方針の共有場所を決定する（例: `docs/notes/rm084-refactorability-assessment.md` 追記）
     - メモ: 同ノートの「2025-12-02 Pipeline 大規模モジュール再分割計画」節に整理。
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 第1段階として `draft_structuring` をパッケージ化し、`types.py` / `dynamic_flow.py` へ分割。`DraftStructuringStep` は `build_dynamic_document` を利用する構成へ変更済み。以降は mapping → layout_validation → prepare_ai の順で進める。
-- [ ] テスト・検証
-  - メモ: 対象モジュールのユニット／統合テスト（CLI flow 含む）を網羅的に再実行する。
-- [ ] ドキュメント更新
-  - メモ: 設計メモ等への追記や更新不要の確認結果を記録する。
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 実装
+  - メモ: `pipeline/mapping.py` をサブパッケージ化し、`types` / `catalog` / `processor` / `outputs` / `step` へ責務分離。`layout_validation/suite.py` は `suite/` 配下へ分割し、テンプレートAI処理やレコード構築をヘルパーモジュール化。`prepare_ai/orchestrator.py` の静的モードは `static_mode/` 配下の executor へ委譲し、公開 API を保ったまま内部構造を整理した。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py`, `uv run --extra dev pytest tests/layout_validation/test_layout_validation_suite_execution.py`, `uv run --extra dev pytest tests/prepare_ai/test_prepare_ai_orchestrator_flow.py`, `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py` を実行し、回帰がないことを確認した。
+- [x] ドキュメント更新
+  - メモ: コード内部の責務再配置のみで外部仕様・手順の変更はなく、関連ドキュメントを確認したうえで更新不要と判断。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: `todo-sync` 実行後に自動付与される Issue 番号を記録する。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクの完了に応じて親タスクの状態も更新する。
+  - メモ: Issue `#359` への紐付けを確認。ローカル環境は `requests` / `GITHUB_TOKEN` 未設定のため `todo-sync` スクリプトは未実行。後続で環境が整い次第 CI 側で同期を再確認する。
+- [x] チェックリスト整合確認
+  - メモ: 各子タスクの更新状況を反映済み。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録し、todo-auto-complete による自動更新結果を確認する。
 
