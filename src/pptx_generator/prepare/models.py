@@ -167,20 +167,13 @@ class PrepareCard(BaseModel):
             return []
 
         for item in items:
-            if isinstance(item, str) and item.strip():
-                yield from self._yield_segments(item)
-            elif isinstance(item, dict):
-                line = str(item.get("text") or "").strip()
-                if not line:
-                    continue
-                level_raw = item.get("level", 0)
-                try:
-                    level = max(int(level_raw), 0)
-                except (TypeError, ValueError):
-                    level = 0
-                indent = "  " * level
-                for segment in self._yield_segments(line):
-                    yield f"{indent}{segment}"
+            if isinstance(item, str):
+                text = item.strip()
+                if text:
+                    yield from self._yield_segments(text)
+                continue
+            if isinstance(item, dict):
+                yield from self._iter_data_mapping(item)
 
     def _iter_block_rows(self, block: PrepareBodyBlock) -> Iterable[str]:
         if not isinstance(block.rows, list):
@@ -199,6 +192,23 @@ class PrepareCard(BaseModel):
         if not desc:
             return []
         return self._yield_segments(desc)
+
+    def _iter_data_mapping(self, item: dict[str, Any]) -> Iterable[str]:
+        line_raw = item.get("text")
+        if not isinstance(line_raw, str):
+            return []
+        line = line_raw.strip()
+        if not line:
+            return []
+
+        level_raw = item.get("level", 0)
+        try:
+            level = max(int(level_raw), 0)
+        except (TypeError, ValueError):
+            level = 0
+        indent = "  " * level
+        for segment in self._yield_segments(line):
+            yield f"{indent}{segment}"
 
     def notes_text(self) -> list[str]:
         return [note.text.strip() for note in self.content.notes if note.text.strip()]
