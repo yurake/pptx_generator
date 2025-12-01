@@ -38,20 +38,29 @@ jobs:
         id: gather
         run: |
           body=$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH")
+          issue_ref=false
+          if printf '%s\n' "$body" | grep -qE '(Close #[0-9]+|Issue Close: #[0-9]+)'; then
+            issue_ref=true
+          fi
           if [ -z "$body" ] || [ "$body" = "null" ]; then
             echo "todo_list=" >> "$GITHUB_OUTPUT"
+            echo "has_issue_ref=$issue_ref" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           todos=$(printf '%s\n' "$body" | grep -oE 'docs/todo/[0-9]{8}-[A-Za-z0-9_-]+\.md' | sort -u)
           if [ -z "$todos" ]; then
             echo "todo_list=" >> "$GITHUB_OUTPUT"
+            echo "has_issue_ref=$issue_ref" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           printf 'Detected ToDo paths:\n%s\n' "$todos"
           printf 'todo_list<<EOF\n%s\nEOF\n' "$todos" >> "$GITHUB_OUTPUT"
+          echo "has_issue_ref=$issue_ref" >> "$GITHUB_OUTPUT"
 
       - name: Fail if no todo detected
-        if: steps.gather.outputs.todo_list == ''
+        if: >
+          steps.gather.outputs.todo_list == '' &&
+          steps.gather.outputs.has_issue_ref != 'true'
         run: |
           echo "PR 本文に対象 ToDo が記載されていません。テンプレートの占位文字列を置き換えてください。"
           exit 1
