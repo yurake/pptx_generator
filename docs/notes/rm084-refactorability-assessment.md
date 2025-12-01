@@ -125,3 +125,8 @@
 - `prepare` コマンドは `PrepareCommandArtifacts` と `resolve_static_context` を公開化し、成果物書き出し・静的モード前処理を責務分離。CLI からは `build_prepare_config` で設定構築のみを行い、ハンドラが AI 実行と成果物生成を担う構成へ整理済み。
 - `prepare` コマンドの Click 定義を `cli_commands/prepare.py` へ移し、`cli.py` はエントリポイントとコマンド登録に専念する構成へ移行。
 - `template` コマンドも `cli_commands/template.py` に移設し、テンプレ系オプションをモジュール側で管理（`cli.py` は登録のみ）。
+
+## 2025-12-02 CLI コマンドモジュール化メモ
+- `gen`/`outline`/`compose`/`mapping`/`tpl-extract`/`layout-validate`/`tpl-release` を `cli_commands/create_*` ファクトリへ移行し、`cli.py` はコマンド登録とデフォルト値の保持に限定。
+- 共通のエラー出力処理を `cli_commands/utils.echo_command_errors` で集約し、Compose/Mapping など複数コマンドでの JSON メッセージ整形を再利用化。
+- `cli.compose` や `cli.mapping` など既存のコマンドオブジェクト参照を維持しつつ、CLI 単体・統合テストを実行して挙動互換性を確認。

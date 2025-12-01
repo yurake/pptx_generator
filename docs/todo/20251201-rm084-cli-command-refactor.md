@@ -40,11 +40,13 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 2025-12-01 Codex CLI: `PrepareCommandArtifacts`／`resolve_static_context` 新設と既存 CLI ラッパ更新を実装。
     - 2025-12-02 Codex CLI: `prepare` コマンドの Click 定義を `cli_commands/prepare.py` へ移設し、`cli.py` はコマンド登録のみを担当。
     - 2025-12-02 Codex CLI: `template` コマンドも `cli_commands/template.py` へ移設し、テンプレ系オプションを共通化。
+    - 2025-12-02 Codex CLI: `gen`/`outline`/`compose`/`mapping`/`tpl-extract`/`layout-validate`/`tpl-release` を `cli_commands/` 配下の `create_*` ファクトリへ移設し、`cli.py` は登録専用に整理。共通エラーメッセージの出力ヘルパーとして `cli_commands/utils.py` を追加。
 - [x] テスト・検証
   - メモ: 実施テストと結果を記載する。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_outline_generation.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` いずれも成功。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_mapping_pipeline_config.py tests/integration/test_cli_generate_pipeline_flow.py` 成功（委譲モジュール化後の回帰確認）。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_logging_configuration.py` 成功（prepare ハンドラ再編の回帰確認）。
+    - 2025-12-02 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py tests/cli/test_cli_outline_generation.py tests/cli/test_cli_logging_configuration.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` 成功（CLI コマンドモジュール化後の回帰確認）。
 - [x] ドキュメント更新
   - メモ: 変更点の影響を整理し、不要の場合も理由を記載する。
   - [x] docs/roadmap 配下（影響なしのため変更不要 / 2025-12-01 確認）

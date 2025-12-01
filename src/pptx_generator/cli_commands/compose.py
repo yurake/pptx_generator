@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import click
+
+from pptx_generator.cli_handlers.compose import (
+    ComposeCommandConfig,
+    ComposeCommandError,
+    run_compose_command,
+)
+
+from .utils import echo_command_errors
+
+
+def create_compose_command(
+    *,
+    default_draft_output: Path,
+    default_appendix_limit: int,
+    default_chapter_templates_dir: Path,
+    default_output_dir: Path,
+    default_rules_path: Path,
+    default_prepare_cards_path: Path,
+    default_draft_filename: str,
+    default_approved_filename: str,
+    default_draft_log_filename: str,
+    default_draft_meta_filename: str,
+    default_generate_ready_filename: str,
+    default_generate_ready_meta_filename: str,
+) -> click.Command:
+    @click.command("compose")
+    @click.argument(
+        "spec_path",
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    )
+    @click.option(
+        "--draft-output",
+        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+        default=default_draft_output,
+        show_default=True,
+        help="ドラフト成果物を保存するディレクトリ",
+    )
+    @click.option(
+        "--target-length",
+        type=int,
+        default=None,
+        help="目標スライド枚数",
+    )
+    @click.option(
+        "--structure-pattern",
+        type=str,
+        default=None,
+        help="章構成パターン名",
+    )
+    @click.option(
+        "--appendix-limit",
+        type=int,
+        default=default_appendix_limit,
+        show_default=True,
+        help="付録枚数の上限",
+    )
+    @click.option(
+        "--chapter-templates-dir",
+        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+        default=default_chapter_templates_dir,
+        show_default=True,
+        help="章テンプレート辞書ディレクトリ",
+    )
+    @click.option(
+        "--chapter-template",
+        type=str,
+        default=None,
+        help="適用する章テンプレート ID",
+    )
+    @click.option(
+        "--import-analysis",
+        "analysis_summary_path",
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+        default=None,
+        help="analysis_summary.json のパス",
+    )
+    @click.option(
+        "--show-layout-reasons",
+        is_flag=True,
+        default=False,
+        help="layout_hint 候補のスコア内訳を表示する",
+    )
+    @click.option(
+        "--output",
+        "-o",
+        "output_dir",
+        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+        default=default_output_dir,
+        show_default=True,
+        help="generate_ready.json 等の出力ディレクトリ",
+    )
+    @click.option(
+        "--rules",
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+        default=default_rules_path,
+        show_default=True,
+        help="検証ルール設定ファイル",
+    )
+    @click.option(
+        "--prepare-cards",
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+        default=default_prepare_cards_path,
+        show_default=True,
+        help="stage 2 の prepare_card.json",
+    )
+    def compose(  # noqa: PLR0913
+        spec_path: Path,
+        draft_output: Path,
+        target_length: int | None,
+        structure_pattern: str | None,
+        appendix_limit: int,
+        chapter_templates_dir: Path,
+        chapter_template: str | None,
+        analysis_summary_path: Path | None,
+        show_layout_reasons: bool,
+        output_dir: Path,
+        rules: Path,
+        prepare_cards: Path,
+    ) -> None:
+        """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
+
+        config = ComposeCommandConfig(
+            spec_path=spec_path,
+            draft_output=draft_output,
+            target_length=target_length,
+            structure_pattern=structure_pattern,
+            appendix_limit=appendix_limit,
+            chapter_templates_dir=chapter_templates_dir,
+            chapter_template=chapter_template,
+            analysis_summary_path=analysis_summary_path,
+            show_layout_reasons=show_layout_reasons,
+            output_dir=output_dir,
+            rules_path=rules,
+            prepare_cards=prepare_cards,
+            draft_filename=default_draft_filename,
+            approved_filename=default_approved_filename,
+            log_filename=default_draft_log_filename,
+            meta_filename=default_draft_meta_filename,
+            generate_ready_filename=default_generate_ready_filename,
+            generate_ready_meta_filename=default_generate_ready_meta_filename,
+        )
+        try:
+            run_compose_command(config)
+        except ComposeCommandError as exc:
+            message = str(exc)
+            if exc.errors:
+                echo_command_errors(message or "エラーが発生しました", exc.errors)
+            elif message:
+                click.echo(message, err=True)
+            raise click.exceptions.Exit(code=exc.exit_code) from exc
+
+    return compose
+
+
+__all__ = ["create_compose_command"]
