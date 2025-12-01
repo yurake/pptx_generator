@@ -38,6 +38,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - 2025-12-01 Codex CLI: LLM ログ設定とファイルロギング初期化を `cli_handlers/common.py` へ移設し、未使用ヘルパー（`_run_content_approval_pipeline` 等）を削除。`tpl-release` コマンドは `TemplateReleaseCommandConfig` を介して実装を統一。
     - 2025-12-01 Codex CLI: `prepare` コマンドの静的モード正規化を `resolve_static_context`（公開 API）へ分離し、成果物書き出しを `PrepareCommandArtifacts` で一元化。CLI は `build_prepare_config` で設定生成のみに専念する構成へ変更。
     - 2025-12-01 Codex CLI: `PrepareCommandArtifacts`／`resolve_static_context` 新設と既存 CLI ラッパ更新を実装。
+    - 2025-12-02 Codex CLI: `prepare` コマンドの Click 定義を `cli_commands/prepare.py` へ移設し、`cli.py` はコマンド登録のみを担当。
 - [x] テスト・検証
   - メモ: 実施テストと結果を記載する。
     - 2025-12-01 Codex CLI: `uv run --extra dev pytest tests/cli/test_cli_outline_generation.py` / `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` いずれも成功。
