@@ -122,6 +122,101 @@ def log_current_llm_provider(context: str) -> None:
     )
 
 
+class _LLMLogFormatter(logging.Formatter):
+    """slide_ai ログ用の安全なフォーマッタ。"""
+
+    def __init__(self, *args, max_chars: int = 2000, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._max_chars = max_chars
+
+    def _sanitize(self, value: object) -> str:
+        if value is None:
+            return "-"
+        text = str(value).replace("\n", "\\n")
+        if len(text) > self._max_chars:
+            return f"{text[: self._max_chars]}...(truncated)"
+        return text
+
+    def format(self, record: logging.LogRecord) -> str:  # noqa: D401
+        for attr in ("slide_id", "card_id", "model", "intent", "reason", "finish_reason", "refusal"):
+            if not hasattr(record, attr):
+                setattr(record, attr, "-")
+
+        record.warnings = self._sanitize(getattr(record, "warnings", None))
+        record.prompt_excerpt = self._sanitize(getattr(record, "prompt", None))
+        record.raw_response_excerpt = self._sanitize(getattr(record, "raw_response", None))
+
+        return super().format(record)
+
+
+def configure_llm_logger(log_dir: Path | None = None) -> None:
+    """slide_ai LLm ログのファイル・ストリーム出力を準備する。"""
+
+    target_dir = log_dir or Path("logs")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    llm_logger = logging.getLogger("pptx_generator.slide_ai.llm")
+    formatter = _LLMLogFormatter(
+        fmt=(
+            "%(asctime)s %(levelname)s %(name)s "
+            "slide_id=%(slide_id)s card_id=%(card_id)s model=%(model)s intent=%(intent)s "
+            "reason=%(reason)s finish=%(finish_reason)s refusal=%(refusal)s warnings=%(warnings)s "
+            "message=%(message)s prompt=%(prompt_excerpt)s raw_response=%(raw_response_excerpt)s"
+        ),
+    )
+
+    class _LLMLogFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            return bool(getattr(record, "raw_response", None) or getattr(record, "prompt", None))
+
+    if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
+        llm_logger.addFilter(_LLMLogFilter())
+
+    existing_handler = next(
+        (
+            handler
+            for handler in llm_logger.handlers
+            if isinstance(handler, logging.FileHandler)
+            and getattr(handler, "baseFilename", None) == str(target_dir / "out.log")
+        ),
+        None,
+    )
+    if existing_handler:
+        existing_handler.setFormatter(formatter)
+    else:
+        handler = logging.FileHandler(target_dir / "out.log", encoding="utf-8")
+        handler.setFormatter(formatter)
+        llm_logger.addHandler(handler)
+
+    stream_handler_exists = any(
+        isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
+        for handler in llm_logger.handlers
+    )
+    if not stream_handler_exists:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        llm_logger.addHandler(stream_handler)
+    llm_logger.setLevel(logging.INFO)
+    llm_logger.propagate = False
+
+
+def configure_file_logging(log_dir: Path | None = None) -> None:
+    """`logs/out.log` へルートロガーの出力を複製するファイルハンドラを設定する。"""
+
+    target_dir = log_dir or Path("logs")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    file_path = target_dir / "out.log"
+    root_logger = logging.getLogger()
+    if not any(
+        isinstance(handler, logging.FileHandler)
+        and getattr(handler, "baseFilename", None) == str(file_path)
+        for handler in root_logger.handlers
+    ):
+        handler = logging.FileHandler(file_path, encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
+
+
 def dump_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, indent=2)

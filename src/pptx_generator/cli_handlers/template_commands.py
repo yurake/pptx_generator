@@ -51,6 +51,20 @@ class TemplateCommandResult:
 
 
 @dataclass(slots=True)
+class TemplateReleaseCommandConfig:
+    template_path: Path
+    brand: str
+    version: str
+    template_id: str | None
+    output_dir: Path
+    generated_by: str | None
+    reviewed_by: str | None
+    baseline_release: Path | None
+    golden_specs: Tuple[Path, ...]
+    layout_mode: str
+
+
+@dataclass(slots=True)
 class TemplateExtractCommandConfig:
     template_path: Path
     output_dir: Path
@@ -151,6 +165,36 @@ def run_template_command(config: TemplateCommandConfig) -> TemplateCommandResult
         )
 
     return TemplateCommandResult(extraction=extraction_result, release=release_result)
+
+
+def run_template_release_command(config: TemplateReleaseCommandConfig) -> TemplateReleaseExecutionResult:
+    try:
+        result = run_template_release(
+            template_path=config.template_path,
+            brand=config.brand,
+            version=config.version,
+            template_id=config.template_id,
+            output_dir=config.output_dir,
+            generated_by=config.generated_by,
+            reviewed_by=config.reviewed_by,
+            baseline_release=config.baseline_release,
+            golden_specs=config.golden_specs,
+            layout_mode=config.layout_mode,
+        )
+    except FileNotFoundError as exc:
+        raise TemplateCommandError(f"ファイルが見つかりません: {exc}", exit_code=4) from exc
+    except Exception as exc:  # noqa: BLE001
+        if isinstance(exc, click.exceptions.Exit):
+            raise
+        raise TemplateCommandError(f"テンプレートリリースの生成に失敗しました: {exc}", exit_code=1) from exc
+
+    if result.release.diagnostics.errors:
+        raise TemplateCommandError(
+            "テンプレートリリースの検証でエラーが検出されました。",
+            exit_code=6,
+        )
+
+    return result
 
 
 def run_template_extract_command(config: TemplateExtractCommandConfig) -> TemplateExtractionResult:

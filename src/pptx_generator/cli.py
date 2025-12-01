@@ -25,7 +25,12 @@ from .cli_handlers import (
     run_prepare_command,
     slugify_prompt_layout,
 )
-from .cli_handlers.common import dump_json, log_current_llm_provider
+from .cli_handlers.common import (
+    configure_file_logging,
+    configure_llm_logger,
+    dump_json,
+    log_current_llm_provider,
+)
 from .cli_handlers.compose import (
     ComposeCommandConfig,
     ComposeCommandError,
@@ -44,18 +49,8 @@ from .cli_handlers.mapping import (
     run_mapping_command,
 )
 from .draft_intel import load_return_reasons
-from .models import (ContentApprovalDocument, DraftDocument, JobSpec,
-                     JobSpecScaffold, SpecValidationError, TemplateBlueprint,
-                     TemplateBlueprintSlide, TemplateSpec, TemplateStyle)
-from .pipeline import (ContentApprovalOptions, ContentApprovalStep,
-                       DraftStructuringOptions, DraftStructuringStep,
-                       MonitoringIntegrationOptions, MonitoringIntegrationStep,
-                       PipelineContext, PipelineRunner, PipelineStep,
-                       PrepareNormalizationError, PrepareNormalizationOptions,
-                       PrepareNormalizationStep, RenderingAuditOptions,
-                       RenderingAuditStep, RenderingOptions,
-                       SimpleAnalyzerStep, SimpleRefinerStep, SimpleRendererStep,
-                       SpecValidatorStep)
+from .models import JobSpec, SpecValidationError
+from .pipeline import DraftStructuringOptions, PrepareNormalizationError
 from .pipeline.draft_structuring import DraftStructuringError
 from .settings import RulesConfig
 from .cli_handlers.outline import (
@@ -72,8 +67,10 @@ from .cli_handlers.template_commands import (
     TemplateCommandConfig,
     TemplateCommandError,
     TemplateExtractCommandConfig,
+    TemplateReleaseCommandConfig,
     run_template_command,
     run_template_extract_command,
+    run_template_release_command,
 )
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
@@ -161,97 +158,6 @@ def _determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[in
     return logging.WARNING, deferred_logs
 
 
-def _configure_llm_logger() -> None:
-    log_dir = Path("logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
-    llm_logger = logging.getLogger("pptx_generator.slide_ai.llm")
-
-    class _LLMLogFormatter(logging.Formatter):
-        """slide_ai ログ用の安全なフォーマッタ。"""
-
-        def __init__(self, *args, max_chars: int = 2000, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
-            self._max_chars = max_chars
-
-        def _sanitize(self, value: object) -> str:
-            if value is None:
-                return "-"
-            text = str(value).replace("\n", "\\n")
-            if len(text) > self._max_chars:
-                return f"{text[: self._max_chars]}...(truncated)"
-            return text
-
-        def format(self, record: logging.LogRecord) -> str:  # noqa: D401
-            for attr in ("slide_id", "card_id", "model", "intent", "reason", "finish_reason", "refusal"):
-                if not hasattr(record, attr):
-                    setattr(record, attr, "-")
-
-            record.warnings = self._sanitize(getattr(record, "warnings", None))
-            record.prompt_excerpt = self._sanitize(getattr(record, "prompt", None))
-            record.raw_response_excerpt = self._sanitize(getattr(record, "raw_response", None))
-
-            return super().format(record)
-
-    formatter = _LLMLogFormatter(
-        fmt=(
-            "%(asctime)s %(levelname)s %(name)s "
-            "slide_id=%(slide_id)s card_id=%(card_id)s model=%(model)s intent=%(intent)s "
-            "reason=%(reason)s finish=%(finish_reason)s refusal=%(refusal)s warnings=%(warnings)s "
-                "message=%(message)s prompt=%(prompt_excerpt)s raw_response=%(raw_response_excerpt)s"
-        ),
-    )
-    class _LLMLogFilter(logging.Filter):
-        def filter(self, record: logging.LogRecord) -> bool:
-            return bool(getattr(record, "raw_response", None) or getattr(record, "prompt", None))
-
-    if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
-        llm_logger.addFilter(_LLMLogFilter())
-
-    existing_handler = next(
-        (
-            handler
-            for handler in llm_logger.handlers
-            if isinstance(handler, logging.FileHandler)
-            and getattr(handler, "baseFilename", None) == str(log_dir / "out.log")
-        ),
-        None,
-    )
-    if existing_handler:
-        existing_handler.setFormatter(formatter)
-    else:
-        handler = logging.FileHandler(log_dir / "out.log", encoding="utf-8")
-        handler.setFormatter(formatter)
-        llm_logger.addHandler(handler)
-
-    stream_handler_exists = any(
-        isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
-        for handler in llm_logger.handlers
-    )
-    if not stream_handler_exists:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        llm_logger.addHandler(stream_handler)
-    llm_logger.setLevel(logging.INFO)
-    llm_logger.propagate = False
-
-
-def _configure_file_logging() -> None:
-    log_dir = Path("logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
-    file_path = log_dir / "out.log"
-    root_logger = logging.getLogger()
-    if not any(
-        isinstance(handler, logging.FileHandler)
-        and getattr(handler, "baseFilename", None) == str(file_path)
-        for handler in root_logger.handlers
-    ):
-        handler = logging.FileHandler(file_path, encoding="utf-8")
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s %(message)s")
-        handler.setFormatter(formatter)
-        root_logger.addHandler(handler)
-
-
 @click.group(
     help="JSON 仕様から PPTX を生成する CLI",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -270,143 +176,8 @@ def app(verbose: bool, debug: bool) -> None:
     cli_logger = logging.getLogger("pptx_generator.cli")
     for message_level, message in deferred_logs:
         cli_logger.log(message_level, message)
-    _configure_llm_logger()
-    _configure_file_logging()
-
-
-def _run_content_approval_pipeline(
-    *,
-    spec: JobSpec,
-    output_dir: Path,
-    content_approved: Path | None,
-    content_review_log: Path | None,
-    require_document: bool,
-) -> PipelineContext:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    context = PipelineContext(spec=spec, workdir=output_dir)
-
-    step = ContentApprovalStep(
-        ContentApprovalOptions(
-            approved_path=content_approved,
-            review_log_path=content_review_log,
-            require_document=require_document,
-            require_all_approved=True,
-        )
-    )
-    PipelineRunner([step]).execute(context)
-    return context
-
-
-def _write_content_outputs(
-    *,
-    context: PipelineContext,
-    output_dir: Path,
-    spec_filename: str,
-    content_filename: str,
-    review_filename: str,
-    meta_filename: str,
-) -> tuple[Path, Path | None, Path | None, Path]:
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    spec_path = output_dir / spec_filename
-    dump_json(spec_path, context.spec.model_dump(mode="json"))
-
-    content_document = context.artifacts.get("content_approved")
-    content_path: Path | None = None
-    if isinstance(content_document, ContentApprovalDocument):
-        content_path = output_dir / content_filename
-        dump_json(content_path, content_document.model_dump(mode="json"))
-
-    review_logs = context.artifacts.get("content_review_log")
-    review_path: Path | None = None
-    if review_logs:
-        review_payload: list[dict[str, object]] = []
-        for entry in review_logs:
-            if hasattr(entry, "model_dump"):
-                review_payload.append(entry.model_dump(
-                    mode="json"))  # type: ignore[call-arg]
-            else:
-                review_payload.append(entry)
-        review_path = output_dir / review_filename
-        dump_json(review_path, review_payload)
-
-    content_meta = context.artifacts.get("content_approved_meta")
-    review_meta = context.artifacts.get("content_review_log_meta")
-    meta_payload: dict[str, object] = {
-        "spec": {
-            "slides": len(context.spec.slides),
-            "output_path": str(spec_path),
-        }
-    }
-    if isinstance(content_meta, dict):
-        meta_payload["content_approved"] = {
-            **content_meta,
-            "output_path": str(content_path) if content_path else None,
-        }
-    if isinstance(review_meta, dict):
-        meta_payload["content_review_log"] = {
-            **review_meta,
-            "output_path": str(review_path) if review_path else None,
-        }
-
-    meta_path = output_dir / meta_filename
-    dump_json(meta_path, meta_payload)
-
-    return spec_path, content_path, review_path, meta_path
-    if not show_layout_reasons:
-        return
-
-    draft_document = result.context.artifacts.get("draft_document")
-    if not isinstance(draft_document, DraftDocument):
-        return
-
-    click.echo("layout_hint 候補スコア内訳:")
-    for section in draft_document.sections:
-        for slide in section.slides:
-            detail = slide.layout_score_detail
-            if not detail:
-                continue
-            click.echo(
-                f"- {slide.ref_id} -> {slide.layout_hint} "
-                f"(uses_tag={detail.uses_tag:.2f}, "
-                f"capacity={detail.content_capacity:.2f}, "
-                f"diversity={detail.diversity:.2f}, "
-                f"analyzer={detail.analyzer_support:.2f})"
-            )
-
-
-
-def _run_render_pipeline(
-    *,
-    generate_ready: GenerateReadyDocument,
-    generate_ready_path: Optional[Path],
-    output_dir: Path,
-    template: Optional[Path],
-    pptx_name: str,
-    template_style: TemplateStyle,
-    template_style_artifact: dict[str, object],
-    analyzer_options: AnalyzerOptions,
-    pdf_options: PdfExportOptions,
-    polisher_options: PolisherOptions | None = None,
-    base_artifacts: dict[str, object] | None = None,
-) -> PipelineContext:
-    return run_render_pipeline(
-        generate_ready=generate_ready,
-        generate_ready_path=generate_ready_path,
-        output_dir=output_dir,
-        template=template,
-        pptx_name=pptx_name,
-        template_style=template_style,
-        template_style_artifact=template_style_artifact,
-        analyzer_options=analyzer_options,
-        pdf_options=pdf_options,
-        polisher_options=polisher_options,
-        base_artifacts=base_artifacts,
-    )
-
-
-def _echo_render_outputs(context: PipelineContext, audit_path: Path | None) -> None:
-    echo_render_outputs(context, audit_path)
+    configure_llm_logger()
+    configure_file_logging()
 
 
 @app.command("gen")
@@ -1416,30 +1187,27 @@ def tpl_release(
 ) -> None:
     """テンプレート受け渡しメタと差分レポートを生成する。"""
 
+    config = TemplateReleaseCommandConfig(
+        template_path=template_path,
+        brand=brand,
+        version=version,
+        template_id=template_id,
+        output_dir=output_dir,
+        generated_by=generated_by,
+        reviewed_by=reviewed_by,
+        baseline_release=baseline_release,
+        golden_specs=golden_specs,
+        layout_mode=layout_mode,
+    )
     try:
-        result = run_template_release(
-            template_path=template_path,
-            brand=brand,
-            version=version,
-            template_id=template_id,
-            output_dir=output_dir,
-            generated_by=generated_by,
-            reviewed_by=reviewed_by,
-            baseline_release=baseline_release,
-            golden_specs=golden_specs,
-            layout_mode=layout_mode,
-        )
-    except FileNotFoundError as exc:
-        click.echo(f"ファイルが見つかりません: {exc}", err=True)
-        raise click.exceptions.Exit(code=4) from exc
-    except Exception as exc:  # noqa: BLE001
-        logging.exception("テンプレートリリース生成中にエラーが発生しました")
-        click.echo(f"テンプレートリリースの生成に失敗しました: {exc}", err=True)
-        raise click.exceptions.Exit(code=1) from exc
-    else:
-        echo_template_release_result(result)
-        if result.release.diagnostics.errors:
-            raise click.exceptions.Exit(code=6)
+        result = run_template_release_command(config)
+    except TemplateCommandError as exc:
+        message = str(exc)
+        if message:
+            click.echo(message, err=True)
+        raise click.exceptions.Exit(code=exc.exit_code) from exc
+
+    echo_template_release_result(result)
 
 
 def _echo_errors(message: str, errors: list[dict[str, object]] | None) -> None:
