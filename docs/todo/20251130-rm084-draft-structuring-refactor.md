@@ -1,7 +1,7 @@
 ---
 目的: RM-084 CLI/Pipeline リファクタビリティ向上 - `DraftStructuringStep` の責務分離とメソッド整理
 関連ブランチ: chore/rm084-cli-refactorability
-関連Issue: #344
+関連Issue: 未作成
 roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 ---
 
@@ -34,8 +34,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] docs/design 配下（実装結果との整合再確認）
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
-- [x] 関連Issue 行の更新
-  - メモ: フロントマター `関連Issue` を `#344` に更新済み。issue への進捗書き込みは不要。
+- [ ] 関連Issue 行の更新
+  - メモ: 2025-12-02 時点で未作成。`todo-sync` 実行後に発行される Issue 番号を反映する。
 - [x] チェックリスト整合確認
   - メモ: 2025-11-30 確認時点で未完タスクは「PR 作成」のみ。その他の子タスクは親タスクと整合している。
 - [ ] PR 作成
