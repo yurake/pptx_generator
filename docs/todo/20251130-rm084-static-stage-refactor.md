@@ -33,7 +33,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: 2025-12-02 時点で未作成。`todo-sync` 実行後に発行される Issue 番号を転記する。
+  - メモ: フロントマターを Issue `#353` へ更新済み。進捗共有は本 ToDo で管理する。
 - [x] チェックリスト整合確認
   - メモ: 2025-11-30 時点で未完は「PR 作成」のみ。他のタスクは子要素と整合。
 - [ ] PR 作成

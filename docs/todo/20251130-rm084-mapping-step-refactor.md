@@ -5,10 +5,10 @@
 roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: chore/rm084-cli-refactorability を main から作成済み。リモート未 push（環境制約のためローカル作業継続）。既存ブランチを流用し mapping リファクタへ拡張予定。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: chore/rm084-cli-refactorability ブランチを再利用し、mapping リファクタ用の初期差分も commit 済み（2025-11-30）。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 2025-11-30 承認済み Plan を本 ToDo に転記済み。スコープ・リスク・テスト方針は下記メモに集約。
     - 対象整理（スコープ、対象ファイル、前提）: `src/pptx_generator/pipeline/mapping.py` の `MappingStep.run` を中心に、ワークアイテム構築・スライド処理・成果物出力処理をヘルパーへ分離する。既存の出力 JSON 構造・例外コード・外部依存は変更しない。
     - ドキュメント／コード修正方針: `MappingStep.run` をフロー制御のみに絞り、ランタイム状態を保持する小さなデータクラス／ヘルパー `_build_work_items`, `_process_work_item`, `_write_outputs`（名称仮）へ抽出。必要に応じて `mapping.py` 内に新規補助クラスを追加。ドキュメント側はリファクタメモを `docs/notes/rm084-refactorability-assessment.md` に追記予定。
     - 確認・共有方法（レビュー、ToDo 更新など）: Plan 承認内容を本 ToDo に転記し、実装後は該当テスト結果と差分要約を PR/ToDo へ記録。
@@ -20,8 +20,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 - [x] 設計・実装方針の確定
   - メモ: `docs/notes/rm084-refactorability-assessment.md` に MappingStep.run リファクタ設計メモを追記済み（2025-11-30）。`MappingWorkItem` / `MappingAccumulator` 導入とフロー 3 分割案を確定。
   - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-    - メモ: `docs/notes/rm084-refactorability-assessment.md#L33` 付近に詳細を記載。
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+    - メモ: `docs/notes/rm084-refactorability-assessment.md` の MappingStep セクション参照。
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: `MappingStep.run` を `MappingWorkItem` / `MappingAccumulator` / `_finalize_outputs` などのヘルパーへ分割し、ループ内のロジックを `_process_work_item` に集約。既存の出力・統計フォーマットは維持。
 - [x] テスト・検証
@@ -34,9 +34,9 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - [x] docs/runbook 配下
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
-  - メモ: 2025-12-02 時点で未作成。`todo-sync` で発行された番号を反映すること。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+  - メモ: フロントマターに `#352` を記載済み（ToDo 同期で発行）。進捗は本ファイルで管理。
+- [x] チェックリスト整合確認
+  - メモ: 2025-12-02 時点で未完タスクは「PR 作成」のみ。その他は親子タスクとも整合済み。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
