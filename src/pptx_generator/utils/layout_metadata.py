@@ -333,18 +333,14 @@ def _build_element_entry(
     name = str(placeholder.get("name") or "")
     expects_text = _expects_text_input(placeholder)
 
-    segment = f"{position_label}に"
-    if size_label:
-        segment += f"{size_label}"
-    segment += label
-    if name and name != label:
-        segment += f"（{name}）"
-    if not expects_text:
-        segment += "（テキスト入力非想定）"
-
-    size_keyword = None
-    if size_label:
-        size_keyword = size_label[:-1] if size_label.endswith("の") else size_label
+    segment = _compose_element_description(
+        position_label=position_label,
+        size_label=size_label,
+        role_label=label,
+        name=name,
+        expects_text=expects_text,
+    )
+    size_keyword = _normalize_size_keyword(size_label)
 
     element_entry: dict[str, Any] = {
         "anchor": name or None,
@@ -355,13 +351,51 @@ def _build_element_entry(
         "expects_text": expects_text,
         "description": segment,
     }
-    if area_ratio is not None:
-        element_entry["area_ratio"] = round(area_ratio, 3)
+    rounded_ratio = _rounded_area_ratio(area_ratio)
+    if rounded_ratio is not None:
+        element_entry["area_ratio"] = rounded_ratio
 
-    flags = placeholder.get("flags")
-    if isinstance(flags, list) and flags:
-        element_entry["flags"] = list(flags)
+    flag_list = _extract_flags(placeholder.get("flags"))
+    if flag_list:
+        element_entry["flags"] = flag_list
     return element_entry
+
+
+def _compose_element_description(
+    *,
+    position_label: str,
+    size_label: str | None,
+    role_label: str,
+    name: str,
+    expects_text: bool,
+) -> str:
+    parts = [f"{position_label}に"]
+    if size_label:
+        parts.append(size_label)
+    parts.append(role_label)
+    if name and name != role_label:
+        parts.append(f"（{name}）")
+    if not expects_text:
+        parts.append("（テキスト入力非想定）")
+    return "".join(parts)
+
+
+def _normalize_size_keyword(size_label: str | None) -> str | None:
+    if not size_label:
+        return None
+    return size_label[:-1] if size_label.endswith("の") else size_label
+
+
+def _rounded_area_ratio(area_ratio: float | None) -> float | None:
+    if area_ratio is None:
+        return None
+    return round(area_ratio, 3)
+
+
+def _extract_flags(flags: Any) -> list[str]:
+    if not isinstance(flags, list):
+        return []
+    return [str(flag) for flag in flags if flag is not None]
 
 
 def generate_layout_description(
@@ -453,12 +487,14 @@ def _guess_type_from_name(name: str | None) -> str | None:
     return None
 
 
+_BODY_PLACEHOLDER_REASON = ("placeholder:type=body",)
+
 _DIRECT_PLACEHOLDER_RULES: dict[str, tuple[str, tuple[str, ...]]] = {
     "title": ("mark_title", ("placeholder:type=title",)),
     "subtitle": ("mark_title", ("placeholder:type=subtitle",)),
-    "body": ("mark_body", ("placeholder:type=body",)),
-    "content": ("mark_body", ("placeholder:type=body",)),
-    "text": ("mark_body", ("placeholder:type=body",)),
+    "body": ("mark_body", _BODY_PLACEHOLDER_REASON),
+    "content": ("mark_body", _BODY_PLACEHOLDER_REASON),
+    "text": ("mark_body", _BODY_PLACEHOLDER_REASON),
     "chart": ("mark_chart", ("placeholder:type=chart",)),
     "table": ("mark_table", ("placeholder:type=table",)),
     "image": ("mark_image", ("placeholder:type=image",)),
