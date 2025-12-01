@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 from collections import Counter, defaultdict
 
@@ -248,6 +248,122 @@ def _expects_text_input(placeholder: dict[str, Any]) -> bool:
     return False
 
 
+def _count_placeholder_types(placeholders: Sequence[dict[str, Any]]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for placeholder in placeholders:
+        placeholder_type = str(placeholder.get("type") or "").casefold() or "unknown"
+        counts[placeholder_type] += 1
+    return counts
+
+
+def _feature_labels_from_counts(counts: Counter[str]) -> list[str]:
+    labels: list[str] = []
+    if counts.get("title") or counts.get("subtitle"):
+        labels.append("タイトル")
+    if counts.get("body") or counts.get("content") or counts.get("text"):
+        labels.append("本文")
+    if counts.get("table"):
+        labels.append("表")
+    if counts.get("chart"):
+        labels.append("チャート")
+    if counts.get("image") or counts.get("media") or counts.get("object"):
+        labels.append("ビジュアル")
+    if counts.get("footer"):
+        labels.append("フッター")
+    if counts.get("notes"):
+        labels.append("ノート")
+    return list(dict.fromkeys(labels))
+
+
+def _compose_overview_text(target: str, total: int, feature_labels: Sequence[str]) -> str:
+    if feature_labels:
+        features_text = "、".join(feature_labels)
+        return f"{target} レイアウトは {features_text} を配置できる {total} 個のプレースホルダー構成です。"
+    return f"{target} レイアウトは {total} 個のプレースホルダーを備えています。"
+
+
+def _sorted_placeholders_for_description(placeholders: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        placeholders,
+        key=lambda item: -(
+            float(item.get("bbox", {}).get("width") or 0.0)
+            * float(item.get("bbox", {}).get("height") or 0.0)
+        ),
+    )
+
+
+def _placeholder_area_metrics(
+    placeholder: dict[str, Any],
+    slide_area: float,
+) -> tuple[float, float, float | None]:
+    bbox = placeholder.get("bbox") or {}
+    width = float(bbox.get("width") or 0.0)
+    height = float(bbox.get("height") or 0.0)
+    area = width * height
+    return width, height, area / slide_area if slide_area > 0 else None
+
+
+def _build_element_entry(
+    placeholder: dict[str, Any],
+    *,
+    slide_width: float,
+    slide_height: float,
+    slide_area: float,
+) -> dict[str, Any]:
+    bbox = placeholder.get("bbox") or {}
+    left = float(bbox.get("x") or 0.0)
+    top = float(bbox.get("y") or 0.0)
+    width = float(bbox.get("width") or 0.0)
+    height = float(bbox.get("height") or 0.0)
+    _, _, area_ratio = _placeholder_area_metrics(placeholder, slide_area)
+
+    position_label = _compose_position_label(
+        _classify_position(
+            left=left,
+            top=top,
+            width=width,
+            height=height,
+            slide_width=slide_width,
+            slide_height=slide_height,
+        )
+    )
+
+    size_label = _size_label(placeholder, area_ratio)
+    label = _placeholder_label(placeholder)
+    name = str(placeholder.get("name") or "")
+    expects_text = _expects_text_input(placeholder)
+
+    segment = f"{position_label}に"
+    if size_label:
+        segment += f"{size_label}"
+    segment += label
+    if name and name != label:
+        segment += f"（{name}）"
+    if not expects_text:
+        segment += "（テキスト入力非想定）"
+
+    size_keyword = None
+    if size_label:
+        size_keyword = size_label[:-1] if size_label.endswith("の") else size_label
+
+    element_entry: dict[str, Any] = {
+        "anchor": name or None,
+        "type": str(placeholder.get("type") or "").lower() or None,
+        "role": label,
+        "position": position_label,
+        "size_label": size_keyword,
+        "expects_text": expects_text,
+        "description": segment,
+    }
+    if area_ratio is not None:
+        element_entry["area_ratio"] = round(area_ratio, 3)
+
+    flags = placeholder.get("flags")
+    if isinstance(flags, list) and flags:
+        element_entry["flags"] = list(flags)
+    return element_entry
+
+
 def generate_layout_description(
     layout_name: str,
     placeholders: Sequence[dict[str, Any]],
@@ -264,101 +380,19 @@ def generate_layout_description(
 
     slide_width, slide_height = (slide_size_emu or (0, 0))
     slide_area = float(slide_width) * float(slide_height)
-    counts: Counter[str] = Counter()
+    counts = _count_placeholder_types(placeholders)
+    feature_labels = _feature_labels_from_counts(counts)
+    overview = _compose_overview_text(target, len(placeholders), feature_labels)
 
-    for placeholder in placeholders:
-        p_type = str(placeholder.get("type") or "").casefold() or "unknown"
-        counts[p_type] += 1
-
-    total = len(placeholders)
-
-    feature_labels: list[str] = []
-    if counts.get("title") or counts.get("subtitle"):
-        feature_labels.append("タイトル")
-    if counts.get("body") or counts.get("content") or counts.get("text"):
-        feature_labels.append("本文")
-    if counts.get("table"):
-        feature_labels.append("表")
-    if counts.get("chart"):
-        feature_labels.append("チャート")
-    if counts.get("image") or counts.get("media") or counts.get("object"):
-        feature_labels.append("ビジュアル")
-    if counts.get("footer"):
-        feature_labels.append("フッター")
-    if counts.get("notes"):
-        feature_labels.append("ノート")
-
-    feature_labels = list(dict.fromkeys(feature_labels))
-    if feature_labels:
-        features_text = "、".join(feature_labels)
-        overview = f"{target} レイアウトは {features_text} を配置できる {total} 個のプレースホルダー構成です。"
-    else:
-        overview = f"{target} レイアウトは {total} 個のプレースホルダーを備えています。"
-
-    elements: list[dict[str, Any]] = []
-    placeholders_sorted = sorted(
-        placeholders,
-        key=lambda item: -(
-            float(item.get("bbox", {}).get("width") or 0.0)
-            * float(item.get("bbox", {}).get("height") or 0.0)
-        ),
-    )
-
-    for placeholder in placeholders_sorted[:20]:
-        bbox = placeholder.get("bbox") or {}
-        left = float(bbox.get("x") or 0.0)
-        top = float(bbox.get("y") or 0.0)
-        width = float(bbox.get("width") or 0.0)
-        height = float(bbox.get("height") or 0.0)
-        area = width * height
-        area_ratio = area / slide_area if slide_area > 0 else None
-
-        position_label = _compose_position_label(
-            _classify_position(
-                left=left,
-                top=top,
-                width=width,
-                height=height,
-                slide_width=float(slide_width or 0.0),
-                slide_height=float(slide_height or 0.0),
-            )
+    elements = [
+        _build_element_entry(
+            placeholder,
+            slide_width=float(slide_width or 0.0),
+            slide_height=float(slide_height or 0.0),
+            slide_area=slide_area,
         )
-
-        size_label = _size_label(placeholder, area_ratio)
-        label = _placeholder_label(placeholder)
-        name = str(placeholder.get("name") or "")
-        expects_text = _expects_text_input(placeholder)
-
-        segment = f"{position_label}に"
-        if size_label:
-            segment += f"{size_label}"
-        segment += label
-        if name and name != label:
-            segment += f"（{name}）"
-        if not expects_text:
-            segment += "（テキスト入力非想定）"
-
-        size_keyword = None
-        if size_label:
-            size_keyword = size_label[:-1] if size_label.endswith("の") else size_label
-
-        element_entry: dict[str, Any] = {
-            "anchor": name or None,
-            "type": str(placeholder.get("type") or "").lower() or None,
-            "role": label,
-            "position": position_label,
-            "size_label": size_keyword,
-            "expects_text": expects_text,
-            "description": segment,
-        }
-        if area_ratio is not None:
-            element_entry["area_ratio"] = round(area_ratio, 3)
-
-        flags = placeholder.get("flags")
-        if isinstance(flags, list) and flags:
-            element_entry["flags"] = list(flags)
-
-        elements.append(element_entry)
+        for placeholder in _sorted_placeholders_for_description(placeholders)[:20]
+    ]
 
     return {
         "overview": overview,
@@ -419,139 +453,186 @@ def _guess_type_from_name(name: str | None) -> str | None:
     return None
 
 
+_DIRECT_PLACEHOLDER_RULES: dict[str, tuple[str, tuple[str, ...]]] = {
+    "title": ("mark_title", ("placeholder:type=title",)),
+    "subtitle": ("mark_title", ("placeholder:type=subtitle",)),
+    "body": ("mark_body", ("placeholder:type=body",)),
+    "content": ("mark_body", ("placeholder:type=body",)),
+    "text": ("mark_body", ("placeholder:type=body",)),
+    "chart": ("mark_chart", ("placeholder:type=chart",)),
+    "table": ("mark_table", ("placeholder:type=table",)),
+    "image": ("mark_image", ("placeholder:type=image",)),
+    "notes": ("add_tag_only", ("notes", "placeholder:type=notes")),
+    "footer": ("add_tag_only", ("footer", "placeholder:type=footer")),
+}
+
+_OBJECT_BODY_KEYWORDS = ("body", "content", "text", "message")
+_OBJECT_IMAGE_KEYWORDS = ("logo", "image", "picture", "visual")
+_OBJECT_TABLE_KEYWORDS = ("table", "grid")
+_OBJECT_CHART_KEYWORDS = ("chart", "graph")
+
+_MEDIA_CHART_KEYWORDS = ("chart", "graph")
+_MEDIA_TABLE_KEYWORDS = ("table", "grid")
+_MEDIA_IMAGE_KEYWORDS = ("image", "picture", "photo", "visual")
+
+_UNKNOWN_TITLE_KEYWORDS = ("title", "header")
+_UNKNOWN_BODY_KEYWORDS = ("body", "content", "message")
+_UNKNOWN_CHART_KEYWORDS = ("chart", "graph")
+_UNKNOWN_TABLE_KEYWORDS = ("table", "grid")
+_UNKNOWN_IMAGE_KEYWORDS = ("image", "picture", "photo", "visual")
+
+
+@dataclass(slots=True)
+class _UsageTagState:
+    tags: set[str] = field(default_factory=set)
+    reasons: dict[str, str] = field(default_factory=dict)
+    has_title_placeholder: bool = False
+    has_body_placeholder: bool = False
+    has_chart_placeholder: bool = False
+    has_table_placeholder: bool = False
+    has_image_placeholder: bool = False
+
+    def add_tag(self, tag: str, reason: str) -> None:
+        if tag not in self.tags:
+            self.tags.add(tag)
+            self.reasons.setdefault(tag, reason)
+
+    def add_tag_only(self, tag: str, reason: str) -> None:
+        self.add_tag(tag, reason)
+
+    def mark_title(self, reason: str) -> None:
+        self.has_title_placeholder = True
+        self.add_tag("title", reason)
+
+    def mark_body(self, reason: str) -> None:
+        self.has_body_placeholder = True
+        self.add_tag("content", reason)
+
+    def mark_chart(self, reason: str) -> None:
+        self.has_chart_placeholder = True
+        self.add_tag("chart", reason)
+
+    def mark_table(self, reason: str) -> None:
+        self.has_table_placeholder = True
+        self.add_tag("table", reason)
+
+    def mark_image(self, reason: str) -> None:
+        self.has_image_placeholder = True
+        self.add_tag("visual", reason)
+
+    def process_placeholder(self, placeholder: dict[str, Any]) -> None:
+        p_type = str(placeholder.get("type") or "").casefold()
+        handler = _DIRECT_PLACEHOLDER_RULES.get(p_type)
+        if handler is not None:
+            method_name, args = handler
+            getattr(self, method_name)(*args)
+            return
+
+        name_cf = (placeholder.get("name") or "").casefold()
+        if p_type == "object":
+            self._handle_object_placeholder(name_cf)
+        elif p_type == "media":
+            self._handle_media_placeholder(name_cf)
+        elif p_type == "unknown":
+            self._handle_unknown_placeholder(name_cf)
+
+    def _handle_object_placeholder(self, name_cf: str) -> None:
+        if any(keyword in name_cf for keyword in _OBJECT_BODY_KEYWORDS):
+            self.mark_body("placeholder:type=object(body)")
+        elif any(keyword in name_cf for keyword in _OBJECT_IMAGE_KEYWORDS):
+            self.mark_image("placeholder:type=object(visual)")
+        elif any(keyword in name_cf for keyword in _OBJECT_TABLE_KEYWORDS):
+            self.mark_table("placeholder:type=object(table)")
+        elif any(keyword in name_cf for keyword in _OBJECT_CHART_KEYWORDS):
+            self.mark_chart("placeholder:type=object(chart)")
+
+    def _handle_media_placeholder(self, name_cf: str) -> None:
+        if any(keyword in name_cf for keyword in _MEDIA_CHART_KEYWORDS):
+            self.mark_chart("placeholder:type=media(chart)")
+        elif any(keyword in name_cf for keyword in _MEDIA_TABLE_KEYWORDS):
+            self.mark_table("placeholder:type=media(table)")
+        elif any(keyword in name_cf for keyword in _MEDIA_IMAGE_KEYWORDS):
+            self.mark_image("placeholder:type=media(image)")
+
+    def _handle_unknown_placeholder(self, name_cf: str) -> None:
+        if any(keyword in name_cf for keyword in _UNKNOWN_TITLE_KEYWORDS):
+            self.mark_title("placeholder:name~title")
+        elif any(keyword in name_cf for keyword in _UNKNOWN_BODY_KEYWORDS):
+            self.mark_body("placeholder:name~body")
+        elif any(keyword in name_cf for keyword in _UNKNOWN_CHART_KEYWORDS):
+            self.mark_chart("placeholder:name~chart")
+        elif any(keyword in name_cf for keyword in _UNKNOWN_TABLE_KEYWORDS):
+            self.mark_table("placeholder:name~table")
+        elif any(keyword in name_cf for keyword in _UNKNOWN_IMAGE_KEYWORDS):
+            self.mark_image("placeholder:name~image")
+
+    def ensure_derived_tags(self) -> None:
+        if self.has_chart_placeholder:
+            self.add_tag("chart", "placeholder:derived=chart")
+        if self.has_table_placeholder:
+            self.add_tag("table", "placeholder:derived=table")
+        if self.has_image_placeholder:
+            self.add_tag("visual", "placeholder:derived=visual")
+
+    def ensure_body_tag(self) -> None:
+        if self.has_body_placeholder:
+            self.add_tag("content", "placeholder:has_body")
+
+
+def _apply_layout_name_hints(state: _UsageTagState, layout_name: str) -> bool:
+    name = layout_name or ""
+    name_cf = name.casefold()
+    if "agenda" in name_cf or "toc" in name_cf:
+        state.add_tag("agenda", "name:contains=agenda")
+    if "summary" in name_cf or "overview" in name_cf:
+        state.add_tag("overview", "name:contains=overview")
+    if "table" in name_cf:
+        state.add_tag("table", "name:contains=table")
+    if "chart" in name_cf:
+        state.add_tag("chart", "name:contains=chart")
+
+    title_from_name = _looks_like_title_layout(name, name_cf)
+    if title_from_name:
+        state.add_tag("title", "name:pattern=title")
+    elif state.has_title_placeholder and not state.has_body_placeholder:
+        state.add_tag("title", "placeholder:only_title")
+    return title_from_name
+
+
+def _looks_like_title_layout(layout_name: str, layout_name_cf: str) -> bool:
+    if not layout_name:
+        return False
+    if any(keyword in layout_name_cf for keyword in ("cover", "front page")):
+        return True
+    if "title" in layout_name_cf and "content" not in layout_name_cf:
+        return True
+    if "タイトル" in layout_name and "コンテンツ" not in layout_name:
+        return True
+    if "表紙" in layout_name:
+        return True
+    if "セクション" in layout_name and ("タイトル" in layout_name or "表紙" in layout_name):
+        return True
+    return False
+
+
 def derive_usage_tags(
     layout_name: str,
     placeholders: Iterable[dict[str, Any]],
 ) -> HeuristicUsageTagsResult:
     """Derive heuristic usage tags and reasoning from layout name and placeholders."""
-    tags: set[str] = set()
-    reasons: dict[str, str] = {}
-    name = layout_name or ""
-    name_cf = name.casefold()
-
-    has_title_placeholder = False
-    has_body_placeholder = False
-    has_chart_placeholder = False
-    has_table_placeholder = False
-    has_image_placeholder = False
-
-    def add_tag(tag: str, reason: str) -> None:
-        if tag not in tags:
-            tags.add(tag)
-            reasons.setdefault(tag, reason)
-
+    state = _UsageTagState()
     for placeholder in placeholders:
-        p_type_raw = placeholder.get("type") or ""
-        p_type = p_type_raw.casefold()
-        placeholder_name_cf = (placeholder.get("name") or "").casefold()
+        state.process_placeholder(placeholder)
 
-        if p_type == "title":
-            has_title_placeholder = True
-            add_tag("title", "placeholder:type=title")
-        elif p_type in {"body", "content", "text"}:
-            has_body_placeholder = True
-            add_tag("content", "placeholder:type=body")
-        elif p_type == "chart":
-            has_chart_placeholder = True
-            add_tag("chart", "placeholder:type=chart")
-        elif p_type == "table":
-            has_table_placeholder = True
-            add_tag("table", "placeholder:type=table")
-        elif p_type == "image":
-            has_image_placeholder = True
-            add_tag("visual", "placeholder:type=image")
-        elif p_type == "object":
-            if any(keyword in placeholder_name_cf for keyword in ("body", "content", "text", "message")):
-                has_body_placeholder = True
-                add_tag("content", "placeholder:type=object(body)")
-            elif any(keyword in placeholder_name_cf for keyword in ("logo", "image", "picture", "visual")):
-                has_image_placeholder = True
-                add_tag("visual", "placeholder:type=object(visual)")
-            elif any(keyword in placeholder_name_cf for keyword in ("table", "grid")):
-                has_table_placeholder = True
-                add_tag("table", "placeholder:type=object(table)")
-            elif any(keyword in placeholder_name_cf for keyword in ("chart", "graph")):
-                has_chart_placeholder = True
-                add_tag("chart", "placeholder:type=object(chart)")
-        elif p_type == "media":
-            if any(keyword in placeholder_name_cf for keyword in ("chart", "graph")):
-                has_chart_placeholder = True
-                add_tag("chart", "placeholder:type=media(chart)")
-            elif any(keyword in placeholder_name_cf for keyword in ("table", "grid")):
-                has_table_placeholder = True
-                add_tag("table", "placeholder:type=media(table)")
-            elif any(keyword in placeholder_name_cf for keyword in ("image", "picture", "photo", "visual")):
-                has_image_placeholder = True
-                add_tag("visual", "placeholder:type=media(image)")
-        elif p_type == "notes":
-            add_tag("notes", "placeholder:type=notes")
-        elif p_type == "subtitle":
-            has_title_placeholder = True
-            add_tag("title", "placeholder:type=subtitle")
-        elif p_type == "footer":
-            add_tag("footer", "placeholder:type=footer")
-        elif p_type == "unknown":
-            if any(keyword in placeholder_name_cf for keyword in ("title", "header")):
-                has_title_placeholder = True
-                add_tag("title", "placeholder:name~title")
-            elif any(keyword in placeholder_name_cf for keyword in ("body", "content", "message")):
-                has_body_placeholder = True
-                add_tag("content", "placeholder:name~body")
-            elif any(keyword in placeholder_name_cf for keyword in ("chart", "graph")):
-                has_chart_placeholder = True
-                add_tag("chart", "placeholder:name~chart")
-            elif any(keyword in placeholder_name_cf for keyword in ("table", "grid")):
-                has_table_placeholder = True
-                add_tag("table", "placeholder:name~table")
-            elif any(keyword in placeholder_name_cf for keyword in ("image", "picture", "photo", "visual")):
-                has_image_placeholder = True
-                add_tag("visual", "placeholder:name~image")
+    state.ensure_derived_tags()
+    title_from_name = _apply_layout_name_hints(state, layout_name)
+    state.ensure_body_tag()
 
-    if has_chart_placeholder and "chart" not in tags:
-        add_tag("chart", "placeholder:derived=chart")
-    if has_table_placeholder and "table" not in tags:
-        add_tag("table", "placeholder:derived=table")
-    if has_image_placeholder and "visual" not in tags:
-        add_tag("visual", "placeholder:derived=visual")
-
-    if "agenda" in name_cf or "toc" in name_cf:
-        add_tag("agenda", "name:contains=agenda")
-    if "summary" in name_cf or "overview" in name_cf:
-        add_tag("overview", "name:contains=overview")
-    if "table" in name_cf:
-        add_tag("table", "name:contains=table")
-    if "chart" in name_cf:
-        add_tag("chart", "name:contains=chart")
-
-    def _looks_like_title_layout(layout_name: str, layout_name_cf: str) -> bool:
-        if not layout_name:
-            return False
-        if any(keyword in layout_name_cf for keyword in ("cover", "front page")):
-            return True
-        if "title" in layout_name_cf and "content" not in layout_name_cf:
-            return True
-        if "タイトル" in layout_name and "コンテンツ" not in layout_name:
-            return True
-        if "表紙" in layout_name:
-            return True
-        if "セクション" in layout_name and ("タイトル" in layout_name or "表紙" in layout_name):
-            return True
-        return False
-
-    title_from_name = _looks_like_title_layout(name, name_cf)
-    if title_from_name:
-        add_tag("title", "name:pattern=title")
-    elif has_title_placeholder and not has_body_placeholder:
-        add_tag("title", "placeholder:only_title")
-
-    if has_body_placeholder:
-        add_tag("content", "placeholder:has_body")
-
-    reasons_list = [reasons[tag] for tag in sorted(reasons)]
+    reasons_list = [state.reasons[tag] for tag in sorted(state.reasons)]
     return HeuristicUsageTagsResult(
-        tags=tags,
-        has_title_placeholder=has_title_placeholder,
-        has_body_placeholder=has_body_placeholder,
+        tags=set(state.tags),
+        has_title_placeholder=state.has_title_placeholder,
+        has_body_placeholder=state.has_body_placeholder,
         title_from_name=title_from_name,
         reasons=reasons_list,
     )
