@@ -126,6 +126,21 @@ def build_refiner_options(
         else defaults.max_bullet_level
     )
 
+    return RefinerOptions(
+        max_bullet_level=max_bullet_level,
+        enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
+        enable_font_raise=refiner_rules.enable_font_raise,
+        min_font_size=refiner_rules.min_font_size
+        if refiner_rules.min_font_size is not None
+        else body_font_size,
+        enable_color_adjust=refiner_rules.enable_color_adjust,
+        preferred_text_color=refiner_rules.preferred_text_color
+        or analyzer_rules.preferred_text_color
+        or primary_color,
+        fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
+        default_font_name=template_style.body_font.name,
+    )
+
 
 def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
     try:
@@ -182,21 +197,6 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
         raise MappingCommandError("マッピング実行中にエラーが発生しました", exit_code=1) from exc
 
     return MappingCommandResult(context=context)
-
-    return RefinerOptions(
-        max_bullet_level=max_bullet_level,
-        enable_bullet_reindent=refiner_rules.enable_bullet_reindent,
-        enable_font_raise=refiner_rules.enable_font_raise,
-        min_font_size=refiner_rules.min_font_size
-        if refiner_rules.min_font_size is not None
-        else body_font_size,
-        enable_color_adjust=refiner_rules.enable_color_adjust,
-        preferred_text_color=refiner_rules.preferred_text_color
-        or analyzer_rules.preferred_text_color
-        or primary_color,
-        fallback_font_color=refiner_rules.fallback_font_color or body_font_color,
-        default_font_name=template_style.body_font.name,
-    )
 
 
 def run_mapping_pipeline(
