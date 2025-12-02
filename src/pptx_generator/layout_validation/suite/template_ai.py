@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from importlib import import_module
 from time import perf_counter
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Sequence, Type
 
 from ...models import LayoutInfo
-from ...template_ai import TemplateAIOptions, TemplateAIResult, TemplateAIService
+from ...template_ai import TemplateAIOptions, TemplateAIResult, TemplateAIService as BaseTemplateAIService
 from ...template_ai.client import TemplateAIClientConfigurationError
 from ...template_ai.policy import TemplateAIPolicyError
 from ...utils.layout_metadata import HeuristicUsageTagsResult
@@ -15,6 +16,9 @@ from ...utils.usage_tags import normalize_usage_tags_with_unknown
 from .types import LayoutValidationOptions
 
 logger = logging.getLogger(__name__)
+
+# backward-compatible alias exposed via package __all__
+TemplateAIService = BaseTemplateAIService
 
 
 class TemplateAIManager:
@@ -48,7 +52,8 @@ class TemplateAIManager:
         if policy_path is None:
             return
         try:
-            service = TemplateAIService(
+            service_cls = _resolve_template_ai_service()
+            service = service_cls(
                 TemplateAIOptions(
                     policy_path=policy_path,
                     policy_id=self._options.template_ai_policy_id,
@@ -201,6 +206,7 @@ class TemplateAIManager:
             )
         return payload
 
+
     def stats(self) -> dict[str, int]:
         return dict(self._stats)
 
@@ -297,3 +303,11 @@ class TemplateAIManager:
         )
 
         return result
+
+
+def _resolve_template_ai_service() -> Type[BaseTemplateAIService]:
+    suite_module = import_module("pptx_generator.layout_validation.suite")
+    service_cls = getattr(suite_module, "TemplateAIService", None)
+    if service_cls is None:
+        return BaseTemplateAIService
+    return service_cls

@@ -374,7 +374,24 @@ class TestTemplateExtractor:
         mock_template_spec = TemplateSpec(
             template_path=str(temp_template_path),
             extracted_at="2023-01-01T00:00:00Z",
-            layouts=[],
+            layouts=[
+                LayoutInfo(
+                    name="TitleSlide",
+                    identifier="title_slide",
+                    anchors=[
+                        ShapeInfo(
+                            name="Title",
+                            shape_type="TEXT",
+                            left_in=1.0,
+                            top_in=1.0,
+                            width_in=4.0,
+                            height_in=1.0,
+                            placeholder_type="title",
+                            is_placeholder=True,
+                        )
+                    ],
+                )
+            ],
         )
         
         with patch.object(extractor.step, 'extract_template_spec') as mock_extract:
@@ -411,7 +428,24 @@ class TestTemplateExtractor:
         mock_template_spec = TemplateSpec(
             template_path=str(temp_template_path),
             extracted_at="2023-01-01T00:00:00Z",
-            layouts=[],
+            layouts=[
+                LayoutInfo(
+                    name="TitleSlide",
+                    identifier="title_slide",
+                    anchors=[
+                        ShapeInfo(
+                            name="Title",
+                            shape_type="TEXT",
+                            left_in=1.0,
+                            top_in=1.0,
+                            width_in=4.0,
+                            height_in=1.0,
+                            placeholder_type="title",
+                            is_placeholder=True,
+                        )
+                    ],
+                )
+            ],
         )
         
         with patch.object(extractor.step, 'extract_template_spec') as mock_extract:

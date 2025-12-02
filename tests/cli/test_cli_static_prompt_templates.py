@@ -26,6 +26,11 @@ from pptx_generator.cli_handlers.prepare import load_prompt_overrides
 from pptx_generator.models import (
     JobSpecScaffold,
     JobSpecScaffoldMeta,
+    JobSpecScaffoldBounds,
+    JobSpecScaffoldPlaceholder,
+    JobSpecScaffoldSlide,
+    LayoutInfo,
+    ShapeInfo,
     TemplateBlueprint,
     TemplateBlueprintSlide,
     TemplateBlueprintSlot,
@@ -41,7 +46,25 @@ def _build_static_template_spec() -> TemplateSpec:
     return TemplateSpec(
         template_path="templates/dummy.pptx",
         extracted_at="2025-01-01T00:00:00Z",
-        layouts=[],
+        layouts=[
+            LayoutInfo(
+                name="TitleSlide",
+                identifier="title_slide",
+                anchors=[
+                    ShapeInfo(
+                        name="Title",
+                        shape_type="TEXT",
+                        left_in=1.0,
+                        top_in=1.0,
+                        width_in=4.0,
+                        height_in=1.0,
+                        text="",
+                        placeholder_type="title",
+                        is_placeholder=True,
+                    )
+                ],
+            )
+        ],
         warnings=[],
         errors=[],
         layout_mode="static",
@@ -78,7 +101,31 @@ def _build_jobspec_scaffold(template_spec_path: Path) -> JobSpecScaffold:
             layouts_path=None,
             template_spec_path=str(template_spec_path),
         ),
-        slides=[],
+        slides=[
+            JobSpecScaffoldSlide(
+                id="slide-01",
+                layout="TitleSlide",
+                sequence=1,
+                placeholders=[
+                    JobSpecScaffoldPlaceholder(
+                        anchor="Title",
+                        kind="text",
+                        placeholder_type="title",
+                        shape_type="TEXT",
+                        is_placeholder=True,
+                        bounds=JobSpecScaffoldBounds(
+                            left_in=1.0,
+                            top_in=1.0,
+                            width_in=4.0,
+                            height_in=1.0,
+                        ),
+                        sample_text=None,
+                        notes=[],
+                        auto_draw=False,
+                    )
+                ],
+            )
+        ],
     )
 
 
