@@ -122,11 +122,11 @@ class RulesConfig:
 
     @classmethod
     def load(cls, path: Path | str) -> "RulesConfig":
-        path = Path(path)
-        logger.info("Loading rules config from %s", path.resolve())
-        data = json.loads(path.read_text(encoding="utf-8"))
+        resolved_path: Path = Path(path).expanduser().resolve()
+        logger.info("Loading rules config from %s", resolved_path)
+        data = json.loads(resolved_path.read_text(encoding="utf-8"))
         config = cls.from_dict(data)
-        logger.info("Loaded rules config from %s", path.resolve())
+        logger.info("Loaded rules config from %s", resolved_path)
         return config
 
     @classmethod
