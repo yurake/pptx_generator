@@ -181,11 +181,11 @@ class BrandingConfig:
 
     @classmethod
     def load(cls, path: Path | str) -> "BrandingConfig":
-        path = Path(path)
-        logger.info("Loading branding config from %s", path.resolve())
-        data = json.loads(path.read_text(encoding="utf-8"))
+        resolved_path: Path = Path(path).expanduser().resolve()
+        logger.info("Loading branding config from %s", resolved_path)
+        data = json.loads(resolved_path.read_text(encoding="utf-8"))
         config = cls.from_dict(data)
-        logger.info("Loaded branding config from %s", path.resolve())
+        logger.info("Loaded branding config from %s", resolved_path)
         return config
 
     @classmethod
@@ -485,4 +485,3 @@ def _resolve_optional_color(value: object, default: str | None) -> str | None:
     if value in (None, ""):
         return default
     return ensure_hex_prefix(str(value))
-
