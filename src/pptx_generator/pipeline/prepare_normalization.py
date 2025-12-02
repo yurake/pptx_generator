@@ -7,9 +7,15 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 import textwrap
-from typing import Any, Iterable
+from typing import Any
 
-from ..prepare import PrepareCard, PrepareDocument, PrepareGenerationMeta, PrepareLogEntry
+from ..prepare import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareDocument,
+    PrepareGenerationMeta,
+    PrepareLogEntry,
+)
 from ..models import (
     ContentApprovalDocument,
     ContentDocumentMeta,
@@ -262,70 +268,85 @@ class PrepareNormalizationStep:
         )
 
     def _build_body_lines(self, card: PrepareCard) -> list[str]:
-        def _split_text(value: str) -> list[str]:
-            stripped = value.strip()
-            if not stripped:
-                return []
-            segments = stripped.splitlines() if "\n" in stripped else [stripped]
-            output: list[str] = []
-            for segment in segments:
-                segment = segment.strip()
-                if not segment:
-                    continue
-                if len(segment) <= 200:
-                    output.append(segment)
-                else:
-                    wrapped = textwrap.wrap(
-                        segment,
-                        width=200,
-                        drop_whitespace=True,
-                        break_long_words=True,
-                    )
-                    output.extend(chunk.strip() for chunk in wrapped if chunk.strip())
-            return output
-
         lines: list[str] = []
         for block in card.content.body:
-            if block.type == "table":
-                continue
-            if block.type == "bullets" and block.data:
-                items = block.data.get("items")
-                if not isinstance(items, list):
-                    continue
-                for entry in items:
-                    if isinstance(entry, dict):
-                        text = str(entry.get("text") or "").strip()
-                        if not text:
-                            continue
-                        level_raw = entry.get("level", 0)
-                        try:
-                            level = max(int(level_raw), 0)
-                        except (TypeError, ValueError):
-                            level = 0
-                        prefix = "  " * level
-                        for segment in _split_text(text):
-                            lines.append(f"{prefix}{segment}")
-                    elif isinstance(entry, str):
-                        for segment in _split_text(entry):
-                            lines.append(segment)
-                continue
-
-            if isinstance(block.text, str):
-                for segment in _split_text(block.text):
-                    lines.append(segment)
-
-            if isinstance(block.description, str):
-                for segment in _split_text(block.description):
-                    lines.append(segment)
+            lines.extend(self._collect_block_lines(block))
 
         if lines:
             return lines
 
         headline = card.headline_or_title().strip()
-        if headline:
-            return [headline]
+        return [headline] if headline else []
+
+    def _collect_block_lines(self, block: PrepareBodyBlock) -> list[str]:
+        if block.type == "table":
+            return []
+
+        if block.type == "bullets":
+            return self._lines_from_bullets(block.data)
+
+        lines: list[str] = []
+        lines.extend(self._split_text(block.text))
+        lines.extend(self._split_text(block.description))
+        return lines
+
+    def _lines_from_bullets(self, raw_items: Any) -> list[str]:
+        items = raw_items.get("items") if isinstance(raw_items, dict) else None
+        if not isinstance(items, list):
+            return []
+
+        lines: list[str] = []
+        for entry in items:
+            lines.extend(self._lines_from_bullet_entry(entry))
+        return lines
+
+    def _lines_from_bullet_entry(self, entry: Any) -> list[str]:
+        if isinstance(entry, dict):
+            text = str(entry.get("text") or "").strip()
+            if not text:
+                return []
+            level = self._extract_bullet_level(entry.get("level", 0))
+            prefix = "  " * level
+            return [f"{prefix}{segment}" for segment in self._split_text(text)]
+
+        if isinstance(entry, str):
+            return self._split_text(entry)
 
         return []
+
+    @staticmethod
+    def _extract_bullet_level(value: Any) -> int:
+        try:
+            return max(int(value), 0)
+        except (TypeError, ValueError):
+            return 0
+
+    @staticmethod
+    def _split_text(value: Any) -> list[str]:
+        if not isinstance(value, str):
+            return []
+
+        stripped = value.strip()
+        if not stripped:
+            return []
+
+        segments = stripped.splitlines() if "\n" in stripped else [stripped]
+        output: list[str] = []
+        for segment in segments:
+            segment = segment.strip()
+            if not segment:
+                continue
+            if len(segment) <= 200:
+                output.append(segment)
+                continue
+            wrapped = textwrap.wrap(
+                segment,
+                width=200,
+                drop_whitespace=True,
+                break_long_words=True,
+            )
+            output.extend(chunk.strip() for chunk in wrapped if chunk.strip())
+        return output
 
     @staticmethod
     def _extract_table_data(card: PrepareCard) -> ContentTableData | None:
