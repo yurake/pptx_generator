@@ -29,6 +29,8 @@ from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
                                    TemplateStyle)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
+from pptx_generator.cli_handlers.mapping import TemplateStylePayload
+from pptx_generator.cli_handlers.outline import OutlineResult
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
 PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
@@ -190,22 +192,23 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
     spec_path.write_text("{}", encoding="utf-8")
     (tmp_path / "rules.json").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(cli, "_load_jobspec", lambda path: object())
     monkeypatch.setattr(
-        cli,
-        "_resolve_template_path",
+        "pptx_generator.cli_handlers.compose.load_jobspec",
+        lambda path: object(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.resolve_template_path",
         lambda spec, spec_source: tmp_path / "template.pptx",
     )
     monkeypatch.setattr(
-        cli,
-        "_resolve_layouts_path",
+        "pptx_generator.cli_handlers.compose.resolve_layouts_path",
         lambda spec, spec_source: tmp_path / "layouts.jsonl",
     )
 
     def boom(**_: object) -> None:
         raise RuntimeError("outline failure")
 
-    monkeypatch.setattr(cli, "_execute_outline", boom)
+    monkeypatch.setattr("pptx_generator.cli_handlers.compose.execute_outline", boom)
 
     with caplog.at_level(logging.ERROR):
         with pytest.raises(click.exceptions.Exit) as exc:
@@ -236,19 +239,20 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
     rules_path = tmp_path / "rules.json"
     rules_path.write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(cli, "_load_jobspec", lambda path: object())
     monkeypatch.setattr(
-        cli,
-        "_resolve_template_path",
+        "pptx_generator.cli_handlers.compose.load_jobspec",
+        lambda path: object(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.resolve_template_path",
         lambda spec, spec_source: tmp_path / "template.pptx",
     )
     monkeypatch.setattr(
-        cli,
-        "_resolve_layouts_path",
+        "pptx_generator.cli_handlers.compose.resolve_layouts_path",
         lambda spec, spec_source: tmp_path / "layouts.jsonl",
     )
 
-    outline_result = cli.OutlineResult(
+    outline_result = OutlineResult(
         context=PipelineContext(spec=object(), workdir=tmp_path),
         draft_path=tmp_path / "draft.json",
         approved_path=tmp_path / "approved.json",
@@ -257,26 +261,37 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
         generate_ready_path=tmp_path / "ready.json",
         generate_ready_meta_path=tmp_path / "ready_meta.json",
     )
-    monkeypatch.setattr(cli, "_execute_outline", lambda **_: outline_result)
-    monkeypatch.setattr(cli, "_print_outline_result", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.execute_outline",
+        lambda **_: outline_result,
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.print_outline_result",
+        lambda *args, **kwargs: None,
+    )
 
     dummy_rules = object()
 
     def fake_rules_load(cls: object, path: Path) -> object:
         return dummy_rules
 
-    monkeypatch.setattr(cli.RulesConfig, "load", classmethod(fake_rules_load))
     monkeypatch.setattr(
-        cli, "_prepare_template_style", lambda template: (TemplateStyle.default(), {})
+        cli.RulesConfig,
+        "load",
+        classmethod(fake_rules_load),
     )
     monkeypatch.setattr(
-        cli, "_build_refiner_options", lambda rules_config, template_style: object()
+        "pptx_generator.cli_handlers.compose.prepare_template_style",
+        lambda template: TemplateStylePayload(style=TemplateStyle.default(), artifact={}),
     )
-
-    def mapping_boom(**_: object) -> None:
-        raise RuntimeError("mapping failure")
-
-    monkeypatch.setattr(cli, "_run_mapping_pipeline", mapping_boom)
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.build_refiner_options",
+        lambda rules_config, template_style: object(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.run_mapping_pipeline",
+        lambda **_: (_ for _ in ()).throw(RuntimeError("mapping failure")),
+    )
 
     with caplog.at_level(logging.ERROR):
         with pytest.raises(click.exceptions.Exit) as exc:

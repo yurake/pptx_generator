@@ -506,7 +506,7 @@ flowchart TB
 - 対象 stage: 4（ドラフト構成設計）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 状況: 保留（2025-11-30 更新）
 - 期待成果:
   - 生成AIによる章立て・ページ順・layout_hint 提案と、ページ内配置を文章化したサマリ出力。
   - ユーザーが自然言語で修正指示を出し、AI がレイアウト差分を適用する対話 API／UI。
@@ -519,7 +519,7 @@ flowchart TB
 - 対象 stage: 3（コンテンツ準備）
 - 参照ドキュメント: [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-10-23 追加）
+- 状況: 保留（2025-11-30 更新）
 - 期待成果:
   - 必須情報チェックリストと生成AIによる質問テンプレートの実装、回答を `content_draft.json` へ反映するフロー。
   - ヒアリング履歴・再問い合わせ管理と承認ログとの連携、ユーザー通知チャネルの整備。
@@ -1060,7 +1060,7 @@ flowchart TB
 - 対象 stage: ステージ横断（CLI、Stage 2〜4 パイプライン）
 - ゴール: 長大化した CLI コマンド実装とパイプライン各ステップの単一責務化を進め、保守性とテスト容易性を高める。
 - 参照ドキュメント: [docs/notes/rm084-refactorability-assessment.md](../notes/rm084-refactorability-assessment.md)
-- 状況: 未着手（2025-02-16 追加）
+- 状況: 完了（2025-12-02 更新）
 - 期待成果:
   - `cli.py` のサブコマンド処理を orchestration レイヤーへ切り出し、ステージ別ハンドラ構造を定義する。
   - `MappingStep.run`・`DraftStructuring._build_document`・`PrepareAIOrchestrator._build_cards_static` など長大メソッドを段階的に分割し、データクラスやヘルパー関数でロジックを整理する。
