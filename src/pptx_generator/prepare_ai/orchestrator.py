@@ -4,11 +4,11 @@ import hashlib
 import json
 import logging
 import re
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal, Sequence
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
+from .errors import PrepareAIOrchestrationError
 from .llm_client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
 from ..prepare.models import (
     PrepareAIRecord,
@@ -22,25 +22,14 @@ from ..prepare.models import (
     PrepareStoryContext,
 )
 from ..prepare.policy import PreparePolicy, PreparePolicyError, PreparePolicySet
-from .prompts import build_prepare_prompt_dynamic, build_prepare_prompt_static
+from .prompts import build_prepare_prompt_dynamic
 from ..prepare.source import PrepareSourceChapter, PrepareSourceDocument, PrepareSourceSupportingPoint
+from .static_mode import StaticModeExecutor, StaticPromptOverride
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_ID = "prepare.default"
 ALLOWED_STORY_PHASES = {"introduction", "problem", "solution", "impact", "next"}
-
-
-@dataclass(slots=True)
-class StaticPromptOverride:
-    slide_id: str
-    slide_index: int
-    instructions: str
-    template_path: str | None = None
-
-
-class PrepareAIOrchestrationError(RuntimeError):
-    """プレペア生成フローの例外。"""
 
 
 class PrepareAIOrchestrator:
@@ -542,6 +531,7 @@ class PrepareAIOrchestrator:
             notes.append(PrepareNoteEntry(type="rationale", text=f"{statement}{evidence}"))
         return notes
 
+
     def _build_cards_static(
         self,
         *,
@@ -553,265 +543,25 @@ class PrepareAIOrchestrator:
         slide_sources: dict[str, PrepareSourceDocument] | None,
         slide_input_refs: dict[str, str] | None,
     ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord], list[dict[str, Any]]]:
-        if page_limit is not None:
-            raise PrepareAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
-
-        slot_entries: list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]] = []
-        for slide_index, blueprint_slide in enumerate(blueprint.slides, start=1):
-            for slot_index, slot in enumerate(blueprint_slide.slots):
-                slot_entries.append((len(slot_entries), blueprint_slide, slot))
-
-        required_entries = [entry for entry in slot_entries if entry[2].required]
-        optional_entries = [entry for entry in slot_entries if not entry[2].required]
-
-        chapters = list(source.chapters)
-        if len(chapters) < len(required_entries):
-            logger.warning(
-                "Blueprint の必須 slot 数 (%d) に対し、入力章数が不足しています (%d)。不足分は原稿全体から補完します。",
-                len(required_entries),
-                len(chapters),
-            )
-
-        chapter_assignments: dict[int, PrepareSourceChapter] = {}
-        chapter_iter_index = 0
-
-        for entry in required_entries:
-            if chapter_iter_index >= len(chapters):
-                break
-            chapter_assignments[entry[0]] = chapters[chapter_iter_index]
-            chapter_iter_index += 1
-
-        for entry in optional_entries:
-            if chapter_iter_index >= len(chapters):
-                break
-            chapter_assignments[entry[0]] = chapters[chapter_iter_index]
-            chapter_iter_index += 1
-
-        cards: list[PrepareCard] = []
-        required_fulfilled = 0
-        optional_used = 0
-
-        ai_records: list[PrepareAIRecord] = []
-        now = datetime.now(timezone.utc)
-        base_context = source.raw_text or self._compose_raw_text(source)
-        base_context = base_context.strip() if isinstance(base_context, str) else ""
-
-        overrides_by_slide_id: dict[str, StaticPromptOverride] = {}
-        overrides_by_index: dict[int, StaticPromptOverride] = {}
-        for override in prompt_overrides:
-            if override.slide_id:
-                overrides_by_slide_id[override.slide_id] = override
-            overrides_by_index[override.slide_index] = override
-
-        entries_by_slide: dict[str, list[tuple[int, TemplateBlueprintSlide, TemplateBlueprintSlot]]] = {}
-        for entry in slot_entries:
-            slide_id = entry[1].slide_id
-            entries_by_slide.setdefault(slide_id, []).append(entry)
-
-        slide_sources = slide_sources or {}
-        slide_input_refs = slide_input_refs or {}
-        prompt_usage: list[dict[str, Any]] = []
-
-        for slide_index, blueprint_slide in enumerate(blueprint.slides, start=1):
-            slide_entries = entries_by_slide.get(blueprint_slide.slide_id, [])
-            if not slide_entries:
-                continue
-
-            slide_source = slide_sources.get(blueprint_slide.slide_id)
-            override = overrides_by_slide_id.get(blueprint_slide.slide_id)
-            if override is None:
-                override = overrides_by_index.get(slide_index)
-            override_instructions = override.instructions.strip() if override else ""
-
-            slot_specs_payload: list[dict[str, Any]] = []
-            slide_base_context = base_context
-            if slide_source is not None:
-                candidate = slide_source.raw_text or self._compose_raw_text(slide_source)
-                if isinstance(candidate, str) and candidate.strip():
-                    slide_base_context = candidate.strip()
-            for order, _, slot in slide_entries:
-                chapter = chapter_assignments.get(order)
-                if slide_source is not None:
-                    chapter = None
-                context_lines: list[str] = []
-                if chapter is not None:
-                    body_blocks = self._build_chapter_body_blocks(chapter)
-                    notes = self._build_chapter_notes(chapter.supporting_points)
-                    if chapter.title:
-                        context_lines.append(chapter.title)
-                    if chapter.message:
-                        context_lines.append(chapter.message)
-                    context_lines.extend(
-                        block.text.strip()
-                        for block in body_blocks
-                        if isinstance(block.text, str) and block.text.strip()
-                    )
-                    context_lines.extend(
-                        note.text.strip()
-                        for note in notes
-                        if isinstance(note.text, str) and note.text.strip()
-                    )
-                context_text = "\n".join(context_lines).strip()
-                if context_text:
-                    context_value = context_text
-                else:
-                    if slide_base_context:
-                        context_value = slide_base_context
-                    else:
-                        labels = [blueprint_slide.layout or "", slot.anchor or ""]
-                        context_value = " / ".join(part for part in labels if part).strip()
-                entry = {
-                    "slot_id": slot.slot_id,
-                    "anchor": slot.anchor,
-                    "required": slot.required,
-                    "intent_tags": slot.intent_tags,
-                    "content_type": slot.content_type,
-                }
-                if context_value:
-                    entry["context"] = context_value
-                slot_specs_payload.append(entry)
-
-            payload: dict[str, Any] = {
-                "raw_context": {
-                    "format": "markdown",
-                    "content": slide_base_context,
-                },
-                "blueprint_slide": {
-                    "slide_id": blueprint_slide.slide_id,
-                    "layout": blueprint_slide.layout,
-                    "required": blueprint_slide.required,
-                    "intent_tags": blueprint_slide.intent_tags,
-                },
-                "slot_specs": slot_specs_payload,
-            }
-
-            if override and override_instructions:
-                payload["user_directives"] = override_instructions
-
-            prompt = build_prepare_prompt_static(payload)
-            try:
-                llm_result = self._llm_client.generate(prompt, model_hint=None)
-            except PrepareLLMConfigurationError as exc:
-                raise PrepareAIOrchestrationError(str(exc)) from exc
-            except Exception as exc:  # noqa: BLE001
-                raise PrepareAIOrchestrationError(f"LLM 呼び出しに失敗しました: {exc}") from exc
-
-            data = self._parse_llm_output(llm_result)
-            slots_payload = data.get("slots")
-            if not isinstance(slots_payload, list):
-                raise PrepareAIOrchestrationError("LLM 応答に 'slots' 配列が含まれていません")
-            slot_output_lookup = {
-                str(item.get("slot_id")): item
-                for item in slots_payload
-                if isinstance(item, dict) and item.get("slot_id")
-            }
-
-            generated_card_ids: list[str] = []
-            for order, _, slot in slide_entries:
-                chapter = chapter_assignments.get(order)
-                slot_output = slot_output_lookup.get(slot.slot_id)
-                slot_has_response = slot.slot_id in slot_output_lookup
-                slot_entry_payload = slot_output if isinstance(slot_output, dict) else {}
-
-                entry = {
-                    "card_id": slot.slot_id,
-                    "story_phase": policy.resolve_story_phase(order),
-                    "intent_tags": slot.intent_tags or [policy.resolve_story_phase(order)],
-                    "title": slot_entry_payload.get("title"),
-                    "headline": slot_entry_payload.get("headline"),
-                    "subtitle": slot_entry_payload.get("subtitle"),
-                    "body": slot_entry_payload.get("body") or [],
-                    "notes": slot_entry_payload.get("notes") or [],
-                }
-                entry["card_id"] = self._normalize_slot_card_id(slot.slot_id)
-
-                card = self._build_card_from_llm_entry(
-                    entry,
-                    index=order,
-                    policy=policy,
-                    generated_at=now,
-                    is_title_card=False,
-                    default_title=chapter.title if chapter is not None else blueprint_slide.layout,
-                )
-
-                blueprint_meta = {
-                    "slide_id": blueprint_slide.slide_id,
-                    "layout": blueprint_slide.layout,
-                    "slot_id": slot.slot_id,
-                    "anchor": slot.anchor,
-                    "content_type": slot.content_type,
-                    "required": slot.required,
-                    "fulfilled": False,
-                    "intent_tags": slot.intent_tags,
-                }
-
-                meta: dict[str, Any] = {}
-                if isinstance(card.meta, dict):
-                    meta.update(card.meta)
-                meta.update(
-                    {
-                        "mode": "static",
-                        "blueprint": blueprint_meta,
-                    }
-                )
-                if chapter is not None:
-                    meta["source_chapter"] = {"id": chapter.id, "title": chapter.title}
-
-                card.card_id = entry["card_id"]
-                card.order = order + 1
-                card.meta = meta
-
-                has_visible_content = bool(
-                    card.content.title
-                    or card.content.headline
-                    or (card.content.subtitle and card.content.subtitle.strip())
-                    or card.content.body
-                )
-                has_content = slot_has_response and has_visible_content
-                card.meta["blueprint"]["fulfilled"] = has_content  # type: ignore[index]
-
-                cards.append(card)
-                generated_card_ids.append(card.card_id)
-
-                if slot.required:
-                    if has_content:
-                        required_fulfilled += 1
-                else:
-                    if has_content:
-                        optional_used += 1
-
-            if generated_card_ids:
-                ai_records.append(
-                    PrepareAIRecord(
-                        card_id=blueprint_slide.slide_id,
-                        batch_card_ids=generated_card_ids,
-                        prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
-                        model=llm_result.model,
-                        prompt_fragment=prompt[:200],
-                        response_digest=json.dumps(slots_payload, ensure_ascii=False)[:200],
-                        warnings=list(llm_result.warnings),
-                        slide_input_path=slide_input_refs.get(blueprint_slide.slide_id),
-                        prompt_template_path=override.template_path if override else None,
-                        prompt_template_instructions=override_instructions if override_instructions else None,
-                        tokens=llm_result.tokens,
-                    )
-                )
-                if override and override_instructions:
-                    prompt_usage.append(
-                        {
-                            "slide_id": blueprint_slide.slide_id,
-                            "slide_index": slide_index,
-                            "template_path": override.template_path,
-                        }
-                    )
-
-        slot_summary = {
-            "required_total": len(required_entries),
-            "required_fulfilled": required_fulfilled,
-            "optional_total": len(optional_entries),
-            "optional_used": optional_used,
-        }
-        return cards, slot_summary, ai_records, prompt_usage
+        executor = StaticModeExecutor(
+            llm_client=self._llm_client,
+            parse_llm_output=self._parse_llm_output,
+            build_card_from_entry=self._build_card_from_llm_entry,
+            compose_raw_text=self._compose_raw_text,
+            build_chapter_body_blocks=self._build_chapter_body_blocks,
+            build_chapter_notes=self._build_chapter_notes,
+            normalize_slot_card_id=self._normalize_slot_card_id,
+            default_prompt_id=DEFAULT_PROMPT_ID,
+        )
+        return executor.build_cards(
+            source=source,
+            policy=policy,
+            blueprint=blueprint,
+            page_limit=page_limit,
+            prompt_overrides=prompt_overrides,
+            slide_sources=slide_sources,
+            slide_input_refs=slide_input_refs,
+        )
 
     def _build_card_from_blueprint_slot(
         self,

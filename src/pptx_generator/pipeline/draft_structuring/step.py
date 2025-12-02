@@ -6,13 +6,13 @@ import hashlib
 import json
 import logging
 from datetime import datetime, timezone
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 from collections import Counter, defaultdict
 
-from ..prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
-from ..models import (
+from ...prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
+from ...models import (
     ContentApprovalDocument,
     ContentSlide,
     DraftAnalyzerSummary,
@@ -39,14 +39,14 @@ from ..models import (
     Slide,
     TemplateSpec,
 )
-from ..draft_recommender import (
+from ...draft_recommender import (
     CardLayoutRecommender,
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
-from ..utils.usage_tags import get_usage_tag_detail_map, normalize_usage_tags
-from ..api.draft_store import DraftStore, BoardAlreadyExistsError
-from ..draft_intel import (
+from ...utils.usage_tags import normalize_usage_tags
+from ...api.draft_store import DraftStore, BoardAlreadyExistsError
+from ...draft_intel import (
     ChapterTemplate,
     ChapterTemplateEvaluation,
     evaluate_chapter_template,
@@ -55,80 +55,19 @@ from ..draft_intel import (
     load_chapter_template,
     summarize_analyzer_counts,
 )
-from .base import PipelineContext
-from .slide_alignment import SlideIdAligner, SlideIdAlignerOptions
-from .table_anchor import (
+from ..base import PipelineContext
+from ..slide_alignment import SlideIdAligner, SlideIdAlignerOptions
+from ..table_anchor import (
     build_table_payload,
     is_table_payload,
     normalize_placeholders,
     resolve_table_anchor,
 )
+from .errors import DraftStructuringError
+from .dynamic_flow import build_dynamic_document
+from .types import DraftStructuringOptions, StaticArtifacts, card_slot_fulfilled, card_slot_id
 
 logger = logging.getLogger(__name__)
-
-
-def _card_slot_id(card: PrepareCard) -> str | None:
-    blueprint = card.blueprint_meta()
-    if not blueprint:
-        return None
-    slot_id = blueprint.get("slot_id")
-    return str(slot_id) if slot_id else None
-
-
-def _card_slot_fulfilled(card: PrepareCard | None) -> bool:
-    if card is None:
-        return False
-    blueprint = card.blueprint_meta()
-    if not blueprint:
-        return False
-    return bool(blueprint.get("fulfilled"))
-
-
-@dataclass(slots=True)
-class DraftStructuringOptions:
-    """ドラフト構成ステップの設定。"""
-
-    layouts_path: Path | None = None
-    output_dir: Path | None = None
-    spec_source_path: Path | None = None
-    draft_filename: str = "draft_draft.json"
-    approved_filename: str = "draft_approved.json"
-    log_filename: str = "draft_review_log.json"
-    generate_ready_filename: str = "generate_ready.json"
-    generate_ready_meta_filename: str = "generate_ready_meta.json"
-    mapping_log_filename: str = "draft_mapping_log.json"
-    target_length: int | None = None
-    structure_pattern: str | None = None
-    appendix_limit: int = 5
-    chapter_templates_dir: Path | None = None
-    chapter_template_id: str | None = None
-    analysis_summary_path: Path | None = None
-    enable_ai_recommender: bool = True
-    ai_weight: float = 0.25
-    diversity_weight: float = 0.05
-    max_layout_candidates: int = 5
-    layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
-    layout_ai_policy_id: str | None = "layout-default"
-    enable_ai_simulation: bool = True
-    enable_slide_alignment: bool = True
-    slide_alignment_threshold: float = 0.6
-    slide_alignment_max_candidates: int = 12
-    layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
-    layout_ai_policy_id: str | None = "layout-default"
-    enable_ai_simulation: bool = True
-
-
-@dataclass(slots=True)
-class StaticArtifacts:
-    draft: DraftDocument
-    generate_ready: GenerateReadyDocument
-    mapping_log: dict[str, Any]
-    ai_summary: dict[str, Any]
-    slot_summary: dict[str, int]
-
-
-class DraftStructuringError(RuntimeError):
-    """ドラフト構成処理の失敗を表す。"""
 
 
 class DraftStructuringStep:
@@ -209,14 +148,16 @@ class DraftStructuringStep:
         if not isinstance(prepare_meta, PrepareGenerationMeta) or prepare_meta.mode not in {"dynamic", "static"}:
             raise DraftStructuringError("prepare_generation_meta が不正、または mode が未設定です")
 
-        draft, mapping_logs, ai_summary = self._build_document(
+        dynamic_prepare = prepare_meta.mode == "dynamic"
+        draft, mapping_logs, ai_summary = build_dynamic_document(
+            options=self.options,
             spec=context.spec,
             document=document,
             layouts=layouts,
             analyzer_map=analyzer_map,
             chapter_template=template,
             recommender=recommender,
-            prepare_meta=prepare_meta,
+            dynamic_prepare=dynamic_prepare,
         )
 
         output_dir = self.options.output_dir or context.workdir
@@ -462,285 +403,6 @@ class DraftStructuringStep:
             "attributes": attributes,
         }
 
-
-    def _build_document(
-        self,
-        *,
-        spec: JobSpec,
-        document: ContentApprovalDocument,
-        layouts: Sequence[LayoutProfile],
-        analyzer_map: dict[str, DraftAnalyzerSummary],
-        chapter_template: ChapterTemplate | None,
-        recommender: CardLayoutRecommender,
-        prepare_meta: PrepareGenerationMeta | None,
-    ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
-        sections: list[DraftSection] = []
-        section_map: dict[str, DraftSection] = {}
-        mapping_logs: list[dict[str, Any]] = []
-        ai_summary: dict[str, Any] = {
-            "invoked": 0,
-            "used": 0,
-            "simulated": 0,
-            "models": {},
-        }
-
-        spec_lookup = {slide.id: slide for slide in spec.slides}
-        dynamic_prepare = prepare_meta.mode == "dynamic"
-
-        layout_lookup = {profile.layout_id: profile for profile in layouts}
-
-        def process_slide(content_slide: ContentSlide | None, spec_slide: Slide | None) -> None:
-            if content_slide is None:
-                return
-
-            section_key, section_name = self._resolve_section(content_slide, spec_slide)
-            section = section_map.get(section_key)
-            if section is None:
-                section = DraftSection(
-                    name=section_name,
-                    order=len(section_map) + 1,
-                    status="draft",
-                )
-                section_map[section_key] = section
-                sections.append(section)
-
-            card_order = len(section.slides) + 1
-            analyzer_summary = analyzer_map.get(content_slide.id)
-            preferred_layout = (
-                spec_slide.layout
-                if spec_slide is not None and getattr(spec_slide, "layout", None)
-                else content_slide.type_hint
-            ) or "Content"
-            recommendation, card = self._build_card(
-                content_slide,
-                preferred_layout,
-                layouts,
-                order=card_order,
-                analyzer_summary=analyzer_summary,
-                recommender=recommender,
-            )
-            section.slides.append(card)
-
-            ai_scores = recommendation.ai_scores
-            selected_layout = card.layout_hint
-            ai_used = selected_layout in ai_scores and ai_scores[selected_layout] > 0.0
-            if ai_used:
-                ai_summary["used"] += 1
-
-            if recommendation.ai_response is not None:
-                ai_summary["invoked"] += 1
-                model = recommendation.ai_response.model or "unknown"
-                model_counts = ai_summary["models"]
-                model_counts[model] = model_counts.get(model, 0) + 1
-            elif (
-                self.options.enable_ai_recommender
-                and self.options.enable_ai_simulation
-                and self.options.ai_weight > 0
-                and not ai_scores
-                and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
-            ):
-                ai_summary["simulated"] += 1
-                if logger.isEnabledFor(logging.INFO):
-                    logger.info(
-                        "layout AI simulated: slide_id=%s preferred=%s",
-                        content_slide.id,
-                        preferred_layout,
-                    )
-
-            candidate_logs: list[dict[str, Any]] = []
-            tag_detail_map = get_usage_tag_detail_map()
-            for candidate, detail in recommendation.candidates:
-                layout_id = candidate.layout_id
-                candidate_entry: dict[str, Any] = {
-                    "layout_id": layout_id,
-                    "score": candidate.score,
-                    "ai_score": ai_scores.get(layout_id, 0.0),
-                    "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
-                    "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
-                    "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
-                    "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
-                    "detail": {
-                        "uses_tag": detail.uses_tag,
-                        "content_capacity": detail.content_capacity,
-                        "diversity": detail.diversity,
-                        "analyzer_support": detail.analyzer_support,
-                        "ai_recommendation": detail.ai_recommendation,
-                    },
-                }
-                profile = layout_lookup.get(layout_id)
-                tags_for_detail: set[str] = set(recommendation.baseline_tags.get(layout_id, ()))
-                tags_for_detail.update(recommendation.classified_tags.get(layout_id, ()))
-                tags_for_detail.update(recommendation.effective_tags.get(layout_id, ()))
-                if profile:
-                    tags_for_detail.update(profile.usage_tags or ())
-                if recommendation.ai_unknown_tags.get(layout_id):
-                    tags_for_detail.update(recommendation.ai_unknown_tags[layout_id])
-                if profile:
-                    if profile.placeholder_summary:
-                        candidate_entry["placeholder_summary"] = profile.placeholder_summary
-                    if profile.heuristic:
-                        candidate_entry["heuristic"] = profile.heuristic
-                    if profile.blueprint:
-                        candidate_entry["blueprint"] = profile.blueprint
-                    if profile.meta:
-                        candidate_entry["meta"] = profile.meta
-                usage_tag_details = {
-                    tag: tag_detail_map[tag]
-                    for tag in sorted(tags_for_detail)
-                    if tag in tag_detail_map
-                }
-                if usage_tag_details:
-                    candidate_entry["usage_tags_detail"] = usage_tag_details
-                candidate_logs.append(candidate_entry)
-
-            source_payload = (
-                content_slide.source.model_dump(mode="json")
-                if content_slide.source is not None
-                else None
-            )
-
-            ai_response_payload: dict[str, Any] | None = None
-            if recommendation.ai_response is not None:
-                ai_response_payload = {
-                    "model": recommendation.ai_response.model,
-                    "recommended": recommendation.ai_response.recommended,
-                    "reasons": recommendation.ai_response.reasons,
-                    "classifications": {
-                        key: list(value)
-                        for key, value in recommendation.ai_response.classifications.items()
-                    },
-                }
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(
-                        (
-                            "layout AI response: slide_id=%s model=%s recommended=%s "
-                            "reasons=%s classifications=%s"
-                        ),
-                        content_slide.id,
-                        recommendation.ai_response.model,
-                        recommendation.ai_response.recommended,
-                        recommendation.ai_response.reasons,
-                        recommendation.ai_response.classifications,
-                    )
-
-            selected_profile = layout_lookup.get(selected_layout)
-            mapping_entry: dict[str, Any] = {
-                "slide_id": content_slide.id,
-                "preferred_layout": preferred_layout,
-                "selected_layout": selected_layout,
-                "ai_recommendation_used": ai_used,
-                "candidates": candidate_logs,
-                "ai_response": ai_response_payload,
-                "source": source_payload,
-            }
-            if selected_profile:
-                if selected_profile.meta and selected_profile.meta.get("heuristic_reason"):
-                    mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
-                if selected_profile.blueprint:
-                    mapping_entry["selected_blueprint"] = selected_profile.blueprint
-                selected_usage_details = {
-                    tag: tag_detail_map[tag]
-                    for tag in sorted(set(selected_profile.usage_tags or ()))
-                    if tag in tag_detail_map
-                }
-                if selected_usage_details:
-                    mapping_entry["selected_usage_tags_detail"] = selected_usage_details
-            mapping_logs.append(mapping_entry)
-
-        if dynamic_prepare:
-            for content_slide in document.slides:
-                spec_slide = spec_lookup.get(content_slide.id)
-                process_slide(content_slide, spec_slide)
-        else:
-            slides_by_id = {slide.id: slide for slide in document.slides}
-            for spec_slide in spec.slides:
-                process_slide(slides_by_id.get(spec_slide.id), spec_slide)
-
-        meta = DraftMeta(
-            target_length=self.options.target_length or sum(len(section.slides) for section in sections),
-            structure_pattern=self.options.structure_pattern or "custom",
-            appendix_limit=self.options.appendix_limit,
-        )
-
-        if analyzer_map:
-            meta.analyzer_summary = summarize_analyzer_counts(analyzer_map.values())
-
-        if chapter_template:
-            section_counts = {section.name: len(section.slides) for section in sections}
-            evaluation = self._evaluate_chapter_template(
-                template=chapter_template,
-                section_counts=section_counts,
-                total_main_pages=sum(section_counts.values()),
-            )
-            meta.template_id = chapter_template.template_id
-            meta.template_match_score = evaluation.match_score
-            meta.template_mismatch = evaluation.mismatches
-            for section in sections:
-                key = section.name.lower()
-                score = evaluation.section_scores.get(key)
-                section.chapter_template_id = chapter_template.template_id
-                if score is not None:
-                    section.template_match_score = score
-
-        draft_document = DraftDocument(sections=sections, meta=meta)
-        if logger.isEnabledFor(logging.INFO):
-            logger.info(
-                "layout recommendation summary: invoked=%d used=%d simulated=%d",
-                ai_summary["invoked"],
-                ai_summary["used"],
-                ai_summary["simulated"],
-            )
-        return draft_document, mapping_logs, ai_summary
-
-    def _resolve_section(self, content_slide: ContentSlide, spec_slide: Slide | None) -> tuple[str, str]:
-        story = getattr(content_slide, "story", None)
-        if story:
-            chapter_id = story.get("chapter_id") if isinstance(story, dict) else story.chapter_id
-            phase = story.get("phase") if isinstance(story, dict) else story.phase
-            if chapter_id:
-                return str(chapter_id), str(chapter_id)
-            if phase:
-                return str(phase), str(phase)
-
-        if content_slide.intent:
-            return content_slide.intent, content_slide.intent
-        if spec_slide is not None and getattr(spec_slide, "layout", None):
-            return spec_slide.layout, spec_slide.layout
-        return content_slide.id, content_slide.id
-
-    def _build_card(
-        self,
-        content_slide: ContentSlide,
-        default_layout: str,
-        layouts: Sequence[LayoutProfile],
-        *,
-        order: int,
-        analyzer_summary: DraftAnalyzerSummary | None,
-        recommender: CardLayoutRecommender,
-    ) -> tuple[RecommendationResult, DraftSlideCard]:
-        recommendation = recommender.recommend(
-            slide=content_slide,
-            preferred_layout=default_layout,
-            layouts=layouts,
-            analyzer_summary=analyzer_summary,
-        )
-        candidates = recommendation.candidates
-        layout_hint = candidates[0][0].layout_id if candidates else default_layout
-        layout_detail = candidates[0][1] if candidates else None
-
-        card = DraftSlideCard(
-            ref_id=content_slide.id,
-            order=order,
-            layout_hint=layout_hint,
-            locked=False,
-            status="draft",
-            layout_candidates=[candidate for candidate, _ in candidates[:5]],
-            appendix=False,
-            layout_score_detail=layout_detail,
-            analyzer_summary=analyzer_summary,
-        )
-        return recommendation, card
-
     @staticmethod
     def _write_document(path: Path, document: DraftDocument) -> None:
         payload = document.model_dump(mode="json")
@@ -894,15 +556,43 @@ class DraftStructuringStep:
         generate_ready: GenerateReadyDocument,
         ai_summary: dict[str, Any],
     ) -> dict[str, Any]:
+        sections_payload, main_slides_total, appendix_slides_total = self._summarize_sections(draft)
+        template_info = self._build_template_info(draft)
+        statistics = self._build_statistics_block(
+            generate_ready=generate_ready,
+            main_slides=main_slides_total,
+            appendix_slides=appendix_slides_total,
+            ai_summary=ai_summary,
+        )
+
+        payload = {
+            "generated_at": generate_ready.meta.generated_at,
+            "sections": sections_payload,
+            "statistics": statistics,
+            "template": template_info,
+            "analyzer_summary": draft.meta.analyzer_summary,
+            "return_reason_stats": draft.meta.return_reason_stats,
+            "ai_recommendation": self._build_ai_recommendation_block(ai_summary),
+        }
+        self._apply_optional_generate_ready_meta(
+            payload=payload,
+            generate_ready=generate_ready,
+        )
+        return payload
+
+    @staticmethod
+    def _summarize_sections(
+        draft: DraftDocument,
+    ) -> tuple[list[dict[str, Any]], int, int]:
         sections_payload: list[dict[str, Any]] = []
-        main_slides_total = 0
-        appendix_slides_total = 0
+        main_total = 0
+        appendix_total = 0
 
         for section in draft.sections:
             main_count = sum(1 for card in section.slides if not card.appendix)
             appendix_count = sum(1 for card in section.slides if card.appendix)
-            main_slides_total += main_count
-            appendix_slides_total += appendix_count
+            main_total += main_count
+            appendix_total += appendix_count
             sections_payload.append(
                 {
                     "name": section.name,
@@ -915,7 +605,11 @@ class DraftStructuringStep:
                 }
             )
 
-        template_info = {
+        return sections_payload, main_total, appendix_total
+
+    @staticmethod
+    def _build_template_info(draft: DraftDocument) -> dict[str, Any]:
+        return {
             "template_id": draft.meta.template_id,
             "structure_pattern": draft.meta.structure_pattern,
             "target_length": draft.meta.target_length,
@@ -924,25 +618,37 @@ class DraftStructuringStep:
             "mismatch": [item.model_dump(mode="json") for item in draft.meta.template_mismatch],
         }
 
-        payload = {
-            "generated_at": generate_ready.meta.generated_at,
-            "sections": sections_payload,
-            "statistics": {
-                "total_slides": len(generate_ready.slides),
-                "main_slides": main_slides_total,
-                "appendix_slides": appendix_slides_total,
-            },
-            "template": template_info,
-            "analyzer_summary": draft.meta.analyzer_summary,
-            "return_reason_stats": draft.meta.return_reason_stats,
-            "ai_recommendation": {
-                "invoked": ai_summary.get("invoked", 0),
-                "used": ai_summary.get("used", 0),
-                "simulated": ai_summary.get("simulated", 0),
-                "models": ai_summary.get("models", {}),
-            },
+    @staticmethod
+    def _build_ai_recommendation_block(ai_summary: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "invoked": ai_summary.get("invoked", 0),
+            "used": ai_summary.get("used", 0),
+            "simulated": ai_summary.get("simulated", 0),
+            "models": ai_summary.get("models", {}),
         }
-        payload["statistics"]["ai_recommendation_used"] = ai_summary.get("used", 0)
+
+    def _build_statistics_block(
+        self,
+        *,
+        generate_ready: GenerateReadyDocument,
+        main_slides: int,
+        appendix_slides: int,
+        ai_summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        statistics = {
+            "total_slides": len(generate_ready.slides),
+            "main_slides": main_slides,
+            "appendix_slides": appendix_slides,
+            "ai_recommendation_used": ai_summary.get("used", 0),
+        }
+        return statistics
+
+    @staticmethod
+    def _apply_optional_generate_ready_meta(
+        *,
+        payload: dict[str, Any],
+        generate_ready: GenerateReadyDocument,
+    ) -> None:
         payload["mode"] = generate_ready.meta.layout_mode
         if generate_ready.meta.slot_summary:
             payload["slot_summary"] = generate_ready.meta.slot_summary
@@ -950,7 +656,6 @@ class DraftStructuringStep:
             payload["blueprint_path"] = generate_ready.meta.blueprint_path
         if generate_ready.meta.blueprint_hash:
             payload["blueprint_hash"] = generate_ready.meta.blueprint_hash
-        return payload
 
     def _merge_slide_elements(
         self,
@@ -1085,25 +790,6 @@ class DraftStructuringStep:
 
         return elements
 
-    def _evaluate_chapter_template(
-        self,
-        template: ChapterTemplate,
-        section_counts: dict[str, int],
-        total_main_pages: int,
-    ) -> ChapterTemplateEvaluation:
-        evaluation = evaluate_chapter_template(
-            template=template,
-            section_counts=section_counts,
-            total_main_pages=total_main_pages,
-        )
-
-        normalized_scores: dict[str, float] = {}
-        for section_id, score in evaluation.section_scores.items():
-            normalized_scores[section_id.lower()] = score
-
-        evaluation.section_scores = normalized_scores
-        return evaluation
-
     def _run_static_mode(
         self,
         *,
@@ -1116,44 +802,9 @@ class DraftStructuringStep:
             msg = "static モードでは prepare_document が必要です"
             raise DraftStructuringError(msg)
 
-        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
-        template_spec_candidate: Path | None = None
-
-        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
-        if template_spec_meta:
-            candidate = Path(template_spec_meta)
-            if not candidate.is_absolute() and spec_source_path is not None:
-                candidate = (spec_source_path.parent / candidate).resolve()
-            elif not candidate.is_absolute():
-                candidate = candidate.resolve()
-            template_spec_candidate = candidate
-
-        if template_spec_candidate is None:
-            blueprint_path_str = prepare_meta.blueprint_path
-            if blueprint_path_str:
-                candidate = Path(blueprint_path_str)
-                if not candidate.is_absolute():
-                    candidate = candidate.resolve()
-                template_spec_candidate = candidate
-
-        if template_spec_candidate is None:
-            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
-            raise DraftStructuringError(msg)
-
-        if not template_spec_candidate.exists():
-            msg = f"template_spec が見つかりません: {template_spec_candidate}"
-            raise DraftStructuringError(msg)
-
-        template_spec = self._load_template_spec(template_spec_candidate)
-        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
-            msg = "template_spec が static Blueprint を含んでいません"
-            raise DraftStructuringError(msg)
-
-        if prepare_meta.blueprint_hash:
-            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
-            if prepare_meta.blueprint_hash != computed_hash:
-                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
-                raise DraftStructuringError(msg)
+        template_spec_path = self._resolve_static_template_spec_path(context, prepare_meta)
+        template_spec = self._load_template_spec(template_spec_path)
+        self._validate_static_template_spec(template_spec, prepare_meta)
 
         self._layout_name_lookup = {layout.name: layout.name for layout in template_spec.layouts}
 
@@ -1165,6 +816,60 @@ class DraftStructuringStep:
             prepare_meta=prepare_meta,
         )
 
+        self._write_static_outputs(context=context, artifacts=artifacts)
+
+    def _resolve_static_template_spec_path(
+        self,
+        context: PipelineContext,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> Path:
+        spec_source_path = Path(self.options.spec_source_path) if self.options.spec_source_path else None
+        template_spec_meta = getattr(context.spec.meta, "template_spec_path", None)
+        candidate: Path | None = None
+
+        if template_spec_meta:
+            candidate = Path(template_spec_meta)
+            if not candidate.is_absolute():
+                if spec_source_path is not None:
+                    candidate = (spec_source_path.parent / candidate).resolve()
+                else:
+                    candidate = candidate.resolve()
+
+        if candidate is None and prepare_meta.blueprint_path:
+            blueprint_path = Path(prepare_meta.blueprint_path)
+            candidate = blueprint_path.resolve() if not blueprint_path.is_absolute() else blueprint_path
+
+        if candidate is None:
+            msg = "template_spec のパスを jobspec または ai_generation_meta から取得できませんでした"
+            raise DraftStructuringError(msg)
+
+        if not candidate.exists():
+            msg = f"template_spec が見つかりません: {candidate}"
+            raise DraftStructuringError(msg)
+
+        return candidate
+
+    def _validate_static_template_spec(
+        self,
+        template_spec: TemplateSpec,
+        prepare_meta: PrepareGenerationMeta,
+    ) -> None:
+        if template_spec.layout_mode != "static" or template_spec.blueprint is None:
+            msg = "template_spec が static Blueprint を含んでいません"
+            raise DraftStructuringError(msg)
+
+        if prepare_meta.blueprint_hash:
+            computed_hash = self._compute_blueprint_hash(template_spec.blueprint)
+            if prepare_meta.blueprint_hash != computed_hash:
+                msg = "Blueprint ハッシュが ai_generation_meta と一致しません"
+                raise DraftStructuringError(msg)
+
+    def _write_static_outputs(
+        self,
+        *,
+        context: PipelineContext,
+        artifacts: StaticArtifacts,
+    ) -> None:
         output_dir = self.options.output_dir or context.workdir
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1224,7 +929,7 @@ class DraftStructuringStep:
 
         cards_by_slot: dict[str, PrepareCard] = {}
         for card in prepare_document.cards:
-            slot_id = _card_slot_id(card)
+            slot_id = card_slot_id(card)
             if slot_id:
                 cards_by_slot[slot_id] = card
         spec_lookup = {slide.id: slide for slide in spec.slides}
@@ -1243,10 +948,10 @@ class DraftStructuringStep:
                 card = cards_by_slot.get(slot.slot_id)
                 if slot.required:
                     required_total += 1
-                    if _card_slot_fulfilled(card):
+                    if card_slot_fulfilled(card):
                         required_fulfilled += 1
                 else:
-                    if _card_slot_fulfilled(card):
+                    if card_slot_fulfilled(card):
                         optional_used += 1
                     else:
                         unused_slots.append(slot.slot_id)
@@ -1265,7 +970,7 @@ class DraftStructuringStep:
 
         orphan_cards = []
         for card in prepare_document.cards:
-            slot_id = _card_slot_id(card)
+            slot_id = card_slot_id(card)
             if slot_id and slot_id not in blueprint_slot_ids:
                 orphan_cards.append(slot_id)
 
@@ -1300,7 +1005,7 @@ class DraftStructuringStep:
 
             for slot in blueprint_slide.slots:
                 card = cards_by_slot.get(slot.slot_id)
-                fulfilled = _card_slot_fulfilled(card)
+                fulfilled = card_slot_fulfilled(card)
                 slot_records.append(
                     {
                         "slot_id": slot.slot_id,

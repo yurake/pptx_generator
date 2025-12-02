@@ -103,6 +103,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/slide_inputs.md` を用意するとスライドごとに入力データを指定でき、全スライド分が記載されていれば `<prepare_path>` 引数を省略できる。未指定スライドがある場合はエラー。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 - static モードで `.pptx/extract/prompts/` 配下の Markdown を編集すると、該当スライドの user-editable 節が LLM プロンプトへ注入される（雛形は `pptx template` 実行時に自動生成され、未編集ファイルは既定プロンプトを保持する）。
+- CLI 実装では `resolve_static_context` が jobspec・Blueprint・slide_inputs を正規化し、`PrepareCommandArtifacts` が `prepare_card.json` など成果物の一括書き出しを担う。外部モジュールからも同 API を利用できるため、GUI やバッチスクリプトからの再利用が容易になっている。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |

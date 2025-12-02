@@ -3,9 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from click.testing import CliRunner
 
 from pptx_generator.cli import app
+from pptx_generator.cli_handlers.prepare import (
+    PrepareCommandArtifacts,
+    PrepareCommandError,
+    PrepareStaticContext,
+    resolve_static_context,
+)
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
 from pptx_generator.prepare.llm_client import MockPrepareLLMClient, PrepareLLMResult
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
@@ -17,11 +25,79 @@ from pptx_generator.prepare.models import (
     PrepareCardContent,
     PrepareCardRole,
     PrepareNoteEntry,
+    PrepareAIRecord,
+    PrepareDocument,
+    PrepareGenerationMeta,
 )
 from pptx_generator.pipeline.draft_structuring import DraftStructuringStep
 
 
 SAMPLE_PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+
+
+def test_resolve_static_context_dynamic_mode(tmp_path: Path) -> None:
+    context = resolve_static_context(
+        jobspec_path=None,
+        default_jobspec_path=tmp_path / "jobspec.json",
+        prompts_dirname=Path("prompts"),
+        slide_inputs_filename=Path("slide_inputs.md"),
+        mode="dynamic",
+        prepare_path=None,
+    )
+
+    assert context.blueprint_spec is None
+    assert context.prompt_overrides == []
+    assert context.messages == []
+
+
+def test_resolve_static_context_requires_jobspec(tmp_path: Path) -> None:
+    with pytest.raises(PrepareCommandError):
+        resolve_static_context(
+            jobspec_path=None,
+            default_jobspec_path=tmp_path / "missing_jobspec.json",
+            prompts_dirname=Path("prompts"),
+            slide_inputs_filename=Path("slide_inputs.md"),
+            mode="static",
+            prepare_path=None,
+        )
+
+
+def test_prepare_command_artifacts_write_outputs(tmp_path: Path) -> None:
+    artifacts = PrepareCommandArtifacts.initialize(tmp_path / "prepare")
+    document = PrepareDocument(prepare_id="prep-1")
+    meta = PrepareGenerationMeta(
+        prepare_id="prep-1",
+        policy_id="policy",
+        input_hash="hash",
+        cards=[],
+    )
+    ai_logs = [PrepareAIRecord(card_id="card-1", prompt_template="template.md")]
+    context = PrepareStaticContext(
+        blueprint_spec=None,
+        blueprint_ref=None,
+        template_spec_path=None,
+        prompt_overrides=[],
+        slide_input_sources=None,
+        slide_input_refs=None,
+        source_document=None,
+        messages=["applied"],
+    )
+
+    result = artifacts.write_outputs(
+        document=document,
+        meta=meta,
+        ai_logs=ai_logs,
+        dump_json=lambda path, payload: path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        ),
+        static_context=context,
+        messages=context.messages,
+    )
+
+    assert result.cards_path.exists()
+    assert result.audit_path.exists()
+    audit_payload = json.loads(result.audit_path.read_text(encoding="utf-8"))
+    assert audit_payload["prepare_normalization"]["statistics"] == meta.statistics
 
 
 def test_prepare_generates_outputs(tmp_path) -> None:

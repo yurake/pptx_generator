@@ -15,15 +15,22 @@ from pptx_generator.cli import (
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
     SLIDE_INPUTS_FILENAME,
-    TemplateExtractionResult,
-    _ensure_prompt_templates,
-    _load_prompt_overrides,
-    _run_template_extraction,
     app,
 )
+from pptx_generator.cli_handlers.template_extraction import (
+    TemplateExtractionResult,
+    _ensure_slide_inputs_manifest,
+    run_template_extraction,
+)
+from pptx_generator.cli_handlers.prepare import load_prompt_overrides
 from pptx_generator.models import (
     JobSpecScaffold,
     JobSpecScaffoldMeta,
+    JobSpecScaffoldBounds,
+    JobSpecScaffoldPlaceholder,
+    JobSpecScaffoldSlide,
+    LayoutInfo,
+    ShapeInfo,
     TemplateBlueprint,
     TemplateBlueprintSlide,
     TemplateBlueprintSlot,
@@ -39,7 +46,25 @@ def _build_static_template_spec() -> TemplateSpec:
     return TemplateSpec(
         template_path="templates/dummy.pptx",
         extracted_at="2025-01-01T00:00:00Z",
-        layouts=[],
+        layouts=[
+            LayoutInfo(
+                name="TitleSlide",
+                identifier="title_slide",
+                anchors=[
+                    ShapeInfo(
+                        name="Title",
+                        shape_type="TEXT",
+                        left_in=1.0,
+                        top_in=1.0,
+                        width_in=4.0,
+                        height_in=1.0,
+                        text="",
+                        placeholder_type="title",
+                        is_placeholder=True,
+                    )
+                ],
+            )
+        ],
         warnings=[],
         errors=[],
         layout_mode="static",
@@ -76,7 +101,31 @@ def _build_jobspec_scaffold(template_spec_path: Path) -> JobSpecScaffold:
             layouts_path=None,
             template_spec_path=str(template_spec_path),
         ),
-        slides=[],
+        slides=[
+            JobSpecScaffoldSlide(
+                id="slide-01",
+                layout="TitleSlide",
+                sequence=1,
+                placeholders=[
+                    JobSpecScaffoldPlaceholder(
+                        anchor="Title",
+                        kind="text",
+                        placeholder_type="title",
+                        shape_type="TEXT",
+                        is_placeholder=True,
+                        bounds=JobSpecScaffoldBounds(
+                            left_in=1.0,
+                            top_in=1.0,
+                            width_in=4.0,
+                            height_in=1.0,
+                        ),
+                        sample_text=None,
+                        notes=[],
+                        auto_draw=False,
+                    )
+                ],
+            )
+        ],
     )
 
 
@@ -109,12 +158,18 @@ def test_run_template_extraction_creates_prompt_files(monkeypatch, tmp_path) -> 
         def to_branding_payload(self) -> dict[str, str]:
             return {"brand": "dummy"}
 
-    monkeypatch.setattr("pptx_generator.cli.TemplateExtractor", DummyExtractor)
-    monkeypatch.setattr("pptx_generator.cli.extract_branding_config", lambda _path: DummyBranding())
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.template_extraction.TemplateExtractor",
+        DummyExtractor,
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.template_extraction.extract_branding_config",
+        lambda _path: DummyBranding(),
+    )
 
     monkeypatch.chdir(tmp_path)
 
-    result = _run_template_extraction(
+    result = run_template_extraction(
         template_path=template_path,
         output_dir=output_dir,
         layout=None,
@@ -154,7 +209,7 @@ def test_load_prompt_overrides_reads_user_section(tmp_path) -> None:
     )
 
     template_spec = _build_static_template_spec()
-    overrides = _load_prompt_overrides(prompts_dir=prompts_dir, blueprint=template_spec.blueprint)
+    overrides = load_prompt_overrides(prompts_dir=prompts_dir, blueprint=template_spec.blueprint)
 
     assert overrides, "user-editable セクションを編集すると override が検出される"
     assert overrides[0].instructions == "- 章構成に沿って3点まとめる"
@@ -205,8 +260,14 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
     def fake_extraction(**_kwargs):  # noqa: ANN002
         return extraction_result
 
-    monkeypatch.setattr("pptx_generator.cli._run_template_extraction", fake_extraction)
-    monkeypatch.setattr("pptx_generator.cli._run_template_release", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.template_commands.run_template_extraction",
+        fake_extraction,
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.template_commands.run_template_release",
+        lambda **_kwargs: None,
+    )
 
     runner = CliRunner()
     result = runner.invoke(app, ["template", str(template_file), "--layout-mode", "static"])
@@ -285,7 +346,7 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
         sample_path.parent.mkdir(parents=True, exist_ok=True)
         sample_path.write_text(sample_text, encoding="utf-8")
 
-        manifest_path = cli._ensure_slide_inputs_manifest(output_dir=extract_dir, template_spec=template_spec)
+        manifest_path = _ensure_slide_inputs_manifest(output_dir=extract_dir, template_spec=template_spec)
         assert manifest_path is not None
         manifest_path = manifest_path.resolve()
         expected_manifest_path = (template_spec_path.resolve().parent.parent / SLIDE_INPUTS_FILENAME)
@@ -338,7 +399,7 @@ def test_cli_prepare_requires_complete_manifest(monkeypatch) -> None:
         jobspec_path = extract_dir / "jobspec.json"
         jobspec_path.write_text(json.dumps(jobspec.model_dump(mode="json"), indent=2), encoding="utf-8")
 
-        manifest_path = cli._ensure_slide_inputs_manifest(output_dir=extract_dir, template_spec=template_spec)
+        manifest_path = _ensure_slide_inputs_manifest(output_dir=extract_dir, template_spec=template_spec)
         assert manifest_path is not None
         manifest_path.write_text("# empty manifest\n", encoding="utf-8")
         assert manifest_path.exists()

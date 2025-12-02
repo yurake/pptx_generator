@@ -13,7 +13,8 @@ from .models import (
     PrepareNoteEntry,
     PrepareStoryContext,
 )
-from .orchestrator import PrepareAIOrchestrator, PrepareAIOrchestrationError
+from ..prepare_ai.errors import PrepareAIOrchestrationError
+from .orchestrator import PrepareAIOrchestrator
 from .policy import (
     PreparePolicy,
     PreparePolicyError,

@@ -6,12 +6,18 @@ import os
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query, Request, Response, status
 
 from ..models import ContentElements, ContentSlide, ContentTableData
 from . import schemas
-from .store import (CardState, ContentStore, RevisionMismatchError,
-                    SlideNotFoundError, SpecAlreadyExistsError, SpecNotFoundError)
+from .store import (
+    CardState,
+    ContentStore,
+    RevisionMismatchError,
+    SlideNotFoundError,
+    SpecAlreadyExistsError,
+    SpecNotFoundError,
+)
 
 
 def _create_store() -> ContentStore:
@@ -52,8 +58,37 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             )
         return if_match
 
-    @app.post(
-        "/v1/content/cards",
+    app.include_router(
+        _build_cards_router(
+            content_store=content_store,
+            verify_token=verify_token,
+            get_actor=get_actor,
+            get_request_id=get_request_id,
+            require_etag=require_etag,
+        )
+    )
+    app.include_router(
+        _build_logs_router(
+            content_store=content_store,
+            verify_token=verify_token,
+        )
+    )
+
+    return app
+
+
+def _build_cards_router(
+    *,
+    content_store: ContentStore,
+    verify_token,
+    get_actor,
+    get_request_id,
+    require_etag,
+) -> APIRouter:
+    router = APIRouter(prefix="/v1/content/cards")
+
+    @router.post(
+        "",
         status_code=status.HTTP_201_CREATED,
         response_model=schemas.CreateCardsResponse,
         responses={409: {"model": schemas.ErrorResponse}},
@@ -97,8 +132,8 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             status_code=status.HTTP_201_CREATED,
         )
 
-    @app.patch(
-        "/v1/content/cards/{slide_id}",
+    @router.patch(
+        "/{slide_id}",
         response_model=schemas.CardUpdateResponse,
         responses={
             404: {"model": schemas.ErrorResponse},
@@ -147,8 +182,8 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             headers={"ETag": new_etag},
         )
 
-    @app.post(
-        "/v1/content/cards/{slide_id}/approve",
+    @router.post(
+        "/{slide_id}/approve",
         response_model=schemas.CardApproveResponse,
         responses={
             404: {"model": schemas.ErrorResponse},
@@ -191,8 +226,8 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             headers={"ETag": new_etag},
         )
 
-    @app.post(
-        "/v1/content/cards/{slide_id}/return",
+    @router.post(
+        "/{slide_id}/return",
         response_model=schemas.CardReturnResponse,
         responses={
             404: {"model": schemas.ErrorResponse},
@@ -224,15 +259,18 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
         except RevisionMismatchError as exc:
             raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail=_error("conflict", str(exc))) from exc
 
-        body = schemas.CardReturnResponse(revision=new_etag, status=status_value)
+        body = schemas.CardReturnResponse(
+            revision=new_etag,
+            status=status_value,
+        )
         return Response(
             content=body.model_dump_json(),
             media_type="application/json",
             headers={"ETag": new_etag},
         )
 
-    @app.get(
-        "/v1/content/cards/{slide_id}",
+    @router.get(
+        "/{slide_id}",
         response_model=schemas.CardResponse,
         responses={404: {"model": schemas.ErrorResponse}},
         dependencies=[Depends(verify_token)],
@@ -269,8 +307,18 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             headers={"ETag": etag},
         )
 
-    @app.get(
-        "/v1/content/logs",
+    return router
+
+
+def _build_logs_router(
+    *,
+    content_store: ContentStore,
+    verify_token,
+) -> APIRouter:
+    router = APIRouter(prefix="/v1/content")
+
+    @router.get(
+        "/logs",
         response_model=schemas.LogsResponse,
         dependencies=[Depends(verify_token)],
     )
@@ -307,7 +355,7 @@ def create_app(store: ContentStore | None = None) -> FastAPI:
             next_offset=str(next_offset) if next_offset is not None else None,
         )
 
-    return app
+    return router
 
 
 # --------------------------------------------------------------------------- #
