@@ -32,6 +32,7 @@ from pptx_generator.pipeline import (
 )
 from pptx_generator.review_engine import AnalyzerReviewEngineAdapter
 from pptx_generator.settings import RulesConfig
+from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.template_style import extract_template_style
 
 logger = logging.getLogger(__name__)
@@ -202,7 +203,7 @@ def run_generate_command(config: GenerateCommandConfig) -> GenerateCommandResult
             exit_code=4,
         )
 
-    rules_config = RulesConfig.load(config.rules_path)
+    rules_config = load_rules_config(config.rules_path)
     template_style, template_style_artifact = prepare_template_style(template_path)
     analyzer_options = build_analyzer_options(
         rules_config,

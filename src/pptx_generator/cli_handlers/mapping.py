@@ -30,6 +30,7 @@ from pptx_generator.pipeline import (
     SpecValidatorStep,
 )
 from pptx_generator.settings import RulesConfig
+from pptx_generator.settings.loader import load_rules_config
 
 from .common import (
     dump_json,
@@ -146,7 +147,7 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
     except ValueError as exc:
         raise MappingCommandError(str(exc), exit_code=2) from exc
 
-    rules_config = RulesConfig.load(config.rules_path)
+    rules_config = load_rules_config(config.rules_path)
     template_style_payload = prepare_template_style(resolved_template)
     refiner_options = build_refiner_options(rules_config, template_style_payload.style)
 

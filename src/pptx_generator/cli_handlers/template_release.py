@@ -22,6 +22,7 @@ from pptx_generator.pipeline import (
 )
 from pptx_generator.pipeline.refiner import RefinerOptions
 from pptx_generator.settings import RulesConfig
+from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.template_audit import (
     build_release_report,
     build_template_release,
@@ -170,7 +171,7 @@ def run_golden_specs(
     if not golden_specs:
         return results, warnings, errors
 
-    rules_config = RulesConfig.load(rules_path)
+    rules_config = load_rules_config(rules_path)
     template_style = load_template_style_for_template(template_path, warnings)
 
     golden_root = output_dir / "golden_runs"

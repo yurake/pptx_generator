@@ -13,6 +13,7 @@ from pptx_generator.pipeline import (
 )
 from pptx_generator.models import SpecValidationError
 from pptx_generator.settings import RulesConfig
+from pptx_generator.settings.loader import load_rules_config
 
 from .common import (
     load_jobspec,
@@ -142,7 +143,7 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
 
     print_outline_result(outline_result, show_layout_reasons=config.show_layout_reasons)
 
-    rules_config = RulesConfig.load(config.rules_path)
+    rules_config = load_rules_config(config.rules_path)
     template_style_payload = prepare_template_style(resolved_template)
     refiner_options = build_refiner_options(rules_config, template_style_payload.style)
 
