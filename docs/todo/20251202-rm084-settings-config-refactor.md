@@ -18,7 +18,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - メモ: `uv run --extra dev pytest tests/settings/test_settings_coercers.py`（新設）、`uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py`、`uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` などを予定。
 - [ ] ドキュメント更新
   - [ ] docs/design/ や CLI ガイドの設定項目リファレンスを確認し、構造変更がある場合は追記
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: `#359`
 - [ ] チェックリスト整合確認
 - [ ] PR 作成
