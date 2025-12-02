@@ -32,8 +32,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - メモ: Issue `#359` への紐付けを確認。ローカル環境は `requests` / `GITHUB_TOKEN` 未設定のため `todo-sync` スクリプトは未実行。後続で環境が整い次第 CI 側で同期を再確認する。
 - [x] チェックリスト整合確認
   - メモ: 各子タスクの更新状況を反映済み。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録し、todo-auto-complete による自動更新結果を確認する。
+- [x] PR 作成
+  - メモ: PR #362 https://github.com/yurake/pptx_generator/pull/362（2025-12-02 完了）
 
 ## メモ
 - 対象: `src/pptx_generator/pipeline/draft_structuring.py`, `src/pptx_generator/pipeline/mapping.py`, `src/pptx_generator/layout_validation/suite.py`, `src/pptx_generator/prepare_ai/orchestrator.py`

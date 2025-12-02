@@ -1061,7 +1061,7 @@ flowchart TB
 - 対象 stage: ステージ横断（CLI、Stage 2〜4 パイプライン）
 - ゴール: 長大化した CLI コマンド実装とパイプライン各ステップの単一責務化を進め、保守性とテスト容易性を高める。
 - 参照ドキュメント: [docs/notes/rm084-refactorability-assessment.md](../notes/rm084-refactorability-assessment.md)
-- 状況: 未着手（2025-02-16 追加）
+- 状況: 完了（2025-12-02 更新）
 - 期待成果:
   - `cli.py` のサブコマンド処理を orchestration レイヤーへ切り出し、ステージ別ハンドラ構造を定義する。
   - `MappingStep.run`・`DraftStructuring._build_document`・`PrepareAIOrchestrator._build_cards_static` など長大メソッドを段階的に分割し、データクラスやヘルパー関数でロジックを整理する。

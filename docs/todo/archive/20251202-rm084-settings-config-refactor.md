@@ -21,4 +21,5 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
 - [x] 関連Issue 行の更新
   - メモ: `#359`
 - [x] チェックリスト整合確認
-- [ ] PR 作成
+- [x] PR 作成
+  - メモ: PR #362 https://github.com/yurake/pptx_generator/pull/362（2025-12-02 完了）
