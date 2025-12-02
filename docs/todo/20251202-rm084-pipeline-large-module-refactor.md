@@ -18,7 +18,7 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
     - メモ: 同ノートの「2025-12-02 Pipeline 大規模モジュール再分割計画」節に整理。
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: `pipeline/mapping.py` をサブパッケージ化し、`types` / `catalog` / `processor` / `outputs` / `step` へ責務分離。`layout_validation/suite.py` は `suite/` 配下へ分割し、テンプレートAI処理やレコード構築をヘルパーモジュール化。`prepare_ai/orchestrator.py` の静的モードは `static_mode/` 配下の executor へ委譲し、公開 API を保ったまま内部構造を整理した。
+  - メモ: `pipeline/mapping.py` をサブパッケージ化し、`types` / `catalog` / `processor` / `outputs` / `step` へ責務分離。`layout_validation/suite.py` は `suite/` 配下へ分割し、テンプレートAI処理やレコード構築をヘルパーモジュール化。`prepare_ai/orchestrator.py` の静的モードは `static_mode/` 配下の executor へ委譲し、公開 API を保ったまま内部構造を整理した。共通モデルは `pptx_generator/models/` 配下に責務別モジュールを設け、旧 `models.py` を再エクスポート専用の `__init__.py` へ移行して CLI/パイプライン横断の依存を整理した。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py`, `uv run --extra dev pytest tests/layout_validation/test_layout_validation_suite_execution.py`, `uv run --extra dev pytest tests/prepare_ai/test_prepare_ai_orchestrator_flow.py`, `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py` を実行し、回帰がないことを確認した。
 - [x] ドキュメント更新
