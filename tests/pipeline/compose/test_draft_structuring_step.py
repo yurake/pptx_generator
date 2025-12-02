@@ -364,6 +364,57 @@ def test_prepare_normalization_preserves_table_blocks() -> None:
     assert all("Outline | Owner" not in line for line in slide.elements.body)
 
 
+def test_build_body_lines_normalizes_text_and_bullets() -> None:
+    long_text = "x" * 210
+    card = PrepareCard(
+        card_id="body-lines-card",
+        role=PrepareCardRole(story_phase="problem", intent_tags=["detail"]),
+        content=PrepareCardContent(
+            headline="Main Headline",
+            body=[
+                PrepareBodyBlock(type="paragraph", text="  概要を整理します。  "),
+                PrepareBodyBlock(
+                    type="bullets",
+                    data={
+                        "items": [
+                            {"text": "ファクトを列挙", "level": 0},
+                            {"text": "補足情報を追加", "level": 2},
+                            "自由記述の項目",
+                            {"text": "", "level": 1},
+                            42,
+                        ]
+                    },
+                ),
+                PrepareBodyBlock(type="paragraph", description=long_text),
+            ],
+        ),
+        meta={},
+    )
+
+    step = PrepareNormalizationStep()
+    lines = step._build_body_lines(card)
+
+    assert lines[0] == "概要を整理します。"
+    assert lines[1] == "ファクトを列挙"
+    assert lines[2] == "    補足情報を追加"
+    assert "自由記述の項目" in lines
+    assert all(line for line in lines)
+    assert len(lines[-2]) <= 200
+    assert len(lines[-1]) <= 200
+
+
+def test_build_body_lines_falls_back_to_headline() -> None:
+    card = PrepareCard(
+        card_id="fallback-card",
+        role=PrepareCardRole(story_phase="impact", intent_tags=["summary"]),
+        content=PrepareCardContent(headline="重要なメッセージ", body=[]),
+        meta={},
+    )
+
+    step = PrepareNormalizationStep()
+    assert step._build_body_lines(card) == ["重要なメッセージ"]
+
+
 def test_merge_slide_elements_assigns_table_anchor() -> None:
     step = DraftStructuringStep()
     layout_profile = LayoutProfile(
