@@ -38,8 +38,8 @@ roadmap_item: RM-084 CLI/Pipeline リファクタビリティ向上
   - メモ: 2025-12-02 時点で未作成。`todo-sync` 実行後に発行される Issue 番号を反映する。
 - [x] チェックリスト整合確認
   - メモ: 2025-11-30 確認時点で未完タスクは「PR 作成」のみ。その他の子タスクは親タスクと整合している。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #362 https://github.com/yurake/pptx_generator/pull/362（2025-12-02 完了）
 
 ## メモ
 - CLI から `_load_prompt_overrides` を再エクスポートし、`tests/cli/test_cli_static_prompt_templates.py` の import 互換性を確保。
