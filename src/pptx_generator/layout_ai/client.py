@@ -52,6 +52,10 @@ class LayoutAIClientConfigurationError(RuntimeError):
     """クライアント設定のエラー。"""
 
 
+class LayoutAIClientExecutionError(RuntimeError):
+    """LLM 呼び出し時の実行エラー。"""
+
+
 class LayoutAIResponseFormatError(RuntimeError):
     """LLM 応答の解析に失敗した場合の例外。"""
 
