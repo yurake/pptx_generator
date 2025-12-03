@@ -30,14 +30,14 @@ roadmap_item: RM-085 LLM プロバイダ共通化
   - メモ: RM 追記と ToDo 更新を実施
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [x] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
-  - メモ: Issue 未作成
-- [ ] チェックリスト整合確認
-  - メモ: Final チェック時に更新
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+  - メモ: Issue 未作成のまま
+- [x] チェックリスト整合確認
+  - メモ: 実装・テスト・ドキュメント更新完了。PR 作成待ち。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。todo-auto-complete が自動更新するため手動でチェックしない。
 
