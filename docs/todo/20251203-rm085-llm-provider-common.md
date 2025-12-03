@@ -1,7 +1,7 @@
 ---
 目的: RM-085 LLM プロバイダ共通化
 関連ブランチ: feat/rm085-llm-provider-common
-関連Issue: 未作成
+関連Issue: #363
 roadmap_item: RM-085 LLM プロバイダ共通化
 ---
 
