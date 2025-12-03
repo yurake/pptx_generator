@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from dataclasses import dataclass, field
 import re
 from typing import Callable, Iterable, Protocol, Tuple
 
-from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
+from pptx_generator.llm import (
+    log_provider_resolution,
+    resolve_llm_provider,
+    load_anthropic_config,
+    load_azure_openai_config,
+    load_aws_claude_config,
+    load_openai_chat_config,
+)
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 
@@ -135,16 +141,14 @@ class OpenAIChatLayoutClient:
     def from_env(cls) -> "OpenAIChatLayoutClient":
         from openai import OpenAI
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise LayoutAIClientConfigurationError("OPENAI_API_KEY が設定されていません")
-
-        base_url = os.getenv("OPENAI_BASE_URL")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
+        config = load_openai_chat_config(
+            default_model="gpt-5-mini",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = OpenAI(api_key=config.api_key, base_url=config.base_url) if config.base_url else OpenAI(api_key=config.api_key)
+        return cls(client, model=config.model, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
@@ -237,24 +241,18 @@ class AzureOpenAIChatLayoutClient:
     def from_env(cls) -> "AzureOpenAIChatLayoutClient":
         from openai import AzureOpenAI
 
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if not endpoint or not api_key or not deployment:
-            raise LayoutAIClientConfigurationError(
-                "AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT を設定してください"
-            )
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.0"))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        endpoint = endpoint.rstrip("/")
-        lowered = endpoint.lower()
-        for suffix in ("/openai/responses", "/openai"):
-            if lowered.endswith(suffix):
-                endpoint = endpoint[: -len(suffix)]
-                lowered = endpoint.lower()
-        client = AzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version)
-        return cls(client, deployment=deployment, temperature=temperature, max_tokens=max_tokens)
+        config = load_azure_openai_config(
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            default_api_version="2024-02-15-preview",
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = AzureOpenAI(
+            api_key=config.api_key,
+            azure_endpoint=config.endpoint,
+            api_version=config.api_version,
+        )
+        return cls(client, deployment=config.deployment, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage
@@ -310,22 +308,24 @@ class AzureOpenAIChatLayoutClient:
 class AnthropicClaudeLayoutClient:
     """Anthropic Claude API を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int, temperature: float) -> None:
         self._client = client
         self._model = model
         self._max_tokens = max_tokens
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AnthropicClaudeLayoutClient":
         import anthropic
 
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise LayoutAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
-        model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = anthropic.Anthropic(api_key=api_key)
-        return cls(client, model=model_id, max_tokens=max_tokens)
+        config = load_anthropic_config(
+            default_model="claude-3-haiku-20240307",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = anthropic.Anthropic(api_key=config.api_key)
+        return cls(client, model=config.model, max_tokens=config.max_tokens, temperature=config.temperature)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         messages = [
@@ -339,13 +339,12 @@ class AnthropicClaudeLayoutClient:
                 ],
             }
         ]
-        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=self._model,
                 system=_build_system_prompt(request),
                 max_tokens=self._max_tokens,
-                temperature=temperature,
+                temperature=self._temperature,
                 messages=messages,
             )
         except Exception as exc:  # pragma: no cover - API failure
@@ -378,27 +377,38 @@ class AnthropicClaudeLayoutClient:
 class AwsClaudeLayoutClient:
     """AWS Bedrock Claude を利用したレイアウト推薦。"""
 
-    def __init__(self, runtime_client, *, model_id: str, max_tokens: int, inference_profile_arn: str | None) -> None:
+    def __init__(
+        self,
+        runtime_client,
+        *,
+        model_id: str,
+        max_tokens: int,
+        inference_profile_arn: str | None,
+        temperature: float,
+    ) -> None:
         self._client = runtime_client
         self._model_id = model_id
         self._max_tokens = max_tokens
         self._inference_profile_arn = inference_profile_arn
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AwsClaudeLayoutClient":
         import boto3
         from botocore.exceptions import NoCredentialsError
 
-        model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
-        inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
-        region = os.getenv("AWS_REGION")
-        profile = os.getenv("AWS_PROFILE")
+        config = load_aws_claude_config(
+            default_model_id="anthropic.claude-3-haiku-20240307-v1:0",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
 
         session_kwargs: dict[str, object] = {}
-        if profile:
-            session_kwargs["profile_name"] = profile
-        if region:
-            session_kwargs["region_name"] = region
+        if config.profile:
+            session_kwargs["profile_name"] = config.profile
+        if config.region:
+            session_kwargs["region_name"] = config.region
         session = boto3.Session(**session_kwargs)
         credentials = session.get_credentials()
         if credentials is None:
@@ -407,8 +417,8 @@ class AwsClaudeLayoutClient:
             )
 
         client_kwargs: dict[str, object] = {}
-        if region:
-            client_kwargs["region_name"] = region
+        if config.region:
+            client_kwargs["region_name"] = config.region
         try:
             runtime_client = session.client("bedrock-runtime", **client_kwargs)
         except NoCredentialsError as exc:
@@ -416,14 +426,19 @@ class AwsClaudeLayoutClient:
                 "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
             ) from exc
 
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        return cls(runtime_client, model_id=model_id, max_tokens=max_tokens, inference_profile_arn=inference_profile_arn)
+        return cls(
+            runtime_client,
+            model_id=config.model_id,
+            max_tokens=config.max_tokens,
+            inference_profile_arn=config.inference_profile_arn,
+            temperature=config.temperature,
+        )
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.0")),
+            "temperature": self._temperature,
             "system": _build_system_prompt(request),
             "messages": [
                 {

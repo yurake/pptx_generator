@@ -58,7 +58,7 @@ def test_anthropic_template_ai_logs_error_and_raises(caplog: pytest.LogCaptureFi
         raise RuntimeError("anthropic outage")
 
     failing_client = SimpleNamespace(messages=SimpleNamespace(create=_raise_error))
-    client = AnthropicTemplateAIClient(failing_client, model="claude-3-haiku", max_tokens=1024)
+    client = AnthropicTemplateAIClient(failing_client, model="claude-3-haiku", max_tokens=1024, temperature=0.0)
     request = TemplateAIRequest(
         prompt="classify",
         policy=policy,
@@ -95,6 +95,7 @@ def test_anthropic_template_ai_success() -> None:
         SimpleNamespace(messages=SimpleNamespace(create=_success_create)),
         model="claude-3-haiku",
         max_tokens=1024,
+        temperature=0.0,
     )
     request = TemplateAIRequest(
         prompt="classify",

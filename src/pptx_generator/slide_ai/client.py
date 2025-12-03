@@ -4,14 +4,20 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 import textwrap
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Callable, Protocol
 
-from ..llm import log_provider_resolution, resolve_llm_provider
+from ..llm import (
+    log_provider_resolution,
+    resolve_llm_provider,
+    load_anthropic_config,
+    load_azure_openai_config,
+    load_aws_claude_config,
+    load_openai_chat_config,
+)
 from ..models import JobSpec, Slide
 from .policy import SlideAIPolicy
 
@@ -493,16 +499,14 @@ class OpenAIChatClient:
     def from_env(cls) -> "OpenAIChatClient":
         from openai import OpenAI
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise LLMClientConfigurationError("OPENAI_API_KEY が設定されていません")
-
-        base_url = os.getenv("OPENAI_BASE_URL")
-        model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        return cls(client, model=model, temperature=temperature, max_tokens=max_tokens)
+        config = load_openai_chat_config(
+            default_model="gpt-5-mini",
+            default_temperature=0.3,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LLMClientConfigurationError,
+        )
+        client = OpenAI(api_key=config.api_key, base_url=config.base_url) if config.base_url else OpenAI(api_key=config.api_key)
+        return cls(client, model=config.model, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         messages = [
@@ -621,24 +625,24 @@ class AzureOpenAIChatClient:
     def from_env(cls) -> "AzureOpenAIChatClient":
         from openai import AzureOpenAI
 
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if not all([endpoint, api_key, deployment]):
-            raise LLMClientConfigurationError(
-                "AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT を設定してください"
-            )
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.3"))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        endpoint = endpoint.rstrip("/")
-        lowered = endpoint.lower()
-        for suffix in ("/openai/responses", "/openai"):
-            if lowered.endswith(suffix):
-                endpoint = endpoint[: -len(suffix)]
-                lowered = endpoint.lower()
-        client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=endpoint)
-        return cls(client, deployment=deployment, api_version=api_version, temperature=temperature, max_tokens=max_tokens)
+        config = load_azure_openai_config(
+            default_temperature=0.3,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            default_api_version="2024-02-15-preview",
+            error_cls=LLMClientConfigurationError,
+        )
+        client = AzureOpenAI(
+            api_key=config.api_key,
+            api_version=config.api_version,
+            azure_endpoint=config.endpoint,
+        )
+        return cls(
+            client,
+            deployment=config.deployment,
+            api_version=config.api_version,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         messages = [
@@ -729,22 +733,24 @@ class AzureOpenAIChatClient:
 class AnthropicClaudeClient:
     """Anthropic Claude API クライアント。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int, temperature: float) -> None:
         self._client = client
         self._model = model
         self._max_tokens = max_tokens
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AnthropicClaudeClient":
         from anthropic import Anthropic
 
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise LLMClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
-        model = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = Anthropic(api_key=api_key)
-        return cls(client, model=model, max_tokens=max_tokens)
+        config = load_anthropic_config(
+            default_model="claude-3-haiku-20240307",
+            default_temperature=0.3,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LLMClientConfigurationError,
+        )
+        client = Anthropic(api_key=config.api_key)
+        return cls(client, model=config.model, max_tokens=config.max_tokens, temperature=config.temperature)
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         messages = [
@@ -765,7 +771,7 @@ class AnthropicClaudeClient:
             model=model_name,
             system=_build_system_prompt(request),
             max_tokens=self._max_tokens,
-            temperature=float(os.getenv("ANTHROPIC_TEMPERATURE", "0.3")),
+            temperature=self._temperature,
             messages=messages,
         )
         text_parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
@@ -780,7 +786,7 @@ class AnthropicClaudeClient:
             model=model_name,
             system=request.system_prompt,
             max_tokens=self._max_tokens,
-            temperature=float(os.getenv("ANTHROPIC_TEMPERATURE", "0.3")),
+            temperature=self._temperature,
             messages=[
                 {
                     "role": "user",
@@ -808,27 +814,31 @@ class AwsClaudeClient:
         model_id: str,
         max_tokens: int,
         inference_profile_arn: str | None,
+        temperature: float,
     ) -> None:
         self._client = runtime_client
         self._model_id = model_id
         self._max_tokens = max_tokens
         self._inference_profile_arn = inference_profile_arn
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AwsClaudeClient":
         import boto3
         from botocore.exceptions import NoCredentialsError
 
-        model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
-        inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
-        region = os.getenv("AWS_REGION")
-        profile = os.getenv("AWS_PROFILE")
+        config = load_aws_claude_config(
+            default_model_id="anthropic.claude-3-haiku-20240307-v1:0",
+            default_temperature=0.3,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LLMClientConfigurationError,
+        )
 
         session_kwargs: dict[str, object] = {}
-        if profile:
-            session_kwargs["profile_name"] = profile
-        if region:
-            session_kwargs["region_name"] = region
+        if config.profile:
+            session_kwargs["profile_name"] = config.profile
+        if config.region:
+            session_kwargs["region_name"] = config.region
         session = boto3.Session(**session_kwargs)
         credentials = session.get_credentials()
         if credentials is None:
@@ -837,27 +847,27 @@ class AwsClaudeClient:
             )
 
         client_kwargs: dict[str, object] = {}
-        if region:
-            client_kwargs["region_name"] = region
+        if config.region:
+            client_kwargs["region_name"] = config.region
         try:
             runtime_client = session.client("bedrock-runtime", **client_kwargs)
         except NoCredentialsError as exc:
             raise LLMClientConfigurationError(
                 "AWS 認証情報を利用できません。環境変数または共有クレデンシャルで設定してください。"
             ) from exc
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         return cls(
             runtime_client,
-            model_id=model_id,
-            max_tokens=max_tokens,
-            inference_profile_arn=inference_profile_arn,
+            model_id=config.model_id,
+            max_tokens=config.max_tokens,
+            inference_profile_arn=config.inference_profile_arn,
+            temperature=config.temperature,
         )
 
     def generate(self, request: AIGenerationRequest) -> AIGenerationResponse:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.3")),
+            "temperature": self._temperature,
             "system": _build_system_prompt(request),
             "messages": [
                 {
@@ -908,7 +918,7 @@ class AwsClaudeClient:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.3")),
+            "temperature": self._temperature,
             "system": request.system_prompt,
             "messages": [
                 {
