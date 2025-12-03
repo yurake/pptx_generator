@@ -1,7 +1,7 @@
 ---
 目的: RM-056 多形式インポート CLI 操作統合の実装と運用整備
 関連ブランチ: feat/rm056-cli-integration
-関連Issue: 未作成
+関連Issue: #364
 roadmap_item: RM-056 多形式インポートCLI統合
 ---
 
