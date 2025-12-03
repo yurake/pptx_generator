@@ -6,7 +6,9 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
+
+from pptx_generator.llm import resolve_llm_provider
 
 from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags
 from .policy import TemplateAIPolicy, TemplateAIPolicyError
@@ -47,26 +49,31 @@ class TemplateAIClientConfigurationError(RuntimeError):
 def create_template_ai_client(policy: TemplateAIPolicy) -> tuple[TemplateAIClient, str]:
     """ポリシー設定から適切なクライアントを生成し、利用プロバイダ名を返す。"""
 
-    provider_env = os.getenv("PPTX_TEMPLATE_LLM_PROVIDER") or os.getenv("PPTX_LLM_PROVIDER")
-    provider = (provider_env or "mock").strip().lower() or "mock"
+    resolution = resolve_llm_provider(
+        primary_env="PPTX_TEMPLATE_LLM_PROVIDER",
+        fallback_env="PPTX_LLM_PROVIDER",
+    )
     logger.info(
-        "template AI provider resolved: env=%s -> %s",
-        provider_env or "",
-        provider,
+        "template AI provider resolved: provider=%s source=%s",
+        resolution.provider,
+        resolution.source,
     )
-    if provider in {"mock", ""}:
-        return MockTemplateAIClient(), "mock"
-    if provider in {"openai", "openai-api"}:
-        return OpenAITemplateAIClient.from_env(policy), "openai"
-    if provider in {"azure", "azure-openai"}:
-        return AzureOpenAITemplateAIClient.from_env(policy), "azure-openai"
-    if provider in {"claude", "anthropic"}:
-        return AnthropicTemplateAIClient.from_env(policy), "anthropic"
-    if provider in {"aws-claude", "bedrock"}:
-        return AwsClaudeTemplateAIClient.from_env(policy), "aws-claude"
-    raise TemplateAIClientConfigurationError(
-        f"テンプレートAIプロバイダ '{provider}' には対応していません"
-    )
+
+    factories: dict[str, Callable[[], TemplateAIClient]] = {
+        "mock": MockTemplateAIClient,
+        "openai": lambda: OpenAITemplateAIClient.from_env(policy),
+        "azure-openai": lambda: AzureOpenAITemplateAIClient.from_env(policy),
+        "anthropic": lambda: AnthropicTemplateAIClient.from_env(policy),
+        "aws-claude": lambda: AwsClaudeTemplateAIClient.from_env(policy),
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        raise TemplateAIClientConfigurationError(
+            f"テンプレートAIプロバイダ '{resolution.provider}' には対応していません"
+        )
+
+    return factory(), resolution.provider
 
 
 class MockTemplateAIClient:

@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from pptx_generator.llm import resolve_llm_provider
 from pptx_generator.models import JobSpec
 from pptx_generator.spec_loader import load_jobspec_from_path
 
@@ -173,11 +174,12 @@ def resolve_template_path(*, spec: JobSpec, spec_source: Path) -> Path:
 
 
 def log_current_llm_provider(context: str) -> None:
-    provider_env = os.getenv("PPTX_LLM_PROVIDER")
-    provider = provider_env.strip().lower() if provider_env else "mock"
-    source = "env" if provider_env else "default"
+    resolution = resolve_llm_provider()
     logging.getLogger("pptx_generator.cli.llm").info(
-        "LLM provider (%s): %s (source=%s)", context, provider, source
+        "LLM provider (%s): %s (source=%s)",
+        context,
+        resolution.provider,
+        resolution.source,
     )
 
 

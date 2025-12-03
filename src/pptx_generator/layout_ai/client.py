@@ -7,7 +7,9 @@ import logging
 import os
 from dataclasses import dataclass, field
 import re
-from typing import Iterable, Protocol, Tuple
+from typing import Callable, Iterable, Protocol, Tuple
+
+from pptx_generator.llm import resolve_llm_provider
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 
@@ -55,25 +57,29 @@ class LayoutAIResponseFormatError(RuntimeError):
 
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
-    provider_env = os.getenv("PPTX_LLM_PROVIDER")
-    provider = provider_env.strip().lower() if provider_env else "mock"
+    resolution = resolve_llm_provider()
     logger.info(
-        "layout AI provider resolved: env=%s policy=%s -> %s",
-        provider_env or "",
-        "env-default",
-        provider,
+        "layout AI provider resolved: provider=%s source=%s policy=%s",
+        resolution.provider,
+        resolution.source,
+        getattr(policy, "id", "-"),
     )
-    if provider in {"mock", ""}:
-        return MockLayoutAIClient()
-    if provider in {"openai", "openai-api"}:
-        return OpenAIChatLayoutClient.from_env()
-    if provider in {"azure", "azure-openai"}:
-        return AzureOpenAIChatLayoutClient.from_env()
-    if provider in {"claude", "anthropic"}:
-        return AnthropicClaudeLayoutClient.from_env()
-    if provider in {"aws-claude", "bedrock"}:
-        return AwsClaudeLayoutClient.from_env()
-    raise LayoutAIClientConfigurationError(f"未知のレイアウトAIプロバイダが指定されました: {provider}")
+
+    factories: dict[str, Callable[[], LayoutAIClient]] = {
+        "mock": MockLayoutAIClient,
+        "openai": OpenAIChatLayoutClient.from_env,
+        "azure-openai": AzureOpenAIChatLayoutClient.from_env,
+        "anthropic": AnthropicClaudeLayoutClient.from_env,
+        "aws-claude": AwsClaudeLayoutClient.from_env,
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        raise LayoutAIClientConfigurationError(
+            f"未知のレイアウトAIプロバイダが指定されました: {resolution.provider}"
+        )
+
+    return factory()
 
 
 class MockLayoutAIClient:

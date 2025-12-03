@@ -7,7 +7,9 @@ import math
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
+
+from pptx_generator.llm import resolve_llm_provider
 
 
 logger = logging.getLogger(__name__)
@@ -33,15 +35,24 @@ class PrepareLLMConfigurationError(RuntimeError):
 
 
 def create_prepare_llm_client() -> PrepareLLMClient:
-    provider = os.getenv("PPTX_LLM_PROVIDER", "mock").strip().lower()
-    logger.info("Prepare LLM provider resolved: %s", provider)
-    if provider in {"", "mock", "mock-local"}:
-        return MockPrepareLLMClient()
-    if provider in {"openai", "openai-api"}:
-        return OpenAIPrepareLLMClient.from_env()
-    if provider in {"azure-openai", "azure"}:
-        return AzureOpenAIPrepareLLMClient.from_env()
-    raise PrepareLLMConfigurationError(f"未知の LLM プロバイダーです: {provider}")
+    resolution = resolve_llm_provider()
+    logger.info(
+        "Prepare LLM provider resolved: %s (source=%s)",
+        resolution.provider,
+        resolution.source,
+    )
+
+    factories: dict[str, Callable[[], PrepareLLMClient]] = {
+        "mock": MockPrepareLLMClient,
+        "openai": OpenAIPrepareLLMClient.from_env,
+        "azure-openai": AzureOpenAIPrepareLLMClient.from_env,
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        raise PrepareLLMConfigurationError(f"未知の LLM プロバイダーです: {resolution.provider}")
+
+    return factory()
 
 
 class MockPrepareLLMClient:

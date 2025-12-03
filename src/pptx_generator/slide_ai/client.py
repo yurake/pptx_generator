@@ -9,8 +9,9 @@ import re
 import textwrap
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from typing import Protocol
+from typing import Callable, Protocol
 
+from ..llm import resolve_llm_provider
 from ..models import JobSpec, Slide
 from .policy import SlideAIPolicy
 
@@ -101,20 +102,27 @@ class LLMClient(Protocol):
 def create_llm_client() -> LLMClient:
     """環境変数に基づき LLM クライアントを生成する。"""
 
-    provider = os.getenv("PPTX_LLM_PROVIDER", "mock").strip().lower()
-    _LLM_LOGGER.info("LLM provider resolved: %s", provider)
-    if provider in {"", "mock", "mock-local"}:
-        return MockLLMClient()
-    if provider in {"openai", "openai-api"}:
-        return OpenAIChatClient.from_env()
-    if provider in {"azure-openai", "azure"}:
-        return AzureOpenAIChatClient.from_env()
-    if provider in {"claude", "anthropic"}:
-        return AnthropicClaudeClient.from_env()
-    if provider in {"aws-claude", "bedrock"}:
-        return AwsClaudeClient.from_env()
-    msg = f"未知の LLM プロバイダーが指定されました: {provider}"
-    raise LLMClientConfigurationError(msg)
+    resolution = resolve_llm_provider()
+    _LLM_LOGGER.info(
+        "LLM provider resolved: %s (source=%s)",
+        resolution.provider,
+        resolution.source,
+    )
+
+    factories: dict[str, Callable[[], LLMClient]] = {
+        "mock": MockLLMClient,
+        "openai": OpenAIChatClient.from_env,
+        "azure-openai": AzureOpenAIChatClient.from_env,
+        "anthropic": AnthropicClaudeClient.from_env,
+        "aws-claude": AwsClaudeClient.from_env,
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        msg = f"未知の LLM プロバイダーが指定されました: {resolution.provider}"
+        raise LLMClientConfigurationError(msg)
+
+    return factory()
 
 
 MAX_BODY_LINES = 6
