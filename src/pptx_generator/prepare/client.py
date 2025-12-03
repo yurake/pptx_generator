@@ -1,8 +1,8 @@
-"""Compatibility wrapper for prepare AI LLM client."""
+"""Compatibility wrapper for prepare AI client module."""
 
 from __future__ import annotations
 
-from pptx_generator.prepare_ai.llm_client import (
+from pptx_generator.prepare_ai.client import (
     AzureOpenAIPrepareLLMClient,
     MockPrepareLLMClient,
     OpenAIPrepareLLMClient,

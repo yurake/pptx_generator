@@ -38,7 +38,7 @@ from pptx_generator.models import (
 )
 from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument
-from pptx_generator.prepare_ai.llm_client import MockPrepareLLMClient
+from pptx_generator.prepare_ai.client import MockPrepareLLMClient
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator
 
 

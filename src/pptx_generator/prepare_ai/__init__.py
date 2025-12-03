@@ -6,7 +6,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING
 
 from .errors import PrepareAIOrchestrationError
-from .llm_client import (
+from .client import (
     AzureOpenAIPrepareLLMClient,
     MockPrepareLLMClient,
     OpenAIPrepareLLMClient,
