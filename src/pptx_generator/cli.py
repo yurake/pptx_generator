@@ -73,6 +73,7 @@ DEFAULT_DRAFT_META_FILENAME = "draft_meta.json"
 def build_prepare_config(
     *,
     prepare_path: Path | None,
+    prepare_inputs: tuple[str, ...],
     output_dir: Path,
     jobspec: Path | None,
     mode: str,
@@ -80,6 +81,7 @@ def build_prepare_config(
 ) -> PrepareCommandConfig:
     return _build_prepare_config(
         prepare_path=prepare_path,
+        prepare_inputs=prepare_inputs,
         output_dir=output_dir,
         jobspec=jobspec,
         mode=mode,

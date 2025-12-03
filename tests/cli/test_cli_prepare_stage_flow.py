@@ -43,6 +43,7 @@ def test_resolve_static_context_dynamic_mode(tmp_path: Path) -> None:
         slide_inputs_filename=Path("slide_inputs.md"),
         mode="dynamic",
         prepare_path=None,
+        has_inline_source=False,
     )
 
     assert context.blueprint_spec is None
@@ -59,6 +60,7 @@ def test_resolve_static_context_requires_jobspec(tmp_path: Path) -> None:
             slide_inputs_filename=Path("slide_inputs.md"),
             mode="static",
             prepare_path=None,
+            has_inline_source=False,
         )
 
 
@@ -153,6 +155,8 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     assert meta_payload["mode"] == "dynamic"
     assert meta_payload["statistics"]["cards_total"] == card_count
     assert meta_payload.get("constraints", {}).get("include_title_page") is True
+    assert meta_payload["import_sources"]
+    assert meta_payload["import_sources"][0]["via"] in {"structured", "content_import"}
 
     outline_payload = json.loads(outline_path.read_text(encoding="utf-8"))
     assert outline_payload["chapters"]
@@ -165,6 +169,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     assert prepare_meta["mode"] == "dynamic"
     outputs = prepare_meta["outputs"]
     assert outputs["prepare_card"].endswith("prepare_card.json")
+    assert prepare_meta.get("import_sources")
 
 
 def test_prepare_requires_valid_prepare_source(tmp_path) -> None:
@@ -240,6 +245,39 @@ def test_prepare_page_limit_short_option(tmp_path) -> None:
     assert len(ai_log_payload) == card_count
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload.get("constraints", {}).get("max_chapters") == 1
+
+
+def test_prepare_accepts_multiple_inputs(tmp_path) -> None:
+    source_a = tmp_path / "source_a.md"
+    source_a.write_text("# イントロ\n- 課題A\n\n## 詳細\n- 詳細A1", encoding="utf-8")
+    source_b = tmp_path / "source_b.md"
+    source_b.write_text("# 提案\n- 提案A\n- 提案B", encoding="utf-8")
+    output_dir = tmp_path / "multi"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(source_a),
+            str(source_b),
+            "--mode",
+            "dynamic",
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    import_sources = meta_payload.get("import_sources", [])
+    assert len(import_sources) == 2
+    kinds = {entry.get("via") for entry in import_sources}
+    assert kinds == {"structured"}
+    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_sources = audit_payload["prepare_normalization"].get("import_sources", [])
+    assert len(audit_sources) == 2
 
 
 def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -> None:

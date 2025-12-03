@@ -6,6 +6,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Callable, Sequence
 
 from pydantic import ValidationError
@@ -17,12 +18,18 @@ from pptx_generator.models import (
     TemplateBlueprintSlide,
     TemplateSpec,
 )
+from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
 from pptx_generator.prepare import (
     PrepareCard,
     PrepareDocument,
     PreparePolicyError,
-    PrepareSourceDocument,
     load_prepare_policy_set,
+)
+from pptx_generator.prepare.source import (
+    PrepareSourceChapter,
+    PrepareSourceDocument,
+    PrepareSourceMeta,
+    PrepareSourceSupportingPoint,
 )
 from pptx_generator.prepare.models import PrepareGenerationMeta
 from pptx_generator.prepare_ai import (
@@ -55,6 +62,7 @@ class PrepareCommandError(Exception):
 @dataclass(slots=True)
 class PrepareCommandConfig:
     prepare_path: Path | None
+    prepare_inputs: tuple[str, ...]
     output_dir: Path
     jobspec_path: Path | None
     mode: str
@@ -88,12 +96,22 @@ def run_prepare_command(
         raise PrepareCommandError("static モードでは --page-limit を利用できません", exit_code=2)
 
     source_document: PrepareSourceDocument | None = None
-    if config.prepare_path is not None:
-        source_document = _load_prepare_source(config.prepare_path)
-    elif normalized_mode != "static":
-        raise PrepareCommandError(
-            "dynamic モードではプレペア入力ファイルを指定する必要があります", exit_code=2
-        )
+    source_metadata: list[dict[str, Any]] = []
+    import_messages: list[str] = []
+
+    if config.prepare_inputs:
+        source_document, source_metadata, import_messages = _load_prepare_inputs(config.prepare_inputs)
+
+    if source_document is None:
+        if config.prepare_path is not None:
+            source_document = _load_prepare_source(config.prepare_path)
+            source_metadata.append(
+                _build_structured_source_meta(config.prepare_path, source_document)
+            )
+        elif normalized_mode != "static":
+            raise PrepareCommandError(
+                "dynamic モードではプレペア入力を指定する必要があります", exit_code=2
+            )
 
     policy_set = _load_prepare_policy(config.policy_path)
 
@@ -104,10 +122,19 @@ def run_prepare_command(
         slide_inputs_filename=config.slide_inputs_filename,
         mode=normalized_mode,
         prepare_path=config.prepare_path,
+        has_inline_source=source_document is not None,
     )
 
     if source_document is None and static_context.source_document is not None:
         source_document = static_context.source_document
+        if static_context.template_spec_path is not None:
+            source_metadata.append(
+                {
+                    "source": str(static_context.template_spec_path),
+                    "kind": "template_spec",
+                    "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
     orchestrator = PrepareAIOrchestrator(policy_set)
     try:
@@ -126,14 +153,20 @@ def run_prepare_command(
         exit_code = 6 if normalized_mode == "static" else 4
         raise PrepareCommandError(f"プレペアカードの生成に失敗しました: {exc}", exit_code=exit_code) from exc
 
+    if source_metadata:
+        meta.import_sources = source_metadata
+
     artifacts = PrepareCommandArtifacts.initialize(config.output_dir)
+    combined_messages = list(static_context.messages)
+    combined_messages.extend(import_messages)
     return artifacts.write_outputs(
         document=document,
         meta=meta,
         ai_logs=ai_logs,
         dump_json=dump_json,
         static_context=static_context,
-        messages=static_context.messages,
+        messages=combined_messages,
+        import_metadata=source_metadata,
     )
 
 
@@ -181,6 +214,7 @@ class PrepareCommandArtifacts:
         dump_json: Callable[[Path, object], None],
         static_context: PrepareStaticContext,
         messages: list[str],
+        import_metadata: list[dict[str, Any]] | None = None,
     ) -> PrepareCommandResult:
         document.meta = dict(document.meta or {})
         document.meta.update(
@@ -227,6 +261,8 @@ class PrepareCommandArtifacts:
             audit_payload["prepare_normalization"]["blueprint"] = static_context.blueprint_ref
         if meta.slot_coverage:
             audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
+        if import_metadata:
+            audit_payload["prepare_normalization"]["import_sources"] = import_metadata
         dump_json(self.audit_path, audit_payload)
 
         return PrepareCommandResult(
@@ -248,6 +284,7 @@ def resolve_static_context(
     slide_inputs_filename: Path,
     mode: str,
     prepare_path: Path | None,
+    has_inline_source: bool,
 ) -> PrepareStaticContext:
     if mode != "static":
         return PrepareStaticContext(
@@ -347,7 +384,7 @@ def resolve_static_context(
                 first_source = parsed
 
         messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
-    elif prepare_path is None:
+    elif prepare_path is None and not has_inline_source:
         raise PrepareCommandError(
             ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
             exit_code=2,
@@ -372,6 +409,205 @@ def _load_prepare_source(path: Path) -> PrepareSourceDocument:
         raise PrepareCommandError(f"プレペア入力ファイルが見つかりません: {exc}", exit_code=2) from exc
     except (json.JSONDecodeError, ValidationError) as exc:
         raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
+    except UnicodeDecodeError as exc:
+        raise PrepareCommandError(f"プレペア入力ファイルを UTF-8 として解釈できません: {exc}", exit_code=2) from exc
+
+
+def _load_prepare_inputs(
+    inputs: Sequence[str],
+) -> tuple[PrepareSourceDocument | None, list[dict[str, Any]], list[str]]:
+    if not inputs:
+        return None, [], []
+
+    service = ContentImportService()
+    documents: list[PrepareSourceDocument] = []
+    metadata: list[dict[str, Any]] = []
+    messages: list[str] = []
+
+    for raw in inputs:
+        value = raw.strip()
+        if not value:
+            continue
+
+        lower_value = value.lower()
+        is_url = lower_value.startswith("http://") or lower_value.startswith("https://")
+        is_data_uri = lower_value.startswith("data:")
+        candidate_path = Path(value).expanduser()
+        path_exists = candidate_path.exists() and candidate_path.is_file()
+
+        if path_exists and candidate_path.suffix.lower() not in {".pdf", ".html", ".htm"}:
+            try:
+                document = PrepareSourceDocument.parse_file(candidate_path)
+            except UnicodeDecodeError:
+                document, imported_meta, import_messages = _import_via_service(service, str(candidate_path))
+                metadata.extend(imported_meta)
+                messages.extend(import_messages)
+                messages.append(f"インポートを完了しました: {candidate_path}")
+                documents.append(document)
+                continue
+            except (json.JSONDecodeError, ValidationError) as exc:
+                raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
+
+            documents.append(document)
+            metadata.append(_build_structured_source_meta(candidate_path, document))
+            messages.append(f"プレペア入力を読み込みました: {candidate_path}")
+            continue
+
+        if is_url or is_data_uri or path_exists:
+            document, imported_meta, import_messages = _import_via_service(service, value)
+            metadata.extend(imported_meta)
+            messages.extend(import_messages)
+            messages.append(f"インポートを完了しました: {value}")
+            documents.append(document)
+            continue
+
+        raise PrepareCommandError(f"プレペア入力を解釈できません: {value}", exit_code=2)
+
+    if not documents:
+        return None, metadata, messages
+
+    combined_document = _combine_prepare_documents(documents)
+    return combined_document, metadata, messages
+
+
+def _import_via_service(
+    service: ContentImportService,
+    source: str,
+) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
+    try:
+        result = service.import_sources([source])
+    except ContentImportError as exc:
+        raise PrepareCommandError(f"入力ソースの取り込みに失敗しました: {exc}", exit_code=2) from exc
+
+    document = _convert_import_result_to_prepare_source(result, source)
+    metadata: list[dict[str, Any]] = []
+    sources_meta = result.meta.get("sources") if isinstance(result.meta, dict) else None
+    if isinstance(sources_meta, list):
+        for entry in sources_meta:
+            if isinstance(entry, dict):
+                copied = dict(entry)
+                copied.setdefault("via", "content_import")
+                metadata.append(copied)
+    if not metadata:
+        metadata.append(
+            {
+                "source": source,
+                "kind": "import",
+                "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                "via": "content_import",
+            }
+        )
+
+    warning_messages = [f"警告: {warning}" for warning in result.warnings]
+    return document, metadata, warning_messages
+
+
+def _convert_import_result_to_prepare_source(
+    result: ContentImportResult,
+    source_label: str,
+) -> PrepareSourceDocument:
+    summary = (
+        result.document.meta.summary
+        if result.document.meta and result.document.meta.summary
+        else source_label
+    )
+    meta = PrepareSourceMeta(
+        title=summary[:120] if summary else "Imported Source",
+        prepare_id=None,
+        objective=None,
+    )
+
+    chapters: list[PrepareSourceChapter] = []
+    raw_lines: list[str] = []
+
+    for index, slide in enumerate(result.document.slides, start=1):
+        title = slide.elements.title or f"{summary or 'Import'} {index:02d}"
+        body_lines = [line.strip() for line in (slide.elements.body or []) if line.strip()]
+        message = body_lines[0] if body_lines else title
+        supporting_points = [
+            PrepareSourceSupportingPoint(statement=line)
+            for line in body_lines[1:]
+        ]
+        chapter = PrepareSourceChapter(
+            id=f"import-{index:02d}",
+            title=title[:120],
+            message=message,
+            details=body_lines,
+            supporting_points=supporting_points,
+            story_hint=None,
+            intent_tags=["imported"],
+        )
+        chapters.append(chapter)
+        raw_lines.append(title)
+        raw_lines.extend(body_lines)
+        if slide.elements.note:
+            raw_lines.append(slide.elements.note.strip())
+
+    raw_text = "\n".join(raw_lines).strip() or None
+    return PrepareSourceDocument(meta=meta, chapters=chapters, raw_text=raw_text)
+
+
+def _combine_prepare_documents(documents: Sequence[PrepareSourceDocument]) -> PrepareSourceDocument:
+    if not documents:
+        raise ValueError("documents must not be empty")
+    if len(documents) == 1:
+        single = documents[0]
+        return PrepareSourceDocument(
+            meta=single.meta.model_copy(deep=True),
+            chapters=[chapter.model_copy(deep=True) for chapter in single.chapters],
+            raw_text=single.raw_text,
+        )
+
+    base_meta = documents[0].meta.model_copy(deep=True)
+    chapters: list[PrepareSourceChapter] = []
+    raw_texts: list[str] = []
+    objectives: list[str] = []
+
+    for doc in documents:
+        chapters.extend(chapter.model_copy(deep=True) for chapter in doc.chapters)
+        if doc.raw_text:
+            raw_texts.append(doc.raw_text)
+        if doc.meta.objective:
+            objectives.append(doc.meta.objective)
+
+    if objectives:
+        base_meta.objective = "\n\n".join(objectives)
+
+    raw_text = "\n\n".join(text for text in raw_texts if text.strip()) or None
+
+    return PrepareSourceDocument(meta=base_meta, chapters=chapters, raw_text=raw_text)
+
+
+def _build_structured_source_meta(
+    path: Path,
+    document: PrepareSourceDocument,
+) -> dict[str, Any]:
+    try:
+        raw_bytes = path.read_bytes()
+    except OSError:
+        raw_bytes = b""
+    hash_value = hashlib.sha256(raw_bytes).hexdigest() if raw_bytes else None
+    metadata = {
+        "source": str(path),
+        "kind": "file",
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "hash": f"sha256:{hash_value}" if hash_value else None,
+        "chapters": len(document.chapters),
+        "content_type": _guess_structured_content_type(path.suffix.lower()),
+        "via": "structured",
+    }
+    return {key: value for key, value in metadata.items() if value is not None}
+
+
+def _guess_structured_content_type(suffix: str) -> str:
+    mapping = {
+        ".json": "application/json",
+        ".jsonc": "application/json",
+        ".md": "text/markdown",
+        ".markdown": "text/markdown",
+        ".txt": "text/plain",
+    }
+    return mapping.get(suffix, "text/plain")
 
 
 def _load_prepare_policy(path: Path) -> Any:
