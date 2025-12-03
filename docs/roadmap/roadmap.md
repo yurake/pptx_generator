@@ -1072,8 +1072,8 @@ flowchart TB
 - 対象 stage: ステージ横断（LLM 基盤）
 - ゴール: 各 Stage の `create_*_client` で重複している LLM プロバイダ解決ロジックを統合し、設定の一貫性と保守性を高める。
 - 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md), [docs/policies/task-management.md](../policies/task-management.md)
-- 参照 ToDo: [docs/todo/20251203-rm085-llm-provider-common.md](../todo/20251203-rm085-llm-provider-common.md)
-- 状況: 未着手（2025-12-03 追加）
+- 参照 ToDo: [docs/todo/archive/20251203-rm085-llm-provider-common.md](../todo/archive/20251203-rm085-llm-provider-common.md)
+- 状況: 完了（2025-12-03 更新）
 - 期待成果:
   - LLM プロバイダ解決・ログ出力・例外処理を単一のユーティリティへ集約し、Slide/Prepare/Layout/Template 各 AI で共通化する。
   - モック・OpenAI・Azure・Anthropic・Bedrock など既存プロバイダのエイリアスを統一し、設定ミスの検知とエラーメッセージを改善する。

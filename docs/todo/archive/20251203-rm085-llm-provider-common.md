@@ -38,8 +38,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化
   - メモ: Issue 未作成のまま
 - [x] チェックリスト整合確認
   - メモ: 実装・テスト・ドキュメント更新完了。PR 作成待ち。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #365 https://github.com/yurake/pptx_generator/pull/365（2025-12-03 完了）
 
 ## メモ
 - 
