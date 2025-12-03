@@ -278,7 +278,7 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
 
 
 def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
-    source_path = Path("samples/contents/sample_import_content.txt")
+    source_path = Path("samples/input/pitch.md")
     source = PrepareSourceDocument.parse_file(source_path)
     policy_set = load_prepare_policy_set(Path(DEFAULT_PREPARE_POLICY_PATH))
     template_spec = _build_static_template_spec()
@@ -341,8 +341,8 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
         jobspec_path = extract_dir / "jobspec.json"
         jobspec_path.write_text(json.dumps(jobspec.model_dump(mode="json"), indent=2), encoding="utf-8")
 
-        sample_text = (Path(__file__).resolve().parents[2] / "samples/contents/sample_import_content.txt").read_text(encoding="utf-8")
-        sample_path = Path("samples/contents/sample_import_content.txt")
+        sample_text = (Path(__file__).resolve().parents[2] / "samples/input/pitch.md").read_text(encoding="utf-8")
+        sample_path = Path("samples/input/pitch.md")
         sample_path.parent.mkdir(parents=True, exist_ok=True)
         sample_path.write_text(sample_text, encoding="utf-8")
 
@@ -352,14 +352,14 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
         expected_manifest_path = (template_spec_path.resolve().parent.parent / SLIDE_INPUTS_FILENAME)
         identifier = "01_titleslide"
         manifest_path.write_text(
-            f"# Slide inputs\n{identifier}: samples/contents/sample_import_content.txt\n",
+            f"# Slide inputs\n{identifier}: samples/input/pitch.md\n",
             encoding="utf-8",
         )
         assert manifest_path.exists()
         assert expected_manifest_path == manifest_path
 
         cli.prepare.callback(
-            prepare_path=None,
+            prepare_inputs=(),
             output_dir=DEFAULT_PREPARE_OUTPUT_DIR,
             jobspec=jobspec_path,
             mode="static",
@@ -368,7 +368,7 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
 
         prepare_dir = Path(".pptx/prepare")
         ai_log = json.loads((prepare_dir / "prepare_ai_log.json").read_text(encoding="utf-8"))
-        assert ai_log[0]["slide_input_path"].endswith("sample_import_content.txt")
+        assert ai_log[0]["slide_input_path"].endswith("pitch.md")
 
         meta = json.loads((prepare_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
         assert meta["slide_inputs"] == [

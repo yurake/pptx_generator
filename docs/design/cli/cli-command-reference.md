@@ -117,7 +117,7 @@ uv run pptx template samples/templates/templates.pptx
 
 実行例:
 ```bash
-uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+uv run pptx prepare samples/input/pitch.md \
   --mode dynamic \
   --output .pptx/prepare
 ```

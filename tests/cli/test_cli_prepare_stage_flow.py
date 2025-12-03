@@ -32,7 +32,7 @@ from pptx_generator.prepare.models import (
 from pptx_generator.pipeline.draft_structuring import DraftStructuringStep
 
 
-SAMPLE_PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+SAMPLE_PREPARE_SOURCE = Path("samples/input/pitch.md")
 
 
 def test_resolve_static_context_dynamic_mode(tmp_path: Path) -> None:

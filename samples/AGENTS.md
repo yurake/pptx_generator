@@ -9,7 +9,7 @@
 - `gen/`: stage 4 `pptx gen` の成果物（`proposal.pptx`, `analysis.json`, `analysis_pre_polisher.json`, `review_engine_analyzer.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`）を格納し、PDF サンプルが生成できた場合は同ディレクトリへ追加する。
 - `json/archive/`: 旧 `content_approved.json` 系サンプルを保管する領域。互換テストが不要になった場合は削除を検討する。
 - `json/sample_template_layouts.jsonl`: stage 2 のレイアウト候補を模した JSON Lines。ドラフト構成 CLI を手動確認する際の既定入力として使用する。
-- `text/sample_import_content.txt`: 外部ソース取り込み向けのプレーンテキスト例。`pptx prepare samples/contents/sample_import_content_summary.txt text/sample_import_content.txt --mode dynamic` のように複数 PREPARE_PATH を指定して stage 2 インポートを検証する際に利用する。
+- `input/`: UAT 用の多様な入力サンプル（`pitch.md`, `blog.text`, `bullet_only.md` など）を配置。`pptx prepare samples/input/pitch.md samples/input/blog.text --mode dynamic` のように複数 PREPARE_PATH を指定して stage 2 インポートを検証する際に利用する。
 - `assets/`: テストやドキュメントで利用する画像・グラフなどの補助ファイルを配置（例: `logo.png`, `team.png`）。
 - `templates/templates.pptx`: フル構成サンプルで利用する参照テンプレート。レイアウト名・アンカー図形の命名例を確認できる。`Timeline Detail` / `Comparison Two Axis` / `Fact Sheet` など RM-038 で追加したレイアウトに加え、RM-043 で拡充予定のバリエーションもここへ集約する。
 - `skeleton.pptx`: 提案書の初期テンプレート。変更時は `docs/policies/config-and-templates.md` の手順に従い検証する。

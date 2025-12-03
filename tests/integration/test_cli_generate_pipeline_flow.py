@@ -33,7 +33,7 @@ from pptx_generator.cli_handlers.mapping import TemplateStylePayload
 from pptx_generator.cli_handlers.outline import OutlineResult
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+PREPARE_SOURCE = Path("samples/input/pitch.md")
 
 
 def _libreoffice_available() -> bool:

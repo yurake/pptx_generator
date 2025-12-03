@@ -739,7 +739,7 @@ uv run pptx prepare <prepare_source...> \
 **使用例**:
 ```bash
 # Dynamic モードでMarkdownから生成
-uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+uv run pptx prepare samples/input/pitch.md \
   --mode dynamic
 
 # Static モードで複数ソースから生成
@@ -748,7 +748,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
   --jobspec .pptx/extract/jobspec.json
 
 # カード枚数を制限
-uv run pptx prepare samples/contents/sample.md \
+uv run pptx prepare samples/input/pitch.md \
   --mode dynamic \
   -p 10
 ```
@@ -1149,7 +1149,7 @@ PowerPoint テンプレート (.pptx)
   "prepare_normalization": {
     "import_sources": [
       {
-        "path": "samples/contents/sample.md",
+        "path": "samples/input/pitch.md",
         "format": "markdown",
         "size_bytes": 2048
       }
@@ -1292,7 +1292,7 @@ uv run pptx --help
 
 # サンプル実行
 uv run pptx template samples/templates/templates.pptx
-uv run pptx prepare samples/contents/sample_import_content_summary.txt --mode dynamic
+uv run pptx prepare samples/input/pitch.md --mode dynamic
 ```
 
 ### 7.3 設定ファイル
@@ -1676,7 +1676,7 @@ export OPENAI_API_KEY="sk-..."
 
 # Mock プロバイダで動作確認
 export PPTX_LLM_PROVIDER=mock
-uv run pptx prepare samples/contents/sample.md --mode dynamic
+uv run pptx prepare samples/input/pitch.md --mode dynamic
 ```
 
 #### エラー: `PDFExportError: LibreOffice not found`
@@ -1802,7 +1802,7 @@ uv run pptx template templates/custom_template.pptx \
 
 ```bash
 export PREPARE_POLICY_ID=custom_v1
-uv run pptx prepare samples/contents/sample.md --mode dynamic
+uv run pptx prepare samples/input/pitch.md --mode dynamic
 ```
 
 ### 12.3 カスタムバリデーションルール
@@ -2072,7 +2072,7 @@ set -e  # エラー時に停止
 
 # 変数設定
 TEMPLATE="samples/templates/templates.pptx"
-CONTENT="samples/contents/sample_import_content_summary.txt"
+CONTENT="samples/input/pitch.md"
 OUTPUT_BASE=".pptx"
 
 # Stage 1: テンプレート抽出

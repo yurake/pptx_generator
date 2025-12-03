@@ -18,14 +18,14 @@
 - `PrepareAIRecord`: プロンプトテンプレ ID、モデル、トークン統計、レスポンスダイジェストを保持。
 
 ## パイプライン連携
-- CLI `uv run pptx prepare samples/contents/sample_import_content_summary.txt` が PrepareCard 生成の入口。`PrepareAIOrchestrator` がカード下書きを作成し、`PrepareStoreWriter` が `.pptx/prepare/` 配下へ保存する。
+- CLI `uv run pptx prepare samples/input/pitch.md` が PrepareCard 生成の入口。`PrepareAIOrchestrator` がカード下書きを作成し、`PrepareStoreWriter` が `.pptx/prepare/` 配下へ保存する。
 - `PrepareNormalizationStep` が `PipelineContext` に `prepare_document`, `prepare_story_outline`, `prepare_log`, `ai_generation_meta` を登録。stage 4/5 は `PrepareCard` 情報を直接参照する。
 - Analyzer / Review Engine は PrepareCard を入力に診断を実行し、結果をログおよびメタへ反映する。
 - DAO / API 層は `PrepareStore` を利用し、ETag 制御・監査ログ出力・差戻し履歴管理を提供する。
 
 ## テスト戦略
 - モデル単体: `PrepareCard` バリデーション（メッセージ長、証跡必須、ストーリー整合性）、Auto-fix JSON Patch の検証。
-- CLI 統合: `samples/contents/sample_import_content_summary.txt` から `.pptx/prepare/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
+- CLI 統合: `samples/input/pitch.md` から `.pptx/prepare/` 成果物を生成し、JSON スナップショットで確認。警告やログ出力を assertion。
 - API: `httpx` ベースで `/v1/prepare/cards` 系エンドポイントをテストし、ETag と監査ログの整合をチェック。
 - パイプライン: `PrepareNormalizationStep` が `PipelineContext` に期待アーティファクトをセットすること、および `audit_log.json` の `prepare_normalization` セクションが生成されることを確認。
 
