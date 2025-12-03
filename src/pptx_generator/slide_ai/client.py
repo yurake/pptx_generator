@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Callable, Protocol
 
-from ..llm import resolve_llm_provider
+from ..llm import log_provider_resolution, resolve_llm_provider
 from ..models import JobSpec, Slide
 from .policy import SlideAIPolicy
 
@@ -103,11 +103,7 @@ def create_llm_client() -> LLMClient:
     """環境変数に基づき LLM クライアントを生成する。"""
 
     resolution = resolve_llm_provider()
-    _LLM_LOGGER.info(
-        "LLM provider resolved: %s (source=%s)",
-        resolution.provider,
-        resolution.source,
-    )
+    log_provider_resolution(_LLM_LOGGER, component="slide_ai", resolution=resolution)
 
     factories: dict[str, Callable[[], LLMClient]] = {
         "mock": MockLLMClient,
@@ -495,11 +491,7 @@ class OpenAIChatClient:
 
     @classmethod
     def from_env(cls) -> "OpenAIChatClient":
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover - missing optional dependency
-            msg = "openai パッケージが必要です。`pip install openai` を実行してください。"
-            raise LLMClientConfigurationError(msg) from exc
+        from openai import OpenAI
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -627,11 +619,7 @@ class AzureOpenAIChatClient:
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIChatClient":
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover - missing optional dependency
-            msg = "openai パッケージが必要です。`pip install openai` を実行してください。"
-            raise LLMClientConfigurationError(msg) from exc
+        from openai import AzureOpenAI
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -748,11 +736,7 @@ class AnthropicClaudeClient:
 
     @classmethod
     def from_env(cls) -> "AnthropicClaudeClient":
-        try:
-            from anthropic import Anthropic
-        except ImportError as exc:  # pragma: no cover - missing optional dependency
-            msg = "anthropic パッケージが必要です。`pip install anthropic` を実行してください。"
-            raise LLMClientConfigurationError(msg) from exc
+        from anthropic import Anthropic
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -832,12 +816,8 @@ class AwsClaudeClient:
 
     @classmethod
     def from_env(cls) -> "AwsClaudeClient":
-        try:
-            import boto3
-            from botocore.exceptions import NoCredentialsError
-        except ImportError as exc:  # pragma: no cover - missing optional dependency
-            msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
-            raise LLMClientConfigurationError(msg) from exc
+        import boto3
+        from botocore.exceptions import NoCredentialsError
 
         model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
         inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")

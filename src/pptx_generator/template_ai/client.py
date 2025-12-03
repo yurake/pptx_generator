@@ -8,12 +8,13 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
-from pptx_generator.llm import resolve_llm_provider
+from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 
 from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags
 from .policy import TemplateAIPolicy, TemplateAIPolicyError
 
 logger = logging.getLogger(__name__)
+DEFAULT_MAX_TOKENS = 32000
 
 
 @dataclass(slots=True)
@@ -46,25 +47,25 @@ class TemplateAIClientConfigurationError(RuntimeError):
     """テンプレート AI クライアントの設定エラー。"""
 
 
-def create_template_ai_client(policy: TemplateAIPolicy) -> tuple[TemplateAIClient, str]:
+def create_template_ai_client() -> tuple[TemplateAIClient, str]:
     """ポリシー設定から適切なクライアントを生成し、利用プロバイダ名を返す。"""
 
     resolution = resolve_llm_provider(
         primary_env="PPTX_TEMPLATE_LLM_PROVIDER",
         fallback_env="PPTX_LLM_PROVIDER",
     )
-    logger.info(
-        "template AI provider resolved: provider=%s source=%s",
-        resolution.provider,
-        resolution.source,
+    log_provider_resolution(
+        logger,
+        component="template_ai",
+        resolution=resolution,
     )
 
     factories: dict[str, Callable[[], TemplateAIClient]] = {
         "mock": MockTemplateAIClient,
-        "openai": lambda: OpenAITemplateAIClient.from_env(policy),
-        "azure-openai": lambda: AzureOpenAITemplateAIClient.from_env(policy),
-        "anthropic": lambda: AnthropicTemplateAIClient.from_env(policy),
-        "aws-claude": lambda: AwsClaudeTemplateAIClient.from_env(policy),
+        "openai": OpenAITemplateAIClient.from_env,
+        "azure-openai": AzureOpenAITemplateAIClient.from_env,
+        "anthropic": AnthropicTemplateAIClient.from_env,
+        "aws-claude": AwsClaudeTemplateAIClient.from_env,
     }
 
     factory = factories.get(resolution.provider)
@@ -101,20 +102,16 @@ class OpenAITemplateAIClient:
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: TemplateAIPolicy) -> OpenAITemplateAIClient:
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise TemplateAIClientConfigurationError(msg) from exc
+    def from_env(cls) -> OpenAITemplateAIClient:
+        from openai import OpenAI
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise TemplateAIClientConfigurationError("OPENAI_API_KEY が設定されていません")
 
         base_url = os.getenv("OPENAI_BASE_URL")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(policy.max_tokens or 32000)))
+        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
+        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         model_name = os.getenv("OPENAI_MODEL")
         if not model_name:
@@ -172,12 +169,8 @@ class AzureOpenAITemplateAIClient:
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: TemplateAIPolicy) -> AzureOpenAITemplateAIClient:
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "openai パッケージが必要です。`pip install openai` を実行してください。"
-            raise TemplateAIClientConfigurationError(msg) from exc
+    def from_env(cls) -> AzureOpenAITemplateAIClient:
+        from openai import AzureOpenAI
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -189,8 +182,8 @@ class AzureOpenAITemplateAIClient:
         if not deployment:
             raise TemplateAIClientConfigurationError("AZURE_OPENAI_DEPLOYMENT が設定されていません")
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", str(policy.temperature or 0.0)))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(policy.max_tokens or 32000)))
+        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.0"))
+        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
 
         endpoint_clean = endpoint.rstrip("/")
         lowered = endpoint_clean.lower()
@@ -253,25 +246,21 @@ class AnthropicTemplateAIClient:
         self._max_tokens = max_tokens
 
     @classmethod
-    def from_env(cls, policy: TemplateAIPolicy) -> AnthropicTemplateAIClient:
-        try:
-            import anthropic
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "anthropic パッケージが必要です。`pip install anthropic` を実行してください。"
-            raise TemplateAIClientConfigurationError(msg) from exc
+    def from_env(cls) -> AnthropicTemplateAIClient:
+        import anthropic
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise TemplateAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
 
         model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(policy.max_tokens or 32000)))
+        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         client = anthropic.Anthropic(api_key=api_key)
         return cls(client, model=model_id, max_tokens=max_tokens)
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:
         model_name = self._model or os.getenv("ANTHROPIC_MODEL") or ""
-        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", str(request.policy.temperature or 0.0)))
+        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=model_name,
@@ -324,13 +313,9 @@ class AwsClaudeTemplateAIClient:
         self._inference_profile_arn = inference_profile_arn
 
     @classmethod
-    def from_env(cls, policy: TemplateAIPolicy) -> AwsClaudeTemplateAIClient:
-        try:
-            import boto3
-            from botocore.exceptions import NoCredentialsError
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
-            raise TemplateAIClientConfigurationError(msg) from exc
+    def from_env(cls) -> AwsClaudeTemplateAIClient:
+        import boto3
+        from botocore.exceptions import NoCredentialsError
 
         model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
         inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
@@ -360,14 +345,14 @@ class AwsClaudeTemplateAIClient:
                 "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
             ) from exc
 
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(policy.max_tokens or 32000)))
+        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
         return cls(runtime_client, model_id=model_id, max_tokens=max_tokens, inference_profile_arn=inference_profile_arn)
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", str(request.policy.temperature or 0.0))),
+            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.0")),
             "system": _build_system_prompt(),
             "messages": [
                 {

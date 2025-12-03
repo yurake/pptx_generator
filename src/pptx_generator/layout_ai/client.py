@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import re
 from typing import Callable, Iterable, Protocol, Tuple
 
-from pptx_generator.llm import resolve_llm_provider
+from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 
@@ -58,11 +58,11 @@ class LayoutAIResponseFormatError(RuntimeError):
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
     resolution = resolve_llm_provider()
-    logger.info(
-        "layout AI provider resolved: provider=%s source=%s policy=%s",
-        resolution.provider,
-        resolution.source,
-        getattr(policy, "id", "-"),
+    log_provider_resolution(
+        logger,
+        component="layout_ai",
+        resolution=resolution,
+        policy_id=getattr(policy, "id", "-"),
     )
 
     factories: dict[str, Callable[[], LayoutAIClient]] = {
@@ -129,11 +129,7 @@ class OpenAIChatLayoutClient:
 
     @classmethod
     def from_env(cls) -> "OpenAIChatLayoutClient":
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise LayoutAIClientConfigurationError(msg) from exc
+        from openai import OpenAI
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -235,11 +231,7 @@ class AzureOpenAIChatLayoutClient:
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIChatLayoutClient":
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise LayoutAIClientConfigurationError(msg) from exc
+        from openai import AzureOpenAI
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -321,11 +313,7 @@ class AnthropicClaudeLayoutClient:
 
     @classmethod
     def from_env(cls) -> "AnthropicClaudeLayoutClient":
-        try:
-            import anthropic
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "anthropic パッケージが必要です。`pip install anthropic` を実行してください。"
-            raise LayoutAIClientConfigurationError(msg) from exc
+        import anthropic
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -394,12 +382,8 @@ class AwsClaudeLayoutClient:
 
     @classmethod
     def from_env(cls) -> "AwsClaudeLayoutClient":
-        try:
-            import boto3
-            from botocore.exceptions import NoCredentialsError
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
-            raise LayoutAIClientConfigurationError(msg) from exc
+        import boto3
+        from botocore.exceptions import NoCredentialsError
 
         model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
         inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")

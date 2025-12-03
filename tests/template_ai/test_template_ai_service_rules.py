@@ -143,17 +143,11 @@ def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
 
 
 def test_template_ai_client_provider_resolution(monkeypatch):
-    policy = TemplateAIPolicy(
-        id="default",
-        name="azure-template-ai",
-        prompt_template="classify layout usage tags",
-    )
-
     dummy_client = object()
 
     class DummyAzureTemplateClient:
         @classmethod
-        def from_env(cls, policy):
+        def from_env(cls):
             return dummy_client
 
     monkeypatch.setattr(
@@ -165,7 +159,7 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "dummy-key")
 
-    client, provider = create_template_ai_client(policy)
+    client, provider = create_template_ai_client()
 
     assert client is dummy_client
     assert provider == "azure-openai"

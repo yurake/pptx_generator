@@ -9,7 +9,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
-from pptx_generator.llm import resolve_llm_provider
+from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 
 
 logger = logging.getLogger(__name__)
@@ -36,11 +36,7 @@ class PrepareLLMConfigurationError(RuntimeError):
 
 def create_prepare_llm_client() -> PrepareLLMClient:
     resolution = resolve_llm_provider()
-    logger.info(
-        "Prepare LLM provider resolved: %s (source=%s)",
-        resolution.provider,
-        resolution.source,
-    )
+    log_provider_resolution(logger, component="prepare_ai", resolution=resolution)
 
     factories: dict[str, Callable[[], PrepareLLMClient]] = {
         "mock": MockPrepareLLMClient,
@@ -169,11 +165,7 @@ class OpenAIPrepareLLMClient:
 
     @classmethod
     def from_env(cls) -> "OpenAIPrepareLLMClient":
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise PrepareLLMConfigurationError(msg) from exc
+        from openai import OpenAI
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -227,11 +219,7 @@ class AzureOpenAIPrepareLLMClient:
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIPrepareLLMClient":
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise PrepareLLMConfigurationError(msg) from exc
+        from openai import AzureOpenAI
 
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from dataclasses import dataclass
 from typing import Mapping
 
@@ -71,3 +72,22 @@ def _iter_env_names(primary_env: str, fallback_env: str | None) -> tuple[str, ..
     if fallback_env and fallback_env not in names:
         names.append(fallback_env)
     return tuple(names)
+
+
+def log_provider_resolution(
+    logger: logging.Logger,
+    *,
+    component: str,
+    resolution: ProviderResolution,
+    **extra_fields: object,
+) -> None:
+    """プロバイダ解決結果を共通フォーマットでログ出力する。"""
+
+    payload = {
+        "component": component,
+        "provider": resolution.provider,
+        "source": resolution.source,
+        **extra_fields,
+    }
+    formatted = " ".join(f"{key}={value}" for key, value in payload.items())
+    logger.info("LLM provider resolved: %s", formatted)
