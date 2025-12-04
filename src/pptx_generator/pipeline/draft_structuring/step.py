@@ -1200,79 +1200,128 @@ class DraftStructuringStep:
         if not anchor:
             return
         anchor_lower = anchor.lower()
+        if DraftStructuringStep._assign_special_anchor(elements, anchor_lower, card):
+            return
+
+        content_type = (slot.content_type or "text").lower()
+        if content_type == "table":
+            DraftStructuringStep._assign_table_content(elements, anchor, card, lines)
+            return
+        if content_type == "text":
+            DraftStructuringStep._assign_text_content(elements, anchor, anchor_lower, card, lines)
+            return
+
+    @staticmethod
+    def _assign_special_anchor(
+        elements: dict[str, Any],
+        anchor_lower: str,
+        card: PrepareCard,
+    ) -> bool:
         if anchor_lower in {"title", "main message"}:
             headline = card.headline_or_title()
             if headline:
                 elements["title"] = headline
-            return
+            return True
         if "subtitle" in anchor_lower:
             subtitle = card.subtitle_or_chapter() or card.headline_or_title()
             if subtitle:
                 elements["subtitle"] = subtitle
+            return True
+        return False
+
+    @staticmethod
+    def _assign_table_content(
+        elements: dict[str, Any],
+        anchor: str,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        table_block = next(
+            (block for block in card.content.body if block.type == "table"), None
+        )
+        if table_block and table_block.rows:
+            elements[anchor] = {
+                "headers": list(table_block.headers or []),
+                "rows": [list(row) for row in table_block.rows],
+            }
             return
-        content_type = (slot.content_type or "text").lower()
-        if content_type == "table":
-            table_block = next(
-                (block for block in card.content.body if block.type == "table"), None
-            )
-            if table_block and table_block.rows:
-                elements[anchor] = {
-                    "headers": list(table_block.headers or []),
-                    "rows": [list(row) for row in table_block.rows],
-                }
-            elif lines:
-                elements[anchor] = {
-                    "headers": ["項目"],
-                    "rows": [[line] for line in lines],
-                }
+        if lines:
+            elements[anchor] = {
+                "headers": ["項目"],
+                "rows": [[line] for line in lines],
+            }
+
+    @staticmethod
+    def _assign_text_content(
+        elements: dict[str, Any],
+        anchor: str,
+        anchor_lower: str,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        bullet_entries, paragraph_entries = DraftStructuringStep._extract_text_blocks(card)
+        if bullet_entries:
+            elements[anchor] = bullet_entries
             return
-        if content_type == "text":
-            bullet_entries: list[dict[str, Any]] = []
-            paragraph_entries: list[str] = []
-            for block in card.content.body:
-                if block.type == "bullets" and block.data:
-                    raw_items = block.data.get("items")
-                    if isinstance(raw_items, list):
-                        for entry in raw_items:
-                            if isinstance(entry, dict):
-                                text = str(entry.get("text") or "").strip()
-                                if not text:
-                                    continue
-                                level_raw = entry.get("level", 0)
-                                try:
-                                    level = max(int(level_raw), 0)
-                                except (TypeError, ValueError):
-                                    level = 0
-                                bullet_entry: dict[str, Any] = {"text": text, "level": level}
-                                for key, value in entry.items():
-                                    if key in {"text", "level"}:
-                                        continue
-                                    bullet_entry[key] = value
-                                bullet_entries.append(bullet_entry)
-                            elif isinstance(entry, str):
-                                text = entry.strip()
-                                if text:
-                                    bullet_entries.append({"text": text, "level": 0})
-                elif isinstance(block.text, str) and block.text.strip():
-                    paragraph_entries.append(block.text.strip())
-            if bullet_entries:
-                elements[anchor] = bullet_entries
-                return
-            if paragraph_entries:
-                elements[anchor] = paragraph_entries
-                return
-            if lines:
-                elements[anchor] = lines
-                return
-            if anchor_lower in {"body", "content"}:
-                headline = card.headline_or_title()
-                if headline:
-                    elements[anchor] = [headline]
-            return
-        if content_type not in {"text"}:
+        if paragraph_entries:
+            elements[anchor] = paragraph_entries
             return
         if lines:
             elements[anchor] = lines
+            return
+        if anchor_lower in {"body", "content"}:
+            headline = card.headline_or_title()
+            if headline:
+                elements[anchor] = [headline]
+
+    @staticmethod
+    def _extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[str]]:
+        bullet_entries: list[dict[str, Any]] = []
+        paragraph_entries: list[str] = []
+        for block in card.content.body:
+            if block.type == "bullets" and block.data:
+                DraftStructuringStep._append_bullet_entries(block.data.get("items"), bullet_entries)
+                continue
+            if isinstance(block.text, str):
+                text = block.text.strip()
+                if text:
+                    paragraph_entries.append(text)
+        return bullet_entries, paragraph_entries
+
+    @staticmethod
+    def _append_bullet_entries(
+        raw_items: Any,
+        bullet_entries: list[dict[str, Any]],
+    ) -> None:
+        if not isinstance(raw_items, list):
+            return
+        for entry in raw_items:
+            if isinstance(entry, dict):
+                DraftStructuringStep._append_dict_bullet(entry, bullet_entries)
+            elif isinstance(entry, str):
+                text = entry.strip()
+                if text:
+                    bullet_entries.append({"text": text, "level": 0})
+
+    @staticmethod
+    def _append_dict_bullet(
+        entry: dict[str, Any],
+        bullet_entries: list[dict[str, Any]],
+    ) -> None:
+        text = str(entry.get("text") or "").strip()
+        if not text:
+            return
+        level_raw = entry.get("level", 0)
+        try:
+            level = max(int(level_raw), 0)
+        except (TypeError, ValueError):
+            level = 0
+        bullet_entry: dict[str, Any] = {"text": text, "level": level}
+        for key, value in entry.items():
+            if key in {"text", "level"}:
+                continue
+            bullet_entry[key] = value
+        bullet_entries.append(bullet_entry)
 
     @staticmethod
     def _merge_slide_notes(elements: dict[str, Any], note_lines: list[str]) -> None:

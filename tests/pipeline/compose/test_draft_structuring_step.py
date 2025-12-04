@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -23,6 +24,7 @@ from pptx_generator.models import (
     JobSpec,
     Slide,
     SlideTable,
+    TemplateBlueprintSlot,
 )
 from pptx_generator.draft_recommender import LayoutProfile
 from pptx_generator.prepare import (
@@ -362,6 +364,170 @@ def test_prepare_normalization_preserves_table_blocks() -> None:
     assert slide.elements.table_data is not None
     assert slide.elements.table_data.headers == ["Stage", "Owner", "Mode"]
     assert all("Outline | Owner" not in line for line in slide.elements.body)
+
+
+def test_assign_slot_handles_title_and_subtitle() -> None:
+    card = PrepareCard(
+        card_id="intro",
+        role=PrepareCardRole(story_phase="introduction", intent_tags=[]),
+        content=PrepareCardContent(
+            headline="Main Headline",
+            subtitle="Sub Headline",
+            body=[],
+        ),
+    )
+    elements: dict[str, Any] = {}
+
+    title_slot = TemplateBlueprintSlot(
+        slot_id="title-slot",
+        anchor="Title",
+        content_type="text",
+    )
+    DraftStructuringStep._assign_slot_to_elements(elements, title_slot, card, lines=[])
+    assert elements["title"] == "Main Headline"
+
+    subtitle_slot = TemplateBlueprintSlot(
+        slot_id="subtitle-slot",
+        anchor="Slide_Subtitle",
+        content_type="text",
+    )
+    DraftStructuringStep._assign_slot_to_elements(elements, subtitle_slot, card, lines=[])
+    assert elements["subtitle"] == "Sub Headline"
+
+
+def test_assign_slot_table_prefers_table_block() -> None:
+    card = PrepareCard(
+        card_id="table-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(
+            headline="Table Slide",
+            body=[
+                PrepareBodyBlock(
+                    type="table",
+                    headers=["項目", "値"],
+                    rows=[["A", "1"]],
+                )
+            ],
+        ),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="DataTable",
+        content_type="table",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=["fallback"])
+
+    assert elements["DataTable"]["headers"] == ["項目", "値"]
+    assert elements["DataTable"]["rows"] == [["A", "1"]]
+
+
+def test_assign_slot_table_falls_back_to_lines() -> None:
+    card = PrepareCard(
+        card_id="table-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(headline="Table Slide", body=[]),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="DataTable",
+        content_type="table",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=["項目A"])
+
+    assert elements["DataTable"]["rows"] == [["項目A"]]
+
+
+def test_assign_slot_text_prefers_bullets() -> None:
+    card = PrepareCard(
+        card_id="bullet-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(
+            headline="Headline",
+            body=[
+                PrepareBodyBlock(
+                    type="bullets",
+                    data={
+                        "items": [
+                            {"text": "Line 1", "level": 0, "extra": "meta"},
+                            "Line 2",
+                        ]
+                    },
+                )
+            ],
+        ),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="Body",
+        content_type="text",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=["fallback"])
+
+    assert elements["Body"][0] == {"text": "Line 1", "level": 0, "extra": "meta"}
+    assert elements["Body"][1] == {"text": "Line 2", "level": 0}
+
+
+def test_assign_slot_text_prefers_paragraphs_when_no_bullets() -> None:
+    card = PrepareCard(
+        card_id="paragraph-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(
+            headline="Headline",
+            body=[PrepareBodyBlock(type="paragraph", text="Paragraph content")],
+        ),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="Body",
+        content_type="text",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=["fallback"])
+
+    assert elements["Body"] == ["Paragraph content"]
+
+
+def test_assign_slot_text_uses_lines_when_no_content() -> None:
+    card = PrepareCard(
+        card_id="lines-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(headline="Headline", body=[]),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="Body",
+        content_type="text",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=["Fallback"])
+
+    assert elements["Body"] == ["Fallback"]
+
+
+def test_assign_slot_text_falls_back_to_headline_for_body_anchor() -> None:
+    card = PrepareCard(
+        card_id="headline-card",
+        role=PrepareCardRole(story_phase="solution", intent_tags=[]),
+        content=PrepareCardContent(headline="Headline Only", body=[]),
+    )
+    elements: dict[str, Any] = {}
+    slot = TemplateBlueprintSlot(
+        slot_id="slot",
+        anchor="Content",
+        content_type="text",
+    )
+
+    DraftStructuringStep._assign_slot_to_elements(elements, slot, card, lines=[])
+
+    assert elements["Content"] == ["Headline Only"]
 
 
 def test_build_body_lines_normalizes_text_and_bullets() -> None:
