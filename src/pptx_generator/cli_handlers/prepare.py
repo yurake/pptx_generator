@@ -371,19 +371,22 @@ def resolve_static_context(
         except (FileNotFoundError, ValueError) as exc:
             raise PrepareCommandError(f"slide_inputs の読み込みに失敗しました: {exc}", exit_code=2) from exc
 
-        slide_input_sources = {}
-        slide_input_refs = {}
-        for slide_id, data_path in slide_input_paths.items():
-            try:
-                parsed = PrepareSourceDocument.parse_file(data_path)
-            except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
-                raise PrepareCommandError(f"{data_path} の読み込みに失敗しました: {exc}", exit_code=2) from exc
-            slide_input_sources[slide_id] = parsed
-            slide_input_refs[slide_id] = str(data_path)
-            if first_source is None:
-                first_source = parsed
+        if slide_input_paths:
+            slide_input_sources = {}
+            slide_input_refs = {}
+            for slide_id, data_path in slide_input_paths.items():
+                try:
+                    parsed = PrepareSourceDocument.parse_file(data_path)
+                except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
+                    raise PrepareCommandError(f"{data_path} の読み込みに失敗しました: {exc}", exit_code=2) from exc
+                slide_input_sources[slide_id] = parsed
+                slide_input_refs[slide_id] = str(data_path)
+                if first_source is None:
+                    first_source = parsed
 
-        messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
+            messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
+        else:
+            messages.append(f"スライド入力マニフェストはプレースホルダーのみのためスキップします: {slide_manifest}")
     elif prepare_path is None and not has_inline_source:
         raise PrepareCommandError(
             ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
@@ -719,6 +722,7 @@ def _load_slide_inputs_manifest(
 ) -> dict[str, Path]:
     text = manifest_path.read_text(encoding="utf-8")
     mapping: dict[str, Path] = {}
+    placeholder_identifiers: set[str] = set()
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
@@ -731,6 +735,9 @@ def _load_slide_inputs_manifest(
         path_value = value.strip()
         if not identifier or not path_value:
             raise ValueError(f"slide_inputs の行に空の値があります: '{line}'")
+        if path_value.startswith("<") and path_value.endswith(">"):
+            placeholder_identifiers.add(identifier)
+            continue
         resolved = Path(path_value)
         if not resolved.is_absolute():
             default_path = (manifest_path.parent / resolved).resolve()
@@ -746,6 +753,8 @@ def _load_slide_inputs_manifest(
     for index, slide in enumerate(blueprint.slides, start=1):
         identifier = build_prompt_identifier(index, slide)
         if identifier not in mapping:
+            if identifier in placeholder_identifiers:
+                continue
             missing.append(identifier)
             continue
         expected[slide.slide_id or identifier] = mapping[identifier]
