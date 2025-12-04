@@ -1066,3 +1066,16 @@ flowchart TB
   - `MappingStep.run`・`DraftStructuring._build_document`・`PrepareAIOrchestrator._build_cards_static` など長大メソッドを段階的に分割し、データクラスやヘルパー関数でロジックを整理する。
   - `layout_validation.suite` と `api.app` の責務分離（ビルダークラス／router 切り出し）を進め、再利用性とテスト可能性を確保する。
   - リファクタリング後の構成を反映したテストおよびドキュメント更新計画を策定し、ToDo/PR テンプレートでトレーサビリティを確保する。
+
+<a id="rm-085"></a>
+### RM-085 LLM プロバイダ共通化
+- 対象 stage: ステージ横断（LLM 基盤）
+- ゴール: 各 Stage の `create_*_client` で重複している LLM プロバイダ解決ロジックを統合し、設定の一貫性と保守性を高める。
+- 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md), [docs/policies/task-management.md](../policies/task-management.md)
+- 参照 ToDo: [docs/todo/archive/20251203-rm085-llm-provider-common.md](../todo/archive/20251203-rm085-llm-provider-common.md)
+- 状況: 完了（2025-12-03 更新）
+- 期待成果:
+  - LLM プロバイダ解決・ログ出力・例外処理を単一のユーティリティへ集約し、Slide/Prepare/Layout/Template 各 AI で共通化する。
+  - モック・OpenAI・Azure・Anthropic・Bedrock など既存プロバイダのエイリアスを統一し、設定ミスの検知とエラーメッセージを改善する。
+  - 既存の単体テストを更新し、新ユーティリティ向けテストを追加して互換性を担保する。
+  - CLI ログやドキュメントの表記揺れを整理し、利用者がプロバイダ設定状況を把握しやすい状態にする。

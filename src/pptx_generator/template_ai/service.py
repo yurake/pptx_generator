@@ -58,7 +58,7 @@ class TemplateAIService:
             raise TemplateAIPolicyError(str(exc)) from exc
 
         try:
-            self._client, self._provider = create_template_ai_client(self._policy)
+            self._client, self._provider = create_template_ai_client()
         except TemplateAIClientConfigurationError as exc:
             raise TemplateAIClientConfigurationError(str(exc)) from exc
 
