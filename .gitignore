@@ -36,3 +36,34 @@ AGENTS_PRIVATE.md
 # Templates (keep README only)
 templates/*
 !templates/README.md
+.DS_Store
+.idea/
+.vscode/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.tox/
+*.pyc
+*.pyo
+__pycache__/
+coverage.xml
+.coverage*
+dist/
+build/
+
+# VS
+.vs/
+
+# JetBrains
+.idea/
+
+# Python virtual envs
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+
+# Local hooks (outside git control)
+external/

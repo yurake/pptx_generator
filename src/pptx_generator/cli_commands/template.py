@@ -228,40 +228,42 @@ def create_template_command(
                 click.echo(message, err=True)
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-        if hook_manager:
-            blueprint_slides = None
-            if result.extraction.template_spec.blueprint is not None:
-                blueprint_slides = [
-                    slide.model_dump(mode="json")
-                    for slide in result.extraction.template_spec.blueprint.slides
-                ]
-            if blueprint_slides:
-                # hooks.json スキャフォールド生成（存在しない場合のみ）
-                contexts = slide_contexts_from_blueprint(
-                    blueprint_slides,
-                    prompts_dir=result.extraction.prompt_templates_dir,
-                )
-                skeleton_path = ensure_hook_skeleton(
-                    template_id,
-                    [ctx.key for ctx in contexts],
-                )
-                if skeleton_path:
-                    click.echo(f"[hooks] scaffold created: {skeleton_path}")
+        blueprint_slides = None
+        if result.extraction.template_spec.blueprint is not None:
+            blueprint_slides = [
+                slide.model_dump(mode="json")
+                for slide in result.extraction.template_spec.blueprint.slides
+            ]
+        contexts = []
+        if blueprint_slides:
+            contexts = slide_contexts_from_blueprint(
+                blueprint_slides,
+                prompts_dir=result.extraction.prompt_templates_dir,
+            )
+            skeleton_path = ensure_hook_skeleton(
+                template_id,
+                [ctx.key for ctx in contexts],
+            )
+            if skeleton_path:
+                click.echo(f"[hooks] scaffold created: {skeleton_path}")
+            if hook_manager is None:
+                hook_manager = load_hooks_for_template_id(template_id)
 
-                stage_env_with_outputs = dict(stage_env)
-                stage_env_with_outputs.update(
-                    {
-                        "PPTX_TEMPLATE_SPEC_PATH": str(result.extraction.template_spec_path.resolve()),
-                        "PPTX_JOBSPEC_SCAFFOLD_PATH": str(result.extraction.jobspec_path.resolve()),
-                        "PPTX_BRANDING_PATH": str(result.extraction.branding_path.resolve()),
-                    }
+        if hook_manager:
+            stage_env_with_outputs = dict(stage_env)
+            stage_env_with_outputs.update(
+                {
+                    "PPTX_TEMPLATE_SPEC_PATH": str(result.extraction.template_spec_path.resolve()),
+                    "PPTX_JOBSPEC_SCAFFOLD_PATH": str(result.extraction.jobspec_path.resolve()),
+                    "PPTX_BRANDING_PATH": str(result.extraction.branding_path.resolve()),
+                }
+            )
+            if contexts:
+                hook_manager.run_slide_hooks(
+                    STAGE_TEMPLATE,
+                    slides=contexts,
+                    env=stage_env_with_outputs,
                 )
-                if contexts:
-                    hook_manager.run_slide_hooks(
-                        STAGE_TEMPLATE,
-                        slides=contexts,
-                        env=stage_env_with_outputs,
-                    )
 
         extraction_result = result.extraction
 
