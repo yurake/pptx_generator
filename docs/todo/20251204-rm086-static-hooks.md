@@ -23,7 +23,21 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
     - メモ: 詳細は `docs/notes/20251204-rm086-static-hooks.md` に会話ログとして記録済み。今後の追記は同ファイルへ集約する。
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。ドキュメント反映は未実施。
+  - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。ドキュメント反映は未実施。以下の計画で `temp/excel_mapper.py` のロジックを 4 stage へ統合する。  
+    1. ロジック分割  
+       - `temp/excel_mapper.py` の機能を役割別に分解し、Excel 抽出／テンプレ適用／JSON 化をそれぞれ独立したユーティリティに切り出す（`src/pptx_generator/static_excel/` 配下など）。  
+       - `mapping_config.json` を Pydantic モデル化し、セル参照・フォーマット変換（円→億円など）の仕組みを整理する。  
+    2. **Stage 2 (Prepare)**  
+       - 静的モードで `Excel` + `mapping_config` を入力に取り、切り出したユーティリティを使って `PrepareDocument` を生成できるよう `pptx prepare` を拡張する。  
+       - 生成したカードは従来の `prepare_card.json`／`prepare_ai_log.json` と互換になるよう整形する。  
+    3. **Stage 3 (Mapping)**  
+       - Prepare 成果物のテーブル情報と `mapping_config` の target 定義を突合し、`generate_ready.json` に必要な table payload を構築する処理を追加。  
+       - 静的テンプレ固有のレイアウト割付ルールを新しいユーティリティで扱えるよう調整する。  
+    4. **Stage 4 (Gen)**  
+       - `generate_ready.json` に含まれる formatted 値をもとに、既存レンダラで表・テキストへ反映できるよう拡張する。  
+    5. **Stage 1 連携・ドキュメント**  
+       - `pptx template --layout-mode static` 時に mapping 設定や Excel → Prepare 用テンプレファイルの配置を整える（必要に応じて hooks 雛形も更新）。  
+       - `docs/design/stages/stage-0x-*` と ToDo を更新し、運用手順を明文化する。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/cli/test_cli_hooks.py` を実行し、外部フック管理・スライドキー生成・template_id ヘルパーのユニットテスト（全6件）を追加。カバレッジ XML を再生成済み。
 - [ ] 外部フック運用検証
