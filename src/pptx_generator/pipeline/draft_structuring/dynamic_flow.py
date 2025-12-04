@@ -130,17 +130,7 @@ def _process_work_item(
     if content_slide is None:
         return
 
-    section_key, section_name = _resolve_section(content_slide, spec_slide)
-    section = accumulator.section_map.get(section_key)
-    if section is None:
-        section = DraftSection(
-            name=section_name,
-            order=len(accumulator.section_map) + 1,
-            status="draft",
-        )
-        accumulator.section_map[section_key] = section
-        accumulator.sections.append(section)
-
+    section = _ensure_section(accumulator, content_slide, spec_slide)
     card_order = len(section.slides) + 1
     analyzer_summary = analyzer_map.get(content_slide.id)
     preferred_layout = (
@@ -159,129 +149,24 @@ def _process_work_item(
     )
     section.slides.append(card)
 
-    ai_scores = recommendation.ai_scores
     selected_layout = card.layout_hint
-    ai_used = selected_layout in ai_scores and ai_scores[selected_layout] > 0.0
-    if ai_used:
-        accumulator.ai_summary["used"] += 1
-
-    if recommendation.ai_response is not None:
-        accumulator.ai_summary["invoked"] += 1
-        model = recommendation.ai_response.model or "unknown"
-        model_counts = accumulator.ai_summary["models"]
-        model_counts[model] = model_counts.get(model, 0) + 1
-    elif (
-        options.enable_ai_recommender
-        and options.enable_ai_simulation
-        and options.ai_weight > 0
-        and not ai_scores
-        and any(detail.ai_recommendation > 0.0 for _, detail in recommendation.candidates)
-    ):
-        accumulator.ai_summary["simulated"] += 1
-        if logger.isEnabledFor(logging.INFO):
-            logger.info(
-                "layout AI simulated: slide_id=%s preferred=%s",
-                content_slide.id,
-                preferred_layout,
-            )
-
-    candidate_logs: list[dict[str, Any]] = []
-    for candidate, detail in recommendation.candidates:
-        layout_id = candidate.layout_id
-        candidate_entry: dict[str, Any] = {
-            "layout_id": layout_id,
-            "score": candidate.score,
-            "ai_score": ai_scores.get(layout_id, 0.0),
-            "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
-            "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
-            "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
-            "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
-            "detail": {
-                "uses_tag": detail.uses_tag,
-                "content_capacity": detail.content_capacity,
-                "diversity": detail.diversity,
-                "analyzer_support": detail.analyzer_support,
-                "ai_recommendation": detail.ai_recommendation,
-            },
-        }
-        profile = layout_lookup.get(layout_id)
-        tags_for_detail: set[str] = set(recommendation.baseline_tags.get(layout_id, ()))
-        tags_for_detail.update(recommendation.classified_tags.get(layout_id, ()))
-        tags_for_detail.update(recommendation.effective_tags.get(layout_id, ()))
-        if profile:
-            tags_for_detail.update(profile.usage_tags or ())
-        if recommendation.ai_unknown_tags.get(layout_id):
-            tags_for_detail.update(recommendation.ai_unknown_tags[layout_id])
-        if profile:
-            if profile.placeholder_summary:
-                candidate_entry["placeholder_summary"] = profile.placeholder_summary
-            if profile.heuristic:
-                candidate_entry["heuristic"] = profile.heuristic
-            if profile.blueprint:
-                candidate_entry["blueprint"] = profile.blueprint
-            if profile.meta:
-                candidate_entry["meta"] = profile.meta
-        usage_tag_details = {
-            tag: tag_detail_map[tag]
-            for tag in sorted(tags_for_detail)
-            if tag in tag_detail_map
-        }
-        if usage_tag_details:
-            candidate_entry["usage_tags_detail"] = usage_tag_details
-        candidate_logs.append(candidate_entry)
-
-    source_payload = (
-        content_slide.source.model_dump(mode="json")
-        if content_slide.source is not None
-        else None
+    ai_used = _update_ai_summary(
+        accumulator,
+        recommendation,
+        selected_layout,
+        options,
+        preferred_layout,
+        content_slide.id,
     )
-
-    ai_response_payload: dict[str, Any] | None = None
-    if recommendation.ai_response is not None:
-        ai_response_payload = {
-            "model": recommendation.ai_response.model,
-            "recommended": recommendation.ai_response.recommended,
-            "reasons": recommendation.ai_response.reasons,
-            "classifications": {
-                key: list(value)
-                for key, value in recommendation.ai_response.classifications.items()
-            },
-        }
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                (
-                    "layout AI response: slide_id=%s model=%s recommended=%s "
-                    "reasons=%s classifications=%s"
-                ),
-                content_slide.id,
-                recommendation.ai_response.model,
-                recommendation.ai_response.recommended,
-                recommendation.ai_response.reasons,
-                recommendation.ai_response.classifications,
-            )
-
-    mapping_entry: dict[str, Any] = {
-        "slide_id": content_slide.id,
-        "preferred_layout": preferred_layout,
-        "selected_layout": selected_layout,
-        "ai_recommendation_used": ai_used,
-        "candidates": candidate_logs,
-        "ai_response": ai_response_payload,
-        "source": source_payload,
-    }
-    selected_profile = layout_lookup.get(selected_layout)
-    if selected_profile:
-        if selected_profile.meta and selected_profile.meta.get("heuristic_reason"):
-            mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
-        if selected_profile.blueprint:
-            mapping_entry["selected_blueprint"] = selected_profile.blueprint
-        selected_usage_details = {
-            tag: tag_detail_map[tag]
-            for tag in sorted(set(selected_profile.usage_tags or ()))
-            if tag in tag_detail_map
-        }
-        if selected_usage_details:
-            mapping_entry["selected_usage_tags_detail"] = selected_usage_details
+    mapping_entry = _build_mapping_entry(
+        content_slide=content_slide,
+        preferred_layout=preferred_layout,
+        selected_layout=selected_layout,
+        recommendation=recommendation,
+        layout_lookup=layout_lookup,
+        tag_detail_map=tag_detail_map,
+        ai_used=ai_used,
+    )
     accumulator.mapping_logs.append(mapping_entry)
 
 
@@ -340,6 +225,25 @@ def _resolve_section(content_slide: ContentSlide, spec_slide: Slide | None) -> t
     return content_slide.id, content_slide.id
 
 
+def _ensure_section(
+    accumulator: DraftAccumulator,
+    content_slide: ContentSlide,
+    spec_slide: Slide | None,
+) -> DraftSection:
+    section_key, section_name = _resolve_section(content_slide, spec_slide)
+    section = accumulator.section_map.get(section_key)
+    if section is not None:
+        return section
+    section = DraftSection(
+        name=section_name,
+        order=len(accumulator.section_map) + 1,
+        status="draft",
+    )
+    accumulator.section_map[section_key] = section
+    accumulator.sections.append(section)
+    return section
+
+
 def _build_card(
     content_slide: ContentSlide,
     default_layout: str,
@@ -371,6 +275,167 @@ def _build_card(
         analyzer_summary=analyzer_summary,
     )
     return recommendation, card
+
+
+def _update_ai_summary(
+    accumulator: DraftAccumulator,
+    recommendation: Any,
+    selected_layout: str,
+    options: DraftStructuringOptions,
+    preferred_layout: str,
+    slide_id: str,
+) -> bool:
+    ai_scores = recommendation.ai_scores
+    ai_used = selected_layout in ai_scores and ai_scores[selected_layout] > 0.0
+    if ai_used:
+        accumulator.ai_summary["used"] += 1
+
+    if recommendation.ai_response is not None:
+        accumulator.ai_summary["invoked"] += 1
+        model = recommendation.ai_response.model or "unknown"
+        models = accumulator.ai_summary["models"]
+        models[model] = models.get(model, 0) + 1
+        return ai_used
+
+    if (
+        options.enable_ai_recommender
+        and options.enable_ai_simulation
+        and options.ai_weight > 0
+        and not ai_scores
+        and _has_positive_ai_recommendation(recommendation.candidates)
+    ):
+        accumulator.ai_summary["simulated"] += 1
+        if logger.isEnabledFor(logging.INFO):
+            logger.info(
+                "layout AI simulated: slide_id=%s preferred=%s",
+                slide_id,
+                preferred_layout,
+            )
+    return ai_used
+
+
+def _build_mapping_entry(
+    *,
+    content_slide: ContentSlide,
+    preferred_layout: str,
+    selected_layout: str,
+    recommendation: Any,
+    layout_lookup: Mapping[str, LayoutProfile],
+    tag_detail_map: Mapping[str, Any],
+    ai_used: bool,
+) -> dict[str, Any]:
+    candidate_logs = _serialize_candidates(recommendation, layout_lookup, tag_detail_map)
+    source_payload = (
+        content_slide.source.model_dump(mode="json")
+        if content_slide.source is not None
+        else None
+    )
+    ai_response_payload = _serialize_ai_response(recommendation.ai_response)
+
+    mapping_entry: dict[str, Any] = {
+        "slide_id": content_slide.id,
+        "preferred_layout": preferred_layout,
+        "selected_layout": selected_layout,
+        "ai_recommendation_used": ai_used,
+        "candidates": candidate_logs,
+        "ai_response": ai_response_payload,
+        "source": source_payload,
+    }
+
+    selected_profile = layout_lookup.get(selected_layout)
+    if selected_profile:
+        if selected_profile.meta and selected_profile.meta.get("heuristic_reason"):
+            mapping_entry["heuristic_reason"] = selected_profile.meta["heuristic_reason"]
+        if selected_profile.blueprint:
+            mapping_entry["selected_blueprint"] = selected_profile.blueprint
+        selected_usage_details = {
+            tag: tag_detail_map[tag]
+            for tag in sorted(set(selected_profile.usage_tags or ()))
+            if tag in tag_detail_map
+        }
+        if selected_usage_details:
+            mapping_entry["selected_usage_tags_detail"] = selected_usage_details
+    return mapping_entry
+
+
+def _serialize_candidates(
+    recommendation: Any,
+    layout_lookup: Mapping[str, LayoutProfile],
+    tag_detail_map: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    candidate_logs: list[dict[str, Any]] = []
+    for candidate, detail in recommendation.candidates:
+        layout_id = candidate.layout_id
+        entry: dict[str, Any] = {
+            "layout_id": layout_id,
+            "score": candidate.score,
+            "ai_score": recommendation.ai_scores.get(layout_id, 0.0),
+            "usage_tags_rule": list(recommendation.baseline_tags.get(layout_id, ())),
+            "ai_tags": list(recommendation.classified_tags.get(layout_id, ())),
+            "effective_usage_tags": list(recommendation.effective_tags.get(layout_id, ())),
+            "unknown_ai_tags": list(recommendation.ai_unknown_tags.get(layout_id, ())),
+            "detail": {
+                "uses_tag": detail.uses_tag,
+                "content_capacity": detail.content_capacity,
+                "diversity": detail.diversity,
+                "analyzer_support": detail.analyzer_support,
+                "ai_recommendation": detail.ai_recommendation,
+            },
+        }
+        profile = layout_lookup.get(layout_id)
+        tags_for_detail: set[str] = set(recommendation.baseline_tags.get(layout_id, ()))
+        tags_for_detail.update(recommendation.classified_tags.get(layout_id, ()))
+        tags_for_detail.update(recommendation.effective_tags.get(layout_id, ()))
+        if recommendation.ai_unknown_tags.get(layout_id):
+            tags_for_detail.update(recommendation.ai_unknown_tags[layout_id])
+        if profile:
+            tags_for_detail.update(profile.usage_tags or ())
+            if profile.placeholder_summary:
+                entry["placeholder_summary"] = profile.placeholder_summary
+            if profile.heuristic:
+                entry["heuristic"] = profile.heuristic
+            if profile.blueprint:
+                entry["blueprint"] = profile.blueprint
+            if profile.meta:
+                entry["meta"] = profile.meta
+        usage_tag_details = {
+            tag: tag_detail_map[tag]
+            for tag in sorted(tags_for_detail)
+            if tag in tag_detail_map
+        }
+        if usage_tag_details:
+            entry["usage_tags_detail"] = usage_tag_details
+        candidate_logs.append(entry)
+    return candidate_logs
+
+
+def _serialize_ai_response(response: Any) -> dict[str, Any] | None:
+    if response is None:
+        return None
+    payload = {
+        "model": response.model,
+        "recommended": response.recommended,
+        "reasons": response.reasons,
+        "classifications": {key: list(value) for key, value in response.classifications.items()},
+    }
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            (
+                "layout AI response: model=%s recommended=%s "
+                "reasons=%s classifications=%s"
+            ),
+            response.model,
+            response.recommended,
+            response.reasons,
+            response.classifications,
+        )
+    return payload
+
+
+def _has_positive_ai_recommendation(
+    candidates: Sequence[tuple[Any, Any]],
+) -> bool:
+    return any(detail.ai_recommendation > 0.0 for _, detail in candidates)
 
 
 def _evaluate_chapter_template(
