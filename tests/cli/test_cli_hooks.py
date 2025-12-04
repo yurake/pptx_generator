@@ -12,6 +12,7 @@ from pptx_generator.cli_hooks import (
     STAGE_PREPARE,
     build_slide_key,
     derive_template_id_from_template_path,
+    ensure_hook_skeleton,
     extract_template_id_from_json_file,
     load_hooks_for_template_id,
     slide_contexts_from_blueprint,
@@ -202,3 +203,15 @@ def test_template_id_helpers(tmp_path: Path) -> None:
 def test_build_slide_key() -> None:
     assert build_slide_key(1, "System Layout", None) == "01_system-layout"
     assert build_slide_key(12, None, "custom-id") == "12_custom-id"
+
+
+def test_ensure_hook_skeleton(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.EXTERNAL_ROOT", tmp_path)
+    keys = ["01_system-layout", "02_agenda"]
+    created = ensure_hook_skeleton("demo_tpl", keys)
+    assert created is not None
+    data = json.loads(created.read_text(encoding="utf-8"))
+    assert set(data["stage"].keys()) == {"compose", "gen", "mapping", "prepare", "template"}
+    assert set(data["slides"].keys()) == set(keys)
+    # 再実行時は None が返る
+    assert ensure_hook_skeleton("demo_tpl", keys) is None

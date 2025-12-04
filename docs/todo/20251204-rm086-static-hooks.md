@@ -33,7 +33,7 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新

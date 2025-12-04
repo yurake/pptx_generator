@@ -21,6 +21,7 @@
   - `PPTX_STAGE=template` / `PPTX_TEMPLATE_ID=<template_id>`  
   - `PPTX_TEMPLATE_SPEC_PATH` / `PPTX_JOBSPEC_SCAFFOLD_PATH` / `PPTX_BRANDING_PATH`  
   - スライド単位: `PPTX_SLIDE_KEY=NN_slug`（例: `01_system-layout`）、`PPTX_SLIDE_ID`、`PPTX_SLIDE_LAYOUT`、必要に応じて `PPTX_PROMPT_TEMPLATE_PATH`  
+- フック設定が存在しない場合、静的モードの `pptx template` 実行時にスケルトン `external/<template_id>/hooks.json` を生成し、`stage` と `slides`（Blueprint 由来のキー）を `null` で初期化する。作成済みのファイルは上書きしない。
 - フック設定ファイル例:
 ```json
 {

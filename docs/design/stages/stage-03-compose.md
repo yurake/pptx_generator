@@ -84,7 +84,7 @@
 - 例外発生時は `.pptx/draft/` 配下へ中間成果物を出力せず、HITL は `prepare_card.json` / `jobspec.json` を突合して ID 設定ミスを修正した上で再実行する。
 - 差戻し理由コード未指定や未承認スライドが残った状態で章承認コマンドを実行した場合は `422 Unprocessable Entity` を返し、CLI は再入力を促す。
 - `analysis_summary.json` に存在しないスライド ID が Import された場合は `400 Bad Request` とし、不一致一覧を含む詳細メッセージを返却する。
-- 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が定義されている場合、`pptx compose` / `pptx mapping` / `pptx gen` 各ステージでフックを呼び出し、`continue_default=false` によって既存処理をスキップできる。環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_GENERATE_READY_PATH` 等。スライド別フックでは `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` が提供される。
+- 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が定義されている場合、`pptx compose` / `pptx mapping` / `pptx gen` 各ステージでフックを呼び出せる。環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`, `PPTX_GENERATE_READY_PATH`。スライド別フックでは `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を提供し、`continue_default=false` 指定により既存処理をスキップして外部スクリプトで `generate_ready.json` などを生成できる。
 
 ## Analyzer 連携
 - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。

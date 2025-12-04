@@ -21,6 +21,7 @@ from .slides import (
     slide_contexts_from_blueprint,
     slide_contexts_from_generate_ready,
 )
+from .scaffold import ensure_hook_skeleton
 
 __all__ = [
     "ExternalHookManager",
@@ -38,4 +39,5 @@ __all__ = [
     "build_slide_key",
     "slide_contexts_from_blueprint",
     "slide_contexts_from_generate_ready",
+    "ensure_hook_skeleton",
 ]

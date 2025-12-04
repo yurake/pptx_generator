@@ -16,6 +16,7 @@ from pptx_generator.cli_hooks import (
     derive_template_id_from_template_path,
     load_hooks_for_template_id,
     slide_contexts_from_blueprint,
+    ensure_hook_skeleton,
 )
 
 
@@ -228,25 +229,32 @@ def create_template_command(
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
         if hook_manager:
-            stage_env_with_outputs = dict(stage_env)
-            stage_env_with_outputs.update(
-                {
-                    "PPTX_TEMPLATE_SPEC_PATH": str(result.extraction.template_spec_path.resolve()),
-                    "PPTX_JOBSPEC_SCAFFOLD_PATH": str(result.extraction.jobspec_path.resolve()),
-                    "PPTX_BRANDING_PATH": str(result.extraction.branding_path.resolve()),
-                }
-            )
-            blueprint = None
+            blueprint_slides = None
             if result.extraction.template_spec.blueprint is not None:
-                blueprint = [
+                blueprint_slides = [
                     slide.model_dump(mode="json")
                     for slide in result.extraction.template_spec.blueprint.slides
                 ]
-            if blueprint:
-                prompts_dir = result.extraction.prompt_templates_dir
+            if blueprint_slides:
+                # hooks.json スキャフォールド生成（存在しない場合のみ）
                 contexts = slide_contexts_from_blueprint(
-                    blueprint,
-                    prompts_dir=prompts_dir,
+                    blueprint_slides,
+                    prompts_dir=result.extraction.prompt_templates_dir,
+                )
+                skeleton_path = ensure_hook_skeleton(
+                    template_id,
+                    [ctx.key for ctx in contexts],
+                )
+                if skeleton_path:
+                    click.echo(f"[hooks] scaffold created: {skeleton_path}")
+
+                stage_env_with_outputs = dict(stage_env)
+                stage_env_with_outputs.update(
+                    {
+                        "PPTX_TEMPLATE_SPEC_PATH": str(result.extraction.template_spec_path.resolve()),
+                        "PPTX_JOBSPEC_SCAFFOLD_PATH": str(result.extraction.jobspec_path.resolve()),
+                        "PPTX_BRANDING_PATH": str(result.extraction.branding_path.resolve()),
+                    }
                 )
                 if contexts:
                     hook_manager.run_slide_hooks(
