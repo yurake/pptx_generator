@@ -17,12 +17,13 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
     - テスト方針: ユニットテストで設定パースと優先順位、結合テストでダミーフックを呼び出す CLI フロー、エラーパス検証、`uv run --extra dev pytest` による回帰確認。
     - ロールバック方法: 実装コミットを `git revert` で戻し、追加ドキュメントも同ブランチで削除。外部設定を利用しないことで旧フローへ戻せる。
     - 承認メッセージ ID／リンク: （本チャットでの承認）
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
+- [x] 設計・実装方針の確定
+  - メモ: CLI 全ステージ（template/prepare/compose/mapping/gen）で静的モード時に `external/<template_id>/hooks.json` を解釈し、ステージ前後のフックとスライド別フックを呼び出す設計に決定。テンプレート ID は PPTX ファイル名 stem から導出し、スライドキーは `.pptx/extract/prompts/01_system-layout.md` と同じ `NN_slug` 形式で揃える。ENV 変数一覧（PPTX_STAGE など）を整理し、ステージ後に生成物パスを追加で渡す。TODO: ドキュメントへ使用方法を追記。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+    - メモ: 詳細は `docs/notes/20251204-rm086-static-hooks.md` に会話ログとして記録済み。今後の追記は同ファイルへ集約する。
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。ドキュメント反映とテストは未着手。
 - [ ] テスト・検証
   - メモ: 実施したテスト内容と結果を記入する
 - [ ] ドキュメント更新
