@@ -13,6 +13,7 @@ from pptx_generator.cli_handlers.compose import (
 from .utils import echo_command_errors
 from pptx_generator.cli_hooks import (
     STAGE_COMPOSE,
+    slide_contexts_from_generate_ready,
     extract_template_id_from_json_file,
     load_hooks_for_template_id,
 )
@@ -133,28 +134,29 @@ def create_compose_command(
         template_id = extract_template_id_from_json_file(spec_path)
         if template_id:
             hook_manager = load_hooks_for_template_id(template_id)
+        stage_env = {
+            "PPTX_STAGE": STAGE_COMPOSE,
+            "PPTX_SPEC_PATH": str(spec_path.resolve()),
+            "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
+            "PPTX_DRAFT_OUTPUT": str(draft_output.resolve()),
+            "PPTX_TARGET_LENGTH": str(target_length) if target_length is not None else "",
+            "PPTX_STRUCTURE_PATTERN": structure_pattern or "",
+            "PPTX_APPENDIX_LIMIT": str(appendix_limit),
+            "PPTX_CHAPTER_TEMPLATES_DIR": str(chapter_templates_dir.resolve()),
+            "PPTX_CHAPTER_TEMPLATE": chapter_template or "",
+            "PPTX_ANALYSIS_SUMMARY_PATH": str(analysis_summary_path.resolve())
+            if analysis_summary_path
+            else "",
+            "PPTX_SHOW_LAYOUT_REASONS": "1" if show_layout_reasons else "0",
+            "PPTX_RULES_PATH": str(rules.resolve()),
+            "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
+        }
+        if template_id:
+            stage_env["PPTX_TEMPLATE_ID"] = template_id
         if hook_manager:
-            env = {
-                "PPTX_STAGE": STAGE_COMPOSE,
-                "PPTX_TEMPLATE_ID": template_id,
-                "PPTX_SPEC_PATH": str(spec_path.resolve()),
-                "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
-                "PPTX_DRAFT_OUTPUT": str(draft_output.resolve()),
-                "PPTX_TARGET_LENGTH": str(target_length) if target_length is not None else "",
-                "PPTX_STRUCTURE_PATTERN": structure_pattern or "",
-                "PPTX_APPENDIX_LIMIT": str(appendix_limit),
-                "PPTX_CHAPTER_TEMPLATES_DIR": str(chapter_templates_dir.resolve()),
-                "PPTX_CHAPTER_TEMPLATE": chapter_template or "",
-                "PPTX_ANALYSIS_SUMMARY_PATH": str(analysis_summary_path.resolve())
-                if analysis_summary_path
-                else "",
-                "PPTX_SHOW_LAYOUT_REASONS": "1" if show_layout_reasons else "0",
-                "PPTX_RULES_PATH": str(rules.resolve()),
-                "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
-            }
             executed, continue_default = hook_manager.run_stage_hook(
                 STAGE_COMPOSE,
-                env=env,
+                env=stage_env,
             )
             if executed:
                 click.echo(
@@ -192,6 +194,18 @@ def create_compose_command(
             elif message:
                 click.echo(message, err=True)
             raise click.exceptions.Exit(code=exc.exit_code) from exc
+
+        if hook_manager and template_id:
+            stage_env_with_outputs = dict(stage_env)
+            generate_ready_path = output_dir / default_generate_ready_filename
+            stage_env_with_outputs["PPTX_GENERATE_READY_PATH"] = str(generate_ready_path.resolve())
+            contexts = slide_contexts_from_generate_ready(generate_ready_path)
+            if contexts:
+                hook_manager.run_slide_hooks(
+                    STAGE_COMPOSE,
+                    slides=contexts,
+                    env=stage_env_with_outputs,
+                )
 
     return compose
 

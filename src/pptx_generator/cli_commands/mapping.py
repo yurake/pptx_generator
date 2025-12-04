@@ -14,6 +14,7 @@ from pptx_generator.cli_handlers.mapping import (
 from .utils import echo_command_errors
 from pptx_generator.cli_hooks import (
     STAGE_MAPPING,
+    slide_contexts_from_generate_ready,
     extract_template_id_from_json_file,
     load_hooks_for_template_id,
 )
@@ -74,19 +75,20 @@ def create_mapping_command(
         template_id = extract_template_id_from_json_file(spec_path)
         if template_id:
             hook_manager = load_hooks_for_template_id(template_id)
+        stage_env = {
+            "PPTX_STAGE": STAGE_MAPPING,
+            "PPTX_SPEC_PATH": str(spec_path.resolve()),
+            "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
+            "PPTX_RULES_PATH": str(rules.resolve()),
+            "PPTX_DRAFT_OUTPUT": str(draft_output.resolve()),
+            "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
+        }
+        if template_id:
+            stage_env["PPTX_TEMPLATE_ID"] = template_id
         if hook_manager:
-            env = {
-                "PPTX_STAGE": STAGE_MAPPING,
-                "PPTX_TEMPLATE_ID": template_id,
-                "PPTX_SPEC_PATH": str(spec_path.resolve()),
-                "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
-                "PPTX_RULES_PATH": str(rules.resolve()),
-                "PPTX_DRAFT_OUTPUT": str(draft_output.resolve()),
-                "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
-            }
             executed, continue_default = hook_manager.run_stage_hook(
                 STAGE_MAPPING,
-                env=env,
+                env=stage_env,
             )
             if executed:
                 click.echo(
@@ -114,6 +116,18 @@ def create_mapping_command(
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
         echo_mapping_outputs(result.context)
+
+        if hook_manager and template_id:
+            stage_env_with_outputs = dict(stage_env)
+            generate_ready_path = output_dir / config.generate_ready_filename
+            stage_env_with_outputs["PPTX_GENERATE_READY_PATH"] = str(generate_ready_path.resolve())
+            contexts = slide_contexts_from_generate_ready(generate_ready_path)
+            if contexts:
+                hook_manager.run_slide_hooks(
+                    STAGE_MAPPING,
+                    slides=contexts,
+                    env=stage_env_with_outputs,
+                )
 
     return mapping
 

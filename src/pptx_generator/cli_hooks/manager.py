@@ -82,6 +82,15 @@ class HookConfig:
     slide_hooks: dict[str, SlideHookConfig] = field(default_factory=dict)
 
 
+@dataclass(slots=True)
+class SlideContext:
+    key: str
+    index: int
+    slide_id: str | None = None
+    layout: str | None = None
+    extra_env: dict[str, str] = field(default_factory=dict)
+
+
 class ExternalHookManager:
     """テンプレート単位の外部フック設定を管理する。"""
 
@@ -119,6 +128,36 @@ class ExternalHookManager:
 
     def get_slide_hooks(self, slide_key: str) -> SlideHookConfig | None:
         return self.config.slide_hooks.get(slide_key)
+
+    def run_slide_hooks(
+        self,
+        stage: str,
+        *,
+        slides: list[SlideContext],
+        env: Mapping[str, str],
+    ) -> bool:
+        executed_any = False
+        for slide in slides:
+            hook_config = self.get_slide_hooks(slide.key)
+            if not hook_config:
+                continue
+            hook = hook_config.stage_hooks.get(stage)
+            if not hook:
+                continue
+            slide_env = dict(env)
+            slide_env.update(
+                {
+                    "PPTX_SLIDE_KEY": slide.key,
+                    "PPTX_SLIDE_INDEX": str(slide.index),
+                    "PPTX_SLIDE_ID": slide.slide_id or "",
+                    "PPTX_SLIDE_LAYOUT": slide.layout or "",
+                }
+            )
+            for key, value in slide.extra_env.items():
+                slide_env[key] = value
+            hook.run(cwd=self.base_dir, extra_env=slide_env)
+            executed_any = True
+        return executed_any
 
 
 def load_hooks_for_template_id(template_id: str) -> ExternalHookManager | None:

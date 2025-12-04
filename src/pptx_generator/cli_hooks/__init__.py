@@ -10,15 +10,22 @@ from .manager import (
     STAGE_TEMPLATE,
     ExternalHookManager,
     load_hooks_for_template_id,
+    SlideContext,
 )
 from .template_id import (
     derive_template_id_from_template_path,
     extract_template_id_from_json_file,
 )
+from .slides import (
+    build_slide_key,
+    slide_contexts_from_blueprint,
+    slide_contexts_from_generate_ready,
+)
 
 __all__ = [
     "ExternalHookManager",
     "load_hooks_for_template_id",
+    "SlideContext",
     "derive_template_id_from_template_path",
     "extract_template_id_from_json_file",
     "STAGE_TEMPLATE",
@@ -28,4 +35,7 @@ __all__ = [
     "STAGE_GEN",
     "KNOWN_STAGES",
     "EXTERNAL_ROOT",
+    "build_slide_key",
+    "slide_contexts_from_blueprint",
+    "slide_contexts_from_generate_ready",
 ]
