@@ -65,92 +65,154 @@ class SlideIdAligner:
     ) -> SlideAlignmentResult:
         if prepare_document is None or not prepare_document.cards:
             logger.info("SlideIdAligner: prepare_document が無いため整合処理をスキップします")
-            return SlideAlignmentResult(
-                document=content_document,
-                records=[],
-                meta={
-                    "status": "skipped",
-                    "reason": "prepare_document_absent",
-                },
-            )
+            return self._build_skip_result(content_document, "prepare_document_absent")
 
         card_map = {card.card_id: card for card in prepare_document.cards}
         candidate_slides = list(spec.slides)
         if not candidate_slides:
             logger.warning("SlideIdAligner: JobSpec にスライドが存在しません")
-            return SlideAlignmentResult(
-                document=content_document,
-                records=[],
-                meta={
-                    "status": "skipped",
-                    "reason": "jobspec_empty",
-                },
-            )
+            return self._build_skip_result(content_document, "jobspec_empty")
 
+        relevant_spec_ids = {
+            candidate.id for candidate in candidate_slides if candidate.id in card_map
+        }
         slide_assignments: dict[str, int] = {}
         records: list[SlideAlignmentRecord] = []
 
         for slide in content_document.slides:
-            original_id = slide.id
-            card = card_map.get(original_id)
-            if card is None:
-                logger.debug("SlideIdAligner: card_id=%s が prepare_document に見つかりません", original_id)
-                records.append(
-                    SlideAlignmentRecord(
-                        card_id=original_id,
-                        recommended_slide_id=None,
-                        confidence=0.0,
-                        reason="card_not_found",
-                        status="pending",
-                    )
-                )
-                continue
-
-            candidates = self._select_candidates(card, candidate_slides)
-            match_request = self._build_match_request(card, candidates)
-            response = self._client.match_slide(match_request)
-
-            candidate_ids = tuple(candidate.id for candidate in candidates)
-            record = SlideAlignmentRecord(
-                card_id=card.card_id,
-                recommended_slide_id=response.slide_id,
-                confidence=response.confidence,
-                reason=response.reason,
-                status="pending",
-                candidates=candidate_ids,
+            record = self._process_content_slide(
+                slide=slide,
+                card_map=card_map,
+                candidate_slides=candidate_slides,
+                slide_assignments=slide_assignments,
+                records=records,
             )
-
-            recommended_slide_id = response.slide_id
-            if recommended_slide_id and recommended_slide_id not in record.candidates:
-                recommended_slide_id = None
-                record.recommended_slide_id = None
-
-            if recommended_slide_id:
-                previous_index = slide_assignments.get(recommended_slide_id)
-                if previous_index is None:
-                    record.status = "applied"
-                    if response.confidence < self._options.confidence_threshold:
-                        record.reason = (record.reason or "") + " | low_confidence"
-                    slide_assignments[recommended_slide_id] = len(records)
-                else:
-                    previous_record = records[previous_index]
-                    if response.confidence > previous_record.confidence:
-                        previous_record.recommended_slide_id = None
-                        previous_record.status = "pending"
-                        previous_record.reason = (previous_record.reason or "") + " | reassigned"
-                        record.status = "applied"
-                        if response.confidence < self._options.confidence_threshold:
-                            record.reason = (record.reason or "") + " | low_confidence"
-                        slide_assignments[recommended_slide_id] = len(records)
-                    else:
-                        if previous_record.confidence < self._options.confidence_threshold:
-                            previous_record.reason = (previous_record.reason or "") + " | low_confidence"
-                        record.status = "pending"
-                        record.reason = (record.reason or "") + " | lower_than_existing"
-                        record.recommended_slide_id = None
             records.append(record)
 
-        assigned_slides = {slide_id for slide_id in slide_assignments}
+        fallback_applied = self._apply_fallback_assignments(records, slide_assignments)
+        updated_slides, applied = self._build_aligned_slides(content_document, records)
+        unmatched_spec_slides = self._collect_unmatched_spec_slides(
+            relevant_spec_ids, slide_assignments
+        )
+        records.extend(self._build_unmatched_records(unmatched_spec_slides))
+
+        aligned_document = content_document.model_copy(update={"slides": updated_slides})
+        meta = self._build_alignment_meta(
+            content_document=content_document,
+            relevant_spec_ids=relevant_spec_ids,
+            unmatched_spec_slides=unmatched_spec_slides,
+            applied=applied,
+            fallback=fallback_applied,
+            pending=sum(1 for record in records if record.status == "pending"),
+        )
+        logger.info(
+            "SlideIdAligner: cards_total=%d jobspec_total=%d jobspec_unassigned=%d applied=%d pending=%d threshold=%.2f",
+            meta["cards_total"],
+            meta["jobspec_total"],
+            meta["jobspec_unassigned"],
+            meta["applied"],
+            meta["pending"],
+            meta["threshold"],
+        )
+        return SlideAlignmentResult(document=aligned_document, records=records, meta=meta)
+
+    @staticmethod
+    def _build_skip_result(
+        content_document: ContentApprovalDocument,
+        reason: str,
+    ) -> SlideAlignmentResult:
+        return SlideAlignmentResult(
+            document=content_document,
+            records=[],
+            meta={
+                "status": "skipped",
+                "reason": reason,
+            },
+        )
+
+    def _process_content_slide(
+        self,
+        *,
+        slide: ContentSlide,
+        card_map: dict[str, PrepareCard],
+        candidate_slides: list[Slide],
+        slide_assignments: dict[str, int],
+        records: list[SlideAlignmentRecord],
+    ) -> SlideAlignmentRecord:
+        original_id = slide.id
+        card = card_map.get(original_id)
+        if card is None:
+            logger.debug("SlideIdAligner: card_id=%s が prepare_document に見つかりません", original_id)
+            return SlideAlignmentRecord(
+                card_id=original_id,
+                recommended_slide_id=None,
+                confidence=0.0,
+                reason="card_not_found",
+                status="pending",
+            )
+
+        candidates = self._select_candidates(card, candidate_slides)
+        match_request = self._build_match_request(card, candidates)
+        response = self._client.match_slide(match_request)
+
+        record = SlideAlignmentRecord(
+            card_id=card.card_id,
+            recommended_slide_id=response.slide_id,
+            confidence=response.confidence,
+            reason=response.reason,
+            status="pending",
+            candidates=tuple(candidate.id for candidate in candidates),
+        )
+        self._normalize_recommendation(record)
+        self._handle_assignment(record, slide_assignments, records)
+        return record
+
+    @staticmethod
+    def _normalize_recommendation(record: SlideAlignmentRecord) -> None:
+        if record.recommended_slide_id and record.recommended_slide_id not in record.candidates:
+            record.recommended_slide_id = None
+
+    def _handle_assignment(
+        self,
+        record: SlideAlignmentRecord,
+        slide_assignments: dict[str, int],
+        records: list[SlideAlignmentRecord],
+    ) -> None:
+        recommended_slide_id = record.recommended_slide_id
+        if not recommended_slide_id:
+            return
+
+        previous_index = slide_assignments.get(recommended_slide_id)
+        if previous_index is None:
+            record.status = "applied"
+            if record.confidence < self._options.confidence_threshold:
+                record.reason = self._append_reason(record.reason, "low_confidence")
+            slide_assignments[recommended_slide_id] = len(records)
+            return
+
+        previous_record = records[previous_index]
+        if record.confidence > previous_record.confidence:
+            previous_record.recommended_slide_id = None
+            previous_record.status = "pending"
+            previous_record.reason = self._append_reason(previous_record.reason, "reassigned")
+            record.status = "applied"
+            if record.confidence < self._options.confidence_threshold:
+                record.reason = self._append_reason(record.reason, "low_confidence")
+            slide_assignments[recommended_slide_id] = len(records)
+            return
+
+        if previous_record.confidence < self._options.confidence_threshold:
+            previous_record.reason = self._append_reason(previous_record.reason, "low_confidence")
+        record.status = "pending"
+        record.reason = self._append_reason(record.reason, "lower_than_existing")
+        record.recommended_slide_id = None
+
+    def _apply_fallback_assignments(
+        self,
+        records: list[SlideAlignmentRecord],
+        slide_assignments: dict[str, int],
+    ) -> int:
+        assigned_slides = set(slide_assignments)
         fallback_applied = 0
         for index, record in enumerate(records):
             if record.status == "applied" and record.recommended_slide_id:
@@ -163,59 +225,77 @@ class SlideIdAligner:
                 if candidate_id not in assigned_slides:
                     record.recommended_slide_id = candidate_id
                     record.status = "fallback"
-                    record.reason = (record.reason or "") + " | fallback_candidate"
+                    record.reason = self._append_reason(record.reason, "fallback_candidate")
                     assigned_slides.add(candidate_id)
                     slide_assignments[candidate_id] = index
                     fallback_applied += 1
                     break
+        return fallback_applied
+
+    def _build_aligned_slides(
+        self,
+        content_document: ContentApprovalDocument,
+        records: list[SlideAlignmentRecord],
+    ) -> tuple[list[ContentSlide], int]:
+        record_map: dict[str, SlideAlignmentRecord] = {}
+        for record in records:
+            record_map.setdefault(record.card_id, record)
 
         updated_slides: list[ContentSlide] = []
         applied = 0
         for slide in content_document.slides:
-            original_id = slide.id
-            record = next((entry for entry in records if entry.card_id == original_id), None)
+            record = record_map.get(slide.id)
             if record and record.recommended_slide_id and record.status in {"applied", "fallback"}:
                 updated_slides.append(slide.model_copy(update={"id": record.recommended_slide_id}))
                 applied += 1
             else:
                 updated_slides.append(slide)
+        return updated_slides, applied
 
-        relevant_spec_ids = {
-            candidate.id for candidate in candidate_slides if candidate.id in card_map
-        }
-        unmatched_spec_slides = [slide_id for slide_id in relevant_spec_ids if slide_id not in assigned_slides]
-        for slide_id in unmatched_spec_slides:
-            records.append(
-                SlideAlignmentRecord(
-                    card_id=slide_id,
-                    recommended_slide_id=None,
-                    confidence=0.0,
-                    reason="jobspec_unassigned",
-                    status="skipped",
-                )
+    @staticmethod
+    def _collect_unmatched_spec_slides(
+        relevant_spec_ids: set[str],
+        slide_assignments: dict[str, int],
+    ) -> list[str]:
+        return [slide_id for slide_id in relevant_spec_ids if slide_id not in slide_assignments]
+
+    @staticmethod
+    def _build_unmatched_records(slide_ids: Iterable[str]) -> list[SlideAlignmentRecord]:
+        return [
+            SlideAlignmentRecord(
+                card_id=slide_id,
+                recommended_slide_id=None,
+                confidence=0.0,
+                reason="jobspec_unassigned",
+                status="skipped",
             )
+            for slide_id in slide_ids
+        ]
 
-        aligned_document = content_document.model_copy(update={"slides": updated_slides})
-        meta = {
+    def _build_alignment_meta(
+        self,
+        *,
+        content_document: ContentApprovalDocument,
+        relevant_spec_ids: set[str],
+        unmatched_spec_slides: list[str],
+        applied: int,
+        fallback: int,
+        pending: int,
+    ) -> dict[str, object]:
+        return {
             "status": "completed",
             "threshold": self._options.confidence_threshold,
             "cards_total": len(content_document.slides),
             "jobspec_total": len(relevant_spec_ids),
             "jobspec_unassigned": len(unmatched_spec_slides),
             "applied": applied,
-            "fallback": fallback_applied,
-            "pending": sum(1 for record in records if record.status == "pending"),
+            "fallback": fallback,
+            "pending": pending,
         }
-        logger.info(
-            "SlideIdAligner: cards_total=%d jobspec_total=%d jobspec_unassigned=%d applied=%d pending=%d threshold=%.2f",
-            meta["cards_total"],
-            meta["jobspec_total"],
-            meta["jobspec_unassigned"],
-            meta["applied"],
-            meta["pending"],
-            meta["threshold"],
-        )
-        return SlideAlignmentResult(document=aligned_document, records=records, meta=meta)
+
+    @staticmethod
+    def _append_reason(origin: str | None, note: str) -> str:
+        return note if not origin else f"{origin} | {note}"
 
     def _build_match_request(
         self,
