@@ -26,6 +26,8 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
   - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。ドキュメント反映は未実施。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/cli/test_cli_hooks.py` を実行し、外部フック管理・スライドキー生成・template_id ヘルパーのユニットテスト（全6件）を追加。カバレッジ XML を再生成済み。
+- [ ] 外部フック運用検証
+  - メモ: `external/<template_id>` にダミー `hooks.json` とスクリプトを配置し、`uv run pptx template/prepare/... --mode static` でステージ・スライドフックが発火することを確認する。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
