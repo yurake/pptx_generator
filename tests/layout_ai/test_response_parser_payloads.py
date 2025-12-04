@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from pptx_generator.layout_ai.client import (
+    LayoutAIClientExecutionError,
     LayoutAIRequest,
     LayoutAIResponse,
     LayoutAIResponseFormatError,
@@ -221,7 +222,7 @@ def test_openai_layout_client_recommend_api_failure(monkeypatch: pytest.MonkeyPa
     policy = _make_layout_policy()
     request = _make_layout_request(policy)
 
-    with pytest.raises(NameError):
+    with pytest.raises(LayoutAIClientExecutionError):
         client.recommend(request)
 
 
@@ -246,7 +247,12 @@ def test_anthropic_layout_client_recommend_success(monkeypatch: pytest.MonkeyPat
     payload = json.dumps({"recommended": [{"layout_id": "cover", "score": 0.9}]})
     response_holder["response"] = SimpleNamespace(content=[FakeBlock(payload)], model="claude")
 
-    client = AnthropicClaudeLayoutClient(SimpleNamespace(messages=SimpleNamespace(create=lambda **kwargs: response_holder["response"])), model="claude", max_tokens=1024)
+    client = AnthropicClaudeLayoutClient(
+        SimpleNamespace(messages=SimpleNamespace(create=lambda **kwargs: response_holder["response"])),
+        model="claude",
+        max_tokens=1024,
+        temperature=0.0,
+    )
     policy = _make_layout_policy()
     request = _make_layout_request(policy)
 
@@ -265,7 +271,12 @@ def test_anthropic_layout_client_recommend_empty_content(monkeypatch: pytest.Mon
             self.messages = SimpleNamespace(create=lambda **kwargs: SimpleNamespace(content=[], model="claude"))
 
     module.Anthropic = FakeAnthropic
-    client = AnthropicClaudeLayoutClient(module.Anthropic("key"), model="claude", max_tokens=1024)
+    client = AnthropicClaudeLayoutClient(
+        module.Anthropic("key"),
+        model="claude",
+        max_tokens=1024,
+        temperature=0.0,
+    )
     policy = _make_layout_policy()
     request = _make_layout_request(policy)
 

@@ -10,7 +10,7 @@ from pptx_generator.prepare.source import (
     PrepareSourceMeta,
     PrepareSourceSupportingPoint,
 )
-from pptx_generator.prepare_ai.llm_client import MockPrepareLLMClient
+from pptx_generator.prepare_ai.client import MockPrepareLLMClient
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
 
 
