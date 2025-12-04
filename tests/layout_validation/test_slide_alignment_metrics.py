@@ -153,3 +153,94 @@ def test_slide_id_aligner_does_not_replace_id_when_pending(monkeypatch: pytest.M
     assert record.status == "applied"
     assert record.recommended_slide_id == captured["candidate"]
     assert "low_confidence" in (record.reason or "")
+
+
+def test_slide_id_aligner_reassigns_to_higher_confidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    spec = _build_spec()
+    prepare_doc = _build_prepare_document()
+    document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+            ContentSlide(id="solution", intent="solution", elements=ContentElements(title="解決策")),
+        ]
+    )
+    aligner = SlideIdAligner(SlideIdAlignerOptions(confidence_threshold=0.5))
+
+    responses = {
+        "intro": SlideMatchResponse(slide_id="solution-slide", confidence=0.4, reason="first"),
+        "solution": SlideMatchResponse(slide_id="solution-slide", confidence=0.9, reason="second"),
+    }
+
+    class StubClient:
+        def match_slide(self, request):
+            return responses[request.card_id]
+
+    monkeypatch.setattr(aligner, "_client", StubClient())
+
+    result = aligner.align(spec=spec, prepare_document=prepare_doc, content_document=document)
+
+    records = {record.card_id: record for record in result.records if record.card_id in {"intro", "solution"}}
+    assert records["solution"].status == "applied"
+    assert records["solution"].recommended_slide_id == "solution-slide"
+    assert records["intro"].status == "fallback"
+    reason = records["intro"].reason or ""
+    assert "reassigned" in reason
+    assert "fallback_candidate" in reason
+    assert result.meta["fallback"] == 1
+
+
+def test_slide_id_aligner_rejects_lower_confidence_recommendation(monkeypatch: pytest.MonkeyPatch) -> None:
+    spec = _build_spec()
+    prepare_doc = _build_prepare_document()
+    document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+            ContentSlide(id="solution", intent="solution", elements=ContentElements(title="解決策")),
+        ]
+    )
+    aligner = SlideIdAligner(SlideIdAlignerOptions(confidence_threshold=0.5))
+
+    responses = {
+        "intro": SlideMatchResponse(slide_id="intro-slide", confidence=0.2, reason="first"),
+        "solution": SlideMatchResponse(slide_id="intro-slide", confidence=0.1, reason="second"),
+    }
+
+    class StubClient:
+        def match_slide(self, request):
+            return responses[request.card_id]
+
+    monkeypatch.setattr(aligner, "_client", StubClient())
+
+    result = aligner.align(spec=spec, prepare_document=prepare_doc, content_document=document)
+
+    records = {record.card_id: record for record in result.records if record.card_id in {"intro", "solution"}}
+    assert records["intro"].status == "applied"
+    assert records["intro"].recommended_slide_id == "intro-slide"
+    assert "low_confidence" in (records["intro"].reason or "")
+    assert records["solution"].status == "fallback"
+    assert records["solution"].recommended_slide_id == "solution-slide"
+    assert "lower_than_existing" in (records["solution"].reason or "")
+
+
+def test_slide_id_aligner_applies_fallback_when_response_not_in_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    spec = _build_spec()
+    prepare_doc = _build_prepare_document()
+    document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(id="intro", intent="introduction", elements=ContentElements(title="イントロ")),
+        ]
+    )
+    aligner = SlideIdAligner()
+
+    class StubClient:
+        def match_slide(self, request):
+            return SlideMatchResponse(slide_id="external", confidence=0.7, reason="out-of-range")
+
+    monkeypatch.setattr(aligner, "_client", StubClient())
+
+    result = aligner.align(spec=spec, prepare_document=prepare_doc, content_document=document)
+
+    record = next(entry for entry in result.records if entry.card_id == "intro")
+    assert record.status == "fallback"
+    assert record.recommended_slide_id == "intro-slide"
+    assert "fallback_candidate" in (record.reason or "")
