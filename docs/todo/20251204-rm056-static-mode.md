@@ -7,16 +7,16 @@ roadmap_item: RM-056 多形式インポートCLI統合
 
 - [ ] ブランチ作成・初期コミット・push
   - メモ: 既存ブランチ `feat/rm056-cli-integration` を継続利用する（新規作成なし）
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提）: 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+    - 対象整理（スコープ、対象ファイル、前提）: `pptx prepare --mode static` で PDF/HTML/URL/data URI を ContentImportService 経由で取り込み、Stage3/Stage4 まで import_sources を維持。既存 jobspec を前提に `feat/rm056-cli-integration` ブランチで対応。
+    - ドキュメント／コード修正方針: `cli_handlers/prepare.py` 静的分岐の入力正規化を拡張、必要なら `prepare/models.py` を補強。CLI 静的モードの手順を CLI リファレンスなどに追記。
+    - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo で進捗を記録し、完了時は PR に ToDo を添付。ユーザーと Plan→実装→テスト結果を共有。
+    - 想定影響ファイル: `src/pptx_generator/cli_handlers/prepare.py`, `prepare/models.py`, `tests/cli/test_cli_prepare_stage_flow.py`, 静的 UAT 用テスト、関連 docs。
+    - リスク: jobspec 依存で入力正規化のズレが発生する恐れ。LibreOffice 変換の失敗や静的コンテキストとの整合性不足。
+    - テスト方針: pytest で静的モード用ケース追加、手動で `prepare --mode static` → `compose` → `gen` を通し `import_sources` を確認。
+    - ロールバック方法: 静的モード対応コミットと docs/テスト追加を revert する。
+    - 承認メッセージ ID／リンク: ユーザー「ok」(2025-12-04)
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
