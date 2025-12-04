@@ -180,6 +180,7 @@ class PrepareStaticContext:
     slide_input_refs: dict[str, str] | None
     source_document: PrepareSourceDocument | None
     messages: list[str]
+    import_metadata: list[dict[str, Any]]
 
 
 @dataclass(slots=True)
@@ -296,6 +297,7 @@ def resolve_static_context(
             slide_input_refs=None,
             source_document=None,
             messages=[],
+            import_metadata=[],
         )
 
     resolved_jobspec = jobspec_path or default_jobspec_path
