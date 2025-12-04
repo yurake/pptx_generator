@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from pptx_generator.prepare.client import AzureOpenAIPrepareLLMClient
+from pptx_generator.prepare_ai.client import AzureOpenAIPrepareLLMClient
 
 
 class DummyResponses:
