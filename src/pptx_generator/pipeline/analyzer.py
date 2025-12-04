@@ -302,83 +302,169 @@ class SimpleAnalyzerStep:
         issues: list[dict[str, Any]] = []
         fixes: list[dict[str, Any]] = []
 
+        bullet_issues, bullet_fixes = self._analyze_bullet_groups(slide_spec, snapshot)
+        issues.extend(bullet_issues)
+        fixes.extend(bullet_fixes)
+
+        image_issues, image_fixes = self._analyze_images(
+            slide_spec,
+            snapshot,
+            slide_width_in=slide_width_in,
+            slide_height_in=slide_height_in,
+        )
+        issues.extend(image_issues)
+        fixes.extend(image_fixes)
+
+        textbox_issues, textbox_fixes = self._analyze_textboxes(slide_spec, snapshot)
+        issues.extend(textbox_issues)
+        fixes.extend(textbox_fixes)
+
+        return issues, fixes
+
+    def _analyze_bullet_groups(
+        self, slide_spec: Slide, snapshot: SlideSnapshot
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
+
         resolver = BulletParagraphResolver(snapshot)
         applied_level: int | None = None
         previous_level: int | None = None
 
         for group in slide_spec.bullets:
             for bullet in group.items:
-                paragraph = resolver.resolve(group.anchor)
-                actual_level = paragraph.level if paragraph else bullet.level
-                target = {
-                    "slide_id": slide_spec.id,
-                    "element_id": bullet.id,
-                    "element_type": "bullet",
-                }
-
-                depth = self._check_bullet_depth(slide_spec, bullet, actual_level, target)
-                if depth:
-                    issue, fix = depth
-                    issues.append(issue)
-                    if fix:
-                        fixes.append(fix)
-
-                font = self._check_font_size(slide_spec, bullet, paragraph, target)
-                if font:
-                    issue, fix = font
-                    issues.append(issue)
-                    if fix:
-                        fixes.append(fix)
-
-                contrast = self._check_contrast(slide_spec, bullet, paragraph, target)
-                if contrast:
-                    issue, fix = contrast
-                    issues.append(issue)
-                    if fix:
-                        fixes.append(fix)
-
-                allowed_level = (
-                    0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
+                bullet_issues, bullet_fixes, applied_level, previous_level = self._evaluate_bullet(
+                    slide_spec,
+                    bullet,
+                    group.anchor,
+                    resolver,
+                    applied_level,
+                    previous_level,
                 )
-                if actual_level > allowed_level:
-                    issue_id = self._next_issue_id("layout_consistency", slide_spec.id, bullet.id)
-                    fix = {
-                        "id": f"fix-{issue_id}",
-                        "issue_id": issue_id,
-                        "type": "bullet_reindent",
-                        "target": target,
-                        "payload": {"level": allowed_level},
-                    }
-                    issue = self._make_issue(
-                        issue_id=issue_id,
-                        issue_type="layout_consistency",
-                        severity="warning",
-                        message=(
-                            f"スライド '{slide_spec.id}' の箇条書き '{bullet.id}' のレベル {actual_level} が"
-                            f" 許容ステップ {allowed_level} を超えています"
-                        ),
-                        target=target,
-                        metrics={
-                            "level": actual_level,
-                            "allowed_level": allowed_level,
-                            "previous_level": previous_level,
-                        },
-                        fix=fix,
-                    )
-                    issues.append(issue)
-                    fixes.append(fix)
-                    applied_level = allowed_level
-                else:
-                    applied_level = actual_level
-                previous_level = actual_level
+                issues.extend(bullet_issues)
+                fixes.extend(bullet_fixes)
 
-                if paragraph is None:
-                    logger.debug(
-                        "箇条書き '%s' に対応する PPTX 段落が見つかりませんでした (slide=%s, anchor=%s)",
-                        bullet.id,
-                        slide_spec.id,
-                        group.anchor,
-                    )
+        return issues, fixes
+
+    def _evaluate_bullet(
+        self,
+        slide_spec: Slide,
+        bullet: SlideBullet,
+        anchor: str | None,
+        resolver: BulletParagraphResolver,
+        applied_level: int | None,
+        previous_level: int | None,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int | None, int | None]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
+
+        paragraph = resolver.resolve(anchor)
+        actual_level = paragraph.level if paragraph else bullet.level
+        target = {
+            "slide_id": slide_spec.id,
+            "element_id": bullet.id,
+            "element_type": "bullet",
+        }
+
+        depth = self._check_bullet_depth(slide_spec, bullet, actual_level, target)
+        if depth:
+            issue, fix = depth
+            issues.append(issue)
+            if fix:
+                fixes.append(fix)
+
+        font = self._check_font_size(slide_spec, bullet, paragraph, target)
+        if font:
+            issue, fix = font
+            issues.append(issue)
+            if fix:
+                fixes.append(fix)
+
+        contrast = self._check_contrast(slide_spec, bullet, paragraph, target)
+        if contrast:
+            issue, fix = contrast
+            issues.append(issue)
+            if fix:
+                fixes.append(fix)
+
+        updated_applied_level = self._resolve_bullet_level(
+            slide_spec,
+            bullet,
+            actual_level,
+            target,
+            applied_level,
+            previous_level,
+            issues,
+            fixes,
+        )
+
+        if paragraph is None:
+            logger.debug(
+                "箇条書き '%s' に対応する PPTX 段落が見つかりませんでした (slide=%s, anchor=%s)",
+                bullet.id,
+                slide_spec.id,
+                anchor,
+            )
+
+        return (
+            issues,
+            fixes,
+            updated_applied_level,
+            actual_level,
+        )
+
+    def _resolve_bullet_level(
+        self,
+        slide_spec: Slide,
+        bullet: SlideBullet,
+        actual_level: int,
+        target: dict[str, Any],
+        applied_level: int | None,
+        previous_level: int | None,
+        issues: list[dict[str, Any]],
+        fixes: list[dict[str, Any]],
+    ) -> int | None:
+        allowed_level = 0 if applied_level is None else min(applied_level + 1, self.options.max_bullet_level)
+        if actual_level > allowed_level:
+            issue_id = self._next_issue_id("layout_consistency", slide_spec.id, bullet.id)
+            fix = {
+                "id": f"fix-{issue_id}",
+                "issue_id": issue_id,
+                "type": "bullet_reindent",
+                "target": target,
+                "payload": {"level": allowed_level},
+            }
+            issue = self._make_issue(
+                issue_id=issue_id,
+                issue_type="layout_consistency",
+                severity="warning",
+                message=(
+                    f"スライド '{slide_spec.id}' の箇条書き '{bullet.id}' のレベル {actual_level} が"
+                    f" 許容ステップ {allowed_level} を超えています"
+                ),
+                target=target,
+                metrics={
+                    "level": actual_level,
+                    "allowed_level": allowed_level,
+                    "previous_level": previous_level,
+                },
+                fix=fix,
+            )
+            issues.append(issue)
+            fixes.append(fix)
+            return allowed_level
+        return actual_level
+
+    def _analyze_images(
+        self,
+        slide_spec: Slide,
+        snapshot: SlideSnapshot,
+        *,
+        slide_width_in: float,
+        slide_height_in: float,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
 
         for image_spec in slide_spec.images:
             shape = self._locate_image_shape(snapshot, image_spec)
@@ -403,6 +489,16 @@ class SimpleAnalyzerStep:
                 issues.append(issue)
                 if fix:
                     fixes.append(fix)
+
+        return issues, fixes
+
+    def _analyze_textboxes(
+        self,
+        slide_spec: Slide,
+        snapshot: SlideSnapshot,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        issues: list[dict[str, Any]] = []
+        fixes: list[dict[str, Any]] = []
 
         for textbox in slide_spec.textboxes:
             shape = self._locate_textbox_shape(snapshot, textbox)
