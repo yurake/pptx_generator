@@ -26,6 +26,24 @@ roadmap_item: RM-056 多形式インポートCLI統合
   - メモ: CLI/ハンドラ/モデルを更新し、複数 PREPARE_PATH の解析・インポート変換・meta 追記を実装。ContentImportService 統合用ヘルパー `_load_prepare_inputs` 等を追加。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/cli/test_cli_prepare_stage_flow.py tests/content_import/test_content_import_pipeline.py` を実行し 16 件成功。
+  - [ ] UAT 実行（Case M1）
+  - [ ] UAT 実行（Case T1）
+  - [ ] UAT 実行（Case B1）
+  - [ ] UAT 実行（Case H1）
+  - [ ] UAT 実行（Case P1）
+  - [ ] UAT 実行（Case MX）
+  - [ ] UAT 実行（Case U1）
+  - メモ: UAT 手動検証の記録テンプレートを以下へ追記。各ケース実行後に「実行結果」を更新すること。
+
+    | ケースID | 入力種別 | 実行コマンド | 実行結果メモ |
+    |----------|----------|---------------|---------------|
+    | M1 | Markdown | `uv run --extra dev pptx prepare samples/input/pitch.md --mode dynamic --output .uat/pitch` | 未実施 |
+    | T1 | プレーンテキスト | `uv run --extra dev pptx prepare samples/input/blog.text --mode dynamic --output .uat/blog` | 未実施 |
+    | B1 | 箇条書きMarkdown | `uv run --extra dev pptx prepare samples/input/bullet_only.md --mode dynamic --output .uat/bullet` | 未実施 |
+    | H1 | HTMLファイル | `uv run --extra dev pptx prepare samples/input/landing_page.html --mode dynamic --output .uat/html` | 未実施 |
+    | P1 | PDF | `uv run --extra dev pptx prepare samples/input/landing_page.pdf --mode dynamic --output .uat/pdf` | 未実施 |
+    | MX | 複数入力 | `uv run --extra dev pptx prepare samples/input/pitch.md samples/input/landing_page.pdf --mode dynamic --output .uat/mixed` | 未実施 |
+    | U1 | URL | `uv run --extra dev pptx prepare https://github.com/yurake/pptx_generator/blob/main/README.en.md --mode dynamic --output .uat/url` | 未実施 |
 - [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける

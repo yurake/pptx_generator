@@ -292,28 +292,33 @@ class ContentImportService:
 
         with TemporaryDirectory() as tmp_dir:
             output_dir = Path(tmp_dir)
-            cmd = [
-                str(soffice),
-                "--headless",
-                "--convert-to",
-                "txt:Text (encoded):UTF8",
-                str(path),
-                "--outdir",
-                str(output_dir),
-            ]
-            try:
-                completed = subprocess.run(  # noqa: S603
-                    cmd,
-                    check=False,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    timeout=self._soffice_timeout,
-                )
-            except subprocess.TimeoutExpired as exc:
-                msg = f"LibreOffice による PDF 変換がタイムアウトしました: {path}"
-                raise ContentImportError(msg) from exc
 
+            def _run_soffice(*, extra_args: Sequence[str] = ()) -> subprocess.CompletedProcess[str]:
+                cmd = [
+                    str(soffice),
+                    "--headless",
+                    "--convert-to",
+                    "txt:Text (encoded):UTF8",
+                ]
+                cmd.extend(extra_args)
+                cmd.append(str(path))
+                cmd.extend(["--outdir", str(output_dir)])
+                try:
+                    return subprocess.run(  # noqa: S603
+                        cmd,
+                        check=False,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        timeout=self._soffice_timeout,
+                    )
+                except subprocess.TimeoutExpired as exc:
+                    msg = f"LibreOffice による PDF 変換がタイムアウトしました: {path}"
+                    raise ContentImportError(msg) from exc
+
+            attempts: list[tuple[Sequence[str], subprocess.CompletedProcess[str]]] = []
+            completed = _run_soffice()
+            attempts.append(((), completed))
             if completed.returncode != 0:
                 msg = (
                     "LibreOffice による PDF 変換に失敗しました: "
@@ -323,8 +328,31 @@ class ContentImportService:
 
             txt_path = output_dir / f"{path.stem}.txt"
             if not txt_path.exists():
-                msg = f"LibreOffice 変換結果が見つかりません: {txt_path}"
-                raise ContentImportError(msg)
+                fallback_args: Sequence[str] = ("--infilter=writer_pdf_import",)
+                completed = _run_soffice(extra_args=fallback_args)
+                attempts.append((fallback_args, completed))
+                if completed.returncode != 0:
+                    msg = (
+                        "LibreOffice による PDF 変換に失敗しました: "
+                        f"{path}\nstdout: {completed.stdout}\nstderr: {completed.stderr}"
+                    )
+                    raise ContentImportError(msg)
+                if not txt_path.exists():
+                    attempt_logs = []
+                    for extra_args, proc in attempts:
+                        log = (
+                            f"stdout: {proc.stdout or '(empty)'}\n"
+                            f"stderr: {proc.stderr or '(empty)'}"
+                        )
+                        if extra_args:
+                            log = f"extra_args: {' '.join(extra_args)}\n{log}"
+                        attempt_logs.append(log)
+                    msg = (
+                        f"LibreOffice 変換結果が見つかりません: {txt_path}\n"
+                        + "\n---\n".join(attempt_logs)
+                    )
+                    raise ContentImportError(msg)
+
             return txt_path.read_text(encoding="utf-8")
 
     def _convert_source(self, payload: _SourcePayload, *, start_index: int) -> _SourceProcessingResult:
