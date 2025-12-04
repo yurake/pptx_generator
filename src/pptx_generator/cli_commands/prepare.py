@@ -11,6 +11,11 @@ from pptx_generator.cli_handlers import (
     run_prepare_command,
 )
 from pptx_generator.cli_handlers.common import dump_json
+from pptx_generator.cli_hooks import (
+    STAGE_PREPARE,
+    extract_template_id_from_json_file,
+    load_hooks_for_template_id,
+)
 
 
 def build_prepare_config(
@@ -91,6 +96,34 @@ def create_prepare_command(
         page_limit: int | None,
     ) -> None:
         """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
+
+        jobspec_path = jobspec or default_jobspec_path
+        hook_manager = None
+        template_id = None
+        if mode.lower() == "static":
+            template_id = extract_template_id_from_json_file(jobspec_path)
+            if template_id:
+                hook_manager = load_hooks_for_template_id(template_id)
+        if hook_manager and template_id:
+            env = {
+                "PPTX_STAGE": STAGE_PREPARE,
+                "PPTX_TEMPLATE_ID": template_id,
+                "PPTX_PREPARE_PATH": str(prepare_path or ""),
+                "PPTX_PREPARE_OUTPUT_DIR": str(output_dir.resolve()),
+                "PPTX_JOBSPEC_PATH": str(jobspec_path.resolve()),
+                "PPTX_MODE": mode.lower(),
+                "PPTX_PAGE_LIMIT": str(page_limit) if page_limit is not None else "",
+            }
+            executed, continue_default = hook_manager.run_stage_hook(
+                STAGE_PREPARE,
+                env=env,
+            )
+            if executed:
+                click.echo(
+                    f"[hooks] prepare stage executed via external hook (template_id={template_id})"
+                )
+                if not continue_default:
+                    return
 
         config = build_prepare_config(
             prepare_path=prepare_path,

@@ -11,6 +11,11 @@ from pptx_generator.cli_handlers.template_commands import (
 )
 
 from pptx_generator.cli_handlers.common import log_current_llm_provider
+from pptx_generator.cli_hooks import (
+    STAGE_TEMPLATE,
+    derive_template_id_from_template_path,
+    load_hooks_for_template_id,
+)
 
 
 def create_template_command(
@@ -152,6 +157,43 @@ def create_template_command(
         """テンプレ stage（抽出・検証・必要に応じてリリース）を実行する。"""
 
         log_current_llm_provider("template")
+
+        hook_manager = None
+        template_id = derive_template_id_from_template_path(template_path)
+        if layout_mode.lower() == "static":
+            hook_manager = load_hooks_for_template_id(template_id)
+        if hook_manager:
+            env = {
+                "PPTX_STAGE": STAGE_TEMPLATE,
+                "PPTX_TEMPLATE_ID": template_id,
+                "PPTX_TEMPLATE_PATH": str(template_path.resolve()),
+                "PPTX_STAGE_OUTPUT_DIR": str(output.resolve()),
+                "PPTX_LAYOUT_MODE": layout_mode.lower(),
+                "PPTX_TEMPLATE_FORMAT": format,
+                "PPTX_TEMPLATE_LAYOUT_FILTER": layout or "",
+                "PPTX_TEMPLATE_ANCHOR_FILTER": anchor or "",
+                "PPTX_TEMPLATE_WITH_RELEASE": "1" if with_release else "0",
+                "PPTX_TEMPLATE_BRAND": brand or "",
+                "PPTX_TEMPLATE_VERSION": version or "",
+                "PPTX_TEMPLATE_RELEASE_OUTPUT": str(release_output.resolve()),
+                "PPTX_TEMPLATE_BASELINE_RELEASE": str(baseline_release) if baseline_release else "",
+                "PPTX_TEMPLATE_GOLDEN_SPEC_COUNT": str(len(golden_specs)),
+                "PPTX_TEMPLATE_AI_POLICY": str(template_ai_policy) if template_ai_policy else "",
+                "PPTX_TEMPLATE_AI_POLICY_ID": template_ai_policy_id or "",
+                "PPTX_TEMPLATE_DISABLE_AI": "1" if disable_template_ai else "0",
+                "PPTX_TEMPLATE_SLIDE_SNAPSHOT": "1" if slide else "0",
+                "PPTX_TEMPLATE_FORCE": "1" if force else "0",
+            }
+            executed, continue_default = hook_manager.run_stage_hook(
+                STAGE_TEMPLATE,
+                env=env,
+            )
+            if executed:
+                click.echo(
+                    f"[hooks] template stage executed via external hook (template_id={template_id})"
+                )
+                if not continue_default:
+                    return
 
         config = TemplateCommandConfig(
             template_path=template_path,

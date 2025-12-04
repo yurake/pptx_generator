@@ -12,6 +12,11 @@ from pptx_generator.cli_handlers.mapping import (
 )
 
 from .utils import echo_command_errors
+from pptx_generator.cli_hooks import (
+    STAGE_MAPPING,
+    extract_template_id_from_json_file,
+    load_hooks_for_template_id,
+)
 
 
 def create_mapping_command(
@@ -64,6 +69,32 @@ def create_mapping_command(
         prepare_cards: Path,
     ) -> None:
         """stage 5 マッピングを実行し generate_ready.json を生成する。"""
+
+        hook_manager = None
+        template_id = extract_template_id_from_json_file(spec_path)
+        if template_id:
+            hook_manager = load_hooks_for_template_id(template_id)
+        if hook_manager:
+            env = {
+                "PPTX_STAGE": STAGE_MAPPING,
+                "PPTX_TEMPLATE_ID": template_id,
+                "PPTX_SPEC_PATH": str(spec_path.resolve()),
+                "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
+                "PPTX_RULES_PATH": str(rules.resolve()),
+                "PPTX_DRAFT_OUTPUT": str(draft_output.resolve()),
+                "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
+            }
+            executed, continue_default = hook_manager.run_stage_hook(
+                STAGE_MAPPING,
+                env=env,
+            )
+            if executed:
+                click.echo(
+                    f"[hooks] mapping stage executed via external hook (template_id={template_id})"
+                )
+                if not continue_default:
+                    return
+
         config = MappingCommandConfig(
             spec_path=spec_path,
             output_dir=output_dir,

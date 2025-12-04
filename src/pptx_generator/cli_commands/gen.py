@@ -12,6 +12,12 @@ from pptx_generator.cli_handlers.rendering import (
     run_generate_command,
 )
 
+from pptx_generator.cli_hooks import (
+    STAGE_GEN,
+    extract_template_id_from_json_file,
+    load_hooks_for_template_id,
+)
+
 
 def create_gen_command(
     *,
@@ -155,6 +161,49 @@ def create_gen_command(
         emit_structure_snapshot: bool,
     ) -> None:
         """generate_ready.json から PPTX / PDF / 監査ログを生成する。"""
+
+        hook_manager = None
+        template_id = extract_template_id_from_json_file(generate_ready_path)
+        if template_id:
+            hook_manager = load_hooks_for_template_id(template_id)
+        if hook_manager:
+            env = {
+                "PPTX_STAGE": STAGE_GEN,
+                "PPTX_TEMPLATE_ID": template_id,
+                "PPTX_GENERATE_READY_PATH": str(generate_ready_path.resolve()),
+                "PPTX_OUTPUT_DIR": str(output_dir.resolve()),
+                "PPTX_PPTX_NAME": pptx_name,
+                "PPTX_RULES_PATH": str(rules.resolve()),
+                "PPTX_EXPORT_PDF": "1" if export_pdf else "0",
+                "PPTX_PDF_MODE": pdf_mode,
+                "PPTX_PDF_OUTPUT": pdf_output,
+                "PPTX_LIBREOFFICE_PATH": str(libreoffice_path.resolve())
+                if libreoffice_path
+                else "",
+                "PPTX_PDF_TIMEOUT": str(pdf_timeout),
+                "PPTX_PDF_RETRIES": str(pdf_retries),
+                "PPTX_POLISHER_TOGGLE": (
+                    "1" if polisher_toggle else "0" if polisher_toggle is not None else ""
+                ),
+                "PPTX_POLISHER_PATH": str(polisher_path.resolve()) if polisher_path else "",
+                "PPTX_POLISHER_RULES": str(polisher_rules.resolve())
+                if polisher_rules
+                else "",
+                "PPTX_POLISHER_TIMEOUT": str(polisher_timeout) if polisher_timeout else "",
+                "PPTX_POLISHER_ARGS": " ".join(polisher_args) if polisher_args else "",
+                "PPTX_POLISHER_CWD": str(polisher_cwd.resolve()) if polisher_cwd else "",
+                "PPTX_EMIT_STRUCTURE_SNAPSHOT": "1" if emit_structure_snapshot else "0",
+            }
+            executed, continue_default = hook_manager.run_stage_hook(
+                STAGE_GEN,
+                env=env,
+            )
+            if executed:
+                click.echo(
+                    f"[hooks] gen stage executed via external hook (template_id={template_id})"
+                )
+                if not continue_default:
+                    return
 
         config = GenerateCommandConfig(
             generate_ready_path=generate_ready_path,
