@@ -18,6 +18,7 @@ from pptx_generator.llm import (
 )
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
+from .prompts import build_system_prompt, build_user_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -154,8 +155,8 @@ class OpenAIChatLayoutClient:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
 
         messages = [
-            {"role": "system", "content": _build_system_prompt(request)},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt(request)},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         kwargs: dict[str, object] = {
             "input": messages,
@@ -260,8 +261,8 @@ class AzureOpenAIChatLayoutClient:
         from openai.types.responses.response_output_refusal import ResponseOutputRefusal
 
         messages = [
-            {"role": "system", "content": _build_system_prompt(request)},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt(request)},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         request_model = self._deployment
         kwargs: dict[str, object] = {
@@ -334,7 +335,7 @@ class AnthropicClaudeLayoutClient:
                 "content": [
                     {
                         "type": "text",
-                        "text": _build_user_prompt(request),
+                        "text": build_user_prompt(request),
                     }
                 ],
             }
@@ -342,7 +343,7 @@ class AnthropicClaudeLayoutClient:
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=self._model,
-                system=_build_system_prompt(request),
+                system=build_system_prompt(request),
                 max_tokens=self._max_tokens,
                 temperature=self._temperature,
                 messages=messages,
@@ -439,14 +440,14 @@ class AwsClaudeLayoutClient:
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
             "temperature": self._temperature,
-            "system": _build_system_prompt(request),
+            "system": build_system_prompt(request),
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": _build_user_prompt(request),
+                            "text": build_user_prompt(request),
                         }
                     ],
                 }
@@ -692,93 +693,3 @@ def _stringify_reason(value: object) -> str:
         parts = [str(item).strip() for item in value if str(item).strip()]
         return " / ".join(parts)
     return str(value)
-
-
-def _build_system_prompt(request: LayoutAIRequest) -> str:
-    return (
-        "あなたは B2B プレゼン資料のレイアウト推薦エージェントです。"
-        "入力される JSON 情報を解析し、最も適したレイアウトを高精度に提案してください。"
-        "応答は JSON オブジェクトのみで返し、次のスキーマを厳守してください: "
-        '{"recommended":[{"layout_id":"<候補ID>","score":0.0,"tags":["title"]}],"reasons":{"<候補ID>":"根拠"}}.'
-        "tags には入力で指定された allowed_tags の語彙を使用し、score は 0〜1 の範囲で数値にしてください。"
-        "recommended 以外のキーやコードフェンス、説明文は含めてはいけません。"
-    )
-
-
-def _apply_policy_template(template: str, **kwargs: object) -> str:
-    try:
-        return template.format(**kwargs)
-    except (KeyError, IndexError) as exc:  # pragma: no cover - defensive log only
-        logger.debug("layout AI policy template format failed: %s", exc)
-        return template
-
-
-def _build_usage_tags_reference(card_payload: dict[str, object]) -> list[dict[str, str]]:
-    allowed = card_payload.get("allowed_tags") or []
-    details = card_payload.get("allowed_tags_detail") or {}
-    if not isinstance(allowed, list):
-        return []
-    reference: list[dict[str, str]] = []
-    if not isinstance(details, dict):
-        details = {}
-    for tag in allowed:
-        if not isinstance(tag, str):
-            continue
-        entry: dict[str, str] = {"tag": tag}
-        description = details.get(tag)
-        if isinstance(description, str) and description.strip():
-            entry["description"] = description.strip()
-        reference.append(entry)
-    return reference
-
-
-def _format_usage_tags_text(reference: list[dict[str, str]]) -> str:
-    if not reference:
-        return ""
-    lines: list[str] = []
-    for entry in reference:
-        tag = entry.get("tag")
-        if not tag:
-            continue
-        description = entry.get("description", "")
-        if description:
-            lines.append(f"- {tag}: {description}")
-        else:
-            lines.append(f"- {tag}")
-    return "\n".join(lines)
-
-
-def _build_card_context_info(card_payload: dict[str, object]) -> dict[str, object]:
-    return {}
-
-
-def _build_user_prompt(request: LayoutAIRequest) -> str:
-    usage_tags_reference = _build_usage_tags_reference(request.card_payload)
-    payload = {
-        "card": request.card_payload,
-        "candidate_layouts": request.layout_candidates,
-        "instruction": request.prompt,
-    }
-    if usage_tags_reference:
-        payload["usage_tags_reference"] = usage_tags_reference
-    if request.layout_metadata:
-        payload["layout_metadata"] = request.layout_metadata
-
-    usage_tags_text = _format_usage_tags_text(usage_tags_reference)
-    if usage_tags_text and request.policy.usage_tags_template:
-        payload["usage_tags_prompt"] = _apply_policy_template(
-            request.policy.usage_tags_template,
-            usage_tags=usage_tags_text,
-        )
-
-    card_context = _build_card_context_info(request.card_payload)
-    if card_context:
-        payload["card_context"] = card_context
-        card_context_text = json.dumps(card_context, ensure_ascii=False, indent=2)
-        if request.policy.card_context_template:
-            payload["card_context_prompt"] = _apply_policy_template(
-                request.policy.card_context_template,
-                card_context=card_context_text,
-            )
-
-    return json.dumps(payload, ensure_ascii=False)

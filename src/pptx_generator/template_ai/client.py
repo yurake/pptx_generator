@@ -18,6 +18,7 @@ from pptx_generator.llm import (
 
 from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags
 from .policy import TemplateAIPolicy, TemplateAIPolicyError
+from .prompts import build_system_prompt, build_user_prompt
 
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_TOKENS = 32000
@@ -126,8 +127,8 @@ class OpenAITemplateAIClient:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputText
 
         messages = [
-            {"role": "system", "content": _build_system_prompt()},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt()},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         base_kwargs: dict[str, object] = {
             "input": messages,
@@ -194,8 +195,8 @@ class AzureOpenAITemplateAIClient:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
 
         messages = [
-            {"role": "system", "content": _build_system_prompt()},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt()},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         kwargs: dict[str, object] = {
             "model": self._deployment,
@@ -259,7 +260,7 @@ class AnthropicTemplateAIClient:
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=model_name,
-                system=_build_system_prompt(),
+                system=build_system_prompt(),
                 max_tokens=self._max_tokens,
                 temperature=self._temperature,
                 messages=[
@@ -268,7 +269,7 @@ class AnthropicTemplateAIClient:
                         "content": [
                             {
                                 "type": "text",
-                                "text": _build_user_prompt(request),
+                                "text": build_user_prompt(request),
                             }
                         ],
                     }
@@ -364,14 +365,14 @@ class AwsClaudeTemplateAIClient:
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
             "temperature": self._temperature,
-            "system": _build_system_prompt(),
+            "system": build_system_prompt(),
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": _build_user_prompt(request),
+                            "text": build_user_prompt(request),
                         }
                     ],
                 }
@@ -435,17 +436,3 @@ def _stringify_reason(value: Any) -> str | None:
         return json.dumps(value, ensure_ascii=False)
     except TypeError:
         return str(value)
-
-
-def _build_system_prompt() -> str:
-    return (
-        "あなたは B2B プレゼン資料テンプレートを分析し、レイアウトの用途タグを判定するアシスタントです。"
-        "必ず JSON オブジェクトのみで出力し、usage_tags に CANONICAL usage tags "
-        f"({', '.join(sorted(CANONICAL_USAGE_TAGS))}) のみを含めてください。"
-    )
-
-
-def _build_user_prompt(request: TemplateAIRequest) -> str:
-    payload = dict(request.payload)
-    payload["instruction"] = request.prompt
-    return json.dumps(payload, ensure_ascii=False, indent=2)
