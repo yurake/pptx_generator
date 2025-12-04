@@ -49,6 +49,7 @@
 ## モニタリング
 - メトリクス: レンダリング時間、PDF 生成時間、警告件数、Polisher 実行率、Analyzer before/after の課題件数差分。
 - ログ: ファイルパス、テンプレ版、LibreOffice exit code、修正内容（フォント調整など）、`monitoring_report.json` に基づくアラートサマリ。
+- 静的テンプレ用外部フック: `external/<template_id>/hooks.json` に `gen` ステージが定義されている場合、CLI はレンダリング前後にフックを実行する。環境変数例: `PPTX_STAGE=gen`, `PPTX_TEMPLATE_ID`, `PPTX_GENERATE_READY_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_OUTPUT_PPTX_PATH`, `PPTX_OUTPUT_PDF_PATH`（PDF 出力時）。スライド別フックでは `PPTX_SLIDE_KEY=NN_slug`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` 等を提供する。
 
 ## テスト戦略
 - 単体: PH マッピング → スライド生成のロジックをモックで検証。
