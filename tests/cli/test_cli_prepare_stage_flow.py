@@ -196,6 +196,154 @@ def test_resolve_static_context_imports_slide_inputs(monkeypatch, tmp_path: Path
     assert any("インポートを完了しました" in message for message in context.messages)
 
 
+def test_resolve_static_context_placeholder_manifest_allows_cli_inputs(tmp_path: Path) -> None:
+    template_dir = tmp_path / "extract"
+    template_dir.mkdir(parents=True, exist_ok=True)
+    template_spec_path = template_dir / "template_spec.json"
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="slide-01",
+                layout="StaticLayout",
+                required=True,
+                intent_tags=["overview"],
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="slot-title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        intent_tags=["headline"],
+                    )
+                ],
+            )
+        ]
+    )
+    template_spec_path.write_text(
+        json.dumps(
+            TemplateSpec(
+                template_path="templates/sample.pptx",
+                extracted_at="2025-12-04T00:00:00Z",
+                layouts=[],
+                layout_mode="static",
+                blueprint=blueprint,
+            ).model_dump(mode="json"),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    jobspec_path = tmp_path / "jobspec.json"
+    jobspec_path.write_text(
+        json.dumps(
+            {
+                "meta": {
+                    "schema_version": "2025-01-01",
+                    "title": "Static Prepare",
+                    "template_path": "templates/sample.pptx",
+                    "template_spec_path": "extract/template_spec.json",
+                },
+                "auth": {"created_by": "tester"},
+                "slides": [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    slide_manifest = tmp_path / "slide_inputs.md"
+    slide_manifest.write_text("01_staticlayout: <TODO>\n", encoding="utf-8")
+
+    context = resolve_static_context(
+        jobspec_path=jobspec_path,
+        default_jobspec_path=jobspec_path,
+        prompts_dirname=Path("prompts"),
+        slide_inputs_filename=Path("slide_inputs.md"),
+        mode="static",
+        prepare_path=None,
+        has_inline_source=True,
+    )
+
+    assert context.slide_input_sources is None
+    assert any("プレースホルダーのみ" in message for message in context.messages)
+
+
+def test_resolve_static_context_placeholder_manifest_requires_inputs(tmp_path: Path) -> None:
+    template_dir = tmp_path / "extract"
+    template_dir.mkdir(parents=True, exist_ok=True)
+    template_spec_path = template_dir / "template_spec.json"
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="slide-01",
+                layout="StaticLayout",
+                required=True,
+                intent_tags=["overview"],
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="slot-title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        intent_tags=["headline"],
+                    )
+                ],
+            )
+        ]
+    )
+    template_spec_path.write_text(
+        json.dumps(
+            TemplateSpec(
+                template_path="templates/sample.pptx",
+                extracted_at="2025-12-04T00:00:00Z",
+                layouts=[],
+                layout_mode="static",
+                blueprint=blueprint,
+            ).model_dump(mode="json"),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    jobspec_path = tmp_path / "jobspec.json"
+    jobspec_path.write_text(
+        json.dumps(
+            {
+                "meta": {
+                    "schema_version": "2025-01-01",
+                    "title": "Static Prepare",
+                    "template_path": "templates/sample.pptx",
+                    "template_spec_path": "extract/template_spec.json",
+                },
+                "auth": {"created_by": "tester"},
+                "slides": [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    slide_manifest = tmp_path / "slide_inputs.md"
+    slide_manifest.write_text("01_staticlayout: <TODO>\n", encoding="utf-8")
+
+    with pytest.raises(PrepareCommandError) as exc_info:
+        resolve_static_context(
+            jobspec_path=jobspec_path,
+            default_jobspec_path=jobspec_path,
+            prompts_dirname=Path("prompts"),
+            slide_inputs_filename=Path("slide_inputs.md"),
+            mode="static",
+            prepare_path=None,
+            has_inline_source=False,
+        )
+
+    assert "slide_inputs.md に有効な入力が含まれていません" in str(exc_info.value)
+
+
 def test_prepare_generates_outputs(tmp_path) -> None:
     output_dir = tmp_path / "prepare"
     runner = CliRunner()

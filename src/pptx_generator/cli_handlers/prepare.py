@@ -393,6 +393,11 @@ def resolve_static_context(
             messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
         else:
             messages.append(f"スライド入力マニフェストはプレースホルダーのみのためスキップします: {slide_manifest}")
+            if not has_inline_source:
+                raise PrepareCommandError(
+                    "slide_inputs.md に有効な入力が含まれていません。--prepare 引数などでプレペア入力ファイルを指定してください",
+                    exit_code=2,
+                )
     elif prepare_path is None and not has_inline_source:
         raise PrepareCommandError(
             ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
