@@ -14,13 +14,8 @@ from pptx_generator.cli_handlers.prepare import (
     PrepareStaticContext,
     resolve_static_context,
 )
-<<<<<<< HEAD
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot, TemplateSpec
 from pptx_generator.prepare_ai.client import MockPrepareLLMClient, PrepareLLMResult
-=======
-from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
-from pptx_generator.prepare_ai.client import MockPrepareLLMClient, PrepareLLMResult
->>>>>>> origin/main
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
 from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument, PrepareSourceMeta
