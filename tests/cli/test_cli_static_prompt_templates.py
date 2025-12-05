@@ -406,7 +406,7 @@ def test_cli_prepare_requires_complete_manifest(monkeypatch) -> None:
 
         with pytest.raises(click.exceptions.Exit) as excinfo:
             cli.prepare.callback(
-                prepare_path=None,
+                prepare_inputs=(),
                 output_dir=DEFAULT_PREPARE_OUTPUT_DIR,
                 jobspec=jobspec_path,
                 mode="static",
