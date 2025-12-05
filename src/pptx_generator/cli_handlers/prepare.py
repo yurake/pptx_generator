@@ -125,6 +125,9 @@ def run_prepare_command(
         has_inline_source=source_document is not None,
     )
 
+    if static_context.import_metadata:
+        source_metadata.extend(static_context.import_metadata)
+
     if source_document is None and static_context.source_document is not None:
         source_document = static_context.source_document
         if static_context.template_spec_path is not None:
@@ -364,6 +367,8 @@ def resolve_static_context(
     slide_input_sources: dict[str, PrepareSourceDocument] | None = None
     slide_input_refs: dict[str, str] | None = None
     first_source: PrepareSourceDocument | None = None
+    import_metadata: list[dict[str, Any]] = []
+    service = ContentImportService()
     if slide_manifest.exists():
         try:
             slide_input_paths = _load_slide_inputs_manifest(
@@ -377,14 +382,13 @@ def resolve_static_context(
             slide_input_sources = {}
             slide_input_refs = {}
             for slide_id, data_path in slide_input_paths.items():
-                try:
-                    parsed = PrepareSourceDocument.parse_file(data_path)
-                except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
-                    raise PrepareCommandError(f"{data_path} の読み込みに失敗しました: {exc}", exit_code=2) from exc
-                slide_input_sources[slide_id] = parsed
+                document, per_source_meta, per_source_messages = _load_prepare_input(str(data_path), service)
+                slide_input_sources[slide_id] = document
                 slide_input_refs[slide_id] = str(data_path)
+                import_metadata.extend(per_source_meta)
+                messages.extend(per_source_messages)
                 if first_source is None:
-                    first_source = parsed
+                    first_source = document
 
             messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
         else:
@@ -404,6 +408,7 @@ def resolve_static_context(
         slide_input_refs=slide_input_refs,
         source_document=first_source,
         messages=messages,
+        import_metadata=import_metadata,
     )
 
 
@@ -433,46 +438,48 @@ def _load_prepare_inputs(
         value = raw.strip()
         if not value:
             continue
-
-        lower_value = value.lower()
-        is_url = lower_value.startswith("http://") or lower_value.startswith("https://")
-        is_data_uri = lower_value.startswith("data:")
-        candidate_path = Path(value).expanduser()
-        path_exists = candidate_path.exists() and candidate_path.is_file()
-
-        if path_exists and candidate_path.suffix.lower() not in {".pdf", ".html", ".htm"}:
-            try:
-                document = PrepareSourceDocument.parse_file(candidate_path)
-            except UnicodeDecodeError:
-                document, imported_meta, import_messages = _import_via_service(service, str(candidate_path))
-                metadata.extend(imported_meta)
-                messages.extend(import_messages)
-                messages.append(f"インポートを完了しました: {candidate_path}")
-                documents.append(document)
-                continue
-            except (json.JSONDecodeError, ValidationError) as exc:
-                raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
-
-            documents.append(document)
-            metadata.append(_build_structured_source_meta(candidate_path, document))
-            messages.append(f"プレペア入力を読み込みました: {candidate_path}")
-            continue
-
-        if is_url or is_data_uri or path_exists:
-            document, imported_meta, import_messages = _import_via_service(service, value)
-            metadata.extend(imported_meta)
-            messages.extend(import_messages)
-            messages.append(f"インポートを完了しました: {value}")
-            documents.append(document)
-            continue
-
-        raise PrepareCommandError(f"プレペア入力を解釈できません: {value}", exit_code=2)
+        document, per_source_meta, per_source_messages = _load_prepare_input(value, service)
+        documents.append(document)
+        metadata.extend(per_source_meta)
+        messages.extend(per_source_messages)
 
     if not documents:
         return None, metadata, messages
 
     combined_document = _combine_prepare_documents(documents)
     return combined_document, metadata, messages
+
+
+def _load_prepare_input(
+    value: str,
+    service: ContentImportService,
+) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
+    lower_value = value.lower()
+    is_url = lower_value.startswith("http://") or lower_value.startswith("https://")
+    is_data_uri = lower_value.startswith("data:")
+    candidate_path = Path(value).expanduser()
+    path_exists = candidate_path.exists() and candidate_path.is_file()
+
+    if path_exists and candidate_path.suffix.lower() not in {".pdf", ".html", ".htm"}:
+        try:
+            document = PrepareSourceDocument.parse_file(candidate_path)
+        except UnicodeDecodeError:
+            document, imported_meta, import_messages = _import_via_service(service, str(candidate_path))
+            messages = [f"インポートを完了しました: {candidate_path}", *import_messages]
+            return document, imported_meta, messages
+        except (json.JSONDecodeError, ValidationError) as exc:
+            raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
+
+        metadata = [_build_structured_source_meta(candidate_path, document)]
+        messages = [f"プレペア入力を読み込みました: {candidate_path}"]
+        return document, metadata, messages
+
+    if is_url or is_data_uri or path_exists:
+        document, imported_meta, import_messages = _import_via_service(service, value)
+        messages = [f"インポートを完了しました: {value}", *import_messages]
+        return document, imported_meta, messages
+
+    raise PrepareCommandError(f"プレペア入力を解釈できません: {value}", exit_code=2)
 
 
 def _import_via_service(
