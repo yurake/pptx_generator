@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from dataclasses import dataclass, field
 import re
-from typing import Iterable, Protocol, Tuple
+from typing import Callable, Iterable, Protocol, Tuple
+
+from pptx_generator.llm import (
+    log_provider_resolution,
+    resolve_llm_provider,
+    load_anthropic_config,
+    load_azure_openai_config,
+    load_aws_claude_config,
+    load_openai_chat_config,
+)
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
+from .prompts import build_system_prompt, build_user_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -50,30 +59,38 @@ class LayoutAIClientConfigurationError(RuntimeError):
     """クライアント設定のエラー。"""
 
 
+class LayoutAIClientExecutionError(RuntimeError):
+    """LLM 呼び出し時の実行エラー。"""
+
+
 class LayoutAIResponseFormatError(RuntimeError):
     """LLM 応答の解析に失敗した場合の例外。"""
 
 
 def create_layout_ai_client(policy: LayoutAIPolicy) -> LayoutAIClient:
-    provider_env = os.getenv("PPTX_LLM_PROVIDER")
-    provider = provider_env.strip().lower() if provider_env else "mock"
-    logger.info(
-        "layout AI provider resolved: env=%s policy=%s -> %s",
-        provider_env or "",
-        "env-default",
-        provider,
+    resolution = resolve_llm_provider()
+    log_provider_resolution(
+        logger,
+        component="layout_ai",
+        resolution=resolution,
+        policy_id=getattr(policy, "id", "-"),
     )
-    if provider in {"mock", ""}:
-        return MockLayoutAIClient()
-    if provider in {"openai", "openai-api"}:
-        return OpenAIChatLayoutClient.from_env()
-    if provider in {"azure", "azure-openai"}:
-        return AzureOpenAIChatLayoutClient.from_env()
-    if provider in {"claude", "anthropic"}:
-        return AnthropicClaudeLayoutClient.from_env()
-    if provider in {"aws-claude", "bedrock"}:
-        return AwsClaudeLayoutClient.from_env()
-    raise LayoutAIClientConfigurationError(f"未知のレイアウトAIプロバイダが指定されました: {provider}")
+
+    factories: dict[str, Callable[[], LayoutAIClient]] = {
+        "mock": MockLayoutAIClient,
+        "openai": OpenAIChatLayoutClient.from_env,
+        "azure-openai": AzureOpenAIChatLayoutClient.from_env,
+        "anthropic": AnthropicClaudeLayoutClient.from_env,
+        "aws-claude": AwsClaudeLayoutClient.from_env,
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        raise LayoutAIClientConfigurationError(
+            f"未知のレイアウトAIプロバイダが指定されました: {resolution.provider}"
+        )
+
+    return factory()
 
 
 class MockLayoutAIClient:
@@ -123,29 +140,23 @@ class OpenAIChatLayoutClient:
 
     @classmethod
     def from_env(cls) -> "OpenAIChatLayoutClient":
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise LayoutAIClientConfigurationError(msg) from exc
+        from openai import OpenAI
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise LayoutAIClientConfigurationError("OPENAI_API_KEY が設定されていません")
-
-        base_url = os.getenv("OPENAI_BASE_URL")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        return cls(client, model=model_name, temperature=temperature, max_tokens=max_tokens)
+        config = load_openai_chat_config(
+            default_model="gpt-5-mini",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = OpenAI(api_key=config.api_key, base_url=config.base_url) if config.base_url else OpenAI(api_key=config.api_key)
+        return cls(client, model=config.model, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
 
         messages = [
-            {"role": "system", "content": _build_system_prompt(request)},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt(request)},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         kwargs: dict[str, object] = {
             "input": messages,
@@ -229,30 +240,20 @@ class AzureOpenAIChatLayoutClient:
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIChatLayoutClient":
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise LayoutAIClientConfigurationError(msg) from exc
+        from openai import AzureOpenAI
 
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if not endpoint or not api_key or not deployment:
-            raise LayoutAIClientConfigurationError(
-                "AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT を設定してください"
-            )
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.0"))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        endpoint = endpoint.rstrip("/")
-        lowered = endpoint.lower()
-        for suffix in ("/openai/responses", "/openai"):
-            if lowered.endswith(suffix):
-                endpoint = endpoint[: -len(suffix)]
-                lowered = endpoint.lower()
-        client = AzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version)
-        return cls(client, deployment=deployment, temperature=temperature, max_tokens=max_tokens)
+        config = load_azure_openai_config(
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            default_api_version="2024-02-15-preview",
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = AzureOpenAI(
+            api_key=config.api_key,
+            azure_endpoint=config.endpoint,
+            api_version=config.api_version,
+        )
+        return cls(client, deployment=config.deployment, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage
@@ -260,8 +261,8 @@ class AzureOpenAIChatLayoutClient:
         from openai.types.responses.response_output_refusal import ResponseOutputRefusal
 
         messages = [
-            {"role": "system", "content": _build_system_prompt(request)},
-            {"role": "user", "content": _build_user_prompt(request)},
+            {"role": "system", "content": build_system_prompt(request)},
+            {"role": "user", "content": build_user_prompt(request)},
         ]
         request_model = self._deployment
         kwargs: dict[str, object] = {
@@ -308,26 +309,24 @@ class AzureOpenAIChatLayoutClient:
 class AnthropicClaudeLayoutClient:
     """Anthropic Claude API を利用したレイアウト推薦。"""
 
-    def __init__(self, client, *, model: str, max_tokens: int) -> None:
+    def __init__(self, client, *, model: str, max_tokens: int, temperature: float) -> None:
         self._client = client
         self._model = model
         self._max_tokens = max_tokens
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AnthropicClaudeLayoutClient":
-        try:
-            import anthropic
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "anthropic パッケージが必要です。`pip install anthropic` を実行してください。"
-            raise LayoutAIClientConfigurationError(msg) from exc
+        import anthropic
 
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise LayoutAIClientConfigurationError("ANTHROPIC_API_KEY が設定されていません")
-        model_id = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        max_tokens = int(os.getenv("ANTHROPIC_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        client = anthropic.Anthropic(api_key=api_key)
-        return cls(client, model=model_id, max_tokens=max_tokens)
+        config = load_anthropic_config(
+            default_model="claude-3-haiku-20240307",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
+        client = anthropic.Anthropic(api_key=config.api_key)
+        return cls(client, model=config.model, max_tokens=config.max_tokens, temperature=config.temperature)
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         messages = [
@@ -336,18 +335,17 @@ class AnthropicClaudeLayoutClient:
                 "content": [
                     {
                         "type": "text",
-                        "text": _build_user_prompt(request),
+                        "text": build_user_prompt(request),
                     }
                 ],
             }
         ]
-        temperature = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=self._model,
-                system=_build_system_prompt(request),
+                system=build_system_prompt(request),
                 max_tokens=self._max_tokens,
-                temperature=temperature,
+                temperature=self._temperature,
                 messages=messages,
             )
         except Exception as exc:  # pragma: no cover - API failure
@@ -380,31 +378,38 @@ class AnthropicClaudeLayoutClient:
 class AwsClaudeLayoutClient:
     """AWS Bedrock Claude を利用したレイアウト推薦。"""
 
-    def __init__(self, runtime_client, *, model_id: str, max_tokens: int, inference_profile_arn: str | None) -> None:
+    def __init__(
+        self,
+        runtime_client,
+        *,
+        model_id: str,
+        max_tokens: int,
+        inference_profile_arn: str | None,
+        temperature: float,
+    ) -> None:
         self._client = runtime_client
         self._model_id = model_id
         self._max_tokens = max_tokens
         self._inference_profile_arn = inference_profile_arn
+        self._temperature = temperature
 
     @classmethod
     def from_env(cls) -> "AwsClaudeLayoutClient":
-        try:
-            import boto3
-            from botocore.exceptions import NoCredentialsError
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            msg = "boto3 パッケージが必要です。`pip install boto3` を実行してください。"
-            raise LayoutAIClientConfigurationError(msg) from exc
+        import boto3
+        from botocore.exceptions import NoCredentialsError
 
-        model_id = os.getenv("AWS_CLAUDE_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
-        inference_profile_arn = os.getenv("AWS_CLAUDE_INFERENCE_PROFILE_ARN")
-        region = os.getenv("AWS_REGION")
-        profile = os.getenv("AWS_PROFILE")
+        config = load_aws_claude_config(
+            default_model_id="anthropic.claude-3-haiku-20240307-v1:0",
+            default_temperature=0.0,
+            default_max_tokens=DEFAULT_MAX_TOKENS,
+            error_cls=LayoutAIClientConfigurationError,
+        )
 
         session_kwargs: dict[str, object] = {}
-        if profile:
-            session_kwargs["profile_name"] = profile
-        if region:
-            session_kwargs["region_name"] = region
+        if config.profile:
+            session_kwargs["profile_name"] = config.profile
+        if config.region:
+            session_kwargs["region_name"] = config.region
         session = boto3.Session(**session_kwargs)
         credentials = session.get_credentials()
         if credentials is None:
@@ -413,8 +418,8 @@ class AwsClaudeLayoutClient:
             )
 
         client_kwargs: dict[str, object] = {}
-        if region:
-            client_kwargs["region_name"] = region
+        if config.region:
+            client_kwargs["region_name"] = config.region
         try:
             runtime_client = session.client("bedrock-runtime", **client_kwargs)
         except NoCredentialsError as exc:
@@ -422,22 +427,27 @@ class AwsClaudeLayoutClient:
                 "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
             ) from exc
 
-        max_tokens = int(os.getenv("AWS_CLAUDE_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
-        return cls(runtime_client, model_id=model_id, max_tokens=max_tokens, inference_profile_arn=inference_profile_arn)
+        return cls(
+            runtime_client,
+            model_id=config.model_id,
+            max_tokens=config.max_tokens,
+            inference_profile_arn=config.inference_profile_arn,
+            temperature=config.temperature,
+        )
 
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self._max_tokens,
-            "temperature": float(os.getenv("AWS_CLAUDE_TEMPERATURE", "0.0")),
-            "system": _build_system_prompt(request),
+            "temperature": self._temperature,
+            "system": build_system_prompt(request),
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": _build_user_prompt(request),
+                            "text": build_user_prompt(request),
                         }
                     ],
                 }
@@ -683,93 +693,3 @@ def _stringify_reason(value: object) -> str:
         parts = [str(item).strip() for item in value if str(item).strip()]
         return " / ".join(parts)
     return str(value)
-
-
-def _build_system_prompt(request: LayoutAIRequest) -> str:
-    return (
-        "あなたは B2B プレゼン資料のレイアウト推薦エージェントです。"
-        "入力される JSON 情報を解析し、最も適したレイアウトを高精度に提案してください。"
-        "応答は JSON オブジェクトのみで返し、次のスキーマを厳守してください: "
-        '{"recommended":[{"layout_id":"<候補ID>","score":0.0,"tags":["title"]}],"reasons":{"<候補ID>":"根拠"}}.'
-        "tags には入力で指定された allowed_tags の語彙を使用し、score は 0〜1 の範囲で数値にしてください。"
-        "recommended 以外のキーやコードフェンス、説明文は含めてはいけません。"
-    )
-
-
-def _apply_policy_template(template: str, **kwargs: object) -> str:
-    try:
-        return template.format(**kwargs)
-    except (KeyError, IndexError) as exc:  # pragma: no cover - defensive log only
-        logger.debug("layout AI policy template format failed: %s", exc)
-        return template
-
-
-def _build_usage_tags_reference(card_payload: dict[str, object]) -> list[dict[str, str]]:
-    allowed = card_payload.get("allowed_tags") or []
-    details = card_payload.get("allowed_tags_detail") or {}
-    if not isinstance(allowed, list):
-        return []
-    reference: list[dict[str, str]] = []
-    if not isinstance(details, dict):
-        details = {}
-    for tag in allowed:
-        if not isinstance(tag, str):
-            continue
-        entry: dict[str, str] = {"tag": tag}
-        description = details.get(tag)
-        if isinstance(description, str) and description.strip():
-            entry["description"] = description.strip()
-        reference.append(entry)
-    return reference
-
-
-def _format_usage_tags_text(reference: list[dict[str, str]]) -> str:
-    if not reference:
-        return ""
-    lines: list[str] = []
-    for entry in reference:
-        tag = entry.get("tag")
-        if not tag:
-            continue
-        description = entry.get("description", "")
-        if description:
-            lines.append(f"- {tag}: {description}")
-        else:
-            lines.append(f"- {tag}")
-    return "\n".join(lines)
-
-
-def _build_card_context_info(card_payload: dict[str, object]) -> dict[str, object]:
-    return {}
-
-
-def _build_user_prompt(request: LayoutAIRequest) -> str:
-    usage_tags_reference = _build_usage_tags_reference(request.card_payload)
-    payload = {
-        "card": request.card_payload,
-        "candidate_layouts": request.layout_candidates,
-        "instruction": request.prompt,
-    }
-    if usage_tags_reference:
-        payload["usage_tags_reference"] = usage_tags_reference
-    if request.layout_metadata:
-        payload["layout_metadata"] = request.layout_metadata
-
-    usage_tags_text = _format_usage_tags_text(usage_tags_reference)
-    if usage_tags_text and request.policy.usage_tags_template:
-        payload["usage_tags_prompt"] = _apply_policy_template(
-            request.policy.usage_tags_template,
-            usage_tags=usage_tags_text,
-        )
-
-    card_context = _build_card_context_info(request.card_payload)
-    if card_context:
-        payload["card_context"] = card_context
-        card_context_text = json.dumps(card_context, ensure_ascii=False, indent=2)
-        if request.policy.card_context_template:
-            payload["card_context_prompt"] = _apply_policy_template(
-                request.policy.card_context_template,
-                card_context=card_context_text,
-            )
-
-    return json.dumps(payload, ensure_ascii=False)

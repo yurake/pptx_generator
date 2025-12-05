@@ -9,7 +9,7 @@ from typing import Any, Literal, Sequence
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
 from .errors import PrepareAIOrchestrationError
-from .llm_client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
+from .client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
 from ..prepare.models import (
     PrepareAIRecord,
     PrepareBodyBlock,

@@ -5,9 +5,17 @@ from __future__ import annotations
 import json
 import math
 import logging
-import os
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
+
+from pptx_generator.llm import (
+    log_provider_resolution,
+    resolve_llm_provider,
+    load_openai_chat_config,
+    load_azure_openai_config,
+    load_anthropic_config,
+    load_aws_claude_config,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -33,15 +41,20 @@ class PrepareLLMConfigurationError(RuntimeError):
 
 
 def create_prepare_llm_client() -> PrepareLLMClient:
-    provider = os.getenv("PPTX_LLM_PROVIDER", "mock").strip().lower()
-    logger.info("Prepare LLM provider resolved: %s", provider)
-    if provider in {"", "mock", "mock-local"}:
-        return MockPrepareLLMClient()
-    if provider in {"openai", "openai-api"}:
-        return OpenAIPrepareLLMClient.from_env()
-    if provider in {"azure-openai", "azure"}:
-        return AzureOpenAIPrepareLLMClient.from_env()
-    raise PrepareLLMConfigurationError(f"未知の LLM プロバイダーです: {provider}")
+    resolution = resolve_llm_provider()
+    log_provider_resolution(logger, component="prepare_ai", resolution=resolution)
+
+    factories: dict[str, Callable[[], PrepareLLMClient]] = {
+        "mock": MockPrepareLLMClient,
+        "openai": OpenAIPrepareLLMClient.from_env,
+        "azure-openai": AzureOpenAIPrepareLLMClient.from_env,
+    }
+
+    factory = factories.get(resolution.provider)
+    if factory is None:
+        raise PrepareLLMConfigurationError(f"未知の LLM プロバイダーです: {resolution.provider}")
+
+    return factory()
 
 
 class MockPrepareLLMClient:
@@ -158,21 +171,16 @@ class OpenAIPrepareLLMClient:
 
     @classmethod
     def from_env(cls) -> "OpenAIPrepareLLMClient":
-        try:
-            from openai import OpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise PrepareLLMConfigurationError(msg) from exc
+        from openai import OpenAI
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise PrepareLLMConfigurationError("OPENAI_API_KEY が設定されていません")
-        base_url = os.getenv("OPENAI_BASE_URL")
-        client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-        model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-        max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", "32000"))
-        return cls(client=client, model=model, temperature=temperature, max_tokens=max_tokens)
+        config = load_openai_chat_config(
+            default_model="gpt-5-mini",
+            default_temperature=0.3,
+            default_max_tokens=32000,
+            error_cls=PrepareLLMConfigurationError,
+        )
+        client = OpenAI(api_key=config.api_key, base_url=config.base_url) if config.base_url else OpenAI(api_key=config.api_key)
+        return cls(client=client, model=config.model, temperature=config.temperature, max_tokens=config.max_tokens)
 
     def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.model
@@ -216,34 +224,26 @@ class AzureOpenAIPrepareLLMClient:
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIPrepareLLMClient":
-        try:
-            from openai import AzureOpenAI
-        except ImportError as exc:  # pragma: no cover
-            msg = "openai パッケージをインストールしてください (`pip install openai`)."
-            raise PrepareLLMConfigurationError(msg) from exc
+        from openai import AzureOpenAI
 
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if not all([endpoint, api_key, deployment]):
-            raise PrepareLLMConfigurationError(
-                "AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY / AZURE_OPENAI_DEPLOYMENT を設定してください"
-            )
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-        temperature = float(os.getenv("AZURE_OPENAI_TEMPERATURE", "0.3"))
-        max_tokens = int(os.getenv("AZURE_OPENAI_MAX_TOKENS", "32000"))
-        endpoint = endpoint.rstrip("/")
-        lowered = endpoint.lower()
-        for suffix in ("/openai/responses", "/openai"):
-            if lowered.endswith(suffix):
-                endpoint = endpoint[: -len(suffix)]
-                lowered = endpoint.lower()
-        client = AzureOpenAI(
-            api_key=api_key,
-            api_version=api_version,
-            azure_endpoint=endpoint,
+        config = load_azure_openai_config(
+            default_temperature=0.3,
+            default_max_tokens=32000,
+            default_api_version="2024-02-15-preview",
+            error_cls=PrepareLLMConfigurationError,
         )
-        return cls(client=client, deployment=deployment, api_version=api_version, temperature=temperature, max_tokens=max_tokens)
+        client = AzureOpenAI(
+            api_key=config.api_key,
+            api_version=config.api_version,
+            azure_endpoint=config.endpoint,
+        )
+        return cls(
+            client=client,
+            deployment=config.deployment,
+            api_version=config.api_version,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
 
     def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.deployment

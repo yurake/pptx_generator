@@ -58,7 +58,7 @@ def test_anthropic_template_ai_logs_error_and_raises(caplog: pytest.LogCaptureFi
         raise RuntimeError("anthropic outage")
 
     failing_client = SimpleNamespace(messages=SimpleNamespace(create=_raise_error))
-    client = AnthropicTemplateAIClient(failing_client, model="claude-3-haiku", max_tokens=1024)
+    client = AnthropicTemplateAIClient(failing_client, model="claude-3-haiku", max_tokens=1024, temperature=0.0)
     request = TemplateAIRequest(
         prompt="classify",
         policy=policy,
@@ -95,6 +95,7 @@ def test_anthropic_template_ai_success() -> None:
         SimpleNamespace(messages=SimpleNamespace(create=_success_create)),
         model="claude-3-haiku",
         max_tokens=1024,
+        temperature=0.0,
     )
     request = TemplateAIRequest(
         prompt="classify",
@@ -143,17 +144,11 @@ def test_template_ai_static_rule_preserves_non_body_placeholders(tmp_path):
 
 
 def test_template_ai_client_provider_resolution(monkeypatch):
-    policy = TemplateAIPolicy(
-        id="default",
-        name="azure-template-ai",
-        prompt_template="classify layout usage tags",
-    )
-
     dummy_client = object()
 
     class DummyAzureTemplateClient:
         @classmethod
-        def from_env(cls, policy):
+        def from_env(cls):
             return dummy_client
 
     monkeypatch.setattr(
@@ -165,7 +160,7 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "dummy-key")
 
-    client, provider = create_template_ai_client(policy)
+    client, provider = create_template_ai_client()
 
     assert client is dummy_client
     assert provider == "azure-openai"

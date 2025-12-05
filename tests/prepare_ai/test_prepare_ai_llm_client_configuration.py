@@ -1,4 +1,4 @@
-"""Tests for prepare_ai.llm_client helpers."""
+"""Tests for prepare_ai.client helpers."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import types
 
 import pytest
 
-from pptx_generator.prepare_ai.llm_client import (
+from pptx_generator.prepare_ai.client import (
     AzureOpenAIPrepareLLMClient,
     MockPrepareLLMClient,
     OpenAIPrepareLLMClient,
