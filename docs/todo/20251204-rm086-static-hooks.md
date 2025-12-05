@@ -23,25 +23,18 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
     - メモ: 詳細は `docs/notes/20251204-rm086-static-hooks.md` に会話ログとして記録済み。今後の追記は同ファイルへ集約する。
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。ドキュメント反映は未実施。以下の計画で `temp/excel_mapper.py` のロジックを 4 stage へ統合する。  
-    1. ロジック分割  
-       - `temp/excel_mapper.py` の機能を役割別に分解し、Excel 抽出／テンプレ適用／JSON 化をそれぞれ独立したユーティリティに切り出す（`src/pptx_generator/static_excel/` 配下など）。  
-       - `mapping_config.json` を Pydantic モデル化し、セル参照・フォーマット変換（円→億円など）の仕組みを整理する。  
-    2. **Stage 2 (Prepare)**  
-       - 静的モードで `Excel` + `mapping_config` を入力に取り、切り出したユーティリティを使って `PrepareDocument` を生成できるよう `pptx prepare` を拡張する。  
-       - 生成したカードは従来の `prepare_card.json`／`prepare_ai_log.json` と互換になるよう整形する。  
-    3. **Stage 3 (Mapping)**  
-       - Prepare 成果物のテーブル情報と `mapping_config` の target 定義を突合し、`generate_ready.json` に必要な table payload を構築する処理を追加。  
-       - 静的テンプレ固有のレイアウト割付ルールを新しいユーティリティで扱えるよう調整する。  
-    4. **Stage 4 (Gen)**  
-       - `generate_ready.json` に含まれる formatted 値をもとに、既存レンダラで表・テキストへ反映できるよう拡張する。  
-    5. **Stage 1 連携・ドキュメント**  
-       - `pptx template --layout-mode static` 時に mapping 設定や Excel → Prepare 用テンプレファイルの配置を整える（必要に応じて hooks 雛形も更新）。  
-       - `docs/design/stages/stage-0x-*` と ToDo を更新し、運用手順を明文化する。
+  - メモ: `src/pptx_generator/cli_hooks/*` を新設し、`cli_commands` 各ステージにフック制御を組み込み済み（コミット: `feat(cli): add external hook support for static mode`, `feat(cli): invoke slide-level hooks after stages`）。外部フック前に `pyproject.toml` / `uv.lock` を検知して `uv sync` を自動実行し、`ModuleNotFoundError` 等が出た場合は 1 度だけ再同期→再実行するリトライを追加。ドキュメント反映は未実施。次は `temp/excel_mapper.py` をステージごとのフックスクリプトへ分割し、`external/jri_template/` で管理する方針に変更。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/cli/test_cli_hooks.py` を実行し、外部フック管理・スライドキー生成・template_id ヘルパーのユニットテスト（全6件）を追加。カバレッジ XML を再生成済み。
+  - メモ: `uv run --extra dev pytest tests/cli/test_cli_hooks.py` を実行し、外部フック設定・スライドキー生成・template_id ヘルパーに加え、`uv sync` 自動実行とリトライ制御（失敗時のフォールバックなし）を検証するユニットテストを通過。カバレッジ XML を再生成済み。
 - [ ] 外部フック運用検証
-  - メモ: `external/<template_id>` にダミー `hooks.json` とスクリプトを配置し、`uv run pptx template/prepare/... --mode static` でステージ・スライドフックが発火することを確認する。
+  - メモ: `external/jri_template/` に Stage ごとの実スクリプトを配置し、`hooks.json` から呼び出す構成で静的テンプレ用パイプラインを再現する。`temp/excel_mapper.py` を Stage1〜4 相当の Python スクリプトへ分割し、CLI 実行時に外部フックだけで Excel → prepare_card.json → generate_ready.json → 静的 PPTX 生成まで流せることを確認する。
+  - [ ] 実装
+    - メモ: 
+      1. `temp/excel_mapper.py` を Stage 別のユーティリティへ分割し、`external/jri_template/stage01_template.py` などに配置する。  
+      2. Excel 抽出・JSON 生成・generate_ready 出力・PPTX 反映の各処理で CLI から渡される環境変数（入力 Excel パス、出力ディレクトリ）を参照できるよう調整する。  
+      3. `external/jri_template/hooks.json` を更新し、各 Stage フックが分割したスクリプトを実行しつつ必要な場合は `continue_default` を設定する。  
+      4. 分割後のスクリプトから生成される成果物パスを ToDo に記録し、検証ログを残す。
+  - [ ] テスト・検証
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける

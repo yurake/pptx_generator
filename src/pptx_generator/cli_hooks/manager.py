@@ -40,7 +40,7 @@ class HookCommandConfig:
     shell: bool = False
     continue_default: bool = False
 
-    def run(self, *, cwd: Path, extra_env: Mapping[str, str] | None = None) -> None:
+    def run(self, *, cwd: Path, extra_env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[str]:
         """コマンドを実行する。"""
         env = os.environ.copy()
         for key, value in (extra_env or {}).items():
@@ -50,23 +50,28 @@ class HookCommandConfig:
 
         if self.shell:
             logger.info("外部フックを shell コマンドとして実行: %s", self.command)
-            subprocess.run(  # noqa: PLW1510
+            proc = subprocess.run(  # noqa: PLW1510
                 self.command,
                 check=True,
                 shell=True,
                 cwd=cwd,
                 env=env,
+                capture_output=True,
+                text=True,
             )
-            return
-
-        command_list = [self.command, *self.args]
-        logger.info("外部フックを実行: %s", " ".join(command_list))
-        subprocess.run(  # noqa: PLW1510
-            command_list,
-            check=True,
-            cwd=cwd,
-            env=env,
-        )
+        else:
+            command_list = [self.command, *self.args]
+            logger.info("外部フックを実行: %s", " ".join(command_list))
+            proc = subprocess.run(  # noqa: PLW1510
+                command_list,
+                check=True,
+                cwd=cwd,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+        _log_subprocess_output("hook", proc.stdout, proc.stderr)
+        return proc
 
 
 @dataclass(slots=True)
@@ -98,6 +103,7 @@ class ExternalHookManager:
         self.template_id = template_id
         self.base_dir = base_dir
         self.config = config
+        self._synced_once = False
 
     @property
     def has_hooks(self) -> bool:
@@ -123,7 +129,8 @@ class ExternalHookManager:
             self.template_id,
             stage,
         )
-        hook.run(cwd=self.base_dir, extra_env=env)
+        self._sync_project_if_needed(force=False)
+        self._execute_hook(hook, env)
         return True, hook.continue_default
 
     def get_slide_hooks(self, slide_key: str) -> SlideHookConfig | None:
@@ -137,6 +144,7 @@ class ExternalHookManager:
         env: Mapping[str, str],
     ) -> bool:
         executed_any = False
+        sync_done = False
         for slide in slides:
             hook_config = self.get_slide_hooks(slide.key)
             if not hook_config:
@@ -144,6 +152,9 @@ class ExternalHookManager:
             hook = hook_config.stage_hooks.get(stage)
             if not hook:
                 continue
+            if not sync_done:
+                self._sync_project_if_needed(force=False)
+                sync_done = True
             slide_env = dict(env)
             slide_env.update(
                 {
@@ -155,9 +166,49 @@ class ExternalHookManager:
             )
             for key, value in slide.extra_env.items():
                 slide_env[key] = value
-            hook.run(cwd=self.base_dir, extra_env=slide_env)
+            self._execute_hook(hook, slide_env)
             executed_any = True
         return executed_any
+
+    def _sync_project_if_needed(self, *, force: bool) -> None:
+        project_root = self.base_dir
+        has_project_files = any(
+            (project_root / candidate).exists() for candidate in ("pyproject.toml", "uv.lock")
+        )
+        if not has_project_files:
+            return
+        if self._synced_once and not force:
+            return
+        self._run_uv_sync(project_root)
+        self._synced_once = True
+
+    def _run_uv_sync(self, project_root: Path) -> None:
+        try:
+            result = subprocess.run(  # noqa: PLW1510
+                ["uv", "sync", "--project", str(project_root)],
+                check=True,
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:  # pragma: no cover - logged and reraised
+            _log_subprocess_failure("uv sync", exc)
+            raise
+        _log_subprocess_output("uv sync", result.stdout, result.stderr)
+
+    def _execute_hook(self, hook: HookCommandConfig, env: Mapping[str, str]) -> None:
+        attempts = 0
+        while True:
+            try:
+                hook.run(cwd=self.base_dir, extra_env=env)
+                return
+            except subprocess.CalledProcessError as exc:
+                attempts += 1
+                _log_subprocess_failure("hook", exc)
+                if attempts == 1 and _should_retry_with_uv_sync(exc.stdout, exc.stderr):
+                    self._sync_project_if_needed(force=True)
+                    continue
+                raise
 
 
 def load_hooks_for_template_id(template_id: str) -> ExternalHookManager | None:
@@ -184,6 +235,37 @@ def load_hooks_for_template_id(template_id: str) -> ExternalHookManager | None:
         return None
 
     return ExternalHookManager(template_id=template_id, base_dir=base_dir, config=config)
+
+
+def _log_subprocess_output(prefix: str, stdout: str | None, stderr: str | None) -> None:
+    if stdout:
+        logger.debug("%s stdout:\n%s", prefix, stdout.strip())
+    if stderr:
+        logger.debug("%s stderr:\n%s", prefix, stderr.strip())
+
+
+def _log_subprocess_failure(prefix: str, exc: subprocess.CalledProcessError) -> None:
+    logger.error(
+        "%s の実行に失敗しました (returncode=%s): %s",
+        prefix,
+        exc.returncode,
+        exc.cmd,
+    )
+    if exc.stdout:
+        logger.error("%s stdout:\n%s", prefix, exc.stdout.strip())
+    if exc.stderr:
+        logger.error("%s stderr:\n%s", prefix, exc.stderr.strip())
+
+
+def _should_retry_with_uv_sync(stdout: str | None, stderr: str | None) -> bool:
+    combined = f"{stdout or ''}\n{stderr or ''}".lower()
+    retry_tokens = (
+        "modulenotfounderror",
+        "module not found",
+        "no module named",
+        "importerror",
+    )
+    return any(token in combined for token in retry_tokens)
 
 
 def _parse_hook_payload(payload: Any) -> HookConfig:

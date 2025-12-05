@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -200,6 +201,137 @@ def test_template_id_helpers(tmp_path: Path) -> None:
     assert extract_template_id_from_json_file(jobspec) == "demo_tpl"
 
 
+def test_stage_hook_uv_sync_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    base_dir = tmp_path / "external"
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.EXTERNAL_ROOT", base_dir)
+
+    tpl_dir = base_dir / "retry_tpl"
+    tpl_dir.mkdir(parents=True)
+    (tpl_dir / "pyproject.toml").write_text(
+        "[project]\nname = 'retry_tpl'\nversion = '0.1.0'\n", encoding="utf-8"
+    )
+
+    script_path = tpl_dir / "hook.py"
+    script_path.write_text("print('hello')", encoding="utf-8")
+    _write_hooks_json(
+        tpl_dir,
+        {
+            "stage": {
+                "prepare": {
+                    "command": sys.executable,
+                    "args": [str(script_path)],
+                }
+            }
+        },
+    )
+
+    call_state = {"hook_runs": 0, "sync_runs": 0}
+
+    def fake_run(
+        command,
+        *,
+        check,
+        cwd,
+        env=None,
+        capture_output,
+        text,
+        shell=False,
+    ):
+        assert capture_output is True
+        assert text is True
+        if isinstance(command, list) and command[:2] == ["uv", "sync"]:
+            call_state["sync_runs"] += 1
+            return subprocess.CompletedProcess(command, 0, stdout="synced", stderr="")
+        if isinstance(command, list) and command[0] == sys.executable:
+            call_state["hook_runs"] += 1
+            if call_state["hook_runs"] == 1:
+                raise subprocess.CalledProcessError(
+                    1,
+                    command,
+                    output="",
+                    stderr="ModuleNotFoundError: sample",
+                )
+            return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.subprocess.run", fake_run)
+
+    manager = load_hooks_for_template_id("retry_tpl")
+    assert manager is not None
+
+    executed, continue_default = manager.run_stage_hook(
+        "prepare",
+        env={"PPTX_STAGE": "prepare"},
+    )
+    assert executed is True
+    assert continue_default is False
+    assert call_state == {"hook_runs": 2, "sync_runs": 2}
+
+
+def test_stage_hook_retry_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    base_dir = tmp_path / "external"
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.EXTERNAL_ROOT", base_dir)
+
+    tpl_dir = base_dir / "fail_tpl"
+    tpl_dir.mkdir(parents=True)
+    (tpl_dir / "pyproject.toml").write_text(
+        "[project]\nname = 'fail_tpl'\nversion = '0.1.0'\n", encoding="utf-8"
+    )
+
+    script_path = tpl_dir / "hook.py"
+    script_path.write_text("print('hello')", encoding="utf-8")
+    _write_hooks_json(
+        tpl_dir,
+        {
+            "stage": {
+                "prepare": {
+                    "command": sys.executable,
+                    "args": [str(script_path)],
+                }
+            }
+        },
+    )
+
+    call_state = {"hook_runs": 0, "sync_runs": 0}
+
+    def fake_run(
+        command,
+        *,
+        check,
+        cwd,
+        env=None,
+        capture_output,
+        text,
+        shell=False,
+    ):
+        assert capture_output is True
+        assert text is True
+        if isinstance(command, list) and command[:2] == ["uv", "sync"]:
+            call_state["sync_runs"] += 1
+            return subprocess.CompletedProcess(command, 0, stdout="synced", stderr="")
+        if isinstance(command, list) and command[0] == sys.executable:
+            call_state["hook_runs"] += 1
+            raise subprocess.CalledProcessError(
+                1,
+                command,
+                output="",
+                stderr="ModuleNotFoundError: sample",
+            )
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.subprocess.run", fake_run)
+
+    manager = load_hooks_for_template_id("fail_tpl")
+    assert manager is not None
+
+    with pytest.raises(subprocess.CalledProcessError):
+        manager.run_stage_hook(
+            "prepare",
+            env={"PPTX_STAGE": "prepare"},
+        )
+    assert call_state == {"hook_runs": 2, "sync_runs": 2}
+
+
 def test_build_slide_key() -> None:
     assert build_slide_key(1, "System Layout", None) == "01_system-layout"
     assert build_slide_key(12, None, "custom-id") == "12_custom-id"
@@ -207,6 +339,7 @@ def test_build_slide_key() -> None:
 
 def test_ensure_hook_skeleton(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("pptx_generator.cli_hooks.manager.EXTERNAL_ROOT", tmp_path)
+    monkeypatch.setattr("pptx_generator.cli_hooks.scaffold.EXTERNAL_ROOT", tmp_path)
     keys = ["01_system-layout", "02_agenda"]
     created = ensure_hook_skeleton("demo_tpl", keys)
     assert created is not None
