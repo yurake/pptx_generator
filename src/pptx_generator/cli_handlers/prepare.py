@@ -461,7 +461,12 @@ def _load_prepare_input(
     service: ContentImportService,
 ) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
     lower_value = value.lower()
-    is_url = lower_value.startswith("http://") or lower_value.startswith("https://")
+    if lower_value.startswith("http://"):
+        raise PrepareCommandError(
+            "http:// は許可されていません。HTTPS を利用してください",
+            exit_code=2,
+        )
+    is_url = lower_value.startswith("https://")
     is_data_uri = lower_value.startswith("data:")
     candidate_path = Path(value).expanduser()
     path_exists = candidate_path.exists() and candidate_path.is_file()

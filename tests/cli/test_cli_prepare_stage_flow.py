@@ -14,6 +14,7 @@ from pptx_generator.cli_handlers.prepare import (
     PrepareCommandError,
     PrepareStaticContext,
     _load_prepare_inputs,
+    _load_prepare_input,
     resolve_static_context,
 )
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot, TemplateSpec
@@ -726,6 +727,11 @@ def test_load_prepare_inputs_assigns_unique_import_ids() -> None:
     assert len(import_ids) == len(set(import_ids))
     assert metadata, "各インポートソースのメタ情報が含まれること"
     assert any("インポートを完了しました" in message for message in messages)
+
+
+def test_load_prepare_input_rejects_http_protocol() -> None:
+    with pytest.raises(PrepareCommandError):
+        _load_prepare_input("http://example.com/sample", object())  # type: ignore[arg-type]
 
 
 def _build_prepare_card(
