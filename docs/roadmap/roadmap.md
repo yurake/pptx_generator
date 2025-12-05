@@ -42,7 +42,6 @@ flowchart TB
         direction TB
         ST2_ANCHOR(( ))
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
-        RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
         RM066["RM-066<br/>テンプレ指定統一<br/>CLI整備<br/>(未着手)"]
     end
@@ -683,7 +682,7 @@ flowchart TB
 - 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-046（生成AIプレペア構成自動化）
-- 状況: 未着手（2025-11-05 追加）
+- 状況: 完了（2025-12-05 更新）
 - 期待成果:
   - CLI レイヤーで PDF や URL を指定可能にし、LibreOffice 連携を含む変換パイプラインを標準実装する。
   - 取得元メタ情報（URL、取得時刻、ハッシュ）を監査ログへ記録し、既存 JSON 入力と同一スキーマで扱えるようにする。

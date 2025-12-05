@@ -486,7 +486,7 @@ def _ensure_slide_inputs_manifest(*, output_dir: Path, template_spec: TemplateSp
     lines = [
         "# Slide Inputs Manifest",
         "# 記法: <01_system-layout>: <data file path>",
-        "# 例: 01_system-layout: samples/contents/sample_import_content.txt",
+        "# 例: 01_system-layout: samples/input/pitch.md",
         "",
     ]
     for index, slide in enumerate(blueprint.slides, start=1):

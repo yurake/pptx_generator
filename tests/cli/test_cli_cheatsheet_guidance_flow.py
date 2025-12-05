@@ -11,8 +11,7 @@ from click.testing import CliRunner
 from pptx_generator.cli import app
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-SAMPLE_PREPARE_SOURCE = Path(
-    "samples/contents/sample_import_content_summary.txt")
+SAMPLE_PREPARE_SOURCE = Path("samples/input/pitch.md")
 
 
 @pytest.mark.skipif(

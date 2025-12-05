@@ -68,7 +68,7 @@
 
 ## 検証方針（案）
 - 単体: `PrepareCard` バリデーション、AI プロンプト生成、インポートサービス変換を pytest で網羅。
-- CLI 統合: `uv run pptx prepare samples/contents/sample_import_content_summary.txt` を基準に生成物（`prepare_card.json`, `ai_generation_meta.json`, `prepare_log.json` など）を検証。
+- CLI 統合: `uv run pptx prepare samples/input/pitch.md` を基準に生成物（`prepare_card.json`, `ai_generation_meta.json`, `prepare_log.json` など）を検証。
 - API: FastAPI エンドポイントのスキーマ検証と ETag 制御を `httpx` ベースで確認。
 - パイプライン: Stage3 内での PrepareCard 生成から承認ログ出力までを通しで確認し、既存 Stage4/5 入力との互換を検証する。
 

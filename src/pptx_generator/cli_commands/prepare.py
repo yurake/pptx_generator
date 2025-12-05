@@ -16,6 +16,7 @@ from pptx_generator.cli_handlers.common import dump_json
 def build_prepare_config(
     *,
     prepare_path: Path | None,
+    prepare_inputs: tuple[str, ...],
     output_dir: Path,
     jobspec: Path | None,
     mode: str,
@@ -27,6 +28,7 @@ def build_prepare_config(
 ) -> PrepareCommandConfig:
     return PrepareCommandConfig(
         prepare_path=prepare_path,
+        prepare_inputs=prepare_inputs,
         output_dir=output_dir,
         jobspec_path=jobspec,
         mode=mode,
@@ -48,10 +50,9 @@ def create_prepare_command(
 ) -> click.Command:
     @click.command("prepare")
     @click.argument(
-        "prepare_path",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
-        required=False,
+        "prepare_inputs",
+        nargs=-1,
+        type=str,
     )
     @click.option(
         "--output",
@@ -84,7 +85,7 @@ def create_prepare_command(
         help="生成するカード枚数の上限",
     )
     def prepare(  # type: ignore[function-uses-closure]
-        prepare_path: Path | None,
+        prepare_inputs: tuple[str, ...],
         output_dir: Path,
         jobspec: Path | None,
         mode: str,
@@ -92,8 +93,22 @@ def create_prepare_command(
     ) -> None:
         """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
+        normalized_inputs: list[str] = []
+        for raw in prepare_inputs:
+            parts = [item.strip() for item in raw.split(",") if item.strip()]
+            if parts:
+                normalized_inputs.extend(parts)
+
+        primary_prepare_path: Path | None = None
+        for candidate in normalized_inputs:
+            candidate_path = Path(candidate).expanduser()
+            if candidate_path.exists() and candidate_path.is_file():
+                primary_prepare_path = candidate_path
+                break
+
         config = build_prepare_config(
-            prepare_path=prepare_path,
+            prepare_path=primary_prepare_path,
+            prepare_inputs=tuple(normalized_inputs),
             output_dir=output_dir,
             jobspec=jobspec,
             mode=mode,
