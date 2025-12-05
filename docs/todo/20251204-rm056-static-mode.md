@@ -23,8 +23,13 @@ roadmap_item: RM-056 多形式インポートCLI統合
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
   - メモ: 実装範囲や未対応事項があれば記載する
+  - メモ: 静的検証用に `.pptx/slide_inputs.md` を全スライド分埋め直し（samples/input の Markdown/HTML/PDF/TXT を割当）。コード差分は未コミット。
 - [ ] テスト・検証
   - メモ: 実施したテスト内容と結果を記入する
+  - メモ: `uv run --extra dev pptx template samples/templates/templates.pptx --layout-mode static` を再実行し Stage1 リソースを更新（warnings=0）。
+  - メモ: `uv run --extra dev pptx prepare --mode static --jobspec .pptx/extract/jobspec.json --output .pptx/prepare` を実施し、`import_sources` 25 件（structured 16 / content_import 8 / template_spec 1）、slot coverage 必須112/112・任意23/23を確認。
+  - メモ: `uv run --extra dev pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` で `generate_ready.json` / `generate_ready_meta.json` を生成し、`mode=static` と Blueprint 情報が継承されていることを確認。
+  - メモ: `uv run --extra dev pptx gen .pptx/compose/generate_ready.json --output .pptx/gen --export-pdf` を完走（LibreOffice 変換成功）。`rendering_log.json` で空プレースホルダー警告 83 件、Monitoring alert 24 件が出力されているため別途原因整理が必要。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
