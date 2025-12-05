@@ -7,6 +7,7 @@
 - `docs/todo/` の対応タスクを最新化し、残作業が無いことを確認する。
 - `uv run --extra dev pytest` を実行し、スタイル設定を含む全テストがグリーンであることを確認する。
 - CI がグリーンであることをダッシュボードで確認する。
+- 静的テンプレで外部フック（`external/<template_id>/hooks.json`）を利用している場合は、同ディレクトリの `pyproject.toml` / `uv.lock` が最新か確認し、必要なら `uv sync --project external/<template_id>` を実行して依存を整えておく（CLI はフック実行前に同コマンドを自動実行するが、リリース前に同期漏れがないかチェックする）。
 
 ## 手順
 1. `CHANGELOG.md` を更新し、主要変更点と既知の注意点を記載する。
