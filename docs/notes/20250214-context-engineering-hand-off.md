@@ -307,7 +307,7 @@ Datacamp や LLM コスト最適化の記事では、コンテキスト設計と
        → `templates/libraries/**/`
      * コンテンツ準備タスク
        → `docs/requirements/stages/stage-02-prepare.md`
-       → `samples/contents/`
+       → `samples/input/`
      * マッピングタスク
        → `docs/requirements/stages/stage-03-compose.md` / `stage-03-compose.md`
        → `src/pptx_generator/mapping/**` `templates/**`
@@ -365,7 +365,7 @@ Claude Code の best practices やサブエージェント活用記事をベー�
    * スコープ:
 
      * `docs/requirements/stages/stage-02-*`
-     * `samples/contents/`
+     * `samples/input/`
      * `src/pptx_generator/prepare/**`
    * 役割:
 

@@ -47,7 +47,7 @@ roadmap_item: RM-046 生成AIプレペア構成自動化
       - 想定更新ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare/*`, `tests/test_cli_content.py` ほか content 関連テスト、README、`docs/design/cli/cli-command-reference.md`, `docs/requirements/stages/stage-03-*`, 必要に応じて `docs/notes/`。
       - 進め方: (1) main の差分を再確認し影響範囲を把握。(2) CLI から該当オプションを削除し、デフォルトポリシーを内部固定化。(3) プレペア生成ロジックの依存（`load_prepare_policy_set` など）を簡素化し、エラーメッセージや監査ログを更新。(4) テストを更新して `uv run --extra dev pytest` を実行。(5) README 等のドキュメントを新仕様に合わせて改訂。(6) ToDo・必要なドキュメントに結果を共有。
       - リスク: 既存の `--prepare-policy` 利用パターンとの互換性がなくなること、外部ドキュメントにオプション前提の記述が残る可能性。
-      - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx prepare samples/contents/sample_import_content_summary.txt` など手動確認。
+      - テスト戦略: `uv run --extra dev pytest` の全体回帰、必要に応じて `uv run pptx prepare samples/input/pitch.md` など手動確認。
       - ロールバック: ブランチ上の変更を revert してオプションを復元する。
 - [x] 設計・実装方針の確定
   - メモ: `docs/notes/20251102-rm046-prepare-analysis.md` に PrepareCard への全面移行と実装ロードマップ／検証方針を整理済み。
