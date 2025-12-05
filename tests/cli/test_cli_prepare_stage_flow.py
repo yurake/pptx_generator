@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from pptx_generator.cli_handlers.prepare import (
     PrepareCommandArtifacts,
     PrepareCommandError,
     PrepareStaticContext,
+    _load_prepare_inputs,
     resolve_static_context,
 )
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot, TemplateSpec
@@ -557,6 +559,25 @@ def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
             "template_path": override.template_path,
         }
     ]
+
+
+def _encode_data_uri(text: str) -> str:
+    payload = base64.b64encode(text.encode("utf-8")).decode("ascii")
+    return f"data:text/plain;base64,{payload}"
+
+
+def test_load_prepare_inputs_assigns_unique_import_ids() -> None:
+    first = _encode_data_uri("# 見出し\n最初の本文です。")
+    second = _encode_data_uri("# セカンド\n別の本文です。")
+
+    document, metadata, messages = _load_prepare_inputs((first, second))
+
+    assert document is not None
+    import_ids = [chapter.id for chapter in document.chapters if chapter.id.startswith("import-")]
+    assert len(import_ids) >= 2
+    assert len(import_ids) == len(set(import_ids))
+    assert metadata, "各インポートソースのメタ情報が含まれること"
+    assert any("インポートを完了しました" in message for message in messages)
 
 
 def _build_prepare_card(

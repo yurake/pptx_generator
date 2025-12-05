@@ -282,13 +282,13 @@ class PrepareCommandArtifacts:
 
 def resolve_static_context(
     *,
-    jobspec_path: Path | None,
-    default_jobspec_path: Path,
-    prompts_dirname: Path,
-    slide_inputs_filename: Path,
-    mode: str,
-    prepare_path: Path | None,
-    has_inline_source: bool,
+        jobspec_path: Path | None,
+        default_jobspec_path: Path,
+        prompts_dirname: Path,
+        slide_inputs_filename: Path,
+        mode: str,
+        prepare_path: Path | None,
+        has_inline_source: bool,
 ) -> PrepareStaticContext:
     if mode != "static":
         return PrepareStaticContext(
@@ -447,7 +447,8 @@ def _load_prepare_inputs(
         return None, metadata, messages
 
     combined_document = _combine_prepare_documents(documents)
-    return combined_document, metadata, messages
+    normalized_document = _normalize_import_chapter_ids(combined_document)
+    return normalized_document, metadata, messages
 
 
 def _load_prepare_input(
@@ -592,6 +593,42 @@ def _combine_prepare_documents(documents: Sequence[PrepareSourceDocument]) -> Pr
     raw_text = "\n\n".join(text for text in raw_texts if text.strip()) or None
 
     return PrepareSourceDocument(meta=base_meta, chapters=chapters, raw_text=raw_text)
+
+
+def _normalize_import_chapter_ids(document: PrepareSourceDocument) -> PrepareSourceDocument:
+    next_index = 1
+    seen_ids: set[str] = set()
+    normalized_chapters: list[PrepareSourceChapter] = []
+    changed = False
+
+    for chapter in document.chapters:
+        new_id = chapter.id
+        if new_id.startswith("import-"):
+            new_id = f"import-{next_index:02d}"
+            next_index += 1
+            while new_id in seen_ids:
+                new_id = f"import-{next_index:02d}"
+                next_index += 1
+            if new_id != chapter.id:
+                changed = True
+        elif new_id in seen_ids:
+            # structured ドキュメントの重複 ID はそのまま保持する
+            pass
+
+        seen_ids.add(new_id)
+        if new_id == chapter.id:
+            normalized_chapters.append(chapter)
+            continue
+        normalized_chapters.append(chapter.model_copy(update={"id": new_id}))
+
+    if not changed:
+        return document
+
+    return PrepareSourceDocument(
+        meta=document.meta.model_copy(deep=True),
+        chapters=[chapter.model_copy(deep=True) for chapter in normalized_chapters],
+        raw_text=document.raw_text,
+    )
 
 
 def _build_structured_source_meta(
