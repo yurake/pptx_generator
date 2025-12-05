@@ -21,10 +21,10 @@ roadmap_item: RM-056 多形式インポートCLI統合
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
+- [x] 実装
   - メモ: 実装範囲や未対応事項があれば記載する
   - メモ: 静的検証用に `.pptx/slide_inputs.md` を全スライド分埋め直し（samples/input の Markdown/HTML/PDF/TXT を割当）。コード差分は未コミット。
-- [ ] テスト・検証
+- [x] テスト・検証
   - メモ: 実施したテスト内容と結果を記入する
   - メモ: `uv run --extra dev pptx template samples/templates/templates.pptx --layout-mode static` を再実行し Stage1 リソースを更新（warnings=0）。
   - メモ: `uv run --extra dev pptx prepare --mode static --jobspec .pptx/extract/jobspec.json --output .pptx/prepare` を実施し、`import_sources` 25 件（structured 16 / content_import 8 / template_spec 1）、slot coverage 必須112/112・任意23/23を確認。
