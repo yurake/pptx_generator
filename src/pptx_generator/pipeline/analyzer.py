@@ -441,25 +441,13 @@ class SimpleAnalyzerStep:
         }
 
         depth = self._check_bullet_depth(slide_spec, bullet, actual_level, target)
-        if depth:
-            issue, fix = depth
-            issues.append(issue)
-            if fix:
-                fixes.append(fix)
+        self._extend_results(issues, fixes, depth)
 
         font = self._check_font_size(slide_spec, bullet, paragraph, target)
-        if font:
-            issue, fix = font
-            issues.append(issue)
-            if fix:
-                fixes.append(fix)
+        self._extend_results(issues, fixes, font)
 
         contrast = self._check_contrast(slide_spec, bullet, paragraph, target)
-        if contrast:
-            issue, fix = contrast
-            issues.append(issue)
-            if fix:
-                fixes.append(fix)
+        self._extend_results(issues, fixes, contrast)
 
         updated_applied_level = self._resolve_bullet_level(
             slide_spec,
@@ -552,17 +540,9 @@ class SimpleAnalyzerStep:
                 slide_width_in=slide_width_in,
                 slide_height_in=slide_height_in,
             )
-            if result:
-                issue, fix = result
-                issues.append(issue)
-                if fix:
-                    fixes.append(fix)
+            self._extend_results(issues, fixes, result)
             grid = self._check_grid_alignment(slide_spec, image_spec.id, "image", shape)
-            if grid:
-                issue, fix = grid
-                issues.append(issue)
-                if fix:
-                    fixes.append(fix)
+            self._extend_results(issues, fixes, grid)
 
         return issues, fixes
 
@@ -580,11 +560,7 @@ class SimpleAnalyzerStep:
                 logger.debug("テキストボックス '%s' の図形が見つかりません", textbox.id)
                 continue
             grid = self._check_grid_alignment(slide_spec, textbox.id, "textbox", shape)
-            if grid:
-                issue, fix = grid
-                issues.append(issue)
-                if fix:
-                    fixes.append(fix)
+            self._extend_results(issues, fixes, grid)
 
         return issues, fixes
 
@@ -968,7 +944,7 @@ class SimpleAnalyzerStep:
             "left": _grid_deviation(shape.left_in, grid),
             "top": _grid_deviation(shape.top_in, grid),
         }
-        out_of_grid = {axis: dev for axis, dev in deviations.items() if dev > tolerance}
+        out_of_grid = {axis: dev for axis, dev in deviations if dev > tolerance}
         if not out_of_grid:
             return None
 
@@ -1048,6 +1024,19 @@ class SimpleAnalyzerStep:
         if fix:
             issue["fix"] = fix
         return issue
+
+    @staticmethod
+    def _extend_results(
+        issues: list[dict[str, Any]],
+        fixes: list[dict[str, Any]],
+        outcome: tuple[dict[str, Any], dict[str, Any]] | None,
+    ) -> None:
+        if outcome is None:
+            return
+        issue, fix = outcome
+        issues.append(issue)
+        if fix:
+            fixes.append(fix)
 
     def _save(self, payload: dict[str, Any], workdir: Path) -> Path:
         workdir.mkdir(parents=True, exist_ok=True)

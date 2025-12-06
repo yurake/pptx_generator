@@ -8,7 +8,9 @@ import json
 import pytest
 
 from pptx import Presentation
-from pptx.util import Inches
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.util import Inches, Pt
 
 from pptx_generator.prepare import (
     PrepareBodyBlock,
@@ -30,6 +32,7 @@ from pptx_generator.models import (
     SlideBullet,
     SlideBulletGroup,
     SlideImage,
+    SlideTextbox,
 )
 from pptx_generator.pipeline import (
     AnalyzerOptions,
@@ -41,6 +44,7 @@ from pptx_generator.pipeline import (
     SimpleRendererStep,
 )
 from pptx_generator.generate_ready import generate_ready_to_jobspec
+from pptx_generator.pipeline.analyzer import BulletParagraphResolver, ShapeSnapshot, SlideSnapshot
 
 
 def _group(*bullets: SlideBullet, anchor: str | None = None) -> SlideBulletGroup:
@@ -421,3 +425,109 @@ def test_analyzer_outputs_structure_snapshot(tmp_path) -> None:
     ]
     assert paragraph_texts, "段落テキストが空です"
     assert "アンカー検証" in paragraph_texts
+
+
+def test_slide_snapshot_from_slide_extracts_metadata() -> None:
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[1])
+
+    body_shape = slide.shapes.placeholders[1]
+    body_shape.name = "Body"
+    text_frame = body_shape.text_frame
+    text_frame.margin_left = Inches(0.2)
+    text_frame.margin_top = Inches(0.1)
+    paragraph = text_frame.paragraphs[0]
+    paragraph.text = "本文"
+    paragraph.level = 0
+    paragraph.font.size = Pt(24)
+    paragraph.font.name = "Calibri"
+    paragraph.font.bold = True
+    paragraph.font.color.rgb = RGBColor(0x12, 0x34, 0x56)
+    paragraph.line_spacing = 36
+    paragraph.space_before = Pt(6)
+    paragraph.space_after = Pt(12)
+
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(4), Inches(4), Inches(1))
+    textbox.name = "anchored-shape"
+    textbox.text_frame.text = "アンカー"
+    additional = textbox.text_frame.add_paragraph()
+    additional.text = "サブ"
+
+    snapshot = SlideSnapshot.from_slide(slide, 0)
+    assert snapshot.index == 0
+    assert snapshot.body_placeholder_id is not None
+
+    body_snapshot = snapshot.shape_by_id(snapshot.body_placeholder_id)
+    assert body_snapshot is not None
+    assert body_snapshot.is_placeholder
+    assert body_snapshot.placeholder_type is not None
+    assert body_snapshot.text_frame_padding is not None
+    assert pytest.approx(body_snapshot.text_frame_padding["left_in"], rel=1e-3) == 0.2
+    assert snapshot.find_shape_by_name("anchored-shape") is not None
+
+    resolver = BulletParagraphResolver(snapshot)
+    fallback = resolver.resolve(None)
+    assert fallback is not None
+    assert fallback.text == "本文"
+
+    anchored_first = resolver.resolve("anchored-shape")
+    anchored_second = resolver.resolve("anchored-shape")
+    assert anchored_first is not None and anchored_first.text == "アンカー"
+    assert anchored_second is not None and anchored_second.text == "サブ"
+
+
+def test_analyzer_locates_shapes_via_snapshot_helpers(tmp_path) -> None:
+    picture_shape = ShapeSnapshot(
+        shape_id=101,
+        name="anchor-picture",
+        shape_type=int(MSO_SHAPE_TYPE.PICTURE),
+        left_in=1.0,
+        top_in=1.5,
+        width_in=2.5,
+        height_in=1.0,
+    )
+    textbox_shape = ShapeSnapshot(
+        shape_id=102,
+        name="anchor-textbox",
+        shape_type=int(MSO_SHAPE_TYPE.TEXT_BOX),
+        left_in=0.5,
+        top_in=0.75,
+        width_in=3.5,
+        height_in=1.2,
+    )
+    placeholder_shape = ShapeSnapshot(
+        shape_id=103,
+        name="textbox-2",
+        shape_type=int(MSO_SHAPE_TYPE.PLACEHOLDER),
+        left_in=0.4,
+        top_in=1.0,
+        width_in=3.0,
+        height_in=1.1,
+        is_placeholder=True,
+        placeholder_type=int(PP_PLACEHOLDER.BODY),
+    )
+    snapshot = SlideSnapshot(
+        index=0,
+        shapes=[picture_shape, textbox_shape, placeholder_shape],
+        body_placeholder_id=placeholder_shape.shape_id,
+    )
+
+    analyzer = SimpleAnalyzerStep()
+    image_spec = SlideImage(
+        id="image-1",
+        source=str((tmp_path / "dummy.png").as_posix()),
+        anchor="anchor-picture",
+    )
+    assert analyzer._locate_image_shape(snapshot, image_spec) is picture_shape
+
+    fallback_image_spec = SlideImage(
+        id="image-2",
+        source=str((tmp_path / "dummy2.png").as_posix()),
+    )
+    assert analyzer._locate_image_shape(snapshot, fallback_image_spec) is picture_shape
+
+    textbox_spec = SlideTextbox(id="textbox-1", text="内容", anchor="anchor-textbox")
+    assert analyzer._locate_textbox_shape(snapshot, textbox_spec) is textbox_shape
+
+    fallback_textbox = SlideTextbox(id="textbox-2", text="詳細")
+    assert analyzer._locate_textbox_shape(snapshot, fallback_textbox) is placeholder_shape
