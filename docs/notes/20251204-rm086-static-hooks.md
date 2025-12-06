@@ -158,5 +158,12 @@ rmの採番もやって
 2. フック設定フォーマットと CLI 側の探索ロジック草案を起こし、Excel マッピング案件での試作計画を立てる。
 
 ユーザー:
-notesについて、漏れなくというのは整理要約せず、1語1句同じ内容を転記してという意味なんだけど。
+ notesについて、漏れなくというのは整理要約せず、1語1句同じ内容を転記してという意味なんだけど。
 
+## 2025-12-06 作業ログ
+- `external/経費投資/mapping_config.json` に Excel セル番地と `target` 名称を追加し、初期計／期間請負／社員／内製開発／PJ 管理／PN／SI／ランニング計の提示額・利益を網羅。
+- `external/経費投資/stage04_gen.py` で `TABLE_CELL_MAPPINGS` を正規化キーへ更新し、`runtime/context.json` の `extract_summary.table` から表セルへ値を差し込む処理を追加。
+- 静的パイプライン (`template`→`prepare`→`mapping`→`gen`) を再実行し、`docs/runbooks/release.md` に記載した Python スニペットで `.pptx/jri/gen/jri_static_output.pptx` の表セルと `context.json` の `extract_summary.table` が一致することを確認。
+- ドキュメント（`docs/roadmap/roadmap.md`, `docs/requirements/requirements.md`, `docs/runbooks/release.md`, `docs/runbooks/runbooks.md`, `README.md`, `AGENTS.md`）を更新し、外部フック運用とテーブルマッピング手順を追記。
+- 静的出力レビュー用に `scripts/inspect_static_pptx.py` を追加し、テンプレートと生成結果のテキスト・表セル差分を CLI で確認できるようにした。
+- Stage4 フックを更新し、`templates/経費投資.pptx` のレイアウトを複製して静的文言を保持しつつ、メッセージライン・表セルを正しく差し込めるようにした。
