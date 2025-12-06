@@ -34,6 +34,7 @@ flowchart TB
     subgraph ST1["Stage 1: テンプレ"]
         direction TB
         ST1_ANCHOR(( ))
+        RM087["RM-087<br/>Blueprint 静的データ拡張<br/>(未着手)"]
         RM088["RM-088<br/>テンプレ実スライド優先抽出<br/>(未着手)"]
     end
 
@@ -70,6 +71,7 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
+    RM087 --> RM088
 ```
 
 ## 個別状況
@@ -733,18 +735,6 @@ flowchart TB
   - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
 - 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
 
-<a id="rm-088"></a>
-### RM-088 テンプレ実スライド優先抽出
-- ゴール: 実スライド（プロトタイプ）をテンプレートに保持している場合はそれを優先的に解析し、`template_spec.json` / `jobspec.json` を実体ベースで構築する。実スライドが無い場合のみ Slide Layout 情報を利用する。
-- 対象 stage: 1（テンプレ抽出）、4（PPTX生成）
-- 参照ドキュメント: [docs/notes/20251206-template-spec-from-slides.md](../notes/20251206-template-spec-from-slides.md)
-- 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
-- 状況: 未着手（2025-12-06 登録）
-- 期待成果:
-  - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
-  - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
-  - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
-
 <a id="rm-060"></a>
 ### RM-060 Stage3 ID 整合性強制
 - 対象 stage: 3（マッピング）
@@ -1103,3 +1093,30 @@ flowchart TB
   - Stage 成果物（`template_spec.json`、`prepare_card.json`、`generate_ready.json`、`proposal.pptx` 等）の I/O 契約を踏まえ、外部スクリプト呼び出し時も監査ログとエラーハンドリングを統一する。
   - `docs/design` / `docs/policies` 系ドキュメントへ静的モード運用手順とフック配置ルールを反映し、テンプレ追加時の手順化を完了する。（ドキュメント更新中）
 - 次アクション: フック設定とテーブルマッピング仕様をドキュメントへ反映し、PR を作成してレビューへ回す。
+
+<a id="rm-087"></a>
+### RM-087 Blueprint 静的データ拡張
+- 対象 stage: 1・3・4（Blueprint 抽出／マッピング／レンダリング）
+- ゴール: Blueprint に表やチャートなど静的データの既定値を保持し、カード未割当時でも標準パイプラインのみでフォールバック挿入できるようにする。
+- 参照ドキュメント: [docs/notes/20251206-rm087-blueprint-static-data.md](../notes/20251206-rm087-blueprint-static-data.md)
+- 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
+- 状況: 未着手（2025-12-06 更新）
+- 期待成果:
+  - Stage1 で Blueprint へ表・チャート構造を JSON 化して保持する `default_payload` スキーマを追加し、python-pptx ベースで抽出できることを確認する。
+  - Stage3 のマッピング処理でカード欠落時に `default_payload`／`default_text` をマージするフォールバックロジックと監査ログ（`mapping_log.json`）のトレースフラグを実装する。
+  - Stage4 標準レンダラーが `default_payload` を参照してテーブル・チャートを復元できるようテンプレート描画ロジックと検証ツール（`inspect_static_pptx.py` 等）を拡張する。
+  - Blueprint 生成の検証パスとして実スライド抽出（RM-088）との連携を図り、テンプレ差分チェックや環境変数設計を整理する。
+  - 仕様変更を `docs/design/stages/stage-01-template.md`／`stage-03-compose.md`／`stage-04-gen.md` に反映し、静的テンプレの運用手順を更新する。
+- 次アクション: Stage1 抽出の PoC を実施し、表データ正規化ルールと JSON モデル案を `docs/notes/20251206-rm087-blueprint-static-data.md` に追記する。
+
+<a id="rm-088"></a>
+### RM-088 テンプレ実スライド優先抽出
+- ゴール: 実スライド（プロトタイプ）をテンプレートに保持している場合はそれを優先的に解析し、`template_spec.json` / `jobspec.json` を実体ベースで構築する。実スライドが無い場合のみ Slide Layout 情報を利用する。
+- 対象 stage: 1（テンプレ抽出）、4（PPTX生成）
+- 参照ドキュメント: [docs/notes/20251206-template-spec-from-slides.md](../notes/20251206-template-spec-from-slides.md)
+- 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
+- 状況: 未着手（2025-12-06 登録）
+- 期待成果:
+  - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
+  - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
+  - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
