@@ -471,8 +471,6 @@ def test_outline_with_layout_reasons(
             str(sample_spec),
             "--output",
             str(output_dir),
-            "--chapter-template",
-            "bp-report-2025",
             "--show-layout-reasons",
             "--prepare-cards",
             str(prepare_cards),

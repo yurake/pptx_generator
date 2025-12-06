@@ -16,7 +16,6 @@ from ..client import (
 )
 from ..prompts import build_prepare_prompt_static
 from ...prepare.models import PrepareAIRecord, PrepareCard
-from ...prepare.policy import PreparePolicy
 from ...prepare.source import PrepareSourceChapter, PrepareSourceDocument
 from .types import StaticPromptOverride, StaticSlotEntry
 
@@ -54,16 +53,12 @@ class StaticModeExecutor:
         self,
         *,
         source: PrepareSourceDocument,
-        policy: PreparePolicy,
         blueprint: TemplateBlueprint,
-        page_limit: int | None,
         prompt_overrides: Sequence[StaticPromptOverride],
         slide_sources: dict[str, PrepareSourceDocument] | None,
         slide_input_refs: dict[str, str] | None,
+        resolve_slot_role: Callable[[StaticSlotEntry, TemplateBlueprintSlide, PrepareSourceChapter | None], tuple[str | None, list[str]]],
     ) -> tuple[list[PrepareCard], dict[str, int], list[PrepareAIRecord], list[dict[str, Any]]]:
-        if page_limit is not None:
-            raise PrepareAIOrchestrationError("static モードでは --page-limit オプションを使用できません")
-
         slot_entries = self._build_static_slot_entries(blueprint)
         chapter_assignments, required_total, optional_total = self._assign_static_chapters(
             slot_entries=slot_entries,
@@ -136,7 +131,7 @@ class StaticModeExecutor:
                     blueprint_slide=blueprint_slide,
                     chapter_assignments=chapter_assignments,
                     slot_output_lookup=slot_output_lookup,
-                    policy=policy,
+                    resolve_slot_role=resolve_slot_role,
                     generated_at=now,
                     slide_source=slide_source,
                 )
@@ -157,7 +152,7 @@ class StaticModeExecutor:
                 PrepareAIRecord(
                     card_id=blueprint_slide.slide_id,
                     batch_card_ids=generated_card_ids,
-                    prompt_template=policy.prompt_template_id or self._default_prompt_id,
+                    prompt_template=self._default_prompt_id,
                     model=llm_result.model,
                     prompt_fragment=prompt[:200],
                     response_digest=json.dumps(slots_payload, ensure_ascii=False)[:200],
@@ -383,7 +378,7 @@ class StaticModeExecutor:
         blueprint_slide: TemplateBlueprintSlide,
         chapter_assignments: dict[int, PrepareSourceChapter],
         slot_output_lookup: dict[str, dict[str, Any]],
-        policy: PreparePolicy,
+        resolve_slot_role: Callable[[StaticSlotEntry, TemplateBlueprintSlide, PrepareSourceChapter | None], tuple[str | None, list[str]]],
         generated_at: datetime,
         slide_source: PrepareSourceDocument | None,
     ) -> tuple[PrepareCard, bool]:
@@ -392,10 +387,15 @@ class StaticModeExecutor:
             chapter = None
 
         slot_output = slot_output_lookup.get(slot_entry.slot.slot_id) or {}
+        story_phase, intent_tags = resolve_slot_role(slot_entry, blueprint_slide, chapter)
+        intent_tags = [tag for tag in (intent_tags or []) if tag]
+        if not intent_tags and story_phase:
+            intent_tags = [story_phase]
+
         entry_payload = {
             "card_id": slot_entry.slot.slot_id,
-            "story_phase": policy.resolve_story_phase(slot_entry.order),
-            "intent_tags": slot_entry.slot.intent_tags or [policy.resolve_story_phase(slot_entry.order)],
+            "story_phase": story_phase,
+            "intent_tags": intent_tags or slot_entry.slot.intent_tags,
             "title": slot_output.get("title"),
             "headline": slot_output.get("headline"),
             "subtitle": slot_output.get("subtitle"),
@@ -407,7 +407,6 @@ class StaticModeExecutor:
         card = self._build_card_from_entry(
             entry_payload,
             index=slot_entry.order,
-            policy=policy,
             generated_at=generated_at,
             is_title_card=False,
             default_title=chapter.title if chapter is not None else blueprint_slide.layout,

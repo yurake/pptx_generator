@@ -24,8 +24,6 @@ class DraftStructuringOptions:
     target_length: int | None = None
     structure_pattern: str | None = None
     appendix_limit: int = 5
-    chapter_templates_dir: Path | None = None
-    chapter_template_id: str | None = None
     analysis_summary_path: Path | None = None
     enable_ai_recommender: bool = True
     ai_weight: float = 0.25

@@ -3,6 +3,10 @@
 ## 背景
 - stage 2 `uv run pptx prepare` で `config/prepare_policies/default.json` を読み込み、`PrepareAIOrchestrator` へ渡しているが、外部ファイルによる骨子制御を廃止したいという議論があったため現状を確認。
 
+> **2025-12-06 更新メモ**
+> - `config/prepare_policies/default.json` は廃止され、Stage2/Stage3 の骨子は Blueprint / 入力意図から動的に導出する設計へ移行した。
+> - CLI / テスト / ドキュメントは内製化したガイダンスに合わせて更新済み（RM-058）。
+
 ## 調査結果
 - CLI の `prepare` コマンドは `DEFAULT_PREPARE_POLICY_PATH = config/prepare_policies/default.json` を固定参照し、`load_prepare_policy_set` で読み込んだポリシーを `PrepareAIOrchestrator.generate_document()` に渡している（`src/pptx_generator/cli.py:55`, `src/pptx_generator/cli.py:1395-1415`）。
 - `PrepareAIOrchestrator` はポリシーに基づいて `resolve_story_phase`／`resolve_chapter_title` を実行し、`PrepareCard` の章タイトル・ストーリーフェーズを決定するとともに `PrepareStoryContext` を生成する（`src/pptx_generator/prepare/orchestrator.py:54-137`）。stage 3 以降はこの `story_context` を前提に章順を扱う。

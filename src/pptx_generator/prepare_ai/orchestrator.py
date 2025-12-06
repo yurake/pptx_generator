@@ -21,15 +21,13 @@ from ..prepare.models import (
     PrepareNoteEntry,
     PrepareStoryContext,
 )
-from ..prepare.policy import PreparePolicy, PreparePolicyError, PreparePolicySet
 from .prompts import build_prepare_prompt_dynamic
 from ..prepare.source import PrepareSourceChapter, PrepareSourceDocument, PrepareSourceSupportingPoint
-from .static_mode import StaticModeExecutor, StaticPromptOverride
+from .static_mode import StaticModeExecutor, StaticPromptOverride, StaticSlotEntry
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_ID = "prepare.default"
-ALLOWED_STORY_PHASES = {"introduction", "problem", "solution", "impact", "next"}
 
 
 class PrepareAIOrchestrator:
@@ -37,18 +35,17 @@ class PrepareAIOrchestrator:
 
     def __init__(
         self,
-        policy_set: PreparePolicySet,
         *,
         llm_client: PrepareLLMClient | None = None,
+        default_prompt_id: str = DEFAULT_PROMPT_ID,
     ) -> None:
-        self._policy_set = policy_set
         self._llm_client = llm_client or create_prepare_llm_client()
+        self._default_prompt_id = default_prompt_id
 
     def generate_document(
         self,
         source: PrepareSourceDocument,
         *,
-        policy_id: str | None = None,
         page_limit: int | None = None,
         mode: Literal["dynamic", "static"] = "dynamic",
         blueprint: TemplateBlueprint | None = None,
@@ -57,27 +54,20 @@ class PrepareAIOrchestrator:
         slide_sources: dict[str, PrepareSourceDocument] | None = None,
         slide_input_refs: dict[str, str] | None = None,
     ) -> tuple[PrepareDocument, PrepareGenerationMeta, list[PrepareAIRecord]]:
-        try:
-            policy = self._policy_set.get_policy(policy_id)
-        except PreparePolicyError as exc:
-            raise PrepareAIOrchestrationError(str(exc)) from exc
-
         normalized_mode = (mode or "dynamic").lower()
         if normalized_mode not in {"dynamic", "static"}:
             normalized_mode = "dynamic"
 
         include_title_page = normalized_mode == "dynamic" and page_limit is None
-
         prompt_usage: list[dict[str, Any]] | None = None
+        slot_summary: dict[str, int] | None = None
 
         if normalized_mode == "static":
             if blueprint is None:
                 raise PrepareAIOrchestrationError("static モードには Blueprint が必要です")
             cards, slot_summary, ai_records, prompt_usage = self._build_cards_static(
                 source=source,
-                policy=policy,
                 blueprint=blueprint,
-                page_limit=page_limit,
                 prompt_overrides=prompt_overrides or (),
                 slide_sources=slide_sources,
                 slide_input_refs=slide_input_refs,
@@ -85,16 +75,14 @@ class PrepareAIOrchestrator:
         else:
             cards, ai_records = self._build_cards_dynamic(
                 source=source,
-                policy=policy,
                 page_limit=page_limit,
                 include_title_page=include_title_page,
             )
-            slot_summary = None
-            prompt_usage = None
 
-        story_context = self._build_story_context(cards=cards, source=source, policy=policy)
+        story_context = self._build_story_context(cards=cards, source=source)
         prepare_id = source.meta.prepare_id or f"prepare-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
         document = PrepareDocument(prepare_id=prepare_id, cards=cards, story_context=story_context)
+
         constraints: dict[str, Any] | None = None
         if normalized_mode == "dynamic":
             constraints = {}
@@ -106,7 +94,7 @@ class PrepareAIOrchestrator:
 
         meta = PrepareGenerationMeta.from_document(
             document=document,
-            policy_id=policy.id,
+            policy_id=None,
             source_payload=source.model_dump(mode="json"),
             cards_meta=[self._build_card_meta(card) for card in cards],
             mode=normalized_mode,  # type: ignore[arg-type]
@@ -126,13 +114,11 @@ class PrepareAIOrchestrator:
         self,
         *,
         source: PrepareSourceDocument,
-        policy: PreparePolicy,
         page_limit: int | None,
         include_title_page: bool,
     ) -> tuple[list[PrepareCard], list[PrepareAIRecord]]:
         payload = self._build_dynamic_prompt_payload(
             source,
-            policy=policy,
             page_limit=page_limit,
             include_title_page=include_title_page,
         )
@@ -161,7 +147,6 @@ class PrepareAIOrchestrator:
             card = self._build_card_from_llm_entry(
                 entry,
                 index=index,
-                policy=policy,
                 generated_at=now,
                 is_title_card=is_title_card,
                 default_title=source.meta.title,
@@ -171,7 +156,7 @@ class PrepareAIOrchestrator:
             ai_records.append(
                 PrepareAIRecord(
                     card_id=card.card_id,
-                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                    prompt_template=self._default_prompt_id,
                     model=llm_result.model,
                     prompt_fragment=prompt[:200],
                     response_digest=json.dumps(entry, ensure_ascii=False)[:200],
@@ -181,13 +166,13 @@ class PrepareAIOrchestrator:
             )
 
         if include_title_page and not any(card.content.title for card in cards):
-            title_card = self._build_default_title_card(source=source, policy=policy, generated_at=now)
+            title_card = self._build_default_title_card(source=source, generated_at=now)
             cards.insert(0, title_card)
             ai_records.insert(
                 0,
                 PrepareAIRecord(
                     card_id=title_card.card_id,
-                    prompt_template=policy.prompt_template_id or DEFAULT_PROMPT_ID,
+                    prompt_template=self._default_prompt_id,
                     model="manual",
                     prompt_fragment=None,
                     response_digest="auto title page",
@@ -205,7 +190,6 @@ class PrepareAIOrchestrator:
         self,
         source: PrepareSourceDocument,
         *,
-        policy: PreparePolicy,
         page_limit: int | None,
         include_title_page: bool,
     ) -> dict[str, Any]:
@@ -266,7 +250,6 @@ class PrepareAIOrchestrator:
         entry: dict[str, Any],
         *,
         index: int,
-        policy: PreparePolicy,
         generated_at: datetime,
         is_title_card: bool,
         default_title: str | None,
@@ -285,16 +268,15 @@ class PrepareAIOrchestrator:
             or f"chapter-{index + 1}"
         )
 
-        story_phase = str(entry.get("story_phase") or policy.resolve_story_phase(index)).lower()
-        if story_phase not in ALLOWED_STORY_PHASES:
-            story_phase = policy.resolve_story_phase(index)
+        raw_phase = entry.get("story_phase")
+        story_phase = str(raw_phase).strip().lower() if isinstance(raw_phase, str) and raw_phase.strip() else None
 
         intent_tags_raw = entry.get("intent_tags")
         if isinstance(intent_tags_raw, list):
             intent_tags = [str(tag).strip() for tag in intent_tags_raw if str(tag).strip()]
         else:
             intent_tags = []
-        if not intent_tags:
+        if not intent_tags and story_phase:
             intent_tags = [story_phase]
 
         subtitle_raw = entry.get("subtitle") or entry.get("chapter") or entry.get("section")
@@ -487,7 +469,6 @@ class PrepareAIOrchestrator:
         self,
         *,
         source: PrepareSourceDocument,
-        policy: PreparePolicy,
         generated_at: datetime,
     ) -> PrepareCard:
         title_text = (source.meta.title or source.meta.prepare_id or "Proposal").strip()
@@ -496,7 +477,7 @@ class PrepareAIOrchestrator:
         if source.meta.objective:
             body_blocks.append(PrepareBodyBlock(type="paragraph", text=source.meta.objective))
 
-        role = PrepareCardRole(story_phase="introduction", intent_tags=["introduction"])
+        role = PrepareCardRole(story_phase=None, intent_tags=[])
         content = PrepareCardContent(title=title_text, subtitle=subtitle, body=body_blocks, notes=[])
         return PrepareCard(
             card_id="title-page",
@@ -536,9 +517,7 @@ class PrepareAIOrchestrator:
         self,
         *,
         source: PrepareSourceDocument,
-        policy: PreparePolicy,
         blueprint: TemplateBlueprint,
-        page_limit: int | None,
         prompt_overrides: Sequence[StaticPromptOverride],
         slide_sources: dict[str, PrepareSourceDocument] | None,
         slide_input_refs: dict[str, str] | None,
@@ -551,97 +530,47 @@ class PrepareAIOrchestrator:
             build_chapter_body_blocks=self._build_chapter_body_blocks,
             build_chapter_notes=self._build_chapter_notes,
             normalize_slot_card_id=self._normalize_slot_card_id,
-            default_prompt_id=DEFAULT_PROMPT_ID,
+            default_prompt_id=self._default_prompt_id,
         )
         return executor.build_cards(
             source=source,
-            policy=policy,
             blueprint=blueprint,
-            page_limit=page_limit,
             prompt_overrides=prompt_overrides,
             slide_sources=slide_sources,
             slide_input_refs=slide_input_refs,
+            resolve_slot_role=self._resolve_static_role,
         )
 
-    def _build_card_from_blueprint_slot(
-        self,
-        *,
-        order: int,
-        slide: TemplateBlueprintSlide,
-        slot: TemplateBlueprintSlot,
+    @staticmethod
+    def _resolve_static_role(
+        slot_entry: StaticSlotEntry,
+        blueprint_slide: TemplateBlueprintSlide,
         chapter: PrepareSourceChapter | None,
-        policy: PreparePolicy,
-    ) -> PrepareCard:
-        story_phase = policy.resolve_story_phase(order)
-        intent_tags: list[str]
-        subtitle: str | None = None
-        if chapter is not None:
-            intent_tags = chapter.intent_tags or slot.intent_tags or []
-            title = policy.resolve_chapter_title(order, chapter.title or slide.layout)
-            headline = chapter.message or chapter.title or chapter.id
-            body_blocks = self._build_chapter_body_blocks(chapter)
-            notes = self._build_chapter_notes(chapter.supporting_points)
-            meta_source = {
-                "id": chapter.id,
-                "title": chapter.title,
-            }
-            subtitle = chapter.title
-            fulfilled = True
-        else:
-            intent_tags = slot.intent_tags or [story_phase]
-            title = policy.resolve_chapter_title(order, slide.layout or slot.slot_id)
-            headline = f"{slide.layout} - {slot.anchor}" if slide.layout else slot.slot_id
-            body_blocks = [
-                PrepareBodyBlock(
-                    type="placeholder",
-                    text=f"Slot {slot.slot_id} に対応する章がまだ割り当てられていません",
-                )
-            ]
-            notes = []
-            meta_source = None
-            subtitle = slide.layout
-            fulfilled = False
+    ) -> tuple[str | None, list[str]]:
+        story_phase: str | None = None
+        if chapter and chapter.story_hint:
+            hint = str(chapter.story_hint).strip()
+            if hint:
+                story_phase = hint
 
-        if not intent_tags:
-            intent_tags = [story_phase]
-
-        role = PrepareCardRole(story_phase=story_phase, intent_tags=intent_tags)
-
-        is_title_slot = (order == 0) and (
-            (slide.layout and slide.layout.lower() == "title")
-            or slot.slot_id.lower().startswith("title")
+        intent_candidates: list[str] = []
+        sources = (
+            chapter.intent_tags if chapter else None,
+            slot_entry.slot.intent_tags,
+            blueprint_slide.intent_tags,
         )
-        if is_title_slot:
-            content = PrepareCardContent(title=title, subtitle=subtitle, body=body_blocks, notes=notes)
-        else:
-            headline_text = headline or title
-            content = PrepareCardContent(headline=headline_text, subtitle=subtitle, body=body_blocks, notes=notes)
+        for values in sources:
+            if not values:
+                continue
+            for value in values:
+                text = str(value).strip()
+                if text:
+                    intent_candidates.append(text)
 
-        blueprint_meta = {
-            "slide_id": slide.slide_id,
-            "layout": slide.layout,
-            "slot_id": slot.slot_id,
-            "anchor": slot.anchor,
-            "content_type": slot.content_type,
-            "required": slot.required,
-            "fulfilled": fulfilled,
-            "intent_tags": slot.intent_tags,
-        }
+        if story_phase is None and intent_candidates:
+            story_phase = intent_candidates[0]
 
-        meta: dict[str, Any] = {
-            "mode": "static",
-            "blueprint": blueprint_meta,
-        }
-        if meta_source:
-            meta["source_chapter"] = meta_source
-
-        return PrepareCard(
-            card_id=self._normalize_slot_card_id(slot.slot_id),
-            order=order + 1,
-            role=role,
-            content=content,
-            meta=meta,
-        )
+        return story_phase, intent_candidates
 
     @staticmethod
     def _normalize_slot_card_id(slot_id: str) -> str:
@@ -651,31 +580,11 @@ class PrepareAIOrchestrator:
         result = "".join(filtered)
         return result or "slot"
 
-    def _build_dummy_card(self, policy: PreparePolicy, index: int) -> PrepareCard:
-        story_phase = policy.resolve_story_phase(index)
-        heading_text = story_phase.title() if isinstance(story_phase, str) else str(story_phase)
-        role = PrepareCardRole(story_phase=story_phase, intent_tags=[story_phase])
-        is_title_card = index == 0
-        headline_text = "自動生成されたプレペアカード（ダミー）"
-        content = PrepareCardContent(
-            title=heading_text if is_title_card else None,
-            headline=None if is_title_card else headline_text,
-            body=[
-                PrepareBodyBlock(
-                    type="paragraph",
-                    text="入力プレペアが空だったため、ダミーカードを生成しました。",
-                )
-            ],
-            notes=[PrepareNoteEntry(type="note", text="原稿が空だったために生成されたダミーです")],
-        )
-        return PrepareCard(card_id="intro-01", order=index + 1, role=role, content=content, meta={})
-
     def _build_story_context(
         self,
         *,
         cards: Sequence[PrepareCard],
         source: PrepareSourceDocument,
-        policy: PreparePolicy,
     ) -> PrepareStoryContext:
         chapters: list[dict[str, Any]] = []
 
@@ -690,15 +599,6 @@ class PrepareAIOrchestrator:
                         "id": card.card_id,
                         "title": card.headline_or_title(),
                         "description": card.content.subtitle or card.content.headline,
-                    }
-                )
-        elif policy.chapters:
-            for chapter in policy.chapters:
-                chapters.append(
-                    {
-                        "id": chapter.id,
-                        "title": chapter.title,
-                        "description": chapter.description,
                     }
                 )
         elif source.chapters:

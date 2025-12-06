@@ -19,12 +19,7 @@ from pptx_generator.models import (
     TemplateSpec,
 )
 from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
-from pptx_generator.prepare import (
-    PrepareCard,
-    PrepareDocument,
-    PreparePolicyError,
-    load_prepare_policy_set,
-)
+from pptx_generator.prepare import PrepareCard, PrepareDocument
 from pptx_generator.prepare.source import (
     PrepareSourceChapter,
     PrepareSourceDocument,
@@ -67,7 +62,6 @@ class PrepareCommandConfig:
     jobspec_path: Path | None
     mode: str
     page_limit: int | None
-    policy_path: Path
     default_jobspec_path: Path
     prompts_dirname: Path
     slide_inputs_filename: Path
@@ -113,8 +107,6 @@ def run_prepare_command(
                 "dynamic モードではプレペア入力を指定する必要があります", exit_code=2
             )
 
-    policy_set = _load_prepare_policy(config.policy_path)
-
     static_context = resolve_static_context(
         jobspec_path=config.jobspec_path,
         default_jobspec_path=config.default_jobspec_path,
@@ -139,11 +131,10 @@ def run_prepare_command(
                 }
             )
 
-    orchestrator = PrepareAIOrchestrator(policy_set)
+    orchestrator = PrepareAIOrchestrator()
     try:
         document, meta, ai_logs = orchestrator.generate_document(
             source_document,
-            policy_id=None,
             page_limit=config.page_limit,
             mode=normalized_mode,  # type: ignore[arg-type]
             blueprint=static_context.blueprint_spec.blueprint if static_context.blueprint_spec else None,
@@ -673,13 +664,6 @@ def _guess_structured_content_type(suffix: str) -> str:
     return mapping.get(suffix, "text/plain")
 
 
-def _load_prepare_policy(path: Path) -> Any:
-    try:
-        return load_prepare_policy_set(path)
-    except PreparePolicyError as exc:
-        raise PrepareCommandError(f"プレペアポリシーの読み込みに失敗しました: {exc}", exit_code=4) from exc
-
-
 def _load_jobspec(path: Path) -> JobSpec:
     logger.info("Loading JobSpec from %s", path.resolve())
     return load_jobspec_from_path(path)
@@ -864,7 +848,7 @@ def _build_prepare_story_outline(document: PrepareDocument) -> dict[str, Any]:
         blueprint = card.blueprint_meta()
         if blueprint and blueprint.get("slide_id"):
             return str(blueprint.get("slide_id"))
-        return card.role.story_phase
+        return card.role.story_phase or card.card_id or "unlabeled"
 
     for card in document.cards:
         bucket = resolve_bucket(card)

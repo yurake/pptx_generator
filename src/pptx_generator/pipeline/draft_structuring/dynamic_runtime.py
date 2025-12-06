@@ -7,12 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from ...draft_intel import (
-    ChapterTemplate,
-    find_template_by_structure,
-    load_analysis_summary,
-    load_chapter_template,
-)
+from ...draft_intel import load_analysis_summary
 from ...prepare.models import PrepareDocument, PrepareGenerationMeta
 from ...models import (
     ContentApprovalDocument,
@@ -111,13 +106,7 @@ def prepare_dynamic_inputs(
     *,
     context: PipelineContext,
     prepare_meta: PrepareGenerationMeta,
-) -> Tuple[
-    List[LayoutProfile],
-    Dict[str, DraftAnalyzerSummary],
-    ChapterTemplate | None,
-    CardLayoutRecommender,
-    bool,
-]:
+) -> Tuple[List[LayoutProfile], Dict[str, DraftAnalyzerSummary], CardLayoutRecommender, bool]:
     layouts = load_layouts(
         path=step.options.layouts_path,
         spec_source_path=Path(step.options.spec_source_path) if step.options.spec_source_path else None,
@@ -130,19 +119,6 @@ def prepare_dynamic_inputs(
         if step.options.analysis_summary_path
         else {}
     )
-
-    template: ChapterTemplate | None = None
-    if step.options.chapter_templates_dir:
-        if step.options.chapter_template_id:
-            template = load_chapter_template(
-                step.options.chapter_templates_dir,
-                step.options.chapter_template_id,
-            )
-        elif step.options.structure_pattern:
-            template = find_template_by_structure(
-                step.options.chapter_templates_dir,
-                step.options.structure_pattern,
-            )
 
     config = CardLayoutRecommenderConfig(
         enable_ai=step.options.enable_ai_recommender,
@@ -157,7 +133,7 @@ def prepare_dynamic_inputs(
     step._recommender = recommender  # type: ignore[attr-defined]
 
     dynamic_prepare = prepare_meta.mode == "dynamic"
-    return layouts, analyzer_map, template, recommender, dynamic_prepare
+    return layouts, analyzer_map, recommender, dynamic_prepare
 
 
 def persist_dynamic_outputs(

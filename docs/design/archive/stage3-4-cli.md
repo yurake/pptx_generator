@@ -18,7 +18,7 @@
   - `-p/--page-limit INT`（任意）: 生成する PrepareCard の上限枚数。
 - **処理フロー**:
  1. `PrepareSourceDocument.parse_file()` でプレペア入力を正規化（Markdown → 章チャプター化を含む）。
-2. 既定ポリシー（`config/prepare_policies/default.json`）を読み込み、`PrepareAIOrchestrator.generate_document()` を呼び出す。
+2. Blueprint や入力メタデータを解決したうえで `PrepareAIOrchestrator.generate_document()` を呼び出す。
  3. 生成した `PrepareDocument`・メタ情報・生成ログ（スタブ）を `.pptx/prepare/` 配下へ書き出す。
  4. 監査用に `audit_log.json` を生成し、ポリシー ID・入力ハッシュ・成果物パスを記録する。
 - **出力ファイル例**:

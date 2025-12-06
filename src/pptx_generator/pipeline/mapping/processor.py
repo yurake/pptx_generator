@@ -147,6 +147,17 @@ class MappingSlideProcessor:
                 (content_slide.type_hint or "").casefold() if content_slide else ""
             )
 
+        source_tags: set[str] = set()
+        if content_slide and content_slide.source and content_slide.source.intent_tags:
+            for tag in content_slide.source.intent_tags:
+                normalized = normalize_usage_tag_value(tag)
+                if normalized:
+                    source_tags.add(normalized)
+        if intent:
+            source_tags.add(intent)
+        if type_hint:
+            source_tags.add(type_hint)
+
         body_lines = (
             len(content_slide.elements.body)
             if content_slide and content_slide.elements and content_slide.elements.body
@@ -165,6 +176,8 @@ class MappingSlideProcessor:
                 score += 0.5
             if type_hint and type_hint in profile.usage_tags:
                 score += 0.15
+            if source_tags and any(tag in profile.usage_tags for tag in source_tags):
+                score += 0.1
             max_lines = profile.max_lines()
             if max_lines is not None:
                 if body_lines <= max_lines:

@@ -36,17 +36,8 @@ from ...models import (
     Slide,
     TemplateSpec,
 )
-from ...draft_recommender import LayoutProfile
+from ...draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
-from ...draft_intel import (
-    ChapterTemplate,
-    ChapterTemplateEvaluation,
-    evaluate_chapter_template,
-    find_template_by_structure,
-    load_analysis_summary,
-    load_chapter_template,
-    summarize_analyzer_counts,
-)
 from ..base import PipelineContext
 from .errors import DraftStructuringError
 from .dynamic_flow import build_dynamic_document
@@ -99,7 +90,6 @@ class DraftStructuringStep:
         (
             layouts,
             analyzer_map,
-            template,
             recommender,
             dynamic_prepare,
         ) = prepare_dynamic_inputs(self, context=context, prepare_meta=prepare_meta)
@@ -110,7 +100,6 @@ class DraftStructuringStep:
             document=document,
             layouts=layouts,
             analyzer_map=analyzer_map,
-            chapter_template=template,
             recommender=recommender,
             dynamic_prepare=dynamic_prepare,
         )
