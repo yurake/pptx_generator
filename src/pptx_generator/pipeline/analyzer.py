@@ -944,7 +944,7 @@ class SimpleAnalyzerStep:
             "left": _grid_deviation(shape.left_in, grid),
             "top": _grid_deviation(shape.top_in, grid),
         }
-        out_of_grid = {axis: dev for axis, dev in deviations if dev > tolerance}
+        out_of_grid = {axis: dev for axis, dev in deviations.items() if dev > tolerance}
         if not out_of_grid:
             return None
 
