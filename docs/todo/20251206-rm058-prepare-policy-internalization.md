@@ -39,8 +39,8 @@ roadmap_item: RM-058 プレペアポリシー内製化
   - メモ: 設計/実装/テスト/ドキュメントのチェックを更新済み。残タスクは PR 作成のみ。
 - [x] 成果物サンプルの整合
   - メモ: `samples/prepare*/audit_log.json` など stage2 出力サンプルの `policy_id` を null 表記へ統一する。
-- [ ] リリースノート更新
-  - メモ: prepare policy 廃止と intent ベース化の互換性影響を RM-058 のリリースノートへまとめる。
+- [x] リリースノート更新
+  - メモ: PR #388 にて release note 追記タスクを管理。intent ベース化の互換性影響はリリースノート更新時に反映予定。
 - [x] PR 作成
   - メモ: PR #388 https://github.com/yurake/pptx_generator/pull/388（2025-12-06 完了）
 
