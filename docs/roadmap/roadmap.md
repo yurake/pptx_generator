@@ -1096,7 +1096,7 @@ flowchart TB
 - 対象 stage: 1〜4（静的モードパイプライン）
 - ゴール: 静的テンプレートと専用入力の組み合わせを外部フックスクリプトで処理しつつ、既存の 4 stage CLI と成果物スキーマを維持できるよう統合経路を整備する。
 - 参照ドキュメント: [docs/notes/20251204-rm086-static-hooks.md](../notes/20251204-rm086-static-hooks.md)（起案中）
-- 参照 ToDo: [docs/todo/20251204-rm086-static-hooks.md](../todo/20251204-rm086-static-hooks.md)
+- 参照 ToDo: [docs/todo/archive/20251204-rm086-static-hooks.md](../todo/archive/20251204-rm086-static-hooks.md)
 - 依存: RM-054（静的テンプレ構成統合プランニング）、RM-084（CLI/Pipeline リファクタビリティ向上）
 - 状況: 完了（2025-12-06 更新）
 - 期待成果:
