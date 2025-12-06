@@ -57,7 +57,7 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
     - メモ: 静的テンプレの `mapping_config.json` と検証手順を紹介する注記を追加。
   - [x] scripts/ 配下
     - メモ: `inspect_static_pptx.py` を追加し、テンプレートと生成結果の差分を CLI で確認可能にした。
-- [ ] external/ 配下 README・AGENTS 整備
+- [x] external/ 配下 README・AGENTS 整備
   - メモ: `external/<template_id>/` に README.md / AGENTS.md を追加し、外部フック運用手順と静的テンプレ仕様を記載する。
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
