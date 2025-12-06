@@ -60,40 +60,6 @@ def _write_dummy_png(path) -> None:
     path.write_bytes(payload)
 
 
-def _make_shape_snapshot(
-    *,
-    shape_id: int,
-    name: str,
-    shape_type: MSO_SHAPE_TYPE,
-    left_in: float,
-    top_in: float,
-    width_in: float,
-    height_in: float,
-    **overrides,
-) -> ShapeSnapshot:
-    payload = {
-        "shape_id": shape_id,
-        "name": name,
-        "shape_type": int(shape_type),
-        "left_in": left_in,
-        "top_in": top_in,
-        "width_in": width_in,
-        "height_in": height_in,
-        "paragraphs": [],
-        "is_placeholder": False,
-        "placeholder_type": None,
-        "placeholder_index": None,
-        "z_order": None,
-        "rotation_deg": None,
-        "text_frame_padding": None,
-        "text_frame_word_wrap": None,
-        "text_frame_vertical_anchor": None,
-        "text_frame_auto_size": None,
-    }
-    payload.update(overrides)
-    return ShapeSnapshot(**payload)
-
-
 def _build_snapshot_with_textbox() -> SlideSnapshot:
     presentation = Presentation()
     slide = presentation.slides.add_slide(presentation.slide_layouts[1])
@@ -516,28 +482,28 @@ def test_slide_snapshot_from_slide_extracts_metadata() -> None:
 
 
 def test_analyzer_locates_shapes_via_snapshot_helpers(tmp_path) -> None:
-    picture_shape = _make_shape_snapshot(
+    picture_shape = ShapeSnapshot(
         shape_id=101,
         name="anchor-picture",
-        shape_type=MSO_SHAPE_TYPE.PICTURE,
+        shape_type=int(MSO_SHAPE_TYPE.PICTURE),
         left_in=1.0,
         top_in=1.5,
         width_in=2.5,
         height_in=1.0,
     )
-    textbox_shape = _make_shape_snapshot(
+    textbox_shape = ShapeSnapshot(
         shape_id=102,
         name="anchor-textbox",
-        shape_type=MSO_SHAPE_TYPE.TEXT_BOX,
+        shape_type=int(MSO_SHAPE_TYPE.TEXT_BOX),
         left_in=0.5,
         top_in=0.75,
         width_in=3.5,
         height_in=1.2,
     )
-    placeholder_shape = _make_shape_snapshot(
+    placeholder_shape = ShapeSnapshot(
         shape_id=103,
         name="textbox-2",
-        shape_type=MSO_SHAPE_TYPE.PLACEHOLDER,
+        shape_type=int(MSO_SHAPE_TYPE.PLACEHOLDER),
         left_in=0.4,
         top_in=1.0,
         width_in=3.0,
