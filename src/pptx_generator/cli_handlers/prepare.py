@@ -6,6 +6,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Callable, Sequence
 
 from pydantic import ValidationError
@@ -17,12 +18,18 @@ from pptx_generator.models import (
     TemplateBlueprintSlide,
     TemplateSpec,
 )
+from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
 from pptx_generator.prepare import (
     PrepareCard,
     PrepareDocument,
     PreparePolicyError,
-    PrepareSourceDocument,
     load_prepare_policy_set,
+)
+from pptx_generator.prepare.source import (
+    PrepareSourceChapter,
+    PrepareSourceDocument,
+    PrepareSourceMeta,
+    PrepareSourceSupportingPoint,
 )
 from pptx_generator.prepare.models import PrepareGenerationMeta
 from pptx_generator.prepare_ai import (
@@ -55,6 +62,7 @@ class PrepareCommandError(Exception):
 @dataclass(slots=True)
 class PrepareCommandConfig:
     prepare_path: Path | None
+    prepare_inputs: tuple[str, ...]
     output_dir: Path
     jobspec_path: Path | None
     mode: str
@@ -88,12 +96,22 @@ def run_prepare_command(
         raise PrepareCommandError("static モードでは --page-limit を利用できません", exit_code=2)
 
     source_document: PrepareSourceDocument | None = None
-    if config.prepare_path is not None:
-        source_document = _load_prepare_source(config.prepare_path)
-    elif normalized_mode != "static":
-        raise PrepareCommandError(
-            "dynamic モードではプレペア入力ファイルを指定する必要があります", exit_code=2
-        )
+    source_metadata: list[dict[str, Any]] = []
+    import_messages: list[str] = []
+
+    if config.prepare_inputs:
+        source_document, source_metadata, import_messages = _load_prepare_inputs(config.prepare_inputs)
+
+    if source_document is None:
+        if config.prepare_path is not None:
+            source_document = _load_prepare_source(config.prepare_path)
+            source_metadata.append(
+                _build_structured_source_meta(config.prepare_path, source_document)
+            )
+        elif normalized_mode != "static":
+            raise PrepareCommandError(
+                "dynamic モードではプレペア入力を指定する必要があります", exit_code=2
+            )
 
     policy_set = _load_prepare_policy(config.policy_path)
 
@@ -104,10 +122,22 @@ def run_prepare_command(
         slide_inputs_filename=config.slide_inputs_filename,
         mode=normalized_mode,
         prepare_path=config.prepare_path,
+        has_inline_source=source_document is not None,
     )
+
+    if static_context.import_metadata:
+        source_metadata.extend(static_context.import_metadata)
 
     if source_document is None and static_context.source_document is not None:
         source_document = static_context.source_document
+        if static_context.template_spec_path is not None:
+            source_metadata.append(
+                {
+                    "source": str(static_context.template_spec_path),
+                    "kind": "template_spec",
+                    "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
     orchestrator = PrepareAIOrchestrator(policy_set)
     try:
@@ -126,14 +156,20 @@ def run_prepare_command(
         exit_code = 6 if normalized_mode == "static" else 4
         raise PrepareCommandError(f"プレペアカードの生成に失敗しました: {exc}", exit_code=exit_code) from exc
 
+    if source_metadata:
+        meta.import_sources = source_metadata
+
     artifacts = PrepareCommandArtifacts.initialize(config.output_dir)
+    combined_messages = list(static_context.messages)
+    combined_messages.extend(import_messages)
     return artifacts.write_outputs(
         document=document,
         meta=meta,
         ai_logs=ai_logs,
         dump_json=dump_json,
         static_context=static_context,
-        messages=static_context.messages,
+        messages=combined_messages,
+        import_metadata=source_metadata,
     )
 
 
@@ -147,6 +183,7 @@ class PrepareStaticContext:
     slide_input_refs: dict[str, str] | None
     source_document: PrepareSourceDocument | None
     messages: list[str]
+    import_metadata: list[dict[str, Any]]
 
 
 @dataclass(slots=True)
@@ -181,6 +218,7 @@ class PrepareCommandArtifacts:
         dump_json: Callable[[Path, object], None],
         static_context: PrepareStaticContext,
         messages: list[str],
+        import_metadata: list[dict[str, Any]] | None = None,
     ) -> PrepareCommandResult:
         document.meta = dict(document.meta or {})
         document.meta.update(
@@ -227,6 +265,8 @@ class PrepareCommandArtifacts:
             audit_payload["prepare_normalization"]["blueprint"] = static_context.blueprint_ref
         if meta.slot_coverage:
             audit_payload["prepare_normalization"]["slot_summary"] = meta.slot_coverage
+        if import_metadata:
+            audit_payload["prepare_normalization"]["import_sources"] = import_metadata
         dump_json(self.audit_path, audit_payload)
 
         return PrepareCommandResult(
@@ -242,12 +282,13 @@ class PrepareCommandArtifacts:
 
 def resolve_static_context(
     *,
-    jobspec_path: Path | None,
-    default_jobspec_path: Path,
-    prompts_dirname: Path,
-    slide_inputs_filename: Path,
-    mode: str,
-    prepare_path: Path | None,
+        jobspec_path: Path | None,
+        default_jobspec_path: Path,
+        prompts_dirname: Path,
+        slide_inputs_filename: Path,
+        mode: str,
+        prepare_path: Path | None,
+        has_inline_source: bool,
 ) -> PrepareStaticContext:
     if mode != "static":
         return PrepareStaticContext(
@@ -259,6 +300,7 @@ def resolve_static_context(
             slide_input_refs=None,
             source_document=None,
             messages=[],
+            import_metadata=[],
         )
 
     resolved_jobspec = jobspec_path or default_jobspec_path
@@ -325,6 +367,8 @@ def resolve_static_context(
     slide_input_sources: dict[str, PrepareSourceDocument] | None = None
     slide_input_refs: dict[str, str] | None = None
     first_source: PrepareSourceDocument | None = None
+    import_metadata: list[dict[str, Any]] = []
+    service = ContentImportService()
     if slide_manifest.exists():
         try:
             slide_input_paths = _load_slide_inputs_manifest(
@@ -334,20 +378,27 @@ def resolve_static_context(
         except (FileNotFoundError, ValueError) as exc:
             raise PrepareCommandError(f"slide_inputs の読み込みに失敗しました: {exc}", exit_code=2) from exc
 
-        slide_input_sources = {}
-        slide_input_refs = {}
-        for slide_id, data_path in slide_input_paths.items():
-            try:
-                parsed = PrepareSourceDocument.parse_file(data_path)
-            except (FileNotFoundError, json.JSONDecodeError, ValidationError) as exc:
-                raise PrepareCommandError(f"{data_path} の読み込みに失敗しました: {exc}", exit_code=2) from exc
-            slide_input_sources[slide_id] = parsed
-            slide_input_refs[slide_id] = str(data_path)
-            if first_source is None:
-                first_source = parsed
+        if slide_input_paths:
+            slide_input_sources = {}
+            slide_input_refs = {}
+            for slide_id, data_path in slide_input_paths.items():
+                document, per_source_meta, per_source_messages = _load_prepare_input(str(data_path), service)
+                slide_input_sources[slide_id] = document
+                slide_input_refs[slide_id] = str(data_path)
+                import_metadata.extend(per_source_meta)
+                messages.extend(per_source_messages)
+                if first_source is None:
+                    first_source = document
 
-        messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
-    elif prepare_path is None:
+            messages.append(f"スライド入力マニフェストを利用します: {slide_manifest}")
+        else:
+            messages.append(f"スライド入力マニフェストはプレースホルダーのみのためスキップします: {slide_manifest}")
+            if not has_inline_source:
+                raise PrepareCommandError(
+                    "slide_inputs.md に有効な入力が含まれていません。--prepare 引数などでプレペア入力ファイルを指定してください",
+                    exit_code=2,
+                )
+    elif prepare_path is None and not has_inline_source:
         raise PrepareCommandError(
             ".pptx/slide_inputs.md が見つかりません。プレペア入力ファイルを指定するか、マニフェストを用意してください",
             exit_code=2,
@@ -362,6 +413,7 @@ def resolve_static_context(
         slide_input_refs=slide_input_refs,
         source_document=first_source,
         messages=messages,
+        import_metadata=import_metadata,
     )
 
 
@@ -372,6 +424,253 @@ def _load_prepare_source(path: Path) -> PrepareSourceDocument:
         raise PrepareCommandError(f"プレペア入力ファイルが見つかりません: {exc}", exit_code=2) from exc
     except (json.JSONDecodeError, ValidationError) as exc:
         raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
+    except UnicodeDecodeError as exc:
+        raise PrepareCommandError(f"プレペア入力ファイルを UTF-8 として解釈できません: {exc}", exit_code=2) from exc
+
+
+def _load_prepare_inputs(
+    inputs: Sequence[str],
+) -> tuple[PrepareSourceDocument | None, list[dict[str, Any]], list[str]]:
+    if not inputs:
+        return None, [], []
+
+    service = ContentImportService()
+    documents: list[PrepareSourceDocument] = []
+    metadata: list[dict[str, Any]] = []
+    messages: list[str] = []
+
+    for raw in inputs:
+        value = raw.strip()
+        if not value:
+            continue
+        document, per_source_meta, per_source_messages = _load_prepare_input(value, service)
+        documents.append(document)
+        metadata.extend(per_source_meta)
+        messages.extend(per_source_messages)
+
+    if not documents:
+        return None, metadata, messages
+
+    combined_document = _combine_prepare_documents(documents)
+    normalized_document = _normalize_import_chapter_ids(combined_document)
+    return normalized_document, metadata, messages
+
+
+def _load_prepare_input(
+    value: str,
+    service: ContentImportService,
+) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
+    lower_value = value.lower()
+    if lower_value.startswith("http://"):
+        raise PrepareCommandError(
+            "http:// は許可されていません。HTTPS を利用してください",
+            exit_code=2,
+        )
+    is_url = lower_value.startswith("https://")
+    is_data_uri = lower_value.startswith("data:")
+    candidate_path = Path(value).expanduser()
+    path_exists = candidate_path.exists() and candidate_path.is_file()
+
+    if path_exists and candidate_path.suffix.lower() not in {".pdf", ".html", ".htm"}:
+        try:
+            document = PrepareSourceDocument.parse_file(candidate_path)
+        except UnicodeDecodeError:
+            document, imported_meta, import_messages = _import_via_service(service, str(candidate_path))
+            messages = [f"インポートを完了しました: {candidate_path}", *import_messages]
+            return document, imported_meta, messages
+        except (json.JSONDecodeError, ValidationError) as exc:
+            if candidate_path.suffix.lower() in {".json", ".jsonc"}:
+                raise PrepareCommandError(f"プレペア入力の解析に失敗しました: {exc}", exit_code=2) from exc
+            document, imported_meta, import_messages = _import_via_service(service, str(candidate_path))
+            messages = [f"インポートを完了しました: {candidate_path}", *import_messages]
+            return document, imported_meta, messages
+
+        metadata = [_build_structured_source_meta(candidate_path, document)]
+        messages = [f"プレペア入力を読み込みました: {candidate_path}"]
+        return document, metadata, messages
+
+    if is_url or is_data_uri or path_exists:
+        document, imported_meta, import_messages = _import_via_service(service, value)
+        messages = [f"インポートを完了しました: {value}", *import_messages]
+        return document, imported_meta, messages
+
+    raise PrepareCommandError(f"プレペア入力を解釈できません: {value}", exit_code=2)
+
+
+def _import_via_service(
+    service: ContentImportService,
+    source: str,
+) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
+    try:
+        result = service.import_sources([source])
+    except ContentImportError as exc:
+        raise PrepareCommandError(f"入力ソースの取り込みに失敗しました: {exc}", exit_code=2) from exc
+
+    document = _convert_import_result_to_prepare_source(result, source)
+    metadata: list[dict[str, Any]] = []
+    sources_meta = result.meta.get("sources") if isinstance(result.meta, dict) else None
+    if isinstance(sources_meta, list):
+        for entry in sources_meta:
+            if isinstance(entry, dict):
+                copied = dict(entry)
+                copied.setdefault("via", "content_import")
+                metadata.append(copied)
+    if not metadata:
+        metadata.append(
+            {
+                "source": source,
+                "kind": "import",
+                "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                "via": "content_import",
+            }
+        )
+
+    warning_messages = [f"警告: {warning}" for warning in result.warnings]
+    return document, metadata, warning_messages
+
+
+def _convert_import_result_to_prepare_source(
+    result: ContentImportResult,
+    source_label: str,
+) -> PrepareSourceDocument:
+    summary = (
+        result.document.meta.summary
+        if result.document.meta and result.document.meta.summary
+        else source_label
+    )
+    meta = PrepareSourceMeta(
+        title=summary[:120] if summary else "Imported Source",
+        prepare_id=None,
+        objective=None,
+    )
+
+    chapters: list[PrepareSourceChapter] = []
+    raw_lines: list[str] = []
+
+    for index, slide in enumerate(result.document.slides, start=1):
+        title = slide.elements.title or f"{summary or 'Import'} {index:02d}"
+        body_lines = [line.strip() for line in (slide.elements.body or []) if line.strip()]
+        message = body_lines[0] if body_lines else title
+        supporting_points = [
+            PrepareSourceSupportingPoint(statement=line)
+            for line in body_lines[1:]
+        ]
+        chapter = PrepareSourceChapter(
+            id=f"import-{index:02d}",
+            title=title[:120],
+            message=message,
+            details=body_lines,
+            supporting_points=supporting_points,
+            story_hint=None,
+            intent_tags=["imported"],
+        )
+        chapters.append(chapter)
+        raw_lines.append(title)
+        raw_lines.extend(body_lines)
+        if slide.elements.note:
+            raw_lines.append(slide.elements.note.strip())
+
+    raw_text = "\n".join(raw_lines).strip() or None
+    return PrepareSourceDocument(meta=meta, chapters=chapters, raw_text=raw_text)
+
+
+def _combine_prepare_documents(documents: Sequence[PrepareSourceDocument]) -> PrepareSourceDocument:
+    if not documents:
+        raise ValueError("documents must not be empty")
+    if len(documents) == 1:
+        single = documents[0]
+        return PrepareSourceDocument(
+            meta=single.meta.model_copy(deep=True),
+            chapters=[chapter.model_copy(deep=True) for chapter in single.chapters],
+            raw_text=single.raw_text,
+        )
+
+    base_meta = documents[0].meta.model_copy(deep=True)
+    chapters: list[PrepareSourceChapter] = []
+    raw_texts: list[str] = []
+    objectives: list[str] = []
+
+    for doc in documents:
+        chapters.extend(chapter.model_copy(deep=True) for chapter in doc.chapters)
+        if doc.raw_text:
+            raw_texts.append(doc.raw_text)
+        if doc.meta.objective:
+            objectives.append(doc.meta.objective)
+
+    if objectives:
+        base_meta.objective = "\n\n".join(objectives)
+
+    raw_text = "\n\n".join(text for text in raw_texts if text.strip()) or None
+
+    return PrepareSourceDocument(meta=base_meta, chapters=chapters, raw_text=raw_text)
+
+
+def _normalize_import_chapter_ids(document: PrepareSourceDocument) -> PrepareSourceDocument:
+    next_index = 1
+    seen_ids: set[str] = set()
+    normalized_chapters: list[PrepareSourceChapter] = []
+    changed = False
+
+    for chapter in document.chapters:
+        new_id = chapter.id
+        if new_id.startswith("import-"):
+            new_id = f"import-{next_index:02d}"
+            next_index += 1
+            while new_id in seen_ids:
+                new_id = f"import-{next_index:02d}"
+                next_index += 1
+            if new_id != chapter.id:
+                changed = True
+        elif new_id in seen_ids:
+            # structured ドキュメントの重複 ID はそのまま保持する
+            pass
+
+        seen_ids.add(new_id)
+        if new_id == chapter.id:
+            normalized_chapters.append(chapter)
+            continue
+        normalized_chapters.append(chapter.model_copy(update={"id": new_id}))
+
+    if not changed:
+        return document
+
+    return PrepareSourceDocument(
+        meta=document.meta.model_copy(deep=True),
+        chapters=[chapter.model_copy(deep=True) for chapter in normalized_chapters],
+        raw_text=document.raw_text,
+    )
+
+
+def _build_structured_source_meta(
+    path: Path,
+    document: PrepareSourceDocument,
+) -> dict[str, Any]:
+    try:
+        raw_bytes = path.read_bytes()
+    except OSError:
+        raw_bytes = b""
+    hash_value = hashlib.sha256(raw_bytes).hexdigest() if raw_bytes else None
+    metadata = {
+        "source": str(path),
+        "kind": "file",
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "hash": f"sha256:{hash_value}" if hash_value else None,
+        "chapters": len(document.chapters),
+        "content_type": _guess_structured_content_type(path.suffix.lower()),
+        "via": "structured",
+    }
+    return {key: value for key, value in metadata.items() if value is not None}
+
+
+def _guess_structured_content_type(suffix: str) -> str:
+    mapping = {
+        ".json": "application/json",
+        ".jsonc": "application/json",
+        ".md": "text/markdown",
+        ".markdown": "text/markdown",
+        ".txt": "text/plain",
+    }
+    return mapping.get(suffix, "text/plain")
 
 
 def _load_prepare_policy(path: Path) -> Any:
@@ -483,6 +782,7 @@ def _load_slide_inputs_manifest(
 ) -> dict[str, Path]:
     text = manifest_path.read_text(encoding="utf-8")
     mapping: dict[str, Path] = {}
+    placeholder_identifiers: set[str] = set()
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
@@ -495,6 +795,9 @@ def _load_slide_inputs_manifest(
         path_value = value.strip()
         if not identifier or not path_value:
             raise ValueError(f"slide_inputs の行に空の値があります: '{line}'")
+        if path_value.startswith("<") and path_value.endswith(">"):
+            placeholder_identifiers.add(identifier)
+            continue
         resolved = Path(path_value)
         if not resolved.is_absolute():
             default_path = (manifest_path.parent / resolved).resolve()
@@ -510,6 +813,8 @@ def _load_slide_inputs_manifest(
     for index, slide in enumerate(blueprint.slides, start=1):
         identifier = build_prompt_identifier(index, slide)
         if identifier not in mapping:
+            if identifier in placeholder_identifiers:
+                continue
             missing.append(identifier)
             continue
         expected[slide.slide_id or identifier] = mapping[identifier]

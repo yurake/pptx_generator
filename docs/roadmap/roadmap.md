@@ -35,14 +35,13 @@ flowchart TB
     subgraph ST1["Stage 1: テンプレ"]
         direction TB
         ST1_ANCHOR(( ))
-        RM080["RM-080<br/>テンプレ実スライド<br/>スナップショット強化<br/>(未着手)"]
+        RM088["RM-088<br/>テンプレ実スライド優先抽出<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
         direction TB
         ST2_ANCHOR(( ))
         RM042["RM-042<br/>情報ギャップ<br/>インテリジェンス<br/>(未着手)"]
-        RM056["RM-056<br/>多形式インポート<br/>CLI統合<br/>(未着手)"]
         RM065["RM-065<br/>フォールバック警告ログ整備<br/>(未着手)"]
         RM066["RM-066<br/>テンプレ指定統一<br/>CLI整備<br/>(未着手)"]
     end
@@ -684,7 +683,7 @@ flowchart TB
 - 参照ドキュメント: [docs/notes/20251105-cli-input-formats-verification.md](../notes/20251105-cli-input-formats-verification.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 依存: RM-046（生成AIプレペア構成自動化）
-- 状況: 未着手（2025-11-05 追加）
+- 状況: 完了（2025-12-05 更新）
 - 期待成果:
   - CLI レイヤーで PDF や URL を指定可能にし、LibreOffice 連携を含む変換パイプラインを標準実装する。
   - 取得元メタ情報（URL、取得時刻、ハッシュ）を監査ログへ記録し、既存 JSON 入力と同一スキーマで扱えるようにする。
@@ -736,6 +735,18 @@ flowchart TB
   - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
   - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
 - 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
+
+<a id="rm-088"></a>
+### RM-088 テンプレ実スライド優先抽出
+- ゴール: 実スライド（プロトタイプ）をテンプレートに保持している場合はそれを優先的に解析し、`template_spec.json` / `jobspec.json` を実体ベースで構築する。実スライドが無い場合のみ Slide Layout 情報を利用する。
+- 対象 stage: 1（テンプレ抽出）、4（PPTX生成）
+- 参照ドキュメント: [docs/notes/20251206-template-spec-from-slides.md](../notes/20251206-template-spec-from-slides.md)
+- 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
+- 状況: 未着手（2025-12-06 登録）
+- 期待成果:
+  - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
+  - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
+  - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
 
 <a id="rm-060"></a>
 ### RM-060 Stage3 ID 整合性強制
@@ -1012,8 +1023,8 @@ flowchart TB
 - 対象 stage: Stage 1（テンプレ）
 - ゴール: `pptx template` で実スライドの形状・段落情報を詳細に取得し、テンプレ解析と後続 stage で活用できる状態にする。
 - 参照ドキュメント: [docs/design/stages/stage-01-template.md](../design/stages/stage-01-template.md)（要更新）
-- 参照 ToDo: [docs/todo/20251124-rm080-template-slide-snapshot.md](../todo/20251124-rm080-template-slide-snapshot.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm080-template-slide-snapshot.md](../todo/archive/20251124-rm080-template-slide-snapshot.md)
+- 状況: 完了（2025-12-06 更新）
 - 期待成果:
   - `slide_snapshot.json` に図形寸法・段落属性・プレースホルダー種別を網羅し、差分検証に利用できるフォーマットへ拡張する。
   - `TemplateExtractor` の抽出結果と整合を取り、バリデーションや Analyzer と共有できるようにする。

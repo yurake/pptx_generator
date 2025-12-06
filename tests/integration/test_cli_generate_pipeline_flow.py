@@ -33,7 +33,7 @@ from pptx_generator.cli_handlers.mapping import TemplateStylePayload
 from pptx_generator.cli_handlers.outline import OutlineResult
 
 SAMPLE_TEMPLATE = Path("samples/templates/templates.pptx")
-PREPARE_SOURCE = Path("samples/contents/sample_import_content_summary.txt")
+PREPARE_SOURCE = Path("samples/input/pitch.md")
 
 
 def _libreoffice_available() -> bool:
@@ -405,13 +405,17 @@ def test_cli_template_emits_slide_snapshot(tmp_path: Path) -> None:
     assert payload["slides"], "スライドスナップショットが空です"
     first_slide = payload["slides"][0]
     assert "shapes" in first_slide and first_slide["shapes"], "図形情報が存在しません"
+    first_shape = first_slide["shapes"][0]
     paragraph_texts = [
-        paragraph["text"]
-        for shape in first_slide["shapes"]
-        for paragraph in shape.get("paragraphs", [])
+        paragraph
+        for paragraph in first_shape.get("paragraphs", [])
         if paragraph.get("text")
     ]
     assert paragraph_texts, "段落テキストが取得できていません"
+    sample_paragraph = paragraph_texts[0]
+    assert "font_name" in sample_paragraph, "フォント属性が出力されていません"
+    assert "alignment" in sample_paragraph, "段落属性が出力されていません"
+    assert "placeholder_type" in first_shape, "プレースホルダー種別がシリアライズされていません"
 
 
 def _prepare_generate_ready(

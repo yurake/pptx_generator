@@ -15,15 +15,16 @@ from pptx_generator.cli_handlers import (
 from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_hooks import (
     STAGE_PREPARE,
-    slide_contexts_from_blueprint,
     extract_template_id_from_json_file,
     load_hooks_for_template_id,
+    slide_contexts_from_blueprint,
 )
 
 
 def build_prepare_config(
     *,
     prepare_path: Path | None,
+    prepare_inputs: tuple[str, ...],
     output_dir: Path,
     jobspec: Path | None,
     mode: str,
@@ -35,6 +36,7 @@ def build_prepare_config(
 ) -> PrepareCommandConfig:
     return PrepareCommandConfig(
         prepare_path=prepare_path,
+        prepare_inputs=prepare_inputs,
         output_dir=output_dir,
         jobspec_path=jobspec,
         mode=mode,
@@ -56,10 +58,9 @@ def create_prepare_command(
 ) -> click.Command:
     @click.command("prepare")
     @click.argument(
-        "prepare_path",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
-        required=False,
+        "prepare_inputs",
+        nargs=-1,
+        type=str,
     )
     @click.option(
         "--output",
@@ -78,8 +79,7 @@ def create_prepare_command(
     )
     @click.option(
         "--jobspec",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
         help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
     )
@@ -92,7 +92,7 @@ def create_prepare_command(
         help="生成するカード枚数の上限",
     )
     def prepare(  # type: ignore[function-uses-closure]
-        prepare_path: Path | None,
+        prepare_inputs: tuple[str, ...],
         output_dir: Path,
         jobspec: Path | None,
         mode: str,
@@ -100,12 +100,26 @@ def create_prepare_command(
     ) -> None:
         """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
+        normalized_inputs: list[str] = []
+        for raw in prepare_inputs:
+            parts = [item.strip() for item in raw.split(",") if item.strip()]
+            if parts:
+                normalized_inputs.extend(parts)
+
+        primary_prepare_path: Path | None = None
+        for candidate in normalized_inputs:
+            candidate_path = Path(candidate).expanduser()
+            if candidate_path.exists() and candidate_path.is_file():
+                primary_prepare_path = candidate_path
+                break
+
         jobspec_path = jobspec or default_jobspec_path
         hook_manager = None
         template_id = None
         stage_env = {
             "PPTX_STAGE": STAGE_PREPARE,
-            "PPTX_PREPARE_PATH": str(prepare_path or ""),
+            "PPTX_PREPARE_PATH": str(primary_prepare_path or ""),
+            "PPTX_PREPARE_INPUTS": "\n".join(normalized_inputs),
             "PPTX_PREPARE_OUTPUT_DIR": str(output_dir.resolve()),
             "PPTX_JOBSPEC_PATH": str(jobspec_path.resolve()),
             "PPTX_MODE": mode.lower(),
@@ -129,7 +143,8 @@ def create_prepare_command(
                     return
 
         config = build_prepare_config(
-            prepare_path=prepare_path,
+            prepare_path=primary_prepare_path,
+            prepare_inputs=tuple(normalized_inputs),
             output_dir=output_dir,
             jobspec=jobspec,
             mode=mode,
@@ -171,7 +186,8 @@ def create_prepare_command(
             if blueprint_slides:
                 prompts_dir = _resolve_prompts_dir_from_jobspec(jobspec_path)
                 contexts = slide_contexts_from_blueprint(
-                    blueprint_slides, prompts_dir=prompts_dir
+                    blueprint_slides,
+                    prompts_dir=prompts_dir,
                 )
                 if contexts:
                     hook_manager.run_slide_hooks(

@@ -26,6 +26,7 @@
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--slide` | 実スライドの図形・段落スナップショット (`slide_snapshot.json`) を出力する |  |  | 無効 |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
 | `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
 | `--version <value>` | `--with-release` 指定時のテンプレバージョン |  |  | - |
@@ -47,6 +48,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/extract/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
 - `.pptx/extract/layouts.jsonl`
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
+- `.pptx/extract/slide_snapshot.json`（`--slide` 指定時。図形寸法・z-order・回転・プレースホルダー種別、各段落のフォント・整列・インデント・行間など実スライドの実体データを集約）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
 `pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
@@ -101,13 +103,15 @@ uv run pptx template samples/templates/templates.pptx
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
 - 静的モードでは `jobspec.meta.template_spec_path` に記録された Blueprint を参照する。`jobspec` が見つからない場合は `.pptx/extract/jobspec.json` を自動探索し、`--jobspec` で明示指定も可能。`--mode=static` と `--page-limit` の併用はできない。
 - `.pptx/slide_inputs.md` を用意するとスライドごとに入力データを指定でき、全スライド分が記載されていれば `<prepare_path>` 引数を省略できる。未指定スライドがある場合はエラー。
+- `<PREPARE_PATH>` はスペースまたはカンマ区切りで複数指定できる。JSON/JSONC/Markdown/TXT は構造化入力として結合し、PDF・URL・data URI は ContentImportService でテキスト化したうえで章へ変換する。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
+- 取り込んだソースは `ai_generation_meta.json.import_sources` と `audit_log.json.prepare_normalization.import_sources` に記録され、後続ステージや監査で参照できる。
 - static モードで `.pptx/extract/prompts/` 配下の Markdown を編集すると、該当スライドの user-editable 節が LLM プロンプトへ注入される（雛形は `pptx template` 実行時に自動生成され、未編集ファイルは既定プロンプトを保持する）。
 - CLI 実装では `resolve_static_context` が jobspec・Blueprint・slide_inputs を正規化し、`PrepareCommandArtifacts` が `prepare_card.json` など成果物の一括書き出しを担う。外部モジュールからも同 API を利用できるため、GUI やバッチスクリプトからの再利用が容易になっている。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
-| `<prepare_source.txt>` | プレペア入力ファイル | ✅ | ✅ | - |
+| `<PREPARE_PATH …>` | プレペア入力。スペース/カンマ区切りで複数指定可（JSON/JSONC/Markdown/TXT/PDF/URL/data URI） | Dynamic モードで ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
 | `--mode <dynamic\|static>` | 生成モードを指定する | ✅ |  | - |
 | `--jobspec <path>` | `jobspec.json` を指定（template_spec_path を参照） | 静的モードで ✅ |  | `.pptx/extract/jobspec.json` を探索 |
@@ -115,7 +119,14 @@ uv run pptx template samples/templates/templates.pptx
 
 実行例:
 ```bash
-uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+uv run pptx prepare samples/input/pitch.md \
+  --mode dynamic \
+  --output .pptx/prepare
+```
+
+複数ソースをまとめて取り込む例:
+```bash
+uv run pptx prepare notes/brief.md https://example.com/report.pdf \
   --mode dynamic \
   --output .pptx/prepare
 ```

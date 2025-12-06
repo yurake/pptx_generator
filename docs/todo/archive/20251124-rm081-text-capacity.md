@@ -39,7 +39,7 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
 - [x] 実装
   - メモ: TemplateStyle モデル追加と CLI / Renderer / Mapping の依存置換、テンプレ起点のスタイル抽出ユーティリティ導入済み。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py` / `tests/integration/test_cli_generate_pipeline_flow.py` を実行し成功。レンダリング・CLI 両経路の回帰確認済み。静的モード UAT (`uv run pptx template templates/jri_template.pptx --layout-mode static` → `uv run pptx prepare samples/contents/sample_import_content.txt --mode static` → `uv run pptx compose .pptx/extract/jobspec.json` → `uv run pptx gen .pptx/compose/generate_ready.json`) で `generate_ready.json.meta.layout_mode=static` と `.pptx/gen/audit_log.json.template_style.config` を確認。
+  - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py` / `tests/integration/test_cli_generate_pipeline_flow.py` を実行し成功。レンダリング・CLI 両経路の回帰確認済み。静的モード UAT (`uv run pptx template templates/j_template.pptx --layout-mode static` → `uv run pptx prepare samples/input/pitch.md --mode static` → `uv run pptx compose .pptx/extract/jobspec.json` → `uv run pptx gen .pptx/compose/generate_ready.json`) で `generate_ready.json.meta.layout_mode=static` と `.pptx/gen/audit_log.json.template_style.config` を確認。
 - [x] ドキュメント更新
   - メモ: TemplateStyle への移行を CLI/設計ドキュメントへ反映済み。未更新の領域は要否検討のうえコメントを残す。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける

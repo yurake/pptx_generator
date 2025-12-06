@@ -91,7 +91,7 @@ flowchart TD
 | Stage | Overview | Command examples |
 | --- | --- | --- |
 | 1. Template | Extract and validate the template PPTX, and output foundational data such as `jobspec.json` to `.pptx/extract/` | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
-| 2. Content preparation | Normalize input materials into tentative slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
+| 2. Content preparation | Normalize input materials into tentative slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/input/pitch.md` |
 | 3. Mapping | Perform HITL approval and layout assignment, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX Generation | Output PPTX/PDF and audit logs using `generate_ready.json` | `uv run pptx gen .pptx/compose/generate_ready.json` |
 

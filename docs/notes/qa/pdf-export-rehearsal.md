@@ -9,7 +9,7 @@
 - stage 4（`pptx compose` もしくは `pptx mapping`）で `.pptx/compose/generate_ready.json` が生成済み。サンプルワークフローは以下の通り。
 
   ```bash
-  uv run pptx prepare samples/contents/sample_import_content_summary.txt \
+  uv run pptx prepare samples/input/pitch.md \
     --output .pptx/prepare
 
   uv run pptx compose samples/extract/jobspec.json \

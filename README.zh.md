@@ -91,7 +91,7 @@ flowchart TD
 | 阶段 | 概述 | 命令示例 |
 | --- | --- | --- |
 | 1. 模板 | 模板 PPTX 的提取与验证，并将 `jobspec.json` 等基础数据输出到 `.pptx/extract/` | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
-| 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成带有 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/contents/sample_import_content_summary.txt` |
+| 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成带有 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/input/pitch.md` |
 | 3. 映射 | 进行 HITL 批准和布局分配，并创建 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX/PDF 与审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
