@@ -16,7 +16,6 @@ def create_outline_command(
     *,
     default_output_dir: Path,
     default_appendix_limit: int,
-    default_chapter_templates_dir: Path,
     default_prepare_cards_path: Path,
     default_return_reasons_path: Path,
     default_draft_filename: str,
@@ -60,19 +59,6 @@ def create_outline_command(
         help="付録枚数の上限",
     )
     @click.option(
-        "--chapter-templates-dir",
-        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-        default=default_chapter_templates_dir,
-        show_default=True,
-        help="章テンプレート辞書ディレクトリ",
-    )
-    @click.option(
-        "--chapter-template",
-        type=str,
-        default=None,
-        help="適用する章テンプレート ID",
-    )
-    @click.option(
         "--import-analysis",
         "analysis_summary_path",
         type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
@@ -111,8 +97,6 @@ def create_outline_command(
         target_length: int | None,
         structure_pattern: str | None,
         appendix_limit: int,
-        chapter_templates_dir: Path,
-        chapter_template: str | None,
         analysis_summary_path: Path | None,
         return_reasons_path: Path,
         return_reasons: bool,
@@ -127,8 +111,6 @@ def create_outline_command(
             target_length=target_length,
             structure_pattern=structure_pattern,
             appendix_limit=appendix_limit,
-            chapter_templates_dir=chapter_templates_dir,
-            chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
             prepare_cards=prepare_cards,
             require_prepare=True,

@@ -45,7 +45,7 @@
 ## ログと監査
 - `prepare_ai_log.json`: プロンプトテンプレート、利用モデル、警告（`response_not_json` や `body_not_array` など）、トークン消費量を記録。static モードで雛形を適用した場合は `prompt_template_path` / `prompt_template_instructions` に差し込み元を残し、スライド別入力を利用した場合は `slide_input_path` も記録する。
 - `ai_generation_meta.json`: カードごとの `content_hash` や `story_phase` を持ち、stage 3 での差分検出に利用。static モードでは `prompt_templates[]` にスライド番号と雛形パス、`slide_inputs[]` にスライド別の入力ファイルを収録する。
-- `audit_log.json`: 生成時刻・ポリシー ID・成果物のパスをまとめる。今後ハッシュ値を追加し改ざん検知を強化する。
+- `audit_log.json`: 生成時刻・成果物パスをまとめる。互換のため `policy_id` を保持するが、intent ベース化後は `null` が設定される。今後ハッシュ値を追加し改ざん検知を強化する。
 - 静的テンプレ用外部フック: 静的モード (`--mode static`) で `external/<template_id>/hooks.json` が存在する場合、CLI はステージ前後にフックを実行し、以下の環境変数を渡す。  
   - ステージ共通: `PPTX_STAGE=prepare`, `PPTX_TEMPLATE_ID`, `PPTX_PREPARE_OUTPUT_DIR`, `PPTX_JOBSPEC_PATH`, `PPTX_MODE=static`, `PPTX_PAGE_LIMIT`  
   - スライド単位: Blueprint の `slides[]` を `NN_slug` キーに変換し（例:`01_system-layout`）、`PPTX_SLIDE_KEY`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_REQUIRED`, `PPTX_SLIDE_INTENT_TAGS` を渡す。  
@@ -53,7 +53,7 @@
 
 ## エラーハンドリング
 - プレペア入力が存在しない場合は exit code 2 (`FileNotFoundError`)。
-- ポリシー読み込みに失敗した場合は exit code 4 (`PreparePolicyError`)。
+- Blueprint や slide_inputs の整合性が取れない場合は exit code 6。
 - LLM 実行でリトライ不能なエラーが発生した場合は exit code 4。警告のみの場合は `prepare_ai_log.json` に記録し処理を継続する。
 
 ## 今後の拡張アイデア

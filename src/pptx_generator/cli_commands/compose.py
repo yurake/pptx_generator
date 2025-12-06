@@ -23,7 +23,6 @@ def create_compose_command(
     *,
     default_draft_output: Path,
     default_appendix_limit: int,
-    default_chapter_templates_dir: Path,
     default_output_dir: Path,
     default_rules_path: Path,
     default_prepare_cards_path: Path,
@@ -64,19 +63,6 @@ def create_compose_command(
         default=default_appendix_limit,
         show_default=True,
         help="付録枚数の上限",
-    )
-    @click.option(
-        "--chapter-templates-dir",
-        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-        default=default_chapter_templates_dir,
-        show_default=True,
-        help="章テンプレート辞書ディレクトリ",
-    )
-    @click.option(
-        "--chapter-template",
-        type=str,
-        default=None,
-        help="適用する章テンプレート ID",
     )
     @click.option(
         "--import-analysis",
@@ -120,8 +106,6 @@ def create_compose_command(
         target_length: int | None,
         structure_pattern: str | None,
         appendix_limit: int,
-        chapter_templates_dir: Path,
-        chapter_template: str | None,
         analysis_summary_path: Path | None,
         show_layout_reasons: bool,
         output_dir: Path,
@@ -134,6 +118,8 @@ def create_compose_command(
         template_id = extract_template_id_from_json_file(spec_path)
         if template_id:
             hook_manager = load_hooks_for_template_id(template_id)
+        chapter_templates_dir: Path | None = None
+        chapter_template: str | None = structure_pattern
         stage_env = {
             "PPTX_STAGE": STAGE_COMPOSE,
             "PPTX_SPEC_PATH": str(spec_path.resolve()),
@@ -142,8 +128,6 @@ def create_compose_command(
             "PPTX_TARGET_LENGTH": str(target_length) if target_length is not None else "",
             "PPTX_STRUCTURE_PATTERN": structure_pattern or "",
             "PPTX_APPENDIX_LIMIT": str(appendix_limit),
-            "PPTX_CHAPTER_TEMPLATES_DIR": str(chapter_templates_dir.resolve()),
-            "PPTX_CHAPTER_TEMPLATE": chapter_template or "",
             "PPTX_ANALYSIS_SUMMARY_PATH": str(analysis_summary_path.resolve())
             if analysis_summary_path
             else "",
@@ -151,6 +135,10 @@ def create_compose_command(
             "PPTX_RULES_PATH": str(rules.resolve()),
             "PPTX_PREPARE_CARDS_PATH": str(prepare_cards.resolve()),
         }
+        stage_env["PPTX_CHAPTER_TEMPLATES_DIR"] = (
+            str(chapter_templates_dir.resolve()) if chapter_templates_dir else ""
+        )
+        stage_env["PPTX_CHAPTER_TEMPLATE"] = chapter_template or ""
         if template_id:
             stage_env["PPTX_TEMPLATE_ID"] = template_id
         if hook_manager:
@@ -171,8 +159,6 @@ def create_compose_command(
             target_length=target_length,
             structure_pattern=structure_pattern,
             appendix_limit=appendix_limit,
-            chapter_templates_dir=chapter_templates_dir,
-            chapter_template=chapter_template,
             analysis_summary_path=analysis_summary_path,
             show_layout_reasons=show_layout_reasons,
             output_dir=output_dir,

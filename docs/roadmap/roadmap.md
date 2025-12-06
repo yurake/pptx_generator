@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -51,7 +50,6 @@ flowchart TB
         ST3_ANCHOR(( ))
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
@@ -708,18 +706,18 @@ flowchart TB
 - 次アクション: JobSpec スキーマ拡張やテンプレ抽出仕様変更が発生した際に差分検証を実施し、変換ロジックのアップデート方針を定期レビューする。
 
 <a id="rm-058"></a>
-### RM-058 プレペアポリシー内製化
+### RM-058 プレペア骨子内製化
 - 対象 stage: 2（コンテンツ準備）
-- ゴール: `config/prepare_policies/default.json` への依存を解消し、プレペア骨子の定義をコードまたは他 stage の成果物に統合する。
+- ゴール: 外部ポリシーファイルに頼らず、Blueprint / 入力メタデータから骨子（story_phase・intent）を導出できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-prepare-policy-removal.md](../notes/20251105-prepare-policy-removal.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-05 追加）
+- 参照 ToDo: [docs/todo/archive/20251206-rm058-prepare-policy-internalization.md](../todo/archive/20251206-rm058-prepare-policy-internalization.md)
+- 状況: 完了（2025-12-06 更新）
 - 期待成果:
-  - `PrepareAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
-  - CLI `prepare` と関連ドキュメント（README、`docs/design/cli/cli-command-reference.md`、`docs/requirements/stages/stage-02-prepare.md`）の仕様を更新する。
-  - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
+  - `PrepareAIOrchestrator` が Blueprint / 入力意図から直接骨子を推論し、`story_phase` は任意・可変語彙として扱える。
+  - CLI `prepare` と関連ドキュメント（README、`docs/requirements/stages/stage-02-prepare.md` など）から外部ポリシー依存を撤廃し、新しいテストシナリオを整備する。
+  - Stage3 以降のマッピング／レイアウト推奨が意図タグ中心で動作し、`policy_id` は監査上 `null` となる。
 - 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIプレペア構成自動化）、テンプレ Blueprint 設計。
-- 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
+- 次アクション: Stage2〜3 のコード改修・ドキュメント更新・テストを着地させ、Blueprint / intent を利用したワークフローを実運用に組み込む。
 
 <a id="rm-059"></a>
 ### RM-059 Mermaid 図自動レンダリング
@@ -933,13 +931,13 @@ flowchart TB
 ### RM-073 README 多言語展開整備
 - 対象領域: ルート `README.md`（日本語版）と多言語版 README（英語・中国語）
 - ゴール: ルート README の更新内容を英語版・中国語版にも速やかに反映できる運用を確立し、三言語の内容差分を最小化する。
-- 参照ドキュメント: （作成予定: `docs/notes/README-i18n-plan.md`）
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-23 追加）
-- 期待成果:
-  - 英語版（`README.en.md` など）、中国語版 README を作成し、ルート README と同等の構成・更新履歴を保つ。
-  - README 更新時に他言語版へ反映するフロー／チェックリストを整備し、ToDo や CI で差分を検知できるようにする。
-  - 翻訳ルール（用語集・スタイル）と翻訳担当の責務を明文化し、リリースフローに組み込む。
+- 参照ドキュメント: [docs/notes/README-i18n-plan.md](../notes/README-i18n-plan.md), [docs/runbooks/readme-i18n.md](../runbooks/readme-i18n.md)
+- 参照 ToDo: [docs/todo/archive/20251130-rm073-readme-multilang.md](../todo/archive/20251130-rm073-readme-multilang.md)
+- 状況: 完了（2025-11-30 更新）
+- 達成成果:
+  - `README.en.md`・`README.zh.md` を整備し、日本語版と共通のセクション構成・Language switcher を導入。
+  - `.locales/translate_readme.py` と GitHub Actions ワークフローを追加し、README 差分の自動翻訳と CI 連携を実装。
+  - `docs/runbooks/readme-i18n.md` へ運用手順と差分検知方法を整理し、レビュー時のチェックポイントを明文化。
 - 依存: RM-002（エージェント運用ガイド整備）、RM-070（開発プロセス運用ルール見直し）
 
 <a id="rm-074"></a>

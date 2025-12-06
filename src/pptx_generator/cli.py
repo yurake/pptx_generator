@@ -38,9 +38,7 @@ from .cli_handlers.template_extraction import (
 )
 
 DEFAULT_RULES_PATH = Path("config/rules.json")
-DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
-DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
@@ -86,7 +84,6 @@ def build_prepare_config(
         jobspec=jobspec,
         mode=mode,
         page_limit=page_limit,
-        default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
         default_jobspec_path=DEFAULT_JOBSPEC_PATH,
         prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
         slide_inputs_filename=SLIDE_INPUTS_FILENAME,
@@ -129,7 +126,6 @@ app.add_command(gen)
 
 prepare = create_prepare_command(
     default_output_dir=DEFAULT_PREPARE_OUTPUT_DIR,
-    default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
     default_jobspec_path=DEFAULT_JOBSPEC_PATH,
     prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
     slide_inputs_filename=SLIDE_INPUTS_FILENAME,
@@ -145,7 +141,6 @@ app.add_command(template)
 outline = create_outline_command(
     default_output_dir=DEFAULT_DRAFT_OUTPUT_DIR,
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
-    default_chapter_templates_dir=DEFAULT_CHAPTER_TEMPLATES_DIR,
     default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
     default_return_reasons_path=DEFAULT_RETURN_REASONS_PATH,
     default_draft_filename=DEFAULT_DRAFT_FILENAME,
@@ -161,7 +156,6 @@ app.add_command(outline)
 compose = create_compose_command(
     default_draft_output=DEFAULT_DRAFT_OUTPUT_DIR,
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
-    default_chapter_templates_dir=DEFAULT_CHAPTER_TEMPLATES_DIR,
     default_output_dir=DEFAULT_COMPOSE_OUTPUT_DIR,
     default_rules_path=DEFAULT_RULES_PATH,
     default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",

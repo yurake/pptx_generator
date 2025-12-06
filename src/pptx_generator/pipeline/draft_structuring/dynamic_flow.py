@@ -4,12 +4,7 @@ import logging
 from collections import Counter, defaultdict
 from typing import Any, Mapping, Sequence
 
-from ...draft_intel import (
-    ChapterTemplate,
-    ChapterTemplateEvaluation,
-    evaluate_chapter_template,
-    summarize_analyzer_counts,
-)
+from ...draft_intel import summarize_analyzer_counts
 from ...draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...models import (
     ContentApprovalDocument,
@@ -41,7 +36,6 @@ def build_dynamic_document(
     document: ContentApprovalDocument,
     layouts: Sequence[LayoutProfile],
     analyzer_map: dict[str, DraftAnalyzerSummary],
-    chapter_template: ChapterTemplate | None,
     recommender: CardLayoutRecommender,
     dynamic_prepare: bool,
 ) -> tuple[DraftDocument, list[dict[str, Any]], dict[str, Any]]:
@@ -73,7 +67,6 @@ def build_dynamic_document(
         options=options,
         accumulator=accumulator,
         analyzer_map=analyzer_map,
-        chapter_template=chapter_template,
         spec=spec,
     )
 
@@ -175,7 +168,6 @@ def _finalize_draft_document(
     options: DraftStructuringOptions,
     accumulator: DraftAccumulator,
     analyzer_map: dict[str, DraftAnalyzerSummary],
-    chapter_template: ChapterTemplate | None,
     spec: JobSpec,
 ) -> DraftDocument:
     sections = accumulator.sections
@@ -187,23 +179,6 @@ def _finalize_draft_document(
 
     if analyzer_map:
         meta.analyzer_summary = summarize_analyzer_counts(analyzer_map.values())
-
-    if chapter_template:
-        section_counts = {section.name: len(section.slides) for section in sections}
-        evaluation = _evaluate_chapter_template(
-            template=chapter_template,
-            section_counts=section_counts,
-            total_main_pages=sum(section_counts.values()),
-        )
-        meta.template_id = chapter_template.template_id
-        meta.template_match_score = evaluation.match_score
-        meta.template_mismatch = evaluation.mismatches
-        for section in sections:
-            key = section.name.lower()
-            score = evaluation.section_scores.get(key)
-            section.chapter_template_id = chapter_template.template_id
-            if score is not None:
-                section.template_match_score = score
 
     return DraftDocument(sections=sections, meta=meta)
 
@@ -459,18 +434,3 @@ def _has_positive_ai_recommendation(
     candidates: Sequence[tuple[Any, Any]],
 ) -> bool:
     return any(detail.ai_recommendation > 0.0 for _, detail in candidates)
-
-
-def _evaluate_chapter_template(
-    *,
-    template: ChapterTemplate,
-    section_counts: Mapping[str, int],
-    total_main_pages: int,
-) -> ChapterTemplateEvaluation:
-    evaluation = evaluate_chapter_template(
-        template=template,
-        section_counts=dict(section_counts),
-        total_main_pages=total_main_pages,
-    )
-    evaluation.section_scores = {key.lower(): value for key, value in evaluation.section_scores.items()}
-    return evaluation

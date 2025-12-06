@@ -126,17 +126,12 @@ class PrepareSourceDocument(BaseModel):
 
         finalize_current()
 
-        story_phases = ["introduction", "problem", "solution", "impact", "next"]
         normalized_chapters: list[PrepareSourceChapter] = []
-        for index, chapter in enumerate(chapters):
-            intent = chapter.intent_tags or []
-            if not intent and index < len(story_phases):
-                intent = [story_phases[index]]
+        for chapter in chapters:
             normalized_chapters.append(
                 chapter.model_copy(
                     update={
-                        "intent_tags": intent,
-                        "story_hint": story_phases[min(index, len(story_phases) - 1)],
+                        "intent_tags": [tag for tag in chapter.intent_tags if tag],
                     }
                 )
             )

@@ -9,7 +9,6 @@ from click.testing import CliRunner
 
 import pptx_generator.cli as cli
 from pptx_generator.cli import (
-    DEFAULT_PREPARE_POLICY_PATH,
     DEFAULT_PREPARE_OUTPUT_DIR,
     PROMPT_TEMPLATE_DIRNAME,
     PROMPT_USER_SECTION_END,
@@ -36,7 +35,6 @@ from pptx_generator.models import (
     TemplateBlueprintSlot,
     TemplateSpec,
 )
-from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument
 from pptx_generator.prepare_ai.client import MockPrepareLLMClient
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator
@@ -280,7 +278,6 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
 def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
     source_path = Path("samples/input/pitch.md")
     source = PrepareSourceDocument.parse_file(source_path)
-    policy_set = load_prepare_policy_set(Path(DEFAULT_PREPARE_POLICY_PATH))
     template_spec = _build_static_template_spec()
 
     class CaptureClient(MockPrepareLLMClient):
@@ -293,7 +290,7 @@ def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
             return super().generate(prompt, model_hint=model_hint)
 
     client = CaptureClient()
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=client)
+    orchestrator = PrepareAIOrchestrator(llm_client=client)
 
     slide_specific = PrepareSourceDocument(meta=source.meta, chapters=[], raw_text="- localized context")
     orchestrator.generate_document(
@@ -327,11 +324,6 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
     with runner.isolated_filesystem():
         extract_dir = Path.cwd() / ".pptx/extract"
         extract_dir.mkdir(parents=True, exist_ok=True)
-
-        policy_source = (Path(__file__).resolve().parents[2] / DEFAULT_PREPARE_POLICY_PATH).resolve()
-        policy_dest = Path(DEFAULT_PREPARE_POLICY_PATH)
-        policy_dest.parent.mkdir(parents=True, exist_ok=True)
-        policy_dest.write_text(policy_source.read_text(encoding="utf-8"), encoding="utf-8")
 
         template_spec = _build_static_template_spec()
         template_spec_path = extract_dir / "template_spec.json"
@@ -386,11 +378,6 @@ def test_cli_prepare_requires_complete_manifest(monkeypatch) -> None:
     with runner.isolated_filesystem():
         extract_dir = Path.cwd() / ".pptx/extract"
         extract_dir.mkdir(parents=True, exist_ok=True)
-
-        policy_source = (Path(__file__).resolve().parents[2] / DEFAULT_PREPARE_POLICY_PATH).resolve()
-        policy_dest = Path(DEFAULT_PREPARE_POLICY_PATH)
-        policy_dest.parent.mkdir(parents=True, exist_ok=True)
-        policy_dest.write_text(policy_source.read_text(encoding="utf-8"), encoding="utf-8")
 
         template_spec = _build_static_template_spec()
         template_spec_path = extract_dir / "template_spec.json"

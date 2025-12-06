@@ -41,8 +41,6 @@ class ComposeCommandConfig:
     target_length: Optional[int]
     structure_pattern: Optional[str]
     appendix_limit: int
-    chapter_templates_dir: Path
-    chapter_template: Optional[str]
     analysis_summary_path: Optional[Path]
     show_layout_reasons: bool
     output_dir: Path
@@ -52,8 +50,6 @@ class ComposeCommandConfig:
     approved_filename: str
     log_filename: str
     meta_filename: str
-    generate_ready_filename: str = DEFAULT_GENERATE_READY_FILENAME
-    generate_ready_meta_filename: str = DEFAULT_GENERATE_READY_META_FILENAME
     generate_ready_filename: str = DEFAULT_GENERATE_READY_FILENAME
     generate_ready_meta_filename: str = DEFAULT_GENERATE_READY_META_FILENAME
 
@@ -100,10 +96,6 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
     except ValueError as exc:
         raise ComposeCommandError(str(exc), exit_code=2) from exc
 
-    templates_dir = (
-        config.chapter_templates_dir if config.chapter_templates_dir.exists() else None
-    )
-
     try:
         outline_result = execute_outline(
             spec=spec,
@@ -113,8 +105,6 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
             target_length=config.target_length,
             structure_pattern=config.structure_pattern,
             appendix_limit=config.appendix_limit,
-            chapter_templates_dir=templates_dir,
-            chapter_template=config.chapter_template,
             analysis_summary_path=config.analysis_summary_path,
             prepare_cards=config.prepare_cards,
             require_prepare=True,
@@ -168,8 +158,6 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         target_length=config.target_length,
         structure_pattern=config.structure_pattern,
         appendix_limit=config.appendix_limit,
-        chapter_templates_dir=config.chapter_templates_dir,
-        chapter_template_id=config.chapter_template,
         analysis_summary_path=config.analysis_summary_path,
     )
 
