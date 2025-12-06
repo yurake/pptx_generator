@@ -18,7 +18,8 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
     - ロールバック方法: dataclass 拡張と `_serialize_slide_snapshot` 変更を revert し、既存項目のみ出力する状態へ戻す。
 - [x] 設計・実装方針の確定
   - メモ: SlideSnapshot 拡張（段落属性・図形メタ）と TemplateExtractor 連携で進める。
-- [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+- [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - メモ: 本 ToDo と PR 説明で方針を共有済み。追加 docs/notes は不要と判断。
 - [x] ドキュメント更新（要件・設計）
   - メモ: `docs/requirements/stages/stage-01-template.md` と `docs/design/stages/stage-01-template.md` を更新し、slide_snapshot.json の目的・内容を追記済み。
   - [x] docs/requirements 配下
@@ -29,15 +30,15 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
   - メモ: `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py::test_cli_template_emits_slide_snapshot`
 - [x] ドキュメント更新（実装結果確認）
   - メモ: 
-  - [ ] docs/roadmap 配下
+  - [x] docs/roadmap 配下（RM-080 のゴール・要件変更なしのため差分不要と判断）
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下（UAT 結果を踏まえ追記要否を検討）
-  - [ ] README.md / AGENTS.md（必要時のみ）
+  - [x] docs/runbook 配下（運用手順の変更なし）
+  - [x] README.md / AGENTS.md（既存サマリで十分）
 - [x] 関連Issue 行の更新
   - メモ: 
-- [ ] チェックリスト整合確認
-  - メモ: 
+- [x] チェックリスト整合確認
+  - メモ: ToDo の残タスクが PR 作成のみであることを確認。
 - [ ] PR 作成
   - メモ: 
 
