@@ -16,7 +16,7 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
     - リスク: JSON サイズ増大による diff 可読性低下、python-pptx 属性未対応による例外。未知属性は `None` を許容し後方互換を確保する。
     - テスト方針: `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` を中心に CLI 実行テスト。必要なら追加の単体テストを作成。
     - ロールバック方法: dataclass 拡張と `_serialize_slide_snapshot` 変更を revert し、既存項目のみ出力する状態へ戻す。
-- [ ] 設計・実装方針の確定
+- [x] 設計・実装方針の確定
   - メモ: SlideSnapshot 拡張（段落属性・図形メタ）と TemplateExtractor 連携で進める。
 - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
 - [x] ドキュメント更新（要件・設計）
@@ -27,13 +27,13 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
   - メモ: SlideSnapshot データクラスと `_serialize_slide_snapshot` を拡張し、図形/段落属性を JSON 出力。Analyzer snapshot 生成側も同じ情報を含むよう更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py::test_cli_template_emits_slide_snapshot`
-- [x] ドキュメント更新
+- [x] ドキュメント更新（実装結果確認）
   - メモ: 
   - [ ] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [ ] docs/runbook 配下（UAT 結果を踏まえ追記要否を検討）
+  - [ ] README.md / AGENTS.md（必要時のみ）
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
@@ -42,3 +42,11 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
   - メモ: 
 
 ## メモ
+### UAT 2025-12-06
+- `uv run pptx template samples/templates/slides.pptx --output .pptx/extract/uat --slide`
+  - `slide_snapshot.json` 生成を確認。`placeholder_index` や段落フォント属性、`text_frame_padding` など拡張項目が出力され、手元 PPTX のタイトル/サブタイトル・本文テキストと一致。
+- `uv run pptx template samples/templates/slides.pptx --output .pptx/extract/uat_force --slide --force`
+  - 検証スキップ時でも snapshot が生成され内容も同一。`diagnostics.json` は作られず、ログメッセージでスキップ判定のみ。
+- `uv run pptx template samples/templates/slides.pptx --output .pptx/extract/uat_noslide`
+  - `slide_snapshot.json` は生成されず既存成果物のみ出力され、後方互換性に影響なし。
+- 3 パターンとも `.pptx/extract/…/slide_snapshot.json` に実スライド図形／段落情報が揃うこと、未指定時はファイルが作成されないことを確認。成果物ディレクトリは後処理で削除済み。
