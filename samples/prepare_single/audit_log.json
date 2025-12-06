@@ -1,7 +1,7 @@
 {
   "prepare_normalization": {
     "generated_at": "2025-01-01T00:00:00+00:00",
-    "policy_id": "prepare-default",
+    "policy_id": null,
     "input_hash": "11b128936e9b8af0023bed8903bf026963a96779acae22d691f59838ce37eeef",
     "mode": "dynamic",
     "outputs": {
