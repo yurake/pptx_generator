@@ -175,6 +175,8 @@ def test_process_work_item_tracks_ai_simulation_when_no_scores() -> None:
     )
 
     assert accumulator.ai_summary["simulated"] == 1
+    assert accumulator.ai_summary["used"] == 0
+    assert accumulator.mapping_logs[0]["ai_recommendation_used"] is True
 
 
 def test_resolve_section_prefers_story_angle_over_chapter_id() -> None:

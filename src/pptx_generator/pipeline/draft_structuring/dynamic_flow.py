@@ -311,14 +311,15 @@ def _update_ai_summary(
     if ai_used:
         accumulator.ai_summary["used"] += 1
 
-    if recommendation.ai_response is not None:
+    ai_response = recommendation.ai_response
+    simulated = False
+
+    if ai_response is not None:
         accumulator.ai_summary["invoked"] += 1
-        model = recommendation.ai_response.model or "unknown"
+        model = ai_response.model or "unknown"
         models = accumulator.ai_summary["models"]
         models[model] = models.get(model, 0) + 1
-        return ai_used
-
-    if (
+    elif (
         options.enable_ai_recommender
         and options.enable_ai_simulation
         and options.ai_weight > 0
@@ -326,13 +327,14 @@ def _update_ai_summary(
         and _has_positive_ai_recommendation(recommendation.candidates)
     ):
         accumulator.ai_summary["simulated"] += 1
+        simulated = True
         if logger.isEnabledFor(logging.INFO):
             logger.info(
                 "layout AI simulated: slide_id=%s preferred=%s",
                 slide_id,
                 preferred_layout,
             )
-    return ai_used
+    return ai_used or simulated
 
 
 def _build_mapping_entry(
