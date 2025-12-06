@@ -60,6 +60,16 @@ class ParagraphSnapshot:
     level: int
     font_size_pt: float | None
     color_hex: str | None
+    font_name: str | None = None
+    bold: bool | None = None
+    italic: bool | None = None
+    alignment: str | None = None
+    line_spacing_pt: float | None = None
+    space_before_pt: float | None = None
+    space_after_pt: float | None = None
+    left_indent_in: float | None = None
+    right_indent_in: float | None = None
+    first_line_indent_in: float | None = None
 
 
 @dataclass(slots=True)
@@ -74,6 +84,13 @@ class ShapeSnapshot:
     paragraphs: list[ParagraphSnapshot] = field(default_factory=list)
     is_placeholder: bool = False
     placeholder_type: int | None = None
+    placeholder_index: int | None = None
+    z_order: int | None = None
+    rotation_deg: float | None = None
+    text_frame_padding: dict[str, float | None] | None = None
+    text_frame_word_wrap: bool | None = None
+    text_frame_vertical_anchor: str | None = None
+    text_frame_auto_size: str | None = None
 
 
 @dataclass(slots=True)
@@ -97,18 +114,45 @@ class SlideSnapshot:
             shape_type = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE))
             is_placeholder = bool(getattr(shape, "is_placeholder", False))
             placeholder_type = None
+            placeholder_index: int | None = None
             if is_placeholder:
                 try:
                     placeholder_type = int(shape.placeholder_format.type)
+                    placeholder_index = int(getattr(shape.placeholder_format, "idx", 0))
                 except Exception:  # noqa: BLE001
                     placeholder_type = None
+                    placeholder_index = None
+
+            z_order = getattr(shape, "z_order_position", None)
+            if z_order is not None:
+                try:
+                    z_order = int(z_order)
+                except (TypeError, ValueError):
+                    z_order = None
+
+            rotation = getattr(shape, "rotation", None)
+            if rotation is not None:
+                try:
+                    rotation = float(rotation)
+                except (TypeError, ValueError):
+                    rotation = None
+
+            text_frame = None
+            if getattr(shape, "has_text_frame", False):
+                text_frame = getattr(shape, "text_frame", None)
 
             paragraphs: list[ParagraphSnapshot] = []
-            if getattr(shape, "has_text_frame", False):
-                text_frame = shape.text_frame
+            if text_frame is not None:
                 for idx, paragraph in enumerate(text_frame.paragraphs):
                     text = paragraph.text or ""
-                    font_size_pt, color_hex = _extract_font_info(paragraph)
+                    (
+                        font_size_pt,
+                        color_hex,
+                        font_name,
+                        bold,
+                        italic,
+                    ) = _extract_font_info(paragraph)
+                    paragraph_style = _extract_paragraph_style(paragraph)
                     level = paragraph.level if paragraph.level is not None else 0
                     paragraphs.append(
                         ParagraphSnapshot(
@@ -120,8 +164,31 @@ class SlideSnapshot:
                             level=level,
                             font_size_pt=font_size_pt,
                             color_hex=color_hex,
+                            font_name=font_name,
+                            bold=bold,
+                            italic=italic,
+                            alignment=paragraph_style.get("alignment"),
+                            line_spacing_pt=paragraph_style.get("line_spacing_pt"),
+                            space_before_pt=paragraph_style.get("space_before_pt"),
+                            space_after_pt=paragraph_style.get("space_after_pt"),
+                            left_indent_in=paragraph_style.get("left_indent_in"),
+                            right_indent_in=paragraph_style.get("right_indent_in"),
+                            first_line_indent_in=paragraph_style.get("first_line_indent_in"),
                         )
                     )
+
+            text_frame_padding = _extract_text_frame_padding(text_frame)
+            text_frame_word_wrap: bool | None = None
+            text_frame_vertical_anchor: str | None = None
+            text_frame_auto_size: str | None = None
+            if text_frame is not None:
+                word_wrap = getattr(text_frame, "word_wrap", None)
+                if word_wrap is not None:
+                    text_frame_word_wrap = bool(word_wrap)
+                text_frame_vertical_anchor = _enum_name(
+                    getattr(text_frame, "vertical_anchor", None)
+                )
+                text_frame_auto_size = _enum_name(getattr(text_frame, "auto_size", None))
 
             snapshot = ShapeSnapshot(
                 shape_id=shape_id,
@@ -134,6 +201,13 @@ class SlideSnapshot:
                 paragraphs=paragraphs,
                 is_placeholder=is_placeholder,
                 placeholder_type=placeholder_type,
+                placeholder_index=placeholder_index,
+                z_order=z_order,
+                rotation_deg=rotation,
+                text_frame_padding=text_frame_padding,
+                text_frame_word_wrap=text_frame_word_wrap,
+                text_frame_vertical_anchor=text_frame_vertical_anchor,
+                text_frame_auto_size=text_frame_auto_size,
             )
             shapes.append(snapshot)
 
@@ -521,6 +595,26 @@ class SimpleAnalyzerStep:
         placeholders: list[dict[str, Any]] = []
 
         for shape in snapshot.shapes:
+            paragraphs = [
+                {
+                    "index": paragraph.paragraph_index,
+                    "text": paragraph.text,
+                    "level": paragraph.level,
+                    "font_size_pt": paragraph.font_size_pt,
+                    "color_hex": paragraph.color_hex,
+                    "font_name": paragraph.font_name,
+                    "bold": paragraph.bold,
+                    "italic": paragraph.italic,
+                    "alignment": paragraph.alignment,
+                    "line_spacing_pt": paragraph.line_spacing_pt,
+                    "space_before_pt": paragraph.space_before_pt,
+                    "space_after_pt": paragraph.space_after_pt,
+                    "left_indent_in": paragraph.left_indent_in,
+                    "right_indent_in": paragraph.right_indent_in,
+                    "first_line_indent_in": paragraph.first_line_indent_in,
+                }
+                for paragraph in shape.paragraphs
+            ]
             base_record = {
                 "shape_id": shape.shape_id,
                 "name": shape.name or "",
@@ -529,29 +623,23 @@ class SimpleAnalyzerStep:
                 "top_in": shape.top_in,
                 "width_in": shape.width_in,
                 "height_in": shape.height_in,
-                "paragraphs": [
-                    {
-                        "index": paragraph.paragraph_index,
-                        "text": paragraph.text,
-                        "level": paragraph.level,
-                        "font_size_pt": paragraph.font_size_pt,
-                        "color_hex": paragraph.color_hex,
-                    }
-                    for paragraph in shape.paragraphs
-                ],
+                "paragraphs": paragraphs,
+                "is_placeholder": shape.is_placeholder,
+                "placeholder_type": self._placeholder_type_name(
+                    shape.placeholder_type
+                ),
+                "placeholder_index": shape.placeholder_index,
+                "z_order": shape.z_order,
+                "rotation_deg": shape.rotation_deg,
+                "text_frame_padding": shape.text_frame_padding,
+                "text_frame_word_wrap": shape.text_frame_word_wrap,
+                "text_frame_vertical_anchor": shape.text_frame_vertical_anchor,
+                "text_frame_auto_size": shape.text_frame_auto_size,
             }
             if shape.is_placeholder or shape.placeholder_type is not None:
-                placeholders.append(
-                    {
-                        **base_record,
-                        "is_placeholder": shape.is_placeholder,
-                        "placeholder_type": self._placeholder_type_name(
-                            shape.placeholder_type
-                        ),
-                    }
-                )
+                placeholders.append(dict(base_record))
             if shape.name:
-                named_shapes.append(base_record)
+                named_shapes.append(dict(base_record))
 
         spec_anchors = sorted(
             {
@@ -1090,13 +1178,85 @@ def _emu_to_inches(value: int) -> float:
     return value / EMU_PER_INCH
 
 
+def _extract_paragraph_style(paragraph) -> dict[str, float | str | None]:
+    paragraph_format = getattr(paragraph, "paragraph_format", None)
+    line_spacing_pt = None
+    space_before_pt = None
+    space_after_pt = None
+    left_indent_in = None
+    right_indent_in = None
+    first_line_indent_in = None
+    if paragraph_format is not None:
+        line_spacing_pt = _length_to_pt(getattr(paragraph_format, "line_spacing", None))
+        space_before_pt = _length_to_pt(getattr(paragraph_format, "space_before", None))
+        space_after_pt = _length_to_pt(getattr(paragraph_format, "space_after", None))
+        left_indent_in = _length_to_inches(getattr(paragraph_format, "left_indent", None))
+        right_indent_in = _length_to_inches(getattr(paragraph_format, "right_indent", None))
+        first_line_indent_in = _length_to_inches(
+            getattr(paragraph_format, "first_line_indent", None)
+        )
+
+    return {
+        "alignment": _enum_name(getattr(paragraph, "alignment", None)),
+        "line_spacing_pt": line_spacing_pt,
+        "space_before_pt": space_before_pt,
+        "space_after_pt": space_after_pt,
+        "left_indent_in": left_indent_in,
+        "right_indent_in": right_indent_in,
+        "first_line_indent_in": first_line_indent_in,
+    }
+
+
+def _extract_text_frame_padding(text_frame) -> dict[str, float | None] | None:
+    if text_frame is None:
+        return None
+    padding = {
+        "left_in": _length_to_inches(getattr(text_frame, "margin_left", None)),
+        "right_in": _length_to_inches(getattr(text_frame, "margin_right", None)),
+        "top_in": _length_to_inches(getattr(text_frame, "margin_top", None)),
+        "bottom_in": _length_to_inches(getattr(text_frame, "margin_bottom", None)),
+    }
+    if all(value is None for value in padding.values()):
+        return None
+    return padding
+
+
+def _enum_name(value) -> str | None:
+    if value is None:
+        return None
+    name = getattr(value, "name", None)
+    if isinstance(name, str) and name:
+        return name.lower()
+    try:
+        text = str(value)
+    except Exception:  # noqa: BLE001
+        return None
+    text = text.strip()
+    return text.lower() if text else None
+
+
+def _length_to_inches(length) -> float | None:
+    if length is None:
+        return None
+    try:
+        return float(length.inches)
+    except AttributeError:
+        try:
+            return float(length) / EMU_PER_INCH
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
+
+
 def _length_to_pt(length) -> float | None:
     if length is None:
         return None
     try:
         return float(length.pt)
     except AttributeError:
-        return None
+        try:
+            return float(length)
+        except (TypeError, ValueError):
+            return None
 
 
 def _color_to_hex(color: ColorFormat | None) -> str | None:
@@ -1112,22 +1272,37 @@ def _color_to_hex(color: ColorFormat | None) -> str | None:
     return "#" + "".join(f"{component:02X}" for component in components)
 
 
-def _extract_font_info(paragraph) -> tuple[float | None, str | None]:
+def _extract_font_info(paragraph) -> tuple[
+    float | None,
+    str | None,
+    str | None,
+    bool | None,
+    bool | None,
+]:
     font = paragraph.font
     size = _length_to_pt(getattr(font, "size", None))
     color = _color_to_hex(getattr(font, "color", None))
+    name = getattr(font, "name", None)
+    bold = getattr(font, "bold", None)
+    italic = getattr(font, "italic", None)
 
-    if size is None or color is None:
+    if size is None or color is None or name is None or bold is None or italic is None:
         for run in paragraph.runs:
             run_font = run.font
             if size is None:
                 size = _length_to_pt(getattr(run_font, "size", None))
             if color is None:
                 color = _color_to_hex(getattr(run_font, "color", None))
-            if size is not None and color is not None:
+            if name is None:
+                name = getattr(run_font, "name", None)
+            if bold is None:
+                bold = getattr(run_font, "bold", None)
+            if italic is None:
+                italic = getattr(run_font, "italic", None)
+            if all(value is not None for value in (size, color, name, bold, italic)):
                 break
 
-    return size, color
+    return size, color, name, bold, italic
 
 
 def _normalize_hex(value: str) -> str:

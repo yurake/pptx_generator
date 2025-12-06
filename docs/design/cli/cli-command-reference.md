@@ -26,6 +26,7 @@
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--slide` | 実スライドの図形・段落スナップショット (`slide_snapshot.json`) を出力する |  |  | 無効 |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
 | `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
 | `--version <value>` | `--with-release` 指定時のテンプレバージョン |  |  | - |
@@ -47,6 +48,7 @@ uv run pptx template samples/templates/templates.pptx
 - `.pptx/extract/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
 - `.pptx/extract/layouts.jsonl`
 - `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
+- `.pptx/extract/slide_snapshot.json`（`--slide` 指定時。図形寸法・z-order・回転・プレースホルダー種別、各段落のフォント・整列・インデント・行間など実スライドの実体データを集約）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
 `pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
