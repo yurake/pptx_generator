@@ -1,7 +1,7 @@
 ---
 目的: RM-086 静的テンプレート抽出の静的文言保持方式検討
 関連ブランチ: docs/rm086-static-hooks-prep
-関連Issue: 未作成
+関連Issue: #382
 roadmap_item: RM-086 静的テンプレ外部フック統合
 ---
 
@@ -39,26 +39,35 @@ roadmap_item: RM-086 静的テンプレ外部フック統合
     - テスト方針: 抽出→生成の通しテスト (`uv run pptx template` 〜 `gen`)、ユニットテストで静的文言が保持されること、差分比較スクリプトで検証。
     - ロールバック方法: Stage1/Stage4 の変更を revert し、静的文言をコード内で復元する従来方式に戻す。
     - 承認メッセージ ID／リンク: （承認取得後に更新）
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 設計・実装方針の確定
+  - メモ: Blueprint に静的テキストを保持（default_text/default_payload）→ Stage3 で未割当スロットへフォールバック → Stage4 標準レンダラがレイアウト図形複製とアンカー正規化で描画する方針を採用。外部 Stage4 フックは不要とし hooks 設定を `null` へ整理。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: TemplateBlueprintSlot に default_text/default_payload を追加し、Stage1 で静的テキストを保持、Stage3 で未割当 slot に既定値を適用、Stage4 Renderer にアンカー正規化・レイアウト図形複製を追加。Stage4 外部フックは hooks.json から除外済み。
 - [x] テスト・検証
-  - メモ: `uv run pptx template --layout-mode static templates/経費投資.pptx` → `prepare` → `mapping` → `gen` を通し、外部 Stage4 フックなしで PPTX 生成が成功することを確認。slot13 カードを一時的に削除して mapping を再実行し、`default_applied: true` が `mapping_log.json` に出力され `generate_ready` に Blueprint 既定値が挿入されることを確認（検証後は原状復帰）。
-- [ ] ドキュメント更新
+  - メモ: 
+      - `uv run pptx template templates/経費投資.pptx --layout-mode static --output .pptx/jri/extract`
+      - `uv run pptx prepare --mode static --jobspec .pptx/jri/extract/jobspec.json --output .pptx/jri/prepare`
+      - `uv run pptx mapping .pptx/jri/extract/jobspec.json --prepare-cards .pptx/jri/prepare/prepare_card.json --output .pptx/jri/mapping --draft-output .pptx/jri/draft`
+      - `uv run pptx gen .pptx/jri/mapping/generate_ready.json --output .pptx/jri/gen --pptx-name jri_static_output.pptx`
+      - 上記通しで外部 Stage4 フックなしに PPTX 出力が成功することを確認。slot13 カードを一時的に削除して mapping を再実行し、`mapping_log.json` に `default_applied: true` が記録され `generate_ready` に Blueprint 既定値が挿入されることを確認（検証後は prepare_card.json を原状復帰）。
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/roadmap 配下
+    - メモ: 対象ロードマップ項目（RM-086）の範囲内で仕様変更は既存タスクに収まるため追加更新不要。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+    - メモ: 要件レベルでの変更はなく、現状記載と矛盾しないため更新不要。
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+  - [x] docs/runbook 配下
+    - メモ: 静的文言保持は運用ドキュメントへ追加不要のため更新なし。
+  - [x] README.md / AGENTS.md
+    - メモ: 今回の仕様変更は README / AGENTS の掲載範囲外のため更新不要。
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: PR 作成以外のチェック項目をすべて完了し、親タスクの状態とも整合していることを確認。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
