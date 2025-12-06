@@ -55,7 +55,6 @@ flowchart TB
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
-        RM086["RM-086<br/>静的テンプレ外部フック統合<br/>(進行中)"]
     end
 
     subgraph ST4["Stage 4: PPTX生成"]
@@ -1099,7 +1098,7 @@ flowchart TB
 - 参照ドキュメント: [docs/notes/20251204-rm086-static-hooks.md](../notes/20251204-rm086-static-hooks.md)（起案中）
 - 参照 ToDo: [docs/todo/20251204-rm086-static-hooks.md](../todo/20251204-rm086-static-hooks.md)
 - 依存: RM-054（静的テンプレ構成統合プランニング）、RM-084（CLI/Pipeline リファクタビリティ向上）
-- 状況: 進行中（2025-12-06 フック通し検証完了）
+- 状況: 完了（2025-12-06 更新）
 - 期待成果:
   - `external/<template_id>/hooks.json` の stage 別エントリを解釈し、外部スクリプトへ委譲した場合でも CLI がテンプレ ID や入出力パスを一貫して引き渡せるようにする。（実装済）
   - Excel→表マッピング用の `mapping_config.json` を読み込み、Stage 2／Stage 4 フック単体でテーブルセルへ値を埋め戻せるようにする。（実装済）
