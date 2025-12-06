@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+from typing import Any
 
 import pytest
 
@@ -57,6 +58,69 @@ def _write_dummy_png(path) -> None:
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
     )
     path.write_bytes(payload)
+
+
+def _make_shape_snapshot(
+    *,
+    shape_id: int,
+    name: str,
+    shape_type: MSO_SHAPE_TYPE,
+    left_in: float,
+    top_in: float,
+    width_in: float,
+    height_in: float,
+    **overrides,
+) -> ShapeSnapshot:
+    payload = {
+        "shape_id": shape_id,
+        "name": name,
+        "shape_type": int(shape_type),
+        "left_in": left_in,
+        "top_in": top_in,
+        "width_in": width_in,
+        "height_in": height_in,
+        "paragraphs": [],
+        "is_placeholder": False,
+        "placeholder_type": None,
+        "placeholder_index": None,
+        "z_order": None,
+        "rotation_deg": None,
+        "text_frame_padding": None,
+        "text_frame_word_wrap": None,
+        "text_frame_vertical_anchor": None,
+        "text_frame_auto_size": None,
+    }
+    payload.update(overrides)
+    return ShapeSnapshot(**payload)
+
+
+def _build_snapshot_with_textbox() -> SlideSnapshot:
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[1])
+
+    body_shape = slide.shapes.placeholders[1]
+    body_shape.name = "Body"
+    text_frame = body_shape.text_frame
+    text_frame.margin_left = Inches(0.2)
+    text_frame.margin_top = Inches(0.1)
+    paragraph = text_frame.paragraphs[0]
+    paragraph.text = "本文"
+    paragraph.level = 0
+    paragraph.font.size = Pt(24)
+    paragraph.font.name = "Calibri"
+    paragraph.font.bold = True
+    paragraph.font.color.rgb = RGBColor(0x12, 0x34, 0x56)
+    paragraph.line_spacing = 36
+    paragraph.space_before = Pt(6)
+    paragraph.space_after = Pt(12)
+
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(4), Inches(4), Inches(1))
+    textbox.name = "anchored-shape"
+    textbox.text_frame.text = "アンカー"
+    additional = textbox.text_frame.add_paragraph()
+    additional.text = "サブ"
+
+    return SlideSnapshot.from_slide(slide, 0)
 
 
 def _render_spec(spec: JobSpec, workdir, template_path=None) -> PipelineContext:
@@ -428,32 +492,7 @@ def test_analyzer_outputs_structure_snapshot(tmp_path) -> None:
 
 
 def test_slide_snapshot_from_slide_extracts_metadata() -> None:
-    presentation = Presentation()
-    slide = presentation.slides.add_slide(presentation.slide_layouts[1])
-
-    body_shape = slide.shapes.placeholders[1]
-    body_shape.name = "Body"
-    text_frame = body_shape.text_frame
-    text_frame.margin_left = Inches(0.2)
-    text_frame.margin_top = Inches(0.1)
-    paragraph = text_frame.paragraphs[0]
-    paragraph.text = "本文"
-    paragraph.level = 0
-    paragraph.font.size = Pt(24)
-    paragraph.font.name = "Calibri"
-    paragraph.font.bold = True
-    paragraph.font.color.rgb = RGBColor(0x12, 0x34, 0x56)
-    paragraph.line_spacing = 36
-    paragraph.space_before = Pt(6)
-    paragraph.space_after = Pt(12)
-
-    textbox = slide.shapes.add_textbox(Inches(1), Inches(4), Inches(4), Inches(1))
-    textbox.name = "anchored-shape"
-    textbox.text_frame.text = "アンカー"
-    additional = textbox.text_frame.add_paragraph()
-    additional.text = "サブ"
-
-    snapshot = SlideSnapshot.from_slide(slide, 0)
+    snapshot = _build_snapshot_with_textbox()
     assert snapshot.index == 0
     assert snapshot.body_placeholder_id is not None
 
@@ -477,28 +516,28 @@ def test_slide_snapshot_from_slide_extracts_metadata() -> None:
 
 
 def test_analyzer_locates_shapes_via_snapshot_helpers(tmp_path) -> None:
-    picture_shape = ShapeSnapshot(
+    picture_shape = _make_shape_snapshot(
         shape_id=101,
         name="anchor-picture",
-        shape_type=int(MSO_SHAPE_TYPE.PICTURE),
+        shape_type=MSO_SHAPE_TYPE.PICTURE,
         left_in=1.0,
         top_in=1.5,
         width_in=2.5,
         height_in=1.0,
     )
-    textbox_shape = ShapeSnapshot(
+    textbox_shape = _make_shape_snapshot(
         shape_id=102,
         name="anchor-textbox",
-        shape_type=int(MSO_SHAPE_TYPE.TEXT_BOX),
+        shape_type=MSO_SHAPE_TYPE.TEXT_BOX,
         left_in=0.5,
         top_in=0.75,
         width_in=3.5,
         height_in=1.2,
     )
-    placeholder_shape = ShapeSnapshot(
+    placeholder_shape = _make_shape_snapshot(
         shape_id=103,
         name="textbox-2",
-        shape_type=int(MSO_SHAPE_TYPE.PLACEHOLDER),
+        shape_type=MSO_SHAPE_TYPE.PLACEHOLDER,
         left_in=0.4,
         top_in=1.0,
         width_in=3.0,
@@ -531,3 +570,24 @@ def test_analyzer_locates_shapes_via_snapshot_helpers(tmp_path) -> None:
 
     fallback_textbox = SlideTextbox(id="textbox-2", text="詳細")
     assert analyzer._locate_textbox_shape(snapshot, fallback_textbox) is placeholder_shape
+
+
+def test_extend_results_handles_optional_fix() -> None:
+    analyzer = SimpleAnalyzerStep()
+    issues: list[dict[str, Any]] = []
+    fixes: list[dict[str, Any]] = []
+
+    analyzer._extend_results(issues, fixes, None)
+    assert not issues
+    assert not fixes
+
+    issue_only = {"id": "issue-1"}
+    analyzer._extend_results(issues, fixes, (issue_only, None))
+    assert issues == [issue_only]
+    assert not fixes
+
+    issue_with_fix = {"id": "issue-2"}
+    fix_payload = {"id": "fix-2"}
+    analyzer._extend_results(issues, fixes, (issue_with_fix, fix_payload))
+    assert issues[-1] is issue_with_fix
+    assert fixes[-1] is fix_payload
