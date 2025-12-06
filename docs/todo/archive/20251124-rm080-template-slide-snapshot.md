@@ -39,8 +39,8 @@ roadmap_item: RM-080 テンプレ実スライドスナップショット強化
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: ToDo の残タスクが PR 作成のみであることを確認。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #377 https://github.com/yurake/pptx_generator/pull/377（2025-12-06 完了）
 
 ## メモ
 ### UAT 2025-12-06
