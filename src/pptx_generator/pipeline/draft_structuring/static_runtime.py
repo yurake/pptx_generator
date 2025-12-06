@@ -36,6 +36,8 @@ from ...draft_recommender import LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
 from .errors import DraftStructuringError
 from .types import DraftStructuringOptions, StaticArtifacts, card_slot_fulfilled, card_slot_id
+from .slide_elements import assign_slot_to_elements, merge_slide_notes, card_to_lines
+from .generate_ready_runtime import build_generate_ready_meta_payload
 
 if TYPE_CHECKING:  # pragma: no cover - typing only.
     from .step import DraftStructuringStep
@@ -148,7 +150,7 @@ def write_static_outputs(
     context.add_artifact("generate_ready", artifacts.generate_ready)
     context.add_artifact("generate_ready_path", str(ready_path))
 
-    ready_meta_payload = step._build_generate_ready_meta_payload(
+    ready_meta_payload = build_generate_ready_meta_payload(
         draft=artifacts.draft,
         generate_ready=artifacts.generate_ready,
         ai_summary=artifacts.ai_summary,
@@ -384,10 +386,10 @@ def build_static_slides(
             card_notes = card.notes_text()
             if card_notes:
                 slide_note_lines.extend(card_notes)
-            lines = step._card_to_lines(card)
-            step._assign_slot_to_elements(elements, slot, card, lines)
+            lines = card_to_lines(card)
+            assign_slot_to_elements(elements, slot, card, lines)
 
-        step._merge_slide_notes(elements, slide_note_lines)
+        merge_slide_notes(elements, slide_note_lines)
 
         sources: list[str] = []
         sources.append(spec_slide.id if spec_slide is not None else blueprint_slide.slide_id)

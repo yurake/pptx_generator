@@ -25,6 +25,11 @@ from ..slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 from ...draft_recommender import CardLayoutRecommender, CardLayoutRecommenderConfig, LayoutProfile
 from ...api.draft_store import BoardAlreadyExistsError, DraftStore
 from .errors import DraftStructuringError
+from .layout_loader import load_layouts
+from .generate_ready_runtime import (
+    build_generate_ready_document,
+    build_generate_ready_meta_payload,
+)
 
 if TYPE_CHECKING:  # pragma: no cover - import-time only for typing.
     from .step import DraftStructuringStep
@@ -113,7 +118,10 @@ def prepare_dynamic_inputs(
     CardLayoutRecommender,
     bool,
 ]:
-    layouts = step._load_layouts(step.options.layouts_path)  # type: ignore[attr-defined]
+    layouts = load_layouts(
+        path=step.options.layouts_path,
+        spec_source_path=Path(step.options.spec_source_path) if step.options.spec_source_path else None,
+    )
     step._layout_name_lookup = {profile.layout_id: profile.layout_name for profile in layouts}  # type: ignore[attr-defined]
     step._layout_catalog = {profile.layout_id: profile for profile in layouts}  # type: ignore[attr-defined]
 
@@ -175,7 +183,8 @@ def persist_dynamic_outputs(
     step._write_json(mapping_log_path, mapping_logs)  # type: ignore[attr-defined]
 
     template_path_value = resolve_template_path(step, context)
-    generate_ready = step._build_generate_ready_document(  # type: ignore[attr-defined]
+    generate_ready = build_generate_ready_document(
+        step=step,
         spec=context.spec,
         draft=draft,
         content_document=content_document,
@@ -187,7 +196,7 @@ def persist_dynamic_outputs(
     context.add_artifact("generate_ready", generate_ready)
     context.add_artifact("generate_ready_path", str(ready_path))
 
-    ready_meta_payload = step._build_generate_ready_meta_payload(  # type: ignore[attr-defined]
+    ready_meta_payload = build_generate_ready_meta_payload(
         draft=draft,
         generate_ready=generate_ready,
         ai_summary=ai_summary,

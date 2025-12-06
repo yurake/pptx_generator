@@ -5,10 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
-from collections import Counter, defaultdict
+from typing import Any, Iterable, Sequence
 
 from ...prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ...models import (
@@ -39,7 +37,6 @@ from ...models import (
     TemplateSpec,
 )
 from ...draft_recommender import LayoutProfile
-from ...utils.usage_tags import normalize_usage_tags
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
 from ...draft_intel import (
     ChapterTemplate,
@@ -51,12 +48,6 @@ from ...draft_intel import (
     summarize_analyzer_counts,
 )
 from ..base import PipelineContext
-from ..table_anchor import (
-    build_table_payload,
-    is_table_payload,
-    normalize_placeholders,
-    resolve_table_anchor,
-)
 from .errors import DraftStructuringError
 from .dynamic_flow import build_dynamic_document
 from .dynamic_runtime import (
@@ -138,169 +129,20 @@ class DraftStructuringStep:
     # ------------------------------------------------------------------ #
 
     def _load_layouts(self, path: Path | None) -> list[LayoutProfile]:
-        if path is None:
-            source_hint = (
-                str(self.options.spec_source_path)
-                if self.options.spec_source_path is not None
-                else "in-memory JobSpec"
-            )
-            logger.info(
-                "layouts.jsonl が指定されていないため、JobSpec (%s) の layout を基準にしたヒューリスティック候補を使用します",
-                source_hint,
-            )
-            return []
+        from .layout_loader import load_layouts
 
-        records: list[LayoutProfile] = []
-        try:
-            text = path.read_text(encoding="utf-8")
-        except FileNotFoundError as exc:
-            msg = f"layouts.jsonl を読み込めません: {path}"
-            raise DraftStructuringError(msg) from exc
-
-        for line in text.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                payload = json.loads(line)
-            except json.JSONDecodeError as exc:
-                msg = f"layouts.jsonl の解析に失敗しました: {path}"
-                raise DraftStructuringError(msg) from exc
-
-            layout_id = payload.get("layout_id")
-            if not layout_id:
-                logger.debug("layout_id が存在しないレコードをスキップ: %s", payload)
-                continue
-
-            text_hint = payload.get("text_hint") or {}
-            media_hint = payload.get("media_hint") or {}
-            if not isinstance(text_hint, dict):
-                text_hint = {}
-            if not isinstance(media_hint, dict):
-                media_hint = {}
-
-            placeholder_records = payload.get("placeholders") or []
-            if not isinstance(placeholder_records, list):
-                placeholder_records = []
-            normalized_placeholders = normalize_placeholders(placeholder_records)
-            placeholder_summary = payload.get("placeholder_summary")
-            if not isinstance(placeholder_summary, dict):
-                placeholder_summary = self._summarize_placeholders(placeholder_records)
-            heuristic_info = payload.get("heuristic")
-            if not isinstance(heuristic_info, dict):
-                heuristic_info = {}
-            blueprint_info = payload.get("blueprint")
-            if not isinstance(blueprint_info, dict):
-                blueprint_info = {}
-            meta_info = payload.get("meta")
-            if not isinstance(meta_info, dict):
-                meta_info = {}
-            layout_description = None
-            description_value = meta_info.get("layout_description")
-            if isinstance(description_value, dict):
-                layout_description = description_value
-            elif isinstance(description_value, str):
-                stripped = description_value.strip()
-                if stripped:
-                    layout_description = {
-                        "overview": stripped,
-                        "elements": [],
-                    }
-
-            record = LayoutProfile(
-                layout_id=layout_id,
-                layout_name=payload.get("layout_name") or layout_id,
-                usage_tags=normalize_usage_tags(payload.get("usage_tags", [])),
-                text_hint=text_hint,
-                media_hint=media_hint,
-                placeholder_summary=placeholder_summary,
-                heuristic=heuristic_info,
-                blueprint=blueprint_info,
-                meta=meta_info,
-                layout_description=layout_description,
-                placeholders=normalized_placeholders,
-            )
-            records.append(record)
-        return records
+        return load_layouts(
+            path=path,
+            spec_source_path=Path(self.options.spec_source_path) if self.options.spec_source_path else None,
+        )
 
     @staticmethod
     def _summarize_placeholders(
         placeholders: Sequence[dict[str, Any]],
     ) -> dict[str, Any]:
-        if not placeholders:
-            return {}
+        from .layout_loader import summarize_placeholders
 
-        counts: Counter[str] = Counter()
-        processed: list[tuple[float, dict[str, Any]]] = []
-        total_area = 0.0
-        type_area: defaultdict[str, float] = defaultdict(float)
-
-        for placeholder in placeholders:
-            raw_type = placeholder.get("type")
-            p_type = str(raw_type or "").casefold()
-            if not p_type:
-                p_type = "unknown"
-            counts[p_type] += 1
-
-            bbox = placeholder.get("bbox") or {}
-            width = float(bbox.get("width") or 0.0)
-            height = float(bbox.get("height") or 0.0)
-            area = max(width, 0.0) * max(height, 0.0)
-            total_area += area
-            type_area[p_type] += area
-
-            shape_type = placeholder.get("shape_type")
-            shape_type_str = str(shape_type or "").casefold() or None
-            flags = placeholder.get("flags")
-            flags_list = (
-                [str(flag) for flag in flags[:6]]
-                if isinstance(flags, list)
-                else []
-            )
-
-            entry: dict[str, Any] = {
-                "name": str(placeholder.get("name") or "")[:64],
-                "type": p_type,
-            }
-            if shape_type_str:
-                entry["shape_type"] = shape_type_str
-            if flags_list:
-                entry["flags"] = flags_list
-            processed.append((area, entry))
-
-        details: list[dict[str, Any]] = []
-        for area, entry in sorted(processed, key=lambda item: item[0], reverse=True)[:8]:
-            ratio = round(area / total_area, 3) if total_area > 0 else None
-            entry = dict(entry)
-            entry["area_ratio"] = ratio
-            details.append(entry)
-
-        area_ratio = {
-            key: round(value / total_area, 3)
-            for key, value in type_area.items()
-            if total_area > 0
-        }
-
-        attributes = {
-            "total": sum(counts.values()),
-            "has_title": counts.get("title", 0) + counts.get("subtitle", 0) > 0,
-            "has_body": counts.get("body", 0) + counts.get("content", 0) > 0,
-            "has_table": counts.get("table", 0) > 0,
-            "has_chart": counts.get("chart", 0) > 0,
-            "has_visual": (
-                counts.get("image", 0)
-                + counts.get("media", 0)
-                + counts.get("object", 0)
-            )
-            > 0,
-        }
-
-        return {
-            "counts": {key: counts[key] for key in sorted(counts)},
-            "area_ratio": area_ratio,
-            "details": details,
-            "attributes": attributes,
-        }
+        return summarize_placeholders(placeholders)
 
     @staticmethod
     def _write_document(path: Path, document: DraftDocument) -> None:
@@ -332,121 +174,15 @@ class DraftStructuringStep:
         content_document: ContentApprovalDocument | None,
         template_path: Path | None = None,
     ) -> GenerateReadyDocument:
-        section_lookup: dict[str, str] = {}
-        cards_in_order: list[DraftSlideCard] = []
-        for section in draft.sections:
-            for card in section.slides:
-                section_lookup[card.ref_id] = section.name
-                cards_in_order.append(card)
+        from .generate_ready_runtime import build_generate_ready_document
 
-            spec_lookup = {slide.id: slide for slide in spec.slides}
-        content_lookup: dict[str, ContentSlide] = {}
-        content_hash: str | None = None
-        if content_document is not None:
-            content_lookup = {slide.id: slide for slide in content_document.slides}
-            try:
-                payload = content_document.model_dump(mode="json")
-                digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
-                content_hash = hashlib.sha256(digest.encode("utf-8")).hexdigest()
-            except (TypeError, ValueError) as exc:
-                logger.debug("content_approved のハッシュ化に失敗しました: %s", exc)
-
-        slides: list[GenerateReadySlide] = []
-        if not cards_in_order:
-            for index, spec_slide in enumerate(spec.slides, start=1):
-                layout_name = self._layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
-                auto_draw_payload = [
-                    {
-                        "anchor": anchor,
-                        "left_in": box.left_in,
-                        "top_in": box.top_in,
-                        "width_in": box.width_in,
-                        "height_in": box.height_in,
-                    }
-                    for anchor, box in spec_slide.auto_draw_boxes.items()
-                ]
-                slides.append(
-                    GenerateReadySlide(
-                        layout_id=spec_slide.layout,
-                        layout_name=layout_name,
-                        elements=self._convert_slide_elements(spec_slide),
-                        meta=MappingSlideMeta(
-                            section=None,
-                            page_no=index,
-                            sources=[spec_slide.id],
-                            fallback="none",
-                            auto_draw=auto_draw_payload,
-                        ),
-                    )
-                )
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            meta = GenerateReadyMeta(
-                template_version=draft.meta.template_id,
-                template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
-                content_hash=content_hash,
-                generated_at=timestamp,
-                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
-                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
-            )
-            if meta.template_path is None and getattr(spec.meta, "template_path", None):
-                meta.template_path = getattr(spec.meta, "template_path", None)
-            return GenerateReadyDocument(slides=slides, meta=meta)
-
-        for index, card in enumerate(cards_in_order, start=1):
-            spec_slide = spec_lookup.get(card.ref_id)
-            section_name = section_lookup.get(card.ref_id)
-            content_slide = content_lookup.get(card.ref_id)
-            layout_id = card.layout_hint
-            if not layout_id and spec_slide is not None:
-                layout_id = spec_slide.layout
-            layout_id = layout_id or "title"
-            layout_name = self._layout_name_lookup.get(layout_id)
-            if layout_name is None and spec_slide is not None and spec_slide.layout == layout_id:
-                layout_name = spec_slide.layout
-            if layout_name is None:
-                layout_name = layout_id
-            layout_profile = self._layout_catalog.get(layout_id)
-            elements = self._merge_slide_elements(spec_slide, content_slide, layout_profile)
-            sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
-            auto_draw_payload = []
-            if spec_slide is not None:
-                auto_draw_payload = [
-                    {
-                        "anchor": anchor,
-                        "left_in": box.left_in,
-                        "top_in": box.top_in,
-                        "width_in": box.width_in,
-                        "height_in": box.height_in,
-                    }
-                    for anchor, box in spec_slide.auto_draw_boxes.items()
-                ]
-            slides.append(
-                GenerateReadySlide(
-                    layout_id=layout_id,
-                    layout_name=layout_name,
-                    elements=elements,
-                    meta=MappingSlideMeta(
-                        section=section_name,
-                        page_no=index,
-                        sources=sources,
-                        fallback="none",
-                        auto_draw=auto_draw_payload,
-                    ),
-                )
-            )
-
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        meta = GenerateReadyMeta(
-            template_version=draft.meta.template_id,
-            template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
-            content_hash=content_hash,
-            generated_at=timestamp,
-            job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
-            job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+        return build_generate_ready_document(
+            step=self,
+            spec=spec,
+            draft=draft,
+            content_document=content_document,
+            template_path=template_path,
         )
-        if meta.template_path is None and getattr(spec.meta, "template_path", None):
-            meta.template_path = getattr(spec.meta, "template_path", None)
-        return GenerateReadyDocument(slides=slides, meta=meta)
 
     def _build_generate_ready_meta_payload(
         self,
@@ -455,76 +191,33 @@ class DraftStructuringStep:
         generate_ready: GenerateReadyDocument,
         ai_summary: dict[str, Any],
     ) -> dict[str, Any]:
-        sections_payload, main_slides_total, appendix_slides_total = self._summarize_sections(draft)
-        template_info = self._build_template_info(draft)
-        statistics = self._build_statistics_block(
+        from .generate_ready_runtime import build_generate_ready_meta_payload
+
+        return build_generate_ready_meta_payload(
+            draft=draft,
             generate_ready=generate_ready,
-            main_slides=main_slides_total,
-            appendix_slides=appendix_slides_total,
             ai_summary=ai_summary,
         )
-
-        payload = {
-            "generated_at": generate_ready.meta.generated_at,
-            "sections": sections_payload,
-            "statistics": statistics,
-            "template": template_info,
-            "analyzer_summary": draft.meta.analyzer_summary,
-            "return_reason_stats": draft.meta.return_reason_stats,
-            "ai_recommendation": self._build_ai_recommendation_block(ai_summary),
-        }
-        self._apply_optional_generate_ready_meta(
-            payload=payload,
-            generate_ready=generate_ready,
-        )
-        return payload
 
     @staticmethod
     def _summarize_sections(
         draft: DraftDocument,
     ) -> tuple[list[dict[str, Any]], int, int]:
-        sections_payload: list[dict[str, Any]] = []
-        main_total = 0
-        appendix_total = 0
+        from .generate_ready_runtime import summarize_sections
 
-        for section in draft.sections:
-            main_count = sum(1 for card in section.slides if not card.appendix)
-            appendix_count = sum(1 for card in section.slides if card.appendix)
-            main_total += main_count
-            appendix_total += appendix_count
-            sections_payload.append(
-                {
-                    "name": section.name,
-                    "order": section.order,
-                    "status": section.status,
-                    "slides": len(section.slides),
-                    "main_slides": main_count,
-                    "appendix_slides": appendix_count,
-                    "locked": any(card.locked for card in section.slides),
-                }
-            )
-
-        return sections_payload, main_total, appendix_total
+        return summarize_sections(draft)
 
     @staticmethod
     def _build_template_info(draft: DraftDocument) -> dict[str, Any]:
-        return {
-            "template_id": draft.meta.template_id,
-            "structure_pattern": draft.meta.structure_pattern,
-            "target_length": draft.meta.target_length,
-            "appendix_limit": draft.meta.appendix_limit,
-            "match_score": draft.meta.template_match_score,
-            "mismatch": [item.model_dump(mode="json") for item in draft.meta.template_mismatch],
-        }
+        from .generate_ready_runtime import build_template_info
+
+        return build_template_info(draft)
 
     @staticmethod
     def _build_ai_recommendation_block(ai_summary: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "invoked": ai_summary.get("invoked", 0),
-            "used": ai_summary.get("used", 0),
-            "simulated": ai_summary.get("simulated", 0),
-            "models": ai_summary.get("models", {}),
-        }
+        from .generate_ready_runtime import build_ai_recommendation_block
+
+        return build_ai_recommendation_block(ai_summary)
 
     def _build_statistics_block(
         self,
@@ -534,13 +227,14 @@ class DraftStructuringStep:
         appendix_slides: int,
         ai_summary: dict[str, Any],
     ) -> dict[str, Any]:
-        statistics = {
-            "total_slides": len(generate_ready.slides),
-            "main_slides": main_slides,
-            "appendix_slides": appendix_slides,
-            "ai_recommendation_used": ai_summary.get("used", 0),
-        }
-        return statistics
+        from .generate_ready_runtime import build_statistics_block
+
+        return build_statistics_block(
+            generate_ready=generate_ready,
+            main_slides=main_slides,
+            appendix_slides=appendix_slides,
+            ai_summary=ai_summary,
+        )
 
     @staticmethod
     def _apply_optional_generate_ready_meta(
@@ -548,13 +242,9 @@ class DraftStructuringStep:
         payload: dict[str, Any],
         generate_ready: GenerateReadyDocument,
     ) -> None:
-        payload["mode"] = generate_ready.meta.layout_mode
-        if generate_ready.meta.slot_summary:
-            payload["slot_summary"] = generate_ready.meta.slot_summary
-        if generate_ready.meta.blueprint_path:
-            payload["blueprint_path"] = generate_ready.meta.blueprint_path
-        if generate_ready.meta.blueprint_hash:
-            payload["blueprint_hash"] = generate_ready.meta.blueprint_hash
+        from .generate_ready_runtime import apply_optional_generate_ready_meta
+
+        apply_optional_generate_ready_meta(payload=payload, generate_ready=generate_ready)
 
     def _merge_slide_elements(
         self,
@@ -562,81 +252,39 @@ class DraftStructuringStep:
         content_slide: ContentSlide | None,
         layout_profile: LayoutProfile | None,
     ) -> dict[str, Any]:
-        base = self._convert_slide_elements(spec_slide) if spec_slide is not None else {}
-        if content_slide is None or content_slide.elements is None:
-            return base
+        from .slide_elements import merge_slide_elements
 
-        content_elements = content_slide.elements
-        elements, table_payload = self._collect_content_elements(content_elements, base)
+        return merge_slide_elements(
+            content_slide=content_slide,
+            spec_slide=spec_slide,
+            layout_profile=layout_profile,
+        )
 
-        if spec_slide is not None:
-            self._merge_spec_slide_details(
-                elements=elements,
-                base=base,
-                spec_slide=spec_slide,
-                table_payload=table_payload,
-            )
-
-        if table_payload is not None:
-            self._apply_table_payload(
-                elements=elements,
-                base=base,
-                table_payload=table_payload,
-                spec_slide=spec_slide,
-                layout_profile=layout_profile,
-                content_slide=content_slide,
-            )
-
-        return elements
-
-    @staticmethod
     def _collect_content_elements(
-        content_elements: ContentElements, base: dict[str, Any]
+        self,
+        content_elements: ContentElements,
+        base: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any] | None]:
-        elements: dict[str, Any] = {}
+        from .slide_elements import collect_content_elements
 
-        if content_elements.title:
-            elements["title"] = content_elements.title
+        return collect_content_elements(content_elements, base)
 
-        if content_elements.subtitle:
-            elements["subtitle"] = content_elements.subtitle
-
-        if content_elements.body:
-            elements["body"] = list(content_elements.body)
-        elif "body" in base:
-            elements["body"] = base["body"]
-
-        if content_elements.note:
-            elements["note"] = content_elements.note
-        elif "note" in base:
-            elements["note"] = base["note"]
-
-        table_payload: dict[str, Any] | None = None
-        if content_elements.table_data is not None:
-            table_payload = build_table_payload(content_elements.table_data)
-
-        return elements, table_payload
-
-    @staticmethod
     def _merge_spec_slide_details(
+        self,
         *,
         elements: dict[str, Any],
         base: dict[str, Any],
         spec_slide: Slide,
         table_payload: dict[str, Any] | None,
     ) -> None:
-        if spec_slide.subtitle and "subtitle" not in elements:
-            elements["subtitle"] = spec_slide.subtitle
+        from .slide_elements import merge_spec_slide_details
 
-        for key, value in base.items():
-            if key in {"title", "body", "note", "subtitle"}:
-                continue
-            if table_payload is not None and is_table_payload(value):
-                continue
-            elements.setdefault(key, value)
-
-        for anchor in spec_slide.auto_draw_anchors:
-            elements.pop(anchor, None)
+        merge_spec_slide_details(
+            elements=elements,
+            base=base,
+            spec_slide=spec_slide,
+            table_payload=table_payload,
+        )
 
     def _apply_table_payload(
         self,
@@ -648,90 +296,102 @@ class DraftStructuringStep:
         layout_profile: LayoutProfile | None,
         content_slide: ContentSlide,
     ) -> None:
-        placeholders = layout_profile.placeholders if layout_profile else ()
-        anchor, reasons = resolve_table_anchor(spec_slide, placeholders)
-        target_key = anchor or "table"
+        from .slide_elements import apply_table_payload
 
-        if logger.isEnabledFor(logging.DEBUG):
-            debug_reason = ", ".join(reasons) if reasons else "none"
-            logger.debug(
-                "table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
-                getattr(content_slide, "id", "unknown"),
-                layout_profile.layout_id if layout_profile else "unknown",
-                target_key,
-                debug_reason,
-            )
-
-        for key in list(elements.keys()):
-            if key == target_key:
-                continue
-            if is_table_payload(elements[key]):
-                elements.pop(key, None)
-
-        if spec_slide is not None:
-            for key, value in base.items():
-                if key == target_key:
-                    continue
-                if is_table_payload(value):
-                    elements.pop(key, None)
-
-        elements[target_key] = table_payload
+        apply_table_payload(
+            elements=elements,
+            base=base,
+            table_payload=table_payload,
+            spec_slide=spec_slide,
+            layout_profile=layout_profile,
+            content_slide=content_slide,
+        )
 
     @staticmethod
     def _convert_slide_elements(slide: Slide | None) -> dict[str, Any]:
-        if slide is None:
-            return {}
-        elements: dict[str, Any] = {}
-        if slide.title:
-            elements["title"] = slide.title
-        if slide.subtitle:
-            elements["subtitle"] = slide.subtitle
-        if slide.notes:
-            elements["note"] = slide.notes
+        from .slide_elements import convert_slide_elements
 
-        body_lines: list[str] = []
-        for group in slide.bullets:
-            texts = [bullet.text for bullet in group.items]
-            if not texts:
-                continue
-            if group.anchor:
-                elements[group.anchor] = texts
-            else:
-                body_lines.extend(texts)
-        if body_lines:
-            elements["body"] = body_lines
+        return convert_slide_elements(slide)
 
-        for index, table in enumerate(slide.tables, start=1):
-            key = table.anchor or f"table_{index}"
-            elements[key] = {
-                "headers": table.columns,
-                "rows": table.rows,
-            }
+    @staticmethod
+    def _card_to_lines(card: PrepareCard) -> list[str]:
+        from .slide_elements import card_to_lines
 
-        for index, image in enumerate(slide.images, start=1):
-            key = image.anchor or f"image_{index}"
-            elements[key] = {
-                "source": str(image.source),
-                "sizing": image.sizing,
-            }
+        return card_to_lines(card)
 
-        for index, chart in enumerate(slide.charts, start=1):
-            key = chart.anchor or f"chart_{index}"
-            elements[key] = {
-                "type": chart.type,
-                "categories": chart.categories,
-                "series": [series.model_dump(mode="json") for series in chart.series],
-                "options": chart.options.model_dump(mode="json") if chart.options else None,
-            }
+    @staticmethod
+    def _assign_slot_to_elements(
+        elements: dict[str, Any],
+        slot: TemplateBlueprintSlot,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        from .slide_elements import assign_slot_to_elements
 
-        for index, textbox in enumerate(slide.textboxes, start=1):
-            key = textbox.anchor or f"textbox_{index}"
-            elements[key] = {"text": textbox.text}
+        assign_slot_to_elements(elements, slot, card, lines)
 
-        for anchor in slide.auto_draw_anchors:
-            elements.pop(anchor, None)
+    @staticmethod
+    def _assign_special_anchor(
+        elements: dict[str, Any],
+        anchor_lower: str,
+        card: PrepareCard,
+    ) -> bool:
+        from .slide_elements import assign_special_anchor
 
-        return elements
+        return assign_special_anchor(elements, anchor_lower, card)
+
+    @staticmethod
+    def _assign_table_content(
+        elements: dict[str, Any],
+        anchor: str,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        from .slide_elements import assign_table_content
+
+        assign_table_content(elements, anchor, card, lines)
+
+    @staticmethod
+    def _assign_text_content(
+        elements: dict[str, Any],
+        anchor: str,
+        anchor_lower: str,
+        card: PrepareCard,
+        lines: list[str],
+    ) -> None:
+        from .slide_elements import assign_text_content
+
+        assign_text_content(elements, anchor, anchor_lower, card, lines)
+
+    @staticmethod
+    def _extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[str]]:
+        from .slide_elements import extract_text_blocks
+
+        return extract_text_blocks(card)
+
+    @staticmethod
+    def _append_bullet_entries(
+        raw_items: Any,
+        bullet_entries: list[dict[str, Any]],
+    ) -> None:
+        from .slide_elements import append_bullet_entries
+
+        append_bullet_entries(raw_items, bullet_entries)
+
+    @staticmethod
+    def _append_dict_bullet(
+        entry: dict[str, Any],
+        bullet_entries: list[dict[str, Any]],
+    ) -> None:
+        from .slide_elements import append_dict_bullet
+
+        append_dict_bullet(entry, bullet_entries)
+
+    @staticmethod
+    def _merge_slide_notes(elements: dict[str, Any], note_lines: list[str]) -> None:
+        from .slide_elements import merge_slide_notes
+
+        merge_slide_notes(elements, note_lines)
 
     def _load_template_spec(self, path: Path) -> TemplateSpec:
         try:
@@ -767,156 +427,3 @@ class DraftStructuringStep:
             return hashlib.sha256(digest.encode("utf-8")).hexdigest()
         except (TypeError, ValueError):
             return None
-
-    @staticmethod
-    def _card_to_lines(card: PrepareCard) -> list[str]:
-        lines = list(card.iter_body_text())
-        if not lines:
-            headline = card.headline_or_title()
-            if headline:
-                lines.append(headline)
-        return [line for line in lines if line]
-
-    @staticmethod
-    def _assign_slot_to_elements(
-        elements: dict[str, Any],
-        slot: TemplateBlueprintSlot,
-        card: PrepareCard,
-        lines: list[str],
-    ) -> None:
-        anchor = slot.anchor or slot.slot_id
-        if not anchor:
-            return
-        anchor_lower = anchor.lower()
-        if DraftStructuringStep._assign_special_anchor(elements, anchor_lower, card):
-            return
-
-        content_type = (slot.content_type or "text").lower()
-        if content_type == "table":
-            DraftStructuringStep._assign_table_content(elements, anchor, card, lines)
-            return
-        if content_type == "text":
-            DraftStructuringStep._assign_text_content(elements, anchor, anchor_lower, card, lines)
-            return
-
-    @staticmethod
-    def _assign_special_anchor(
-        elements: dict[str, Any],
-        anchor_lower: str,
-        card: PrepareCard,
-    ) -> bool:
-        if anchor_lower in {"title", "main message"}:
-            headline = card.headline_or_title()
-            if headline:
-                elements["title"] = headline
-            return True
-        if "subtitle" in anchor_lower:
-            subtitle = card.subtitle_or_chapter() or card.headline_or_title()
-            if subtitle:
-                elements["subtitle"] = subtitle
-            return True
-        return False
-
-    @staticmethod
-    def _assign_table_content(
-        elements: dict[str, Any],
-        anchor: str,
-        card: PrepareCard,
-        lines: list[str],
-    ) -> None:
-        table_block = next(
-            (block for block in card.content.body if block.type == "table"), None
-        )
-        if table_block and table_block.rows:
-            elements[anchor] = {
-                "headers": list(table_block.headers or []),
-                "rows": [list(row) for row in table_block.rows],
-            }
-            return
-        if lines:
-            elements[anchor] = {
-                "headers": ["項目"],
-                "rows": [[line] for line in lines],
-            }
-
-    @staticmethod
-    def _assign_text_content(
-        elements: dict[str, Any],
-        anchor: str,
-        anchor_lower: str,
-        card: PrepareCard,
-        lines: list[str],
-    ) -> None:
-        bullet_entries, paragraph_entries = DraftStructuringStep._extract_text_blocks(card)
-        if bullet_entries:
-            elements[anchor] = bullet_entries
-            return
-        if paragraph_entries:
-            elements[anchor] = paragraph_entries
-            return
-        if lines:
-            elements[anchor] = lines
-            return
-        if anchor_lower in {"body", "content"}:
-            headline = card.headline_or_title()
-            if headline:
-                elements[anchor] = [headline]
-
-    @staticmethod
-    def _extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[str]]:
-        bullet_entries: list[dict[str, Any]] = []
-        paragraph_entries: list[str] = []
-        for block in card.content.body:
-            if block.type == "bullets" and block.data:
-                DraftStructuringStep._append_bullet_entries(block.data.get("items"), bullet_entries)
-                continue
-            if isinstance(block.text, str):
-                text = block.text.strip()
-                if text:
-                    paragraph_entries.append(text)
-        return bullet_entries, paragraph_entries
-
-    @staticmethod
-    def _append_bullet_entries(
-        raw_items: Any,
-        bullet_entries: list[dict[str, Any]],
-    ) -> None:
-        if not isinstance(raw_items, list):
-            return
-        for entry in raw_items:
-            if isinstance(entry, dict):
-                DraftStructuringStep._append_dict_bullet(entry, bullet_entries)
-            elif isinstance(entry, str):
-                text = entry.strip()
-                if text:
-                    bullet_entries.append({"text": text, "level": 0})
-
-    @staticmethod
-    def _append_dict_bullet(
-        entry: dict[str, Any],
-        bullet_entries: list[dict[str, Any]],
-    ) -> None:
-        text = str(entry.get("text") or "").strip()
-        if not text:
-            return
-        level_raw = entry.get("level", 0)
-        try:
-            level = max(int(level_raw), 0)
-        except (TypeError, ValueError):
-            level = 0
-        bullet_entry: dict[str, Any] = {"text": text, "level": level}
-        for key, value in entry.items():
-            if key in {"text", "level"}:
-                continue
-            bullet_entry[key] = value
-        bullet_entries.append(bullet_entry)
-
-    @staticmethod
-    def _merge_slide_notes(elements: dict[str, Any], note_lines: list[str]) -> None:
-        if not note_lines:
-            return
-        aggregated_notes = "\n".join(note_lines)
-        existing_note = elements.get("note")
-        if isinstance(existing_note, str) and existing_note.strip():
-            aggregated_notes = f"{existing_note.rstrip()}\n{aggregated_notes}"
-        elements["note"] = aggregated_notes
