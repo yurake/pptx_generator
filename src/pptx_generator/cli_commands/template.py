@@ -160,12 +160,13 @@ def create_template_command(
 
         hook_manager = None
         effective_template_id = template_id or derive_template_id_from_template_path(template_path)
+        layout_mode_lower = layout_mode.lower()
         stage_env = {
             "PPTX_STAGE": STAGE_TEMPLATE,
             "PPTX_TEMPLATE_ID": effective_template_id,
             "PPTX_TEMPLATE_PATH": str(template_path.resolve()),
             "PPTX_STAGE_OUTPUT_DIR": str(output.resolve()),
-            "PPTX_LAYOUT_MODE": layout_mode.lower(),
+            "PPTX_LAYOUT_MODE": layout_mode_lower,
             "PPTX_TEMPLATE_FORMAT": format,
             "PPTX_TEMPLATE_LAYOUT_FILTER": layout or "",
             "PPTX_TEMPLATE_ANCHOR_FILTER": anchor or "",
@@ -181,7 +182,7 @@ def create_template_command(
             "PPTX_TEMPLATE_SLIDE_SNAPSHOT": "1" if slide else "0",
             "PPTX_TEMPLATE_FORCE": "1" if force else "0",
         }
-        if layout_mode.lower() == "static":
+        if layout_mode_lower == "static":
             hook_manager = load_hooks_for_template_id(effective_template_id)
         if hook_manager:
             executed, continue_default = hook_manager.run_stage_hook(
