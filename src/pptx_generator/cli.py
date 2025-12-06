@@ -112,8 +112,8 @@ def app(verbose: bool, debug: bool) -> None:
     cli_logger = logging.getLogger("pptx_generator.cli")
     for message_level, message in deferred_logs:
         cli_logger.log(message_level, message)
+    configure_file_logging()
     configure_llm_logger()
-configure_file_logging()
 
 
 gen = create_gen_command(
