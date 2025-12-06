@@ -499,4 +499,170 @@ def test_prepare_accepts_multiple_inputs(tmp_path) -> None:
     source_a.write_text("# イントロ\n- 課題A\n\n## 詳細\n- 詳細A1", encoding="utf-8")
     source_b = tmp_path / "source_b.md"
     source_b.write_text("# 提案\n- 提案A\n- 提案B", encoding="utf-8")
-    output_di...
+    output_dir = tmp_path / "multi"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "prepare",
+            str(source_a),
+            str(source_b),
+            "--mode",
+            "dynamic",
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
+    import_sources = meta_payload.get("import_sources", [])
+    assert len(import_sources) == 2
+    kinds = {entry.get("via") for entry in import_sources}
+    assert kinds == {"structured"}
+    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    audit_sources = audit_payload["prepare_normalization"].get("import_sources", [])
+    assert len(audit_sources) == 2
+
+
+def test_cli_prepare_static_mode_invokes_hooks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    runner = CliRunner()
+    output_dir = tmp_path / "prepare-output"
+    jobspec_dir = tmp_path / "spec"
+    template_dir = jobspec_dir / "extract"
+    prompts_dir = template_dir / "prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+
+    template_spec_path = template_dir / "template_spec.json"
+    blueprint = TemplateBlueprint(
+        slides=[
+            TemplateBlueprintSlide(
+                slide_id="slide-001",
+                layout="StaticLayout",
+                slots=[
+                    TemplateBlueprintSlot(
+                        slot_id="slot-title",
+                        anchor="Title",
+                        content_type="text",
+                        required=True,
+                        default_text=["既定タイトル"],
+                    )
+                ],
+            )
+        ]
+    )
+    template_spec_path.write_text(
+        json.dumps(
+            TemplateSpec(
+                template_path="templates/static_layout.pptx",
+                extracted_at="2025-12-06T00:00:00Z",
+                layouts=[],
+                layout_mode="static",
+                blueprint=blueprint,
+            ).model_dump(mode="json"),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    jobspec_path = jobspec_dir / "jobspec.json"
+    jobspec_payload = {
+        "meta": {
+            "schema_version": "1.0",
+            "title": "静的テンプレ CLI",
+            "template_path": "templates/static_layout.pptx",
+            "template_spec_path": "extract/template_spec.json",
+            "template_id": "static_layout",
+        },
+        "auth": {"created_by": "tester"},
+        "slides": [
+            {
+                "id": "slide-001",
+                "layout": "StaticLayout",
+                "title": "S1",
+            }
+        ],
+    }
+    jobspec_path.write_text(json.dumps(jobspec_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    prepare_source_a = tmp_path / "input-a.md"
+    prepare_source_a.write_text("line1", encoding="utf-8")
+    prepare_source_b = tmp_path / "input-b.md"
+    prepare_source_b.write_text("line2", encoding="utf-8")
+
+    cards_path = output_dir / "prepare_card.json"
+    log_path = output_dir / "prepare_log.json"
+    ai_log_path = output_dir / "prepare_ai_log.json"
+    meta_path = output_dir / "meta.json"
+    story_outline_path = output_dir / "story_outline.json"
+    audit_path = output_dir / "audit.json"
+    for file_path in (cards_path, log_path, ai_log_path, meta_path, story_outline_path, audit_path):
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text("{}", encoding="utf-8")
+
+    class DummyHookManager:
+        def __init__(self) -> None:
+            self.stage_calls: list[dict[str, str]] = []
+            self.slide_calls: list[tuple[str, list[dict[str, Any]], dict[str, str]]] = []
+
+        def run_stage_hook(self, stage: str, env: dict[str, str]) -> tuple[bool, bool]:
+            self.stage_calls.append(dict(env))
+            return True, True
+
+        def run_slide_hooks(
+            self,
+            stage: str,
+            *,
+            slides: list[dict[str, Any]],
+            env: dict[str, str],
+        ) -> None:
+            self.slide_calls.append((stage, slides, dict(env)))
+
+    hook_manager = DummyHookManager()
+
+    def fake_run_prepare_command(config, *, dump_json):  # type: ignore[missing-annotations]
+        return PrepareCommandResult(
+            cards_path=cards_path,
+            log_path=log_path,
+            ai_log_path=ai_log_path,
+            meta_path=meta_path,
+            story_outline_path=story_outline_path,
+            audit_path=audit_path,
+            messages=["prepare executed"],
+        )
+
+    monkeypatch.setattr("pptx_generator.cli_commands.prepare.run_prepare_command", fake_run_prepare_command)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.prepare.load_hooks_for_template_id",
+        lambda template_id: hook_manager,
+    )
+
+    args = [
+        "prepare",
+        f"{prepare_source_a},{prepare_source_b}",
+        "--mode",
+        "static",
+        "--jobspec",
+        str(jobspec_path),
+        "--output",
+        str(output_dir),
+    ]
+
+    result = runner.invoke(app, args, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert hook_manager.stage_calls
+    stage_env = hook_manager.stage_calls[0]
+    assert stage_env["PPTX_STAGE"] == STAGE_PREPARE
+    assert stage_env["PPTX_TEMPLATE_ID"] == "static_layout"
+    assert stage_env["PPTX_PREPARE_PATH"] == str(prepare_source_a)
+    assert stage_env["PPTX_PREPARE_INPUTS"].splitlines() == [str(prepare_source_a), str(prepare_source_b)]
+
+    assert hook_manager.slide_calls
+    slide_stage, slide_contexts, slide_env = hook_manager.slide_calls[0]
+    assert slide_stage == STAGE_PREPARE
+    assert slide_env["PPTX_PREPARE_CARD_PATH"] == str(cards_path)
+    assert getattr(slide_contexts[0], "slide_id") == "slide-001"
