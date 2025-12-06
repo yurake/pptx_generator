@@ -105,118 +105,11 @@ class SlideSnapshot:
         body_placeholder_id: int | None = None
 
         for shape in slide.shapes:
-            shape_id = getattr(shape, "shape_id", id(shape))
-            left_in = _emu_to_inches(int(getattr(shape, "left", 0)))
-            top_in = _emu_to_inches(int(getattr(shape, "top", 0)))
-            width_in = _emu_to_inches(int(getattr(shape, "width", 0)))
-            height_in = _emu_to_inches(int(getattr(shape, "height", 0)))
-            shape_name = getattr(shape, "name", None)
-            shape_type = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE))
-            is_placeholder = bool(getattr(shape, "is_placeholder", False))
-            placeholder_type = None
-            placeholder_index: int | None = None
-            if is_placeholder:
-                try:
-                    placeholder_type = int(shape.placeholder_format.type)
-                    placeholder_index = int(getattr(shape.placeholder_format, "idx", 0))
-                except Exception:  # noqa: BLE001
-                    placeholder_type = None
-                    placeholder_index = None
-
-            z_order = getattr(shape, "z_order_position", None)
-            if z_order is not None:
-                try:
-                    z_order = int(z_order)
-                except (TypeError, ValueError):
-                    z_order = None
-
-            rotation = getattr(shape, "rotation", None)
-            if rotation is not None:
-                try:
-                    rotation = float(rotation)
-                except (TypeError, ValueError):
-                    rotation = None
-
-            text_frame = None
-            if getattr(shape, "has_text_frame", False):
-                text_frame = getattr(shape, "text_frame", None)
-
-            paragraphs: list[ParagraphSnapshot] = []
-            if text_frame is not None:
-                for idx, paragraph in enumerate(text_frame.paragraphs):
-                    text = paragraph.text or ""
-                    (
-                        font_size_pt,
-                        color_hex,
-                        font_name,
-                        bold,
-                        italic,
-                    ) = _extract_font_info(paragraph)
-                    paragraph_style = _extract_paragraph_style(paragraph)
-                    level = paragraph.level if paragraph.level is not None else 0
-                    paragraphs.append(
-                        ParagraphSnapshot(
-                            shape_id=shape_id,
-                            shape_name=shape_name,
-                            shape_type=shape_type,
-                            paragraph_index=idx,
-                            text=text,
-                            level=level,
-                            font_size_pt=font_size_pt,
-                            color_hex=color_hex,
-                            font_name=font_name,
-                            bold=bold,
-                            italic=italic,
-                            alignment=paragraph_style.get("alignment"),
-                            line_spacing_pt=paragraph_style.get("line_spacing_pt"),
-                            space_before_pt=paragraph_style.get("space_before_pt"),
-                            space_after_pt=paragraph_style.get("space_after_pt"),
-                            left_indent_in=paragraph_style.get("left_indent_in"),
-                            right_indent_in=paragraph_style.get("right_indent_in"),
-                            first_line_indent_in=paragraph_style.get("first_line_indent_in"),
-                        )
-                    )
-
-            text_frame_padding = _extract_text_frame_padding(text_frame)
-            text_frame_word_wrap: bool | None = None
-            text_frame_vertical_anchor: str | None = None
-            text_frame_auto_size: str | None = None
-            if text_frame is not None:
-                word_wrap = getattr(text_frame, "word_wrap", None)
-                if word_wrap is not None:
-                    text_frame_word_wrap = bool(word_wrap)
-                text_frame_vertical_anchor = _enum_name(
-                    getattr(text_frame, "vertical_anchor", None)
-                )
-                text_frame_auto_size = _enum_name(getattr(text_frame, "auto_size", None))
-
-            snapshot = ShapeSnapshot(
-                shape_id=shape_id,
-                name=shape_name,
-                shape_type=shape_type,
-                left_in=left_in,
-                top_in=top_in,
-                width_in=width_in,
-                height_in=height_in,
-                paragraphs=paragraphs,
-                is_placeholder=is_placeholder,
-                placeholder_type=placeholder_type,
-                placeholder_index=placeholder_index,
-                z_order=z_order,
-                rotation_deg=rotation,
-                text_frame_padding=text_frame_padding,
-                text_frame_word_wrap=text_frame_word_wrap,
-                text_frame_vertical_anchor=text_frame_vertical_anchor,
-                text_frame_auto_size=text_frame_auto_size,
-            )
+            snapshot = cls._build_shape_snapshot(shape)
             shapes.append(snapshot)
 
-            if is_placeholder and placeholder_type in {
-                int(PP_PLACEHOLDER.BODY),
-                int(PP_PLACEHOLDER.VERTICAL_BODY),
-                int(PP_PLACEHOLDER.OBJECT),
-            }:
-                body_placeholder_id = shape_id
+            if cls._is_body_placeholder(snapshot):
+                body_placeholder_id = snapshot.shape_id
 
         return cls(index=index, shapes=shapes, body_placeholder_id=body_placeholder_id)
 
@@ -238,6 +131,163 @@ class SlideSnapshot:
                 continue
             return shape
         return None
+
+    @staticmethod
+    def _shape_id(shape) -> int:
+        return getattr(shape, "shape_id", id(shape))
+
+    @staticmethod
+    def _extract_geometry(shape) -> tuple[float, float, float, float]:
+        left = _emu_to_inches(int(getattr(shape, "left", 0)))
+        top = _emu_to_inches(int(getattr(shape, "top", 0)))
+        width = _emu_to_inches(int(getattr(shape, "width", 0)))
+        height = _emu_to_inches(int(getattr(shape, "height", 0)))
+        return left, top, width, height
+
+    @classmethod
+    def _build_shape_snapshot(cls, shape) -> ShapeSnapshot:
+        shape_id = cls._shape_id(shape)
+        left_in, top_in, width_in, height_in = cls._extract_geometry(shape)
+        shape_name = getattr(shape, "name", None)
+        shape_type = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE))
+        is_placeholder = bool(getattr(shape, "is_placeholder", False))
+        placeholder_type, placeholder_index = cls._extract_placeholder(shape, is_placeholder)
+        z_order = cls._extract_z_order(shape)
+        rotation = cls._extract_rotation(shape)
+        text_frame = cls._get_text_frame(shape)
+        paragraphs = cls._build_paragraph_snapshots(shape_id, shape_name, shape_type, text_frame)
+        (
+            text_frame_padding,
+            text_frame_word_wrap,
+            text_frame_vertical_anchor,
+            text_frame_auto_size,
+        ) = cls._extract_text_frame_metadata(text_frame)
+
+        return ShapeSnapshot(
+            shape_id=shape_id,
+            name=shape_name,
+            shape_type=shape_type,
+            left_in=left_in,
+            top_in=top_in,
+            width_in=width_in,
+            height_in=height_in,
+            paragraphs=paragraphs,
+            is_placeholder=is_placeholder,
+            placeholder_type=placeholder_type,
+            placeholder_index=placeholder_index,
+            z_order=z_order,
+            rotation_deg=rotation,
+            text_frame_padding=text_frame_padding,
+            text_frame_word_wrap=text_frame_word_wrap,
+            text_frame_vertical_anchor=text_frame_vertical_anchor,
+            text_frame_auto_size=text_frame_auto_size,
+        )
+
+    @staticmethod
+    def _extract_placeholder(shape, is_placeholder: bool) -> tuple[int | None, int | None]:
+        if not is_placeholder:
+            return None, None
+        try:
+            placeholder_type = int(shape.placeholder_format.type)
+            placeholder_index = int(getattr(shape.placeholder_format, "idx", 0))
+            return placeholder_type, placeholder_index
+        except Exception:  # noqa: BLE001
+            return None, None
+
+    @staticmethod
+    def _extract_z_order(shape) -> int | None:
+        z_order = getattr(shape, "z_order_position", None)
+        if z_order is None:
+            return None
+        try:
+            return int(z_order)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _extract_rotation(shape) -> float | None:
+        rotation = getattr(shape, "rotation", None)
+        if rotation is None:
+            return None
+        try:
+            return float(rotation)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _get_text_frame(shape):
+        if not getattr(shape, "has_text_frame", False):
+            return None
+        return getattr(shape, "text_frame", None)
+
+    @staticmethod
+    def _build_paragraph_snapshots(
+        shape_id: int,
+        shape_name: str | None,
+        shape_type: int,
+        text_frame,
+    ) -> list[ParagraphSnapshot]:
+        if text_frame is None:
+            return []
+        paragraphs: list[ParagraphSnapshot] = []
+        for idx, paragraph in enumerate(text_frame.paragraphs):
+            text = paragraph.text or ""
+            font_size_pt, color_hex, font_name, bold, italic = _extract_font_info(paragraph)
+            paragraph_style = _extract_paragraph_style(paragraph)
+            level = paragraph.level if paragraph.level is not None else 0
+            paragraphs.append(
+                ParagraphSnapshot(
+                    shape_id=shape_id,
+                    shape_name=shape_name,
+                    shape_type=shape_type,
+                    paragraph_index=idx,
+                    text=text,
+                    level=level,
+                    font_size_pt=font_size_pt,
+                    color_hex=color_hex,
+                    font_name=font_name,
+                    bold=bold,
+                    italic=italic,
+                    alignment=paragraph_style.get("alignment"),
+                    line_spacing_pt=paragraph_style.get("line_spacing_pt"),
+                    space_before_pt=paragraph_style.get("space_before_pt"),
+                    space_after_pt=paragraph_style.get("space_after_pt"),
+                    left_indent_in=paragraph_style.get("left_indent_in"),
+                    right_indent_in=paragraph_style.get("right_indent_in"),
+                    first_line_indent_in=paragraph_style.get("first_line_indent_in"),
+                )
+            )
+        return paragraphs
+
+    @staticmethod
+    def _extract_text_frame_metadata(
+        text_frame,
+    ) -> tuple[
+        dict[str, float | None] | None,
+        bool | None,
+        str | None,
+        str | None,
+    ]:
+        padding = _extract_text_frame_padding(text_frame)
+        if text_frame is None:
+            return padding, None, None, None
+
+        word_wrap_value = getattr(text_frame, "word_wrap", None)
+        word_wrap = bool(word_wrap_value) if word_wrap_value is not None else None
+        vertical_anchor = _enum_name(getattr(text_frame, "vertical_anchor", None))
+        auto_size = _enum_name(getattr(text_frame, "auto_size", None))
+        return padding, word_wrap, vertical_anchor, auto_size
+
+    @staticmethod
+    def _is_body_placeholder(shape: ShapeSnapshot) -> bool:
+        if not shape.is_placeholder or shape.placeholder_type is None:
+            return False
+        body_placeholders = {
+            int(PP_PLACEHOLDER.BODY),
+            int(PP_PLACEHOLDER.VERTICAL_BODY),
+            int(PP_PLACEHOLDER.OBJECT),
+        }
+        return shape.placeholder_type in body_placeholders
 
     def body_paragraphs(self) -> list[ParagraphSnapshot]:
         if self.body_placeholder_id is None:
