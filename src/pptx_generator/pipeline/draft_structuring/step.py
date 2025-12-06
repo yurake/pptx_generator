@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timezone
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 from collections import Counter, defaultdict
 
 from ...prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
@@ -971,13 +971,101 @@ class DraftStructuringStep:
     ) -> StaticArtifacts:
         blueprint: TemplateBlueprint = template_spec.blueprint  # type: ignore[assignment]
 
+        cards_by_slot = self._build_cards_by_slot(prepare_document)
+        spec_lookup = {slide.id: slide for slide in spec.slides}
+
+        slot_summary, unused_slots, blueprint_slot_ids = self._compute_static_slot_stats(
+            blueprint=blueprint,
+            cards_by_slot=cards_by_slot,
+        )
+        orphan_cards = self._collect_orphan_cards(prepare_document.cards, blueprint_slot_ids)
+
+        sections, generate_ready_slides, mapping_slides = self._build_static_slides(
+            blueprint=blueprint,
+            spec_lookup=spec_lookup,
+            cards_by_slot=cards_by_slot,
+            layout_lookup=self._layout_name_lookup,
+        )
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        content_hash = self._compute_content_hash(content_document)
+
+        generate_ready = GenerateReadyDocument(
+            slides=generate_ready_slides,
+            meta=GenerateReadyMeta(
+                template_version=None,
+                template_path=None,
+                content_hash=content_hash,
+                generated_at=timestamp,
+                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+                layout_mode="static",
+                blueprint_path=prepare_meta.blueprint_path,
+                blueprint_hash=prepare_meta.blueprint_hash,
+                slot_summary=slot_summary,
+            ),
+        )
+
+        draft_meta = DraftMeta(
+            target_length=len(blueprint.slides),
+            structure_pattern="static",
+            appendix_limit=self.options.appendix_limit,
+            template_id=template_spec.template_path,
+            template_match_score=1.0,
+            template_mismatch=[],
+            return_reason_stats={},
+            analyzer_summary={},
+        )
+        draft = DraftDocument(sections=sections, meta=draft_meta)
+
+        blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
+
+        mapping_log_meta = MappingLogMeta(
+            mapping_time_ms=0,
+            fallback_count=0,
+            ai_patch_count=0,
+            analyzer_issue_count=0,
+            mode="static",
+            blueprint_path=str(blueprint_path_value) if blueprint_path_value else None,
+            slot_summary=slot_summary,
+            static_slot_checks={
+                "unused_slots": unused_slots,
+                "orphan_cards": orphan_cards,
+            },
+        )
+        mapping_log = MappingLog(slides=mapping_slides, meta=mapping_log_meta).model_dump(mode="json")
+
+        ai_summary = {
+            "mode": "static",
+            "invoked": 0,
+            "used": 0,
+            "simulated": 0,
+            "models": {},
+        }
+
+        return StaticArtifacts(
+            draft=draft,
+            generate_ready=generate_ready,
+            mapping_log=mapping_log,
+            ai_summary=ai_summary,
+            slot_summary=slot_summary,
+        )
+
+    @staticmethod
+    def _build_cards_by_slot(prepare_document: PrepareDocument) -> dict[str, PrepareCard]:
         cards_by_slot: dict[str, PrepareCard] = {}
         for card in prepare_document.cards:
             slot_id = card_slot_id(card)
             if slot_id:
                 cards_by_slot[slot_id] = card
-        spec_lookup = {slide.id: slide for slide in spec.slides}
+        return cards_by_slot
 
+    def _compute_static_slot_stats(
+        self,
+        *,
+        blueprint: TemplateBlueprint,
+        cards_by_slot: Mapping[str, PrepareCard],
+    ) -> tuple[dict[str, int], list[str], set[str]]:
         total_slots = 0
         required_total = 0
         required_fulfilled = 0
@@ -1012,19 +1100,31 @@ class DraftStructuringStep:
             "optional_used": optional_used,
         }
 
-        orphan_cards = []
-        for card in prepare_document.cards:
+        return slot_summary, unused_slots, blueprint_slot_ids
+
+    @staticmethod
+    def _collect_orphan_cards(
+        cards: Sequence[PrepareCard], blueprint_slot_ids: set[str]
+    ) -> list[str]:
+        orphan_cards: list[str] = []
+        for card in cards:
             slot_id = card_slot_id(card)
             if slot_id and slot_id not in blueprint_slot_ids:
                 orphan_cards.append(slot_id)
+        return orphan_cards
 
+    def _build_static_slides(
+        self,
+        *,
+        blueprint: TemplateBlueprint,
+        spec_lookup: Mapping[str, Slide],
+        cards_by_slot: Mapping[str, PrepareCard],
+        layout_lookup: Mapping[str, str],
+    ) -> tuple[list[DraftSection], list[GenerateReadySlide], list[MappingLogSlide]]:
         section = DraftSection(name="Static Template", order=1, status="draft", slides=[])
-        draft_sections = [section]
-
+        sections = [section]
         generate_ready_slides: list[GenerateReadySlide] = []
         mapping_slides: list[MappingLogSlide] = []
-
-        layout_lookup = self._layout_name_lookup
 
         for page_no, blueprint_slide in enumerate(blueprint.slides, start=1):
             spec_slide = spec_lookup.get(blueprint_slide.slide_id)
@@ -1044,7 +1144,6 @@ class DraftStructuringStep:
 
             elements: dict[str, Any] = {}
             slot_records: list[dict[str, Any]] = []
-
             slide_note_lines: list[str] = []
 
             for slot in blueprint_slide.slots:
@@ -1125,69 +1224,7 @@ class DraftStructuringStep:
                 )
             )
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        content_hash = self._compute_content_hash(content_document)
-
-        generate_ready = GenerateReadyDocument(
-            slides=generate_ready_slides,
-            meta=GenerateReadyMeta(
-                template_version=None,
-                template_path=None,
-                content_hash=content_hash,
-                generated_at=timestamp,
-                job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
-                job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
-                layout_mode="static",
-                blueprint_path=prepare_meta.blueprint_path,
-                blueprint_hash=prepare_meta.blueprint_hash,
-                slot_summary=slot_summary,
-            ),
-        )
-
-        draft_meta = DraftMeta(
-            target_length=len(blueprint.slides),
-            structure_pattern="static",
-            appendix_limit=self.options.appendix_limit,
-            template_id=template_spec.template_path,
-            template_match_score=1.0,
-            template_mismatch=[],
-            return_reason_stats={},
-            analyzer_summary={},
-        )
-        draft = DraftDocument(sections=draft_sections, meta=draft_meta)
-
-        blueprint_path_value = prepare_meta.blueprint_path or getattr(spec.meta, "template_spec_path", None)
-
-        mapping_log_meta = MappingLogMeta(
-            mapping_time_ms=0,
-            fallback_count=0,
-            ai_patch_count=0,
-            analyzer_issue_count=0,
-            mode="static",
-            blueprint_path=str(blueprint_path_value) if blueprint_path_value else None,
-            slot_summary=slot_summary,
-            static_slot_checks={
-                "unused_slots": unused_slots,
-                "orphan_cards": orphan_cards,
-            },
-        )
-        mapping_log = MappingLog(slides=mapping_slides, meta=mapping_log_meta).model_dump(mode="json")
-
-        ai_summary = {
-            "mode": "static",
-            "invoked": 0,
-            "used": 0,
-            "simulated": 0,
-            "models": {},
-        }
-
-        return StaticArtifacts(
-            draft=draft,
-            generate_ready=generate_ready,
-            mapping_log=mapping_log,
-            ai_summary=ai_summary,
-            slot_summary=slot_summary,
-        )
+        return sections, generate_ready_slides, mapping_slides
 
     def _load_template_spec(self, path: Path) -> TemplateSpec:
         try:
