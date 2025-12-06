@@ -209,20 +209,41 @@ def _finalize_draft_document(
 
 
 def _resolve_section(content_slide: ContentSlide, spec_slide: Slide | None) -> tuple[str, str]:
-    story = getattr(content_slide, "story", None)
-    if story:
-        chapter_id = story.get("chapter_id") if isinstance(story, dict) else story.chapter_id
-        phase = story.get("phase") if isinstance(story, dict) else story.phase
-        if chapter_id:
-            return str(chapter_id), str(chapter_id)
-        if phase:
-            return str(phase), str(phase)
+    def _normalize_value(value: Any | None) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
 
-    if content_slide.intent:
-        return content_slide.intent, content_slide.intent
-    if spec_slide is not None and getattr(spec_slide, "layout", None):
-        return spec_slide.layout, spec_slide.layout
-    return content_slide.id, content_slide.id
+    def _story_value(field: str) -> str | None:
+        story = getattr(content_slide, "story", None)
+        if story is None:
+            return None
+        raw = story.get(field) if isinstance(story, dict) else getattr(story, field, None)
+        return _normalize_value(raw)
+
+    chapter_id = _story_value("chapter_id")
+    phase = _story_value("phase")
+    angle = _story_value("angle")
+
+    if chapter_id:
+        section_name = angle or phase or f"Chapter {chapter_id}"
+        return chapter_id, section_name
+    if phase:
+        section_name = angle or f"Phase {phase}"
+        return phase, section_name
+
+    intent = _normalize_value(content_slide.intent)
+    if intent:
+        return intent, f"Intent: {intent}"
+
+    layout = getattr(spec_slide, "layout", None)
+    layout_value = _normalize_value(layout)
+    if layout_value:
+        return layout_value, f"Layout: {layout_value}"
+
+    slide_id = _normalize_value(content_slide.id) or "untitled"
+    return slide_id, f"Slide: {slide_id}"
 
 
 def _ensure_section(

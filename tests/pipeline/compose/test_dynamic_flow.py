@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 from pptx_generator.draft_recommender import LayoutProfile, RecommendationResult
@@ -18,6 +19,7 @@ from pptx_generator.pipeline.draft_structuring.dynamic_flow import (
     DraftStructuringOptions,
     DraftWorkItem,
     _process_work_item,
+    _resolve_section,
 )
 
 
@@ -97,7 +99,7 @@ def test_process_work_item_creates_section_and_mapping_log() -> None:
 
     assert len(accumulator.sections) == 1
     section = accumulator.sections[0]
-    assert section.name == "introduction"
+    assert section.name == "Intent: introduction"
     assert isinstance(section, DraftSection)
     assert len(section.slides) == 1
     slide_card = section.slides[0]
@@ -173,3 +175,40 @@ def test_process_work_item_tracks_ai_simulation_when_no_scores() -> None:
     )
 
     assert accumulator.ai_summary["simulated"] == 1
+
+
+def test_resolve_section_prefers_story_angle_over_chapter_id() -> None:
+    slide = SimpleNamespace(
+        id="slide-1",
+        intent="intent",
+        story={"chapter_id": "chapter-1", "phase": "phase-one", "angle": "angle headline"},
+    )
+    key, name = _resolve_section(slide, None)
+    assert key == "chapter-1"
+    assert name == "angle headline"
+
+
+def test_resolve_section_uses_phase_when_chapter_missing() -> None:
+    slide = SimpleNamespace(
+        id="slide-1",
+        intent="intent",
+        story={"phase": "problem"},
+    )
+    key, name = _resolve_section(slide, None)
+    assert key == "problem"
+    assert name == "Phase problem"
+
+
+def test_resolve_section_falls_back_to_layout_hint() -> None:
+    slide = SimpleNamespace(id="slide-1", intent=None)
+    spec_slide = Slide(id="spec-1", layout="TitleSlide")
+    key, name = _resolve_section(slide, spec_slide)
+    assert key == "TitleSlide"
+    assert name == "Layout: TitleSlide"
+
+
+def test_resolve_section_final_fallback_uses_slide_id() -> None:
+    slide = SimpleNamespace(id="slide-123", intent=None)
+    key, name = _resolve_section(slide, None)
+    assert key == "slide-123"
+    assert name == "Slide: slide-123"
