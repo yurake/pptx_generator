@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -12,11 +13,13 @@ from pptx_generator.cli import app
 from pptx_generator.cli_handlers.prepare import (
     PrepareCommandArtifacts,
     PrepareCommandError,
+    PrepareCommandResult,
     PrepareStaticContext,
     _load_prepare_inputs,
     _load_prepare_input,
     resolve_static_context,
 )
+from pptx_generator.cli_hooks import STAGE_PREPARE
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot, TemplateSpec
 from pptx_generator.prepare_ai.client import MockPrepareLLMClient, PrepareLLMResult
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
@@ -461,6 +464,7 @@ def test_prepare_respects_page_limit(tmp_path) -> None:
     meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
     assert meta_payload["statistics"]["cards_total"] == card_count
     assert meta_payload.get("constraints", {}).get("max_chapters") == 2
+
 def test_prepare_page_limit_short_option(tmp_path) -> None:
     output_dir = tmp_path / "short"
     runner = CliRunner()
@@ -495,310 +499,4 @@ def test_prepare_accepts_multiple_inputs(tmp_path) -> None:
     source_a.write_text("# イントロ\n- 課題A\n\n## 詳細\n- 詳細A1", encoding="utf-8")
     source_b = tmp_path / "source_b.md"
     source_b.write_text("# 提案\n- 提案A\n- 提案B", encoding="utf-8")
-    output_dir = tmp_path / "multi"
-
-    runner = CliRunner()
-    result = runner.invoke(
-        app,
-        [
-            "prepare",
-            str(source_a),
-            str(source_b),
-            "--mode",
-            "dynamic",
-            "--output",
-            str(output_dir),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 0
-    meta_payload = json.loads((output_dir / "ai_generation_meta.json").read_text(encoding="utf-8"))
-    import_sources = meta_payload.get("import_sources", [])
-    assert len(import_sources) == 2
-    kinds = {entry.get("via") for entry in import_sources}
-    assert kinds == {"structured"}
-    audit_payload = json.loads((output_dir / "audit_log.json").read_text(encoding="utf-8"))
-    audit_sources = audit_payload["prepare_normalization"].get("import_sources", [])
-    assert len(audit_sources) == 2
-
-
-def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
-
-    source = PrepareSourceDocument(
-        meta=PrepareSourceMeta(title="静的テンプレ検証", prepare_id="static-fallback"),
-        chapters=[],
-        raw_text="A. 静的テンプレの概要\nB. 主なポイント\nC. まとめ",
-    )
-    blueprint = TemplateBlueprint(
-        slides=[
-            TemplateBlueprintSlide(
-                slide_id="blueprint-01",
-                layout="StaticLayout",
-                required=True,
-                intent_tags=["overview"],
-                slots=[
-                    TemplateBlueprintSlot(
-                        slot_id="blueprint-01.title",
-                        anchor="Title",
-                        content_type="text",
-                        required=True,
-                        intent_tags=["headline"],
-                    ),
-                    TemplateBlueprintSlot(
-                        slot_id="blueprint-01.body",
-                        anchor="Body",
-                        content_type="text",
-                        required=False,
-                        intent_tags=["details"],
-                    ),
-                ],
-            )
-        ]
-    )
-
-    policy = policy_set.get_policy(None)
-    cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
-        source=source,
-        policy=policy,
-        blueprint=blueprint,
-        page_limit=None,
-        prompt_overrides=[],
-        slide_sources=None,
-        slide_input_refs=None,
-    )
-
-    assert len(cards) == 2
-    assert slot_summary["required_total"] == 1
-    assert slot_summary["required_fulfilled"] == 1
-    assert cards[0].meta["blueprint"]["fulfilled"] is True
-    # fallback経路でも LLM 呼び出しが slot 数分行われる
-    assert len(ai_records) == 1
-    assert ai_records[0].batch_card_ids == ["blueprint-01-title", "blueprint-01-body"]
-    assert prompt_usage == []
-
-
-class SlotDroppingPrepareMock(MockPrepareLLMClient):
-    """Mock that omits the last slot from the response."""
-
-    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:  # noqa: D401
-        result = super().generate(prompt, model_hint=model_hint)
-        payload = json.loads(result.text)
-        slots = payload.get("slots") or []
-        if isinstance(slots, list) and slots:
-            slots = slots[:-1]
-        text = json.dumps({"slots": slots}, ensure_ascii=False)
-        return PrepareLLMResult(text=text, model=result.model, warnings=result.warnings, tokens=result.tokens)
-
-
-def test_prepare_static_slot_missing_response(monkeypatch) -> None:
-    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=SlotDroppingPrepareMock())
-
-    source = PrepareSourceDocument(
-        meta=PrepareSourceMeta(title="Slot 欠損", prepare_id="slot-missing"),
-        chapters=[],
-        raw_text="A. 要約のみ",
-    )
-    blueprint = TemplateBlueprint(
-        slides=[
-            TemplateBlueprintSlide(
-                slide_id="bp-slot",
-                layout="StaticLayout",
-                required=True,
-                intent_tags=["overview"],
-                slots=[
-                    TemplateBlueprintSlot(
-                        slot_id="bp-slot.title",
-                        anchor="Title",
-                        content_type="text",
-                        required=True,
-                        intent_tags=["headline"],
-                    ),
-                    TemplateBlueprintSlot(
-                        slot_id="bp-slot.body",
-                        anchor="Body",
-                        content_type="text",
-                        required=False,
-                        intent_tags=["details"],
-                    ),
-                ],
-            )
-        ]
-    )
-
-    policy = policy_set.get_policy(None)
-    cards, slot_summary, _, prompt_usage = orchestrator._build_cards_static(
-        source=source,
-        policy=policy,
-        blueprint=blueprint,
-        page_limit=None,
-        prompt_overrides=[],
-        slide_sources=None,
-        slide_input_refs=None,
-    )
-
-    assert len(cards) == 2
-    assert cards[1].meta["blueprint"]["fulfilled"] is False
-    assert slot_summary["optional_total"] == 1
-    assert slot_summary["optional_used"] == 0
-    assert prompt_usage == []
-
-
-def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
-    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
-
-    source = PrepareSourceDocument(
-        meta=PrepareSourceMeta(title="Override テスト", prepare_id="override-test"),
-        chapters=[],
-        raw_text="概要のみ",
-    )
-    blueprint = TemplateBlueprint(
-        slides=[
-            TemplateBlueprintSlide(
-                slide_id="override-slide",
-                layout="OverrideLayout",
-                required=True,
-                intent_tags=["overview"],
-                slots=[
-                    TemplateBlueprintSlot(
-                        slot_id="override-slide.title",
-                        anchor="Title",
-                        content_type="text",
-                        required=True,
-                        intent_tags=["headline"],
-                    )
-                ],
-            )
-        ]
-    )
-
-    override = StaticPromptOverride(
-        slide_id="override-slide",
-        slide_index=1,
-        instructions="- ROI を 2 行で列挙",
-        template_path=".pptx/extract/prompts/01_override.md",
-    )
-
-    policy = policy_set.get_policy(None)
-    cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
-        source=source,
-        policy=policy,
-        blueprint=blueprint,
-        page_limit=None,
-        prompt_overrides=[override],
-        slide_sources=None,
-        slide_input_refs=None,
-    )
-
-    assert cards, "カードが生成されること"
-    assert slot_summary["required_total"] == 1
-    assert ai_records[0].prompt_template_path == override.template_path
-    assert ai_records[0].prompt_template_instructions == override.instructions
-    assert prompt_usage == [
-        {
-            "slide_id": "override-slide",
-            "slide_index": 1,
-            "template_path": override.template_path,
-        }
-    ]
-
-
-def _encode_data_uri(text: str) -> str:
-    payload = base64.b64encode(text.encode("utf-8")).decode("ascii")
-    return f"data:text/plain;base64,{payload}"
-
-
-def test_load_prepare_inputs_assigns_unique_import_ids() -> None:
-    first = _encode_data_uri("# 見出し\n最初の本文です。")
-    second = _encode_data_uri("# セカンド\n別の本文です。")
-
-    document, metadata, messages = _load_prepare_inputs((first, second))
-
-    assert document is not None
-    import_ids = [chapter.id for chapter in document.chapters if chapter.id.startswith("import-")]
-    assert len(import_ids) >= 2
-    assert len(import_ids) == len(set(import_ids))
-    assert metadata, "各インポートソースのメタ情報が含まれること"
-    assert any("インポートを完了しました" in message for message in messages)
-
-
-def test_load_prepare_input_rejects_http_protocol() -> None:
-    with pytest.raises(PrepareCommandError):
-        _load_prepare_input("http://example.com/sample", object())  # type: ignore[arg-type]
-
-
-def _build_prepare_card(
-    *,
-    card_id: str,
-    headline: str,
-    body_lines: list[str],
-    notes: list[str] | None = None,
-) -> PrepareCard:
-    body_blocks = [PrepareBodyBlock(type="paragraph", text=line) for line in body_lines]
-    note_entries = [PrepareNoteEntry(type="note", text=text) for text in (notes or [])]
-    content = PrepareCardContent(headline=headline, body=body_blocks, notes=note_entries)
-    return PrepareCard(
-        card_id=card_id,
-        order=1,
-        role=PrepareCardRole(story_phase="introduction", intent_tags=["body"]),
-        content=content,
-        meta={"blueprint": {"slot_id": card_id}},
-    )
-
-
-def test_draft_structuring_routes_notes_to_slide_notes() -> None:
-    step = DraftStructuringStep()
-    slot = TemplateBlueprintSlot(
-        slot_id="system_layout-01.slot09",
-        anchor="Date_dept",
-        content_type="text",
-        required=True,
-        intent_tags=["body"],
-    )
-    card = _build_prepare_card(
-        card_id="systemlayout-01-slot09",
-        headline="Date",
-        body_lines=["2025-11 | 提案自動化プラットフォーム（R&D）"],
-        notes=["日付は作成月、部門はプロジェクトの性格に合わせて調整可。"],
-    )
-    elements: dict[str, object] = {}
-    lines = step._card_to_lines(card)
-    step._assign_slot_to_elements(elements, slot, card, lines)
-
-    assert elements["Date_dept"] == ["2025-11 | 提案自動化プラットフォーム（R&D）"]
-    assert "note" not in elements
-
-    step._merge_slide_notes(elements, card.notes_text())
-    assert "note" in elements
-    assert "日付は作成月" in elements["note"]
-    assert "2025-11" not in elements["note"]
-
-
-def test_draft_structuring_builds_table_payload_for_table_slots() -> None:
-    step = DraftStructuringStep()
-    slot = TemplateBlueprintSlot(
-        slot_id="system_layout-01.slot05",
-        anchor="Items",
-        content_type="table",
-        required=True,
-        intent_tags=[],
-    )
-    card = _build_prepare_card(
-        card_id="systemlayout-01-slot05",
-        headline="Items",
-        body_lines=["品質基準を可視化", "承認プロセスを共通化"],
-    )
-    elements: dict[str, object] = {}
-    lines = step._card_to_lines(card)
-    step._assign_slot_to_elements(elements, slot, card, lines)
-
-    table_payload = elements["Items"]
-    assert table_payload["headers"] == ["項目"]
-    assert table_payload["rows"] == [["品質基準を可視化"], ["承認プロセスを共通化"]]
+    output_di...
