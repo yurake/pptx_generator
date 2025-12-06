@@ -49,7 +49,6 @@ flowchart TB
         ST3_ANCHOR(( ))
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM058["RM-058<br/>プレペア骨子<br/>内製化<br/>(進行中)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
@@ -710,8 +709,8 @@ flowchart TB
 - 対象 stage: 2（コンテンツ準備）
 - ゴール: 外部ポリシーファイルに頼らず、Blueprint / 入力メタデータから骨子（story_phase・intent）を導出できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-prepare-policy-removal.md](../notes/20251105-prepare-policy-removal.md)
-- 参照 ToDo: [docs/todo/20251206-rm058-prepare-policy-internalization.md](../todo/20251206-rm058-prepare-policy-internalization.md)
-- 状況: 進行中（2025-12-06 更新）
+- 参照 ToDo: [docs/todo/archive/20251206-rm058-prepare-policy-internalization.md](../todo/archive/20251206-rm058-prepare-policy-internalization.md)
+- 状況: 完了（2025-12-06 更新）
 - 期待成果:
   - `PrepareAIOrchestrator` が Blueprint / 入力意図から直接骨子を推論し、`story_phase` は任意・可変語彙として扱える。
   - CLI `prepare` と関連ドキュメント（README、`docs/requirements/stages/stage-02-prepare.md` など）から外部ポリシー依存を撤廃し、新しいテストシナリオを整備する。
