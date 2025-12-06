@@ -35,7 +35,6 @@ flowchart TB
     subgraph ST1["Stage 1: テンプレ"]
         direction TB
         ST1_ANCHOR(( ))
-        RM080["RM-080<br/>テンプレ実スライド<br/>スナップショット強化<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
@@ -1010,8 +1009,8 @@ flowchart TB
 - 対象 stage: Stage 1（テンプレ）
 - ゴール: `pptx template` で実スライドの形状・段落情報を詳細に取得し、テンプレ解析と後続 stage で活用できる状態にする。
 - 参照ドキュメント: [docs/design/stages/stage-01-template.md](../design/stages/stage-01-template.md)（要更新）
-- 参照 ToDo: [docs/todo/20251124-rm080-template-slide-snapshot.md](../todo/20251124-rm080-template-slide-snapshot.md)
-- 状況: 未着手（2025-11-24 追加）
+- 参照 ToDo: [docs/todo/archive/20251124-rm080-template-slide-snapshot.md](../todo/archive/20251124-rm080-template-slide-snapshot.md)
+- 状況: 完了（2025-12-06 更新）
 - 期待成果:
   - `slide_snapshot.json` に図形寸法・段落属性・プレースホルダー種別を網羅し、差分検証に利用できるフォーマットへ拡張する。
   - `TemplateExtractor` の抽出結果と整合を取り、バリデーションや Analyzer と共有できるようにする。

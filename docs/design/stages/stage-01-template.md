@@ -43,6 +43,7 @@
 ### 抽出・検証 CLI 補助
 - `uv run pptx tpl-extract`: テンプレ PPTX から `template_spec.json`・`layouts.jsonl`・`jobspec.json` を抽出し、後続 stage が参照するメタデータを更新する。
 - `uv run pptx layout-validate --template <path>`: レイアウトごとのプレースホルダー構造や禁則チェックを実行し、`diagnostics.json` と差分レポートを生成する。Golden Sample や Analyzer と組み合わせて品質ゲートを設計する。
+- `uv run pptx template ... --slide`: 抽出と同時に `slide_snapshot.json` を生成する。実スライドの図形座標・z-order・回転・テキスト枠余白、および段落のフォント／整列／インデント／行間などを網羅し、TemplateExtractor が構築するアンカー情報や Stage 4 Analyzer スナップショットと照合できる粒度で実データを記録する。テンプレ差分レビューや RM-080 の検証で参照する。
 
 ## 監視・ログ
 - Release CLI: 生成時刻、操作者、テンプレパス、検出エラーを構造化ログに記録。

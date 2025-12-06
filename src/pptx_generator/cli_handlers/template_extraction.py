@@ -352,6 +352,16 @@ def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
                 "level": paragraph.level,
                 "font_size_pt": paragraph.font_size_pt,
                 "color_hex": paragraph.color_hex,
+                "font_name": paragraph.font_name,
+                "bold": paragraph.bold,
+                "italic": paragraph.italic,
+                "alignment": paragraph.alignment,
+                "line_spacing_pt": paragraph.line_spacing_pt,
+                "space_before_pt": paragraph.space_before_pt,
+                "space_after_pt": paragraph.space_after_pt,
+                "left_indent_in": paragraph.left_indent_in,
+                "right_indent_in": paragraph.right_indent_in,
+                "first_line_indent_in": paragraph.first_line_indent_in,
             }
             for paragraph in shape.paragraphs
         ]
@@ -366,6 +376,13 @@ def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
                 "height_in": shape.height_in,
                 "is_placeholder": shape.is_placeholder,
                 "placeholder_type": _placeholder_type_name(shape.placeholder_type),
+                "placeholder_index": shape.placeholder_index,
+                "z_order": shape.z_order,
+                "rotation_deg": shape.rotation_deg,
+                "text_frame_padding": shape.text_frame_padding,
+                "text_frame_word_wrap": shape.text_frame_word_wrap,
+                "text_frame_vertical_anchor": shape.text_frame_vertical_anchor,
+                "text_frame_auto_size": shape.text_frame_auto_size,
                 "paragraphs": paragraphs,
             }
         )
