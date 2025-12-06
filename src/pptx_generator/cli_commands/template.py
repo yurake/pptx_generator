@@ -90,16 +90,14 @@ def create_template_command(
     @click.option("--reviewed-by", type=str, default=None, help="テンプレートリリースメタのレビュー担当者")
     @click.option(
         "--baseline-release",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
         help="比較対象となる過去の template_release.json",
     )
     @click.option(
         "--golden-spec",
         "golden_specs",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         multiple=True,
         help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
     )
@@ -161,10 +159,10 @@ def create_template_command(
         log_current_llm_provider("template")
 
         hook_manager = None
-        template_id = derive_template_id_from_template_path(template_path)
+        effective_template_id = template_id or derive_template_id_from_template_path(template_path)
         stage_env = {
             "PPTX_STAGE": STAGE_TEMPLATE,
-            "PPTX_TEMPLATE_ID": template_id,
+            "PPTX_TEMPLATE_ID": effective_template_id,
             "PPTX_TEMPLATE_PATH": str(template_path.resolve()),
             "PPTX_STAGE_OUTPUT_DIR": str(output.resolve()),
             "PPTX_LAYOUT_MODE": layout_mode.lower(),
@@ -184,7 +182,7 @@ def create_template_command(
             "PPTX_TEMPLATE_FORCE": "1" if force else "0",
         }
         if layout_mode.lower() == "static":
-            hook_manager = load_hooks_for_template_id(template_id)
+            hook_manager = load_hooks_for_template_id(effective_template_id)
         if hook_manager:
             executed, continue_default = hook_manager.run_stage_hook(
                 STAGE_TEMPLATE,
@@ -192,7 +190,8 @@ def create_template_command(
             )
             if executed:
                 click.echo(
-                    f"[hooks] template stage executed via external hook (template_id={template_id})"
+                    "[hooks] template stage executed via external hook "
+                    f"(template_id={effective_template_id})"
                 )
                 if not continue_default:
                     return
@@ -210,7 +209,7 @@ def create_template_command(
             with_release=with_release,
             brand=brand,
             version=version,
-            template_id=template_id,
+            template_id=effective_template_id,
             release_output=release_output,
             generated_by=generated_by,
             reviewed_by=reviewed_by,
@@ -241,13 +240,13 @@ def create_template_command(
                 prompts_dir=result.extraction.prompt_templates_dir,
             )
             skeleton_path = ensure_hook_skeleton(
-                template_id,
+                effective_template_id,
                 [ctx.key for ctx in contexts],
             )
             if skeleton_path:
                 click.echo(f"[hooks] scaffold created: {skeleton_path}")
             if hook_manager is None:
-                hook_manager = load_hooks_for_template_id(template_id)
+                hook_manager = load_hooks_for_template_id(effective_template_id)
 
         if hook_manager:
             stage_env_with_outputs = dict(stage_env)
