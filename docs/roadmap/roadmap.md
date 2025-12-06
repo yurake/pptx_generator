@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM073["RM-073<br/>README 多言語展開整備<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -920,13 +919,13 @@ flowchart TB
 ### RM-073 README 多言語展開整備
 - 対象領域: ルート `README.md`（日本語版）と多言語版 README（英語・中国語）
 - ゴール: ルート README の更新内容を英語版・中国語版にも速やかに反映できる運用を確立し、三言語の内容差分を最小化する。
-- 参照ドキュメント: （作成予定: `docs/notes/README-i18n-plan.md`）
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-23 追加）
-- 期待成果:
-  - 英語版（`README.en.md` など）、中国語版 README を作成し、ルート README と同等の構成・更新履歴を保つ。
-  - README 更新時に他言語版へ反映するフロー／チェックリストを整備し、ToDo や CI で差分を検知できるようにする。
-  - 翻訳ルール（用語集・スタイル）と翻訳担当の責務を明文化し、リリースフローに組み込む。
+- 参照ドキュメント: [docs/notes/README-i18n-plan.md](../notes/README-i18n-plan.md), [docs/runbooks/readme-i18n.md](../runbooks/readme-i18n.md)
+- 参照 ToDo: [docs/todo/archive/20251130-rm073-readme-multilang.md](../todo/archive/20251130-rm073-readme-multilang.md)
+- 状況: 完了（2025-11-30 更新）
+- 達成成果:
+  - `README.en.md`・`README.zh.md` を整備し、日本語版と共通のセクション構成・Language switcher を導入。
+  - `.locales/translate_readme.py` と GitHub Actions ワークフローを追加し、README 差分の自動翻訳と CI 連携を実装。
+  - `docs/runbooks/readme-i18n.md` へ運用手順と差分検知方法を整理し、レビュー時のチェックポイントを明文化。
 - 依存: RM-002（エージェント運用ガイド整備）、RM-070（開発プロセス運用ルール見直し）
 
 <a id="rm-074"></a>
