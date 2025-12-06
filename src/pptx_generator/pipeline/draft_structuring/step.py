@@ -668,6 +668,32 @@ class DraftStructuringStep:
             return base
 
         content_elements = content_slide.elements
+        elements, table_payload = self._collect_content_elements(content_elements, base)
+
+        if spec_slide is not None:
+            self._merge_spec_slide_details(
+                elements=elements,
+                base=base,
+                spec_slide=spec_slide,
+                table_payload=table_payload,
+            )
+
+        if table_payload is not None:
+            self._apply_table_payload(
+                elements=elements,
+                base=base,
+                table_payload=table_payload,
+                spec_slide=spec_slide,
+                layout_profile=layout_profile,
+                content_slide=content_slide,
+            )
+
+        return elements
+
+    @staticmethod
+    def _collect_content_elements(
+        content_elements: ContentElements, base: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
         elements: dict[str, Any] = {}
 
         if content_elements.title:
@@ -690,49 +716,67 @@ class DraftStructuringStep:
         if content_elements.table_data is not None:
             table_payload = build_table_payload(content_elements.table_data)
 
+        return elements, table_payload
+
+    @staticmethod
+    def _merge_spec_slide_details(
+        *,
+        elements: dict[str, Any],
+        base: dict[str, Any],
+        spec_slide: Slide,
+        table_payload: dict[str, Any] | None,
+    ) -> None:
+        if spec_slide.subtitle and "subtitle" not in elements:
+            elements["subtitle"] = spec_slide.subtitle
+
+        for key, value in base.items():
+            if key in {"title", "body", "note", "subtitle"}:
+                continue
+            if table_payload is not None and is_table_payload(value):
+                continue
+            elements.setdefault(key, value)
+
+        for anchor in spec_slide.auto_draw_anchors:
+            elements.pop(anchor, None)
+
+    def _apply_table_payload(
+        self,
+        *,
+        elements: dict[str, Any],
+        base: dict[str, Any],
+        table_payload: dict[str, Any],
+        spec_slide: Slide | None,
+        layout_profile: LayoutProfile | None,
+        content_slide: ContentSlide,
+    ) -> None:
+        placeholders = layout_profile.placeholders if layout_profile else ()
+        anchor, reasons = resolve_table_anchor(spec_slide, placeholders)
+        target_key = anchor or "table"
+
+        if logger.isEnabledFor(logging.DEBUG):
+            debug_reason = ", ".join(reasons) if reasons else "none"
+            logger.debug(
+                "table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
+                getattr(content_slide, "id", "unknown"),
+                layout_profile.layout_id if layout_profile else "unknown",
+                target_key,
+                debug_reason,
+            )
+
+        for key in list(elements.keys()):
+            if key == target_key:
+                continue
+            if is_table_payload(elements[key]):
+                elements.pop(key, None)
+
         if spec_slide is not None:
-            if spec_slide.subtitle and "subtitle" not in elements:
-                elements["subtitle"] = spec_slide.subtitle
             for key, value in base.items():
-                if key in {"title", "body", "note", "subtitle"}:
-                    continue
-                if table_payload is not None and is_table_payload(value):
-                    continue
-                elements.setdefault(key, value)
-            for anchor in spec_slide.auto_draw_anchors:
-                elements.pop(anchor, None)
-
-        if table_payload is not None:
-            placeholders = layout_profile.placeholders if layout_profile else ()
-            anchor, reasons = resolve_table_anchor(spec_slide, placeholders)
-            target_key = anchor or "table"
-
-            if logger.isEnabledFor(logging.DEBUG):
-                debug_reason = ", ".join(reasons) if reasons else "none"
-                logger.debug(
-                    "table anchor resolved: slide_id=%s layout=%s anchor=%s reason=%s",
-                    getattr(content_slide, "id", "unknown"),
-                    layout_profile.layout_id if layout_profile else "unknown",
-                    target_key,
-                    debug_reason,
-                )
-
-            for key in list(elements.keys()):
                 if key == target_key:
                     continue
-                if is_table_payload(elements[key]):
+                if is_table_payload(value):
                     elements.pop(key, None)
 
-            if spec_slide is not None:
-                for key, value in base.items():
-                    if key == target_key:
-                        continue
-                    if is_table_payload(value):
-                        elements.pop(key, None)
-
-            elements[target_key] = table_payload
-
-        return elements
+        elements[target_key] = table_payload
 
     @staticmethod
     def _convert_slide_elements(slide: Slide | None) -> dict[str, Any]:
