@@ -60,10 +60,14 @@
    - `summary` セクションにレイアウト数・アンカー数・警告/エラー件数・Analyzer issue/fix 件数を集計し、`summary_delta` で品質推移を数値化する。
    - `environment` に Python / OS / CLI / LibreOffice / .NET SDK のバージョンを記録し、取得できなかった項目は診断警告に出力する。
 3. **互換性チェック**  
-   - Golden Sample Runner が既知 spec を用いてレンダリング → Analyzer → LibreOffice まで通し、互換性指標を算出。  
-   - エラー時は差分レポートにハッシュとログパスを記録。
+  - Golden Sample Runner が既知 spec を用いてレンダリング → Analyzer → LibreOffice まで通し、互換性指標を算出。  
+  - エラー時は差分レポートにハッシュとログパスを記録。
 4. **アーカイブ**  
-   - Release CLI が成果物（PPTX, release.json, diagnostics）を `templates/releases/<brand>/<version>/` にまとめる。
+  - Release CLI が成果物（PPTX, release.json, diagnostics）を `templates/releases/<brand>/<version>/` にまとめる。
+
+### Blueprint 拡張
+- Static モードで抽出された Blueprint は `TemplateBlueprintSlot.default_text` にテンプレート側の初期文言を保持する。プレーンテキスト要素は改行ごとに分割され、Stage3 以降でカード未割当の場合のフォールバックとして利用できる。
+- 表や画像などの構造化要素については `TemplateBlueprintSlot.default_payload` を今後拡張予定のフィールドとして確保しており、必要に応じてスキーマ追加で取り込む。
 
 ## インターフェース
 - CLI: `uv run pptx tpl-release --template templates/.../template.pptx --brand <brand> --version <version> [--baseline-release <path>] [--golden-spec <spec.json>...]`

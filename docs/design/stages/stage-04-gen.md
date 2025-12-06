@@ -15,7 +15,7 @@
 | Polisher Bridge | Open XML SDK プロジェクト呼び出し | .NET 8 CLI |
 
 ## フロー
-1. Rendering Orchestrator がテンプレートを開き、`generate_ready.json` から再構築した `JobSpec` を基にスライドを生成。  
+1. Rendering Orchestrator がテンプレートを開き、`generate_ready.json` から再構築した `JobSpec` を基にスライドを生成。静的モードでは Blueprint で参照するレイアウト図形をスライドへ複製し、テンプレ由来のアンカー名で直接操作できるようにする。  
 2. 各 PH にテキスト・表・画像を挿入し、フォーマット調整。  
 3. Pre-Analyzer がレンダリング直後の PPTX を解析し、ベースラインとして `analysis_pre_polisher.json` を生成。  
 4. Rendering Consistency が空プレースホルダーやスライド数不一致をチェックし、検知結果を `rendering_log.json` に追記。  
@@ -49,7 +49,7 @@
 ## モニタリング
 - メトリクス: レンダリング時間、PDF 生成時間、警告件数、Polisher 実行率、Analyzer before/after の課題件数差分。
 - ログ: ファイルパス、テンプレ版、LibreOffice exit code、修正内容（フォント調整など）、`monitoring_report.json` に基づくアラートサマリ。
-- 静的テンプレ用外部フック: `external/<template_id>/hooks.json` に `gen` ステージが定義されている場合、CLI はレンダリング前後にフックを実行する。環境変数例: `PPTX_STAGE=gen`, `PPTX_TEMPLATE_ID`, `PPTX_GENERATE_READY_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_OUTPUT_PPTX_PATH`, `PPTX_OUTPUT_PDF_PATH`（PDF 出力時）。スライド別フックでは `PPTX_SLIDE_KEY=NN_slug`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` 等を提供する。
+- 静的テンプレの既定文言は Blueprint (`TemplateBlueprintSlot.default_text`) と `generate_ready.json` に保持され、Renderer が直接挿入するため Stage4 フックは原則不要となった。`external/<template_id>/hooks.json` で `gen` ステージを `null` に設定すれば標準レンダラのみで完結する。特殊処理が必要な場合のみ任意フックを定義でき、その際は `PPTX_STAGE=gen`, `PPTX_TEMPLATE_ID`, `PPTX_GENERATE_READY_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_OUTPUT_PPTX_PATH`, `PPTX_OUTPUT_PDF_PATH` 等の環境変数が渡される。スライド単位のフックでも `PPTX_SLIDE_KEY=NN_slug`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を利用可能。
 
 ## テスト戦略
 - 単体: PH マッピング → スライド生成のロジックをモックで検証。

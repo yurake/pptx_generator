@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import tempfile
 import time
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -102,6 +104,7 @@ class SimpleRendererStep:
         for page_number, slide_spec in enumerate(spec.slides, start=1):
             layout = self._resolve_layout(presentation, slide_spec)
             slide = presentation.slides.add_slide(layout)
+            self._ensure_layout_shapes(slide, layout)
             self._apply_title(slide, slide_spec)
             self._apply_subtitle(slide, slide_spec)
             self._apply_bullets(slide, slide_spec)
@@ -730,9 +733,29 @@ class SimpleRendererStep:
         presentation.save(output_path)
         return output_path
 
+    def _ensure_layout_shapes(self, slide, layout) -> None:
+        if layout is None:
+            return
+        if len(slide.shapes) >= len(layout.shapes):
+            return
+        for layout_shape in layout.shapes:
+            if getattr(layout_shape, "is_placeholder", False):
+                continue
+            new_element = deepcopy(layout_shape.element)
+            slide.shapes._spTree.insert_element_before(new_element, "p:extLst")
+
     def _find_shape_by_name(self, slide, name: str):
         for shape in slide.shapes:
             if shape.name == name:
+                return shape
+        normalized = self._normalize_anchor_name(name)
+        if not normalized:
+            return None
+        for shape in slide.shapes:
+            candidate = getattr(shape, "name", "")
+            if candidate == name:
+                return shape
+            if self._normalize_anchor_name(candidate) == normalized:
                 return shape
         return None
 
@@ -749,6 +772,16 @@ class SimpleRendererStep:
                 target_idx = layout_shape.placeholder_format.idx
                 break
         if target_idx is None:
+            normalized = self._normalize_anchor_name(name)
+            if normalized:
+                for layout_shape in layout.shapes:
+                    if not getattr(layout_shape, "is_placeholder", False):
+                        continue
+                    candidate = getattr(layout_shape, "name", "")
+                    if self._normalize_anchor_name(candidate) == normalized:
+                        target_idx = layout_shape.placeholder_format.idx
+                        break
+        if target_idx is None:
             return None
         for shape in slide.shapes:
             if (
@@ -756,7 +789,35 @@ class SimpleRendererStep:
                 and shape.placeholder_format.idx == target_idx
             ):
                 return shape
+        if normalized := self._normalize_anchor_name(name):
+            for shape in slide.shapes:
+                if not getattr(shape, "is_placeholder", False):
+                    continue
+                candidate = getattr(shape, "name", "")
+                if self._normalize_anchor_name(candidate) == normalized:
+                    return shape
         return None
+
+    @staticmethod
+    def _normalize_anchor_name(value: str | None) -> str:
+        if value is None:
+            return ""
+        text = value.lower()
+        replacements = {
+            "テキストプレースホルダー": "textplaceholder",
+            "テキスト プレースホルダー": "textplaceholder",
+            "テキストボックス": "textbox",
+            "テキスト ボックス": "textbox",
+            "タイトル": "title",
+            "表": "table",
+            "図": "picture",
+        }
+        for src, dest in replacements.items():
+            text = text.replace(src, dest)
+        text = text.replace("（", "(").replace("）", ")")
+        text = text.replace(" ", "").replace("_", "").replace("-", "")
+        text = re.sub(r"[0-9\.]+", "", text)
+        return text
 
     def _resolve_anchor(
         self,

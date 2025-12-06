@@ -67,6 +67,14 @@ class TemplateBlueprintSlot(BaseModel):
     )
     required: bool = Field(True, description="必須 slot かどうか")
     intent_tags: list[str] = Field(default_factory=list, description="意図タグ（プロンプト補助用）")
+    default_text: list[str] | None = Field(
+        None,
+        description="静的テンプレートが提示する既定テキスト行",
+    )
+    default_payload: dict[str, Any] | None = Field(
+        None,
+        description="テキスト以外の要素向け既定ペイロード",
+    )
 
 
 class TemplateBlueprintSlide(BaseModel):
