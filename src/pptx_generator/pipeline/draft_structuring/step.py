@@ -46,15 +46,7 @@ from ...draft_recommender import (
 )
 from ...utils.usage_tags import normalize_usage_tags
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
-from ...draft_intel import (
-    ChapterTemplate,
-    ChapterTemplateEvaluation,
-    evaluate_chapter_template,
-    find_template_by_structure,
-    load_analysis_summary,
-    load_chapter_template,
-    summarize_analyzer_counts,
-)
+from ...draft_intel import load_analysis_summary, summarize_analyzer_counts
 from ..base import PipelineContext
 from ..slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 from ..table_anchor import (
@@ -137,12 +129,6 @@ class DraftStructuringStep:
         self._layout_name_lookup = {profile.layout_id: profile.layout_name for profile in layouts}
         self._layout_catalog = {profile.layout_id: profile for profile in layouts}
         analyzer_map = load_analysis_summary(self.options.analysis_summary_path) if self.options.analysis_summary_path else {}
-        template: ChapterTemplate | None = None
-        if self.options.chapter_templates_dir:
-            if self.options.chapter_template_id:
-                template = load_chapter_template(self.options.chapter_templates_dir, self.options.chapter_template_id)
-            elif self.options.structure_pattern:
-                template = find_template_by_structure(self.options.chapter_templates_dir, self.options.structure_pattern)
         recommender = self._resolve_recommender()
         prepare_meta = context.artifacts.get("prepare_generation_meta")
         if not isinstance(prepare_meta, PrepareGenerationMeta) or prepare_meta.mode not in {"dynamic", "static"}:
@@ -155,7 +141,6 @@ class DraftStructuringStep:
             document=document,
             layouts=layouts,
             analyzer_map=analyzer_map,
-            chapter_template=template,
             recommender=recommender,
             dynamic_prepare=dynamic_prepare,
         )

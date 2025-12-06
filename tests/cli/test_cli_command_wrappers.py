@@ -51,7 +51,6 @@ def test_outline_command_invokes_handler(monkeypatch, tmp_path: Path) -> None:
     defaults = {
         "default_output_dir": tmp_path / "draft",
         "default_appendix_limit": 7,
-        "default_chapter_templates_dir": tmp_path / "chapters",
         "default_prepare_cards_path": tmp_path / "prepare" / "prepare_card.json",
         "default_return_reasons_path": tmp_path / "return_reasons.json",
         "default_draft_filename": "draft.json",
@@ -117,7 +116,6 @@ def test_outline_command_error_paths(monkeypatch, tmp_path: Path, exc_type, mess
     command = create_outline_command(
         default_output_dir=tmp_path / "draft",
         default_appendix_limit=5,
-        default_chapter_templates_dir=tmp_path / "chapters",
         default_prepare_cards_path=tmp_path / "prepare_card.json",
         default_return_reasons_path=tmp_path / "return_reasons.json",
         default_draft_filename="draft.json",

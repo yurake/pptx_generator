@@ -1,5 +1,8 @@
 # 2025-10-23 RM-036 ドラフト構成インテリジェンス調査メモ
 
+> **2025-12-06 メモ**  
+> 章テンプレート機能は廃止済み。本メモは PoC 記録として参照してください。
+
 ## 背景
 - RM-036 のゴールに沿い、章テンプレ・layout_hint 候補提示・差戻し理由テンプレートを体系化して HITL stage の手戻りを削減する方針を整理した。
 - 現状仕様は `docs/design/stages/stage-03-compose.md` と `docs/requirements/stages/stage-03-compose.md` に集約されているが、テンプレ運用や Analyzer 連携は未定義のままである。

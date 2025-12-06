@@ -31,8 +31,6 @@ class OutlineCommandConfig:
     target_length: int | None
     structure_pattern: str | None
     appendix_limit: int
-    chapter_templates_dir: Path
-    chapter_template: str | None
     analysis_summary_path: Path | None
     prepare_cards: Path
     require_prepare: bool
@@ -80,10 +78,6 @@ def run_outline_command(config: OutlineCommandConfig) -> None:
             target_length=config.target_length,
             structure_pattern=config.structure_pattern,
             appendix_limit=config.appendix_limit,
-            chapter_templates_dir=config.chapter_templates_dir
-            if config.chapter_templates_dir.exists()
-            else None,
-            chapter_template=config.chapter_template,
             analysis_summary_path=config.analysis_summary_path,
             prepare_cards=config.prepare_cards,
             require_prepare=config.require_prepare,
@@ -126,8 +120,6 @@ def execute_outline(
     target_length: int | None,
     structure_pattern: str | None,
     appendix_limit: int,
-    chapter_templates_dir: Path | None,
-    chapter_template: str | None,
     analysis_summary_path: Path | None,
     prepare_cards: Path | None,
     require_prepare: bool,
@@ -145,8 +137,6 @@ def execute_outline(
         target_length=target_length,
         structure_pattern=structure_pattern,
         appendix_limit=appendix_limit,
-        chapter_templates_dir=chapter_templates_dir,
-        chapter_template_id=chapter_template,
         analysis_summary_path=analysis_summary_path,
     )
 
