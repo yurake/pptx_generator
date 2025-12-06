@@ -7,10 +7,21 @@
 - `docs/todo/` の対応タスクを最新化し、残作業が無いことを確認する。
 - `uv run --extra dev pytest` を実行し、スタイル設定を含む全テストがグリーンであることを確認する。
 - CI がグリーンであることをダッシュボードで確認する。
+- 静的テンプレで外部フック（`external/<template_id>/hooks.json`）を利用している場合は、同ディレクトリの `pyproject.toml` / `uv.lock` が最新か確認し、必要なら `uv sync --project external/<template_id>` を実行して依存を整えておく（CLI はフック実行前に同コマンドを自動実行するが、リリース前に同期漏れがないかチェックする）。
 
 ## 手順
 1. `CHANGELOG.md` を更新し、主要変更点と既知の注意点を記載する。
 2. ステージング環境で代表的な案件データ（最低 3 件）を用いて JSON→PPTX→PDF の生成テストを実施する。
+   - 静的テンプレート＋外部フックを利用する案件は Excel 入力を含む静的パイプラインを実行し、`.pptx/<slug>/gen/` に出力された PPTX の表セルと `external/<template_id>/runtime/context.json` の `extract_summary.table` を `scripts/inspect_static_pptx.py` で突合する。
+
+     ```bash
+     uv run python scripts/inspect_static_pptx.py \
+       --template templates/経費投資.pptx \
+       --pptx .pptx/jri/gen/jri_static_output.pptx \
+       --slide-index 0
+     ```
+
+     出力結果から表セルやプレースホルダーの文言を確認し、`context.json` の `extract_summary.table` と一致しているかをレビューする。
 3. テンプレート更新が含まれる場合は `uv run pptx layout-validate --template samples/templates/templates.pptx --output .pptx/validation/release` を実行し、`diagnostics.json` にエラーが無いことと `layouts.jsonl` の差分を確認する。必要に応じて `samples/json/sample_template_layouts.jsonl` / `samples/json/sample_jobspec.json` / `samples/extract/jobspec.json` を同期する。
    - `diagnostics.json.template_ai` を確認し、生成 AI が `usage_tags` を返しているか、未知タグやエラーが無いかをレビューする。`mock` フォールバックの場合は静的ルールによりタグが採用されていることを確認し、本番運用では環境変数で LLM を有効化する。
 4. 監査ログ、通知動作、PDF 変換など重要機能を確認し、承認者のレビューを取得する。

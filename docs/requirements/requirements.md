@@ -74,6 +74,8 @@
 - Analyzer の指摘・修正件数を `template_release.json` / `release_report.json` に集計し、品質メトリクスとして追跡できること。
 - `samples/templates/templates.pptx` をベースに 50 ページ規模のサンプルテンプレート群を維持し、カテゴリ別（セクション、KPI、プロセス、リスクなど）のレイアウトとアンカー命名ルールを `samples/json/sample_jobspec.json` / `samples/extract/jobspec.json` / `sample_template_layouts.jsonl` に反映すること。
 - テンプレ更新時は `uv run pptx layout-validate` の結果を確認し、重大エラーが解消された状態をリリース判定条件とすること。
+- 静的テンプレートの外部フック（`external/<template_id>/hooks.json`）を stage ごと・スライドごとに委譲できること。テンプレ固有の依存ライブラリが必要な場合は同ディレクトリに `pyproject.toml` / `uv.lock` を配置し、CLI がフック実行前に `uv sync --project external/<template_id>` を自動実行して 1 回まで再同期リトライできること。
+- Excel／静的テンプレの組み合わせでは `external/<template_id>/mapping_config.json` を定義し、`target` 名称と PPTX 表セルの対応を Stage 2／Stage 4 フックが共有できるようにする。マッピングは監査ログ（`runtime/context.json`）へ記録し、CLI パイプラインで `generate_ready.json` や出力 PPTX と突合できること。
 
 ### 4.11 多形式インポート
 - stage 3 で JSON に加えてプレーンテキスト、PDF、URL を入力として受け取れること。

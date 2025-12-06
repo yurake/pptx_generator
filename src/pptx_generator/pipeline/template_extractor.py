@@ -697,6 +697,13 @@ class TemplateExtractorStep:
                 slot_id = f"{slide_id}.slot{slot_sequence:02d}"
                 slot_sequence += 1
                 required = self._is_required_slot(anchor)
+                default_text: list[str] | None = None
+                default_payload: dict[str, Any] | None = None
+                if content_type == "text":
+                    source_text = anchor.text or ""
+                    lines = [line.strip() for line in source_text.splitlines() if line.strip()]
+                    if lines:
+                        default_text = lines
                 slots.append(
                     TemplateBlueprintSlot(
                         slot_id=slot_id,
@@ -704,6 +711,8 @@ class TemplateExtractorStep:
                         content_type=content_type,
                         required=required,
                         intent_tags=self._derive_slot_intent_tags(anchor, layout.name),
+                        default_text=default_text,
+                        default_payload=default_payload,
                     )
                 )
 

@@ -35,6 +35,7 @@ flowchart TB
     subgraph ST1["Stage 1: テンプレ"]
         direction TB
         ST1_ANCHOR(( ))
+        RM088["RM-088<br/>テンプレ実スライド優先抽出<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
@@ -233,7 +234,7 @@ flowchart TB
 - ゴール: テンプレート内で同一スライドに重複するプレースホルダー／図形名を検出し、アンカー指定時の衝突を防ぐ運用・実装フローを整える。
 - 対象 stage: 1・2（テンプレ準備 / 構造抽出）
 - 参照ドキュメント: [docs/policies/config-and-templates.md](../policies/config-and-templates.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 参照 ToDo: [docs/todo/20251204-rm086-static-hooks.md](../todo/20251204-rm086-static-hooks.md)
 - 状況: 完了（2025-10-15 更新）
 - 期待成果: テンプレート読込時の名称衝突検知、CLI への警告出力、プレースホルダー命名規則の追加ガイド。
 - 依存: RM-008（カスタムテンプレート操作性向上）のアンカー実装、テンプレート運用ポリシー、CLI 構成の拡張余地。
@@ -450,7 +451,7 @@ flowchart TB
 - ゴール: `pptx mapping` / `pptx gen` を分離し、`generate_ready.json` を中心とした再実行性と監査性の高い CLI パイプラインを構築する。
 - 対象 stage: 5（マッピング）・6（レンダリング）
 - 参照ドキュメント: [docs/notes/20251018-pipeline-decoupling-design.md](../notes/20251018-pipeline-decoupling-design.md), [docs/notes/20251023-roadmap-theme-research.md](../notes/20251023-roadmap-theme-research.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
+- 参照 ToDo: [docs/todo/20251204-rm086-static-hooks.md](../todo/20251204-rm086-static-hooks.md)
 - 状況: 完了（2025-10-23 更新）
 - 期待成果:
   - `pptx mapping` / `pptx gen` サブコマンドの実装と互換性維持した `generate_ready` → `JobSpec` 変換ヘルパの提供。
@@ -733,6 +734,18 @@ flowchart TB
   - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
   - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
 - 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
+
+<a id="rm-088"></a>
+### RM-088 テンプレ実スライド優先抽出
+- ゴール: 実スライド（プロトタイプ）をテンプレートに保持している場合はそれを優先的に解析し、`template_spec.json` / `jobspec.json` を実体ベースで構築する。実スライドが無い場合のみ Slide Layout 情報を利用する。
+- 対象 stage: 1（テンプレ抽出）、4（PPTX生成）
+- 参照ドキュメント: [docs/notes/20251206-template-spec-from-slides.md](../notes/20251206-template-spec-from-slides.md)
+- 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
+- 状況: 未着手（2025-12-06 登録）
+- 期待成果:
+  - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
+  - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
+  - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
 
 <a id="rm-060"></a>
 ### RM-060 Stage3 ID 整合性強制
@@ -1077,3 +1090,18 @@ flowchart TB
   - モック・OpenAI・Azure・Anthropic・Bedrock など既存プロバイダのエイリアスを統一し、設定ミスの検知とエラーメッセージを改善する。
   - 既存の単体テストを更新し、新ユーティリティ向けテストを追加して互換性を担保する。
   - CLI ログやドキュメントの表記揺れを整理し、利用者がプロバイダ設定状況を把握しやすい状態にする。
+
+<a id="rm-086"></a>
+### RM-086 静的テンプレ外部フック統合
+- 対象 stage: 1〜4（静的モードパイプライン）
+- ゴール: 静的テンプレートと専用入力の組み合わせを外部フックスクリプトで処理しつつ、既存の 4 stage CLI と成果物スキーマを維持できるよう統合経路を整備する。
+- 参照ドキュメント: [docs/notes/20251204-rm086-static-hooks.md](../notes/20251204-rm086-static-hooks.md)（起案中）
+- 参照 ToDo: [docs/todo/archive/20251204-rm086-static-hooks.md](../todo/archive/20251204-rm086-static-hooks.md)
+- 依存: RM-054（静的テンプレ構成統合プランニング）、RM-084（CLI/Pipeline リファクタビリティ向上）
+- 状況: 完了（2025-12-06 更新）
+- 期待成果:
+  - `external/<template_id>/hooks.json` の stage 別エントリを解釈し、外部スクリプトへ委譲した場合でも CLI がテンプレ ID や入出力パスを一貫して引き渡せるようにする。（実装済）
+  - Excel→表マッピング用の `mapping_config.json` を読み込み、Stage 2／Stage 4 フック単体でテーブルセルへ値を埋め戻せるようにする。（実装済）
+  - Stage 成果物（`template_spec.json`、`prepare_card.json`、`generate_ready.json`、`proposal.pptx` 等）の I/O 契約を踏まえ、外部スクリプト呼び出し時も監査ログとエラーハンドリングを統一する。
+  - `docs/design` / `docs/policies` 系ドキュメントへ静的モード運用手順とフック配置ルールを反映し、テンプレ追加時の手順化を完了する。（ドキュメント更新中）
+- 次アクション: フック設定とテーブルマッピング仕様をドキュメントへ反映し、PR を作成してレビューへ回す。
