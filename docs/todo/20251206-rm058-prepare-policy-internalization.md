@@ -18,26 +18,25 @@ roadmap_item: RM-058 プレペアポリシー内製化
     - テスト方針: `uv run --extra dev pytest` で CLI・パイプライン全体の更新テストを実行。story_phase 依存テストは全て新仕様へ書き換え。
     - ロールバック方法: 旧仕様へ戻す場合は本ブランチの変更を全 revert し、`config/prepare_policies/default.json` や旧モデル定義を復旧する。
     - 承認メッセージ ID／リンク: ユーザー承認メッセージ「ありがとう、planを承認しますので、todoのチェックを更新してcommit,pushして」
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] 設計・実装方針の確定
+  - メモ: Stage2 ではポリシーファイルを廃止して Blueprint / 入力意図から骨子を導出し、`story_phase` は任意・可変語彙として扱う。Stage3 以降は intent ベースでマッピング・レイアウト判定を行う構成へ統一。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: Stage2/3/4 の主要モジュールを改修し、`PrepareCardRole.story_phase` を optional 化。CLI から `config/prepare_policies` 依存を削除し、サンプル/ロジック/静的パイプラインを intent 駆動へ再構成。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/prepare_ai/test_prepare_ai_orchestrator_flow.py tests/cli/test_cli_prepare_stage_flow.py tests/cli/test_cli_static_prompt_templates.py`
+- [x] ドキュメント更新
+  - メモ: 新仕様に合わせて要件・設計・ロードマップ・ノートを更新。外部ポリシー依存が不要である旨を明記。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下 （更新不要: runbook 影響範囲なし）
+  - [x] README.md / AGENTS.md （更新不要: 記載なし）
 - [x] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+  - メモ: Issue 未作成（不要）。進捗は ToDo で管理。
+- [x] チェックリスト整合確認
+  - メモ: 設計/実装/テスト/ドキュメントのチェックを更新済み。残タスクは PR 作成のみ。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 

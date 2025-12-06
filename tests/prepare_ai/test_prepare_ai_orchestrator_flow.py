@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
-from pptx_generator.prepare.policy import PreparePolicy, PreparePolicySet
 from pptx_generator.prepare.source import (
     PrepareSourceChapter,
     PrepareSourceDocument,
@@ -12,17 +11,6 @@ from pptx_generator.prepare.source import (
 )
 from pptx_generator.prepare_ai.client import MockPrepareLLMClient
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
-
-
-def _build_policy_set() -> PreparePolicySet:
-    policy = PreparePolicy(
-        id="default",
-        name="Default",
-        story_framework=["introduction", "problem", "solution", "impact", "next"],
-        prompt_template_id=None,
-        chapters=[],
-    )
-    return PreparePolicySet(default_policy_id=policy.id, policies={policy.id: policy})
 
 
 def _build_source() -> PrepareSourceDocument:
@@ -87,17 +75,18 @@ def _build_blueprint() -> TemplateBlueprint:
 
 
 def test_generate_document_dynamic_includes_title_card() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
     document, meta, records = orchestrator.generate_document(_build_source())
 
     assert document.cards, "dynamic mode should create cards"
     assert document.cards[0].content.title, "title card should be inserted when include_title_page"
     assert meta.mode == "dynamic"
+    assert meta.policy_id is None
     assert records, "AI records should be collected"
 
 
 def test_generate_document_static_resolves_slots() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
     document, meta, records = orchestrator.generate_document(
         _build_source(),
         mode="static",
@@ -107,11 +96,12 @@ def test_generate_document_static_resolves_slots() -> None:
 
     assert any(card.meta.get("blueprint") for card in document.cards)
     assert meta.mode == "static"
+    assert meta.policy_id is None
     assert records and records[0].batch_card_ids, "static mode should record batch responses"
 
 
 def test_generate_document_static_records_prompt_overrides() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
     blueprint = _build_blueprint()
     override = StaticPromptOverride(
         slide_id=blueprint.slides[0].slide_id,
@@ -140,7 +130,7 @@ def test_generate_document_static_records_prompt_overrides() -> None:
 
 
 def test_build_body_blocks_variations() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
 
     bullet_payload = [
         {"type": "bullets", "items": [{"text": "Point A", "level": 1}, {"text": "Point B", "level": 0}]},
@@ -154,7 +144,7 @@ def test_build_body_blocks_variations() -> None:
 
 
 def test_build_note_entries_variations() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
     entry_with_notes = {
         "notes": [
             {"type": "note", "text": "explicit note"},
@@ -171,33 +161,3 @@ def test_build_note_entries_variations() -> None:
     }
     supporting_notes = orchestrator._build_note_entries(entry_supporting_only)
     assert any("supporting statement" in note.text for note in supporting_notes)
-
-
-def test_build_card_from_blueprint_slot_handles_missing_chapter() -> None:
-    orchestrator = PrepareAIOrchestrator(_build_policy_set(), llm_client=MockPrepareLLMClient())
-    policy = _build_policy_set().policies["default"]
-    slide = TemplateBlueprintSlide(
-        slide_id="slide-2",
-        layout="Detail",
-        required=False,
-        intent_tags=["detail"],
-        slots=[
-            TemplateBlueprintSlot(
-                slot_id="detail-slot",
-                anchor="DETAIL",
-                content_type="text",
-                required=False,
-                intent_tags=["detail"],
-            )
-        ],
-    )
-    slot = slide.slots[0]
-    card = orchestrator._build_card_from_blueprint_slot(
-        order=1,
-        slide=slide,
-        slot=slot,
-        chapter=None,
-        policy=policy,
-    )
-    assert card.content.body[0].type == "placeholder"
-    assert card.meta["mode"] == "static"

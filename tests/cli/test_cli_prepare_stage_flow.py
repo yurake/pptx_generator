@@ -20,7 +20,6 @@ from pptx_generator.cli_handlers.prepare import (
 from pptx_generator.models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot, TemplateSpec
 from pptx_generator.prepare_ai.client import MockPrepareLLMClient, PrepareLLMResult
 from pptx_generator.prepare_ai.orchestrator import PrepareAIOrchestrator, StaticPromptOverride
-from pptx_generator.prepare.policy import load_prepare_policy_set
 from pptx_generator.prepare.source import PrepareSourceDocument, PrepareSourceMeta
 from pptx_generator.prepare.models import (
     PrepareBodyBlock,
@@ -72,7 +71,7 @@ def test_prepare_command_artifacts_write_outputs(tmp_path: Path) -> None:
     document = PrepareDocument(prepare_id="prep-1")
     meta = PrepareGenerationMeta(
         prepare_id="prep-1",
-        policy_id="policy",
+        policy_id=None,
         input_hash="hash",
         cards=[],
     )
@@ -380,7 +379,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
     card_count = len(cards_payload["cards"])
     assert card_count >= 1
     first_card = cards_payload["cards"][0]
-    assert first_card["role"]["story_phase"] in {"introduction", "problem", "solution", "impact", "next"}
+    assert first_card["role"]["story_phase"]
     assert first_card["content"]["title"]
     assert first_card["content"].get("headline") is None
     assert isinstance(first_card["content"].get("body", []), list)
@@ -407,7 +406,7 @@ def test_prepare_generates_outputs(tmp_path) -> None:
 
     audit_payload = json.loads(audit_path.read_text(encoding="utf-8"))
     prepare_meta = audit_payload["prepare_normalization"]
-    assert prepare_meta["policy_id"]
+    assert prepare_meta["policy_id"] is None
     assert prepare_meta["statistics"]["cards_total"] == card_count
     assert prepare_meta["mode"] == "dynamic"
     outputs = prepare_meta["outputs"]
@@ -525,8 +524,7 @@ def test_prepare_accepts_multiple_inputs(tmp_path) -> None:
 
 def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
 
     source = PrepareSourceDocument(
         meta=PrepareSourceMeta(title="静的テンプレ検証", prepare_id="static-fallback"),
@@ -560,12 +558,9 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
         ]
     )
 
-    policy = policy_set.get_policy(None)
     cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
         source=source,
-        policy=policy,
         blueprint=blueprint,
-        page_limit=None,
         prompt_overrides=[],
         slide_sources=None,
         slide_input_refs=None,
@@ -575,6 +570,7 @@ def test_prepare_static_fallback_without_chapters(tmp_path: Path, monkeypatch) -
     assert slot_summary["required_total"] == 1
     assert slot_summary["required_fulfilled"] == 1
     assert cards[0].meta["blueprint"]["fulfilled"] is True
+    assert cards[0].role.story_phase == "headline"
     # fallback経路でも LLM 呼び出しが slot 数分行われる
     assert len(ai_records) == 1
     assert ai_records[0].batch_card_ids == ["blueprint-01-title", "blueprint-01-body"]
@@ -596,8 +592,7 @@ class SlotDroppingPrepareMock(MockPrepareLLMClient):
 
 def test_prepare_static_slot_missing_response(monkeypatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=SlotDroppingPrepareMock())
+    orchestrator = PrepareAIOrchestrator(llm_client=SlotDroppingPrepareMock())
 
     source = PrepareSourceDocument(
         meta=PrepareSourceMeta(title="Slot 欠損", prepare_id="slot-missing"),
@@ -631,12 +626,9 @@ def test_prepare_static_slot_missing_response(monkeypatch) -> None:
         ]
     )
 
-    policy = policy_set.get_policy(None)
     cards, slot_summary, _, prompt_usage = orchestrator._build_cards_static(
         source=source,
-        policy=policy,
         blueprint=blueprint,
-        page_limit=None,
         prompt_overrides=[],
         slide_sources=None,
         slide_input_refs=None,
@@ -651,8 +643,7 @@ def test_prepare_static_slot_missing_response(monkeypatch) -> None:
 
 def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
-    policy_set = load_prepare_policy_set(Path("config/prepare_policies/default.json"))
-    orchestrator = PrepareAIOrchestrator(policy_set, llm_client=MockPrepareLLMClient())
+    orchestrator = PrepareAIOrchestrator(llm_client=MockPrepareLLMClient())
 
     source = PrepareSourceDocument(
         meta=PrepareSourceMeta(title="Override テスト", prepare_id="override-test"),
@@ -686,12 +677,9 @@ def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
         template_path=".pptx/extract/prompts/01_override.md",
     )
 
-    policy = policy_set.get_policy(None)
     cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(
         source=source,
-        policy=policy,
         blueprint=blueprint,
-        page_limit=None,
         prompt_overrides=[override],
         slide_sources=None,
         slide_input_refs=None,

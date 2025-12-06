@@ -329,7 +329,7 @@ class SlideIdAligner:
             "# カード情報",
             f"card_id: {card.card_id}",
             f"chapter: {card.resolved_chapter_title()}",
-            f"story_phase: {card.role.story_phase}",
+            f"story_phase: {card.role.story_phase or '未指定'}",
             f"intent_tags: {', '.join(card.resolved_intent_tags()) if card.resolved_intent_tags() else 'なし'}",
             "summary:",
             card_summary,
@@ -376,7 +376,8 @@ class SlideIdAligner:
         chapter = card.resolved_chapter_title().lower()
         if chapter and chapter in title:
             score += 3.0
-        if card.role.story_phase and card.role.story_phase.lower() in (slide.layout or "").lower():
+        phase = (card.role.story_phase or "").lower()
+        if phase and phase in (slide.layout or "").lower():
             score += 1.5
         intent_tags = card.resolved_intent_tags()
         if intent_tags:

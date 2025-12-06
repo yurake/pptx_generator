@@ -76,8 +76,16 @@ class PrepareCardContent(BaseModel):
 class PrepareCardRole(BaseModel):
     """カードの役割情報。"""
 
-    story_phase: Literal["introduction", "problem", "solution", "impact", "next"]
+    story_phase: str | None = None
     intent_tags: list[str] = Field(default_factory=list)
+
+    @field_validator("story_phase", mode="before")
+    @classmethod
+    def normalize_story_phase(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
 
     @field_validator("intent_tags", mode="before")
     @classmethod
@@ -103,13 +111,15 @@ class PrepareCard(BaseModel):
     # ------------------------------------------------------------------ #
     def resolved_intent_tags(self) -> list[str]:
         intents = [tag for tag in self.role.intent_tags if tag]
-        if not intents:
+        if not intents and self.role.story_phase:
             intents = [self.role.story_phase]
         return intents
 
-    def primary_intent(self) -> str:
+    def primary_intent(self) -> str | None:
         intents = self.resolved_intent_tags()
-        return intents[0] if intents else self.role.story_phase
+        if intents:
+            return intents[0]
+        return self.role.story_phase
 
     def headline_or_title(self) -> str:
         value = self.content.headline or self.content.title
@@ -306,7 +316,7 @@ class PrepareGenerationMeta(BaseModel):
 
     prepare_id: str
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    policy_id: str
+    policy_id: str | None = None
     input_hash: str
     cards: list[dict[str, Any]] = Field(default_factory=list)
     statistics: dict[str, int] = Field(default_factory=dict)
@@ -324,7 +334,7 @@ class PrepareGenerationMeta(BaseModel):
         cls,
         *,
         document: PrepareDocument,
-        policy_id: str,
+        policy_id: str | None,
         source_payload: dict[str, Any],
         cards_meta: list[dict[str, Any]],
         mode: Literal["dynamic", "static"] = "dynamic",

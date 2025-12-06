@@ -40,7 +40,6 @@ from .cli_handlers.template_extraction import (
 DEFAULT_RULES_PATH = Path("config/rules.json")
 DEFAULT_CHAPTER_TEMPLATES_DIR = Path("config/chapter_templates")
 DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
-DEFAULT_PREPARE_POLICY_PATH = Path("config/prepare_policies/default.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
@@ -86,7 +85,6 @@ def build_prepare_config(
         jobspec=jobspec,
         mode=mode,
         page_limit=page_limit,
-        default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
         default_jobspec_path=DEFAULT_JOBSPEC_PATH,
         prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
         slide_inputs_filename=SLIDE_INPUTS_FILENAME,
@@ -129,7 +127,6 @@ app.add_command(gen)
 
 prepare = create_prepare_command(
     default_output_dir=DEFAULT_PREPARE_OUTPUT_DIR,
-    default_policy_path=DEFAULT_PREPARE_POLICY_PATH,
     default_jobspec_path=DEFAULT_JOBSPEC_PATH,
     prompts_dirname=PROMPT_TEMPLATE_DIRNAME,
     slide_inputs_filename=SLIDE_INPUTS_FILENAME,

@@ -238,28 +238,31 @@ class PrepareNormalizationStep:
             table_data=table_data,
             note="\n".join(notes_text) if notes_text else None,
         )
-        intent = card.primary_intent()
-
-        phase = card.role.story_phase
-        phase_counts[phase] = phase_counts.get(phase, 0) + 1
+        intent = card.primary_intent() or card.role.story_phase or "unlabeled"
+        phase_key = (card.role.story_phase or intent or "unlabeled").lower()
+        phase_counts[phase_key] = phase_counts.get(phase_key, 0) + 1
         blueprint_meta = card.blueprint_meta()
         if blueprint_meta and blueprint_meta.get("slot_id"):
             slide_id = str(blueprint_meta.get("slot_id"))
         else:
             slide_id = card.card_id or f"prepare-{index:03d}"
 
+        intent_tags = card.resolved_intent_tags()
+        if intent and intent not in intent_tags:
+            intent_tags.append(intent)
+
         source = ContentSlideSource(
             card_id=card.card_id,
             order=card.order,
             story_phase=card.role.story_phase,
-            intent_tags=card.role.intent_tags,
+            intent_tags=tuple(intent_tags),
             blueprint=blueprint_meta if isinstance(blueprint_meta, dict) else None,
         )
 
         return ContentSlide(
             id=slide_id,
             intent=intent,
-            type_hint=card.role.story_phase,
+            type_hint=card.role.story_phase or intent,
             elements=elements,
             status="draft",
             ai_review=None,

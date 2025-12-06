@@ -49,7 +49,7 @@ flowchart TB
         ST3_ANCHOR(( ))
         RM030["RM-030<br/>Analyzer ドラフト評価<br/>ダッシュボード<br/>(保留)"]
         RM041["RM-041<br/>レイアウト生成AI<br/>HITL ハイブリッド<br/>(未着手)"]
-        RM058["RM-058<br/>プレペアポリシー<br/>内製化<br/>(未着手)"]
+        RM058["RM-058<br/>プレペア骨子<br/>内製化<br/>(進行中)"]
         RM061["RM-061<br/>usage_tags ガバナンス強化<br/>(未着手)"]
         RM067["RM-067<br/>スケジュールスライド<br/>自動生成<br/>(未着手)"]
         RM076["RM-076<br/>コンテンツオーバーフロー自動化<br/>(未着手)"]
@@ -706,18 +706,18 @@ flowchart TB
 - 次アクション: JobSpec スキーマ拡張やテンプレ抽出仕様変更が発生した際に差分検証を実施し、変換ロジックのアップデート方針を定期レビューする。
 
 <a id="rm-058"></a>
-### RM-058 プレペアポリシー内製化
+### RM-058 プレペア骨子内製化
 - 対象 stage: 2（コンテンツ準備）
-- ゴール: `config/prepare_policies/default.json` への依存を解消し、プレペア骨子の定義をコードまたは他 stage の成果物に統合する。
+- ゴール: 外部ポリシーファイルに頼らず、Blueprint / 入力メタデータから骨子（story_phase・intent）を導出できるようにする。
 - 参照ドキュメント: [docs/notes/20251105-prepare-policy-removal.md](../notes/20251105-prepare-policy-removal.md)
-- 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
-- 状況: 未着手（2025-11-05 追加）
+- 参照 ToDo: [docs/todo/20251206-rm058-prepare-policy-internalization.md](../todo/20251206-rm058-prepare-policy-internalization.md)
+- 状況: 進行中（2025-12-06 更新）
 - 期待成果:
-  - `PrepareAIOrchestrator` へ渡すポリシーを内製化またはテンプレ/JobSpec からの自動導出へ置き換え、外部 JSON を不要にする。
-  - CLI `prepare` と関連ドキュメント（README、`docs/design/cli/cli-command-reference.md`、`docs/requirements/stages/stage-02-prepare.md`）の仕様を更新する。
-  - 既存 tests/ が参照するポリシー設定を刷新し、新フローの品質を担保する。
+  - `PrepareAIOrchestrator` が Blueprint / 入力意図から直接骨子を推論し、`story_phase` は任意・可変語彙として扱える。
+  - CLI `prepare` と関連ドキュメント（README、`docs/requirements/stages/stage-02-prepare.md` など）から外部ポリシー依存を撤廃し、新しいテストシナリオを整備する。
+  - Stage3 以降のマッピング／レイアウト推奨が意図タグ中心で動作し、`policy_id` は監査上 `null` となる。
 - 依存: RM-054（静的テンプレ構成統合プランニング）、RM-046（生成AIプレペア構成自動化）、テンプレ Blueprint 設計。
-- 次アクション: ポリシー定義の新たな取得先と初期値、テスト更新方針を整理し、CLI 実装の改修範囲を明確化する。
+- 次アクション: Stage2〜3 のコード改修・ドキュメント更新・テストを着地させ、Blueprint / intent を利用したワークフローを実運用に組み込む。
 
 <a id="rm-059"></a>
 ### RM-059 Mermaid 図自動レンダリング
