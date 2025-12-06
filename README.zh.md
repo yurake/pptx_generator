@@ -98,6 +98,16 @@ flowchart TD
 ### 静态生成 (static mode)
 这是根据模板设定的幻灯片结构自动分配资料数据并完成排版的模式。在幻灯片的布局和规则已确定的场景中非常有用。
 
+静态模式涉及的结构层次如下所示。
+
+```
+Blueprint（模板整体蓝图）
+└─ Slide（每张幻灯片的框架）
+    └─ Slot（内容插槽）
+```
+
+- 对静态模板，如果放置 `external/<template_id>/hooks.json`，可以将各 Stage 的处理委托给外部 Hook。配置示例以及可用的环境变量记录在 `docs/design/stages/` 各 Stage 文档中。
+
 ```mermaid
 flowchart TD
   %% ======= Styles =======

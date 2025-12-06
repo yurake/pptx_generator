@@ -98,6 +98,16 @@ flowchart TD
 ### Static generation (static mode)
 A mode that automatically maps data to the slide structure defined by the template and produces the final output. It is useful when slide layout and rules are fixed.
 
+The structures that appear in static mode are organized as follows.
+
+```
+Blueprint (overall template blueprint)
+└─ Slide (per-slide frame)
+    └─ Slot (content placeholder)
+```
+
+- For static templates, placing `external/<template_id>/hooks.json` lets you delegate each stage to external hooks. Configuration examples and the environment variables passed to hooks are documented under `docs/design/stages/`.
+
 ```mermaid
 flowchart TD
   %% ======= Styles =======

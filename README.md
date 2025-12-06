@@ -150,6 +150,8 @@ flowchart TD
 | 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/extract/jobspec.json --static` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
+- 静的テンプレートでは `external/<template_id>/hooks.json` を用意すると Stage ごとの処理を外部フックへ委譲できます。導入・運用手順は `external/README.md`、作業指針は `external/AGENTS.md` を参照してください。詳細な設定例や渡される環境変数は `docs/design/stages/` の各ステージドキュメントを参照してください。
+
 各 stage の CLI コマンドと主要オプションは `docs/design/cli/cli-command-reference.md`。
 
 ## テスト

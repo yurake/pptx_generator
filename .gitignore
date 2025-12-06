@@ -36,3 +36,26 @@ AGENTS_PRIVATE.md
 # Templates (keep README only)
 templates/*
 !templates/README.md
+
+# Tool caches
+.idea/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage*
+dist/
+build/
+.vs/
+
+# Additional virtual env folders
+venv/
+env/
+
+# Node
+node_modules/
+
+# Local external hooks (keep docs only)
+external/*
+!external/README.md
+!external/AGENTS.md

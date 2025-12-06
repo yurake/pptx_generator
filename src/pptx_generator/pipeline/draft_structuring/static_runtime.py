@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, List, Mapping, Sequence, Tuple
@@ -300,14 +301,15 @@ def compute_static_slot_stats(
             blueprint_slot_ids.add(slot.slot_id)
             total_slots += 1
             card = cards_by_slot.get(slot.slot_id)
+            has_default = bool(slot.default_text or slot.default_payload)
             if slot.required:
                 required_total += 1
-                if card_slot_fulfilled(card):
+                if card_slot_fulfilled(card) or has_default:
                     required_fulfilled += 1
             else:
                 if card_slot_fulfilled(card):
                     optional_used += 1
-                else:
+                elif not has_default:
                     unused_slots.append(slot.slot_id)
 
     if required_fulfilled < required_total:
@@ -372,17 +374,26 @@ def build_static_slides(
         for slot in blueprint_slide.slots:
             card = cards_by_slot.get(slot.slot_id)
             fulfilled = card_slot_fulfilled(card)
-            slot_records.append(
-                {
-                    "slot_id": slot.slot_id,
-                    "anchor": slot.anchor,
-                    "required": slot.required,
-                    "card_id": card.card_id if card else None,
-                    "fulfilled": fulfilled,
-                }
-            )
+            slot_record = {
+                "slot_id": slot.slot_id,
+                "anchor": slot.anchor,
+                "required": slot.required,
+                "card_id": card.card_id if card else None,
+                "fulfilled": fulfilled,
+                "default_applied": False,
+            }
             if card is None:
+                applied_default = False
+                if slot.default_text:
+                    elements[slot.anchor] = list(slot.default_text)
+                    applied_default = True
+                elif slot.default_payload:
+                    elements[slot.anchor] = deepcopy(slot.default_payload)
+                    applied_default = True
+                slot_record["default_applied"] = applied_default
+                slot_records.append(slot_record)
                 continue
+            slot_records.append(slot_record)
             card_notes = card.notes_text()
             if card_notes:
                 slide_note_lines.extend(card_notes)
