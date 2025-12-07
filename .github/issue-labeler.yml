@@ -1,6 +1,6 @@
 # Issue body / title に基づく自動ラベル設定
 type:bug:
-  - '/(\\[Bug\\]|不具合|バグ|エラー|例外|障害|異常|落ちる|クラッシュ|stack trace|bugfix|hotfix|failure|crash|動作しない|不正|想定外)/i'
+  - '/(\\[Bug\\]|\\bbug\\b|不具合|バグ|エラー|例外|障害|異常|落ちる|クラッシュ|stack trace|bugfix|hotfix|failure|crash|動作しない|不正|想定外)/i'
 type:enhancement:
   - '/(\\[Feature\\]|改善|機能追加|追加|強化|拡張|要望|提案|整備|実装|導入|最適化|アップデート|enhancement|feature|improve|update|refactor)/i'
 type:docs:
