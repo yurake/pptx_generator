@@ -17,15 +17,15 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
     - テスト方針: `uv run --extra dev pytest tests/template_audit/test_template_extractor_jobspec_output.py`, 静的モード関連統合テスト、オプション切替用追加テスト。
     - ロールバック方法: TemplateExtractor/レンダラー変更を revert して従来レイアウトベースに戻す。
     - 承認メッセージ ID／リンク: （ユーザー承認済み）
-- [ ] 設計・実装方針の確定
+- [x] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
-- [ ] ドキュメント更新
+- [x] 実装
+  - メモ: TemplateExtractor／CLI／モデルに `--from {slide,template}` と `template_source`/`prototype_index` を追加し、Stage2〜4 でメタを伝搬。SimpleRendererStep は `template_source=slide` 時にプロトタイプスライドを再利用してレンダリングし、余剰スライドを削除するよう調整済み。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py`、`tests/template_audit/test_template_extractor_jobspec_output.py`、`tests/cli/test_cli_prepare_stage_flow.py`、`tests/integration/test_cli_generate_pipeline_flow.py::test_cli_template_emits_slide_snapshot` を実行し成功。
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [ ] docs/roadmap 配下

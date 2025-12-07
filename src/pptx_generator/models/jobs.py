@@ -120,6 +120,10 @@ class JobSpecScaffoldMeta(BaseModel):
     layout_count: int
     layouts_path: str | None = None
     template_spec_path: str | None = None
+    template_source: Literal["slide", "template"] | None = Field(
+        None,
+        description="テンプレ抽出ソース。静的モードで実スライドを使用した場合は 'slide'。",
+    )
 
 
 class JobSpecScaffold(BaseModel):

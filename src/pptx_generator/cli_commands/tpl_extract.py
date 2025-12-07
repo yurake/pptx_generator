@@ -79,6 +79,14 @@ def create_tpl_extract_command(
         default=False,
         help="生成AIによる usage_tags 推定を無効化する",
     )
+    @click.option(
+        "--from",
+        "static_source",
+        type=click.Choice(["slide", "template"]),
+        default="slide",
+        show_default=True,
+        help="static モード時にテンプレ抽出へ使用するソースを指定する",
+    )
     def tpl_extract(
         template_path: Path,
         output_dir: Path,
@@ -89,6 +97,7 @@ def create_tpl_extract_command(
         template_ai_policy: Path | None,
         template_ai_policy_id: str | None,
         disable_template_ai: bool,
+        static_source: str,
     ) -> None:
         """テンプレートファイルから図形・プレースホルダー情報を抽出してJSON仕様の雛形を生成する。"""
         config = TemplateExtractCommandConfig(
@@ -98,6 +107,7 @@ def create_tpl_extract_command(
             layout=layout,
             anchor=anchor,
             layout_mode=layout_mode,
+            static_source=static_source,
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,

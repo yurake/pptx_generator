@@ -26,6 +26,7 @@
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--from <slide\|template>` | 静的モード時に抽出へ利用するソースを指定。既定は実スライド |  |  | `slide` |
 | `--slide` | 実スライドの図形・段落スナップショット (`slide_snapshot.json`) を出力する |  |  | 無効 |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
 | `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
@@ -68,6 +69,7 @@ uv run pptx template samples/templates/templates.pptx
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | 出力形式を選択 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--from <slide\|template>` | 静的モード時に抽出へ利用するソースを指定 |  |  | `slide` |
 
 ##### `pptx layout-validate`
 抽出結果と同等のレイアウト検証を単独で実行する。`--baseline` や `--analyzer-snapshot` を用いて比較条件を変えたいケースで利用する。

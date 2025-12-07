@@ -77,6 +77,75 @@ def _emu_box_from_inches(
     )
 
 
+def test_renderer_updates_prototype_slides(tmp_path: Path) -> None:
+    template_path = tmp_path / "prototype.pptx"
+    presentation = Presentation()
+    layout = presentation.slide_layouts[1]
+    for idx in range(3):
+        slide = presentation.slides.add_slide(layout)
+        slide.shapes.title.text = f"Prototype {idx + 1}"
+        body_placeholder = slide.shapes.placeholders[1]
+        body_placeholder.text = f"Body {idx + 1}"
+    presentation.save(template_path)
+
+    spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Prototype Deck"),
+        auth=JobAuth(created_by="tester"),
+        slides=[
+            Slide(
+                id="slide-1",
+                layout=layout.name,
+                title="First Updated Title",
+                bullets=[
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="s1-b1", text="First slide bullet", level=0, font=None),
+                        ]
+                    )
+                ],
+            ),
+            Slide(
+                id="slide-2",
+                layout=layout.name,
+                title="Second Updated Title",
+                bullets=[
+                    SlideBulletGroup(
+                        items=[
+                            SlideBullet(id="s2-b1", text="Second slide bullet", level=0, font=None),
+                        ]
+                    )
+                ],
+            ),
+        ],
+    )
+
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="prototype-out.pptx",
+            template_style=TemplateStyle.default(),
+            template_source="slide",
+        )
+    )
+    renderer.run(context)
+
+    pptx_path = context.artifacts["pptx_path"]
+    result = Presentation(pptx_path)
+
+    assert len(result.slides) == 2
+
+    first_slide = result.slides[0]
+    assert first_slide.shapes.title.text == "First Updated Title"
+    first_texts = [paragraph.text for shape in first_slide.shapes if getattr(shape, "has_text_frame", False) for paragraph in shape.text_frame.paragraphs]
+    assert any("First slide bullet" in text for text in first_texts)
+
+    second_slide = result.slides[1]
+    assert second_slide.shapes.title.text == "Second Updated Title"
+    second_texts = [paragraph.text for shape in second_slide.shapes if getattr(shape, "has_text_frame", False) for paragraph in shape.text_frame.paragraphs]
+    assert any("Second slide bullet" in text for text in second_texts)
+
+
 def test_renderer_renders_rich_content(tmp_path: Path) -> None:
     image_path = tmp_path / "image.png"
     _write_dummy_png(image_path)

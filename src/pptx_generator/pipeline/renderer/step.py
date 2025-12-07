@@ -67,6 +67,12 @@ class SimpleRendererStep(
         return Presentation()
 
     def _render_slides(self, presentation: Presentation, spec: JobSpec) -> None:
+        if self.options.template_source == "slide":
+            self._render_using_prototype_slides(presentation, spec)
+        else:
+            self._render_using_layouts(presentation, spec)
+
+    def _render_using_layouts(self, presentation: Presentation, spec: JobSpec) -> None:
         for page_number, slide_spec in enumerate(spec.slides, start=1):
             layout = self._resolve_layout(presentation, slide_spec)
             slide = presentation.slides.add_slide(layout)
@@ -79,6 +85,39 @@ class SimpleRendererStep(
             self._apply_charts(slide, slide_spec)
             self._apply_notes(slide, slide_spec)
             self._apply_auto_draw(slide, slide_spec, page_number)
+
+    def _render_using_prototype_slides(self, presentation: Presentation, spec: JobSpec) -> None:
+        total_required = len(spec.slides)
+        mapped_indices = self.options.prototype_mapping or []
+        if mapped_indices and len(mapped_indices) < total_required:
+            raise RuntimeError(
+                "プロトタイプスライドの指定数が不足しています。"
+            )
+        if not mapped_indices:
+            mapped_indices = list(range(1, total_required + 1))
+        expected_sequence = list(range(1, total_required + 1))
+        if mapped_indices[:total_required] != expected_sequence:
+            raise RuntimeError(
+                "プロトタイプスライドの順序指定には現在対応していません。テンプレートの先頭から順に実スライドを配置してください。"
+            )
+        if len(presentation.slides) < total_required:
+            raise RuntimeError(
+                "テンプレートに含まれる実スライド数が不足しています。"
+            )
+
+        for page_number, slide_spec in enumerate(spec.slides, start=1):
+            slide = presentation.slides[page_number - 1]
+            self._apply_title(slide, slide_spec)
+            self._apply_subtitle(slide, slide_spec)
+            self._apply_bullets(slide, slide_spec)
+            self._apply_textboxes(slide, slide_spec)
+            self._apply_tables(slide, slide_spec)
+            self._apply_images(slide, slide_spec)
+            self._apply_charts(slide, slide_spec)
+            self._apply_notes(slide, slide_spec)
+            self._apply_auto_draw(slide, slide_spec, page_number)
+
+        self._truncate_slides(presentation, total_required)
 
     def _resolve_layout(self, presentation: Presentation, slide_spec: Slide):
         for layout in presentation.slide_layouts:
@@ -154,6 +193,21 @@ class SimpleRendererStep(
         return slide.shapes.add_textbox(
             Inches(1.0), Inches(1.5), Inches(8.0), Inches(4.5)
         )
+
+    def _truncate_slides(self, presentation: Presentation, keep_count: int) -> None:
+        total = len(presentation.slides)
+        if keep_count >= total:
+            return
+        for index in range(total - 1, keep_count - 1, -1):
+            self._delete_slide(presentation, index)
+
+    @staticmethod
+    def _delete_slide(presentation: Presentation, index: int) -> None:
+        slides = presentation.slides
+        slide_id = slides._sldIdLst[index]
+        r_id = slide_id.rId
+        presentation.part.drop_rel(r_id)
+        slides._sldIdLst.remove(slide_id)
 
     def _save(self, presentation: Presentation, workdir: Path) -> Path:
         workdir.mkdir(parents=True, exist_ok=True)
