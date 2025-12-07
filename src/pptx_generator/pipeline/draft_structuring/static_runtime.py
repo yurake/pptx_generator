@@ -173,7 +173,8 @@ def write_static_outputs(
     spec_id = step._spec_id_from_title(getattr(context.spec.meta, "title", None))
     context.add_artifact("draft_spec_id", spec_id)
 
-    store = DraftStore()
+    store_dir = step.options.draft_store_dir
+    store = DraftStore(base_dir=store_dir if store_dir is not None else None)
     try:
         store.create_board(spec_id, artifacts.draft)
     except BoardAlreadyExistsError:

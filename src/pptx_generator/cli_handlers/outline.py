@@ -138,6 +138,7 @@ def execute_outline(
         structure_pattern=structure_pattern,
         appendix_limit=appendix_limit,
         analysis_summary_path=analysis_summary_path,
+        draft_store_dir=output_dir / "store",
     )
 
     context = run_draft_pipeline(
@@ -207,6 +208,11 @@ def run_draft_pipeline(
     draft_options: DraftStructuringOptions,
 ) -> PipelineContext:
     output_dir.mkdir(parents=True, exist_ok=True)
+    base_dir_for_store = draft_options.draft_store_dir
+    if base_dir_for_store is None:
+        candidate_base = draft_options.output_dir or output_dir
+        base_dir_for_store = (candidate_base / "store") if candidate_base is not None else Path(".pptx/draft/store")
+        draft_options.draft_store_dir = base_dir_for_store
 
     if prepare_cards is not None:
         resolved_cards = (
