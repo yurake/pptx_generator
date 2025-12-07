@@ -305,7 +305,6 @@ def test_compose_resolves_paths_from_jobspec_meta(
         encoding="utf-8",
     )
 
-    draft_dir = tmp_path / "draft"
     compose_dir = tmp_path / "compose"
 
     result = runner.invoke(
@@ -315,14 +314,14 @@ def test_compose_resolves_paths_from_jobspec_meta(
             str(spec_path),
             "--prepare-cards",
             str(cards_path),
-            "--draft-output",
-            str(draft_dir),
             "--output",
             str(compose_dir),
         ],
     )
 
     assert result.exit_code == 0, result.output
+    draft_dir = compose_dir / "draft"
+    assert draft_dir.exists()
     assert (compose_dir / "generate_ready.json").exists()
 
 
@@ -434,7 +433,6 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
     )
 
     output_dir = tmp_path / "compose"
-    draft_dir = tmp_path / "draft"
 
     result = runner.invoke(
         app,
@@ -445,12 +443,12 @@ def test_mapping_resolves_layouts_from_jobspec_meta(
             str(cards_path),
             "--output",
             str(output_dir),
-            "--draft-output",
-            str(draft_dir),
         ],
     )
 
     assert result.exit_code == 0, result.output
+    draft_dir = output_dir / "draft"
+    assert draft_dir.exists()
     assert (output_dir / "generate_ready.json").exists()
 
 

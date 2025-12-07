@@ -21,7 +21,6 @@ from pptx_generator.cli_hooks import (
 
 def create_compose_command(
     *,
-    default_draft_output: Path,
     default_appendix_limit: int,
     default_output_dir: Path,
     default_rules_path: Path,
@@ -37,13 +36,6 @@ def create_compose_command(
     @click.argument(
         "spec_path",
         type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-    )
-    @click.option(
-        "--draft-output",
-        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-        default=default_draft_output,
-        show_default=True,
-        help="ドラフト成果物を保存するディレクトリ",
     )
     @click.option(
         "--target-length",
@@ -102,7 +94,6 @@ def create_compose_command(
     )
     def compose(  # noqa: PLR0913
         spec_path: Path,
-        draft_output: Path,
         target_length: int | None,
         structure_pattern: str | None,
         appendix_limit: int,
@@ -114,6 +105,7 @@ def create_compose_command(
     ) -> None:
         """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
+        draft_output = output_dir / "draft"
         hook_manager = None
         template_id = extract_template_id_from_json_file(spec_path)
         if template_id:

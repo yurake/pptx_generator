@@ -15,9 +15,9 @@
 2. **HITL レビュー**  
    承認ツール（CLI や UI）で章・フェーズ情報を表示し、再割当が必要な場合は `prepare_card.json.cards[*].story` を更新する。差戻し理由や再割当ログは ToDo／ノートに残す。
 3. **Compose 実行**  
-   Stage 3/4 の再構成は `uv run pptx compose <jobspec.json> --prepare-cards .pptx/prepare/prepare_card.json --draft-output .pptx/draft` を使用する。実行後に以下を確認する:
-   - `.pptx/draft/draft_review_log.json` に章ごとの承認履歴が残っている。
-   - `.pptx/draft/generate_ready_meta.json.sections[*].story_phase` と `status` が骨子と一致している。
+   Stage 3/4 の再構成は `uv run pptx compose <jobspec.json> --prepare-cards .pptx/prepare/prepare_card.json --output .pptx/compose` を使用する（ドラフト成果物は `.pptx/compose/draft` に自動配置される）。実行後に以下を確認する:
+   - `.pptx/compose/draft/draft_review_log.json` に章ごとの承認履歴が残っている。
+   - `.pptx/compose/draft/generate_ready_meta.json.sections[*].story_phase` と `status` が骨子と一致している。
    - `DraftStructuringError` が発生した場合はメッセージに記載されたカード ID を `prepare_card.json` と照合し、欠番や重複がないか見直す。
 4. **成果物の整合チェック**  
    `generate_ready.json` のスライド順と `story.phase` の整合を確認し、必要に応じて `draft_mapping_log.json` の `fallback` / `slot_checks` / `layout_hint` 情報を参照する。付録送りや統合が発生した場合は `generate_ready_meta.sections[*].fallback_reason` で骨子との齟齬を確認し、差戻しを検討する。

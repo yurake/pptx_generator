@@ -50,7 +50,7 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
     2. `uv run pptx template samples/templates/static_slide.pptx --layout-mode static --from template --output .pptx/uat-from-template/extract` → `template_source=template` で実スライド情報が落ちることを確認。  
     3. `uv run pptx template samples/templates/static_template.pptx --layout-mode static --from slide --output .pptx/uat-from-template-fallback/extract` → 実スライドが無いテンプレで `template_source` が `template` にフォールバックする挙動と警告の有無を確認。  
     4. `.pptx/uat-from-slide/extract/jobspec.json` を用いて `uv run pptx prepare samples/input/pitch.md --mode static --jobspec … --output .pptx/uat-from-slide/prepare` → `ai_generation_meta.template_source=slide`、Blueprint ハッシュ整合を確認。  
-    5. `uv run pptx compose .pptx/uat-from-slide/extract/jobspec.json --prepare-cards .pptx/uat-from-slide/prepare/prepare_card.json --output .pptx/uat-from-slide/compose --draft-output .pptx/uat-from-slide/draft` → `generate_ready.meta.template_source=slide`、`slides[].meta.prototype_index` の伝搬を確認。  
+    5. `uv run pptx compose .pptx/uat-from-slide/extract/jobspec.json --prepare-cards .pptx/uat-from-slide/prepare/prepare_card.json --output .pptx/uat-from-slide/compose` → `<output>/draft`（`.pptx/uat-from-slide/compose/draft`） にドラフト成果物が生成され、`generate_ready.meta.template_source=slide`、`slides[].meta.prototype_index` の伝搬を確認。  
     6. `uv run pptx gen .pptx/uat-from-slide/compose/generate_ready.json --output .pptx/uat-from-slide/gen` → プロトタイプ再利用で余剰スライドが無いこと、`proposal.pptx` の内容を視覚確認。  
     7. 2. で取得した `template_source=template` 版でも 4〜6 を同様に実行し、従来挙動との差分を比較（成果物は `.pptx/uat-from-template/*` に出力）。  
     8. `--from` を省略したデフォルト実行（テンプレのみ `samples/templates/static_slide.pptx` を使用）で 4〜6 を行い、既定値が実スライド優先になっていることを確認（成果物は `.pptx/uat-default/*` など任意の作業ディレクトリへ）。  

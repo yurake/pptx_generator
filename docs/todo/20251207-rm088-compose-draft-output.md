@@ -7,7 +7,7 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
 
 - [x] ブランチ作成・初期コミット・push
   - メモ: feat/rm088-template-slide-priority を main から作成済み。既存タスクと共通で利用する（追加の初期コミット・push は今回不要）。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
     - 対象整理（スコープ、対象ファイル、前提）: `pptx compose` / `pptx mapping` の CLI 定義とハンドラから `--draft-output` を撤廃し、ドラフト成果物の出力先を `--output` 直下の `draft/`（例: `.pptx/compose/draft`）へ自動導出する。DraftStore を含めた stage 3 の内部処理・外部フック連携は新ディレクトリ構造を前提とする。
     - ドキュメント／コード修正方針: CLI コマンド生成・ハンドラで `draft_output` の決定ロジックを更新し、`PPTX_DRAFT_OUTPUT` など環境変数も新パスを渡す。テスト／サンプル／設計ドキュメントの `--draft-output` 言及を削除し、`<output>/draft` 自動生成前提に記述を改訂する。
@@ -21,18 +21,17 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
+- [x] 実装
+  - メモ: `pptx compose` / `pptx mapping` の CLI オプションから `--draft-output` を削除し、`draft_output = output_dir / "draft"` を導出するよう更新。`PPTX_DRAFT_OUTPUT` を含む環境変数と DraftStore の解決先を新構造へ合わせ、テストコード／サンプルのパスも `<output>/draft` 前提に修正。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/cli/test_cli_outline_generation.py`、`uv run --extra dev pytest tests/cli/test_cli_cheatsheet_guidance_flow.py`、`uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` を実行し、いずれも成功を確認。
+- [x] ドキュメント更新
+  - メモ: 主要ドキュメントを `<output>/draft` 自動生成の前提に書き換え、手順サンプルを新コマンド構成へ更新。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
