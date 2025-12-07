@@ -23,6 +23,7 @@ from pptx_generator.pipeline import (
 from pptx_generator.pipeline.refiner import RefinerOptions
 from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
+from pptx_generator.settings.paths import get_default_config_path
 from pptx_generator.template_audit import (
     build_release_report,
     build_template_release,
@@ -40,7 +41,7 @@ from .common import load_jobspec
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_RULES_PATH = Path("config/rules.json")
+DEFAULT_RULES_PATH = get_default_config_path("rules.json")
 
 
 @dataclass(slots=True)

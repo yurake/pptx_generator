@@ -29,6 +29,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/issue-labeler.yml
+          include-title: 1
           not-before: '2025-11-24T00:00:00Z'
           enable-versioned-regex: 0
       - name: Apply labels (manual run)
@@ -38,5 +39,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/issue-labeler.yml
           issue-number: ${{ inputs.issue-number }}
+          include-title: 1
           not-before: '2025-11-24T00:00:00Z'
           enable-versioned-regex: 0

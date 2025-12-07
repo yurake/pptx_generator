@@ -1,0 +1,37 @@
+[
+  {
+    "code": "STRUCTURE_GAP",
+    "label": "章構成の不足",
+    "description": "章テンプレで必須となっているセクションが不足しています。",
+    "severity": "blocker",
+    "default_actions": [
+      "Add required section",
+      "Escalate to story lead"
+    ],
+    "related_analyzer_tags": ["missing_section"]
+  },
+  {
+    "code": "ANALYZER_BLOCKER",
+    "label": "Analyzer 指摘（重大）",
+    "description": "重大度 High の Analyzer 指摘が解消されていません。",
+    "severity": "blocker",
+    "default_actions": [
+      "Resolve analyzer issues"
+    ],
+    "related_analyzer_tags": [
+      "layout_consistency",
+      "contrast_low"
+    ]
+  },
+  {
+    "code": "CAPACITY_WARN",
+    "label": "枚数超過",
+    "description": "テンプレで想定した枚数を超過しています。付録送りなどで調整してください。",
+    "severity": "warn",
+    "default_actions": [
+      "Move slides to appendix",
+      "Consolidate content"
+    ],
+    "related_analyzer_tags": []
+  }
+]

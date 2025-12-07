@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ...models import ContentSlide, DraftDocument, DraftSection, GenerateReadyDocument, Slide
+from ...settings.paths import get_default_config_path
 from ...prepare.models import PrepareCard
 
 
@@ -29,7 +30,7 @@ class DraftStructuringOptions:
     ai_weight: float = 0.25
     diversity_weight: float = 0.05
     max_layout_candidates: int = 5
-    layout_ai_policy_path: Path | None = Path("config/layout_ai_policies.json")
+    layout_ai_policy_path: Path | None = get_default_config_path("layout_ai_policies.json")
     layout_ai_policy_id: str | None = "layout-default"
     enable_ai_simulation: bool = True
     enable_slide_alignment: bool = True
