@@ -38,8 +38,8 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [x] チェックリスト整合確認
   - メモ: チェック済み項目の取りこぼしがないことを点検した。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #406 https://github.com/yurake/pptx_generator/pull/406（2025-12-07 完了）
 
 ## メモ
 - 探索メモ: `docs/notes/20251207-rm088-draft-output-discussion.md` に議論内容を記録済み。
