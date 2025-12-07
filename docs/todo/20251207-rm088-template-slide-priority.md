@@ -42,4 +42,17 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
-- 
+- UAT 計画  
+  - 目的: 静的モードにおける `--from {slide,template}` と `template_source` 伝搬、Stage4 プロトタイプ再利用動作を `samples/templates/static_slide.pptx`（実スライド有）／`samples/templates/static_template.pptx`（レイアウトのみ）で検証する。  
+  - 前提: `uv sync` 済み、対象テンプレ2種が存在、`.pptx/` 配下を作業用に準備。  
+  - 手順:  
+    1. `uv run pptx template … --layout-mode static --from slide --output .pptx/extract-slide` → `template_source=slide` / `prototype_index` の付与、`jobspec` メタの確認。  
+    2. `uv run pptx template … --layout-mode static --from template --output .pptx/extract-template` → `template_source=template` で実スライド情報が落ちることを確認。  
+    3. 実スライドなしテンプレで `--from slide` 実行 → `template_source` が `template` にフォールバックする挙動と警告の有無を確認。  
+    4. `.pptx/extract-slide` を用いて `uv run pptx prepare --mode static --jobspec …` → `ai_generation_meta.template_source=slide`、Blueprint ハッシュ整合を確認。  
+    5. `uv run pptx compose … --output .pptx/compose-slide` → `generate_ready.meta.template_source=slide`、`slides[].meta.prototype_index` の伝搬を確認。  
+    6. `uv run pptx gen .pptx/compose-slide/generate_ready.json --template samples/templates/static_slide.pptx --output .pptx/gen-slide` → スライド数・内容が期待通り、余剰スライドがないことを確認。  
+    7. `--from template` ベースで Stage2〜4 を実行し、従来挙動との比較チェック。  
+    8. 異常系: Stage4 でテンプレ未指定時のエラーメッセージ、`template_source` 不整合時の Compose エラーを確認。  
+  - 評価基準: すべてのコマンド成功、メタ情報が期待通り伝搬、Stage4 が正しく分岐、異常系メッセージが適切であること。  
+  - レポート: 実行日時・担当者、コマンドログ、成果物パス、結果サマリ、課題があれば詳細を記録。
