@@ -30,7 +30,8 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: cli リファレンス／stage-01／stage-04／schema を更新し、`--from` オプションと `template_source`／`prototype_index` の流れを明文化。
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
