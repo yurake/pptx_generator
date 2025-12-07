@@ -28,7 +28,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const inputIssueNumber = core.getInput('issue-number');
+            const inputIssueNumber = context.payload?.inputs?.['issue-number'];
             const issueNumber = inputIssueNumber ? Number(inputIssueNumber) : context.issue?.number;
             if (!issueNumber) {
               core.info('Issue number not available; skipping title-based labeling');
