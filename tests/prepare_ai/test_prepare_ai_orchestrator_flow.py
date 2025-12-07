@@ -91,7 +91,7 @@ def test_generate_document_static_resolves_slots() -> None:
         _build_source(),
         mode="static",
         blueprint=_build_blueprint(),
-        blueprint_ref={"path": "blueprint.json", "hash": "deadbeef"},
+        blueprint_ref={"path": "blueprint.json", "hash": "deadbeef", "template_source": "slide"},
     )
 
     assert any(card.meta.get("blueprint") for card in document.cards)
@@ -114,7 +114,7 @@ def test_generate_document_static_records_prompt_overrides() -> None:
         _build_source(),
         mode="static",
         blueprint=blueprint,
-        blueprint_ref={"path": "blueprint.json", "hash": "deadbeef"},
+        blueprint_ref={"path": "blueprint.json", "hash": "deadbeef", "template_source": "slide"},
         prompt_overrides=[override],
     )
 

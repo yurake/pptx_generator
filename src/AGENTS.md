@@ -12,7 +12,7 @@
 
 ## 実装時の動作確認
 - 単体テスト: 対象モジュールに応じて `pytest` のマーカーを絞る。例: `uv run --extra dev pytest tests/test_renderer.py`。
-- パイプライン全体: `uv run pptx compose samples/extract/jobspec.json --draft-output .pptx/draft --output .pptx/compose` で `generate_ready.json` を生成し、続けて `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` を実行して `audit_log.json` の差分を確認。独自 JobSpec を使用する場合は `meta.template_path` / `meta.layouts_path` を事前に設定する。
+- パイプライン全体: `uv run pptx compose samples/extract/jobspec.json --output .pptx/compose` で `generate_ready.json` を生成し、続けて `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` を実行して `audit_log.json` の差分を確認。.stage3 のドラフト成果物は `.pptx/compose/draft` に自動配置される。独自 JobSpec を使用する場合は `meta.template_path` / `meta.layouts_path` を事前に設定する。
 - PDF 変換: LibreOffice がインストールされている環境で `--export-pdf` と `--pdf-mode=only` の双方を確認する。
 
 ## 変更とドキュメントの同期

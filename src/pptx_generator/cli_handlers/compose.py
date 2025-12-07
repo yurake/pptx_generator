@@ -159,6 +159,7 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         structure_pattern=config.structure_pattern,
         appendix_limit=config.appendix_limit,
         analysis_summary_path=config.analysis_summary_path,
+        draft_store_dir=(config.draft_output / "store"),
     )
 
     try:

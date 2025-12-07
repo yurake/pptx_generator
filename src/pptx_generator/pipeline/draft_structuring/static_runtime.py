@@ -117,6 +117,11 @@ def validate_static_template_spec(
         msg = "template_spec が static Blueprint を含んでいません"
         raise DraftStructuringError(msg)
 
+    meta_source = getattr(prepare_meta, "template_source", "template")
+    if meta_source != template_spec.template_source:
+        msg = "template_spec と ai_generation_meta の template_source が一致しません"
+        raise DraftStructuringError(msg)
+
     if prepare_meta.blueprint_hash:
         computed_hash = step._compute_blueprint_hash(template_spec.blueprint)
         if prepare_meta.blueprint_hash != computed_hash:
@@ -168,7 +173,8 @@ def write_static_outputs(
     spec_id = step._spec_id_from_title(getattr(context.spec.meta, "title", None))
     context.add_artifact("draft_spec_id", spec_id)
 
-    store = DraftStore()
+    store_dir = step.options.draft_store_dir
+    store = DraftStore(base_dir=store_dir if store_dir is not None else None)
     try:
         store.create_board(spec_id, artifacts.draft)
     except BoardAlreadyExistsError:
@@ -225,6 +231,7 @@ def build_static_artifacts(
             blueprint_path=prepare_meta.blueprint_path,
             blueprint_hash=prepare_meta.blueprint_hash,
             slot_summary=slot_summary,
+            template_source=prepare_meta.template_source,
         ),
     )
 
@@ -427,6 +434,7 @@ def build_static_slides(
             layout_mode="static",
             blueprint_slide_id=blueprint_slide.slide_id,
             blueprint_slots=slot_records,
+            prototype_index=blueprint_slide.prototype_index,
         )
 
         generate_ready_slides.append(

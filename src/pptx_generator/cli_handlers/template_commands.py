@@ -28,6 +28,7 @@ class TemplateCommandConfig:
     layout: Optional[str]
     anchor: Optional[str]
     layout_mode: str
+    static_source: str
     template_ai_policy: Path | None
     template_ai_policy_id: str | None
     disable_template_ai: bool
@@ -72,6 +73,7 @@ class TemplateExtractCommandConfig:
     layout: Optional[str]
     anchor: Optional[str]
     layout_mode: str
+    static_source: str
     template_ai_policy: Path | None
     template_ai_policy_id: str | None
     disable_template_ai: bool
@@ -97,6 +99,7 @@ def run_template_command(config: TemplateCommandConfig) -> TemplateCommandResult
             template_ai_policy_id=config.template_ai_policy_id,
             disable_template_ai=config.disable_template_ai,
             layout_mode=config.layout_mode,
+            static_source=config.static_source,
             skip_validation=config.force,
             emit_slide_snapshot=config.slide_snapshot,
         )
@@ -209,6 +212,7 @@ def run_template_extract_command(config: TemplateExtractCommandConfig) -> Templa
             template_ai_policy_id=config.template_ai_policy_id,
             disable_template_ai=config.disable_template_ai,
             layout_mode=config.layout_mode,
+            static_source=config.static_source,
         )
     except FileNotFoundError as exc:
         raise TemplateCommandError(f"ファイルが見つかりません: {exc}", exit_code=4) from exc

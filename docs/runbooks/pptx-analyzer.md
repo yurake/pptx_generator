@@ -20,10 +20,9 @@
     ```bash
     uv run pptx compose samples/extract/jobspec.json \
       --prepare-cards .pptx/prepare/prepare_card.json \
-      --draft-output .pptx/draft \
       --output .pptx/compose
     ```
-    - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。独自 JobSpec を利用する場合も `meta` にテンプレート／レイアウトのパスを設定してから実行する。
+    - `prepare_card.json.meta` にログや AI メタのパスが保存されるため、追加オプションは不要。HITL 承認後は最新の `prepare_card.json` を渡す。独自 JobSpec を利用する場合も `meta` にテンプレート／レイアウトのパスを設定してから実行する。ドラフト成果物は `.pptx/compose/draft` に配置される。
   - stage 4（レンダリング）を実行し、Analyzer 結果を取得する（`--output` を省略した場合は `.pptx/gen/` に出力される）:
     ```bash
     uv run pptx gen .pptx/compose/generate_ready.json \

@@ -70,8 +70,13 @@ def run_template_release(
 ) -> TemplateReleaseExecutionResult:
     resolved_template_id = resolve_template_id(template_id, brand, version)
 
+    static_source = "slide" if layout_mode.lower() == "static" else "template"
     extractor = TemplateExtractor(
-        TemplateExtractorOptions(template_path=template_path, layout_mode=layout_mode)
+        TemplateExtractorOptions(
+            template_path=template_path,
+            layout_mode=layout_mode,
+            static_source=static_source,
+        )
     )
     spec = extractor.extract()
 

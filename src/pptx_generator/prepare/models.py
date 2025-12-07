@@ -328,6 +328,7 @@ class PrepareGenerationMeta(BaseModel):
     prompt_templates: list[dict[str, Any]] = Field(default_factory=list)
     slide_inputs: list[dict[str, Any]] = Field(default_factory=list)
     import_sources: list[dict[str, Any]] = Field(default_factory=list)
+    template_source: Literal["slide", "template"] = "template"
 
     @classmethod
     def from_document(
@@ -345,6 +346,7 @@ class PrepareGenerationMeta(BaseModel):
         prompt_templates: list[dict[str, Any]] | None = None,
         slide_inputs: list[dict[str, Any]] | None = None,
         import_sources: list[dict[str, Any]] | None = None,
+        template_source: Literal["slide", "template"] = "template",
     ) -> "PrepareGenerationMeta":
         normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
         hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
@@ -375,4 +377,5 @@ class PrepareGenerationMeta(BaseModel):
             prompt_templates=prompt_templates or [],
             slide_inputs=slide_inputs or [],
             import_sources=import_sources or [],
+            template_source=template_source,
         )
