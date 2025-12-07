@@ -36,9 +36,10 @@ from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
 )
+from .settings.paths import get_default_config_path
 
-DEFAULT_RULES_PATH = Path("config/rules.json")
-DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
+DEFAULT_RULES_PATH = get_default_config_path("rules.json")
+DEFAULT_RETURN_REASONS_PATH = get_default_config_path("return_reasons.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
