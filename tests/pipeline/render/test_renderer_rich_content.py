@@ -13,13 +13,18 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
+from pptx_generator.cli_handlers.rendering import run_render_pipeline
 from pptx_generator.models import (
     ChartOptions,
     ChartSeries,
     FontSpec,
+    GenerateReadyDocument,
+    GenerateReadyMeta,
+    GenerateReadySlide,
     JobAuth,
     JobMeta,
     JobSpec,
+    MappingSlideMeta,
     PipelineFallbackError,
     Slide,
     SlideBullet,
@@ -33,7 +38,10 @@ from pptx_generator.models import (
     TextboxPosition,
     TemplateStyle,
 )
+from pptx_generator.pipeline.analyzer.options import AnalyzerOptions
 from pptx_generator.pipeline.base import PipelineContext
+from pptx_generator.pipeline.pdf_exporter import PdfExportOptions
+from pptx_generator.pipeline.polisher import PolisherOptions
 from pptx_generator.pipeline.renderer import RenderingOptions, SimpleRendererStep
 from pydantic import ValidationError
 
@@ -74,6 +82,37 @@ def _emu_box_from_inches(
         int(Inches(top_in)),
         int(Inches(width_in)),
         int(Inches(height_in)),
+    )
+
+
+def _build_generate_ready_document(template_source: str = "slide") -> GenerateReadyDocument:
+    return GenerateReadyDocument(
+        slides=[
+            GenerateReadySlide(
+                layout_id="Title",
+                meta=MappingSlideMeta(prototype_index=1),
+            )
+        ],
+        meta=GenerateReadyMeta(
+            template_source=template_source,
+            generated_at="2025-12-07T00:00:00Z",
+        ),
+    )
+
+
+def _build_job_spec_with_slides(count: int, layout_name: str) -> JobSpec:
+    slides = [
+        Slide(
+            id=f"slide-{idx}",
+            layout=layout_name,
+            title=f"Title {idx}",
+        )
+        for idx in range(1, count + 1)
+    ]
+    return JobSpec(
+        meta=JobMeta(schema_version="1.0", title="Prototype"),
+        auth=JobAuth(created_by="tester"),
+        slides=slides,
     )
 
 
@@ -1389,3 +1428,106 @@ def test_renderer_raises_error_for_duplicate_group_anchor(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="箇条書きのアンカー 'Left Content Placeholder'"):
         renderer.run(context)
+
+
+def test_run_render_pipeline_requires_template_for_slide_source(tmp_path: Path) -> None:
+    generate_ready = _build_generate_ready_document(template_source="slide")
+
+    with pytest.raises(RuntimeError, match="テンプレート PPTX のパスが必要です"):
+        run_render_pipeline(
+            generate_ready=generate_ready,
+            generate_ready_path=None,
+            output_dir=tmp_path,
+            template=None,
+            pptx_name="out.pptx",
+            template_style=TemplateStyle.default(),
+            template_style_artifact={},
+            analyzer_options=AnalyzerOptions(),
+            pdf_options=PdfExportOptions(),
+            polisher_options=PolisherOptions(),
+        )
+
+
+def test_render_using_prototype_slides_requires_enough_mappings(tmp_path: Path) -> None:
+    template_path = tmp_path / "prototype-insufficient.pptx"
+    presentation = Presentation()
+    layout = presentation.slide_layouts[1]
+    for _ in range(2):
+        presentation.slides.add_slide(layout)
+    presentation.save(template_path)
+
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="out.pptx",
+            template_style=TemplateStyle.default(),
+            template_source="slide",
+            prototype_mapping=[1],
+        )
+    )
+    spec = _build_job_spec_with_slides(2, layout.name)
+
+    with pytest.raises(RuntimeError, match="プロトタイプスライドの指定数が不足しています"):
+        renderer._render_using_prototype_slides(Presentation(template_path), spec)
+
+
+def test_render_using_prototype_slides_rejects_shuffled_indices(tmp_path: Path) -> None:
+    template_path = tmp_path / "prototype-order.pptx"
+    presentation = Presentation()
+    layout = presentation.slide_layouts[1]
+    for _ in range(2):
+        presentation.slides.add_slide(layout)
+    presentation.save(template_path)
+
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="out.pptx",
+            template_style=TemplateStyle.default(),
+            template_source="slide",
+            prototype_mapping=[2, 1],
+        )
+    )
+    spec = _build_job_spec_with_slides(2, layout.name)
+
+    with pytest.raises(RuntimeError, match="順序指定には現在対応していません"):
+        renderer._render_using_prototype_slides(Presentation(template_path), spec)
+
+
+def test_render_using_prototype_slides_requires_enough_template_slides(tmp_path: Path) -> None:
+    template_path = tmp_path / "prototype-missing.pptx"
+    presentation = Presentation()
+    layout = presentation.slide_layouts[1]
+    presentation.slides.add_slide(layout)
+    presentation.save(template_path)
+
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=template_path,
+            output_filename="out.pptx",
+            template_style=TemplateStyle.default(),
+            template_source="slide",
+            prototype_mapping=[1, 2],
+        )
+    )
+    spec = _build_job_spec_with_slides(2, layout.name)
+
+    with pytest.raises(RuntimeError, match="テンプレートに含まれる実スライド数が不足しています"):
+        renderer._render_using_prototype_slides(Presentation(template_path), spec)
+
+
+def test_truncate_slides_no_op_when_keep_count_matches_total(tmp_path: Path) -> None:
+    presentation = Presentation()
+    layout = presentation.slide_layouts[1]
+    for _ in range(2):
+        presentation.slides.add_slide(layout)
+
+    renderer = SimpleRendererStep(
+        RenderingOptions(
+            template_path=None,
+            output_filename="out.pptx",
+            template_style=TemplateStyle.default(),
+        )
+    )
+    renderer._truncate_slides(presentation, keep_count=2)
+    assert len(presentation.slides) == 2
