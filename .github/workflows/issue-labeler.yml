@@ -17,6 +17,8 @@ permissions:
 jobs:
   triage:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
