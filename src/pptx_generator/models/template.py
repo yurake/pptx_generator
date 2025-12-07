@@ -46,6 +46,9 @@ class LayoutInfo(BaseModel):
     identifier: str | None = Field(None, description="レイアウト固有識別子")
     anchors: list[ShapeInfo] = Field(default_factory=list, description="図形・プレースホルダー一覧")
     error: str | None = Field(None, description="レイアウト抽出時のエラー")
+    prototype_index: int | None = Field(
+        None, description="実スライド抽出時に対応するテンプレートスライドの連番（1始まり）"
+    )
     placeholder_summary: dict[str, Any] | None = Field(
         None, description="プレースホルダー統計情報"
     )
@@ -82,6 +85,9 @@ class TemplateBlueprintSlide(BaseModel):
 
     slide_id: str = Field(..., description="Blueprint 上のスライド ID")
     layout: str = Field(..., description="利用するレイアウト名")
+    prototype_index: int | None = Field(
+        None, description="実スライド抽出時に参照するテンプレートスライドの連番（1始まり）"
+    )
     required: bool = Field(True, description="必須スライドかどうか")
     intent_tags: list[str] = Field(default_factory=list, description="スライド意図タグ")
     slots: list[TemplateBlueprintSlot] = Field(default_factory=list, description="slot 一覧")
@@ -98,6 +104,10 @@ class TemplateSpec(BaseModel):
 
     template_path: str = Field(..., description="テンプレートファイルパス")
     extracted_at: str = Field(..., description="抽出日時（ISO8601）")
+    template_source: Literal["slide", "template"] = Field(
+        "template",
+        description="テンプレ抽出のソース。静的モードで実スライドを利用した場合は 'slide'。",
+    )
     layouts: list[LayoutInfo] = Field(default_factory=list, description="レイアウト一覧")
     warnings: list[str] = Field(default_factory=list, description="警告メッセージ")
     errors: list[str] = Field(default_factory=list, description="エラーメッセージ")

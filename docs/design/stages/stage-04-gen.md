@@ -15,7 +15,7 @@
 | Polisher Bridge | Open XML SDK プロジェクト呼び出し | .NET 8 CLI |
 
 ## フロー
-1. Rendering Orchestrator がテンプレートを開き、`generate_ready.json` から再構築した `JobSpec` を基にスライドを生成。静的モードでは Blueprint で参照するレイアウト図形をスライドへ複製し、テンプレ由来のアンカー名で直接操作できるようにする。  
+1. Rendering Orchestrator がテンプレートを開き、`generate_ready.json` から再構築した `JobSpec` を基にスライドを生成。`GenerateReadyMeta.template_source=slide`（静的モードかつ実スライド抽出）ではテンプレ内のプロトタイプスライドをそのまま再利用し、不要なスライドを削除する。`template` の場合は従来どおりスライドマスターから複製してアンカー名で直接操作できるようにする。  
 2. 各 PH にテキスト・表・画像を挿入し、フォーマット調整。  
 3. Pre-Analyzer がレンダリング直後の PPTX を解析し、ベースラインとして `analysis_pre_polisher.json` を生成。  
 4. Rendering Consistency が空プレースホルダーやスライド数不一致をチェックし、検知結果を `rendering_log.json` に追記。  
