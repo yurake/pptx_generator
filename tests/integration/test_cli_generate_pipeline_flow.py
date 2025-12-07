@@ -214,7 +214,6 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
         with pytest.raises(click.exceptions.Exit) as exc:
             cli.compose.callback(
                 spec_path=spec_path,
-                draft_output=tmp_path / "draft",
                 target_length=None,
                 structure_pattern=None,
                 appendix_limit=5,
@@ -295,7 +294,6 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
         with pytest.raises(click.exceptions.Exit) as exc:
             cli.compose.callback(
                 spec_path=spec_path,
-                draft_output=tmp_path / "draft",
                 target_length=None,
                 structure_pattern=None,
                 appendix_limit=5,
@@ -419,22 +417,21 @@ def _prepare_generate_ready(
     spec_path: Path,
     mapping_dir: Path,
     *,
-    draft_dir: Path,
     prepare_paths: dict[str, Path],
 ) -> Path:
+    draft_dir = mapping_dir / "draft"
     args = [
         "mapping",
         str(spec_path),
         "--output",
         str(mapping_dir),
-        "--draft-output",
-        str(draft_dir),
         *_prepare_args(prepare_paths),
     ]
 
     result = runner.invoke(app, args, catch_exceptions=False)
     assert result.exit_code == 0, result.output
 
+    assert draft_dir.exists()
     ready_path = mapping_dir / "generate_ready.json"
     assert ready_path.exists()
     meta_path = mapping_dir / "generate_ready_meta.json"
@@ -454,7 +451,6 @@ def _prepare_generate_ready(
 
 def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -465,7 +461,6 @@ def test_cli_gen_generates_outputs(tmp_path: Path) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -557,7 +552,6 @@ def test_cli_prepare_generates_outputs(tmp_path: Path) -> None:
 
 def test_cli_mapping_then_gen(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "render"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -567,7 +561,6 @@ def test_cli_mapping_then_gen(tmp_path: Path) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -591,7 +584,6 @@ def test_cli_mapping_then_gen(tmp_path: Path) -> None:
 
 def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
@@ -609,8 +601,6 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
             str(spec_path),
             "--output",
             str(mapping_dir),
-            "--draft-output",
-            str(draft_dir),
             *_prepare_args(prepare_paths),
         ],
         catch_exceptions=False,
@@ -624,7 +614,6 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
 
 
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
-    draft_dir = tmp_path / "compose-draft"
     output_dir = tmp_path / "compose-gen"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -635,8 +624,6 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
         [
             "compose",
             str(spec_path),
-            "--draft-output",
-            str(draft_dir),
             "--output",
             str(output_dir),
             *_prepare_args(prepare_paths),
@@ -645,6 +632,8 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
+    draft_dir = output_dir / "draft"
+    assert draft_dir.exists()
     assert (output_dir / "generate_ready.json").exists()
     assert (output_dir / "mapping_log.json").exists()
     assert (output_dir / "generate_ready_meta.json").exists()
@@ -652,7 +641,6 @@ def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
 
 def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
@@ -661,7 +649,6 @@ def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -683,7 +670,6 @@ def test_cli_gen_missing_template_path(tmp_path: Path) -> None:
 
 def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
     spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
@@ -698,8 +684,6 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
             str(spec_path),
             "--output",
             str(mapping_dir),
-            "--draft-output",
-            str(draft_dir),
             "--prepare-cards",
             str(invalid_cards),
         ],
@@ -712,7 +696,6 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
 
 def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -722,7 +705,6 @@ def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -765,7 +747,6 @@ def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
         pytest.skip("LibreOffice が利用できないためスキップします")
 
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf-only"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -775,7 +756,6 @@ def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -805,7 +785,6 @@ def test_cli_gen_pdf_only(tmp_path: Path, monkeypatch) -> None:
 
 def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-pdf-skip"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -815,7 +794,6 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -847,7 +825,6 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
 
 def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-polisher"
     rules_path = tmp_path / "polisher-rules.json"
     rules_path.write_text(json.dumps(
@@ -881,7 +858,6 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -921,7 +897,6 @@ def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
 
 def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-template-fallback"
     runner = CliRunner()
     prepare_paths = _prepare_inputs(runner, tmp_path)
@@ -931,7 +906,6 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -961,7 +935,6 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
 
 def test_cli_gen_template_uses_template_branding(tmp_path: Path) -> None:
     mapping_dir = tmp_path / "mapping"
-    draft_dir = tmp_path / "draft"
     output_dir = tmp_path / "gen-template-branding"
     template_path = tmp_path / "template.pptx"
     shutil.copyfile(SAMPLE_TEMPLATE, template_path)
@@ -980,7 +953,6 @@ def test_cli_gen_template_uses_template_branding(tmp_path: Path) -> None:
         runner,
         spec_path,
         mapping_dir,
-        draft_dir=draft_dir,
         prepare_paths=prepare_paths,
     )
 
@@ -1174,7 +1146,6 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
     assert meta_payload["slot_coverage"]["required_total"] == 2
 
     mapping_dir = tmp_path / "mapping_static"
-    draft_dir = tmp_path / "draft_static"
     result = runner.invoke(
         app,
         [
@@ -1184,12 +1155,12 @@ def test_static_mode_pipeline(tmp_path: Path) -> None:
             str(prepare_dir / "prepare_card.json"),
             "--output",
             str(mapping_dir),
-            "--draft-output",
-            str(draft_dir),
         ],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output
+    draft_dir = mapping_dir / "draft"
+    assert draft_dir.exists()
 
     ready_payload = json.loads(
         (mapping_dir / "generate_ready.json").read_text(encoding="utf-8"))

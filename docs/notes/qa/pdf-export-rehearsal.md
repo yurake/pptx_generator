@@ -14,7 +14,6 @@
 
   uv run pptx compose samples/extract/jobspec.json \
     --prepare-cards .pptx/prepare/prepare_card.json \
-    --draft-output .pptx/draft \
     --output .pptx/compose
 ```
 - ブランド設定はテンプレートのテーマを参照（`config/branding.json` は参考用）。

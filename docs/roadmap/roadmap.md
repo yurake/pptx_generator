@@ -35,7 +35,6 @@ flowchart TB
         direction TB
         ST1_ANCHOR(( ))
         RM087["RM-087<br/>Blueprint 静的データ拡張<br/>(未着手)"]
-        RM088["RM-088<br/>テンプレ実スライド優先抽出<br/>(未着手)"]
     end
 
     subgraph ST2["Stage 2: コンテンツ準備"]
@@ -71,7 +70,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM087 --> RM088
 ```
 
 ## 個別状況
@@ -1115,7 +1113,7 @@ flowchart TB
 - 対象 stage: 1（テンプレ抽出）、4（PPTX生成）
 - 参照ドキュメント: [docs/notes/20251206-template-spec-from-slides.md](../notes/20251206-template-spec-from-slides.md)
 - 依存: RM-080（テンプレ実スライドスナップショット強化）、RM-086（静的テンプレ外部フック統合）
-- 状況: 未着手（2025-12-06 登録）
+- 状況: 完了（2025-12-07 更新）
 - 期待成果:
   - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
   - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。

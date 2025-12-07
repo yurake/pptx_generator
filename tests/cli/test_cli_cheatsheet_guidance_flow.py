@@ -146,8 +146,6 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
         [
             "compose",
             str(matching_jobspec_path),
-            "--draft-output",
-            str(compose_output_root / "draft"),
             "--output",
             str(compose_output_root / "gen"),
             "--prepare-cards",
@@ -160,3 +158,4 @@ def test_cli_cheatsheet_flow(tmp_path: Path) -> None:
 
     generate_ready_path = compose_output_root / "gen" / "generate_ready.json"
     assert generate_ready_path.exists()
+    assert (compose_output_root / "gen" / "draft").exists()

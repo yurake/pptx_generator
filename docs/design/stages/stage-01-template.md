@@ -68,6 +68,7 @@
 ### Blueprint 拡張
 - Static モードで抽出された Blueprint は `TemplateBlueprintSlot.default_text` にテンプレート側の初期文言を保持する。プレーンテキスト要素は改行ごとに分割され、Stage3 以降でカード未割当の場合のフォールバックとして利用できる。
 - 表や画像などの構造化要素については `TemplateBlueprintSlot.default_payload` を今後拡張予定のフィールドとして確保しており、必要に応じてスキーマ追加で取り込む。
+- 実スライドを優先した抽出では `template_spec.template_source=slide` が出力され、各レイアウト／Blueprint スライドに `prototype_index`（1 始まりのテンプレスライド連番）が記録される。Stage2〜4 はこのメタ情報を引き継ぎ、Stage4 でテンプレ内プロトタイプを再利用して PPTX を再生成する。
 
 ## インターフェース
 - CLI: `uv run pptx tpl-release --template templates/.../template.pptx --brand <brand> --version <version> [--baseline-release <path>] [--golden-spec <spec.json>...]`
@@ -76,6 +77,7 @@
 
 ### 抽出・検証 CLI 補助
 - `uv run pptx tpl-extract`: テンプレ PPTX から `template_spec.json`・`layouts.jsonl`・`jobspec.json` を抽出し、後続 stage が参照するメタデータを更新する。
+- `uv run pptx template ... --from {slide,template}`: 静的モード時にテンプレ抽出へ使用するソースを選択する。既定は `slide` で実スライドを参照し、`template` を指定すると従来どおりスライドマスターから抽出する。
 - `uv run pptx layout-validate --template <path>`: レイアウトごとのプレースホルダー構造や禁則チェックを実行し、`diagnostics.json` と差分レポートを生成する。Golden Sample や Analyzer と組み合わせて品質ゲートを設計する。
 - `uv run pptx template ... --slide`: 抽出と同時に `slide_snapshot.json` を生成する。実スライドの図形座標・z-order・回転・テキスト枠余白、および段落のフォント／整列／インデント／行間などを網羅し、TemplateExtractor が構築するアンカー情報や Stage 4 Analyzer スナップショットと照合できる粒度で実データを記録する。テンプレ差分レビューや RM-080 の検証で参照する。
 

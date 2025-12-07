@@ -332,11 +332,25 @@ def run_render_pipeline(
     if generate_ready_path is not None:
         context.add_artifact("generate_ready_path", str(generate_ready_path))
 
+    template_source = getattr(generate_ready.meta, "template_source", "template")
+    prototype_indices = [
+        slide.meta.prototype_index
+        for slide in generate_ready.slides
+        if slide.meta.prototype_index is not None
+    ]
+    prototype_mapping = prototype_indices if prototype_indices else None
+    if template_source == "slide" and template is None:
+        raise RuntimeError(
+            "template_source=slide の場合はテンプレート PPTX のパスが必要です。"
+        )
+
     renderer = SimpleRendererStep(
         RenderingOptions(
             template_path=template,
             output_filename=pptx_name,
             template_style=template_style,
+            template_source=template_source,
+            prototype_mapping=prototype_mapping,
         )
     )
     baseline_analyzer_options = replace(

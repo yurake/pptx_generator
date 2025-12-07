@@ -3,7 +3,7 @@
 stage 1 ではテンプレート受け渡しの品質を確保するため、以下の成果物を想定する。
 
 ## ファイル
-- `template_spec.json`: テンプレ抽出結果。`layout_mode` や Blueprint を含むテンプレ構造を表現し、`jobspec.json.meta.template_spec_path` から参照される。`layouts[*]` には Stage1 時点で集計した `placeholder_summary`（種別ごとの counts / area_ratio / attributes）と、用途タグ推定のヒューリスティック結果 `heuristic`（tags / reasons / has_title_placeholder など）を保持する。
+- `template_spec.json`: テンプレ抽出結果。`layout_mode` や Blueprint を含むテンプレ構造を表現し、`jobspec.json.meta.template_spec_path` から参照される。`template_source` は抽出元（`slide` / `template`）を示し、静的モードで実スライドを利用した場合は `slide` になる。`layouts[*]` には Stage1 時点で集計した `placeholder_summary`（種別ごとの counts / area_ratio / attributes）と、用途タグ推定のヒューリスティック結果 `heuristic`（tags / reasons / has_title_placeholder など）、実スライド抽出時は `prototype_index`（テンプレ内スライドの 1 始まり連番）を保持する。Blueprint スライドも同様に `prototype_index` を持つ。
 - `template_release.json`: テンプレートのメタ情報と検証結果を記録。
 - `release_report.json`: 差分結果や警告一覧。
 - `golden_runs/*.log`: ゴールデンサンプル実行ログ（任意）。
@@ -17,11 +17,13 @@ stage 1 ではテンプレート受け渡しの品質を確保するため、以
 {
   "template_path": "templates/acme/static_v1/template.pptx",
   "layout_mode": "static",
+  "template_source": "slide",
   "blueprint": {
     "slides": [
       {
         "slide_id": "cover",
         "layout": "Title",
+        "prototype_index": 1,
         "intent_tags": ["opening"],
         "slots": [
           {
@@ -46,6 +48,7 @@ stage 1 ではテンプレート受け渡しの品質を確保するため、以
 - `slides[*].layout` は抽出済みレイアウト名と一致させる。
 - `slots[*].anchor` はテンプレ内の shape 名に一致させ、`required=true` の slot は stage 2/3 で必須充足を検査する。
 - `content_type` は `text` / `image` / `table` / `chart` / `shape` / `other` を想定し、stage 2 のカード生成と stage 3 のマッピングに利用する。
+- `jobspec.json.meta.template_source` にも同値が記録され、後続ステージでテンプレ実体の扱いを分岐できる。
 
 ### 自動描画プレースホルダーの扱い
 - PowerPoint が自動描画するプレースホルダー（例: `SLIDE_NUMBER`、`DATE`／`DATETIME`、`FOOTER`、`HEADER`）は `jobspec.json` にそのまま残るが、`auto_draw=true` が付与される。  

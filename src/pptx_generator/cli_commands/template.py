@@ -120,6 +120,14 @@ def create_template_command(
         help="生成AIによる usage_tags 推定を無効化する",
     )
     @click.option(
+        "--from",
+        "static_source",
+        type=click.Choice(["slide", "template"]),
+        default="slide",
+        show_default=True,
+        help="static モード時にテンプレ抽出へ使用するソースを指定する",
+    )
+    @click.option(
         "--slide",
         is_flag=True,
         default=False,
@@ -151,6 +159,7 @@ def create_template_command(
         template_ai_policy: Path | None,
         template_ai_policy_id: str | None,
         disable_template_ai: bool,
+        static_source: str,
         slide: bool,
         force: bool,
     ) -> None:
@@ -179,6 +188,7 @@ def create_template_command(
             "PPTX_TEMPLATE_AI_POLICY": str(template_ai_policy) if template_ai_policy else "",
             "PPTX_TEMPLATE_AI_POLICY_ID": template_ai_policy_id or "",
             "PPTX_TEMPLATE_DISABLE_AI": "1" if disable_template_ai else "0",
+            "PPTX_TEMPLATE_STATIC_SOURCE": static_source,
             "PPTX_TEMPLATE_SLIDE_SNAPSHOT": "1" if slide else "0",
             "PPTX_TEMPLATE_FORCE": "1" if force else "0",
         }
@@ -204,6 +214,7 @@ def create_template_command(
             layout=layout,
             anchor=anchor,
             layout_mode=layout_mode,
+            static_source=static_source,
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,
             disable_template_ai=disable_template_ai,

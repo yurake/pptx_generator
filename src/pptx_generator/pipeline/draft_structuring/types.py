@@ -26,6 +26,7 @@ class DraftStructuringOptions:
     structure_pattern: str | None = None
     appendix_limit: int = 5
     analysis_summary_path: Path | None = None
+    draft_store_dir: Path | None = None
     enable_ai_recommender: bool = True
     ai_weight: float = 0.25
     diversity_weight: float = 0.05

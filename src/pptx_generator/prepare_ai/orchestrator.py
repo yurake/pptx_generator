@@ -107,6 +107,9 @@ class PrepareAIOrchestrator:
                 {"slide_id": key, "input_path": value}
                 for key, value in (slide_input_refs or {}).items()
             ],
+            template_source=(
+                blueprint_ref.get("template_source") if blueprint_ref else "template"
+            ),
         )
         return document, meta, ai_records
 
