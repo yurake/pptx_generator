@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "default_policy_id": "layout-default",
+  "policies": [
+    {
+      "id": "layout-default",
+      "name": "レイアウト候補推薦スタンダード",
+      "description": "stage 4 ドラフト構成向けの標準レイアウト推薦ポリシー",
+      "prompt_template": "各レイアウトproviderの適合度を0〜1で評価し、最適な順に並べてください。",
+      "usage_tags_template": "以下は使用可能な用途タグ一覧です。タグの意味を踏まえて scoring に反映してください。\\n{usage_tags}",
+      "card_context_template": "カードの背景情報です。ストーリーフェーズやBlueprintの必須スロットを考慮してください。\\n{card_context}",
+      "slide_policies": []
+    }
+  ]
+}

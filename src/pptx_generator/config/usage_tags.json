@@ -1,0 +1,144 @@
+{
+  "version": "2.0",
+  "intent": [
+    {
+      "tag": "title",
+      "label_jp": "表紙",
+      "description": "表紙やタイトル専用のレイアウト。最低限のテキストと視覚要素のみで構成される。",
+      "synonyms": ["cover", "front", "headline", "opening"],
+      "examples": ["イントロダクション（社名＋スローガン）"],
+      "deprecated": false
+    },
+    {
+      "tag": "agenda",
+      "label_jp": "アジェンダ",
+      "description": "章構成や議題を一覧表示するレイアウト。目次スライドを想定。",
+      "synonyms": ["table_of_contents", "toc"],
+      "examples": ["本日の流れ"],
+      "deprecated": false
+    },
+    {
+      "tag": "overview",
+      "label_jp": "概要",
+      "description": "全体像や要約を提示するレイアウト。エグゼクティブサマリーやハイライトページを想定。",
+      "synonyms": ["introduction"],
+      "examples": ["プロジェクト概要"],
+      "deprecated": false
+    },
+    {
+      "tag": "content",
+      "label_jp": "本文",
+      "description": "汎用的な本文ページで、テキストや図を柔軟に配置できるレイアウト。",
+      "synonyms": ["body", "text", "details"],
+      "examples": ["施策詳細", "提案背景"],
+      "deprecated": false
+    },
+    {
+      "tag": "section_break",
+      "label_jp": "セクション区切り",
+      "description": "章区切りやセクション開始を示すレイアウト。章タイトルと簡単な補足情報を含む。",
+      "synonyms": ["chapter_break"],
+      "examples": ["第2章開始"],
+      "deprecated": false
+    },
+    {
+      "tag": "closing",
+      "label_jp": "クロージング",
+      "description": "まとめ・連絡先など締めのメッセージを配置するレイアウト。",
+      "synonyms": ["outro"],
+      "examples": ["ご清聴ありがとうございました"],
+      "deprecated": false
+    },
+    {
+      "tag": "summary",
+      "label_jp": "要約",
+      "description": "要点を箇条書きでまとめるレイアウト。結論や主要メッセージを短く整理する。",
+      "synonyms": ["recap"],
+      "examples": ["まとめ", "キーメッセージ"],
+      "deprecated": false
+    },
+    {
+      "tag": "next_steps",
+      "label_jp": "次のアクション",
+      "description": "次のステップやスケジュールを提示するレイアウト。ロードマップやタスクを想定。",
+      "synonyms": ["action_items"],
+      "examples": ["今後の進め方"],
+      "deprecated": false
+    },
+    {
+      "tag": "call_to_action",
+      "label_jp": "CTA",
+      "description": "提案の承認や連絡先など、読者に具体的な行動を促すレイアウト。",
+      "synonyms": ["cta"],
+      "examples": ["お問い合わせ先"],
+      "deprecated": false
+    }
+  ],
+  "media": [
+    {
+      "tag": "chart",
+      "label_jp": "チャート",
+      "description": "グラフやチャートの配置を想定したレイアウト。",
+      "synonyms": ["graph", "diagram"],
+      "examples": ["売上推移チャート"],
+      "deprecated": false
+    },
+    {
+      "tag": "table",
+      "label_jp": "テーブル",
+      "description": "テーブルや表形式のデータ配置を想定したレイアウト。",
+      "synonyms": ["grid"],
+      "examples": ["比較表", "指標一覧"],
+      "deprecated": false
+    },
+    {
+      "tag": "visual",
+      "label_jp": "ビジュアル",
+      "description": "画像や図版を中心に配置するレイアウト。",
+      "synonyms": ["picture", "image", "photo", "illustration"],
+      "examples": ["製品写真", "概念図"],
+      "deprecated": false
+    }
+  ],
+  "fallback": {
+    "tag": "generic",
+    "description": "用途が特定できない場合に使用するフォールバックタグ。",
+    "synonyms": [],
+    "examples": [],
+    "deprecated": false
+  },
+  "layout_rules": {
+    "intent": [
+      {
+        "layout_name_pattern": ".*Title.*",
+        "tags": ["title"]
+      },
+      {
+        "layout_name_pattern": ".*Agenda.*",
+        "tags": ["agenda"]
+      },
+      {
+        "layout_name_pattern": ".*executive.*summary.*",
+        "tags": ["overview", "content"]
+      },
+      {
+        "layout_name_pattern": null,
+        "tags": ["content"]
+      }
+    ],
+    "media": [
+      {
+        "layout_name_pattern": ".*Chart.*",
+        "tags": ["chart"]
+      },
+      {
+        "layout_name_pattern": ".*Table.*",
+        "tags": ["table"]
+      },
+      {
+        "layout_name_pattern": ".*Picture.*",
+        "tags": ["visual"]
+      }
+    ]
+  }
+}

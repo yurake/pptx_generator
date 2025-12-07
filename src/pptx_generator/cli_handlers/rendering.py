@@ -33,6 +33,7 @@ from pptx_generator.pipeline import (
 from pptx_generator.review_engine import AnalyzerReviewEngineAdapter
 from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
+from pptx_generator.settings.paths import find_config_path
 from pptx_generator.template_style import extract_template_style
 
 logger = logging.getLogger(__name__)
@@ -293,19 +294,10 @@ def run_generate_command(config: GenerateCommandConfig) -> GenerateCommandResult
 
 
 def resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
-    candidate = Path(value)
-    if candidate.is_absolute():
-        resolved = candidate
-    else:
-        if candidate.parts and candidate.parts[0] == "config":
-            resolved = Path.cwd() / candidate
-        elif base_dir is not None:
-            resolved = base_dir / candidate
-        else:
-            resolved = Path.cwd() / candidate
-    resolved = resolved.resolve()
-    if not resolved.exists():
-        msg = f"設定ファイルで指定されたパスが見つかりません: {resolved}"
+    resolved = find_config_path(value, base_dir=base_dir)
+    if resolved is None:
+        candidate = Path(value)
+        msg = f"設定ファイルで指定されたパスが見つかりません: {candidate}"
         raise FileNotFoundError(msg)
     return resolved
 
