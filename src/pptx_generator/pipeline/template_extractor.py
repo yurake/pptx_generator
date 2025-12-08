@@ -487,7 +487,6 @@ class TemplateExtractorStep:
             )
 
             error_msg = "\n".join(error_lines)
-            logger.error(error_msg)
             raise DuplicateAnchorError(error_msg)
 
     @staticmethod
