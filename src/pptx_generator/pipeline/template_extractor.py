@@ -418,10 +418,7 @@ class TemplateExtractorStep:
         index: int,
         source_mode: Literal["slide", "template"],
     ) -> None:
-        """同一スライド内でアンカー名の重複をチェックする。
-        
-        重複が見つかった場合は RuntimeError を投げる。
-        """
+        """同一スライド内でアンカー名の重複をチェックする。重複が見つかった場合は RuntimeError を投げる。"""
         anchor_names: dict[str, list[int]] = {}
         
         for idx, shape_info in enumerate(anchors):

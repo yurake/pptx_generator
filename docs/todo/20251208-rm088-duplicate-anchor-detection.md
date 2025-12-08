@@ -31,8 +31,8 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
     - test_no_duplicate_anchor_different_slides: 異なるスライド間での同名アンカーは許容
     - test_unnamed_shapes_ignored_in_duplicate_check: unnamed 図形は除外
     - 実行結果: 17 passed（新規 3 件 + 既存 14 件）
-- [ ] ドキュメント更新
-  - メモ: 機能追加のため実装詳細を確認後、必要に応じて更新
+- [x] ドキュメント更新
+  - メモ: すべてのサブタスク完了を確認。機能追加のため実装詳細を確認し、既存ドキュメントで十分カバーされていることを確認
   - [x] docs/roadmap 配下
     - メモ: RM-088 は既に完了済みとマークされており、本機能は品質向上のための追加実装のため更新不要
   - [x] docs/requirements 配下（実装結果との整合再確認）
@@ -44,9 +44,9 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - [x] README.md / AGENTS.md
     - メモ: ユーザー向け機能説明は変更なく、内部品質向上のため更新不要
 - [x] 関連Issue 行の更新
-  - メモ: 関連Issue が特定できたら更新
-- [ ] チェックリスト整合確認
-  - メモ: 親タスク完了確認
+  - メモ: 関連Issue #412 を特定し更新完了
+- [x] チェックリスト整合確認
+  - メモ: 全タスク完了を確認。親タスク（ドキュメント更新、関連Issue更新）のチェックを完了
 - [x] PR 作成
   - メモ: PR #411 https://github.com/yurake/pptx_generator/pull/411（2025-12-08 完了）
 

@@ -515,7 +515,8 @@ class TestDuplicateAnchorDetection:
         """一時テンプレートファイルパス。"""
         with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as f:
             temp_path = Path(f.name)
-        temp_path.write_text("dummy pptx content")
+        # Write a valid empty pptx file
+        Presentation().save(temp_path)
         yield temp_path
         temp_path.unlink()
 
@@ -628,7 +629,7 @@ class TestDuplicateAnchorDetection:
 
         # unnamed で始まる図形（重複チェック対象外）
         shape1 = Mock()
-        shape1.name = ""  # 空文字は自動で unnamed_shape_xxx になる
+        shape1.name = ""  # 空文字は自動で unnamed_shape_{id(shape)} になる
         shape1.left = 914400
         shape1.top = 914400
         shape1.width = 914400
