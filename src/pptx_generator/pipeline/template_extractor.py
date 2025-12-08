@@ -466,9 +466,15 @@ class TemplateExtractorStep:
         if duplicates:
             source_label = "スライド" if source_mode == "slide" else "レイアウト"
             layout_display = layout_name or f"{source_label}-{index:02d}"
+            source_desc = (
+                "実スライド (layout_mode=static/from=slide)"
+                if source_mode == "slide"
+                else "スライドマスター (layout_mode=dynamic または static/from=template)"
+            )
 
             error_lines = [
                 f"同一{source_label}内でアンカー名が重複しています:",
+                f"  - 抽出ソース: {source_desc}",
                 f"  - {source_label}: {layout_display} (index={index})",
             ]
 
