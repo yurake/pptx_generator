@@ -11,26 +11,38 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, Optional
+from zipfile import BadZipFile
 
 from pptx import Presentation
 from pptx.dml.color import ColorFormat
 from pptx.enum.text import PP_ALIGN
 from pptx.shapes.base import BaseShape
 from pptx.shapes.placeholder import PlaceholderPicture, SlidePlaceholder
-from zipfile import BadZipFile
 
-from ..branding_extractor import (BrandingExtractionError,
-                                  extract_branding_config)
-from ..models import (FontSpec, JobSpecScaffold, JobSpecScaffoldBounds,
-                      JobSpecScaffoldMeta, JobSpecScaffoldPlaceholder,
-                      JobSpecScaffoldSlide, LayoutInfo, ShapeInfo,
-                      TemplateBlueprint, TemplateBlueprintSlide,
-                      TemplateBlueprintSlot, TemplateSpec, TextCapacity,
-                      TextFramePadding, TextboxParagraph)
-from ..utils.layout_metadata import (derive_usage_tags,
-                                     generate_layout_description,
-                                     normalise_placeholder_type,
-                                     summarize_placeholders)
+from ..branding_extractor import BrandingExtractionError, extract_branding_config
+from ..models import (
+    FontSpec,
+    JobSpecScaffold,
+    JobSpecScaffoldBounds,
+    JobSpecScaffoldMeta,
+    JobSpecScaffoldPlaceholder,
+    JobSpecScaffoldSlide,
+    LayoutInfo,
+    ShapeInfo,
+    TemplateBlueprint,
+    TemplateBlueprintSlide,
+    TemplateBlueprintSlot,
+    TemplateSpec,
+    TextboxParagraph,
+    TextCapacity,
+    TextFramePadding,
+)
+from ..utils.layout_metadata import (
+    derive_usage_tags,
+    generate_layout_description,
+    normalise_placeholder_type,
+    summarize_placeholders,
+)
 from ..utils.text_capacity import estimate_text_capacity
 from .base import PipelineContext
 
@@ -65,11 +77,15 @@ class TemplateExtractorOptions:
     static_source: Literal["slide", "template"] = "template"
 
 
+class DuplicateAnchorError(RuntimeError):
+    """アンカー名重複を通知する例外。"""
+
+
 class TemplateExtractorStep:
     """テンプレートファイルから図形情報を抽出するステップ。"""
-    
+
     name = "TemplateExtractor"
-    
+
     def __init__(self, options: TemplateExtractorOptions) -> None:
         self.options = options
         self._slide_width_emu: int | None = None
@@ -81,11 +97,11 @@ class TemplateExtractorStep:
             name="Meiryo UI", size_pt=18.0, color_hex="#333333"
         )
         self._template_source: Literal["slide", "template"] = "template"
-    
+
     def run(self, context: PipelineContext) -> None:
         """テンプレート抽出を実行する。"""
         logger.info("テンプレート抽出を開始: %s", self.options.template_path)
-        
+
         try:
             template_spec = self.extract_template_spec()
             output_path = self._determine_output_path(context)
@@ -99,23 +115,29 @@ class TemplateExtractorStep:
             context.add_artifact("jobspec_scaffold", jobspec_scaffold)
             context.add_artifact("jobspec_path", jobspec_path)
 
-            logger.info("テンプレート抽出完了: %s (jobspec=%s)", output_path, jobspec_path)
-            
+            logger.info(
+                "テンプレート抽出完了: %s (jobspec=%s)", output_path, jobspec_path
+            )
+
         except Exception as exc:
             logger.error("テンプレート抽出に失敗: %s", exc)
             raise
-    
+
     def extract_template_spec(self) -> TemplateSpec:
         """テンプレートファイルから仕様を抽出する。"""
         if not self.options.template_path.exists():
-            raise FileNotFoundError(f"テンプレートファイルが見つかりません: {self.options.template_path}")
+            raise FileNotFoundError(
+                f"テンプレートファイルが見つかりません: {self.options.template_path}"
+            )
 
         self._load_font_defaults()
 
         try:
             presentation = Presentation(self.options.template_path)
         except Exception as exc:
-            raise RuntimeError(f"テンプレートファイルの読み込みに失敗しました: {exc}") from exc
+            raise RuntimeError(
+                f"テンプレートファイルの読み込みに失敗しました: {exc}"
+            ) from exc
 
         try:
             slide_width = int(presentation.slide_width)
@@ -126,7 +148,9 @@ class TemplateExtractorStep:
 
         if slide_width <= 0 or slide_height <= 0:
             logger.error(
-                "スライドサイズが不正です (width=%s, height=%s)", slide_width, slide_height
+                "スライドサイズが不正です (width=%s, height=%s)",
+                slide_width,
+                slide_height,
             )
             raise RuntimeError(
                 "スライドサイズが不正です。テンプレートのページ設定を確認してください。"
@@ -167,10 +191,9 @@ class TemplateExtractorStep:
 
                 layouts.append(layout_info)
 
+            except DuplicateAnchorError:
+                raise
             except RuntimeError as exc:
-                # アンカー名重複など致命的なエラーは即座に伝播
-                if "アンカー名が重複しています" in str(exc):
-                    raise
                 container_name = getattr(container, "name", None) or f"index={index}"
                 error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
                 logger.warning(error_msg)
@@ -210,7 +233,11 @@ class TemplateExtractorStep:
             base_name = getattr(container, "name", None)
             if not base_name:
                 slide_layout = getattr(container, "slide_layout", None)
-                base_name = getattr(slide_layout, "name", None) if slide_layout is not None else None
+                base_name = (
+                    getattr(slide_layout, "name", None)
+                    if slide_layout is not None
+                    else None
+                )
             slugified = self._slugify_layout_name(base_name)
             if slugified:
                 layout_name = f"{slugified}-{index:02d}"
@@ -242,22 +269,22 @@ class TemplateExtractorStep:
         for shape in shapes_iterable:
             try:
                 shape_info = self._extract_shape_info(shape)
-                
+
                 # アンカーフィルタがある場合はチェック
                 if self.options.anchor_filter and not self._matches_filter(
                     shape_info.name, self.options.anchor_filter
                 ):
                     continue
-                
+
                 anchors.append(shape_info)
-                
+
             except Exception as exc:
                 error_msg = f"図形 '{shape.name}' の抽出エラー: {exc}"
                 logger.warning(error_msg)
-                
+
                 # エラー付きの図形情報を作成
                 error_shape = ShapeInfo(
-                    name=getattr(shape, 'name', '不明な図形'),
+                    name=getattr(shape, "name", "不明な図形"),
                     shape_type="unknown",
                     left_in=0.0,
                     top_in=0.0,
@@ -312,23 +339,23 @@ class TemplateExtractorStep:
             heuristic=heuristic_payload,
             layout_description=layout_description,
         )
-    
+
     def _extract_shape_info(self, shape: BaseShape) -> ShapeInfo:
         """単一図形から情報を抽出する。"""
         # 基本属性の抽出
-        name = getattr(shape, 'name', '')
+        name = getattr(shape, "name", "")
         if not name:
             name = f"unnamed_shape_{id(shape)}"
-        
+
         # 位置・サイズ情報（EMU単位からインチに変換）
-        left_in = shape.left / 914400.0 if hasattr(shape, 'left') else 0.0
-        top_in = shape.top / 914400.0 if hasattr(shape, 'top') else 0.0
-        width_in = shape.width / 914400.0 if hasattr(shape, 'width') else 0.0
-        height_in = shape.height / 914400.0 if hasattr(shape, 'height') else 0.0
-        
+        left_in = shape.left / 914400.0 if hasattr(shape, "left") else 0.0
+        top_in = shape.top / 914400.0 if hasattr(shape, "top") else 0.0
+        width_in = shape.width / 914400.0 if hasattr(shape, "width") else 0.0
+        height_in = shape.height / 914400.0 if hasattr(shape, "height") else 0.0
+
         # 図形種別の判定
         shape_type = shape.__class__.__name__
-        
+
         # テキスト内容の抽出
         text = None
         text_frame = getattr(shape, "text_frame", None)
@@ -340,7 +367,7 @@ class TemplateExtractorStep:
             raw_text = getattr(shape, "text", None)
             if isinstance(raw_text, str):
                 text = raw_text
-        
+
         # プレースホルダー情報の抽出
         placeholder_format = None
         try:
@@ -360,7 +387,7 @@ class TemplateExtractorStep:
                 placeholder_type = str(getattr(placeholder_kind, "name"))
             elif placeholder_kind is not None:
                 placeholder_type = str(placeholder_kind)
-        
+
         # テキスト属性（フォント/段落/余白/容量）
         font_spec: FontSpec | None = None
         paragraph_spec: TextboxParagraph | None = None
@@ -383,7 +410,7 @@ class TemplateExtractorStep:
         conflict = None
         if name.lower() in SLIDE_BULLET_ANCHORS:
             conflict = f"SlideBullet拡張仕様で使用される可能性のあるアンカー名: {name}"
-        
+
         # 必須フィールドの欠落チェック
         missing_fields = []
         if not name or name.startswith("unnamed_"):
@@ -392,7 +419,7 @@ class TemplateExtractorStep:
             missing_fields.append("width")
         if height_in <= 0:
             missing_fields.append("height")
-        
+
         return ShapeInfo(
             name=name,
             shape_type=shape_type,
@@ -418,44 +445,50 @@ class TemplateExtractorStep:
         index: int,
         source_mode: Literal["slide", "template"],
     ) -> None:
-        """同一スライド内でアンカー名の重複をチェックする。重複が見つかった場合は RuntimeError を投げる。"""
+        """同一スライド内でアンカー名の重複をチェックし、重複時には例外を送出する。"""
         anchor_names: dict[str, list[int]] = {}
-        
+
         for idx, shape_info in enumerate(anchors):
             name = shape_info.name
             # unnamed で始まる名前や空文字は無視（自動生成名）
             if not name or name.startswith("unnamed_"):
                 continue
-            
+
             if name not in anchor_names:
                 anchor_names[name] = []
             anchor_names[name].append(idx)
-        
+
         # 重複しているアンカー名を検出
-        duplicates = {name: indices for name, indices in anchor_names.items() if len(indices) > 1}
-        
+        duplicates = {
+            name: indices for name, indices in anchor_names.items() if len(indices) > 1
+        }
+
         if duplicates:
             source_label = "スライド" if source_mode == "slide" else "レイアウト"
             layout_display = layout_name or f"{source_label}-{index:02d}"
-            
+
             error_lines = [
                 f"同一{source_label}内でアンカー名が重複しています:",
                 f"  - {source_label}: {layout_display} (index={index})",
             ]
-            
+
             for dup_name, indices in duplicates.items():
-                error_lines.append(f"  - 重複アンカー: '{dup_name}' (出現回数: {len(indices)})")
-            
-            error_lines.extend([
-                "",
-                "修正方法:",
-                "  PowerPoint で該当図形を選択し、図形名を一意にリネームしてください。",
-                "  図形名は「ホーム」→「選択」→「オブジェクトの選択と表示」で確認・変更できます。",
-            ])
-            
+                error_lines.append(
+                    f"  - 重複アンカー: '{dup_name}' (出現回数: {len(indices)})"
+                )
+
+            error_lines.extend(
+                [
+                    "",
+                    "修正方法:",
+                    "  PowerPoint で該当図形を選択し、図形名を一意にリネームしてください。",
+                    "  図形名は「ホーム」→「選択」→「オブジェクトの選択と表示」で確認・変更できます。",
+                ]
+            )
+
             error_msg = "\n".join(error_lines)
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise DuplicateAnchorError(error_msg)
 
     @staticmethod
     def _should_include_for_summary(shape: ShapeInfo) -> bool:
@@ -502,12 +535,21 @@ class TemplateExtractorStep:
 
     def _is_text_shape(self, placeholder_type: str | None, shape: BaseShape) -> bool:
         placeholder = (placeholder_type or "").upper()
-        if placeholder in {"TITLE", "CENTER_TITLE", "SUBTITLE", "BODY", "CONTENT", "TEXT"}:
+        if placeholder in {
+            "TITLE",
+            "CENTER_TITLE",
+            "SUBTITLE",
+            "BODY",
+            "CONTENT",
+            "TEXT",
+        }:
             return True
         text_frame = getattr(shape, "text_frame", None)
         if text_frame is None:
             return False
-        text_value = getattr(text_frame, "text", None) or getattr(shape, "text", None) or ""
+        text_value = (
+            getattr(text_frame, "text", None) or getattr(shape, "text", None) or ""
+        )
         return bool(text_value.strip())
 
     def _extract_text_attributes(
@@ -516,7 +558,12 @@ class TemplateExtractorStep:
         placeholder_type: str | None,
         width_in: float,
         height_in: float,
-    ) -> tuple[FontSpec | None, TextboxParagraph | None, TextFramePadding | None, TextCapacity | None]:
+    ) -> tuple[
+        FontSpec | None,
+        TextboxParagraph | None,
+        TextFramePadding | None,
+        TextCapacity | None,
+    ]:
         if text_frame is None:
             font_spec = self._resolve_font_spec(placeholder_type, None)
             text_capacity = estimate_text_capacity(
@@ -630,12 +677,24 @@ class TemplateExtractorStep:
         return TextboxParagraph(
             level=max(paragraph.level if paragraph.level is not None else 0, 0),
             line_spacing_pt=self._line_spacing_to_pt(paragraph),
-            space_before_pt=_length_to_pt(getattr(fmt, "space_before", None)) if fmt else None,
-            space_after_pt=_length_to_pt(getattr(fmt, "space_after", None)) if fmt else None,
+            space_before_pt=(
+                _length_to_pt(getattr(fmt, "space_before", None)) if fmt else None
+            ),
+            space_after_pt=(
+                _length_to_pt(getattr(fmt, "space_after", None)) if fmt else None
+            ),
             align=self._alignment_to_str(paragraph.alignment),
-            left_indent_in=_length_to_inches(getattr(fmt, "left_margin", None)) if fmt else None,
-            right_indent_in=_length_to_inches(getattr(fmt, "right_margin", None)) if fmt else None,
-            first_line_indent_in=_length_to_inches(getattr(fmt, "first_line_indent", None)) if fmt else None,
+            left_indent_in=(
+                _length_to_inches(getattr(fmt, "left_margin", None)) if fmt else None
+            ),
+            right_indent_in=(
+                _length_to_inches(getattr(fmt, "right_margin", None)) if fmt else None
+            ),
+            first_line_indent_in=(
+                _length_to_inches(getattr(fmt, "first_line_indent", None))
+                if fmt
+                else None
+            ),
         )
 
     @staticmethod
@@ -687,7 +746,7 @@ class TemplateExtractorStep:
         if not value or not keyword:
             return True
         return value.casefold().startswith(keyword.casefold())
-    
+
     def _determine_output_path(self, context: PipelineContext) -> Path:
         """出力パスを決定する。"""
         if self.options.output_path:
@@ -703,12 +762,17 @@ class TemplateExtractorStep:
         """jobspec.json の出力先パスを決定する。"""
         return spec_output_path.with_name("jobspec.json")
 
-    def _save_template_spec(self, template_spec: TemplateSpec, output_path: Path) -> None:
+    def _save_template_spec(
+        self, template_spec: TemplateSpec, output_path: Path
+    ) -> None:
         """テンプレート仕様をファイルに保存する。"""
         if self.options.format == "yaml":
             import yaml
+
             data = template_spec.model_dump(mode="json", exclude_none=True)
-            content = yaml.dump(data, allow_unicode=True, default_flow_style=False, indent=2)
+            content = yaml.dump(
+                data, allow_unicode=True, default_flow_style=False, indent=2
+            )
         else:
             content = json.dumps(
                 template_spec.model_dump(mode="json", exclude_none=True),
@@ -808,7 +872,11 @@ class TemplateExtractorStep:
                 default_payload: dict[str, Any] | None = None
                 if content_type == "text":
                     source_text = anchor.text or ""
-                    lines = [line.strip() for line in source_text.splitlines() if line.strip()]
+                    lines = [
+                        line.strip()
+                        for line in source_text.splitlines()
+                        if line.strip()
+                    ]
                     if lines:
                         default_text = lines
                 slots.append(
@@ -836,7 +904,9 @@ class TemplateExtractorStep:
 
         return TemplateBlueprint(slides=slides)
 
-    def _save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
+    def _save_jobspec_scaffold(
+        self, jobspec: JobSpecScaffold, output_path: Path
+    ) -> None:
         """ジョブスペック雛形をファイルに保存する。"""
         output_path.write_text(
             json.dumps(jobspec.model_dump(), indent=2, ensure_ascii=False),
@@ -859,7 +929,14 @@ class TemplateExtractorStep:
         self, shape: ShapeInfo
     ) -> Literal["text", "image", "table", "chart", "shape", "other"]:
         placeholder_type = (shape.placeholder_type or "").upper()
-        if placeholder_type in {"TITLE", "CENTER_TITLE", "SUBTITLE", "BODY", "CONTENT", "TEXT"}:
+        if placeholder_type in {
+            "TITLE",
+            "CENTER_TITLE",
+            "SUBTITLE",
+            "BODY",
+            "CONTENT",
+            "TEXT",
+        }:
             return "text"
         if placeholder_type in {"PICTURE", "CLIP_ART", "BITMAP", "OBJECT"}:
             return "image"
@@ -893,7 +970,9 @@ class TemplateExtractorStep:
         return True
 
     @staticmethod
-    def _derive_slot_intent_tags(shape: ShapeInfo, layout_name: str | None) -> list[str]:
+    def _derive_slot_intent_tags(
+        shape: ShapeInfo, layout_name: str | None
+    ) -> list[str]:
         del layout_name  # 現状は形状からの推測に限定
         placeholder_type = (shape.placeholder_type or "").upper()
         if placeholder_type in {"TITLE", "CENTER_TITLE"}:
@@ -976,7 +1055,9 @@ class TemplateExtractorStep:
             )
 
     @staticmethod
-    def _font_spec_from_payload(payload: dict[str, Any], fallback: FontSpec) -> FontSpec:
+    def _font_spec_from_payload(
+        payload: dict[str, Any], fallback: FontSpec
+    ) -> FontSpec:
         name = payload.get("name") or fallback.name
         size_pt = payload.get("size_pt") or fallback.size_pt
         color_hex = _normalize_hex(payload.get("color_hex")) or fallback.color_hex
@@ -995,11 +1076,11 @@ class TemplateExtractorStep:
 
 class TemplateExtractor:
     """スタンドアロンでテンプレート抽出を行うクラス。"""
-    
+
     def __init__(self, options: TemplateExtractorOptions) -> None:
         self.options = options
         self.step = TemplateExtractorStep(options)
-    
+
     def extract(self) -> TemplateSpec:
         """テンプレート抽出を実行してTemplateSpecを返す。"""
         return self.step.extract_template_spec()
@@ -1010,7 +1091,9 @@ class TemplateExtractor:
         """テンプレート仕様からジョブスペック雛形を構築する。"""
         return self.step.build_jobspec_scaffold(template_spec, template_spec_path)
 
-    def save_jobspec_scaffold(self, jobspec: JobSpecScaffold, output_path: Path) -> None:
+    def save_jobspec_scaffold(
+        self, jobspec: JobSpecScaffold, output_path: Path
+    ) -> None:
         """ジョブスペック雛形を保存する。"""
         self.step._save_jobspec_scaffold(jobspec, output_path)
 
