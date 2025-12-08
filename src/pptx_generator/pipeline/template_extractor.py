@@ -167,6 +167,14 @@ class TemplateExtractorStep:
 
                 layouts.append(layout_info)
 
+            except RuntimeError as exc:
+                # アンカー名重複など致命的なエラーは即座に伝播
+                if "アンカー名が重複しています" in str(exc):
+                    raise
+                container_name = getattr(container, "name", None) or f"index={index}"
+                error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
+                logger.warning(error_msg)
+                errors.append(error_msg)
             except Exception as exc:
                 container_name = getattr(container, "name", None) or f"index={index}"
                 error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
@@ -258,6 +266,9 @@ class TemplateExtractorStep:
                     error=error_msg,
                 )
                 anchors.append(error_shape)
+
+        # アンカー名の重複チェック
+        self._check_duplicate_anchors(anchors, layout_name, index, source_mode)
 
         placeholder_records = [
             self._build_placeholder_record(shape_info)
@@ -399,6 +410,55 @@ class TemplateExtractorStep:
             text_frame_padding=frame_padding,
             text_capacity=text_capacity,
         )
+
+    def _check_duplicate_anchors(
+        self,
+        anchors: list[ShapeInfo],
+        layout_name: str | None,
+        index: int,
+        source_mode: Literal["slide", "template"],
+    ) -> None:
+        """同一スライド内でアンカー名の重複をチェックする。
+        
+        重複が見つかった場合は RuntimeError を投げる。
+        """
+        anchor_names: dict[str, list[int]] = {}
+        
+        for idx, shape_info in enumerate(anchors):
+            name = shape_info.name
+            # unnamed で始まる名前や空文字は無視（自動生成名）
+            if not name or name.startswith("unnamed_"):
+                continue
+            
+            if name not in anchor_names:
+                anchor_names[name] = []
+            anchor_names[name].append(idx)
+        
+        # 重複しているアンカー名を検出
+        duplicates = {name: indices for name, indices in anchor_names.items() if len(indices) > 1}
+        
+        if duplicates:
+            source_label = "スライド" if source_mode == "slide" else "レイアウト"
+            layout_display = layout_name or f"{source_label}-{index:02d}"
+            
+            error_lines = [
+                f"同一{source_label}内でアンカー名が重複しています:",
+                f"  - {source_label}: {layout_display} (index={index})",
+            ]
+            
+            for dup_name, indices in duplicates.items():
+                error_lines.append(f"  - 重複アンカー: '{dup_name}' (出現回数: {len(indices)})")
+            
+            error_lines.extend([
+                "",
+                "修正方法:",
+                "  PowerPoint で該当図形を選択し、図形名を一意にリネームしてください。",
+                "  図形名は「ホーム」→「選択」→「オブジェクトの選択と表示」で確認・変更できます。",
+            ])
+            
+            error_msg = "\n".join(error_lines)
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
     @staticmethod
     def _should_include_for_summary(shape: ShapeInfo) -> bool:
