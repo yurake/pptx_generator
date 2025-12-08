@@ -57,5 +57,6 @@ node_modules/
 
 # Local external hooks (keep docs only)
 external/*
+external/.gitignore
 !external/README.md
 !external/AGENTS.md
