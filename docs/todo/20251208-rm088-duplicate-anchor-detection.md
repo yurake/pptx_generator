@@ -1,7 +1,7 @@
 ---
 目的: RM-088 テンプレ抽出でアンカー名重複を検出してエラー化する
 関連ブランチ: feat/rm088-duplicate-anchor-detection
-関連Issue: 未作成の場合は作成次第更新
+関連Issue: #412
 roadmap_item: RM-088 テンプレ実スライド優先抽出
 ---
 
@@ -22,7 +22,7 @@ roadmap_item: RM-088 テンプレ実スライド優先抽出
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 関連Issue が特定できたら更新
 - [ ] チェックリスト整合確認
   - メモ: 親タスク完了確認
