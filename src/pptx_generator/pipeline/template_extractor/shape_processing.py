@@ -36,52 +36,15 @@ class ShapeExtractionMixin:
     def _extract_shape_info(self, shape: BaseShape) -> "ShapeInfo":
         from ...models import ShapeInfo  # local import to avoid cycles
 
-        name = getattr(shape, "name", "")
-        if not name:
-            name = f"unnamed_shape_{id(shape)}"
-
-        left_in = shape.left / EMU_PER_INCH if hasattr(shape, "left") else 0.0
-        top_in = shape.top / EMU_PER_INCH if hasattr(shape, "top") else 0.0
-        width_in = shape.width / EMU_PER_INCH if hasattr(shape, "width") else 0.0
-        height_in = shape.height / EMU_PER_INCH if hasattr(shape, "height") else 0.0
-
+        name = self._derive_shape_name(shape)
+        left_in, top_in, width_in, height_in = self._extract_geometry(shape)
         shape_type = shape.__class__.__name__
 
-        text = None
         text_frame = getattr(shape, "text_frame", None)
-        if text_frame is not None:
-            frame_text = getattr(text_frame, "text", None)
-            if isinstance(frame_text, str):
-                text = frame_text
-        if text is None:
-            raw_text = getattr(shape, "text", None)
-            if isinstance(raw_text, str):
-                text = raw_text
+        text = self._extract_shape_text(shape, text_frame)
+        placeholder_type, is_placeholder = self._placeholder_metadata(shape)
 
-        placeholder_format = None
-        try:
-            placeholder_format = shape.placeholder_format  # type: ignore[attr-defined]
-        except (AttributeError, ValueError):
-            placeholder_format = None
-        is_placeholder = bool(
-            isinstance(shape, (SlidePlaceholder, PlaceholderPicture))
-            or getattr(shape, "is_placeholder", False)
-            or placeholder_format is not None
-        )
-        placeholder_type = None
-        if placeholder_format is not None:
-            placeholder_kind = getattr(placeholder_format, "type", None)
-            if hasattr(placeholder_kind, "name"):
-                placeholder_type = str(getattr(placeholder_kind, "name"))
-            elif placeholder_kind is not None:
-                placeholder_type = str(placeholder_kind)
-
-        (
-            font_spec,
-            paragraph_spec,
-            frame_padding,
-            text_capacity,
-        ) = (None, None, None, None)
+        font_spec = paragraph_spec = frame_padding = text_capacity = None
         if self._is_text_shape(placeholder_type, shape):
             (
                 font_spec,
@@ -95,17 +58,8 @@ class ShapeExtractionMixin:
                 height_in,
             )
 
-        conflict = None
-        if name.lower() in SLIDE_BULLET_ANCHORS:
-            conflict = f"SlideBullet拡張仕様で使用される可能性のあるアンカー名: {name}"
-
-        missing_fields = []
-        if not name or name.startswith("unnamed_"):
-            missing_fields.append("name")
-        if width_in <= 0:
-            missing_fields.append("width")
-        if height_in <= 0:
-            missing_fields.append("height")
+        conflict = self._detect_conflict(name)
+        missing_fields = self._detect_missing_fields(name, width_in, height_in)
 
         return ShapeInfo(
             name=name,
@@ -124,6 +78,74 @@ class ShapeExtractionMixin:
             text_frame_padding=frame_padding,
             text_capacity=text_capacity,
         )
+
+    @staticmethod
+    def _derive_shape_name(shape: BaseShape) -> str:
+        name = getattr(shape, "name", "")
+        if not name:
+            name = f"unnamed_shape_{id(shape)}"
+        return name
+
+    @staticmethod
+    def _extract_geometry(shape: BaseShape) -> tuple[float, float, float, float]:
+        left = shape.left / EMU_PER_INCH if hasattr(shape, "left") else 0.0
+        top = shape.top / EMU_PER_INCH if hasattr(shape, "top") else 0.0
+        width = shape.width / EMU_PER_INCH if hasattr(shape, "width") else 0.0
+        height = shape.height / EMU_PER_INCH if hasattr(shape, "height") else 0.0
+        return left, top, width, height
+
+    @staticmethod
+    def _extract_shape_text(shape: BaseShape, text_frame) -> str | None:
+        if text_frame is not None:
+            frame_text = getattr(text_frame, "text", None)
+            if isinstance(frame_text, str):
+                return frame_text
+        raw_text = getattr(shape, "text", None)
+        if isinstance(raw_text, str):
+            return raw_text
+        return None
+
+    @staticmethod
+    def _placeholder_metadata(shape: BaseShape) -> tuple[str | None, bool]:
+        try:
+            placeholder_format = shape.placeholder_format  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            placeholder_format = None
+
+        is_placeholder = bool(
+            isinstance(shape, (SlidePlaceholder, PlaceholderPicture))
+            or getattr(shape, "is_placeholder", False)
+            or placeholder_format is not None
+        )
+
+        placeholder_type = None
+        if placeholder_format is not None:
+            placeholder_kind = getattr(placeholder_format, "type", None)
+            if hasattr(placeholder_kind, "name"):
+                placeholder_type = str(getattr(placeholder_kind, "name"))
+            elif placeholder_kind is not None:
+                placeholder_type = str(placeholder_kind)
+
+        return placeholder_type, is_placeholder
+
+    @staticmethod
+    def _detect_conflict(name: str) -> str | None:
+        if name.lower() in SLIDE_BULLET_ANCHORS:
+            return f"SlideBullet拡張仕様で使用される可能性のあるアンカー名: {name}"
+        return None
+
+    @staticmethod
+    def _detect_missing_fields(
+        name: str, width_in: float, height_in: float
+    ) -> list[str]:
+        missing_fields: list[str] = []
+        if not name or name.startswith("unnamed_"):
+            missing_fields.append("name")
+        if width_in <= 0:
+            missing_fields.append("width")
+        if height_in <= 0:
+            missing_fields.append("height")
+        return missing_fields
 
     def _is_text_shape(self, placeholder_type: str | None, shape: BaseShape) -> bool:
         placeholder = (placeholder_type or "").upper()

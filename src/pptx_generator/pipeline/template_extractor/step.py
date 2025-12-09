@@ -87,15 +87,41 @@ class TemplateExtractorStep(
 
         self._load_font_defaults()
 
+        presentation = self._load_presentation()
+        self._validate_dimensions(presentation)
+
+        layout_mode = self._normalized_layout_mode()
+        template_source, containers = self._determine_template_source(
+            layout_mode, presentation
+        )
+        layouts, errors = self._collect_layouts(containers, template_source)
+
+        blueprint: TemplateBlueprint | None = None
+        if layout_mode == "static":
+            blueprint = self._build_blueprint(layouts)
+
+        return TemplateSpec(
+            template_path=str(self.options.template_path),
+            extracted_at=datetime.now(timezone.utc).isoformat(),
+            template_source=template_source,
+            layouts=layouts,
+            warnings=[],
+            errors=errors,
+            layout_mode=layout_mode,  # type: ignore[arg-type]
+            blueprint=blueprint,
+        )
+
+    def _load_presentation(self):
         from . import Presentation
 
         try:
-            presentation = Presentation(self.options.template_path)
+            return Presentation(self.options.template_path)
         except Exception as exc:
             raise RuntimeError(
                 f"テンプレートファイルの読み込みに失敗しました: {exc}"
             ) from exc
 
+    def _validate_dimensions(self, presentation) -> None:
         try:
             slide_width = int(presentation.slide_width)
             slide_height = int(presentation.slide_height)
@@ -116,22 +142,36 @@ class TemplateExtractorStep(
         self._slide_width_emu = slide_width
         self._slide_height_emu = slide_height
 
+    def _normalized_layout_mode(self) -> str:
         layout_mode = (self.options.layout_mode or "dynamic").lower()
         if layout_mode not in {"dynamic", "static"}:
-            layout_mode = "dynamic"
-        template_source: Literal["slide", "template"] = "template"
+            return "dynamic"
+        return layout_mode
+
+    def _determine_template_source(
+        self, layout_mode: str, presentation
+    ) -> tuple[str, enumerate]:
         if layout_mode == "static":
             candidate_source = (self.options.static_source or "slide").lower()
-            template_source = "slide" if candidate_source == "slide" else "template"
-        self._template_source = template_source
-        layouts: list[LayoutInfo] = []
-        warnings: list[str] = []
-        errors: list[str] = []
-
-        if template_source == "slide":
-            containers = enumerate(presentation.slides, start=1)
+            template_source: Literal["slide", "template"] = (
+                "slide" if candidate_source == "slide" else "template"
+            )
         else:
-            containers = enumerate(presentation.slide_layouts, start=1)
+            template_source = "template"
+
+        self._template_source = template_source
+        containers = (
+            enumerate(presentation.slides, start=1)
+            if template_source == "slide"
+            else enumerate(presentation.slide_layouts, start=1)
+        )
+        return template_source, containers
+
+    def _collect_layouts(
+        self, containers: enumerate, template_source: Literal["slide", "template"]
+    ) -> tuple[list[LayoutInfo], list[str]]:
+        layouts: list[LayoutInfo] = []
+        errors: list[str] = []
 
         for index, container in containers:
             try:
@@ -151,30 +191,20 @@ class TemplateExtractorStep(
             except DuplicateAnchorError:
                 raise
             except RuntimeError as exc:
-                container_name = getattr(container, "name", None) or f"index={index}"
-                error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
-                logger.warning(error_msg)
-                errors.append(error_msg)
+                self._record_layout_error(errors, container, index, exc)
             except Exception as exc:
-                container_name = getattr(container, "name", None) or f"index={index}"
-                error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
-                logger.warning(error_msg)
-                errors.append(error_msg)
+                self._record_layout_error(errors, container, index, exc)
 
-        blueprint: TemplateBlueprint | None = None
-        if layout_mode == "static":
-            blueprint = self._build_blueprint(layouts)
+        return layouts, errors
 
-        return TemplateSpec(
-            template_path=str(self.options.template_path),
-            extracted_at=datetime.now(timezone.utc).isoformat(),
-            template_source=template_source,
-            layouts=layouts,
-            warnings=warnings,
-            errors=errors,
-            layout_mode=layout_mode,  # type: ignore[arg-type]
-            blueprint=blueprint,
-        )
+    @staticmethod
+    def _record_layout_error(
+        errors: list[str], container, index: int, exc: Exception
+    ) -> None:
+        container_name = getattr(container, "name", None) or f"index={index}"
+        error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
+        logger.warning(error_msg)
+        errors.append(error_msg)
 
     def _extract_layout_info(
         self,
@@ -183,106 +213,26 @@ class TemplateExtractorStep(
         index: int,
         source_mode: Literal["slide", "template"],
     ) -> LayoutInfo:
-        prototype_index: int | None = None
-        if source_mode == "slide":
-            base_name = getattr(container, "name", None)
-            if not base_name:
-                slide_layout = getattr(container, "slide_layout", None)
-                base_name = (
-                    getattr(slide_layout, "name", None)
-                    if slide_layout is not None
-                    else None
-                )
-            slugified = slugify_layout_name(base_name)
-            if slugified:
-                layout_name = f"{slugified}-{index:02d}"
-            else:
-                layout_name = f"slide-{index:02d}"
-            identifier = None
-            try:
-                slide_identifier = getattr(container, "slide_id", None)
-            except Exception:  # noqa: BLE001
-                slide_identifier = None
-            if slide_identifier is not None:
-                identifier = str(slide_identifier)
-            prototype_index = index
-            shapes_iterable = getattr(container, "shapes", ())
-        else:
-            layout_name = getattr(container, "name", None)
-            identifier = None
-            try:
-                layout_identifier = getattr(container, "slide_layout_id", None)
-            except Exception:  # noqa: BLE001
-                layout_identifier = None
-            if layout_identifier is not None:
-                identifier = str(layout_identifier)
-            shapes_iterable = getattr(container, "shapes", ())
-            if not layout_name:
-                layout_name = f"layout-{index:02d}"
-        anchors: list[ShapeInfo] = []
+        (
+            layout_name,
+            identifier,
+            prototype_index,
+            shapes_iterable,
+        ) = self._resolve_layout_context(container, index, source_mode)
 
-        for shape in shapes_iterable:
-            try:
-                shape_info = self._extract_shape_info(shape)
-
-                if self.options.anchor_filter and not self._matches_filter(
-                    shape_info.name, self.options.anchor_filter
-                ):
-                    continue
-
-                anchors.append(shape_info)
-
-            except Exception as exc:
-                error_msg = (
-                    f"図形 '{getattr(shape, 'name', '不明な図形')}' の抽出エラー: {exc}"
-                )
-                logger.warning(error_msg)
-
-                error_shape = ShapeInfo(
-                    name=getattr(shape, "name", "不明な図形"),
-                    shape_type="unknown",
-                    left_in=0.0,
-                    top_in=0.0,
-                    width_in=0.0,
-                    height_in=0.0,
-                    error=error_msg,
-                )
-                anchors.append(error_shape)
+        anchors = self._collect_anchors(shapes_iterable)
+        anchors = self._apply_anchor_filter(anchors)
 
         self._check_duplicate_anchors(anchors, layout_name, index, source_mode)
 
-        placeholder_records = [
-            self._build_placeholder_record(shape_info)
-            for shape_info in anchors
-            if self._should_include_for_summary(shape_info)
-        ]
-        placeholder_summary = summarize_placeholders(placeholder_records)
-        heuristic_result = derive_usage_tags(layout_name or "", placeholder_records)
-        heuristic_payload = {
-            "tags": sorted(heuristic_result.tags),
-            "reasons": heuristic_result.reasons,
-            "has_title_placeholder": heuristic_result.has_title_placeholder,
-            "has_body_placeholder": heuristic_result.has_body_placeholder,
-            "title_from_name": heuristic_result.title_from_name,
-        }
-        if (
-            not heuristic_payload["tags"]
-            and not heuristic_payload["reasons"]
-            and not heuristic_payload["has_title_placeholder"]
-            and not heuristic_payload["has_body_placeholder"]
-        ):
-            heuristic_payload = None
-
-        placeholder_summary_payload = placeholder_summary or None
-        layout_description: dict[str, Any] | None = None
-        try:
-            layout_description = generate_layout_description(
-                layout_name or "",
-                placeholder_records,
-                (self._slide_width_emu or 0, self._slide_height_emu or 0),
-            )
-        except Exception:  # noqa: BLE001
-            layout_description = None
+        placeholder_records = self._build_placeholder_records(anchors)
+        placeholder_summary_payload = self._summarize_placeholders(placeholder_records)
+        heuristic_payload = self._derive_heuristic_payload(
+            layout_name, placeholder_records
+        )
+        layout_description = self._generate_layout_description(
+            layout_name, placeholder_records
+        )
 
         return LayoutInfo(
             name=layout_name,
@@ -293,6 +243,109 @@ class TemplateExtractorStep(
             heuristic=heuristic_payload,
             layout_description=layout_description,
         )
+
+    def _resolve_layout_context(
+        self, container, index: int, source_mode: Literal["slide", "template"]
+    ) -> tuple[str | None, str | None, int | None, Any]:
+        if source_mode == "slide":
+            return self._slide_context(container, index)
+        return self._template_context(container, index)
+
+    def _slide_context(self, container, index: int):
+        base_name = getattr(container, "name", None)
+        if not base_name:
+            slide_layout = getattr(container, "slide_layout", None)
+            base_name = getattr(slide_layout, "name", None) if slide_layout else None
+        slugified = slugify_layout_name(base_name)
+        layout_name = f"{slugified}-{index:02d}" if slugified else f"slide-{index:02d}"
+        identifier = self._safe_str(getattr(container, "slide_id", None))
+        shapes_iterable = getattr(container, "shapes", ())
+        prototype_index = index
+        return layout_name, identifier, prototype_index, shapes_iterable
+
+    def _template_context(self, container, index: int):
+        layout_name = getattr(container, "name", None) or f"layout-{index:02d}"
+        identifier = self._safe_str(getattr(container, "slide_layout_id", None))
+        shapes_iterable = getattr(container, "shapes", ())
+        return layout_name, identifier, None, shapes_iterable
+
+    @staticmethod
+    def _safe_str(value) -> str | None:
+        return str(value) if value is not None else None
+
+    def _collect_anchors(self, shapes_iterable) -> list[ShapeInfo]:
+        anchors: list[ShapeInfo] = []
+        for shape in shapes_iterable:
+            anchors.append(self._build_shape_info_with_fallback(shape))
+        return anchors
+
+    def _build_shape_info_with_fallback(self, shape) -> ShapeInfo:
+        try:
+            return self._extract_shape_info(shape)
+        except Exception as exc:
+            error_msg = (
+                f"図形 '{getattr(shape, 'name', '不明な図形')}' の抽出エラー: {exc}"
+            )
+            logger.warning(error_msg)
+            return ShapeInfo(
+                name=getattr(shape, "name", "不明な図形"),
+                shape_type="unknown",
+                left_in=0.0,
+                top_in=0.0,
+                width_in=0.0,
+                height_in=0.0,
+                error=error_msg,
+            )
+
+    def _apply_anchor_filter(self, anchors: list[ShapeInfo]) -> list[ShapeInfo]:
+        if not self.options.anchor_filter:
+            return anchors
+        keyword = self.options.anchor_filter
+        return [
+            anchor for anchor in anchors if self._matches_filter(anchor.name, keyword)
+        ]
+
+    def _build_placeholder_records(
+        self, anchors: list[ShapeInfo]
+    ) -> list[dict[str, Any]]:
+        return [
+            self._build_placeholder_record(shape_info)
+            for shape_info in anchors
+            if self._should_include_for_summary(shape_info)
+        ]
+
+    def _summarize_placeholders(
+        self, placeholder_records: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        summary = summarize_placeholders(placeholder_records)
+        return summary or None
+
+    def _derive_heuristic_payload(
+        self, layout_name: str | None, placeholder_records: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        heuristic_result = derive_usage_tags(layout_name or "", placeholder_records)
+        payload = {
+            "tags": sorted(heuristic_result.tags),
+            "reasons": heuristic_result.reasons,
+            "has_title_placeholder": heuristic_result.has_title_placeholder,
+            "has_body_placeholder": heuristic_result.has_body_placeholder,
+            "title_from_name": heuristic_result.title_from_name,
+        }
+        if any(payload.values()):
+            return payload
+        return None
+
+    def _generate_layout_description(
+        self, layout_name: str | None, placeholder_records: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        try:
+            return generate_layout_description(
+                layout_name or "",
+                placeholder_records,
+                (self._slide_width_emu or 0, self._slide_height_emu or 0),
+            )
+        except Exception:  # noqa: BLE001
+            return None
 
     @staticmethod
     def _matches_filter(value: str, keyword: str) -> bool:
