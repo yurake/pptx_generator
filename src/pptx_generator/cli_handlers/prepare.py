@@ -340,6 +340,7 @@ def resolve_static_context(
     blueprint_ref = {
         "path": str(template_spec_path),
         "hash": f"sha256:{blueprint_hash}",
+        "template_source": blueprint_spec.template_source,
     }
 
     prompt_overrides = load_prompt_overrides(

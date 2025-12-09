@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from pptx import Presentation
 
 from pptx_generator.models import (JobSpecScaffold, LayoutInfo, ShapeInfo,
                                    TemplateSpec)
@@ -206,6 +207,32 @@ class TestTemplateExtractorStep:
             layout = template_spec.layouts[0]
             assert len(layout.anchors) == 1  # タイトルのみ
             assert layout.anchors[0].name == "タイトル"
+
+    def test_extract_template_spec_static_slide_source(self, tmp_path: Path) -> None:
+        """static モードで実スライドを抽出する経路を確認する。"""
+        presentation = Presentation()
+        layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(layout)
+        slide.shapes.title.text = "Static Title"
+        body_placeholder = slide.shapes.placeholders[1]
+        body_placeholder.text = "Static Body"
+        template_path = tmp_path / "static-template.pptx"
+        presentation.save(template_path)
+
+        options = TemplateExtractorOptions(
+            template_path=template_path,
+            layout_mode="static",
+            static_source="slide",
+        )
+        step = TemplateExtractorStep(options)
+
+        template_spec = step.extract_template_spec()
+
+        assert template_spec.template_source == "slide"
+        assert template_spec.layout_mode == "static"
+        assert template_spec.blueprint is not None
+        assert template_spec.layouts
+        assert template_spec.layouts[0].prototype_index == 1
 
     def test_build_jobspec_scaffold(self):
         """ジョブスペック雛形生成のテスト。"""

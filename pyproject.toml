@@ -42,6 +42,16 @@ markers = [
     "integration: 統合テストに分類されるケース",
 ]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"pptx_generator.config" = ["*.json"]
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"

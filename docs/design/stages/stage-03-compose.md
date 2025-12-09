@@ -3,7 +3,7 @@
 ## 目的
 - stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。
 - HITL 承認と割当ログを `generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約し、監査しやすい構造を維持する。
-- 再実行や差戻しが発生した際も `.pptx/draft/` 配下の成果物を固定し、CLI／自動化から運用できるようにする。
+- 再実行や差戻しが発生した際も `<output>/draft/` 配下の成果物を固定し、CLI／自動化から運用できるようにする（既定の `--output` は `.pptx/compose`）。
 
 ## コンポーネント
 | コンポーネント | 役割 | 技術 | 備考 |
@@ -33,7 +33,7 @@
 | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で抽出したジョブスペック | 必須 |
 | `--prepare-cards <path>` | stage 2 の PrepareCard | `.pptx/prepare/prepare_card.json` |
-| `--draft-output <dir>` | ドラフト成果物のディレクトリ | `.pptx/draft` |
+| （自動） | ドラフト成果物のディレクトリ | `<output>/draft` |
 | `--target-length <int>` | 目標スライド枚数 | 未指定 |
 | `--structure-pattern <name>` | 章構成パターン名 | 未指定 |
 | `--appendix-limit <int>` | 付録枚数の上限 | `5` |
@@ -77,7 +77,7 @@
 ## 品質ゲート
 - `jobspec.json.slides[*].id` に含まれる ID はすべて `content_approved.slides[*].id` に存在することを必須とし、不一致が 1 件でも見つかった場合は `DraftStructuringError` を送出して stage 3 を即時停止する。エラーメッセージには欠損 ID 一覧を含め、CLI 側では exit code 6 として扱う。
 - Slide ID Aligner が `content_approved` を補正した後も未解決の ID が残るケースを前提とし、品質ゲートに到達する前に INFO ログで検出状況を通知する。
-- 例外発生時は `.pptx/draft/` 配下へ中間成果物を出力せず、HITL は `prepare_card.json` / `jobspec.json` を突合して ID 設定ミスを修正した上で再実行する。
+- 例外発生時は `<output>/draft/` 配下へ中間成果物を出力せず、HITL は `prepare_card.json` / `jobspec.json` を突合して ID 設定ミスを修正した上で再実行する。
 - 差戻し理由コード未指定や未承認スライドが残った状態で章承認コマンドを実行した場合は `422 Unprocessable Entity` を返し、CLI は再入力を促す。
 - `analysis_summary.json` に存在しないスライド ID が Import された場合は `400 Bad Request` とし、不一致一覧を含む詳細メッセージを返却する。
 - 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が定義されている場合、`pptx compose` / `pptx mapping` / `pptx gen` 各ステージでフックを呼び出せる。環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`, `PPTX_GENERATE_READY_PATH`。スライド別フックでは `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を提供し、`continue_default=false` 指定により既存処理をスキップして外部スクリプトで `generate_ready.json` などを生成できる。

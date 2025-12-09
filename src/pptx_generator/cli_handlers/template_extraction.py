@@ -68,6 +68,7 @@ def run_template_extraction(
     template_ai_policy_id: str | None,
     disable_template_ai: bool,
     layout_mode: str,
+    static_source: str,
     skip_validation: bool = False,
     emit_slide_snapshot: bool = False,
 ) -> TemplateExtractionResult:
@@ -79,6 +80,7 @@ def run_template_extraction(
         anchor_filter=anchor,
         format=fmt,
         layout_mode=layout_mode,
+        static_source=static_source,
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)

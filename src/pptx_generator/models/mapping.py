@@ -37,6 +37,7 @@ class MappingSlideMeta(BaseModel):
     blueprint_slots: list[dict[str, Any]] | None = None
     auto_draw: list[dict[str, Any]] = Field(default_factory=list)
     layout_description: dict[str, Any] | None = None
+    prototype_index: int | None = None
 
 
 class GenerateReadySlide(BaseModel):
@@ -58,6 +59,7 @@ class GenerateReadyMeta(BaseModel):
     blueprint_hash: str | None = None
     slot_summary: dict[str, int] | None = None
     template_style: TemplateStyle | None = None
+    template_source: Literal["slide", "template"] = "template"
 
 
 class GenerateReadyDocument(BaseModel):

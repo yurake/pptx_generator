@@ -24,7 +24,6 @@ def create_mapping_command(
     *,
     default_output_dir: Path,
     default_rules_path: Path,
-    default_draft_output: Path,
     default_prepare_cards_path: Path,
 ) -> click.Command:
     @click.command("mapping")
@@ -49,13 +48,6 @@ def create_mapping_command(
         help="検証ルール設定ファイル",
     )
     @click.option(
-        "--draft-output",
-        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-        default=default_draft_output,
-        show_default=True,
-        help="draft_draft.json / draft_approved.json の出力先",
-    )
-    @click.option(
         "--prepare-cards",
         type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=default_prepare_cards_path,
@@ -66,11 +58,11 @@ def create_mapping_command(
         spec_path: Path,
         output_dir: Path,
         rules: Path,
-        draft_output: Path,
         prepare_cards: Path,
     ) -> None:
         """stage 5 マッピングを実行し generate_ready.json を生成する。"""
 
+        draft_output = output_dir / "draft"
         hook_manager = None
         template_id = extract_template_id_from_json_file(spec_path)
         if template_id:

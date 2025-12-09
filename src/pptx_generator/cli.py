@@ -36,9 +36,10 @@ from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
 )
+from .settings.paths import get_default_config_path
 
-DEFAULT_RULES_PATH = Path("config/rules.json")
-DEFAULT_RETURN_REASONS_PATH = Path("config/return_reasons.json")
+DEFAULT_RULES_PATH = get_default_config_path("rules.json")
+DEFAULT_RETURN_REASONS_PATH = get_default_config_path("return_reasons.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
@@ -154,7 +155,6 @@ app.add_command(outline)
 
 
 compose = create_compose_command(
-    default_draft_output=DEFAULT_DRAFT_OUTPUT_DIR,
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
     default_output_dir=DEFAULT_COMPOSE_OUTPUT_DIR,
     default_rules_path=DEFAULT_RULES_PATH,
@@ -172,7 +172,6 @@ app.add_command(compose)
 mapping = create_mapping_command(
     default_output_dir=DEFAULT_GEN_OUTPUT_DIR,
     default_rules_path=DEFAULT_RULES_PATH,
-    default_draft_output=DEFAULT_DRAFT_OUTPUT_DIR,
     default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
 )
 app.add_command(mapping)

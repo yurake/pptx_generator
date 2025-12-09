@@ -62,6 +62,7 @@ class TemplateExtractorOptions:
     anchor_filter: Optional[str] = None
     format: str = "json"  # json または yaml
     layout_mode: str = "dynamic"
+    static_source: Literal["slide", "template"] = "template"
 
 
 class TemplateExtractorStep:
@@ -79,6 +80,7 @@ class TemplateExtractorStep:
         self._body_font_default = FontSpec(
             name="Meiryo UI", size_pt=18.0, color_hex="#333333"
         )
+        self._template_source: Literal["slide", "template"] = "template"
     
     def run(self, context: PipelineContext) -> None:
         """テンプレート抽出を実行する。"""
@@ -133,57 +135,103 @@ class TemplateExtractorStep:
         self._slide_width_emu = slide_width
         self._slide_height_emu = slide_height
 
-        layouts = []
-        warnings = []
-        errors = []
-        
-        for slide_layout in presentation.slide_layouts:
+        layout_mode = (self.options.layout_mode or "dynamic").lower()
+        if layout_mode not in {"dynamic", "static"}:
+            layout_mode = "dynamic"
+        template_source: Literal["slide", "template"] = "template"
+        if layout_mode == "static":
+            candidate_source = (self.options.static_source or "slide").lower()
+            template_source = "slide" if candidate_source == "slide" else "template"
+        self._template_source = template_source
+        layouts: list[LayoutInfo] = []
+        warnings: list[str] = []
+        errors: list[str] = []
+
+        if template_source == "slide":
+            containers = enumerate(presentation.slides, start=1)
+        else:
+            containers = enumerate(presentation.slide_layouts, start=1)
+
+        for index, container in containers:
             try:
-                layout_info = self._extract_layout_info(slide_layout)
-                
-                # レイアウトフィルタがある場合はチェック
+                layout_info = self._extract_layout_info(
+                    container,
+                    index=index,
+                    source_mode=template_source,
+                )
+
                 if self.options.layout_filter and not self._matches_filter(
                     layout_info.name, self.options.layout_filter
                 ):
                     continue
-                
+
                 layouts.append(layout_info)
-                
+
             except Exception as exc:
-                error_msg = f"レイアウト '{slide_layout.name}' の抽出に失敗: {exc}"
+                container_name = getattr(container, "name", None) or f"index={index}"
+                error_msg = f"レイアウト '{container_name}' の抽出に失敗: {exc}"
                 logger.warning(error_msg)
                 errors.append(error_msg)
-        
+
         blueprint = None
-        layout_mode = (self.options.layout_mode or "dynamic").lower()
-        if layout_mode not in {"dynamic", "static"}:
-            layout_mode = "dynamic"
+
         if layout_mode == "static":
             blueprint = self._build_blueprint(layouts)
 
         return TemplateSpec(
             template_path=str(self.options.template_path),
             extracted_at=datetime.now(timezone.utc).isoformat(),
+            template_source=template_source,
             layouts=layouts,
             warnings=warnings,
             errors=errors,
             layout_mode=layout_mode,  # type: ignore[arg-type]
             blueprint=blueprint,
         )
-    
-    def _extract_layout_info(self, slide_layout) -> LayoutInfo:
+
+    def _extract_layout_info(
+        self,
+        container,
+        *,
+        index: int,
+        source_mode: Literal["slide", "template"],
+    ) -> LayoutInfo:
         """単一レイアウトから図形情報を抽出する。"""
-        layout_name = slide_layout.name
-        identifier = None
-        try:
-            layout_identifier = getattr(slide_layout, "slide_layout_id", None)
-        except Exception:  # noqa: BLE001
-            layout_identifier = None
-        if layout_identifier is not None:
-            identifier = str(layout_identifier)
+        prototype_index: int | None = None
+        if source_mode == "slide":
+            base_name = getattr(container, "name", None)
+            if not base_name:
+                slide_layout = getattr(container, "slide_layout", None)
+                base_name = getattr(slide_layout, "name", None) if slide_layout is not None else None
+            slugified = self._slugify_layout_name(base_name)
+            if slugified:
+                layout_name = f"{slugified}-{index:02d}"
+            else:
+                layout_name = f"slide-{index:02d}"
+            identifier = None
+            try:
+                slide_identifier = getattr(container, "slide_id", None)
+            except Exception:  # noqa: BLE001
+                slide_identifier = None
+            if slide_identifier is not None:
+                identifier = str(slide_identifier)
+            prototype_index = index
+            shapes_iterable = getattr(container, "shapes", ())
+        else:
+            layout_name = getattr(container, "name", None)
+            identifier = None
+            try:
+                layout_identifier = getattr(container, "slide_layout_id", None)
+            except Exception:  # noqa: BLE001
+                layout_identifier = None
+            if layout_identifier is not None:
+                identifier = str(layout_identifier)
+            shapes_iterable = getattr(container, "shapes", ())
+            if not layout_name:
+                layout_name = f"layout-{index:02d}"
         anchors = []
 
-        for shape in slide_layout.shapes:
+        for shape in shapes_iterable:
             try:
                 shape_info = self._extract_shape_info(shape)
                 
@@ -248,6 +296,7 @@ class TemplateExtractorStep:
             name=layout_name,
             identifier=identifier,
             anchors=anchors,
+            prototype_index=prototype_index,
             placeholder_summary=placeholder_summary_payload,
             heuristic=heuristic_payload,
             layout_description=layout_description,
@@ -626,6 +675,7 @@ class TemplateExtractorStep:
             generated_at=datetime.now(timezone.utc).isoformat(),
             layout_count=len(template_spec.layouts),
             template_spec_path=str(template_spec_path) if template_spec_path else None,
+            template_source=template_spec.template_source,
         )
 
         counters: defaultdict[str, int] = defaultdict(int)
@@ -720,6 +770,7 @@ class TemplateExtractorStep:
                 TemplateBlueprintSlide(
                     slide_id=slide_id,
                     layout=layout.name,
+                    prototype_index=layout.prototype_index,
                     required=True,
                     intent_tags=self._derive_layout_intent_tags(layout.name),
                     slots=slots,

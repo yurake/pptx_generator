@@ -1,0 +1,63 @@
+---
+目的: RM-088 テンプレ実スライド優先抽出の実装に向けた準備と実装
+関連ブランチ: feat/rm088-template-slide-priority
+関連Issue: #392
+roadmap_item: RM-088 テンプレ実スライド優先抽出
+---
+
+- [x] ブランチ作成・初期コミット・push
+  - メモ: feat/rm088-template-slide-priority を main から作成しリモートと同期状態にしている。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
+    - 対象整理（スコープ、対象ファイル、前提）: Stage1 静的モードに `--from {slide,template}` を追加し既定で実スライド抽出とする。後方互換は考慮しない。Stage2〜4 へ抽出ソース種別をメタとして引き継ぎ、Stage4 レンダラーは実スライド・テンプレどちらにも対応する前提で、入力テンプレはソースを混在させず一方のみ採用する。
+    - ドキュメント／コード修正方針: TemplateExtractor / CLI / モデル / パイプラインを改修し、Stage4 レンダラーをリファクタしてコード重複なくソース切替を実装。仕様変更は関連 docs に反映。
+    - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo 更新、Plan 承認済み内容の通りに進行。
+    - 想定影響ファイル: `src/pptx_generator/pipeline/template_extractor.py`, `cli_handlers/template_extraction.py`, `cli_commands/template.py`, `src/pptx_generator/models/*`, `pipeline/draft_structuring/static_runtime.py`, `pipeline/renderer/*`, テスト各種。
+    - リスク: ソース種別伝搬漏れによる後段失敗、Stage4 リファクタ時のバグ混入、テンプレ構造差異による挙動変化。
+    - テスト方針: `uv run --extra dev pytest tests/template_audit/test_template_extractor_jobspec_output.py`, 静的モード関連統合テスト、オプション切替用追加テスト。
+    - ロールバック方法: TemplateExtractor/レンダラー変更を revert して従来レイアウトベースに戻す。
+    - 承認メッセージ ID／リンク: （ユーザー承認済み）
+- [x] 設計・実装方針の確定
+  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: TemplateExtractor／CLI／モデルに `--from {slide,template}` と `template_source`/`prototype_index` を追加し、Stage2〜4 でメタを伝搬。SimpleRendererStep は `template_source=slide` 時にプロトタイプスライドを再利用してレンダリングし、余剰スライドを削除するよう調整済み。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py`、`tests/template_audit/test_template_extractor_jobspec_output.py`、`tests/cli/test_cli_prepare_stage_flow.py`、`tests/integration/test_cli_generate_pipeline_flow.py::test_cli_template_emits_slide_snapshot` を実行し成功。
+- [x] ドキュメント更新
+  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
+  - [x] docs/roadmap 配下
+  - メモ: RM-088 のロードマップ記載と実装内容が一致しているため追加更新不要と判断。
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - メモ: requirements の想定と挙動の整合を取れているため追記は不要と判断。
+  - [x] docs/design 配下（実装結果との整合再確認）
+    - メモ: cli リファレンス／stage-01／stage-04／schema を更新し、`--from` オプションと `template_source`／`prototype_index` の流れを明文化。
+  - [x] docs/runbook 配下
+  - メモ: 運用手順への影響が生じないため更新不要と判断。
+  - [x] README.md / AGENTS.md
+  - メモ: 概要レベルの記述で追加変更が不要であることを確認。
+- [x] 関連Issue 行の更新
+  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] チェックリスト整合確認
+  - メモ: 残存チェックがないことを確認した。
+- [x] PR 作成
+  - メモ: PR #406 https://github.com/yurake/pptx_generator/pull/406（2025-12-07 完了）
+
+## メモ
+- UAT 計画  
+  - 目的: 静的モードにおける `--from {slide,template}` と `template_source` 伝搬、Stage4 プロトタイプ再利用動作を `samples/templates/static_slide.pptx`（実スライド有）／`samples/templates/static_template.pptx`（レイアウトのみ）で検証する。  
+  - 前提: `uv sync` 済み、対象テンプレ2種が存在、`.pptx/` 配下を作業用に準備。  
+  - 手順:  
+    1. `uv run pptx template samples/templates/static_slide.pptx --layout-mode static --from slide --output .pptx/uat-from-slide/extract` → `template_source=slide` / `prototype_index` の付与、`jobspec` メタの確認。  
+    2. `uv run pptx template samples/templates/static_slide.pptx --layout-mode static --from template --output .pptx/uat-from-template/extract` → `template_source=template` で実スライド情報が落ちることを確認。  
+    3. `uv run pptx template samples/templates/static_template.pptx --layout-mode static --from slide --output .pptx/uat-from-template-fallback/extract` → 実スライドが無いテンプレで `template_source` が `template` にフォールバックする挙動と警告の有無を確認。  
+    4. `.pptx/uat-from-slide/extract/jobspec.json` を用いて `uv run pptx prepare samples/input/pitch.md --mode static --jobspec … --output .pptx/uat-from-slide/prepare` → `ai_generation_meta.template_source=slide`、Blueprint ハッシュ整合を確認。  
+    5. `uv run pptx compose .pptx/uat-from-slide/extract/jobspec.json --prepare-cards .pptx/uat-from-slide/prepare/prepare_card.json --output .pptx/uat-from-slide/compose` → `<output>/draft`（`.pptx/uat-from-slide/compose/draft`） にドラフト成果物が生成され、`generate_ready.meta.template_source=slide`、`slides[].meta.prototype_index` の伝搬を確認。  
+    6. `uv run pptx gen .pptx/uat-from-slide/compose/generate_ready.json --output .pptx/uat-from-slide/gen` → プロトタイプ再利用で余剰スライドが無いこと、`proposal.pptx` の内容を視覚確認。  
+    7. 2. で取得した `template_source=template` 版でも 4〜6 を同様に実行し、従来挙動との差分を比較（成果物は `.pptx/uat-from-template/*` に出力）。  
+    8. `--from` を省略したデフォルト実行（テンプレのみ `samples/templates/static_slide.pptx` を使用）で 4〜6 を行い、既定値が実スライド優先になっていることを確認（成果物は `.pptx/uat-default/*` など任意の作業ディレクトリへ）。  
+    9. 異常系: Stage4 でテンプレパス未指定時のエラーメッセージ、`ai_generation_meta.template_source` と `template_spec.template_source` を手動改変した場合の Compose エラーを確認。  
+  - 評価基準: すべてのコマンド成功、メタ情報が期待通り伝搬、Stage4 が正しく分岐、異常系メッセージが適切であること。  
+  - レポート: 実行日時・担当者、コマンドログ、成果物パス、結果サマリ、課題があれば詳細を記録。

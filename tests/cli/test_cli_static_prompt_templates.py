@@ -44,6 +44,7 @@ def _build_static_template_spec() -> TemplateSpec:
     return TemplateSpec(
         template_path="templates/dummy.pptx",
         extracted_at="2025-01-01T00:00:00Z",
+        template_source="slide",
         layouts=[
             LayoutInfo(
                 name="TitleSlide",
@@ -177,6 +178,7 @@ def test_run_template_extraction_creates_prompt_files(monkeypatch, tmp_path) -> 
         template_ai_policy_id=None,
         disable_template_ai=True,
         layout_mode="static",
+        static_source="slide",
         skip_validation=True,
         emit_slide_snapshot=False,
     )
@@ -297,7 +299,7 @@ def test_slot_contexts_do_not_duplicate_raw_context(tmp_path) -> None:
         source,
         mode="static",
         blueprint=template_spec.blueprint,
-        blueprint_ref={"path": "template_spec.json", "hash": "deadbeef"},
+        blueprint_ref={"path": "template_spec.json", "hash": "deadbeef", "template_source": "slide"},
         prompt_overrides=[],
         slide_sources={"slide-01": slide_specific},
         slide_input_refs={"slide-01": "slide-input.txt"},

@@ -762,7 +762,6 @@ uv run pptx prepare samples/input/pitch.md \
 ```bash
 uv run pptx compose <jobspec.json> \
   [--prepare-cards <path>] \
-  [--draft-output <dir>] \
   [--rules <path>] \
   [--show-layout-reasons]
 ```
@@ -772,7 +771,8 @@ uv run pptx compose <jobspec.json> \
 | オプション | 説明 | 既定値 |
 |-----------|------|--------|
 | `--prepare-cards` | prepare_card.json のパス | `.pptx/prepare/prepare_card.json` |
-| `--draft-output` | ドラフト成果物の出力先 | `.pptx/draft` |
+| `--output, -o <dir>` | `generate_ready.json` などの出力先 | `.pptx/compose` |
+| （自動） | ドラフト成果物の出力先 | `<output>/draft` |
 | `--rules` | マッピングルール設定 | `config/rules.json` |
 | `--show-layout-reasons` | スコア内訳を表示 | 無効 |
 
@@ -2089,7 +2089,6 @@ uv run pptx prepare "$CONTENT" \
 echo "Stage 3: マッピング"
 uv run pptx compose "$OUTPUT_BASE/extract/jobspec.json" \
   --prepare-cards "$OUTPUT_BASE/prepare/prepare_card.json" \
-  --draft-output "$OUTPUT_BASE/draft"
 
 # Stage 4: レンダリング + PDF 生成
 echo "Stage 4: レンダリング"

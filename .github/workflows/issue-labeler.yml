@@ -23,12 +23,54 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
+      - name: Ensure bug label from title
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const inputIssueNumber = context.payload?.inputs?.['issue-number'];
+            const issueNumber = inputIssueNumber ? Number(inputIssueNumber) : context.issue?.number;
+            if (!issueNumber) {
+              core.info('Issue number not available; skipping title-based labeling');
+              return;
+            }
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+            const hasLabel = name => issue.labels.some(label => (typeof label === 'string' ? label : label.name) === name);
+            if (/^\[Bug\]/i.test(issue.title)) {
+              if (!hasLabel('type:bug')) {
+                core.info(`Adding type:bug label to issue #${issueNumber} based on title prefix`);
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: ['type:bug'],
+                });
+              }
+              if (hasLabel('type:enhancement')) {
+                core.info(`Removing type:enhancement label from issue #${issueNumber} due to bug title prefix`);
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: 'type:enhancement',
+                  });
+                } catch (error) {
+                  core.warning(`type:enhancement label removal skipped: ${error.message}`);
+                }
+              }
+            }
       - name: Apply labels (issue event)
         if: github.event_name == 'issues'
         uses: github/issue-labeler@v3.4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/issue-labeler.yml
+          include-title: 1
           not-before: '2025-11-24T00:00:00Z'
           enable-versioned-regex: 0
       - name: Apply labels (manual run)
@@ -38,5 +80,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/issue-labeler.yml
           issue-number: ${{ inputs.issue-number }}
+          include-title: 1
           not-before: '2025-11-24T00:00:00Z'
           enable-versioned-regex: 0

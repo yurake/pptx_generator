@@ -231,6 +231,7 @@ def run_mapping_pipeline(
                 layouts_path=params.layouts,
                 output_dir=params.draft_output,
                 spec_source_path=params.spec_source_path,
+                draft_store_dir=params.draft_output / "store",
             ),
         )
     elif draft_context.workdir != params.draft_output:

@@ -26,6 +26,7 @@
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--from <slide\|template>` | 静的モード時に抽出へ利用するソースを指定。既定は実スライド |  |  | `slide` |
 | `--slide` | 実スライドの図形・段落スナップショット (`slide_snapshot.json`) を出力する |  |  | 無効 |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
 | `--brand <name>` | `--with-release` 指定時のブランド名 |  |  | - |
@@ -68,6 +69,7 @@ uv run pptx template samples/templates/templates.pptx
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | 出力形式を選択 |  |  | `json` |
 | `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--from <slide\|template>` | 静的モード時に抽出へ利用するソースを指定 |  |  | `slide` |
 
 ##### `pptx layout-validate`
 抽出結果と同等のレイアウト検証を単独で実行する。`--baseline` や `--analyzer-snapshot` を用いて比較条件を変えたいケースで利用する。
@@ -143,17 +145,16 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Prepare 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
-- stage 3 全体を一括で実行し、`.pptx/draft/` にドラフト成果物、`.pptx/compose/` に `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。
+- stage 3 全体を一括で実行し、`--output` で指定したディレクトリに `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。ドラフト成果物（`draft_draft.json` など）は自動的に `<output>/draft/` 配下へ出力される。
 - `--prepare-cards` で stage 2 の成果物を指定すると、CLI が `prepare_card.json.meta` に記録されたパスを使ってログや AI メタを読み込む。
 - 承認状態（差戻し含む）は PrepareStore の管理下にあり、CLI は読み取りのみを行う。
 - `jobspec.meta.template_path` と `jobspec.meta.layouts_path` を必ず埋め込む。欠落している場合はエラーになる。
-- ドラフトボードの永続化データは `.pptx/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる。
+- ドラフトボードの永続化データは `<output>/draft/store/` に保存され、環境変数 `DRAFT_STORE_DIR` で上書きできる（既定の `--output` 利用時は `.pptx/compose/draft/store/`）。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
 | `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
-| `--draft-output <dir>` | ドラフト成果物の保存先 |  |  | `.pptx/draft` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
 | `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  |  | `draft_review_log.json` |
@@ -180,6 +181,8 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
 
+ドラフト成果物を任意ディレクトリへ分離したい場合は、`--output` を `<root>` に設定したうえで `<root>/draft` を参照する。
+
 #### 補助: `pptx mapping`
 - stage 4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
 
@@ -189,7 +192,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
 | `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
-| `--draft-output <dir>` | draft 成果物の出力先 |  |  | `.pptx/draft` |
+| （自動） | draft 成果物の出力先 |  |  | `<output>/draft` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
 ### stage 4: レンダリング
