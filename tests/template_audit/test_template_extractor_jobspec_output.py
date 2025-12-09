@@ -505,3 +505,154 @@ class TestConstants:
         expected_anchors = {"bullets", "bullet_list", "content", "body"}
         assert SLIDE_BULLET_ANCHORS == expected_anchors
         assert isinstance(SLIDE_BULLET_ANCHORS, set)
+
+
+class TestDuplicateAnchorDetection:
+    """アンカー名重複検出のテスト。"""
+
+    @pytest.fixture
+    def temp_template_path(self):
+        """一時テンプレートファイルパス。"""
+        with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as f:
+            temp_path = Path(f.name)
+        # Write a valid empty pptx file
+        Presentation().save(temp_path)
+        yield temp_path
+        temp_path.unlink()
+
+    def test_duplicate_anchor_detection_in_same_slide(self, temp_template_path):
+        """同一スライド内でアンカー名が重複している場合、RuntimeError が発生することを確認。"""
+        options = TemplateExtractorOptions(template_path=temp_template_path)
+        step = TemplateExtractorStep(options)
+
+        # 重複するアンカー名を持つモックプレゼンテーション
+        presentation = Mock()
+        presentation.slide_width = 9144000
+        presentation.slide_height = 6858000
+
+        layout = Mock()
+        layout.name = "テストレイアウト"
+
+        # 同じ名前の図形を2つ作成
+        shape1 = Mock()
+        shape1.name = "テキスト プレースホルダー 2"
+        shape1.left = 914400
+        shape1.top = 914400
+        shape1.width = 4572000
+        shape1.height = 914400
+        shape1.__class__.__name__ = "SlidePlaceholder"
+        shape1.text_frame = Mock()
+        shape1.text_frame.text = "最初のテキスト"
+        shape1.text_frame.paragraphs = []
+        shape1.text_frame.margin_left = 0
+        shape1.text_frame.margin_right = 0
+        shape1.text_frame.margin_top = 0
+        shape1.text_frame.margin_bottom = 0
+        shape1.placeholder_format = Mock()
+        shape1.placeholder_format.type = Mock()
+        shape1.placeholder_format.type.name = "TEXT"
+
+        shape2 = Mock()
+        shape2.name = "テキスト プレースホルダー 2"  # 同じ名前
+        shape2.left = 914400
+        shape2.top = 2743200
+        shape2.width = 4572000
+        shape2.height = 914400
+        shape2.__class__.__name__ = "SlidePlaceholder"
+        shape2.text_frame = Mock()
+        shape2.text_frame.text = "2番目のテキスト"
+        shape2.text_frame.paragraphs = []
+        shape2.text_frame.margin_left = 0
+        shape2.text_frame.margin_right = 0
+        shape2.text_frame.margin_top = 0
+        shape2.text_frame.margin_bottom = 0
+        shape2.placeholder_format = Mock()
+        shape2.placeholder_format.type = Mock()
+        shape2.placeholder_format.type.name = "TEXT"
+
+        layout.shapes = [shape1, shape2]
+        presentation.slide_layouts = [layout]
+
+        with patch("pptx_generator.pipeline.template_extractor.Presentation") as mock_pres_class:
+            mock_pres_class.return_value = presentation
+
+            with pytest.raises(RuntimeError) as exc_info:
+                step.extract_template_spec()
+
+            error_message = str(exc_info.value)
+            assert "同一" in error_message
+            assert "アンカー名が重複しています" in error_message
+            assert "テキスト プレースホルダー 2" in error_message
+            assert "テストレイアウト" in error_message
+
+    def test_no_duplicate_anchor_different_slides(self, tmp_path: Path):
+        """異なるスライド間で同じアンカー名を持つ場合は問題ないことを確認。"""
+        presentation = Presentation()
+
+        # 1つ目のスライド
+        layout1 = presentation.slide_layouts[1]
+        slide1 = presentation.slides.add_slide(layout1)
+        slide1.shapes.title.text = "スライド1"
+        slide1.shapes.title.name = "共通タイトル"
+
+        # 2つ目のスライド（同じアンカー名を使用）
+        layout2 = presentation.slide_layouts[1]
+        slide2 = presentation.slides.add_slide(layout2)
+        slide2.shapes.title.text = "スライド2"
+        slide2.shapes.title.name = "共通タイトル"  # 同じ名前だが別スライド
+
+        template_path = tmp_path / "test-multi-slide.pptx"
+        presentation.save(template_path)
+
+        options = TemplateExtractorOptions(
+            template_path=template_path,
+            layout_mode="static",
+            static_source="slide",
+        )
+        step = TemplateExtractorStep(options)
+
+        # 例外が発生しないことを確認
+        template_spec = step.extract_template_spec()
+        assert len(template_spec.layouts) == 2
+
+    def test_unnamed_shapes_ignored_in_duplicate_check(self, temp_template_path):
+        """unnamed で始まる図形名は重複チェックから除外されることを確認。"""
+        options = TemplateExtractorOptions(template_path=temp_template_path)
+        step = TemplateExtractorStep(options)
+
+        presentation = Mock()
+        presentation.slide_width = 9144000
+        presentation.slide_height = 6858000
+
+        layout = Mock()
+        layout.name = "テストレイアウト"
+
+        # unnamed で始まる図形（重複チェック対象外）
+        shape1 = Mock()
+        shape1.name = ""  # 空文字は自動で unnamed_shape_{id(shape)} になる
+        shape1.left = 914400
+        shape1.top = 914400
+        shape1.width = 914400
+        shape1.height = 914400
+        shape1.__class__.__name__ = "Rectangle"
+        shape1.text_frame = None
+
+        shape2 = Mock()
+        shape2.name = ""  # 空文字（重複しても問題なし）
+        shape2.left = 914400
+        shape2.top = 2743200
+        shape2.width = 914400
+        shape2.height = 914400
+        shape2.__class__.__name__ = "Rectangle"
+        shape2.text_frame = None
+
+        layout.shapes = [shape1, shape2]
+        presentation.slide_layouts = [layout]
+
+        with patch("pptx_generator.pipeline.template_extractor.Presentation") as mock_pres_class:
+            mock_pres_class.return_value = presentation
+
+            # 例外が発生しないことを確認
+            template_spec = step.extract_template_spec()
+            assert len(template_spec.layouts) == 1
+
