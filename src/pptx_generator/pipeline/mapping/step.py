@@ -6,7 +6,7 @@ import logging
 import time
 from pathlib import Path
 
-from ..base import PipelineContext
+from ..base import PipelineContext, PipelineStage
 from ...models import (
     ContentApprovalDocument,
     DraftDocument,
@@ -39,6 +39,7 @@ class MappingStep:
     """承認済みドラフトを基に generate_ready.json を生成するステップ。"""
 
     name = "mapping"
+    stage = PipelineStage.MAPPING
 
     def __init__(self, options: MappingOptions | None = None) -> None:
         self.options = options or MappingOptions()

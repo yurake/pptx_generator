@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from pptx_generator.config_manager import ConfigManager
 from pptx_generator.pipeline import (
     DraftStructuringError,
     DraftStructuringOptions,
@@ -23,9 +24,11 @@ from .common import (
 from .mapping import (
     DEFAULT_GENERATE_READY_FILENAME,
     DEFAULT_GENERATE_READY_META_FILENAME,
+    extract_template_config,
     MappingPipelineConfig,
     build_refiner_options,
     echo_mapping_outputs,
+    load_env_overrides,
     prepare_template_style,
     run_mapping_pipeline,
 )
@@ -60,6 +63,45 @@ class ComposeCommandResult:
     mapping_context: PipelineContext
 
 
+def _build_compose_config_manager(spec: JobSpec, config: ComposeCommandConfig) -> ConfigManager:
+    manager = ConfigManager()
+    manager.add_source(
+        "defaults",
+        {
+            "generate_ready_filename": config.generate_ready_filename,
+            "generate_ready_meta_filename": config.generate_ready_meta_filename,
+        },
+    )
+    manager.add_source("template_config", extract_template_config(spec))
+    manager.add_source("project_config", {})
+    manager.add_source("env_variables", load_env_overrides())
+    manager.add_source(
+        "cli_options",
+        {
+            "output_dir": str(config.output_dir),
+            "draft_output": str(config.draft_output),
+            "rules_path": str(config.rules_path),
+            "prepare_cards": str(config.prepare_cards),
+        },
+    )
+    return manager
+
+
+def _resolve_with_optional_manager(
+    resolver,
+    *,
+    spec: JobSpec,
+    spec_source: Path,
+    config_manager: ConfigManager,
+):
+    try:
+        return resolver(spec=spec, spec_source=spec_source, config_manager=config_manager)
+    except TypeError as exc:
+        if "config_manager" not in str(exc):
+            raise
+        return resolver(spec=spec, spec_source=spec_source)
+
+
 class ComposeCommandError(Exception):
     """compose コマンド実行時の失敗を表す例外。"""
 
@@ -86,15 +128,46 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
             errors=errors,
         ) from exc
 
+    config_manager = _build_compose_config_manager(spec, config)
+
     try:
-        resolved_template = resolve_template_path(spec=spec, spec_source=config.spec_path)
+        resolved_template = _resolve_with_optional_manager(
+            resolve_template_path,
+            spec=spec,
+            spec_source=config.spec_path,
+            config_manager=config_manager,
+        )
     except ValueError as exc:
         raise ComposeCommandError(str(exc), exit_code=2) from exc
 
     try:
-        resolved_layouts = resolve_layouts_path(spec=spec, spec_source=config.spec_path)
+        resolved_layouts = _resolve_with_optional_manager(
+            resolve_layouts_path,
+            spec=spec,
+            spec_source=config.spec_path,
+            config_manager=config_manager,
+        )
     except ValueError as exc:
         raise ComposeCommandError(str(exc), exit_code=2) from exc
+
+    config_manager.record("rules_path", str(config.rules_path.resolve()), "cli_options")
+    config_manager.record("output_dir", str(config.output_dir.resolve()), "cli_options")
+    config_manager.record("draft_output", str(config.draft_output.resolve()), "cli_options")
+    if config.prepare_cards:
+        config_manager.record("prepare_cards", str(config.prepare_cards.resolve()), "cli_options")
+
+    config_snapshot = config_manager.snapshot(
+        keys=[
+            "template_path",
+            "layouts_path",
+            "rules_path",
+            "prepare_cards",
+            "output_dir",
+            "draft_output",
+            "generate_ready_filename",
+            "generate_ready_meta_filename",
+        ]
+    )
 
     try:
         outline_result = execute_outline(
@@ -132,6 +205,7 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         raise ComposeCommandError("compose 実行中にアウトライン stage でエラーが発生しました", exit_code=1) from exc
 
     print_outline_result(outline_result, show_layout_reasons=config.show_layout_reasons)
+    outline_result.context.config_snapshot = config_snapshot
 
     rules_config = load_rules_config(config.rules_path)
     template_style_payload = prepare_template_style(resolved_template)
@@ -149,6 +223,7 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         layouts=resolved_layouts,
         draft_output=config.draft_output,
         template=resolved_template,
+        config_snapshot=config_snapshot,
     )
 
     draft_options = DraftStructuringOptions(

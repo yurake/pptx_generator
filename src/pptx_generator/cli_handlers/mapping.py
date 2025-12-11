@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Optional
 
 import click
 
+from pptx_generator.config_manager import ConfigManager, ResolvedConfig
 from pptx_generator.generate_ready import generate_ready_to_jobspec
 from pptx_generator.models import (
     GenerateReadyDocument,
@@ -65,6 +67,7 @@ class MappingPipelineConfig:
     layouts: Path | None
     draft_output: Path
     template: Path | None
+    config_snapshot: ResolvedConfig | None = None
 
 
 @dataclass(slots=True)
@@ -142,6 +145,30 @@ def build_refiner_options(
     )
 
 
+def load_env_overrides() -> dict[str, str]:
+    mapping = {
+        "template_path": os.getenv("PPTX_TEMPLATE_PATH"),
+        "layouts_path": os.getenv("PPTX_LAYOUTS_PATH"),
+        "prepare_cards": os.getenv("PPTX_PREPARE_CARDS"),
+        "rules_path": os.getenv("PPTX_RULES_PATH"),
+        "output_dir": os.getenv("PPTX_OUTPUT_DIR"),
+        "draft_output": os.getenv("PPTX_DRAFT_OUTPUT"),
+    }
+    return {key: value for key, value in mapping.items() if value}
+
+
+def extract_template_config(spec: JobSpec) -> dict[str, str]:
+    meta = getattr(spec, "meta", None)
+    layouts_path_value = getattr(meta, "layouts_path", None) if meta is not None else None
+    template_path_value = getattr(meta, "template_path", None) if meta is not None else None
+    payload: dict[str, str] = {}
+    if template_path_value:
+        payload["template_path"] = str(template_path_value)
+    if layouts_path_value:
+        payload["layouts_path"] = str(layouts_path_value)
+    return payload
+
+
 def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
     try:
         spec = load_jobspec(config.spec_path)
@@ -152,17 +179,57 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
             errors=exc.errors,
         ) from exc
 
+    config_manager = ConfigManager()
+    config_manager.add_source(
+        "defaults",
+        {
+            "generate_ready_filename": config.generate_ready_filename,
+            "generate_ready_meta_filename": config.generate_ready_meta_filename,
+        },
+    )
+    config_manager.add_source("template_config", extract_template_config(spec))
+    config_manager.add_source("project_config", {})
+    config_manager.add_source("env_variables", load_env_overrides())
+    config_manager.add_source(
+        "cli_options",
+        {
+            "output_dir": str(config.output_dir),
+            "draft_output": str(config.draft_output),
+            "rules_path": str(config.rules_path),
+            "prepare_cards": str(config.prepare_cards),
+        },
+    )
+
     try:
-        resolved_template = resolve_template_path(spec=spec, spec_source=config.spec_path)
+        resolved_template = resolve_template_path(
+            spec=spec,
+            spec_source=config.spec_path,
+            config_manager=config_manager,
+        )
     except ValueError as exc:
         raise MappingCommandError(str(exc), exit_code=2) from exc
 
     try:
-        resolved_layouts = resolve_layouts_path(spec=spec, spec_source=config.spec_path)
+        resolved_layouts = resolve_layouts_path(
+            spec=spec,
+            spec_source=config.spec_path,
+            config_manager=config_manager,
+        )
     except ValueError as exc:
         raise MappingCommandError(str(exc), exit_code=2) from exc
 
-    rules_config = load_rules_config(config.rules_path)
+    config_manager.record("rules_path", str(config.rules_path.resolve()), "cli_options")
+    config_manager.record("output_dir", str(config.output_dir.resolve()), "cli_options")
+    config_manager.record("draft_output", str(config.draft_output.resolve()), "cli_options")
+    if config.prepare_cards:
+        config_manager.record("prepare_cards", str(config.prepare_cards.resolve()), "cli_options")
+
+    try:
+        rules_config = load_rules_config(config.rules_path)
+    except FileNotFoundError as exc:
+        config_manager.record("rules_path", str(config.rules_path), "cli_options")
+        raise MappingCommandError(str(exc), exit_code=2) from exc
+
     template_style_payload = prepare_template_style(resolved_template)
     refiner_options = build_refiner_options(rules_config, template_style_payload.style)
 
@@ -178,6 +245,18 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
         layouts=resolved_layouts,
         draft_output=config.draft_output,
         template=resolved_template,
+        config_snapshot=config_manager.snapshot(
+            keys=[
+                "template_path",
+                "layouts_path",
+                "rules_path",
+                "prepare_cards",
+                "output_dir",
+                "draft_output",
+                "generate_ready_filename",
+                "generate_ready_meta_filename",
+            ]
+        ),
     )
 
     try:
@@ -253,6 +332,7 @@ def run_mapping_pipeline(
             mapping_options=mapping_options,
             generate_ready_filename=generate_ready_filename,
             generate_ready_meta_filename=generate_ready_meta_filename,
+            config_snapshot=params.config_snapshot,
         )
 
     context = PipelineContext(
@@ -260,6 +340,7 @@ def run_mapping_pipeline(
         workdir=params.output_dir,
         artifacts=dict(draft_context.artifacts),
     )
+    context.config_snapshot = params.config_snapshot
     context.add_artifact("template_style", params.template_style.artifact)
     context.add_artifact("template_style_data", params.template_style.style)
     steps: list[PipelineStep] = [
@@ -302,6 +383,7 @@ def _pass_through_static_generate_ready(
     mapping_options: MappingOptions,
     generate_ready_filename: str,
     generate_ready_meta_filename: str,
+    config_snapshot: ResolvedConfig | None = None,
 ) -> PipelineContext:
     ready_doc = draft_context.artifacts.get("generate_ready")
     if not isinstance(ready_doc, GenerateReadyDocument):
@@ -378,6 +460,7 @@ def _pass_through_static_generate_ready(
             dump_json(mapping_log_dest, draft_mapping_log)
 
     context = PipelineContext(spec=spec, workdir=output_dir)
+    context.config_snapshot = config_snapshot
     context.artifacts.update(
         {
             "generate_ready": ready_doc,

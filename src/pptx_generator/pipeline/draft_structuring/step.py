@@ -38,7 +38,7 @@ from ...models import (
 )
 from ...draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
-from ..base import PipelineContext
+from ..base import PipelineContext, PipelineStage
 from .errors import DraftStructuringError
 from .dynamic_flow import build_dynamic_document
 from .dynamic_runtime import (
@@ -59,6 +59,7 @@ class DraftStructuringStep:
     """content_approved と layouts.jsonl から Draft ドキュメントを生成する。"""
 
     name = "draft_structuring"
+    stage = PipelineStage.COMPOSE
 
     def __init__(self, options: DraftStructuringOptions | None = None) -> None:
         self.options = options or DraftStructuringOptions()

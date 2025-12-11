@@ -5,15 +5,16 @@ from __future__ import annotations
 import logging
 
 from ..models import JobSpec, SpecValidationError
-from .base import PipelineContext
+from .base import PipelineContext, PipelineStage, StageContract, StageResult
 
 logger = logging.getLogger(__name__)
 
 
-class SpecValidatorStep:
+class SpecValidatorStep(StageContract):
     """スキーマ検証後のビジネスルール確認。"""
 
     name = "validator"
+    stage = PipelineStage.MAPPING
 
     def __init__(
         self,
@@ -28,7 +29,11 @@ class SpecValidatorStep:
         self.max_bullet_level = max_bullet_level
         self.forbidden_words = forbidden_words
 
-    def run(self, context: PipelineContext) -> None:
+    def validate_input(self, context: PipelineContext) -> None:
+        if not isinstance(context.spec, JobSpec):
+            raise SpecValidationError("JobSpec が正しく読み込まれていません")
+
+    def execute(self, context: PipelineContext) -> StageResult:
         spec = context.spec
         logger.debug("slide count=%s", len(spec.slides))
         self._validate_slide_presence(spec)
@@ -36,6 +41,7 @@ class SpecValidatorStep:
         self._validate_bullet_length(spec)
         self._validate_bullet_level(spec)
         self._validate_forbidden_words(spec)
+        return StageResult(stage=self.stage, success=True, details={"slides": len(spec.slides)})
 
     def _validate_slide_presence(self, spec: JobSpec) -> None:
         if not spec.slides:

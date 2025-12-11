@@ -24,7 +24,7 @@ from ..models import (
     ContentSlideSource,
     ContentTableData,
 )
-from .base import PipelineContext, PipelineStep
+from .base import PipelineContext, PipelineStage, PipelineStep
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class PrepareNormalizationStep:
     """PrepareCard 成果物を読み込むパイプラインステップ。"""
 
     name = "prepare_normalization"
+    stage = PipelineStage.PREPARE
 
     def __init__(self, options: PrepareNormalizationOptions | None = None) -> None:
         self.options = options or PrepareNormalizationOptions()
