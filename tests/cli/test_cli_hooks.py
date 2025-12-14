@@ -19,7 +19,13 @@ from pptx_generator.cli_hooks import (
     slide_contexts_from_blueprint,
     slide_contexts_from_generate_ready,
 )
-from pptx_generator.cli_hooks.manager import SlideContext
+from pptx_generator.cli_hooks.manager import (
+    HookCommandConfig,
+    HookConfig,
+    SlideContext,
+    SlideHookConfig,
+    ExternalHookManager,
+)
 
 
 def _make_hook_script(path: Path) -> Path:
@@ -135,6 +141,52 @@ def test_run_slide_hooks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     assert data["PPTX_SLIDE_ID"] == "system_layout-01"
     assert data["PPTX_SLIDE_LAYOUT"] == "System Layout"
     assert data["CUSTOM"] == "1"
+
+
+def test_run_slide_hooks_filters_and_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    base_dir = tmp_path / "external"
+    monkeypatch.setattr("pptx_generator.cli_hooks.manager.EXTERNAL_ROOT", base_dir)
+
+    # prepare hook config with continue_default variance
+    hook_true = HookCommandConfig(command="echo", continue_default=True)
+    hook_false = HookCommandConfig(command="echo", continue_default=False)
+    config = HookConfig(
+        slide_hooks={
+            "01_slide": SlideHookConfig(stage_hooks={STAGE_PREPARE: hook_true}),
+            "02_slide": SlideHookConfig(stage_hooks={STAGE_PREPARE: hook_false}),
+        }
+    )
+    manager = ExternalHookManager(template_id="demo", base_dir=base_dir, config=config)
+    monkeypatch.setattr(manager, "_execute_hook", lambda hook, env: None)
+
+    # fallback contexts (slides=[]) should synthesize from config keys
+    executed = manager.run_slide_hooks(
+        STAGE_PREPARE,
+        slides=[],
+        env={"PPTX_STAGE": STAGE_PREPARE},
+        allow_fallback_context=True,
+    )
+    assert executed is True
+
+    # filter: only continue_default=True should run
+    executed_filtered = manager.run_slide_hooks(
+        STAGE_PREPARE,
+        slides=[],
+        env={"PPTX_STAGE": STAGE_PREPARE},
+        continue_default_filter=True,
+        allow_fallback_context=True,
+    )
+    assert executed_filtered is True
+
+    # filter: only continue_default=False should run
+    executed_filtered_false = manager.run_slide_hooks(
+        STAGE_PREPARE,
+        slides=[],
+        env={"PPTX_STAGE": STAGE_PREPARE},
+        continue_default_filter=False,
+        allow_fallback_context=True,
+    )
+    assert executed_filtered_false is True
 
 
 def test_slide_contexts_from_blueprint(tmp_path: Path) -> None:
