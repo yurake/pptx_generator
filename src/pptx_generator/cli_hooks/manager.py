@@ -142,39 +142,15 @@ class ExternalHookManager:
         *,
         slides: list[SlideContext],
         env: Mapping[str, str],
-        continue_default_filter: bool | None = None,
-        allow_fallback_context: bool = False,
     ) -> bool:
-        """スライド単位のフックを実行する。
-
-        Args:
-            stage: ステージ名。
-            slides: スライドコンテキストのリスト。
-            env: 共通環境変数。
-            continue_default_filter: True/False を指定すると、該当する continue_default のフックのみ実行する。
-            allow_fallback_context: True のとき、slides が空でも hooks.json のスライドキーから疑似コンテキストを生成する。
-
-        Returns:
-            何らかのフックが実行されたかどうか。
-        """
-
-        contexts = list(slides)
-        if not contexts and allow_fallback_context and self.config.slide_hooks:
-            contexts = [
-                SlideContext(key=key, index=idx)
-                for idx, key in enumerate(self.config.slide_hooks.keys(), start=1)
-            ]
-
         executed_any = False
         sync_done = False
-        for slide in contexts:
+        for slide in slides:
             hook_config = self.get_slide_hooks(slide.key)
             if not hook_config:
                 continue
             hook = hook_config.stage_hooks.get(stage)
             if not hook:
-                continue
-            if continue_default_filter is not None and hook.continue_default != continue_default_filter:
                 continue
             if not sync_done:
                 self._sync_project_if_needed(force=False)

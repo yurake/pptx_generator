@@ -127,7 +127,6 @@ def create_prepare_command(
             if template_id:
                 hook_manager = load_hooks_for_template_id(template_id)
                 stage_env["PPTX_TEMPLATE_ID"] = template_id
-        # stage hook: continue_default=False を優先チェック
         if hook_manager and template_id:
             executed, continue_default = hook_manager.run_stage_hook(
                 STAGE_PREPARE,
@@ -151,26 +150,6 @@ def create_prepare_command(
             prompts_dirname=prompts_dirname,
             slide_inputs_filename=slide_inputs_filename,
         )
-
-        # slide hooks (continue_default=False) 実行 → 実行されたら標準処理スキップ
-        contexts: list[dict[str, Any]] = []
-        if hook_manager and template_id:
-            blueprint_slides = _load_blueprint_slides_from_jobspec(jobspec_path)
-            prompts_dir = _resolve_prompts_dir_from_jobspec(jobspec_path)
-            contexts = slide_contexts_from_blueprint(
-                blueprint_slides,
-                prompts_dir=prompts_dir,
-            ) if blueprint_slides else []
-            executed = hook_manager.run_slide_hooks(
-                STAGE_PREPARE,
-                slides=contexts,
-                env=stage_env,
-                continue_default_filter=False,
-                allow_fallback_context=True,
-            )
-            if executed:
-                return
-
         try:
             result = run_prepare_command(config, dump_json=dump_json)
         except PrepareCommandError as exc:
@@ -199,13 +178,19 @@ def create_prepare_command(
                     "PPTX_PREPARE_AUDIT_PATH": str(result.audit_path.resolve()),
                 }
             )
-            hook_manager.run_slide_hooks(
-                STAGE_PREPARE,
-                slides=contexts,
-                env=stage_env_with_outputs,
-                continue_default_filter=True,
-                allow_fallback_context=True,
-            )
+            blueprint_slides = _load_blueprint_slides_from_jobspec(jobspec_path)
+            if blueprint_slides:
+                prompts_dir = _resolve_prompts_dir_from_jobspec(jobspec_path)
+                contexts = slide_contexts_from_blueprint(
+                    blueprint_slides,
+                    prompts_dir=prompts_dir,
+                )
+                if contexts:
+                    hook_manager.run_slide_hooks(
+                        STAGE_PREPARE,
+                        slides=contexts,
+                        env=stage_env_with_outputs,
+                    )
 
     return prepare
 

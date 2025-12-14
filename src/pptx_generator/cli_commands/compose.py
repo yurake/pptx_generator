@@ -145,18 +145,6 @@ def create_compose_command(
                 if not continue_default:
                     return
 
-        contexts = slide_contexts_from_generate_ready(prepare_cards)
-        if hook_manager:
-            executed = hook_manager.run_slide_hooks(
-                STAGE_COMPOSE,
-                slides=contexts,
-                env=stage_env,
-                continue_default_filter=False,
-                allow_fallback_context=True,
-            )
-            if executed:
-                return
-
         config = ComposeCommandConfig(
             spec_path=spec_path,
             draft_output=draft_output,
@@ -190,13 +178,12 @@ def create_compose_command(
             generate_ready_path = output_dir / default_generate_ready_filename
             stage_env_with_outputs["PPTX_GENERATE_READY_PATH"] = str(generate_ready_path.resolve())
             contexts = slide_contexts_from_generate_ready(generate_ready_path)
-            hook_manager.run_slide_hooks(
-                STAGE_COMPOSE,
-                slides=contexts,
-                env=stage_env_with_outputs,
-                continue_default_filter=True,
-                allow_fallback_context=True,
-            )
+            if contexts:
+                hook_manager.run_slide_hooks(
+                    STAGE_COMPOSE,
+                    slides=contexts,
+                    env=stage_env_with_outputs,
+                )
 
     return compose
 
