@@ -338,7 +338,7 @@ def run_mapping_pipeline(
     context = PipelineContext(
         spec=params.spec,
         workdir=params.output_dir,
-        artifacts=dict(draft_context.artifacts),
+        artifacts=draft_context.artifacts.as_dict(),
     )
     context.config_snapshot = params.config_snapshot
     context.add_artifact("template_style", params.template_style.artifact)

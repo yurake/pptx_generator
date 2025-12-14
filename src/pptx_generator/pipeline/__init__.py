@@ -1,8 +1,9 @@
 """パイプラインモジュール。"""
 
 from .analyzer import AnalyzerOptions, SimpleAnalyzerStep
-from .base import (PipelineContext, PipelineRunner, PipelineStage,
-                   PipelineStep, StageContract, StageResult)
+from .base import (PipelineArtifactKey, PipelineArtifacts, PipelineContext,
+                   PipelineRunner, PipelineStage, PipelineStep, StageContract,
+                   StageResult)
 from .prepare_normalization import (PrepareNormalizationError,
                                     PrepareNormalizationOptions,
                                     PrepareNormalizationStep)
@@ -35,6 +36,8 @@ __all__ = [
     "DraftStructuringStep",
     "DraftStructuringError",
     "RefinerOptions",
+    "PipelineArtifactKey",
+    "PipelineArtifacts",
     "PipelineContext",
     "PipelineRunner",
     "PipelineStage",

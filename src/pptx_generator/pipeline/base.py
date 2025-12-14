@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Iterable, Iterator, MutableMapping, Protocol
 from uuid import uuid4
 
 from ..config_manager import ResolvedConfig
@@ -35,6 +35,80 @@ class StageResult:
     details: dict[str, Any] = field(default_factory=dict)
 
 
+class PipelineArtifactKey(str, Enum):
+    """よく使うアーティファクトキーを列挙する。"""
+
+    TEMPLATE_STYLE = "template_style"
+    TEMPLATE_STYLE_DATA = "template_style_data"
+    DRAFT_DOCUMENT = "draft_document"
+    DRAFT_DOCUMENT_PATH = "draft_document_path"
+    DRAFT_REVIEW_LOG = "draft_review_log"
+    DRAFT_REVIEW_LOG_PATH = "draft_review_log_path"
+    DRAFT_GENERATE_READY = "generate_ready"
+    DRAFT_GENERATE_READY_META_PATH = "generate_ready_meta_path"
+    PREPARE_DOCUMENT = "prepare_document"
+    PREPARE_DOCUMENT_PATH = "prepare_document_path"
+    GENERATE_READY = "generate_ready"
+    GENERATE_READY_PATH = "generate_ready_path"
+    MAPPING_LOG_PATH = "mapping_log_path"
+    MAPPING_META = "mapping_meta"
+
+
+class PipelineArtifacts(MutableMapping[str, object]):
+    """アーティファクトを型安全に扱う薄いラッパー。"""
+
+    def __init__(self, initial: dict[str, object] | None = None) -> None:
+        self._store: dict[str, object] = dict(initial or {})
+
+    def __getitem__(self, key: str | PipelineArtifactKey) -> object:
+        return self._store[self._key(key)]
+
+    def __setitem__(self, key: str | PipelineArtifactKey, value: object) -> None:
+        self._store[self._key(key)] = value
+
+    def __delitem__(self, key: str | PipelineArtifactKey) -> None:
+        del self._store[self._key(key)]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._store)
+
+    def __len__(self) -> int:
+        return len(self._store)
+
+    def _key(self, key: str | PipelineArtifactKey) -> str:
+        return key.value if isinstance(key, PipelineArtifactKey) else key
+
+    # 互換メソッド
+    def get(self, key: str | PipelineArtifactKey, default: object | None = None) -> object | None:  # type: ignore[override]
+        return self._store.get(self._key(key), default)
+
+    def setdefault(
+        self,
+        key: str | PipelineArtifactKey,
+        default: object | None = None,
+    ) -> object | None:  # type: ignore[override]
+        return self._store.setdefault(self._key(key), default)
+
+    def update(self, other: Iterable[tuple[str, object]] | dict[str, object], **kwargs: object) -> None:  # type: ignore[override]
+        if isinstance(other, dict):
+            items = other.items()
+        else:
+            items = other
+        for key, value in items:
+            self[key] = value
+        for key, value in kwargs.items():
+            self[key] = value
+
+    @classmethod
+    def from_mapping(cls, mapping: MutableMapping[str, object]) -> "PipelineArtifacts":
+        if isinstance(mapping, PipelineArtifacts):
+            return mapping
+        return cls(dict(mapping))
+
+    def as_dict(self) -> dict[str, object]:
+        return dict(self._store)
+
+
 @dataclass(slots=True)
 class PipelineContext:
     """パイプライン全体で共有する情報。"""
@@ -47,7 +121,11 @@ class PipelineContext:
     error_history: list[str] = field(default_factory=list)
     execution_trace: list[str] = field(default_factory=list)
     stage_results: list[StageResult] = field(default_factory=list)
-    artifacts: dict[str, object] = field(default_factory=dict)
+    artifacts: PipelineArtifacts = field(default_factory=PipelineArtifacts)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.artifacts, PipelineArtifacts):
+            self.artifacts = PipelineArtifacts.from_mapping(self.artifacts)
 
     def add_artifact(self, key: str, value: object) -> None:
         logger.debug("artifact 登録: %s", key)
