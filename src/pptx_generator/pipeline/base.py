@@ -52,6 +52,7 @@ class PipelineArtifactKey(str, Enum):
     GENERATE_READY_PATH = "generate_ready_path"
     MAPPING_LOG_PATH = "mapping_log_path"
     MAPPING_META = "mapping_meta"
+    PIPELINE_TRACE_PATH = "pipeline_trace_path"
 
 
 class PipelineArtifacts(MutableMapping[str, object]):

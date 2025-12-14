@@ -21,6 +21,7 @@ from .polisher import PolisherError, PolisherOptions, PolisherStep
 from .renderer import RenderingOptions, SimpleRendererStep
 from .render_audit import RenderingAuditOptions, RenderingAuditStep
 from .refiner import RefinerOptions, SimpleRefinerStep
+from .trace import write_pipeline_trace
 from .template_extractor import TemplateExtractor, TemplateExtractorOptions, TemplateExtractorStep
 from .validator import SpecValidatorStep
 
@@ -65,4 +66,5 @@ __all__ = [
     "TemplateExtractor",
     "TemplateExtractorOptions",
     "TemplateExtractorStep",
+    "write_pipeline_trace",
 ]

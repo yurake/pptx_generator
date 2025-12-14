@@ -24,12 +24,14 @@ from pptx_generator.pipeline import (
     MappingOptions,
     MappingStep,
     PipelineContext,
+    PipelineArtifactKey,
     PipelineRunner,
     PipelineStep,
     PrepareNormalizationError,
     RefinerOptions,
     SimpleRefinerStep,
     SpecValidatorStep,
+    write_pipeline_trace,
 )
 from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
@@ -360,6 +362,8 @@ def run_mapping_pipeline(
         output_dir=params.output_dir,
         filename=generate_ready_meta_filename,
     )
+    trace_path = write_pipeline_trace(context, params.output_dir)
+    context.add_artifact(PipelineArtifactKey.PIPELINE_TRACE_PATH.value, str(trace_path))
     return context
 
 
@@ -479,6 +483,8 @@ def _pass_through_static_generate_ready(
         "blueprint_hash": ready_doc.meta.blueprint_hash,
     }
     context.add_artifact("mapping_meta", mapping_meta)
+    trace_path = write_pipeline_trace(context, output_dir)
+    context.add_artifact(PipelineArtifactKey.PIPELINE_TRACE_PATH.value, str(trace_path))
     return context
 
 
