@@ -163,7 +163,15 @@ class ContentImportService:
             except UnicodeDecodeError:
                 text = raw.decode("utf-8", errors="ignore")
                 warnings.append("UTF-8 で解釈できない文字を無視しました")
-            content_type = "text/plain"
+
+            if suffix in {".html", ".htm"}:
+                text = self._html_to_text(text)
+                content_type = "text/html"
+            elif suffix == ".json":
+                text = self._json_to_text(text, warnings)
+                content_type = "application/json"
+            else:
+                content_type = "text/plain"
 
         return _SourcePayload(
             source=str(path),
