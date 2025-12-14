@@ -121,16 +121,19 @@ class ScheduleGanttRenderer:
         template_path: Path | None = None,
         branding: BrandingConfig | None = None,
         config: GanttRenderConfig | None = None,
+        date_text: str | None = None,
     ) -> None:
         """
         Args:
             template_path: テンプレートPPTXファイルパス
             branding: ブランド設定
             config: ガントチャート描画設定
+            date_text: Date_deptに表示する固定文言（未指定時は当日日付を使用）
         """
         self.template_path = template_path
         self.branding = branding or BrandingConfig.default()
         self.config = config or GanttRenderConfig()
+        self.date_text = date_text
 
     def render(
         self, schedule: ScheduleGantt, output_path: Path, layout_name: str = "System_layout"
@@ -143,12 +146,7 @@ class ScheduleGanttRenderer:
             layout_name: 使用するレイアウト名（デフォルト: "System_layout"）
         """
         presentation = self._load_template()
-        
-        # テンプレート内の既存スライドを削除
-        self._clear_existing_slides(presentation)
-        
-        layout = self._find_layout(presentation, layout_name)
-        slide = presentation.slides.add_slide(layout)
+        slide = self._prepare_slide(presentation, layout_name)
 
         # 背景を白に設定
         background = slide.background
@@ -197,14 +195,17 @@ class ScheduleGanttRenderer:
             raise RuntimeError(msg)
         return presentation.slide_layouts[0]
 
-    def _clear_existing_slides(self, presentation: Presentation) -> None:
-        """プレゼンテーション内の既存スライドを全て削除する。"""
-        # スライドを逆順で削除（インデックスのずれを防ぐため）
-        slide_count = len(presentation.slides)
-        for i in range(slide_count - 1, -1, -1):
-            rId = presentation.slides._sldIdLst[i].rId
-            presentation.part.drop_rel(rId)
-            del presentation.slides._sldIdLst[i]
+    def _prepare_slide(self, presentation: Presentation, layout_name: str):
+        """既存スライドを再利用してクリーンな状態にする。
+
+        既存スライドがあれば最初のスライドの図形を全削除して再利用。
+        なければ指定レイアウトで新規スライドを追加。
+        """
+        if presentation.slides:
+            return presentation.slides[0]
+
+        layout = self._find_layout(presentation, layout_name)
+        return presentation.slides.add_slide(layout)
 
     def _generate_message_line(self, schedule: ScheduleGantt) -> str:
         """スケジュールの概要を説明するメッセージラインを生成する。
@@ -306,11 +307,13 @@ class ScheduleGanttRenderer:
 
     def _set_date_dept(self, slide, schedule: ScheduleGantt) -> None:
         """Date_deptプレースホルダーに日付と部門を設定する（idx: 10）。"""
-        # 現在の日付を取得
-        today = datetime.now().strftime("%Y年%m月%d日")
-        # 部門情報（実際には schedule.meta から取得することも可能）
-        dept = "システム部"  # デフォルト値
-        date_dept_text = f"{today} {dept}"
+        # 現在の日付を取得（固定文言が指定されていればそれを使用）
+        if self.date_text:
+            date_dept_text = self.date_text
+        else:
+            today = datetime.now().strftime("%Y年%m月%d日")
+            dept = "XX部"  # 固定のマスク表記
+            date_dept_text = f"{today} {dept}"
         
         for shape in slide.shapes:
             if shape.is_placeholder and hasattr(shape, 'text_frame'):
