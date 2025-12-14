@@ -60,3 +60,6 @@ external/*
 external/.gitignore
 !external/README.md
 !external/AGENTS.md
+
+# 一時的に除外
+src/pptx_generator_schedule/*
