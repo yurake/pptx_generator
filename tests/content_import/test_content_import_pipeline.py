@@ -40,6 +40,34 @@ def test_import_without_sources_raises() -> None:
         service.import_sources([])
 
 
+def test_import_from_local_html(tmp_path: Path) -> None:
+    source = tmp_path / "page.html"
+    source.write_text("<h1>Summary</h1><p>売上が前年比+20%です</p>", encoding="utf-8")
+
+    service = ContentImportService()
+    result = service.import_sources([str(source)])
+
+    slide = result.document.slides[0]
+    body_joined = "\n".join(slide.elements.body)
+    assert "Summary" in slide.elements.title or "Summary" in body_joined
+    assert "<" not in body_joined
+    assert result.meta["total_slides"] == len(result.document.slides)
+
+
+def test_import_from_local_json(tmp_path: Path) -> None:
+    source = tmp_path / "payload.json"
+    source.write_text('{"title": "Hello", "body": "World"}', encoding="utf-8")
+
+    service = ContentImportService()
+    result = service.import_sources([str(source)])
+
+    slide = result.document.slides[0]
+    text_joined = "\n".join(slide.elements.body)
+    assert '"title": "Hello"' in text_joined
+    assert "<" not in text_joined
+    assert result.meta["total_slides"] == len(result.document.slides)
+
+
 def test_convert_pdf_retries_with_writer_infilter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4 mock")
