@@ -203,6 +203,18 @@ def create_gen_command(
                 if not continue_default:
                     return
 
+        contexts = slide_contexts_from_generate_ready(generate_ready_path)
+        if hook_manager:
+            executed = hook_manager.run_slide_hooks(
+                STAGE_GEN,
+                slides=contexts,
+                env=stage_env,
+                continue_default_filter=False,
+                allow_fallback_context=True,
+            )
+            if executed:
+                return
+
         config = GenerateCommandConfig(
             generate_ready_path=generate_ready_path,
             output_dir=output_dir,
@@ -240,12 +252,13 @@ def create_gen_command(
                 pdf_path = output_dir / pdf_output
                 stage_env_with_outputs["PPTX_OUTPUT_PDF_PATH"] = str(pdf_path.resolve())
             contexts = slide_contexts_from_generate_ready(generate_ready_path)
-            if contexts:
-                hook_manager.run_slide_hooks(
-                    STAGE_GEN,
-                    slides=contexts,
-                    env=stage_env_with_outputs,
-                )
+            hook_manager.run_slide_hooks(
+                STAGE_GEN,
+                slides=contexts,
+                env=stage_env_with_outputs,
+                continue_default_filter=True,
+                allow_fallback_context=True,
+            )
 
     return gen
 
