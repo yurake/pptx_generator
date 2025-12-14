@@ -60,5 +60,3 @@ external/*
 external/.gitignore
 !external/README.md
 !external/AGENTS.md
-
-src/pptx_generator_schedule/*

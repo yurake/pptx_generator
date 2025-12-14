@@ -1,6 +1,6 @@
 {
-  "extracted_at": "2025-12-14T03:56:39.297523+00:00",
-  "source_path": "src/pptx_generator_schedule/samples/development_personnel/personnel_data_row.xlsx",
+  "extracted_at": "2025-12-04T09:45:11.973778+00:00",
+  "source_path": "src/pptx_generator_schedule/samples/development_personnel/personnel_data.xlsx",
   "phases": [
     {
       "phase_name": "フェーズ1：企画・設計",
