@@ -1,7 +1,9 @@
 """パイプラインモジュール。"""
 
 from .analyzer import AnalyzerOptions, SimpleAnalyzerStep
-from .base import PipelineContext, PipelineRunner, PipelineStep
+from .base import (PipelineArtifactKey, PipelineArtifacts, PipelineContext,
+                   PipelineRunner, PipelineStage, PipelineStep, StageContract,
+                   StageResult)
 from .prepare_normalization import (PrepareNormalizationError,
                                     PrepareNormalizationOptions,
                                     PrepareNormalizationStep)
@@ -19,6 +21,7 @@ from .polisher import PolisherError, PolisherOptions, PolisherStep
 from .renderer import RenderingOptions, SimpleRendererStep
 from .render_audit import RenderingAuditOptions, RenderingAuditStep
 from .refiner import RefinerOptions, SimpleRefinerStep
+from .trace import write_pipeline_trace
 from .template_extractor import TemplateExtractor, TemplateExtractorOptions, TemplateExtractorStep
 from .validator import SpecValidatorStep
 
@@ -34,9 +37,14 @@ __all__ = [
     "DraftStructuringStep",
     "DraftStructuringError",
     "RefinerOptions",
+    "PipelineArtifactKey",
+    "PipelineArtifacts",
     "PipelineContext",
     "PipelineRunner",
+    "PipelineStage",
     "PipelineStep",
+    "StageContract",
+    "StageResult",
     "RenderingOptions",
     "PdfExportError",
     "PdfExportOptions",
@@ -58,4 +66,5 @@ __all__ = [
     "TemplateExtractor",
     "TemplateExtractorOptions",
     "TemplateExtractorStep",
+    "write_pipeline_trace",
 ]
