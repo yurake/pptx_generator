@@ -37,7 +37,7 @@
   "template_style": {
     "source": {
       "type": "file",
-      "path": "config/branding.json"
+      "path": ".pptx/template/branding.json"
     }
   },
   "polisher": {

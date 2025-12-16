@@ -1,7 +1,7 @@
 # 設定・テンプレート管理ポリシー
 
 ## 対象範囲
-- `config/rules.json` など設定ファイル、および参考用の `config/branding.json`
+- `config/rules.json` など設定ファイル、および `pptx template` が出力するテンプレートスタイル（`branding.json` スナップショット）
 - `.pptx` テンプレートおよび `rules/polish.yaml`
   ※テンプレートは .pptx のみ対応（.potxは未対応）。.potxを利用したい場合はPowerPointで新規 .pptx として保存してください。
 
@@ -10,17 +10,9 @@
 2. Pull Request でレビューを受けるまで `draft` 状態を維持する。
 3. レビューコメントは 24 時間以内を目安に対応し、議論の結果は PR に明記する。
 
-## （参考）branding.json の構造
-- ランタイムはテンプレートからスタイルを抽出するため、`branding.json` は移行ガイドやテンプレ設計の共有用途として扱う。
-- スキーマバージョンは `version: "layout-style-v1"` を既定とする。後続の拡張ではバージョンを更新し、互換性の有無をドキュメント化する。
-- `theme` 配下でブランド共通のフォント (`fonts.heading` / `fonts.body`) と基調色 (`colors.primary` など) を定義する。フォントには `bold` / `italic` も指定できる。
-- `components` 配下で要素別スタイルを管理する（テンプレート内のスタイルを整理・共有したいときに利用）。
-  - `table`: フォールバック配置 (`fallback_box`)、ヘッダー／本文のフォントと塗りつぶし色、ゼブラ配色を定義。
-  - `chart`: カラーパレット、データラベル既定値、軸フォント、フォールバック配置を定義。
-  - `image`: フォールバック配置と既定の `sizing` モードを定義。
-  - `textbox`: フォールバック配置、既定フォント、段落スタイル（揃え・行間・段落前後余白・インデント）を定義。
-    - インデントはインチ単位で `left_indent_in` / `right_indent_in` / `first_line_indent_in` を指定し、Renderer が段落レベルに応じた余白を正しく適用できるようにする。
-- `layouts` にレイアウト名ごとの `placements` を登録すると、アンカー未指定時に要素 ID 単位で配置やフォントを上書きできる。
+## （参考）テンプレートスタイル（branding.json）について
+- ランタイムはテンプレートから TemplateStyle を抽出して利用するため、`branding.json` は `pptx template` 実行時に `.pptx/template/` 配下へ出力されるスナップショットのみを参考用途として扱う（リポジトリ直下に配置しない）。
+- スキーマバージョンは `version: "layout-style-v1"` を既定とし、テンプレートのテーマやプレースホルダーから得られたフォント／カラー／配置のサマリを含む。
 - 詳細な設計背景と運用ルールは [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md) を参照する。
 
 ## rules.json の構成
@@ -35,7 +27,7 @@
   - `enable_bullet_reindent`: 箇条書きレベルの再調整を有効化。
   - `enable_font_raise`, `min_font_size`: フォントサイズを下限まで引き上げるかどうかと閾値。
   - `enable_color_adjust`, `preferred_text_color`, `fallback_font_color`: 文字色をブランドカラーへ合わせる際の挙動。
-- `refiner` のカラー調整を有効化する場合は、テンプレートのテーマカラー（もしくは参考用 `config/branding.json`）と整合する色を指定する。
+- `refiner` のカラー調整を有効化する場合は、テンプレートのテーマカラー（`pptx template` で出力される `branding.json` スナップショットに記録）と整合する色を指定する。
 
 ## usage_tags.json の運用
 - バージョン `2.0` では Intent（スライドの目的）と Media（表現形式）を分離し、各タグに `synonyms` / `examples` / `deprecated` を付与する。  
@@ -58,14 +50,14 @@
   ```bash
   uv run pptx tpl-extract \
     --template templates/libraries/<brand>/<version>/template.pptx \
-    --output .pptx/extract/<brand>_<version>
+    --output .pptx/template/<brand>_<version>
 
   uv run pptx layout-validate \
     --template templates/libraries/<brand>/<version>/template.pptx \
     --output .pptx/validation/<brand>_<version> \
     --baseline releases/<brand>/<prev_version>/layouts.jsonl
   ```
-  - `tpl-extract` で最新テンプレのレイアウト仕様を生成し、必要に応じて参考用の `branding.json` も出力する。
+  - `tpl-extract` で最新テンプレのレイアウト仕様を生成し、参考用に `branding.json` スナップショット（TemplateStyle 抜粋）も出力する。
   - `layout-validate` で `layouts.jsonl` と `diagnostics.json` を検証し、ベースラインとの差分レポート (`diff_report.json`) を確認する。致命的エラーが検出された場合は exit code 6 で停止する。
 - 設定ファイルは `jsonschema` に基づく検証スクリプト（未整備の場合は CLI で手動検証）を実施する。
 
@@ -73,7 +65,7 @@
 - Stage1 系コマンド（`pptx template` / `tpl-extract` / `layout-validate` など）の `--template` オプションで指定できるのは `.pptx` ファイルのみ。.potx は PowerPoint で新規 `.pptx` として保存し直す。Stage3 (`pptx compose` / `pptx mapping`) では `jobspec.meta.template_path` にテンプレートを記載する。
 - JSON 仕様の `layout` はテンプレート内のレイアウト名と一致させる。不一致時は既定レイアウトが利用されるため、意図した構成を反映したい場合はテンプレート側の名称を確認する。
 - 画像・表・グラフなどを特定位置へ差し込みたい場合は、テンプレートの図形またはプレースホルダーに一意な名前を付けて JSON の `anchor` に同じ名前を記載する。アンカーが無い場合は既定のフォールバック座標に配置される。
-- 色やフォントはテンプレートのスライドマスター／テーマ設定を直接参照して適用される。テンプレートに反映しない限りスタイルは変わらない点に注意する（`config/branding.json` は設計メモとして参照する）。
+- 色やフォントはテンプレートのスライドマスター／テーマ設定を直接参照して適用される。テンプレートに反映しない限りスタイルは変わらない点に注意し、必要に応じて TemplateStyle スナップショットを確認する。
 - 利用者向けテンプレートは `templates/` ディレクトリ配下に管理し、案件固有のテンプレートは `samples/` など任意の場所に置いたうえで CLI 実行時にパスを明示する。
 - 具体例として、`samples/templates/templates.pptx` にレイアウト名とアンカー命名例を添付している。
 - 画像は連携済みロゴのみを想定する。写真・アイコンなど任意画像はテンプレート側に含めず、必要に応じて後 stage で人手挿入とする。チャートはテキストで構造化可能なデータのみ表形式で表現する。
@@ -110,7 +102,7 @@
 - スライドマスターに JSON 仕様で使用する `layout` と同名のレイアウトを登録し、必要なアウトラインを網羅する。
 - 各レイアウトのテキスト枠や図形は位置・サイズを確定させ、不要なプレースホルダーを削除する。
 - 差し込み対象の図形・テキスト枠には一意な名前を設定し、JSON から `anchor` として参照できるようにする。
-- 配色やフォントはテンプレートのテーマで整え、`config/branding.json` が必要な場合はドキュメント化のために更新する。
+- 配色やフォントはテンプレートのテーマで整え、共有用のスタイル情報が必要な場合は `pptx template` で出力される `branding.json` を設計メモとして保存する。
 - 画像・アイコンなど差し替えが想定される領域にはダミー枠を配置し、同じくアンカー名を付与する。
 - 想定ストーリー（タイトル、アジェンダ、セクション、まとめ等）に対応したスライド種別が不足していないか確認する。
 - `.pptx` 形式で保存し、`soffice` など外部ツールで開いた際に不要なサンプルスライドやメタ情報が残っていないか点検する。

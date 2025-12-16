@@ -206,7 +206,11 @@ class MappingSlideProcessor:
     ) -> list[MappingCandidate]:
         merged = {candidate.layout_id: candidate.score for candidate in scorer_candidates}
         for candidate in card_candidates:
-            merged.setdefault(candidate.layout_id, candidate.score)
+            existing_score = merged.get(candidate.layout_id)
+            if existing_score is None:
+                merged[candidate.layout_id] = candidate.score
+                continue
+            merged[candidate.layout_id] = max(existing_score, candidate.score)
         result = [
             MappingCandidate(layout_id=layout_id, score=score)
             for layout_id, score in merged.items()

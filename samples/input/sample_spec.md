@@ -237,7 +237,7 @@ assets:
 |-----------|------|
 | jobspec.json | テンプレート依存のスライド仕様カタログ |
 | template_spec.json | テンプレート構造仕様 |
-| branding.json | スタイルスナップショット（参考用） |
+| branding.json | TemplateStyle スナップショット（`pptx template` 出力、参考用） |
 | layouts.jsonl | レイアウト構造情報（1行1レイアウト） |
 | diagnostics.json | 抽出・検証時の診断結果 |
 
@@ -592,7 +592,7 @@ config/
 │   ├── extract/                # Stage 1 出力
 │   │   ├── jobspec.json
 │   │   ├── template_spec.json
-│   │   ├── branding.json
+│   │   ├── branding.json       # TemplateStyle スナップショット（参考）
 │   │   ├── layouts.jsonl
 │   │   ├── diagnostics.json
 │   │   └── prompts/           # Static mode 用雛形
@@ -647,7 +647,7 @@ uv run pptx template <template.pptx> \
   [--layout <keyword>] \
   [--anchor <keyword>] \
   [--format <json|yaml>] \
-  [--layout-mode <dynamic|static>] \
+  [--mode <dynamic|static>] \
   [--with-release] \
   [--brand <name>] \
   [--version <value>]
@@ -658,7 +658,7 @@ uv run pptx template <template.pptx> \
 | オプション | 説明 | 既定値 |
 |-----------|------|--------|
 | `--output` | 抽出結果の出力先 | `.pptx/extract` |
-| `--layout-mode` | 運用モード（dynamic/static） | `dynamic` |
+| `--mode` | 運用モード（dynamic/static） | `dynamic` |
 | `--with-release` | リリースメタを生成 | 無効 |
 | `--brand` | ブランド名（--with-release 時） | - |
 | `--version` | テンプレートバージョン | - |
@@ -670,7 +670,7 @@ uv run pptx template samples/templates/templates.pptx
 
 # Static モードで抽出＋リリースメタ生成
 uv run pptx template samples/templates/templates.pptx \
-  --layout-mode static \
+  --mode static \
   --with-release \
   --brand corporate \
   --version 1.0
@@ -1000,7 +1000,7 @@ PowerPoint テンプレート (.pptx)
 | template.pptx | ✅ | テンプレート本体 | ユーザー準備 | S1, S3, S4 |
 | jobspec.json | ✅ | テンプレート仕様カタログ | S1 | S2, S3, S4 |
 | template_spec.json | ○ | テンプレート構造仕様 | S1 | S3 |
-| branding.json | ○ | スタイルスナップショット（参考） | S1 | - |
+| branding.json | ○ | TemplateStyle スナップショット（`pptx template` 出力、参考） | S1 | - |
 | layouts.jsonl | ○ | レイアウト構造（1行1件） | S1 | S3 |
 | diagnostics.json | ○ | 抽出・検証診断結果 | S1 | - |
 | template_release.json | ○ | リリースメタ | S1 | S1（差分比較） |

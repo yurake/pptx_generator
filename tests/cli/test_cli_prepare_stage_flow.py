@@ -819,7 +819,7 @@ def test_build_cards_static_applies_prompt_override(monkeypatch) -> None:
         slide_id="override-slide",
         slide_index=1,
         instructions="- ROI を 2 行で列挙",
-        template_path=".pptx/extract/prompts/01_override.md",
+        template_path=".pptx/template/prompts/01_override.md",
     )
 
     cards, slot_summary, ai_records, prompt_usage = orchestrator._build_cards_static(

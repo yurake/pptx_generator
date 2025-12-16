@@ -2,7 +2,7 @@
 
 ## 目的と出力物
 - stage 2 (`pptx tpl-extract`) の成果物としてテンプレート依存情報のみをまとめた `jobspec.json` を追加する。
-- 既存の `template_spec.json`・`branding.json` と同一ディレクトリ (`.pptx/extract/`) に保存し、stage 3 以降がテンプレ構造を参照できるようにする。
+- 既存の `template_spec.json`・`branding.json` と同一ディレクトリ (`.pptx/template/`) に保存し、stage 3 以降がテンプレ構造を参照できるようにする。
 - 雛形は章構成や本文コンテンツを含めず、レイアウトとプレースホルダー情報の catalog として機能する。
 
 ## jobspec.json スキーマ案
@@ -73,7 +73,7 @@
 5. CLI から `jobspec.json` を `ensure_ascii=False` で出力する。
 
 ## CLI 連携
-- `pptx tpl-extract` 実行時に `.pptx/extract/jobspec.json` を追加で書き出す。
+- `pptx tpl-extract` 実行時に `.pptx/template/jobspec.json` を追加で書き出す。
 - 出力完了メッセージに `jobspec.json` のパスとスライド件数を追記する。
 - エラー時は既存の例外処理を踏襲し、jobspec 生成途中で失敗しても CLI 全体をエラー終了させる。
 

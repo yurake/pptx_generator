@@ -21,11 +21,11 @@
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<template.pptx>` | 解析するテンプレート | ✅ | ✅ | - |
-| `--output <dir>` | 抽出・検証成果物を保存するディレクトリ |  |  | `.pptx/extract` |
+| `--output <dir>` | 抽出・検証成果物を保存するディレクトリ |  |  | `.pptx/template` |
 | `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | テンプレ仕様の出力形式 |  |  | `json` |
-| `--layout-mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
+| `--mode <dynamic\|static>` | テンプレ運用モード。`static` で Blueprint を出力 |  |  | `dynamic` |
 | `--from <slide\|template>` | 静的モード時に抽出へ利用するソースを指定。既定は実スライド |  |  | `slide` |
 | `--slide` | 実スライドの図形・段落スナップショット (`slide_snapshot.json`) を出力する |  |  | 無効 |
 | `--with-release` | リリースメタ（`template_release.json` 等）を生成する |  |  | 無効 |
@@ -37,24 +37,24 @@
 | `--baseline-release <path>` | 過去の `template_release.json` と比較する |  |  | 指定なし |
 | `--golden-spec <spec.json>` | ゴールデンサンプル検証に用いる spec（複数指定可） |  |  | 指定なし |
 
-オプションを省略した場合は、抽出結果が既定の `.pptx/extract/` 配下に出力される。例えば以下のようにテンプレートファイルのみを指定すれば、最小構成で抽出と検証が実行できる。
+オプションを省略した場合は、抽出結果が既定の `.pptx/template/` 配下に出力される。例えば以下のようにテンプレートファイルのみを指定すれば、最小構成で抽出と検証が実行できる。
 
 ```bash
 uv run pptx template samples/templates/templates.pptx
 ```
 
 主要成果物:
-- `.pptx/extract/template_spec.json` / `template_spec.yaml`
-- `.pptx/extract/jobspec.json`
-- `.pptx/extract/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
-- `.pptx/extract/layouts.jsonl`
-- `.pptx/extract/diagnostics.json`（`diff_report.json` は比較時のみ）
-- `.pptx/extract/slide_snapshot.json`（`--slide` 指定時。図形寸法・z-order・回転・プレースホルダー種別、各段落のフォント・整列・インデント・行間など実スライドの実体データを集約）
+- `.pptx/template/template_spec.json` / `template_spec.yaml`
+- `.pptx/template/jobspec.json`
+- `.pptx/template/branding.json`（テンプレートから抽出したスタイルスナップショット。運用メモ用途）
+- `.pptx/template/layouts.jsonl`
+- `.pptx/template/diagnostics.json`（`diff_report.json` は比較時のみ）
+- `.pptx/template/slide_snapshot.json`（`--slide` 指定時。図形寸法・z-order・回転・プレースホルダー種別、各段落のフォント・整列・インデント・行間など実スライドの実体データを集約）
 - `--with-release` 指定時は `.pptx/release/` に `template_release.json`, `release_report.json`, `golden_runs.json`
 
-`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--layout-mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
+`pptx template` は抽出完了後にレイアウト検証を自動実行するため、通常は本コマンド単体でテンプレ が完結する。`--mode=static` を指定すると `template_spec.json` に Blueprint (`slides[*].slots[*]`) が含まれ、静的テンプレ運用に必要な `slot_id` 情報を自動生成する。詳細な制御が必要な場合は以下の個別サブコマンドを利用する。
 
-> static モードでテンプレを抽出した場合、`.pptx/extract/prompts/` にスライド単位のプロンプト雛形 (`01_<layout>.md`) と `.pptx/slide_inputs.md` を同時出力する。`<<<user-editable:*>` ブロックのみ編集すると、stage 2 の `pptx prepare --mode static` が自動的に LLM プロンプトへ取り込み、AI ログ (`prepare_ai_log.json`) と `ai_generation_meta.json` に適用結果が記録される。`.pptx/slide_inputs.md` には `01_<layout>` をキーにカード生成時に参照するデータファイルパスを記述できる。
+> static モードでテンプレを抽出した場合、`.pptx/template/prompts/` にスライド単位のプロンプト雛形 (`01_<layout>.md`) と `.pptx/slide_inputs.md` を同時出力する。`<<<user-editable:*>` ブロックのみ編集すると、stage 2 の `pptx prepare --mode static` が自動的に LLM プロンプトへ取り込み、AI ログ (`prepare_ai_log.json`) と `ai_generation_meta.json` に適用結果が記録される。`.pptx/slide_inputs.md` には `01_<layout>` をキーにカード生成時に参照するデータファイルパスを記述できる。
 
 #### 詳細: 個別コマンド
 
@@ -64,7 +64,7 @@ uv run pptx template samples/templates/templates.pptx
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `--template <path>` | 解析する `.pptx` テンプレート | ✅ |  | - |
-| `--output <dir>` | 抽出結果を保存するディレクトリ |  |  | `.pptx/extract` |
+| `--output <dir>` | 抽出結果を保存するディレクトリ |  |  | `.pptx/template` |
 | `--layout <keyword>` | レイアウト名（前方一致）で抽出対象を絞る |  |  | 全レイアウト |
 | `--anchor <keyword>` | アンカー名（前方一致）で抽出対象を絞る |  |  | 全アンカー |
 | `--format <json\|yaml>` | 出力形式を選択 |  |  | `json` |
@@ -103,12 +103,12 @@ uv run pptx template samples/templates/templates.pptx
 
 #### `pptx prepare`
 - `--mode` でテンプレ運用モードを明示する。`dynamic` は従来どおりテンプレ依存なしでカードを生成し、`static` は Blueprint を参照して slot 単位のカードを生成する。
-- 静的モードでは `jobspec.meta.template_spec_path` に記録された Blueprint を参照する。`jobspec` が見つからない場合は `.pptx/extract/jobspec.json` を自動探索し、`--jobspec` で明示指定も可能。`--mode=static` と `--page-limit` の併用はできない。
+- 静的モードでは `jobspec.meta.template_spec_path` に記録された Blueprint を参照する。`jobspec` が見つからない場合は `.pptx/template/jobspec.json` を自動探索し、`--jobspec` で明示指定も可能。`--mode=static` と `--page-limit` の併用はできない。
 - `.pptx/slide_inputs.md` を用意するとスライドごとに入力データを指定でき、全スライド分が記載されていれば `<prepare_path>` 引数を省略できる。未指定スライドがある場合はエラー。
 - `<PREPARE_PATH>` はスペースまたはカンマ区切りで複数指定できる。JSON/JSONC/Markdown/TXT は構造化入力として結合し、PDF・URL・data URI は ContentImportService でテキスト化したうえで章へ変換する。
 - 生成カード枚数を制御したい場合は `-p/--page-limit` を利用する。`--output` で成果物ディレクトリを変更できる。
 - 取り込んだソースは `ai_generation_meta.json.import_sources` と `audit_log.json.prepare_normalization.import_sources` に記録され、後続ステージや監査で参照できる。
-- static モードで `.pptx/extract/prompts/` 配下の Markdown を編集すると、該当スライドの user-editable 節が LLM プロンプトへ注入される（雛形は `pptx template` 実行時に自動生成され、未編集ファイルは既定プロンプトを保持する）。
+- static モードで `.pptx/template/prompts/` 配下の Markdown を編集すると、該当スライドの user-editable 節が LLM プロンプトへ注入される（雛形は `pptx template` 実行時に自動生成され、未編集ファイルは既定プロンプトを保持する）。
 - CLI 実装では `resolve_static_context` が jobspec・Blueprint・slide_inputs を正規化し、`PrepareCommandArtifacts` が `prepare_card.json` など成果物の一括書き出しを担う。外部モジュールからも同 API を利用できるため、GUI やバッチスクリプトからの再利用が容易になっている。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
@@ -116,7 +116,7 @@ uv run pptx template samples/templates/templates.pptx
 | `<PREPARE_PATH …>` | プレペア入力。スペース/カンマ区切りで複数指定可（JSON/JSONC/Markdown/TXT/PDF/URL/data URI） | Dynamic モードで ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/prepare` |
 | `--mode <dynamic\|static>` | 生成モードを指定する | ✅ |  | - |
-| `--jobspec <path>` | `jobspec.json` を指定（template_spec_path を参照） | 静的モードで ✅ |  | `.pptx/extract/jobspec.json` を探索 |
+| `--jobspec <path>` | `jobspec.json` を指定（template_spec_path を参照） | 静的モードで ✅ |  | `.pptx/template/jobspec.json` を探索 |
 | `-p/--page-limit <int>` | 生成するカード枚数の上限 |  |  | 指定なし |
 
 実行例:

@@ -14,7 +14,7 @@
 
 ## 成果物
 - 承認済みテンプレート PPTX（最新版）。
-- `.pptx/extract/<template_id>/` 内の成果物
+- `.pptx/template/<template_id>/` 内の成果物
   - `template_spec.json`（または `template_spec.yaml`）
   - `jobspec.json`
   - `branding.json`
@@ -41,8 +41,8 @@
    - 抽出成果物とリリースメタをリポジトリ／テンプレ資産管理ストレージへ配置し、後続 stage（コンテンツ準備・マッピング）から参照可能にする。
 
 ## 推奨 CLI
-- 標準フロー: `uv run pptx template templates/libraries/acme/v1/template.pptx --output .pptx/extract/acme_v1`
-- リリースメタ生成を含める場合: `uv run pptx template templates/libraries/acme/v1/template.pptx --with-release --brand ACME --version v1 --output .pptx/extract/acme_v1`
+- 標準フロー: `uv run pptx template templates/libraries/acme/v1/template.pptx --output .pptx/template/acme_v1`
+- リリースメタ生成を含める場合: `uv run pptx template templates/libraries/acme/v1/template.pptx --with-release --brand ACME --version v1 --output .pptx/template/acme_v1`
 - 高度な運用（個別コマンドの活用）は `docs/design/cli/cli-command-reference.md` の「テンプレ 詳細オプション」を参照する（`tpl-extract` / `layout-validate` / `tpl-release` を直接呼び出すケース）。
 
 ## 品質ゲート

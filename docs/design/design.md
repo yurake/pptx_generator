@@ -42,7 +42,7 @@
 README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
 1. **テンプレ**（自動＋HITL）  
-   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
+  テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/template/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
@@ -191,7 +191,7 @@ slides:
           right_indent_in: float
           first_line_indent_in: float
 - レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続 stage が同名アンカーで参照できるようにする。
-- 段落スタイルは `config/branding.json` の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合はブランド既定を上書きする。
+- 段落スタイルはテンプレートから抽出した TemplateStyle の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合は TemplateStyle 既定を上書きする。
 assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
@@ -209,7 +209,7 @@ assets:
 
 ## 6. テンプレート設計
 - `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
-- ブランドカラー・フォントおよびレイアウト別スタイルを `config/branding.json` (`theme` / `components` / `layouts`) に定義し、Renderer・Analyzer・Polisher が共有。
+- ブランドカラー・フォントおよびレイアウト別スタイルはテンプレートから抽出した TemplateStyle（`branding.json` スナップショットの `theme` / `components` / `layouts`）で共有し、Renderer・Analyzer・Polisher が利用する。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
 - 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
 - テンプレートファイルは .pptx 形式のみ対応。.potxを利用する場合は、PowerPointで新規 .pptx を作成して保存してください。
