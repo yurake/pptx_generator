@@ -18,7 +18,7 @@
   - `template_spec.json`（または `template_spec.yaml`）
   - `jobspec.json`
   - `branding.json`
-  - `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）。`diagnostics.json.template_ai` に LLM 応答の要約を出力し、usage_tags は Template AI が `config/usage_tags.json` の canonical 語彙へ正規化した結果を `layouts.jsonl` に記録する。Template AI のプロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などを選択できる。さらに `layouts.jsonl.meta.layout_description.overview`（全体概要）と `layouts.jsonl.meta.layout_description.elements[*]`（プレースホルダーごとの説明リスト）を必ず出力し、Stage2/Stage3 の LLM プロンプトやログで共有する。
+- `layouts.jsonl` / `diagnostics.json` / `diff_report.json`（比較時のみ）。`diagnostics.json.template_ai` に LLM 応答の要約を出力し、usage_tags は Template AI が `src/pptx_generator/config/usage_tags.json` の canonical 語彙へ正規化した結果を `layouts.jsonl` に記録する。Template AI のプロバイダは `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）で OpenAI / Azure OpenAI / Anthropic Claude / AWS Bedrock（Claude）などを選択できる。さらに `layouts.jsonl.meta.layout_description.overview`（全体概要）と `layouts.jsonl.meta.layout_description.elements[*]`（プレースホルダーごとの説明リスト）を必ず出力し、Stage2/Stage3 の LLM プロンプトやログで共有する。
   - `slide_snapshot.json`（`pptx template --slide` 指定時）。テンプレ実スライドに存在する全図形・プレースホルダーの座標 / 寸法 / z-order / 回転 / テキスト枠余白と、段落ごとのフォント名・太字/斜体・整列・行間・インデント・色を記録し、TemplateExtractor や Analyzer スナップショットとの突合・差分検証に利用する。
 - `.pptx/release/` 内の成果物（`--with-release` 指定時）
   - `template_release.json`
