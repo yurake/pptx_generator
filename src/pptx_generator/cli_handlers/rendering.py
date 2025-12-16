@@ -295,6 +295,11 @@ def run_generate_command(config: GenerateCommandConfig) -> GenerateCommandResult
 
 def resolve_config_path(value: str, *, base_dir: Path | None = None) -> Path:
     resolved = find_config_path(value, base_dir=base_dir)
+    if resolved is None and Path(value).name == "rules.json":
+        # 後方互換: legacy 名称が指定された場合は pipeline_rules.json へのフォールバックも試す
+        fallback = find_config_path(Path(value).with_name("pipeline_rules.json"), base_dir=base_dir)
+        if fallback is not None:
+            resolved = fallback
     if resolved is None:
         candidate = Path(value)
         msg = f"設定ファイルで指定されたパスが見つかりません: {candidate}"

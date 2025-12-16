@@ -19,7 +19,7 @@ def write_json(path: Path, data: dict) -> Path:
 class TestRulesConfig:
     def test_load_with_custom_values(self, tmp_path: Path) -> None:
         config_path = write_json(
-            tmp_path / "rules.json",
+            tmp_path / "pipeline_rules.json",
             {
                 "title": {"max_length": 10},
                 "bullet": {"max_length": 90, "max_level": 2},
@@ -73,7 +73,7 @@ class TestRulesConfig:
         assert config.polisher.arguments == ("--profile", "default")
 
     def test_load_fallback_to_defaults(self, tmp_path: Path) -> None:
-        config_path = write_json(tmp_path / "rules.json", {})
+        config_path = write_json(tmp_path / "pipeline_rules.json", {})
 
         config = RulesConfig.load(config_path)
 
