@@ -756,7 +756,7 @@ flowchart TB
 - 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-16 更新）
 - 期待成果:
-  - テンプレ抽出コマンドで Template AI を既定起動し、`config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
+- テンプレ抽出コマンドで Template AI を既定起動し、`src/pptx_generator/config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
   - `diagnostics.json.template_ai` と CLI ログで推論状況・未知語・フォールバックを可視化し、監査できるようにする。
   - Stage3 の推奨スコアリングが同じ語彙を利用するよう整合評価を行い、差分があれば policy／スコアリングルールを調整する。
 - 次アクション: Stage3 layout_ai policy との語彙整合とスコアリング差異をレビューし、必要なテスト・ドキュメント更新を反映する。完了後は RM-064 へバトンする。

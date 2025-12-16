@@ -24,8 +24,8 @@
 - `docs/notes/`: 調査メモや議事録。短期的な共有事項はここに保存し、アーカイブ化が必要なら `docs/todo/` のメモにも記録する。
 - `docs/roadmap/`: 大項目 ToDo。テーマステータスを更新した場合は、関連する ToDo ファイルから相互リンクを張る。
 - `docs/todo/`: ToDo 管理。テンプレートに沿った更新ルールは `docs/todo/README.md` を参照。
-- `config/`: CLI が参照する設定を配置（例: `usage_tags.json`）。ルール設定はパッケージ同梱の `src/pptx_generator/config/pipeline_rules.json` を利用する。更新時は対応する requirements/design/runbook へ根拠を記録する。
-  - `config/usage_tags.json` を改訂する場合は Template AI / layout AI の語彙整合を確認し、`docs/requirements/stages/stage-01-template.md` と `docs/design/stages/stage-01-template.md` の記述を更新する。環境変数で `mock` 以外を利用する手順を README と runbook に反映すること。
+- `config/`: CLI が参照する設定を配置（例: AI ポリシー）。ルール設定はパッケージ同梱の `src/pptx_generator/config/pipeline_rules.json` を参照する。usage_tags の canonical 定義は `src/pptx_generator/config/usage_tags.json` に集約されている（環境変数 `PPTX_GENERATOR_USAGE_TAGS` で上書き可能）。更新時は対応する requirements/design/runbook へ根拠を記録する。
+  - usage_tags を改訂する場合は Template AI / layout AI の語彙整合を確認し、`docs/requirements/stages/stage-01-template.md` と `docs/design/stages/stage-01-template.md` の記述を更新する。環境変数で `mock` 以外を利用する手順を README と runbook に反映すること。
 - `assets/`: ロゴ・図版など共有資産の保管場所。更新フローと注意事項は `assets/README.md` を参照し、機微情報が混入していないかを必ず確認する。
 
 ## 更新手順
