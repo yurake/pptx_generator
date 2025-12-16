@@ -1,7 +1,7 @@
 # 設定・テンプレート管理ポリシー
 
 ## 対象範囲
-- `config/rules.json` など設定ファイル、および `pptx template` が出力するテンプレートスタイル（`branding.json` スナップショット）
+- `src/pptx_generator/config/pipeline_rules.json` など設定ファイル、および `pptx template` が出力するテンプレートスタイル（`branding.json` スナップショット）
 - `.pptx` テンプレートおよび `rules/polish.yaml`
   ※テンプレートは .pptx のみ対応（.potxは未対応）。.potxを利用したい場合はPowerPointで新規 .pptx として保存してください。
 
@@ -15,7 +15,8 @@
 - スキーマバージョンは `version: "layout-style-v1"` を既定とし、テンプレートのテーマやプレースホルダーから得られたフォント／カラー／配置のサマリを含む。
 - 詳細な設計背景と運用ルールは [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md) を参照する。
 
-## rules.json の構成
+## pipeline_rules.json の構成
+- 既定値はパッケージ同梱の `src/pptx_generator/config/pipeline_rules.json` を参照する。
 - タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング stage での警告に委譲する。
 - `forbidden_words` は禁則語を列挙し、バリデーションで一致したテキストを拒否する。
 - `analyzer` セクションでは自動診断の閾値を管理する。

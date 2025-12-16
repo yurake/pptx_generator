@@ -162,7 +162,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
-| `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
+| `--rules <path>` | マッピング時に参照するルール設定 |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
 
@@ -189,7 +189,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
 | `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
-| `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
+| `--rules <path>` | 検証ルール設定ファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 | （自動） | draft 成果物の出力先 |  |  | `<output>/draft` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
@@ -205,7 +205,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `<generate_ready.json>` | generate_ready ドキュメント | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
-| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `config/rules.json` |
+| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
 | `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
 | `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
@@ -219,8 +219,8 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.rules_path` |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
@@ -233,7 +233,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<generate_ready.json>` | レンダリング対象の generate_ready | ✅ | ✅ | - |
-| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `config/rules.json` |
+| `--rules <path>` | 文字数や段落レベル制限を定義したルールを指定 |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
@@ -243,8 +243,8 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒数 |  |  | 120 |
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
 | `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 |  |  | ルール設定の値 |
-| `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.rules_path` |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}` `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
@@ -268,6 +268,6 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 
 
 ## 運用上のポイント
-- Polisher を有効化する場合は .NET 8 SDK を導入し、`config/rules.json` の `polisher` 設定と整合させる。
+- Polisher を有効化する場合は .NET 8 SDK を導入し、`src/pptx_generator/config/pipeline_rules.json` の `polisher` 設定と整合させる。
 - PDF 変換機能を利用する場合は LibreOffice (headless 実行可能) を導入し、`soffice --headless --version` で動作確認する。
 - CLI オプションの変更に伴う運用手順は `docs/runbooks/` を更新し、ToDo へメモを残す。

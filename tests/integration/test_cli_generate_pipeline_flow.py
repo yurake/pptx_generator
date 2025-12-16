@@ -190,7 +190,7 @@ def test_cli_template_basic(tmp_path: Path) -> None:
 def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     spec_path = tmp_path / "jobspec.json"
     spec_path.write_text("{}", encoding="utf-8")
-    (tmp_path / "rules.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "pipeline_rules.json").write_text("{}", encoding="utf-8")
 
     monkeypatch.setattr(
         "pptx_generator.cli_handlers.compose.load_jobspec",
@@ -220,7 +220,7 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 analysis_summary_path=None,
                 show_layout_reasons=False,
                 output_dir=tmp_path / "compose",
-                rules=tmp_path / "rules.json",
+                rules=tmp_path / "pipeline_rules.json",
                 prepare_cards=tmp_path / "prepare_card.json",
             )
 
@@ -233,7 +233,7 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
 def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     spec_path = tmp_path / "jobspec.json"
     spec_path.write_text("{}", encoding="utf-8")
-    rules_path = tmp_path / "rules.json"
+    rules_path = tmp_path / "pipeline_rules.json"
     rules_path.write_text("{}", encoding="utf-8")
 
     monkeypatch.setattr(

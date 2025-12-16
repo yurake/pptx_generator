@@ -129,7 +129,7 @@ def test_mapping_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
 
     cmd = create_mapping_command(
         default_output_dir=tmp_path / "out",
-        default_rules_path=_touch(tmp_path / "rules.json"),
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
         default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
     )
 
@@ -141,7 +141,7 @@ def test_mapping_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
             "--output",
             str(tmp_path / "out"),
             "--rules",
-            str(tmp_path / "rules.json"),
+            str(tmp_path / "pipeline_rules.json"),
             "--prepare-cards",
             str(tmp_path / "prepare_card.json"),
         ],
@@ -174,7 +174,7 @@ def test_compose_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
     cmd = create_compose_command(
         default_appendix_limit=0,
         default_output_dir=tmp_path / "out",
-        default_rules_path=_touch(tmp_path / "rules.json"),
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
         default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
         default_draft_filename="draft.json",
         default_approved_filename="approved.json",
@@ -192,7 +192,7 @@ def test_compose_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
             "--output",
             str(tmp_path / "out"),
             "--rules",
-            str(tmp_path / "rules.json"),
+            str(tmp_path / "pipeline_rules.json"),
             "--prepare-cards",
             str(tmp_path / "prepare_card.json"),
         ],
@@ -226,7 +226,7 @@ def test_gen_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> N
     cmd = create_gen_command(
         default_output_dir=tmp_path / "out",
         default_pptx_name="out.pptx",
-        default_rules_path=_touch(tmp_path / "rules.json"),
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
         default_pdf_output="out.pdf",
         default_pdf_timeout=10,
         default_pdf_retries=1,
@@ -242,7 +242,7 @@ def test_gen_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> N
             "--pptx-name",
             "out.pptx",
             "--rules",
-            str(tmp_path / "rules.json"),
+            str(tmp_path / "pipeline_rules.json"),
         ],
         catch_exceptions=False,
     )

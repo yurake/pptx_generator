@@ -39,7 +39,7 @@
 | `--appendix-limit <int>` | 付録枚数の上限 | `5` |
 | `--import-analysis <path>` | `analysis_summary.json` のパス | 未指定 |
 | `--output, -o <dir>` | `generate_ready.json` 等の出力ディレクトリ | `.pptx/compose` |
-| `--rules <path>` | 検証ルール設定ファイル | `config/rules.json` |
+| `--rules <path>` | 検証ルール設定ファイル | `src/pptx_generator/config/pipeline_rules.json` |
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit` など。詳細は CLI リファレンスを参照。

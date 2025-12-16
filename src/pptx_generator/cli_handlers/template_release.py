@@ -41,7 +41,7 @@ from .common import load_jobspec
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_RULES_PATH = get_default_config_path("rules.json")
+DEFAULT_RULES_PATH = get_default_config_path("pipeline_rules.json")
 
 
 @dataclass(slots=True)
