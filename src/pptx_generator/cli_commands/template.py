@@ -24,7 +24,7 @@ def create_template_command(
     *,
     default_extract_output: Path,
     default_release_output: Path,
-    default_layout_mode: str,
+    default_mode: str,
     default_template_ai_policy: Path | None = None,
 ) -> click.Command:
     @click.command("template")
@@ -62,7 +62,7 @@ def create_template_command(
     @click.option(
         "--mode",
         type=click.Choice(["dynamic", "static"], case_sensitive=False),
-        default=default_layout_mode,
+        default=default_mode,
         show_default=True,
         help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
     )
