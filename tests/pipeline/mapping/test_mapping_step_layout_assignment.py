@@ -9,15 +9,27 @@ from typing import Iterable
 
 import pytest
 
-from pptx_generator.models import (ContentApprovalDocument, ContentDocumentMeta,
-                                   ContentElements, ContentSlide,
-                                   ContentTableData, DraftDocument,
-                                   DraftSection, DraftSlideCard,
-                                   GenerateReadyDocument, JobAuth, JobMeta,
-                                   JobSpec, PipelineFallbackError, Slide,
-                                   SlideTable)
+from pptx_generator.models import (
+    ContentApprovalDocument,
+    ContentDocumentMeta,
+    ContentElements,
+    ContentSlide,
+    ContentTableData,
+    DraftDocument,
+    DraftSection,
+    DraftSlideCard,
+    GenerateReadyDocument,
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    MappingCandidate,
+    PipelineFallbackError,
+    Slide,
+    SlideTable,
+)
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
+from pptx_generator.pipeline.mapping.processor import MappingSlideProcessor
 from pptx_generator.prepare import (
     PrepareBodyBlock,
     PrepareCard,
@@ -65,6 +77,25 @@ def _attach_minimal_draft_document(context: PipelineContext, spec: JobSpec) -> N
     draft_section = DraftSection(name="auto", order=1, slides=draft_cards)
     draft_document = DraftDocument(sections=[draft_section])
     context.add_artifact("draft_document", draft_document)
+
+
+def test_merge_layout_candidates_prefers_card_score(tmp_path: Path) -> None:
+    processor = MappingSlideProcessor(
+        options=MappingOptions(output_dir=tmp_path),
+        layout_catalog={},
+    )
+    scorer_candidates = [
+        MappingCandidate(layout_id="title", score=0.5),
+        MappingCandidate(layout_id="two_column", score=0.3),
+    ]
+    card_candidates = [MappingCandidate(layout_id="two_column", score=0.95)]
+
+    merged = processor._merge_layout_candidates(scorer_candidates, card_candidates)
+
+    assert merged[0].layout_id == "two_column"
+    assert merged[0].score == 0.95, "カード側のスコアがヒューリスティックより低くならないこと"
+    assert merged[1].layout_id == "title"
+    assert merged[1].score == 0.5
 
 
 def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
