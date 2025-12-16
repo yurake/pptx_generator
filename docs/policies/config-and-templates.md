@@ -38,7 +38,7 @@
   - 既存の `static_rules` は廃止し、Intent / Media それぞれのルールに分離する。
 - シノニムは JSON に記載する（例: `title` の synonyms に `cover`, `headline` を追加）。`_SYNONYM_MAP` はコード内で自動生成されるため個別メンテナンスは不要。
 - 更新手順:
-  1. `config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する。
+  1. `src/pptx_generator/config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する（必要に応じて `PPTX_GENERATOR_USAGE_TAGS` で外部パスを指定）。
   2. `uv run --extra dev pytest tests/test_utils_usage_tags.py tests/test_template_ai.py tests/test_layout_recommender.py` を実行して整合性を確認する。  
      必要に応じて `scripts/test_template_ai.sh` を併用し、LLM プロンプトへの影響を確認する。
   3. Layout AI / Template AI のポリシーテンプレート（`config/ai_policies/layout.json`, `config/ai_policies/template.json`）にタグ説明を反映する。
