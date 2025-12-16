@@ -17,7 +17,7 @@
 - プロンプトやモデルの既定値は `config/template_ai_policies.json` で管理し、policy 単位で `provider` / `model` / `temperature` / `max_tokens` を上書きできる。
 - `config/usage_tags.json` に canonical タグと説明、静的ルールを集約し、LLM 応答の正規化や `mock` 利用時のフォールバックに再利用する。
 - `pptx_generator.template_ai.llm` ロガーへ JSON 応答を出力し、`diagnostics.json.template_ai` に推論ソース・タグ・未知語・エラーを記録する。静的ルールが適用された場合も同様に記録し、後続 stage から差分を確認できるようにする。
-- 静的テンプレ専用フック: `.pptx/template/` への成果物出力完了後、CLI はテンプレ ID（PPTX ファイル名 stem）に対応する `external/<template_id>/hooks.json` を探索する。静的モード (`--layout-mode static`) でフックが定義されていれば、ステージ完了後に以下を環境変数で提供して外部スクリプトを呼び出す。  
+- 静的テンプレ専用フック: `.pptx/template/` への成果物出力完了後、CLI はテンプレ ID（PPTX ファイル名 stem）に対応する `external/<template_id>/hooks.json` を探索する。静的モード (`--mode static`) でフックが定義されていれば、ステージ完了後に以下を環境変数で提供して外部スクリプトを呼び出す。  
   - `PPTX_STAGE=template` / `PPTX_TEMPLATE_ID=<template_id>`  
   - `PPTX_TEMPLATE_SPEC_PATH` / `PPTX_JOBSPEC_SCAFFOLD_PATH` / `PPTX_BRANDING_PATH`  
   - スライド単位: `PPTX_SLIDE_KEY=NN_slug`（例: `01_system-layout`）、`PPTX_SLIDE_ID`、`PPTX_SLIDE_LAYOUT`、必要に応じて `PPTX_PROMPT_TEMPLATE_PATH`  
