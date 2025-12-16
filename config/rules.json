@@ -27,7 +27,6 @@
   },
   "polisher": {
     "enabled": false,
-    "timeout_sec": 90,
-    "rules_path": "config/polisher-rules.json"
+    "timeout_sec": 90
   }
 }

@@ -33,7 +33,6 @@
     "enabled": true,
     "status": "success",
     "elapsed_ms": 420,
-    "rules_path": "config/polisher-rules.json",
     "summary": {
       "font_adjustments": 5,
       "color_adjustments": 2
