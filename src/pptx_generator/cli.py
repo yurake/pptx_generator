@@ -39,7 +39,6 @@ from .cli_handlers.template_extraction import (
 from .settings.paths import get_default_config_path
 
 DEFAULT_RULES_PATH = get_default_config_path("rules.json")
-DEFAULT_RETURN_REASONS_PATH = get_default_config_path("return_reasons.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/template/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
@@ -143,7 +142,6 @@ outline = create_outline_command(
     default_output_dir=DEFAULT_DRAFT_OUTPUT_DIR,
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
     default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
-    default_return_reasons_path=DEFAULT_RETURN_REASONS_PATH,
     default_draft_filename=DEFAULT_DRAFT_FILENAME,
     default_approved_filename=DEFAULT_APPROVED_FILENAME,
     default_draft_log_filename=DEFAULT_DRAFT_LOG_FILENAME,

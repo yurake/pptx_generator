@@ -59,15 +59,15 @@
   - フィールド: `template_id`, `name`, `structure_pattern`, `required_sections[]`, `optional_sections[]`, `constraints`.
   - `constraints` は `max_main_pages`, `appendix_policy`, `tags[]` を想定。`appendix_policy` は `overflow|allow|block`。
   - 適合レポート: `draft_meta.template_mismatch[]` で不足章や超過章を特定し、`severity` を `warn/blocker` で記録する。
-- 差戻し理由テンプレ (`return_reasons.json`)
-  - 配列形式で管理し、`code`, `label`, `description`, `severity`, `default_actions[]`, `related_analyzer_tags[]` を保持。
-  - CLI は `uv run pptx outline ... --return-reasons` で一覧表示、差戻し操作では `--return-reason <code>` を必須化。
+- 差戻し理由テンプレ
+  - 内蔵テンプレートとして `code`, `label`, `description`, `severity`, `default_actions[]`, `related_analyzer_tags[]` を保持。
+  - CLI から参照する差戻しコードはこの内蔵テンプレートに従う。
 - Analyzer サマリ (`analysis_summary.json`)
   - stage 5 がスライド単位で出力。`severity_counts`, `layout_consistency`, `blocking_tags`, `last_analyzed_at` を含む。
   - Draft stage 取り込み時にスライド ID が未一致であれば詳細エラーを返す。
 - CLI / API 追加仕様
-  - 新オプション: `--show-layout-reasons`, `--chapter-template`, `--import-analysis`, `--return-reasons`.
-  - 新 API: `GET /draft/templates`, `GET /draft/return-reasons`, `POST /draft/analyzer/import`。
+  - 新オプション: `--show-layout-reasons`, `--chapter-template`, `--import-analysis`。
+  - 新 API: `GET /draft/templates`, `POST /draft/analyzer/import`。
   - 既存レスポンスに `layout_score_detail`, `chapter_template_id`, `template_match_score`, `analyzer_summary` を追加。
 - テスト観点
   - Analyzer インポート検証（欠落 or 不一致）、差戻しテンプレ必須化、章テンプレ強制指定の挙動を PoC テスト計画へ追加。

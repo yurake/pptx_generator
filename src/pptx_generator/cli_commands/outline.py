@@ -17,7 +17,6 @@ def create_outline_command(
     default_output_dir: Path,
     default_appendix_limit: int,
     default_prepare_cards_path: Path,
-    default_return_reasons_path: Path,
     default_draft_filename: str,
     default_approved_filename: str,
     default_draft_log_filename: str,
@@ -66,19 +65,6 @@ def create_outline_command(
         help="analysis_summary.json のパス",
     )
     @click.option(
-        "--return-reasons-path",
-        type=click.Path(dir_okay=False, writable=False, path_type=Path),
-        default=default_return_reasons_path,
-        show_default=True,
-        help="差戻し理由テンプレート辞書のパス",
-    )
-    @click.option(
-        "--return-reasons",
-        is_flag=True,
-        default=False,
-        help="差戻し理由テンプレート一覧を表示して終了する",
-    )
-    @click.option(
         "--show-layout-reasons",
         is_flag=True,
         default=False,
@@ -98,8 +84,6 @@ def create_outline_command(
         structure_pattern: str | None,
         appendix_limit: int,
         analysis_summary_path: Path | None,
-        return_reasons_path: Path,
-        return_reasons: bool,
         show_layout_reasons: bool,
         prepare_cards: Path,
     ) -> None:
@@ -114,8 +98,6 @@ def create_outline_command(
             analysis_summary_path=analysis_summary_path,
             prepare_cards=prepare_cards,
             require_prepare=True,
-            return_reasons_path=return_reasons_path,
-            return_reasons=return_reasons,
             show_layout_reasons=show_layout_reasons,
             draft_filename=default_draft_filename,
             approved_filename=default_approved_filename,
