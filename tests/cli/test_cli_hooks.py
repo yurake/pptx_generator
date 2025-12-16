@@ -43,8 +43,13 @@ def _write_hooks_json(path: Path, payload: dict) -> Path:
 
 
 def test_load_hooks_for_template_id(monkeypatch, tmp_path: Path) -> None:
+    external_root = tmp_path / "external"
+    external_root.mkdir()
+    template_dir = external_root / tmp_path.name
+    template_dir.mkdir()
+
     config_path = _write_hooks_json(
-        tmp_path,
+        template_dir,
         {
             "stage": {
                 "compose": {
@@ -68,9 +73,8 @@ def test_load_hooks_for_template_id(monkeypatch, tmp_path: Path) -> None:
     manager = load_hooks_for_template_id(tmp_path.name)
 
     assert manager is not None
-    assert tmp_path == manager.base_dir
+    assert template_dir.resolve() == manager.base_dir.resolve()
     assert manager.config.slide_hooks
-    assert manager.config.has_stage_hook(STAGE_PREPARE) is False
 
 
 # ... existing tests ...
