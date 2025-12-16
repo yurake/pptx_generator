@@ -15,14 +15,14 @@
 | CLI | `pptx compose` / `pptx outline` | Click | compose が stage 3 全体をラップし、outline が構成再実行を担う |
 
 ## 入出力
-- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`（ログ／AIメタのパスは `prepare_card.json.meta.*` から参照）、（任意）`analysis_summary.json`、差戻し理由辞書。
+- 入力: `jobspec.json`, `layouts.jsonl`, `prepare_card.json`（ログ／AIメタのパスは `prepare_card.json.meta.*` から参照）、（任意）`analysis_summary.json`。差戻し理由テンプレートは内蔵定義を利用する。
 - 出力: `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json`。
 
 ## ワークフロー概要
 1. `pptx compose` が Prepare 成果物とテンプレ構造を読み込み、通常の章構成を生成する。
 2. Slide ID Aligner が `prepare_card.json` と `jobspec.json` を参照し、AI マッチングでカード ↔ スライド ID を突合。採用された ID は `content_approved` に反映し、信頼度や未確定カードをログへ記録する。
 3. `CardLayoutRecommender` がカード単位でレイアウト候補を算出し、スコア内訳と共に `draft_mapping_log.json` に記録する。Analyzer 連携がある場合は重大度情報を候補に付与する。
-4. HITL が CLI から章・スライド単位で承認／差戻し／付録送りを行い、操作履歴を `draft_review_log.json` に追記する。差戻し理由コードは `return_reasons.json` の定義に従って必須入力とする。
+4. HITL が CLI から章・スライド単位で承認／差戻し／付録送りを行い、操作履歴を `draft_review_log.json` に追記する。差戻し理由コードは内蔵テンプレートの定義に従って必須入力とする。
 5. GenerateReady Builder が承認済みカードをテンプレ構造と突合し、カードのメッセージ／サポートポイントを `elements` として再構成しつつ、フォールバック（縮約→分割→付録送り）を適用しながら `generate_ready.json` を生成する。生成されるスライド数は PrepareCard に依存し、未割当の JobSpec スライドは出力しない。
 6. `generate_ready_meta.json` を出力し、承認統計・AI 推薦採用件数・Analyzer サマリ・監査メタ情報を集約する。
 
@@ -43,7 +43,7 @@
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit` など。詳細は CLI リファレンスを参照。
-- 込み入った診断を確認する場合は `--show-layout-reasons`・`--return-reasons`・`--preflight` を併用し、差戻し理由テンプレやレイアウト判定根拠を CLI で即時確認できるようにする。
+- 込み入った診断を確認する場合は `--show-layout-reasons`・`--preflight` を併用し、レイアウト判定根拠を CLI で即時確認できるようにする。差戻し理由コードは内蔵テンプレートを参照する。
 - Analyzer 連携を再評価したい場合は `--import-analysis <path>` を指定し、`analysis_summary.json` の重大度情報を取り込む。
 
 ### `pptx outline`
@@ -64,8 +64,8 @@
 - CLI では `--show-layout-reasons` 指定時に各指標の貢献度を可視化し、HITL が採用判断を行いやすくする。
 
 ### 差戻し理由テンプレート
-- `return_reasons.json` で差戻しコード（例: `STRUCTURE_GAP`, `ANALYZER_BLOCKER`）と推奨対応を管理し、ドラフト操作時の必須入力として扱う。
-- CLI は `--return-reasons` を用いてコード一覧と説明を提示し、差戻し記録時に `--return-reason <code> --note <text>` 形式で受け付ける。
+- 差戻しコード（例: `STRUCTURE_GAP`, `ANALYZER_BLOCKER`）と推奨対応を内蔵テンプレートで管理し、ドラフト操作時の必須入力として扱う。
+- 差戻し記録時は `return_reason_code` と `return_reason_note` を受け付け、コード一覧は内蔵テンプレートを参照する。
 - Analyzer のブロッキングタグが存在する場合は対応する差戻しコードを優先表示し、監査ログへ `acknowledged_analyzer_risk` などのフラグを残す。
 
 ## ログ・監査
