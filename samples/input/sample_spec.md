@@ -1893,7 +1893,7 @@ async def generate_pptx(spec: GenerateRequest):
 **症状**: 適切なレイアウトが選ばれない場合がある
 
 **回避策**:
-- `config/ai_policies/layout.json` でスコアリングルールを調整
+- パッケージ同梱の `src/pptx_generator/config/ai_policies/layout.json` をベースにレイアウトスコアリングを実施（上書き不要）
 - `--show-layout-reasons` でスコア内訳を確認
 
 ### 13.3 将来的な改善予定
