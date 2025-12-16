@@ -647,7 +647,7 @@ uv run pptx template <template.pptx> \
   [--layout <keyword>] \
   [--anchor <keyword>] \
   [--format <json|yaml>] \
-  [--layout-mode <dynamic|static>] \
+  [--mode <dynamic|static>] \
   [--with-release] \
   [--brand <name>] \
   [--version <value>]
@@ -658,7 +658,7 @@ uv run pptx template <template.pptx> \
 | オプション | 説明 | 既定値 |
 |-----------|------|--------|
 | `--output` | 抽出結果の出力先 | `.pptx/extract` |
-| `--layout-mode` | 運用モード（dynamic/static） | `dynamic` |
+| `--mode` | 運用モード（dynamic/static） | `dynamic` |
 | `--with-release` | リリースメタを生成 | 無効 |
 | `--brand` | ブランド名（--with-release 時） | - |
 | `--version` | テンプレートバージョン | - |
@@ -670,7 +670,7 @@ uv run pptx template samples/templates/templates.pptx
 
 # Static モードで抽出＋リリースメタ生成
 uv run pptx template samples/templates/templates.pptx \
-  --layout-mode static \
+  --mode static \
   --with-release \
   --brand corporate \
   --version 1.0
