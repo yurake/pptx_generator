@@ -16,7 +16,7 @@
     --prepare-cards .pptx/prepare/prepare_card.json \
     --output .pptx/compose
 ```
-- ブランド設定はテンプレートのテーマを参照（`config/branding.json` は参考用）。
+- ブランド設定はテンプレートのテーマを参照（参考用のスタイルはテンプレ抽出成果物の `branding.json` を確認）。
 
 ## 手順
 1. 仮想環境をアクティブ化し、`uv sync` で依存をインストール。

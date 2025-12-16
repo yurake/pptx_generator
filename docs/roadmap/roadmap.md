@@ -155,7 +155,7 @@ flowchart TB
 
 <a id="rm-009"></a>
 ### RM-009 テンプレート設定自動生成
-- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
+- ゴール: PPTX テンプレートからスタイル定義 (`branding.json` スナップショット) を自動生成し、ブランド設定保守の手間を削減する。
 - 参照ドキュメント: 未整備（本テーマで作成予定）
 - 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
 - 状況: 完了（2025-10-11 更新）
@@ -179,8 +179,8 @@ flowchart TB
 - 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
-- 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、`config/branding.json` の拡張設計。
-- 成果: `layout-style-v1` スキーマとブランド設定テンプレートを確立し、`config/branding.json`／レンダラー適用ロジック／CLI ドキュメントを更新済み。
+- 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、テンプレ抽出 `branding.json` の拡張設計。
+- 成果: `layout-style-v1` スキーマとブランド設定テンプレートを確立し、テンプレ抽出 `branding.json`／レンダラー適用ロジック／CLI ドキュメントを更新済み。
    - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
 <a id="rm-012"></a>
