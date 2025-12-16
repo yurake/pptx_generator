@@ -191,7 +191,7 @@ slides:
           right_indent_in: float
           first_line_indent_in: float
 - レンダラーはアンカー指定されたテキストボックスを挿入する際、テンプレート側の図形名を新しいテキストボックスへ引き継ぎ、後続 stage が同名アンカーで参照できるようにする。
-- 段落スタイルは `config/branding.json` の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合はブランド既定を上書きする。
+- 段落スタイルはテンプレートから抽出した TemplateStyle の `components.textbox.paragraph` またはレイアウト別 `layouts.*.placements.*.paragraph` から取得し、Renderer が段落揃え・行間・余白・インデント（左／右／一行目）を描画時に適用する。個別スライドで `paragraph` パラメータを指定した場合は TemplateStyle 既定を上書きする。
 assets:
   fonts: [{ name: string, url: string }]
   images: [{ id: string, url: string }]
@@ -209,7 +209,7 @@ assets:
 
 ## 6. テンプレート設計
 - `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
-- ブランドカラー・フォントおよびレイアウト別スタイルを `config/branding.json` (`theme` / `components` / `layouts`) に定義し、Renderer・Analyzer・Polisher が共有。
+- ブランドカラー・フォントおよびレイアウト別スタイルはテンプレートから抽出した TemplateStyle（`branding.json` スナップショットの `theme` / `components` / `layouts`）で共有し、Renderer・Analyzer・Polisher が利用する。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
 - 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
 - テンプレートファイルは .pptx 形式のみ対応。.potxを利用する場合は、PowerPointで新規 .pptx を作成して保存してください。

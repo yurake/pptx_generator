@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from pptx_generator.cli_handlers.rendering import resolve_config_path
-from pptx_generator.settings.loader import load_branding_config, load_rules_config
+from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.settings.paths import find_config_path, get_default_config_path
 
 
@@ -64,25 +64,6 @@ def test_load_rules_config_raises_when_missing(monkeypatch):
     with pytest.raises(FileNotFoundError):
         load_rules_config("config/nonexistent.json")
     load_rules_config.cache_clear()
-
-
-def test_load_branding_config_falls_back_to_packaged_resource(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    find_config_path.cache_clear()
-    load_branding_config.cache_clear()
-    branding = load_branding_config("config/branding.json")
-    assert branding.heading_font.name
-
-
-def test_load_branding_config_raises_when_missing(monkeypatch):
-    load_branding_config.cache_clear()
-    monkeypatch.setattr(
-        "pptx_generator.settings.loader.find_config_path",
-        lambda path, base_dir=None: None,
-    )
-    with pytest.raises(FileNotFoundError):
-        load_branding_config("config/missing.json")
-    load_branding_config.cache_clear()
 
 
 def test_resolve_config_path_falls_back_to_packaged_resource(tmp_path, monkeypatch):

@@ -2,7 +2,7 @@
 
 ## 構成
 - `json/sample_jobspec.json`: フル構成サンプル。アンカー付きテンプレートやリッチコンテンツの実装例を含む。
-- `extract/`: stage 1 `pptx template` の出力サンプル。`template_spec.json` / `jobspec.json` / `branding.json` / `diagnostics.json` / `layouts.jsonl` を保持し、コマンド実行結果と同じファイル名を維持する。
+- `extract/`: stage 1 `pptx template` の出力サンプル。`template_spec.json` / `jobspec.json` / `branding.json` / `diagnostics.json` / `layouts.jsonl` を保持し、コマンド実行結果と同じファイル名を維持する（ブランド情報はテンプレート抽出結果の TemplateStyle を参照）。
 - `prepare/`: stage 2 `pptx prepare` の成果物（`prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`, `audit_log.json`, `prepare_story_outline.json`）。CLI やテストで参照するため最新スキーマへ追従させる。
 - `draft/`: stage 3 アウトライン承認の出力 (`draft_draft.json`, `draft_approved.json`, `draft_review_log.json`, `draft_meta.json`) を格納する。
 - `compose/`: stage 3 マッピング結果 (`generate_ready.json`, `mapping_log.json`) を保存する。stage 4 の成果物は `gen/` へ移動する。
@@ -29,5 +29,5 @@
 
 ## レビュー時の確認ポイント
 - サンプルが最新スキーマに準拠し、未使用フィールドや古いキーが残っていないか。
-- テンプレート更新に伴い、ブランドカラーやフォントの整合性が取れているか（必要なら `config/branding.json` と併せて変更）。
+- テンプレート更新に伴い、ブランドカラーやフォントの整合性が取れているか（`pptx template` で出力される `branding.json` スナップショットと合わせて確認）。
 - ドキュメントや README のサンプルコマンドが最新のファイル構成を反映しているか。

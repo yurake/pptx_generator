@@ -21,7 +21,7 @@ from .branding import (
     TableHeaderStyle,
     TextboxComponentStyle,
 )
-from .loader import load_branding_config, load_rules_config
+from .loader import load_rules_config
 from .paths import find_config_path, get_default_config_path
 from .rules import AnalyzerRuleConfig, PolisherRuleConfig, RefinerRuleConfig, RulesConfig
 
@@ -48,7 +48,6 @@ __all__ = [
     "PlacementStyle",
     "LayoutStyle",
     "load_rules_config",
-    "load_branding_config",
     "find_config_path",
     "get_default_config_path",
 ]
