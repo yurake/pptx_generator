@@ -394,7 +394,7 @@ generate_ready.json へ確定
 
 **Open XML Polisher**:
 - .NET 8 SDK + Open XML SDK で実装
-- `config/polisher-rules.json` でルール管理
+- Polisher ルールは内蔵デフォルトを使用（カスタムする場合のみ任意の JSON を指定）
 - フォント最小値の再確認
 - テーマ色未リンクの RGB を Accent カラーへマップ
 - 段落間隔の最終調整（フォールバック用）
@@ -424,7 +424,7 @@ generate_ready.json へ確定
 
 | 項目 | ルール | 出典 |
 |------|--------|------|
-| 禁則語 | `config/pipeline_rules.json` の `forbidden_words` リスト | Validator |
+| 禁則語 | `src/pptx_generator/config/pipeline_rules.json` の `forbidden_words` リスト | Validator |
 | 表記揺れ | 正式名称マッピング辞書で置換 | Validator |
 | タイトル文字数 | ≤ 25 文字（推奨） | レイアウト依存 |
 | 本文行文字数 | ≤ 40 文字（推奨） | レイアウト依存 |
@@ -1329,7 +1329,6 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
   "polisher": {
     "enabled": true,
     "executable": "dotnet/OpenXmlPolish/bin/Release/net8.0/OpenXmlPolish.dll",
-    "rules_path": "config/polisher-rules.json",
     "timeout_sec": 60
   }
 }
@@ -1886,7 +1885,7 @@ async def generate_pptx(spec: GenerateRequest):
 
 **回避策**:
 - `--no-polisher` で Polisher を無効化
-- `config/polisher-rules.json` で対象ルールを調整
+- Polisher ルールは内蔵デフォルトを使用（カスタムする場合のみ任意の JSON を指定）
 
 #### Issue 3: レイアウト適合度スコアの誤判定
 
