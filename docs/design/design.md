@@ -42,7 +42,7 @@
 README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
 1. **テンプレ**（自動＋HITL）  
-   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/extract/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
+  テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/template/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
    - usage_tags は Template AI（LLM）を既定で呼び出し、`config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。

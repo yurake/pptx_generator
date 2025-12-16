@@ -311,7 +311,7 @@ def test_template_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path)
         cmd,
         [
             str(template_path),
-            "--layout-mode",
+            "--mode",
             "static",
         ],
         catch_exceptions=False,

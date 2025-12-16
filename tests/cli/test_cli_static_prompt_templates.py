@@ -133,7 +133,7 @@ def test_run_template_extraction_creates_prompt_files(monkeypatch, tmp_path) -> 
     template_path.write_bytes(b"fake")
 
     base_dir = tmp_path / ".pptx"
-    output_dir = base_dir / "extract"
+    output_dir = base_dir / "template"
     output_dir.mkdir(parents=True, exist_ok=True)
     branding_path = output_dir / "branding.json"
     jobspec_path = output_dir / "jobspec.json"
@@ -219,18 +219,18 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
     template_file = tmp_path / "dummy.pptx"
     template_file.write_bytes(b"pptx")
 
-    prompts_dir = tmp_path / "extract" / PROMPT_TEMPLATE_DIRNAME
+    prompts_dir = tmp_path / "template" / PROMPT_TEMPLATE_DIRNAME
     prompts_dir.mkdir(parents=True)
-    template_spec_path = tmp_path / "extract" / "template_spec.json"
+    template_spec_path = tmp_path / "template" / "template_spec.json"
     template_spec_path.write_text("{}", encoding="utf-8")
-    jobspec_path = tmp_path / "extract" / "jobspec.json"
+    jobspec_path = tmp_path / "template" / "jobspec.json"
     jobspec_path.write_text("{}", encoding="utf-8")
-    branding_path = tmp_path / "extract" / "branding.json"
+    branding_path = tmp_path / "template" / "branding.json"
     branding_path.write_text("{}", encoding="utf-8")
 
     template_spec = _build_static_template_spec()
-    layouts_path = tmp_path / "extract" / "layouts.json"
-    diagnostics_path = tmp_path / "extract" / "diagnostics.json"
+    layouts_path = tmp_path / "template" / "layouts.json"
+    diagnostics_path = tmp_path / "template" / "diagnostics.json"
     layouts_path.write_text("{}", encoding="utf-8")
     diagnostics_path.write_text("{}", encoding="utf-8")
     layouts_path_value = layouts_path
@@ -250,7 +250,7 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
         branding_path=branding_path,
         jobspec_path=jobspec_path,
         validation_result=DummyValidationResult(),
-        output_dir=tmp_path / "extract",
+        output_dir=tmp_path / "template",
         slide_snapshot_path=None,
         prompt_templates_dir=prompts_dir,
         prompt_templates_created=2,
@@ -270,7 +270,7 @@ def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
     )
 
     runner = CliRunner()
-    result = runner.invoke(app, ["template", str(template_file), "--layout-mode", "static"])
+    result = runner.invoke(app, ["template", str(template_file), "--mode", "static"])
 
     assert result.exit_code == 0
     assert "プロンプト雛形を出力しました" in result.output
@@ -324,7 +324,7 @@ def test_cli_prepare_uses_slide_inputs_manifest(monkeypatch) -> None:
 
     runner = CliRunner()
     with runner.isolated_filesystem():
-        extract_dir = Path.cwd() / ".pptx/extract"
+        extract_dir = Path.cwd() / ".pptx/template"
         extract_dir.mkdir(parents=True, exist_ok=True)
 
         template_spec = _build_static_template_spec()
@@ -378,7 +378,7 @@ def test_cli_prepare_requires_complete_manifest(monkeypatch) -> None:
 
     runner = CliRunner()
     with runner.isolated_filesystem():
-        extract_dir = Path.cwd() / ".pptx/extract"
+        extract_dir = Path.cwd() / ".pptx/template"
         extract_dir.mkdir(parents=True, exist_ok=True)
 
         template_spec = _build_static_template_spec()

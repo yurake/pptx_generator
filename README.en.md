@@ -90,9 +90,9 @@ flowchart TD
 
 | Stage | Overview | Command examples |
 | --- | --- | --- |
-| 1. Template | Extract and validate the template PPTX, and output foundational data such as `jobspec.json` to `.pptx/extract/` | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
+| 1. Template | Extract and validate the template PPTX, and output foundational data such as `jobspec.json` to `.pptx/template/` | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
 | 2. Content preparation | Normalize input materials into tentative slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/input/pitch.md` |
-| 3. Mapping | Perform HITL approval and layout assignment, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
+| 3. Mapping | Perform HITL approval and layout assignment, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX Generation | Output PPTX/PDF and audit logs using `generate_ready.json` | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 ### Static generation (static mode)
@@ -147,9 +147,9 @@ flowchart TD
 
 | stage | Overview | Command examples |
 | --- | --- | --- |
-| 1. Template | Output the Blueprint information together with `.pptx/extract/prompts/` (prompt templates) and `.pptx/slide_inputs.md` (slide input manifest) | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
-| 2. Content preparation | Edit the template (`.pptx/extract/prompts/01_*.md`) and the input manifest (`.pptx/slide_inputs.md`), and if necessary omit `<data file path>` to shape mock slides according to the Blueprint slot definitions | `uv run pptx prepare --mode static` |
-| 3. Mapping | Validate slot fulfillment and generate `generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --static` |
+| 1. Template | Output the Blueprint information together with `.pptx/template/prompts/` (prompt templates) and `.pptx/slide_inputs.md` (slide input manifest) | `uv run pptx template samples/templates/templates.pptx --mode static` |
+| 2. Content preparation | Edit the template (`.pptx/template/prompts/01_*.md`) and the input manifest (`.pptx/slide_inputs.md`), and if necessary omit `<data file path>` to shape mock slides according to the Blueprint slot definitions | `uv run pptx prepare --mode static` |
+| 3. Mapping | Validate slot fulfillment and generate `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` |
 | 4. PPTX generation | Output PPTX/PDF with a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 The CLI commands for each stage and their key options are in `docs/design/cli/cli-command-reference.md`.

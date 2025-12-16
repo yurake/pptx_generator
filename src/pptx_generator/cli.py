@@ -41,7 +41,7 @@ from .settings.paths import get_default_config_path
 DEFAULT_RULES_PATH = get_default_config_path("rules.json")
 DEFAULT_RETURN_REASONS_PATH = get_default_config_path("return_reasons.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
-DEFAULT_JOBSPEC_PATH = Path(".pptx/extract/jobspec.json")
+DEFAULT_JOBSPEC_PATH = Path(".pptx/template/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
 DEFAULT_COMPOSE_OUTPUT_DIR = Path(".pptx/compose")
 DEFAULT_GEN_OUTPUT_DIR = Path(".pptx/gen")
@@ -49,7 +49,7 @@ DEFAULT_GEN_PPTX_NAME = "proposal.pptx"
 DEFAULT_GEN_PDF_OUTPUT = "proposal.pdf"
 DEFAULT_GEN_PDF_TIMEOUT = 120
 DEFAULT_GEN_PDF_RETRIES = 2
-DEFAULT_TEMPLATE_OUTPUT_DIR = Path(".pptx/extract")
+DEFAULT_TEMPLATE_OUTPUT_DIR = Path(".pptx/template")
 DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR = Path(".pptx/release")
 DEFAULT_TEMPLATE_LAYOUT_MODE = "dynamic"
 DEFAULT_VALIDATION_OUTPUT_DIR = Path(".pptx/validation")

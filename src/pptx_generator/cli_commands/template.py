@@ -60,7 +60,7 @@ def create_template_command(
         help="抽出対象アンカー名のフィルタ（前方一致）",
     )
     @click.option(
-        "--layout-mode",
+        "--mode",
         type=click.Choice(["dynamic", "static"], case_sensitive=False),
         default=default_layout_mode,
         show_default=True,
@@ -146,7 +146,7 @@ def create_template_command(
         format: str,
         layout: str | None,
         anchor: str | None,
-        layout_mode: str,
+        mode: str,
         with_release: bool,
         brand: str | None,
         version: str | None,
@@ -169,7 +169,7 @@ def create_template_command(
 
         hook_manager = None
         effective_template_id = template_id or derive_template_id_from_template_path(template_path)
-        layout_mode_lower = layout_mode.lower()
+        layout_mode_lower = mode.lower()
         stage_env = {
             "PPTX_STAGE": STAGE_TEMPLATE,
             "PPTX_TEMPLATE_ID": effective_template_id,
@@ -213,7 +213,7 @@ def create_template_command(
             format=format,
             layout=layout,
             anchor=anchor,
-            layout_mode=layout_mode,
+            layout_mode=mode,
             static_source=static_source,
             template_ai_policy=template_ai_policy,
             template_ai_policy_id=template_ai_policy_id,

@@ -78,7 +78,7 @@ def create_prepare_command(
         "--jobspec",
         type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
-        help="静的モードで参照する jobspec.json (未指定時は .pptx/extract/jobspec.json を探索)",
+        help="静的モードで参照する jobspec.json (未指定時は .pptx/template/jobspec.json を探索)",
     )
     @click.option(
         "-p",
