@@ -274,6 +274,8 @@ def create_template_command(
                     STAGE_TEMPLATE,
                     slides=contexts,
                     env=stage_env_with_outputs,
+                    continue_default_filter=True,
+                    allow_fallback_context=True,
                 )
 
         extraction_result = result.extraction

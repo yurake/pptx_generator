@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..models import FontSpec, Slide, SlideBullet
-from .base import PipelineContext
+from .base import PipelineContext, PipelineStage
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ class SimpleRefinerStep:
     """ジョブ仕様の簡易自動補正を行うステップ。"""
 
     name = "refiner"
+    stage = PipelineStage.MAPPING
 
     def __init__(self, options: RefinerOptions | None = None) -> None:
         self.options = options or RefinerOptions()

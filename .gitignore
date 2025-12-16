@@ -29,6 +29,7 @@ src/pptx_generator.egg-info/
 coverage.xml
 .pptx*/
 temp/
+.uv-cache/
 
 # Private configuration files
 AGENTS_PRIVATE.md
@@ -47,6 +48,7 @@ templates/*
 dist/
 build/
 .vs/
+.claude/
 
 # Additional virtual env folders
 venv/

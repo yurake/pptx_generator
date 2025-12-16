@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from pptx_generator.config_manager import ConfigManager
 from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 from pptx_generator.models import JobSpec
 from pptx_generator.spec_loader import load_jobspec_from_path
@@ -79,12 +80,24 @@ def load_jobspec(path: Path) -> JobSpec:
     return load_jobspec_from_path(path)
 
 
-def resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
+def resolve_layouts_path(
+    *,
+    spec: JobSpec,
+    spec_source: Path,
+    config_manager: ConfigManager | None = None,
+) -> Path | None:
     """jobspec と spec ファイルから layouts.jsonl の候補を解決する。"""
 
+    source_name: str | None = None
     layouts_path_value: str | None = None
+    if config_manager is not None:
+        candidate, resolved_source = config_manager.resolve_with_source("layouts_path")
+        if isinstance(candidate, (str, Path)):
+            layouts_path_value = str(candidate)
+            source_name = resolved_source
+
     meta = getattr(spec, "meta", None)
-    if meta is not None:
+    if layouts_path_value is None and meta is not None:
         layouts_path_value = getattr(meta, "layouts_path", None)
         if layouts_path_value is None and isinstance(meta, BaseModel):
             extra = getattr(meta, "model_extra", None)
@@ -92,6 +105,8 @@ def resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
                 layouts_path_value = extra.get("layouts_path")
         if layouts_path_value is None and isinstance(meta, dict):
             layouts_path_value = meta.get("layouts_path")
+        if layouts_path_value is not None and source_name is None:
+            source_name = "template_config"
 
     if layouts_path_value is None:
         try:
@@ -103,6 +118,8 @@ def resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
             if isinstance(raw_spec, dict)
             else None
         )
+        if layouts_path_value is not None and source_name is None:
+            source_name = "template_config"
 
     if not layouts_path_value:
         return None
@@ -117,6 +134,8 @@ def resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
 
     for candidate in candidates:
         if candidate.exists():
+            if config_manager is not None:
+                config_manager.record("layouts_path", str(candidate), source_name)
             return candidate
 
     message = (
@@ -126,12 +145,25 @@ def resolve_layouts_path(*, spec: JobSpec, spec_source: Path) -> Path | None:
     raise ValueError(message)
 
 
-def resolve_template_path(*, spec: JobSpec, spec_source: Path) -> Path:
+def resolve_template_path(
+    *,
+    spec: JobSpec,
+    spec_source: Path,
+    config_manager: ConfigManager | None = None,
+) -> Path:
     """jobspec と spec ファイルからテンプレートパスの候補を解決する。"""
 
     template_path_value: str | None = None
+    source_name: str | None = None
+
+    if config_manager is not None:
+        candidate, resolved_source = config_manager.resolve_with_source("template_path")
+        if isinstance(candidate, (str, Path)):
+            template_path_value = str(candidate)
+            source_name = resolved_source
+
     meta = getattr(spec, "meta", None)
-    if meta is not None:
+    if template_path_value is None and meta is not None:
         template_path_value = getattr(meta, "template_path", None)
         if template_path_value is None and isinstance(meta, BaseModel):
             extra = getattr(meta, "model_extra", None)
@@ -139,6 +171,8 @@ def resolve_template_path(*, spec: JobSpec, spec_source: Path) -> Path:
                 template_path_value = extra.get("template_path")
         if template_path_value is None and isinstance(meta, dict):
             template_path_value = meta.get("template_path")
+        if template_path_value is not None and source_name is None:
+            source_name = "template_config"
 
     if not template_path_value:
         try:
@@ -147,6 +181,8 @@ def resolve_template_path(*, spec: JobSpec, spec_source: Path) -> Path:
             raw_spec = {}
         if isinstance(raw_spec, dict):
             template_path_value = raw_spec.get("meta", {}).get("template_path")  # type: ignore[assignment]
+            if template_path_value is not None and source_name is None:
+                source_name = "template_config"
 
     if not template_path_value:
         raise ValueError("jobspec.meta.template_path にテンプレートパスを設定してください。")
@@ -170,6 +206,9 @@ def resolve_template_path(*, spec: JobSpec, spec_source: Path) -> Path:
 
     if not resolved.exists():
         raise ValueError(f"テンプレートファイルが見つかりません: {resolved}")
+
+    if config_manager is not None:
+        config_manager.record("template_path", str(resolved), source_name)
     return resolved
 
 

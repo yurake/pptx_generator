@@ -8,9 +8,9 @@
   "structure_pattern": "custom",
   "target_length": 0,
   "paths": {
-    "draft_draft": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_draft.json",
-    "draft_approved": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_approved.json",
-    "draft_review_log": "/Users/yurak/git/pptx_generator_sub1/.pptx/draft/draft_review_log.json"
+    "draft_draft": ".pptx/draft/draft_draft.json",
+    "draft_approved": ".pptx/draft/draft_approved.json",
+    "draft_review_log": ".pptx/draft/draft_review_log.json"
   },
   "template": {
     "template_id": null,
