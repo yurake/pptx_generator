@@ -2,7 +2,7 @@
 
 ## 目的
 - PPTX 生成時にレイアウト単位でスタイル（フォント・配色・配置パターン）を制御し、ブランドの一貫性を担保する。
-- `config/branding.json` を新スキーマへ刷新し、スタイル適用ロジックを設定駆動に切り替える。
+- テンプレ抽出で出力される `branding.json` スナップショットを新スキーマへ刷新し、スタイル適用ロジックを設定駆動に切り替える。
 - レイアウト／コンポーネントごとのスタイル変更をコード改修なしで反映できるようにする。
 
 ## スキーマ方針
@@ -74,13 +74,13 @@
 - `tests/test_cli_integration.py`: 新 `branding.json` へ差し替えた上で CLI 出力が成功することを確認。
 
 ## ドキュメント更新
-- `config/branding.json` のサンプルを新スキーマに差し替え、`docs/policies/config-and-templates.md` に更新手順を追記する。
+- テンプレ抽出成果物の `branding.json` サンプルを新スキーマに差し替え、`docs/policies/config-and-templates.md` に更新手順を追記する。
 - `docs/requirements/requirements.md` / `docs/design/design.md` に「レイアウトスタイル設定を設定ファイルで制御する」旨を反映する。
 - `docs/roadmap/roadmap.md` の RM-011 ステータスを「設計完了」へ更新予定。
 - ToDo (`docs/todo/20251011-layout-style-governance.md`) に設計完了メモと次 stage の記録を追加する。
 
 ## マイグレーション手順
-1. `config/branding.json` を新スキーマへ置き換える。
+1. テンプレ抽出成果物の `branding.json` を新スキーマへ置き換える。
 2. CLI / テスト環境で `uv sync` 済みであることを確認してから `uv run --extra dev pytest` を実行。
 3. 旧 `branding.json` を参照する資料・サンプルを全て更新し、新スキーマのみを利用するようにする。
 4. テンプレ更新時は `layouts` セクションでアンカー別スタイルをメンテナンスし、`docs/notes/` に差分メモを残す。
