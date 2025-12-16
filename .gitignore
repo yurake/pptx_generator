@@ -47,6 +47,7 @@ templates/*
 dist/
 build/
 .vs/
+.claude/
 
 # Additional virtual env folders
 venv/
