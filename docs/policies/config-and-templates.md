@@ -58,7 +58,7 @@
   ```bash
   uv run pptx tpl-extract \
     --template templates/libraries/<brand>/<version>/template.pptx \
-    --output .pptx/extract/<brand>_<version>
+    --output .pptx/template/<brand>_<version>
 
   uv run pptx layout-validate \
     --template templates/libraries/<brand>/<version>/template.pptx \

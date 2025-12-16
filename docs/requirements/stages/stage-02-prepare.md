@@ -36,7 +36,7 @@
 ## CLI 要件
 - `pptx prepare <PREPARE_PATH …>` は入力が解決できない場合に exit code 2 を返す。
 - `--mode` オプション（`dynamic` / `static`）を必須とし、実行モード未指定の場合は CLI がエラーで終了する。
-- 静的モード (`--mode=static`) では `jobspec.meta.template_spec_path` を参照して Blueprint を読み込む。`--jobspec` 未指定時は `.pptx/extract/jobspec.json` を探索し、見つからない場合はエラーにする。
+- 静的モード (`--mode=static`) では `jobspec.meta.template_spec_path` を参照して Blueprint を読み込む。`--jobspec` 未指定時は `.pptx/template/jobspec.json` を探索し、見つからない場合はエラーにする。
 - 動的モードで `-p/--page-limit` を指定しない場合はタイトルページ（`content.title` を持つカード）を自動的に 1 枚追加する。タイトルページを抑止したい場合は `-p/--page-limit` を明示し、ユーザー側でページ数を固定する。
 - 参照した Blueprint パスは `ai_generation_meta.json.blueprint_path` と監査ログに記録する。
 - 生成結果は `.pptx/prepare/` 配下へ出力し、ディレクトリが存在しない場合は自動生成する。

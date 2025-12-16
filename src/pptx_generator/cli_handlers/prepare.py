@@ -297,7 +297,7 @@ def resolve_static_context(
     resolved_jobspec = jobspec_path or default_jobspec_path
     if not resolved_jobspec.exists():
         raise PrepareCommandError(
-            "static モードでは --jobspec で jobspec.json のパスを指定するか、.pptx/extract/jobspec.json を用意してください",
+            "static モードでは --jobspec で jobspec.json のパスを指定するか、.pptx/template/jobspec.json を用意してください",
             exit_code=2,
         )
 

@@ -107,7 +107,7 @@ def test_generate_document_static_records_prompt_overrides() -> None:
         slide_id=blueprint.slides[0].slide_id,
         slide_index=1,
         instructions="- 重要メッセージを先頭に配置",
-        template_path=".pptx/extract/prompts/01_intro.md",
+        template_path=".pptx/template/prompts/01_intro.md",
     )
 
     document, meta, records = orchestrator.generate_document(

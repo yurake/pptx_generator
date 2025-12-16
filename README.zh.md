@@ -90,9 +90,9 @@ flowchart TD
 
 | 阶段 | 概述 | 命令示例 |
 | --- | --- | --- |
-| 1. 模板 | 模板 PPTX 的提取与验证，并将 `jobspec.json` 等基础数据输出到 `.pptx/extract/` | `uv run pptx template samples/templates/templates.pptx --layout-mode dynamic` |
+| 1. 模板 | 模板 PPTX 的提取与验证，并将 `jobspec.json` 等基础数据输出到 `.pptx/template/` | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
 | 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成带有 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/input/pitch.md` |
-| 3. 映射 | 进行 HITL 批准和布局分配，并创建 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
+| 3. 映射 | 进行 HITL 批准和布局分配，并创建 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX/PDF 与审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 ### 静态生成 (static mode)
@@ -147,9 +147,9 @@ flowchart TD
 
 | 阶段 | 概述 | 命令示例 |
 | --- | --- | --- |
-| 1. 模板 | 与 Blueprint 信息一起输出 `.pptx/extract/prompts/`（提示词模板）和 `.pptx/slide_inputs.md`（幻灯片输入清单） | `uv run pptx template samples/templates/templates.pptx --layout-mode static` |
-| 2. 内容准备 | 模板 (`.pptx/extract/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`) 进行编辑；如有需要，可以省略 `<data file path>`，并按照 Blueprint 的 slot 定义整理占位幻灯片 | `uv run pptx prepare --mode static` |
-| 3. 映射 | 在验证 slot 的充足情况的同时，生成 `generate_ready.json` | `uv run pptx compose .pptx/extract/jobspec.json --static` |
+| 1. 模板 | 与 Blueprint 信息一起输出 `.pptx/template/prompts/`（提示词模板）和 `.pptx/slide_inputs.md`（幻灯片输入清单） | `uv run pptx template samples/templates/templates.pptx --mode static` |
+| 2. 内容准备 | 模板 (`.pptx/template/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`) 进行编辑；如有需要，可以省略 `<data file path>`，并按照 Blueprint 的 slot 定义整理占位幻灯片 | `uv run pptx prepare --mode static` |
+| 3. 映射 | 在验证 slot 的充足情况的同时，生成 `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` |
 | 4. PPTX 生成 | 在固定布局下输出 PPTX/PDF | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
 各阶段的 CLI 命令和主要选项是 `docs/design/cli/cli-command-reference.md`。
