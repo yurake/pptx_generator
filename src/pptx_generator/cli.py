@@ -136,7 +136,7 @@ app.add_command(prepare)
 template = create_template_command(
     default_extract_output=DEFAULT_TEMPLATE_OUTPUT_DIR,
     default_release_output=DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR,
-    default_layout_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
+    default_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
 )
 app.add_command(template)
 outline = create_outline_command(

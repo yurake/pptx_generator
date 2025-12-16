@@ -302,7 +302,7 @@ def test_template_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path)
     cmd = create_template_command(
         default_extract_output=tmp_path / "out",
         default_release_output=tmp_path / "release",
-        default_layout_mode="static",
+        default_mode="static",
         default_template_ai_policy=None,
     )
 
