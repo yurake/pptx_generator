@@ -42,7 +42,7 @@
   1. `src/pptx_generator/config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する（必要に応じて `PPTX_GENERATOR_USAGE_TAGS` で外部パスを指定）。
   2. `uv run --extra dev pytest tests/test_utils_usage_tags.py tests/test_template_ai.py tests/test_layout_recommender.py` を実行して整合性を確認する。  
      必要に応じて `scripts/test_template_ai.sh` を併用し、LLM プロンプトへの影響を確認する。
-  3. Layout AI / Template AI のポリシーテンプレート（`config/ai_policies/layout.json`, `config/ai_policies/template.json`）にタグ説明を反映する。
+  3. Layout AI / Template AI のポリシーテンプレート（パッケージ同梱の `src/pptx_generator/config/ai_policies/*.json` または任意の上書きファイル）にタグ説明を反映する。
   4. `docs/notes/20251122-usage-tag-taxonomy-plan.md` など関連ドキュメントを更新し、変更理由と影響範囲を記録する。
 - 変更後は ToDo とロードマップに記録し、PR の説明にもタグ体系更新を明記する。
 

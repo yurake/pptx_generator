@@ -577,7 +577,7 @@ generate_ready.json へ確定
 #### 3.3.3 プロンプト管理
 
 ```
-config/
+config/（任意で上書きする場合の例）
 ├── ai_policies/
 │   ├── template.json          # Template AI のプロンプト・モデル設定
 │   ├── slide.json             # Slide AI のポリシー定義
