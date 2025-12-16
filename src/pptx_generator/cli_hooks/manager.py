@@ -38,7 +38,7 @@ class HookCommandConfig:
     args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     shell: bool = False
-    continue_default: bool = False
+    continue_default: bool = True
 
     def run(self, *, cwd: Path, extra_env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[str]:
         """コマンドを実行する。"""
@@ -199,147 +199,65 @@ class ExternalHookManager:
         has_project_files = any(
             (project_root / candidate).exists() for candidate in ("pyproject.toml", "uv.lock")
         )
-        if not has_project_files:
-            return
-        if self._synced_once and not force:
-            return
-        self._run_uv_sync(project_root)
-        self._synced_once = True
-
-    def _run_uv_sync(self, project_root: Path) -> None:
-        try:
-            result = subprocess.run(  # noqa: PLW1510
-                ["uv", "sync", "--project", str(project_root)],
+        if has_project_files and (not self._synced_once or force):
+            logger.info("フック実行前に `uv sync` を実行します: %s", project_root)
+            subprocess.run(  # noqa: PLW1510
+                ["uv", "sync", "--frozen"],
                 check=True,
                 cwd=project_root,
                 capture_output=True,
                 text=True,
             )
-        except subprocess.CalledProcessError as exc:  # pragma: no cover - logged and reraised
-            _log_subprocess_failure("uv sync", exc)
-            raise
-        _log_subprocess_output("uv sync", result.stdout, result.stderr)
+            self._synced_once = True
 
     def _execute_hook(self, hook: HookCommandConfig, env: Mapping[str, str]) -> None:
-        attempts = 0
-        while True:
-            try:
-                hook.run(cwd=self.base_dir, extra_env=env)
-                return
-            except subprocess.CalledProcessError as exc:
-                attempts += 1
-                _log_subprocess_failure("hook", exc)
-                if attempts == 1 and _should_retry_with_uv_sync(exc.stdout, exc.stderr):
-                    self._sync_project_if_needed(force=True)
-                    continue
-                raise
+        try:
+            hook.run(cwd=self.base_dir, extra_env=env)
+        except subprocess.CalledProcessError as exc:  # noqa: PERF203
+            msg = f"フックの実行に失敗しました: {exc}\nstdout: {exc.stdout}\nstderr: {exc.stderr}"
+            raise RuntimeError(msg) from exc
+
+    def _load_hook(self, hook_path: Path) -> HookConfig:
+        if not hook_path.exists():
+            msg = f"外部フック設定が見つかりません: {hook_path}"
+            raise FileNotFoundError(msg)
+
+        with hook_path.open(encoding="utf-8") as f:
+            obj = json.load(f)
+
+        stage_hooks = {key: _build_command_config(value) for key, value in obj.get("stage", {}).items()}
+
+        slide_hooks = {}
+        for slide_key, slide_config in obj.get("slides", {}).items():
+            stage_config = slide_config.get("stage", slide_config)
+            slide_hooks[slide_key] = SlideHookConfig(
+                stage_hooks={
+                    stage: _build_command_config(command) for stage, command in stage_config.items()
+                }
+            )
+
+        return HookConfig(stage_hooks=stage_hooks, slide_hooks=slide_hooks)
+
+    def _ensure_project_dir(self) -> None:
+        if not self.base_dir.exists():
+            self.base_dir.mkdir(parents=True, exist_ok=True)
 
 
-def load_hooks_for_template_id(template_id: str) -> ExternalHookManager | None:
-    """template_id に対応する外部フック設定を読み込む。"""
-    base_dir = EXTERNAL_ROOT / template_id
-    config_path = base_dir / HOOKS_FILENAME
-    if not config_path.exists():
-        logger.debug("外部フック設定が見つかりません: %s", config_path)
-        return None
-
-    try:
-        text = config_path.read_text(encoding="utf-8")
-        payload = json.loads(text)
-    except json.JSONDecodeError as exc:
-        logger.error("外部フック設定の解析に失敗しました: %s (%s)", config_path, exc)
-        return None
-    except OSError as exc:
-        logger.error("外部フック設定の読み込みに失敗しました: %s (%s)", config_path, exc)
-        return None
-
-    config = _parse_hook_payload(payload)
-    if not config.stage_hooks and not config.slide_hooks:
-        logger.debug("外部フック設定に有効なエントリがありません: %s", config_path)
-        return None
-
-    return ExternalHookManager(template_id=template_id, base_dir=base_dir, config=config)
+@dataclass(slots=True)
+class LoadedHookConfig:
+    template_id: str
+    base_dir: Path
+    hook_config: HookConfig
 
 
-def _log_subprocess_output(prefix: str, stdout: str | None, stderr: str | None) -> None:
-    if stdout:
-        logger.debug("%s stdout:\n%s", prefix, stdout.strip())
-    if stderr:
-        logger.debug("%s stderr:\n%s", prefix, stderr.strip())
-
-
-def _log_subprocess_failure(prefix: str, exc: subprocess.CalledProcessError) -> None:
-    logger.error(
-        "%s の実行に失敗しました (returncode=%s): %s",
-        prefix,
-        exc.returncode,
-        exc.cmd,
-    )
-    if exc.stdout:
-        logger.error("%s stdout:\n%s", prefix, exc.stdout.strip())
-    if exc.stderr:
-        logger.error("%s stderr:\n%s", prefix, exc.stderr.strip())
-
-
-def _should_retry_with_uv_sync(stdout: str | None, stderr: str | None) -> bool:
-    combined = f"{stdout or ''}\n{stderr or ''}".lower()
-    retry_tokens = (
-        "modulenotfounderror",
-        "module not found",
-        "no module named",
-        "importerror",
-    )
-    return any(token in combined for token in retry_tokens)
-
-
-def _parse_hook_payload(payload: Any) -> HookConfig:
-    config = HookConfig()
-    if not isinstance(payload, dict):
-        return config
-
-    stage_section = payload.get("stage") or payload.get("stages")
-    if isinstance(stage_section, dict):
-        for raw_stage, raw_config in stage_section.items():
-            stage = str(raw_stage).strip().lower()
-            if stage not in KNOWN_STAGES:
-                logger.debug("未知のステージフックをスキップしました: %s", raw_stage)
-                continue
-            hook = _parse_stage_hook(raw_config)
-            if hook:
-                config.stage_hooks[stage] = hook
-
-    slides_section = payload.get("slides")
-    if isinstance(slides_section, dict):
-        for slide_key, slide_payload in slides_section.items():
-            parsed = _parse_slide_hooks(slide_payload)
-            if parsed.stage_hooks:
-                config.slide_hooks[str(slide_key)] = parsed
-
-    return config
-
-
-def _parse_stage_hook(obj: Any) -> HookCommandConfig | None:
-    if not isinstance(obj, dict):
-        return None
-    command = obj.get("command")
-    if not isinstance(command, str) or not command.strip():
-        return None
-
-    args_raw = obj.get("args")
-    args: list[str] = []
-    if isinstance(args_raw, list):
-        args = [str(item) for item in args_raw]
-
-    env_raw = obj.get("env")
-    env: dict[str, str] = {}
-    if isinstance(env_raw, dict):
-        env = {str(k): str(v) for k, v in env_raw.items()}
-
-    shell = bool(obj.get("shell", False))
-    continue_default = bool(obj.get("continue_default", False))
-
+def _build_command_config(obj: dict) -> HookCommandConfig:
+    command = str(obj["command"])
+    args = [str(arg) for arg in obj.get("args", [])]
+    env = {str(key): str(value) for key, value in obj.get("env", {}).items()}
+    shell = bool(obj.get("shell"))
+    continue_default = bool(obj.get("continue_default", True))
     return HookCommandConfig(
-        command=command.strip(),
+        command=command,
         args=args,
         env=env,
         shell=shell,
@@ -347,12 +265,28 @@ def _parse_stage_hook(obj: Any) -> HookCommandConfig | None:
     )
 
 
-def _parse_slide_hooks(obj: Any) -> SlideHookConfig:
-    stage_hooks: dict[str, HookCommandConfig] = {}
-    if isinstance(obj, dict):
-        for stage_key, stage_payload in obj.items():
-            stage = str(stage_key).strip().lower()
-            hook = _parse_stage_hook(stage_payload)
-            if hook:
-                stage_hooks[stage] = hook
-    return SlideHookConfig(stage_hooks=stage_hooks)
+def load_hooks_for_template_id(template_id: str) -> ExternalHookManager | None:
+    hooks_path = EXTERNAL_ROOT / template_id / HOOKS_FILENAME
+    base_dir = hooks_path.parent
+    if not hooks_path.exists():
+        return None
+
+    hook_manager = ExternalHookManager(
+        template_id=template_id,
+        base_dir=base_dir,
+        config=ExternalHookManager._load_hook(ExternalHookManager, hooks_path),
+    )
+    hook_manager._ensure_project_dir()
+    return hook_manager
+
+
+def derive_template_id_from_template_path(template_path: Path) -> str:
+    return template_id_from_path(template_path)
+
+
+def _log_subprocess_output(prefix: str, stdout: str | None, stderr: str | None) -> None:
+    if stdout:
+        logger.info("%s stdout:\n%s", prefix, stdout)
+    if stderr:
+        logger.info("%s stderr:\n%s", prefix, stderr)
+*** End Patch
