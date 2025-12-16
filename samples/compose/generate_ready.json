@@ -1300,7 +1300,7 @@
   ],
   "meta": {
     "template_version": "templates",
-    "template_path": "/Users/yurak/git/pptx_generator_sub1/samples/templates/templates.pptx",
+    "template_path": "samples/templates/templates.pptx",
     "content_hash": "bdd65bb7d16939a3950561ed4f1d9239e2e2657f9f045999a3f679cd0a1a98c1",
     "generated_at": "2025-11-04T10:50:44Z",
     "job_meta": {

@@ -289,4 +289,3 @@ def _log_subprocess_output(prefix: str, stdout: str | None, stderr: str | None) 
         logger.info("%s stdout:\n%s", prefix, stdout)
     if stderr:
         logger.info("%s stderr:\n%s", prefix, stderr)
-*** End Patch

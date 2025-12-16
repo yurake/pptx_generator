@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from pptx_generator.cli_hooks import slide_contexts_from_blueprint
 from pptx_generator.cli_hooks.manager import (
     STAGE_PREPARE,
     HookCommandConfig,
@@ -202,7 +203,6 @@ def test_slide_contexts_from_blueprint(tmp_path: Path) -> None:
     assert contexts[0].key == "01_system-layout"
     assert contexts[0].layout == "System Layout"
     assert contexts[0].slide_id == "system_layout-01"
-    assert contexts[1].key == "agenda-02"
+    assert contexts[1].key == "02_agenda"
     assert contexts[1].layout == "Agenda"
     assert contexts[1].slide_id == "agenda-02"
-*** End Patch
