@@ -253,6 +253,7 @@ class ContentImportService:
         mime_part, data_part = mime_and_data
         is_base64 = mime_part.endswith(";base64")
         mime_type = mime_part.split(";", maxsplit=1)[0] if ";" in mime_part else mime_part
+        normalized_mime_type = mime_type.lower()
         raw: bytes
         if is_base64:
             raw = base64.b64decode(data_part)
@@ -263,7 +264,7 @@ class ContentImportService:
         retrieved_at = datetime.now(timezone.utc)
         warnings: list[str] = []
 
-        if "pdf" in mime_type:
+        if "pdf" in normalized_mime_type:
             with NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
                 tmp_file.write(raw)
                 tmp_path = Path(tmp_file.name)
@@ -278,9 +279,9 @@ class ContentImportService:
             except UnicodeDecodeError:
                 text = raw.decode(encoding, errors="ignore")
                 warnings.append("data URI のデコード時に無効なバイトを無視しました")
-            if "html" in mime_type:
+            if "html" in normalized_mime_type:
                 text = self._html_to_text(text)
-            elif "json" in mime_type:
+            elif "json" in normalized_mime_type:
                 text = self._json_to_text(text, warnings)
 
         return _SourcePayload(
