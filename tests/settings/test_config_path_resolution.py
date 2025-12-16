@@ -69,7 +69,7 @@ def test_load_rules_config_raises_when_missing(monkeypatch):
 def test_resolve_config_path_falls_back_to_packaged_resource(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     find_config_path.cache_clear()
-    path = resolve_config_path("config/polisher-rules.json")
+    path = resolve_config_path("config/rules.json")
     assert path.exists()
 
 
@@ -77,9 +77,9 @@ def test_resolve_config_path_uses_base_dir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     base_dir = tmp_path / "cfg"
     base_dir.mkdir()
-    config_path = base_dir / "polisher-rules.json"
+    config_path = base_dir / "custom-config.json"
     config_path.write_text("{}", encoding="utf-8")
 
     find_config_path.cache_clear()
-    resolved = resolve_config_path("polisher-rules.json", base_dir=base_dir)
+    resolved = resolve_config_path("custom-config.json", base_dir=base_dir)
     assert resolved == config_path.resolve()

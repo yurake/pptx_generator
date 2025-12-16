@@ -78,8 +78,7 @@
     "polisher": {
       "enabled": true,
       "status": "success",
-      "elapsed_ms": 420,
-      "rules_path": "config/polisher-rules.json"
+      "elapsed_ms": 420
     },
     "pdf_export": {
       "enabled": true,

@@ -214,13 +214,13 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
 | `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 |  |  | 設定ファイル準拠 |
 | `--polisher-path <path>` | Polisher 実行ファイルのパス |  |  | 指定なし |
-| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし |
+| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし（未指定時はコード内蔵デフォルトを使用） |
 | `--polisher-timeout <sec>` | Polisher のタイムアウト秒 |  |  | 指定なし |
 | `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
 | `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
@@ -244,7 +244,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
 | `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 |  |  | ルール設定の値 |
 | `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}` `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
