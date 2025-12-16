@@ -225,14 +225,26 @@ class ExternalHookManager:
         with hook_path.open(encoding="utf-8") as f:
             obj = json.load(f)
 
-        stage_hooks = {key: _build_command_config(value) for key, value in obj.get("stage", {}).items()}
+        stage_hooks = {
+            key: _build_command_config(value)
+            for key, value in obj.get("stage", {}).items()
+            if value
+        }
 
         slide_hooks = {}
         for slide_key, slide_config in obj.get("slides", {}).items():
-            stage_config = slide_config.get("stage", slide_config)
+            if not slide_config:
+                continue
+
+            stage_config = slide_config.get("stage", slide_config) if isinstance(slide_config, dict) else {}
+            if not stage_config:
+                continue
+
             slide_hooks[slide_key] = SlideHookConfig(
                 stage_hooks={
-                    stage: _build_command_config(command) for stage, command in stage_config.items()
+                    stage: _build_command_config(command)
+                    for stage, command in stage_config.items()
+                    if command
                 }
             )
 
