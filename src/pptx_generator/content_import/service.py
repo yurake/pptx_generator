@@ -163,7 +163,6 @@ class ContentImportService:
             except UnicodeDecodeError:
                 text = raw.decode("utf-8", errors="ignore")
                 warnings.append("UTF-8 で解釈できない文字を無視しました")
-
             if suffix in {".html", ".htm"}:
                 text = self._html_to_text(text)
                 content_type = "text/html"
@@ -196,8 +195,9 @@ class ContentImportService:
 
         hash_value = sha256(raw).hexdigest()
         retrieved_at = datetime.now(timezone.utc)
-        normalized_content_type = (content_type or "").lower()
         warnings: list[str] = []
+
+        normalized_content_type = (content_type or "").lower()
 
         if "pdf" in normalized_content_type:
             with NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
@@ -253,7 +253,7 @@ class ContentImportService:
         mime_part, data_part = mime_and_data
         is_base64 = mime_part.endswith(";base64")
         mime_type = mime_part.split(";", maxsplit=1)[0] if ";" in mime_part else mime_part
-        normalized_mime_type = (mime_type or "").lower()
+        normalized_mime_type = mime_type.lower()
         raw: bytes
         if is_base64:
             raw = base64.b64decode(data_part)

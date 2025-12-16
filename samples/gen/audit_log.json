@@ -93,7 +93,7 @@
     "generate_ready_path": ".pptx/compose/generate_ready.json",
     "generate_ready_generated_at": "2025-11-04T10:50:44Z",
     "template_version": "templates",
-    "template_path": "/Users/yurak/git/pptx_generator_sub1/samples/templates/templates.pptx",
+    "template_path": "samples/templates/templates.pptx",
     "mapping_time_ms": 0,
     "fallback_count": 0,
     "ai_patch_count": 0,

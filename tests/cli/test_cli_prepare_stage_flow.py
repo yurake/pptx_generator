@@ -616,6 +616,7 @@ def test_cli_prepare_static_mode_invokes_hooks(tmp_path: Path, monkeypatch: pyte
             *,
             slides: list[dict[str, Any]],
             env: dict[str, str],
+            **kwargs: Any,
         ) -> None:
             self.slide_calls.append((stage, slides, dict(env)))
 
@@ -660,7 +661,7 @@ def test_cli_prepare_static_mode_invokes_hooks(tmp_path: Path, monkeypatch: pyte
     assert stage_env["PPTX_PREPARE_INPUTS"].splitlines() == [str(prepare_source_a), str(prepare_source_b)]
 
     assert hook_manager.slide_calls
-    slide_stage, slide_contexts, slide_env = hook_manager.slide_calls[0]
+    slide_stage, slide_contexts, slide_env = hook_manager.slide_calls[-1]
     assert slide_stage == STAGE_PREPARE
     assert slide_env["PPTX_PREPARE_CARD_PATH"] == str(cards_path)
     assert getattr(slide_contexts[0], "slide_id") == "slide-001"
