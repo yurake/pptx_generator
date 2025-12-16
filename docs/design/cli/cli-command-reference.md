@@ -177,8 +177,6 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
-| `--return-reasons-path <path>` | 差戻し理由テンプレート辞書のパス |  |  | `config/return_reasons.json` |
-| `--return-reasons` | 差戻し理由テンプレート一覧を表示して終了する |  |  | 無効 |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
 
 ドラフト成果物を任意ディレクトリへ分離したい場合は、`--output` を `<root>` に設定したうえで `<root>/draft` を参照する。

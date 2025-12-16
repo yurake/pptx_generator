@@ -52,6 +52,43 @@ class ReturnReasonTemplate:
     related_analyzer_tags: tuple[str, ...]
 
 
+DEFAULT_RETURN_REASONS: tuple[ReturnReasonTemplate, ...] = (
+    ReturnReasonTemplate(
+        code="STRUCTURE_GAP",
+        label="章構成の不足",
+        description="章テンプレで必須となっているセクションが不足しています。",
+        severity="blocker",
+        default_actions=(
+            "Add required section",
+            "Escalate to story lead",
+        ),
+        related_analyzer_tags=("missing_section",),
+    ),
+    ReturnReasonTemplate(
+        code="ANALYZER_BLOCKER",
+        label="Analyzer 指摘（重大）",
+        description="重大度 High の Analyzer 指摘が解消されていません。",
+        severity="blocker",
+        default_actions=("Resolve analyzer issues",),
+        related_analyzer_tags=(
+            "layout_consistency",
+            "contrast_low",
+        ),
+    ),
+    ReturnReasonTemplate(
+        code="CAPACITY_WARN",
+        label="枚数超過",
+        description="テンプレで想定した枚数を超過しています。付録送りなどで調整してください。",
+        severity="warn",
+        default_actions=(
+            "Move slides to appendix",
+            "Consolidate content",
+        ),
+        related_analyzer_tags=(),
+    ),
+)
+
+
 def _load_json(path: Path) -> object:
     logger.info("Loading JSON from %s", path.resolve())
     return json.loads(path.read_text(encoding="utf-8"))
@@ -242,44 +279,8 @@ def evaluate_chapter_template(
     )
 
 
-def load_return_reasons(path: Path) -> tuple[ReturnReasonTemplate, ...]:
-    if not path.exists():
-        return ()
-    payload = _load_json(path)
-    if not isinstance(payload, list):
-        raise ValueError(f"差戻しテンプレートの形式が不正です: {path}")
-
-    results: list[ReturnReasonTemplate] = []
-    for item in payload:
-        if not isinstance(item, dict):
-            continue
-        code = str(item.get("code", "")).strip()
-        if not code:
-            continue
-        label = str(item.get("label", code)).strip()
-        description = item.get("description")
-        if description is not None:
-            description = str(description)
-        severity = str(item.get("severity", "warn")).lower()
-        default_actions: tuple[str, ...] = ()
-        related_tags: tuple[str, ...] = ()
-        actions = item.get("default_actions")
-        if isinstance(actions, list):
-            default_actions = tuple(str(action) for action in actions if str(action).strip())
-        tags = item.get("related_analyzer_tags")
-        if isinstance(tags, list):
-            related_tags = tuple(str(tag) for tag in tags if str(tag).strip())
-        results.append(
-            ReturnReasonTemplate(
-                code=code,
-                label=label,
-                description=description,
-                severity=severity,
-                default_actions=default_actions,
-                related_analyzer_tags=related_tags,
-            )
-        )
-    return tuple(results)
+def load_return_reasons(path: Path | None = None) -> tuple[ReturnReasonTemplate, ...]:
+    return DEFAULT_RETURN_REASONS
 
 
 def load_analysis_summary(path: Path) -> dict[str, DraftAnalyzerSummary]:

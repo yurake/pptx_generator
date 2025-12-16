@@ -36,7 +36,7 @@
    - 割当結果は `DraftSlideAllocation`（内部モデル）として保持し、HITL 操作用に `ref_id`（card_id）と `layout_hint`（jobspec.layout）を記録する。
 6. **承認フロー**:
    - CLI で章・スライド単位の承認／差戻し／付録送りを操作すると、`draft_review_log.json` に履歴を記録し、`generate_ready_meta.sections[*].status` を更新する。
-   - 差戻し時には `return_reasons.json` からコードを選択し、カードに紐付ける。差戻し後にカードが再割当されると過去ログはバージョンとして保持する。
+   - 差戻し時には定義済みの差戻しコードを選択し、カードに紐付ける。差戻し後にカードが再割当されると過去ログはバージョンとして保持する。
 7. **generate_ready 出力**:
    - 割当済みスライドを `GenerateReadySlide` へ変換する。`elements` にはカードの `content.title` / `content.headline` / `content.body` / `content.notes` をアンカー構造に合わせて整形して格納。
    - `meta.sources` には `card_id` を記載し、stage 5 以降でトレース可能にする。

@@ -3,11 +3,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import click
 
-from pptx_generator.draft_intel import load_return_reasons
 from pptx_generator.models import DraftDocument, JobSpec
 from pptx_generator.pipeline import (
     DraftStructuringOptions,
@@ -34,8 +32,6 @@ class OutlineCommandConfig:
     analysis_summary_path: Path | None
     prepare_cards: Path
     require_prepare: bool
-    return_reasons_path: Path
-    return_reasons: bool
     show_layout_reasons: bool
     draft_filename: str
     approved_filename: str
@@ -57,10 +53,6 @@ class OutlineResult:
 
 
 def run_outline_command(config: OutlineCommandConfig) -> None:
-    if config.return_reasons:
-        _print_return_reasons(config.return_reasons_path)
-        return
-
     spec = load_jobspec(config.spec_path)
 
     try:
@@ -96,19 +88,6 @@ def run_outline_command(config: OutlineCommandConfig) -> None:
         raise click.exceptions.Exit(code=1) from exc
 
     print_outline_result(result, show_layout_reasons=config.show_layout_reasons)
-
-
-def _print_return_reasons(path: Path) -> None:
-    reasons = load_return_reasons(path)
-    if not reasons:
-        click.echo(f"差戻し理由テンプレートが見つかりません: {path}")
-        return
-    click.echo("差戻し理由テンプレート一覧:")
-    for reason in reasons:
-        label = f"{reason.code} ({reason.severity})"
-        if reason.label and reason.label != reason.code:
-            label += f" - {reason.label}"
-        click.echo(f"- {label}")
 
 
 def execute_outline(
