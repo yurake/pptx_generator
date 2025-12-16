@@ -322,7 +322,7 @@ Layout AI Scoring
          ↓
 適合度上位候補を選定
          ↓
-ルールベース調整 (config/rules.json)
+ルールベース調整 (同梱の `src/pptx_generator/config/pipeline_rules.json`)
          ↓
 フォールバック判定
          ↓
@@ -424,7 +424,7 @@ generate_ready.json へ確定
 
 | 項目 | ルール | 出典 |
 |------|--------|------|
-| 禁則語 | `config/rules.json` の `forbidden_words` リスト | Validator |
+| 禁則語 | `src/pptx_generator/config/pipeline_rules.json` の `forbidden_words` リスト | Validator |
 | 表記揺れ | 正式名称マッピング辞書で置換 | Validator |
 | タイトル文字数 | ≤ 25 文字（推奨） | レイアウト依存 |
 | 本文行文字数 | ≤ 40 文字（推奨） | レイアウト依存 |
@@ -773,7 +773,7 @@ uv run pptx compose <jobspec.json> \
 | `--prepare-cards` | prepare_card.json のパス | `.pptx/prepare/prepare_card.json` |
 | `--output, -o <dir>` | `generate_ready.json` などの出力先 | `.pptx/compose` |
 | （自動） | ドラフト成果物の出力先 | `<output>/draft` |
-| `--rules` | マッピングルール設定 | `config/rules.json` |
+| `--rules` | マッピングルール設定 | `src/pptx_generator/config/pipeline_rules.json` |
 | `--show-layout-reasons` | スコア内訳を表示 | 無効 |
 
 **使用例**:
@@ -1297,7 +1297,7 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
 
 ### 7.3 設定ファイル
 
-#### config/rules.json
+#### src/pptx_generator/config/pipeline_rules.json
 
 ```json
 {
@@ -1806,7 +1806,7 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
 
 ### 12.3 カスタムバリデーションルール
 
-#### Step 1: rules.json 編集
+#### Step 1: pipeline_rules.json 編集
 
 ```json
 {
@@ -1938,7 +1938,7 @@ async def generate_pptx(spec: GenerateRequest):
 
 #### DON'T
 
-❌ 禁則語を含めない（`config/rules.json` で定義）
+❌ 禁則語を含めない（`src/pptx_generator/config/pipeline_rules.json` で定義）
 ❌ 極端に長い段落（200 文字超）を避ける
 ❌ 文字装飾（太字・斜体）を多用しない
 

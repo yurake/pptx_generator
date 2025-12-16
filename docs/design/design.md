@@ -94,7 +94,7 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 | draft_review_log.json | 任意 | HITL 承認・差戻しの操作履歴。 | S3 出 |
 | draft_mapping_log.json | 任意 | レイアウト候補スコア、フォールバック履歴、AI 推薦結果。 | S3 出 |
 | fallback_report.json | 任意 | 重大フォールバック時の詳細。 | S3 出 |
-| rules.json | 任意 | レイアウト割付で参照するルール設定。 | S3 入 / S4 入 |
+| pipeline_rules.json | 任意 | レイアウト割付で参照するルール設定（パッケージ同梱を利用）。 | S3 入 / S4 入 |
 | proposal.pptx | 必須（最終成果物） | **最終成果物** PPTX。 | S4 出 |
 | proposal.pdf | 任意（最終成果物） | **最終成果物** PDF。指定時のみ生成。 | S4 出 |
 | analysis.json / review_engine_analyzer.json | 任意 | レンダリング結果の解析・レビュー用メタ。 | S4 出 |
@@ -200,7 +200,7 @@ assets:
 - フォーマット検証は `pydantic` で実装し、必須項目不足・型不一致を例外化。
 
 ## 5. バリデーションルール
-- **禁則語**: `config/rules.json` のリストにマッチ。
+- **禁則語**: `src/pptx_generator/config/pipeline_rules.json` のリストにマッチ。
 - **表記揺れ**: 正式名称マッピング辞書で置換。
 - **数値整合性**: 指標ごとの範囲定義、金額桁数チェック。
 - **文字数**: タイトル <= 25 文字、本文行 <= 40 文字、行数 <= 6。
@@ -289,7 +289,7 @@ project/
  │   ├─ refine.py
  │   ├─ config/
  │   │   ├─ branding.json
- │   │   └─ rules.json
+│   │   └─ pipeline_rules.json
  │   └─ tests/
  ├─ dotnet/
  │   └─ OpenXmlPolish/

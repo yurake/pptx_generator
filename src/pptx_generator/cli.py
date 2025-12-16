@@ -38,7 +38,7 @@ from .cli_handlers.template_extraction import (
 )
 from .settings.paths import get_default_config_path
 
-DEFAULT_RULES_PATH = get_default_config_path("rules.json")
+DEFAULT_RULES_PATH = get_default_config_path("pipeline_rules.json")
 DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
 DEFAULT_JOBSPEC_PATH = Path(".pptx/template/jobspec.json")
 DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
