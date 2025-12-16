@@ -327,7 +327,7 @@ class ContentImportService:
 
             attempts: list[tuple[Sequence[str], subprocess.CompletedProcess[str]]] = []
             completed = _run_soffice()
-            attempts.append((), completed)
+            attempts.append(((), completed))
             if completed.returncode != 0:
                 msg = (
                     "LibreOffice による PDF 変換に失敗しました: "
@@ -339,7 +339,7 @@ class ContentImportService:
             if not txt_path.exists():
                 fallback_args: Sequence[str] = ("--infilter=writer_pdf_import",)
                 completed = _run_soffice(extra_args=fallback_args)
-                attempts.append(fallback_args, completed)
+                attempts.append((fallback_args, completed))
                 if completed.returncode != 0:
                     msg = (
                         "LibreOffice による PDF 変換に失敗しました: "
