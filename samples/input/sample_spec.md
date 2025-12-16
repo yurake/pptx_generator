@@ -578,9 +578,10 @@ generate_ready.json へ確定
 
 ```
 config/
-├── template_ai_policies.json  # Template AI のプロンプト・モデル設定
-├── slide_ai_policies.json     # Slide AI のポリシー定義
-├── layout_ai_policies.json    # Layout AI のスコアリングルール
+├── ai_policies/
+│   ├── template.json          # Template AI のプロンプト・モデル設定
+│   ├── slide.json             # Slide AI のポリシー定義
+│   └── layout.json            # Layout AI のスコアリングルール
 └── usage_tags.json            # canonical タグ定義とシノニム
 ```
 
@@ -1893,7 +1894,7 @@ async def generate_pptx(spec: GenerateRequest):
 **症状**: 適切なレイアウトが選ばれない場合がある
 
 **回避策**:
-- `config/layout_ai_policies.json` でスコアリングルールを調整
+- `config/ai_policies/layout.json` でスコアリングルールを調整
 - `--show-layout-reasons` でスコア内訳を確認
 
 ### 13.3 将来的な改善予定
