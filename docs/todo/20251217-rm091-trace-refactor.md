@@ -42,3 +42,4 @@ roadmap_item: RM-091 transaction_id 導入
 
 ## メモ
 - UAT 予定: ステージごとに pipeline_trace.json が出力されることを確認（静的/動的モード）。出力先は各ステージの output ディレクトリ配下。
+- static モードでスライドが空の場合に template 抽出へフォールバックし、jobspec/blueprint を生成するよう修正。templates/static_template.pptx で再現したエラーを解消済み。

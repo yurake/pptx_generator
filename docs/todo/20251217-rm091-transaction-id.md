@@ -48,10 +48,13 @@ roadmap_item: RM-091 transaction_id 導入
     2) `uv run pptx prepare --mode static --jobspec .pptx/uat-static/template/jobspec.json --output .pptx/uat-static/prepare`
     3) `uv run pptx compose .pptx/uat-static/template/jobspec.json --prepare-cards .pptx/uat-static/prepare/prepare_card.json --output .pptx/uat-static/compose`
     4) `uv run pptx gen .pptx/uat-static/compose/generate_ready.json --output .pptx/uat-static/gen --export-pdf --emit-structure-snapshot`
-    - 確認: 各 stage の `pipeline_trace.json` に `job_id` と `transaction_id` が併記されること、主要成果物（jobspec/prepare_card/generate_ready/pptx/pdf）が生成されること、終了コード 0
+    - 確認: ルートの `.pptx/uat-static/pipeline_trace.json` に各ステージの履歴が append され、ステージ配下にも `pipeline_trace.json` が出力され `job_id` と `transaction_id` が併記されること。主要成果物（jobspec/prepare_card/generate_ready/pptx/pdf）が生成されること。終了コード 0。
   - 動的モード全通し（出力先: `.pptx/uat-dynamic`）
     1) `uv run pptx template samples/templates/templates.pptx --mode dynamic --output .pptx/uat-dynamic/template`
     2) `uv run pptx prepare samples/input/pitch.md --mode dynamic --output .pptx/uat-dynamic/prepare`
     3) `uv run pptx compose .pptx/uat-dynamic/template/jobspec.json --prepare-cards .pptx/uat-dynamic/prepare/prepare_card.json --output .pptx/uat-dynamic/compose`
     4) `uv run pptx gen .pptx/uat-dynamic/compose/generate_ready.json --output .pptx/uat-dynamic/gen --export-pdf --emit-structure-snapshot`
-    - 確認: 各 stage の `pipeline_trace.json` に `job_id` と `transaction_id` が併記されること、主要成果物が生成されること、終了コード 0
+    - 確認: ルートの `.pptx/uat-dynamic/pipeline_trace.json` に各ステージの履歴が append され、ステージ配下にも `pipeline_trace.json` が出力され `job_id` と `transaction_id` が併記されること。主要成果物が生成されること。終了コード 0。
+- UAT 実績メモ
+  - 動的モード（templates.pptx → pitch.md → compose → gen）を再実行し、全ステージ成功。各ステージとルートに pipeline_trace.json が出力され job_id/transaction_id が引き継がれることを確認。gen では PDF/構造スナップショットも生成。
+  - 静的モードで static_template.pptx / static_slide.pptx を実行し、ともに成功。static_template はスライド空のためテンプレート抽出へフォールバックし jobspec と blueprint が生成されることを確認。

@@ -132,6 +132,7 @@ class TestTemplateExtractorStep:
             assert isinstance(template_spec, TemplateSpec)
             assert template_spec.template_path == str(temp_template_path)
             assert len(template_spec.layouts) == 1
+            assert template_spec.template_source == "template"
             
             layout = template_spec.layouts[0]
             assert layout.name == "タイトルスライド"
@@ -189,6 +190,27 @@ class TestTemplateExtractorStep:
             
             # フィルタに一致しないため、レイアウトは0個
             assert len(template_spec.layouts) == 0
+
+    def test_static_mode_fallbacks_to_template_when_no_slides(
+        self, temp_template_path, mock_presentation
+    ):
+        """static モードでスライドが空のときテンプレート抽出へフォールバックする。"""
+        mock_presentation.slides = []
+        options = TemplateExtractorOptions(
+            template_path=temp_template_path,
+            layout_mode="static",
+            static_source="slide",
+        )
+        step = TemplateExtractorStep(options)
+
+        with patch("pptx_generator.pipeline.template_extractor.Presentation") as mock_pres_class:
+            mock_pres_class.return_value = mock_presentation
+
+            template_spec = step.extract_template_spec()
+
+        assert template_spec.template_source == "template"
+        assert len(template_spec.layouts) == 1
+        assert template_spec.blueprint is not None
 
     def test_anchor_filter(self, temp_template_path, mock_presentation):
         """アンカーフィルタのテスト。"""
@@ -655,4 +677,3 @@ class TestDuplicateAnchorDetection:
             # 例外が発生しないことを確認
             template_spec = step.extract_template_spec()
             assert len(template_spec.layouts) == 1
-
