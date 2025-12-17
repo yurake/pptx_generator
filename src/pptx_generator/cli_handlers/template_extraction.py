@@ -179,13 +179,17 @@ def run_template_extraction(
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
     logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
 
+    scaffold_meta = getattr(jobspec_scaffold, "meta", None)
+    schema_version = getattr(scaffold_meta, "schema_version", None) or "1.0"
+    template_id = getattr(scaffold_meta, "template_id", None)
+    template_spec_path = getattr(scaffold_meta, "template_spec_path", None)
     stub_spec = JobSpec(
         meta=JobMeta(
-            schema_version=jobspec_scaffold.meta.schema_version,
-            title=jobspec_scaffold.meta.template_id or Path(template_path).stem,
+            schema_version=schema_version,
+            title=template_id or Path(template_path).stem,
             template_path=str(template_path),
-            template_id=jobspec_scaffold.meta.template_id,
-            template_spec_path=jobspec_scaffold.meta.template_spec_path,
+            template_id=template_id,
+            template_spec_path=template_spec_path,
         ),
         auth=JobAuth(created_by="cli"),
         slides=[],
