@@ -24,7 +24,7 @@ roadmap_item: RM-091 transaction_id 導入
 - [x] 実装
   - メモ: PipelineContext に transaction_id を追加し、pipeline_trace 出力とテストを更新。
 - [x] テスト・検証
-  - メモ: `uv run --extra dev pytest tests/pipeline/test_pipeline_trace.py`（1 passed）
+  - メモ: `uv run --extra dev pytest --cov --cov-report=term --cov-report=xml`（全390件: 389 passed, 1 skipped, coverage 82%）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
