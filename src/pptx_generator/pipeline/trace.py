@@ -34,7 +34,7 @@ def write_pipeline_trace(
     """PipelineContext のトレース情報を JSON へ書き出す。"""
 
     payload = {
-        "execution_id": context.execution_id,
+        "job_id": context.job_id,
         "current_stage": context.current_stage.value if context.current_stage else None,
         "execution_trace": list(context.execution_trace),
         "stage_results": [_serialize_stage_result(result) for result in context.stage_results],
