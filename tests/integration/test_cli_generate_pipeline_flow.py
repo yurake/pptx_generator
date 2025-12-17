@@ -982,7 +982,6 @@ def test_cli_gen_default_output_directory(tmp_path) -> None:
     repo_root = Path.cwd()
     with runner.isolated_filesystem(temp_dir=tmp_path) as fs_root:
         shutil.copytree(repo_root / "samples", Path(fs_root) / "samples")
-        shutil.copytree(repo_root / "config", Path(fs_root) / "config")
 
         prepare_paths = _prepare_inputs(runner, Path(fs_root))
         spec_path = _create_matching_jobspec(
