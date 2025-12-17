@@ -42,3 +42,16 @@ roadmap_item: RM-091 transaction_id 導入
 
 ## メモ
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
+- UAT 計画（job_id/transaction_id 出力確認を重視）
+  - 静的モード全通し（出力先: `.pptx/uat-static`）
+    1) `uv run pptx template samples/templates/templates.pptx --mode static --output .pptx/uat-static/template`
+    2) `uv run pptx prepare --mode static --jobspec .pptx/uat-static/template/jobspec.json --output .pptx/uat-static/prepare`
+    3) `uv run pptx compose .pptx/uat-static/template/jobspec.json --prepare-cards .pptx/uat-static/prepare/prepare_card.json --output .pptx/uat-static/compose`
+    4) `uv run pptx gen .pptx/uat-static/compose/generate_ready.json --output .pptx/uat-static/gen --export-pdf --emit-structure-snapshot`
+    - 確認: 各 stage の `pipeline_trace.json` に `job_id` と `transaction_id` が併記されること、主要成果物（jobspec/prepare_card/generate_ready/pptx/pdf）が生成されること、終了コード 0
+  - 動的モード全通し（出力先: `.pptx/uat-dynamic`）
+    1) `uv run pptx template samples/templates/templates.pptx --mode dynamic --output .pptx/uat-dynamic/template`
+    2) `uv run pptx prepare samples/input/pitch.md --mode dynamic --output .pptx/uat-dynamic/prepare`
+    3) `uv run pptx compose .pptx/uat-dynamic/template/jobspec.json --prepare-cards .pptx/uat-dynamic/prepare/prepare_card.json --output .pptx/uat-dynamic/compose`
+    4) `uv run pptx gen .pptx/uat-dynamic/compose/generate_ready.json --output .pptx/uat-dynamic/gen --export-pdf --emit-structure-snapshot`
+    - 確認: 各 stage の `pipeline_trace.json` に `job_id` と `transaction_id` が併記されること、主要成果物が生成されること、終了コード 0
