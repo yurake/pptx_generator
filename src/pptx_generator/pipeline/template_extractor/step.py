@@ -153,11 +153,22 @@ class TemplateExtractorStep(
     ) -> tuple[str, enumerate]:
         if layout_mode == "static":
             candidate_source = (self.options.static_source or "slide").lower()
-            template_source: Literal["slide", "template"] = (
-                "slide" if candidate_source == "slide" else "template"
-            )
+            if candidate_source == "slide":
+                try:
+                    slide_count = len(presentation.slides)
+                except Exception:  # noqa: BLE001
+                    slide_count = 0
+                if slide_count == 0:
+                    logger.info(
+                        "static モード: スライドが存在しないため template 抽出へフォールバックします"
+                    )
+                    template_source: Literal["slide", "template"] = "template"
+                else:
+                    template_source = "slide"
+            else:
+                template_source = "template"
         else:
-            template_source = "template"
+            template_source: Literal["slide", "template"] = "template"
 
         self._template_source = template_source
         containers = (
