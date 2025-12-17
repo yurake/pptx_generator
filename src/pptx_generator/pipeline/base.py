@@ -116,7 +116,7 @@ class PipelineContext:
 
     spec: JobSpec
     workdir: Path
-    execution_id: str = field(default_factory=lambda: uuid4().hex)
+    job_id: str = field(default_factory=lambda: uuid4().hex)
     current_stage: PipelineStage | None = None
     config_snapshot: ResolvedConfig | None = None
     error_history: list[str] = field(default_factory=list)

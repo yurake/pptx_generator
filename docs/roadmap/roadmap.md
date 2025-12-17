@@ -29,6 +29,10 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
+        RM091["RM-091<br/>transaction_id 導入<br/>(未着手)"]
+        RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
+        RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
+        RM094["RM-094<br/>ジョブ状態＋非同期化<br/>(未着手)"]
     end
 
     subgraph ST1["Stage 1: テンプレ"]
@@ -69,6 +73,8 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
+    RM091 --> RM094 --> RM093
+    RM092 --> RM094
 ```
 
 ## 個別状況
@@ -727,7 +733,7 @@ flowchart TB
 - 依存: RM-002（エージェント運用ガイド整備）・RM-050（ロードマップ参照整備）
 - 状況: 完了（2025-11-30 更新）
 - 期待成果:
-  - `diagrams/` にソースを管理し、生成 PNG/SVG を `assets/diagrams/` 配下へ出力する構成を整備する。
+  - `diagrams/` にソースを管理し、生成 PNG/SVG を `docs/assets/diagrams/` 配下へ出力する構成を整備する。
   - README 内の自動埋め込みタグを通じて PNG を挿入／更新し、Mermaid ブロックの差分に追従できる GitHub Actions を構築する。
   - 差分ノイズを抑制（handDrawnSeed 固定等）し、将来的な draw.io 連携や別テーマへの拡張にも耐えられる構成を確立する。
 - 次アクション: フォルダ構成・スクリプト・ワークフローの初期実装案を作成し、試験運用で生成物の安定性とレビュー負荷を評価する。
@@ -777,12 +783,12 @@ flowchart TB
 <a id="rm-063"></a>
 ### RM-063 assets 運用ガイド整備
 - 対象 stage: 横断（ブランド資産・ドキュメント運用）
-- ゴール: `assets/` ディレクトリの役割と更新手順を README として整備し、ブランド資産の管理方針を明文化する。
-- 参照ドキュメント: （作成予定: `assets/README.md`）、[docs/AGENTS.md](../AGENTS.md)
+- ゴール: `docs/assets/` ディレクトリの役割と更新手順を README として整備し、ブランド資産の管理方針を明文化する。
+- 参照ドキュメント: （作成予定: `docs/assets/README.md`）、[docs/AGENTS.md](../AGENTS.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-11-09 更新）
 - 期待成果:
-  - `assets/` 配下の構造、命名規則、公開範囲を整理した README を提供し、参照ドキュメントからリンクできるようにする。
+  - `docs/assets/` 配下の構造、命名規則、公開範囲を整理した README を提供し、参照ドキュメントからリンクできるようにする。
   - ロゴや図版の生成手順・再現性を明記し、機微情報の取り扱いルールを共有する。
   - 自動生成図版（Mermaid など）のソース配置と更新フローを定義し、関連スクリプトへの導線を示す。
 - 依存: RM-052（ドキュメント可読性向上）
@@ -1130,3 +1136,48 @@ flowchart TB
   - ジョブ登録/ステータス参照 API とジョブキュー（RQ または Celery + Redis）を導入し、各 stage を非同期実行する。
   - Bearer トークン認証・ETag・成果物パス/ハッシュ返却を CLI と同等に維持し、監査ログと成果物構成を変えない。
   - ローカル開発と gunicorn 本番起動の手順を整備し、API/CLI 両経路で同一成果物が得られることを検証する。
+
+<a id="rm-090"></a>
+### RM-090 job_id リネーム
+- ゴール: execution_id を job_id に統一し、外部公開時も一貫して job_id を使用する。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: なし（全タスクの前提）
+- 状況: 完了（2025-12-17 更新）
+- 対象: パイプライン基盤（PipelineContext/pipeline_trace）、関連テスト
+- 期待成果: pipeline_trace 等で job_id を公式キーとし、以降の API/ログで統一
+
+<a id="rm-091"></a>
+### RM-091 transaction_id 導入
+- ゴール: 4 stage をまたぐ一意 ID（transaction_id）を公式化し、job_id を束ねて追跡できるようにする。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-090
+- 状況: 未着手
+- 対象: パイプライン基盤（PipelineContext/pipeline_trace）、API 入出力メタ
+- 期待成果: job_id と併せた transaction_id を払い出し・保存し、ステージ横断の追跡を可能にする
+
+<a id="rm-092"></a>
+### RM-092 出力ディレクトリ統一
+- ゴール: Web/API と CLI で出力ルート指定を `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に統一し、履歴を保持する。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-091
+- 状況: 未着手
+- 対象: 出力先解決（PipelineContext/workdir）、CLI ハンドラ、設定ドキュメント
+- 期待成果: API/CLI の出力パス規約を統一し、履歴保持と成果物参照の一貫性を確保
+
+<a id="rm-093"></a>
+### RM-093 入力配置・ダウンロードAPI
+- ゴール: 入力配置を `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に規約化し、job_id をキーに成果物をダウンロードできる API を提供する。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-091, RM-092
+- 状況: 未着手
+- 対象: 入力配置解決、ダウンロードAPI、入出力パスのドキュメント
+- 期待成果: 入出力の置き場を固定し、job_id をキーに PPTX/PDF をAPI経由で取得可能にする
+
+<a id="rm-094"></a>
+### RM-094 ジョブ状態モデル＋非同期化
+- ゴール: ジョブ状態（pending/running/succeeded/failed/canceled）を明示し、compose/gen など長時間処理を非同期実行できるようにする。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-091（実装時は RM-092 と整合を取る）
+- 状況: 未着手
+- 対象: ジョブ状態ストア、非同期実行基盤（キュー/ワーカー）、ステータスAPI、ログ/メトリクス
+- 期待成果: job_id/transaction_id で状態を問い合わせ・追跡でき、compose/gen を非同期実行できるようにする
