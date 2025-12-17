@@ -9,8 +9,8 @@ roadmap_item: RM-091 transaction_id 導入
   - メモ: ブランチ chore/rm091-transaction-id を継続利用
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan を転記
-    - 対象整理（スコープ、対象ファイル、前提）: template/prepare/compose/gen の CLI ハンドラを PipelineContext ベースに揃え、各ステージで pipeline_trace.json を出力する。job_id はステージごとに発行、transaction_id はステージ横断で共通。コンテキスト初期化と trace 出力の共通化を行い、CLI で transaction_id 指定を受け取れるようにする。
-    - ドキュメント／コード修正方針: コンテキスト生成のヘルパを用意し、各ステージ終了時に write_pipeline_trace を呼ぶ。出力は stage ディレクトリ配下に配置。必要に応じて CLI オプションを追加し、従来挙動との互換性に注意する（出力ファイル増加は許容）。
+    - 対象整理（スコープ、対象ファイル、前提）: template/prepare/compose/gen の CLI ハンドラを PipelineContext ベースに揃え、各ステージで pipeline_trace.json を出力する。job_id はステージごとに発行、transaction_id はステージ横断で共通。CLI オプション追加は避け、自動発行＋生成物内に埋め込み、後続ステージで継承する形にする。
+    - ドキュメント／コード修正方針: コンテキスト生成のヘルパを用意し、各ステージ終了時に write_pipeline_trace を呼ぶ。出力は stage ディレクトリ配下に配置。transaction_id は初回ステージで発行し、成果物メタや出力ディレクトリから後続ステージが継承する。
     - 確認・共有方法: 本 ToDo に進捗を記録し、PR で変更概要・影響範囲を共有。
     - 想定影響ファイル: `src/pptx_generator/cli_handlers/template_*.py`, `prepare.py`, `compose.py`, `rendering.py`、`pipeline/base.py`, `pipeline/trace.py`、CLI コマンド定義部、関連テスト。
     - リスク: CLI 互換性（引数追加/出力構成変更）、コンテキスト生成漏れ、外部スクリプト依存の破壊。LLM 呼び出しによるレート制限影響。

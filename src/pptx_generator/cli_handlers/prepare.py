@@ -13,11 +13,15 @@ from pydantic import ValidationError
 
 from pptx_generator.models import (
     JobSpec,
+    JobMeta,
+    JobAuth,
     SpecValidationError,
     TemplateBlueprint,
     TemplateBlueprintSlide,
     TemplateSpec,
 )
+from pptx_generator.pipeline import PipelineContext, PipelineStage
+from pptx_generator.cli_handlers.trace_utils import record_stage_trace
 from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
 from pptx_generator.prepare import PrepareCard, PrepareDocument
 from pptx_generator.prepare.source import (
@@ -153,7 +157,7 @@ def run_prepare_command(
     artifacts = PrepareCommandArtifacts.initialize(config.output_dir)
     combined_messages = list(static_context.messages)
     combined_messages.extend(import_messages)
-    return artifacts.write_outputs(
+    result = artifacts.write_outputs(
         document=document,
         meta=meta,
         ai_logs=ai_logs,
@@ -162,6 +166,16 @@ def run_prepare_command(
         messages=combined_messages,
         import_metadata=source_metadata,
     )
+    # trace: prepare stage
+    stub_spec = JobSpec(
+        meta=JobMeta(schema_version="1.0", title="prepare"),
+        auth=JobAuth(created_by="cli"),
+        slides=[],
+    )
+    context = PipelineContext(spec=stub_spec, workdir=config.output_dir)
+    context.current_stage = PipelineStage.PREPARE
+    record_stage_trace(context=context, stage="prepare", output_dir=config.output_dir)
+    return result
 
 
 @dataclass(slots=True)
