@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM091["RM-091<br/>transaction_id 導入<br/>(未着手)"]
         RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
         RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
         RM094["RM-094<br/>ジョブ状態＋非同期化<br/>(未着手)"]
@@ -73,7 +72,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM091 --> RM094 --> RM093
     RM092 --> RM094
 ```
 
@@ -1151,7 +1149,7 @@ flowchart TB
 - ゴール: 4 stage をまたぐ一意 ID（transaction_id）を公式化し、job_id を束ねて追跡できるようにする。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-090
-- 状況: 未着手
+- 状況: 完了（2025-12-17 更新）
 - 対象: パイプライン基盤（PipelineContext/pipeline_trace）、API 入出力メタ
 - 期待成果: job_id と併せた transaction_id を払い出し・保存し、ステージ横断の追跡を可能にする
 
