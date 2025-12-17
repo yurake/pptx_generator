@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM090["RM-090<br/>job_id リネーム<br/>(未着手)"]
         RM091["RM-091<br/>transaction_id 導入<br/>(未着手)"]
         RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
         RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
@@ -74,7 +73,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM090 --> RM091 --> RM092 --> RM093
     RM091 --> RM094 --> RM093
     RM092 --> RM094
 ```
@@ -1144,7 +1142,7 @@ flowchart TB
 - ゴール: execution_id を job_id に統一し、外部公開時も一貫して job_id を使用する。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: なし（全タスクの前提）
-- 状況: 未着手
+- 状況: 完了（2025-12-17 更新）
 - 対象: パイプライン基盤（PipelineContext/pipeline_trace）、関連テスト
 - 期待成果: pipeline_trace 等で job_id を公式キーとし、以降の API/ログで統一
 
