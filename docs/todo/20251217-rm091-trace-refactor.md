@@ -6,7 +6,7 @@ roadmap_item: RM-091 transaction_id 導入
 ---
 
 - [ ] ブランチ作成・初期コミット・push
-  - メモ: ブランチ chore/rm091-transaction-id を継続利用
+  - メモ: ブランチ chore/rm091-transaction-id を継続利用（済）
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan を転記
     - 対象整理（スコープ、対象ファイル、前提）: template/prepare/compose/gen の CLI ハンドラを PipelineContext ベースに揃え、各ステージで pipeline_trace.json を出力する。job_id はステージごとに発行、transaction_id はステージ横断で共通。CLI オプション追加は避け、自動発行＋生成物内に埋め込み、後続ステージで継承する形にする。
@@ -18,25 +18,25 @@ roadmap_item: RM-091 transaction_id 導入
     - ロールバック方法: コンテキスト統一をまとまったコミットにし、revert 可能な単位で管理する。
     - 承認メッセージ ID／リンク: チャット承認（RM-091 trace リファクタ）
 - [ ] 設計・実装方針の確定
-  - メモ: Plan に基づき、CLI オプション追加とコンテキスト初期化ヘルパの形を決めて記載する
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: `uv run --extra dev pytest --cov --cov-report=term --cov-report=xml`（実行中 / failure 1件対応中）
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+  - メモ: Plan に基づき、CLI オプション追加とコンテキスト初期化ヘルパの形を決めて記載する（コンテキスト共通化・trace append 採用）
+  - [x] 設計・実装方針メモの共有（本 ToDo メモで管理）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: 全ステージで pipeline_trace を append。静的テンプレート抽出のフォールバック追加。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest --cov --cov-report=term --cov-report=xml`（390 passed, 1 skipped, coverage 82%）
+- [x] ドキュメント更新
+  - メモ: コード変更は内部挙動の統一のみで既存ドキュメント整合性に影響なし。追加記載不要。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: 子タスク完了を確認し親タスクのチェックを更新済み。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 

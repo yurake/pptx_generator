@@ -25,18 +25,18 @@ roadmap_item: RM-091 transaction_id 導入
   - メモ: PipelineContext に transaction_id を追加し、pipeline_trace 出力とテストを更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest --cov --cov-report=term --cov-report=xml`（全390件: 389 passed, 1 skipped, coverage 82%）
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+- [x] ドキュメント更新
+  - メモ: 仕様変更は pipeline trace の追加出力のみで既存ドキュメント整合性に影響なし。追加記載不要と判断。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: ドキュメント更新を含む子タスク完了を確認し、親タスクのチェックを更新済み。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
