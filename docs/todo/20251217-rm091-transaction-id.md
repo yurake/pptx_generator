@@ -17,14 +17,14 @@ roadmap_item: RM-091 transaction_id 導入
     - テスト方針: 最小で `uv run --extra dev pytest tests/pipeline/test_pipeline_trace.py` を実行。余力があれば関連小粒度テストを追加・実行する。
     - ロールバック方法: 変更をまとまったコミットにし、問題時はそのコミットを revert できる形にする。
     - 承認メッセージ ID／リンク: チャット承認（2025-12-17 RM-091）
-- [ ] 設計・実装方針の確定
-  - メモ: Plan を前提に実装方針を整理し、追加論点が出た場合に記載する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
+- [x] 設計・実装方針の確定
+  - メモ: Plan 方針そのまま適用。PipelineContext に transaction_id を追加し、trace とテストで併記。入口層は最小で内部生成を優先し、追加の指定経路は後続で検討。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: PipelineContext に transaction_id を追加し、pipeline_trace 出力とテストを更新。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/pipeline/test_pipeline_trace.py`（1 passed）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
