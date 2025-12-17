@@ -22,7 +22,7 @@ pptx_generator/
 │  ├─ config/
 │  │  └─ mermaid.config.json # handDrawn 等の共通設定
 │  └─ manifests/             # 生成物のメタ情報（ハッシュ等）
-├─ assets/
+├─ docs/assets/
 │  ├─ diagrams/
 │  │  ├─ png/
 │  │  │  ├─ flow.png
@@ -37,8 +37,8 @@ pptx_generator/
 ```
 
 ## 自動レンダリングの流れ
-1. `scripts/render_mermaid.py` が `diagrams/mermaid/*.mmd` を走査し、Mermaid CLI で `assets/diagrams/png/*.png`（必要なら SVG も）を生成する。
-2. README 内に配置したマーカー `<!-- AUTO-DIAGRAM: diagrams/mermaid/<name>.mmd -->` を検出し、マーカー直下に `<img src="assets/diagrams/png/<name>.png" …>` を挿入または更新する。
+1. `scripts/render_mermaid.py` が `diagrams/mermaid/*.mmd` を走査し、Mermaid CLI で `docs/assets/diagrams/png/*.png`（必要なら SVG も）を生成する。
+2. README 内に配置したマーカー `<!-- AUTO-DIAGRAM: diagrams/mermaid/<name>.mmd -->` を検出し、マーカー直下に `<img src="docs/assets/diagrams/png/<name>.png" …>` を挿入または更新する。
 3. GitHub Actions（`render-mermaid.yml`）が README や `.mmd`、設定ファイルが変更された際に実行され、差分があれば自動コミットする。
 4. ローカルでも `make diagrams`（Mermaid CLI 事前インストール）で同じ生成処理を再現可能とする。
 

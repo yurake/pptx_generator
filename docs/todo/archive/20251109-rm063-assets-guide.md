@@ -10,9 +10,9 @@ roadmap_item: RM-063 assets 運用ガイド整備
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
     - 対象整理（スコープ、対象ファイル、前提）: `assets/` 直下のガイド文書新設と、`docs/README.md`・`docs/AGENTS.md` への導線追加。既存バイナリアセットの内容変更は行わない。
-    - ドキュメント／コード修正方針: `assets/README.md` を新規作成し、目的・構造・命名規則・更新手順・機微情報取り扱いを整理。関連ドキュメントへリンクを追記し重複を避ける。
+    - ドキュメント／コード修正方針: `docs/assets/README.md` を新規作成し、目的・構造・命名規則・更新手順・機微情報取り扱いを整理。関連ドキュメントへリンクを追記し重複を避ける。
     - 確認・共有方法（レビュー、ToDo 更新など）: 本 ToDo を随時更新し、Plan 承認・成果物リンクを記録。PR でレビューを取得。
-    - 想定影響ファイル: `assets/README.md`, `docs/README.md`, `docs/AGENTS.md`（必要に応じて）。
+    - 想定影響ファイル: `docs/assets/README.md`, `docs/README.md`, `docs/AGENTS.md`（必要に応じて）。
     - リスク: 既存ポリシー（`docs/policies/config-and-templates.md` など）との文言不整合、将来の自動生成ワークフローとの齟齬。
     - テスト方針: ドキュメントのみのため自動テストは実施せず、リンクと Markdown の構造を目視確認。
     - ロールバック方法: 追加・更新した Markdown を `git checkout -- <path>` で差し戻す。
@@ -24,7 +24,7 @@ roadmap_item: RM-063 assets 運用ガイド整備
   - [x] docs/requirements 配下（対象外）
   - [x] docs/design 配下（対象外）
 - [x] 実装
-  - メモ: `assets/README.md` を整備し、ロゴ生成手順と運用方針を反映。併せて関連導線を整理。
+  - メモ: `docs/assets/README.md` を整備し、ロゴ生成手順と運用方針を反映。併せて関連導線を整理。
 - [x] テスト・検証
   - メモ: 対象外（ドキュメント更新のみのためテスト不要）
 - [x] ドキュメント更新
