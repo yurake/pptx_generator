@@ -1,7 +1,7 @@
 ---
 目的: RM-091 transaction_id 導入で 4 stage を跨ぐ一意 ID を公式化し、job_id を束ねて追跡できるようにする
 関連ブランチ: chore/rm091-transaction-id
-関連Issue: 未作成
+関連Issue: #435
 roadmap_item: RM-091 transaction_id 導入
 ---
 
@@ -33,7 +33,7 @@ roadmap_item: RM-091 transaction_id 導入
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
