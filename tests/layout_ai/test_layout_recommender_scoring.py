@@ -11,6 +11,7 @@ from pptx_generator.draft_recommender import (
     CardLayoutRecommenderConfig,
     LayoutProfile,
 )
+from pptx_generator.settings.ai_policy import resolve_layout_ai_policy_path
 from pptx_generator.layout_ai.client import LayoutAIResponse
 from pptx_generator.models import (ContentElements, ContentSlide,
                                    ContentSlideSource, DraftAnalyzerSummary)
@@ -63,7 +64,7 @@ def test_recommend_returns_ai_boost_when_enabled() -> None:
             enable_ai=True,
             ai_weight=0.3,
             max_candidates=2,
-            policy_path=Path("config/layout_ai_policies.json"),
+            policy_path=resolve_layout_ai_policy_path().path,
         )
     )
     result = recommender.recommend(

@@ -9,6 +9,7 @@ import pytest
 
 from pptx_generator.slide_ai import SlideAIPolicyError, load_policy_set
 from pptx_generator.slide_ai import prompts
+from pptx_generator.settings.ai_policy import resolve_slide_ai_policy_path
 
 
 def test_load_policy_set_and_resolve(tmp_path: Path) -> None:
@@ -43,7 +44,7 @@ def test_load_policy_set_and_resolve(tmp_path: Path) -> None:
 
 
 def test_get_policy_with_unknown_id() -> None:
-    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
+    policy_set = load_policy_set(resolve_slide_ai_policy_path().path)
     with pytest.raises(SlideAIPolicyError):
         policy_set.get_policy("unknown-policy")
 

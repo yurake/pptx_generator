@@ -1117,3 +1117,16 @@ flowchart TB
   - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
   - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
   - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
+
+<a id="rm-089"></a>
+### RM-089 stage1-4 Flask Web/API 化
+- ゴール: stage1-4 の CLI 実行を Flask ベースの Web/API として提供し、FastAPI 実装を移行する。長時間処理はジョブキュー経由で実行し、成果物と監査ログの互換性を維持する。
+- 対象 stage: 1〜4（テンプレ準備・コンテンツ準備・マッピング・PPTX生成）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template.md](../requirements/stages/stage-01-template.md), [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/requirements/stages/stage-04-gen.md](../requirements/stages/stage-04-gen.md), [docs/design/stages/stage-04-gen.md](../design/stages/stage-04-gen.md)
+- 依存: RM-084（CLI/Pipeline リファクタビリティ向上）、RM-086（静的テンプレ外部フック統合）
+- 状況: 新規（2025-12-17 起票）
+- 期待成果:
+  - Flask アプリファクトリと Blueprint（content/draft API＋stage1-4 ジョブ API）を用意し、FastAPI ルートを移植する。
+  - ジョブ登録/ステータス参照 API とジョブキュー（RQ または Celery + Redis）を導入し、各 stage を非同期実行する。
+  - Bearer トークン認証・ETag・成果物パス/ハッシュ返却を CLI と同等に維持し、監査ログと成果物構成を変えない。
+  - ローカル開発と gunicorn 本番起動の手順を整備し、API/CLI 両経路で同一成果物が得られることを検証する。

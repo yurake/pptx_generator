@@ -5,7 +5,6 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
@@ -36,6 +35,7 @@ from pptx_generator.models import (
 )
 from pptx_generator.pipeline import TemplateExtractor, TemplateExtractorOptions
 from pptx_generator.pipeline.analyzer import SlideSnapshot
+from pptx_generator.settings.ai_policy import resolve_template_ai_policy_path
 
 logger = logging.getLogger(__name__)
 
@@ -85,19 +85,14 @@ def run_template_extraction(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    ai_policy_path = template_ai_policy
-    if ai_policy_path is None and not disable_template_ai:
-        env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
-        if env_policy:
-            ai_policy_path = Path(env_policy)
-        else:
-            ai_policy_path = discover_template_ai_policy()
+    policy_resolution = resolve_template_ai_policy_path(
+        None if disable_template_ai else template_ai_policy
+    )
+    ai_policy_path = None if disable_template_ai else policy_resolution.path
     ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
     effective_disable = disable_template_ai or ai_policy_path is None
-    if effective_disable:
-        ai_policy_path = None
-        if not disable_template_ai:
-            logger.info("Template AI validation disabled: no policy file available")
+    if effective_disable and not disable_template_ai:
+        logger.info("Template AI validation disabled: no policy file available")
 
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
@@ -276,39 +271,6 @@ def echo_template_extraction_result(result: TemplateExtractionResult) -> None:
         click.echo(f"エラー: {len(template_spec.errors)} 件")
         for error in template_spec.errors:
             click.echo(f"  - {error}", err=True)
-
-
-def discover_template_ai_policy() -> Path | None:
-    env_policy = os.getenv("PPTX_TEMPLATE_AI_POLICY")
-    if env_policy:
-        candidate = Path(env_policy)
-        if candidate.is_file():
-            return candidate.resolve()
-
-    cwd_candidate = Path.cwd() / "config" / "template_ai_policies.json"
-    if cwd_candidate.exists():
-        logger.info("Detected default template AI policy: %s", cwd_candidate)
-        return cwd_candidate.resolve()
-
-    try:
-        resource = importlib_resources.files("pptx_generator").joinpath(
-            "config/template_ai_policies.json"
-        )
-        if resource.is_file():
-            try:
-                text = resource.read_text(encoding="utf-8")
-            except FileNotFoundError:
-                text = None
-            if text is not None:
-                cache_dir = Path(".pptx/cache")
-                cache_dir.mkdir(parents=True, exist_ok=True)
-                cached_path = cache_dir / "template_ai_policies.json"
-                cached_path.write_text(text, encoding="utf-8")
-                logger.info("Using bundled template AI policy: %s", cached_path)
-                return cached_path.resolve()
-    except ModuleNotFoundError:
-        logger.debug("Bundled template AI policy not found in package resources")
-    return None
 
 
 def _generate_slide_snapshot(*, template_path: Path, output_dir: Path) -> Path | None:

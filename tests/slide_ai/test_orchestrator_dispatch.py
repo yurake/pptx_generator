@@ -2,21 +2,21 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import logging
+from pathlib import Path
 
 import pytest
 
 from pptx_generator.slide_ai import SlideAIOrchestrationError, SlideAIOrchestrator, load_policy_set
 from pptx_generator.slide_ai.client import AIGenerationResponse
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide, SlideBullet, SlideBulletGroup
+from pptx_generator.settings.ai_policy import resolve_slide_ai_policy_path
 
 
 def test_orchestrator_generates_document(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
     spec = JobSpec.parse_file(Path("samples/json/sample_jobspec.json"))
-    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
+    policy_set = load_policy_set(resolve_slide_ai_policy_path().path)
     orchestrator = SlideAIOrchestrator(policy_set)
 
     caplog.set_level(logging.INFO, logger="pptx_generator.slide_ai.orchestrator")
@@ -52,7 +52,7 @@ class _NoIntentLLMClient:
 
 
 def test_orchestrator_raises_when_intent_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    policy_set = load_policy_set(Path("config/slide_ai_policies.json"))
+    policy_set = load_policy_set(resolve_slide_ai_policy_path().path)
     spec = JobSpec(
         meta=JobMeta(schema_version="1.0", title="テスト資料"),
         auth=JobAuth(created_by="tester"),
