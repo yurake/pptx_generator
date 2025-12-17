@@ -36,22 +36,14 @@ from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
 )
-from .settings.paths import get_default_config_path
+from .settings.paths import get_default_config_path, get_output_root, build_output_dir
 
 DEFAULT_RULES_PATH = get_default_config_path("pipeline_rules.json")
-DEFAULT_PREPARE_OUTPUT_DIR = Path(".pptx/prepare")
-DEFAULT_JOBSPEC_PATH = Path(".pptx/template/jobspec.json")
-DEFAULT_DRAFT_OUTPUT_DIR = Path(".pptx/draft")
-DEFAULT_COMPOSE_OUTPUT_DIR = Path(".pptx/compose")
-DEFAULT_GEN_OUTPUT_DIR = Path(".pptx/gen")
 DEFAULT_GEN_PPTX_NAME = "proposal.pptx"
 DEFAULT_GEN_PDF_OUTPUT = "proposal.pdf"
 DEFAULT_GEN_PDF_TIMEOUT = 120
 DEFAULT_GEN_PDF_RETRIES = 2
-DEFAULT_TEMPLATE_OUTPUT_DIR = Path(".pptx/template")
-DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR = Path(".pptx/release")
 DEFAULT_TEMPLATE_LAYOUT_MODE = "dynamic"
-DEFAULT_VALIDATION_OUTPUT_DIR = Path(".pptx/validation")
 DEFAULT_APPENDIX_LIMIT = 5
 
 logger = logging.getLogger(__name__)
@@ -91,6 +83,16 @@ def build_prepare_config(
 
 
 load_dotenv()
+
+_OUTPUT_ROOT = get_output_root()
+DEFAULT_TEMPLATE_OUTPUT_DIR = build_output_dir("template", root=_OUTPUT_ROOT)
+DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR = build_output_dir("release", root=_OUTPUT_ROOT)
+DEFAULT_PREPARE_OUTPUT_DIR = build_output_dir("prepare", root=_OUTPUT_ROOT)
+DEFAULT_JOBSPEC_PATH = DEFAULT_TEMPLATE_OUTPUT_DIR / "jobspec.json"
+DEFAULT_DRAFT_OUTPUT_DIR = build_output_dir("draft", root=_OUTPUT_ROOT)
+DEFAULT_COMPOSE_OUTPUT_DIR = build_output_dir("compose", root=_OUTPUT_ROOT)
+DEFAULT_GEN_OUTPUT_DIR = build_output_dir("gen", root=_OUTPUT_ROOT)
+DEFAULT_VALIDATION_OUTPUT_DIR = build_output_dir("validation", root=_OUTPUT_ROOT)
 @click.group(
     help="JSON 仕様から PPTX を生成する CLI",
     context_settings={"help_option_names": ["-h", "--help"]},
