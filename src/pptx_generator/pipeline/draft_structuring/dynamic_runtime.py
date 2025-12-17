@@ -18,6 +18,7 @@ from ...models import (
 from ..base import PipelineContext
 from ..slide_alignment import SlideIdAligner, SlideIdAlignerOptions
 from ...draft_recommender import CardLayoutRecommender, CardLayoutRecommenderConfig, LayoutProfile
+from ...settings.ai_policy import resolve_layout_ai_policy_path
 from ...api.draft_store import BoardAlreadyExistsError, DraftStore
 from .errors import DraftStructuringError
 from .layout_loader import load_layouts
@@ -120,12 +121,16 @@ def prepare_dynamic_inputs(
         else {}
     )
 
+    policy_resolution = resolve_layout_ai_policy_path(step.options.layout_ai_policy_path)
+    if policy_resolution.path is None:
+        logger.info("Layout AI ポリシーを利用できないため simulate フローで継続します")
+
     config = CardLayoutRecommenderConfig(
         enable_ai=step.options.enable_ai_recommender,
         ai_weight=step.options.ai_weight,
         diversity_weight=step.options.diversity_weight,
         max_candidates=step.options.max_layout_candidates,
-        policy_path=step.options.layout_ai_policy_path,
+        policy_path=policy_resolution.path,
         policy_id=step.options.layout_ai_policy_id,
         enable_simulated_ai=step.options.enable_ai_simulation,
     )

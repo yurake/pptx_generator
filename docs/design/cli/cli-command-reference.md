@@ -162,7 +162,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
-| `--rules <path>` | マッピング時に参照するルール設定 |  |  | `config/rules.json` |
+| `--rules <path>` | マッピング時に参照するルール設定 |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
 
@@ -189,7 +189,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
 | `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | generate_ready 等の出力ディレクトリ |  |  | `.pptx/gen` |
-| `--rules <path>` | 検証ルール設定ファイル |  |  | `config/rules.json` |
+| `--rules <path>` | 検証ルール設定ファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 | （自動） | draft 成果物の出力先 |  |  | `<output>/draft` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
@@ -205,7 +205,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `<generate_ready.json>` | generate_ready ドキュメント | ✅ | ✅ | - |
 | `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
 | `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
-| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `config/rules.json` |
+| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 | `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
 | `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
 | `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
@@ -214,13 +214,13 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
 | `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 |  |  | 設定ファイル準拠 |
 | `--polisher-path <path>` | Polisher 実行ファイルのパス |  |  | 指定なし |
-| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし |
+| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし（未指定時はコード内蔵デフォルトを使用） |
 | `--polisher-timeout <sec>` | Polisher のタイムアウト秒 |  |  | 指定なし |
 | `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.executable` または環境変数 |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
@@ -244,7 +244,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
 | `--polisher/--no-polisher` | Open XML Polisher を実行するかを指定 |  |  | ルール設定の値 |
 | `--polisher-path <path>` | Polisher 実行ファイルを明示する |  |  | `config/rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | `config/rules.json` の `polisher.rules_path` |
+| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
 | `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
 | `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}` `{rules}` プレースホルダー対応） |  |  | 指定なし |
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |

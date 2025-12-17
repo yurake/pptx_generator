@@ -155,7 +155,7 @@ flowchart TB
 
 <a id="rm-009"></a>
 ### RM-009 テンプレート設定自動生成
-- ゴール: PPTX テンプレートから `config/branding.json` 同等のスタイル定義を自動生成し、ブランド設定保守の手間を削減する。
+- ゴール: PPTX テンプレートからスタイル定義 (`branding.json` スナップショット) を自動生成し、ブランド設定保守の手間を削減する。
 - 参照ドキュメント: 未整備（本テーマで作成予定）
 - 参照 ToDo: [docs/todo/archive/20251009-branding-config-generator.md](../todo/archive/20251009-branding-config-generator.md)
 - 状況: 完了（2025-10-11 更新）
@@ -179,8 +179,8 @@ flowchart TB
 - 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
-- 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、`config/branding.json` の拡張設計。
-- 成果: `layout-style-v1` スキーマとブランド設定テンプレートを確立し、`config/branding.json`／レンダラー適用ロジック／CLI ドキュメントを更新済み。
+- 依存: RM-008（アンカー混在対応）、RM-009（テンプレート設定自動生成）、RM-010（テンプレート仕様エクスポート）、テンプレ抽出 `branding.json` の拡張設計。
+- 成果: `layout-style-v1` スキーマとブランド設定テンプレートを確立し、テンプレ抽出 `branding.json`／レンダラー適用ロジック／CLI ドキュメントを更新済み。
    - 備考: レイアウト仕様をエクスポートし資料化する拡張は RM-010 完了後の成果を元に新規 Roadmap として検討する。
 
 <a id="rm-012"></a>
@@ -210,7 +210,7 @@ flowchart TB
 - 参照 ToDo: [docs/todo/archive/20251011-automated-polisher-integration.md](../todo/archive/20251011-automated-polisher-integration.md)
 - 状況: 完了（2025-10-19 更新）
 - 期待成果: フォントサイズ引き上げ・色調整などの安全な自動適用、Polisher プロジェクト雛形と CLI 連携、監査ログへの補正記録。
-- 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`config/rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
+- 進捗: `pptx gen` に `--polisher` 系オプションを追加し、Python から Open XML Polisher を呼び出すステップと監査メタを実装。`src/pptx_generator/config/pipeline_rules.json` の `polisher` セクションを拡張済み。`dotnet/Polisher` プロジェクトでフォントサイズ・色調整を自動適用する最小実装を追加。
 - 依存: RM-013 の解析結果、RM-026（レンダリング監査統合）のチェックルール、RM-020（PDF 自動生成対応）の出力フロー、.NET 8 実行環境、テンプレート運用ポリシーの更新。
 
 <a id="rm-015"></a>
@@ -756,7 +756,7 @@ flowchart TB
 - 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-16 更新）
 - 期待成果:
-  - テンプレ抽出コマンドで Template AI を既定起動し、`config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
+- テンプレ抽出コマンドで Template AI を既定起動し、`src/pptx_generator/config/usage_tags.json` に定義した canonical 語彙と説明を LLM プロンプトへ渡して usage_tags を正規化する。
   - `diagnostics.json.template_ai` と CLI ログで推論状況・未知語・フォールバックを可視化し、監査できるようにする。
   - Stage3 の推奨スコアリングが同じ語彙を利用するよう整合評価を行い、差分があれば policy／スコアリングルールを調整する。
 - 次アクション: Stage3 layout_ai policy との語彙整合とスコアリング差異をレビューし、必要なテスト・ドキュメント更新を反映する。完了後は RM-064 へバトンする。
@@ -851,7 +851,7 @@ flowchart TB
 - 依存: RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-24 更新）
 - 期待成果:
-  - `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` や title/subtitle の固定上限を撤廃し、`config/rules.json` からも長さ・階層の閾値を除外してレンダリング stage へ委譲する）。
+- `src/pptx_generator/models.ContentElements` のバリデーションを再設計し、カード本文の段落数・文字数を柔軟に扱えるようにする（`SlideBullet.text` や title/subtitle の固定上限を撤廃し、`src/pptx_generator/config/pipeline_rules.json` からも長さ・階層の閾値を除外してレンダリング stage へ委譲する）。
   - DraftStructuring / compose パイプラインが `prepare_card.json` の本文を損失なく `generate_ready.json` へ引き渡す仕組みを整備し、制約緩和後もテストで担保する。
   - 新方針を `docs/requirements/stages/stage-02-prepare.md` や `docs/design/schema/stage-03-compose.md` など関連ドキュメントへ反映し、stage 別のトリミング責務を定義する。
 - 次アクション: 要件整理とレイアウト別許容文字数の検討を行い、UI サイドの設計見直しタスク（別イシュー想定）との調整を進める。
@@ -1117,3 +1117,16 @@ flowchart TB
   - 実スライドからアンカー情報・既定テキスト・表構造を抽出できるよう Stage1 を拡張し、Stage3/4 がテンプレ内プロトタイプを複製するだけで完結する状態にする。
   - 実スライドが存在しないテンプレートでは従来のレイアウト抽出をフォールバックとして維持し、互換性を確保する。
   - リレーション整合チェックや外部フック整理と組み合わせ、PowerPoint 修復ダイアログの原因となる `deepcopy` 依存を撤廃する土台を整備する。
+
+<a id="rm-089"></a>
+### RM-089 stage1-4 Flask Web/API 化
+- ゴール: stage1-4 の CLI 実行を Flask ベースの Web/API として提供し、FastAPI 実装を移行する。長時間処理はジョブキュー経由で実行し、成果物と監査ログの互換性を維持する。
+- 対象 stage: 1〜4（テンプレ準備・コンテンツ準備・マッピング・PPTX生成）
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template.md](../requirements/stages/stage-01-template.md), [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/requirements/stages/stage-04-gen.md](../requirements/stages/stage-04-gen.md), [docs/design/stages/stage-04-gen.md](../design/stages/stage-04-gen.md)
+- 依存: RM-084（CLI/Pipeline リファクタビリティ向上）、RM-086（静的テンプレ外部フック統合）
+- 状況: 新規（2025-12-17 起票）
+- 期待成果:
+  - Flask アプリファクトリと Blueprint（content/draft API＋stage1-4 ジョブ API）を用意し、FastAPI ルートを移植する。
+  - ジョブ登録/ステータス参照 API とジョブキュー（RQ または Celery + Redis）を導入し、各 stage を非同期実行する。
+  - Bearer トークン認証・ETag・成果物パス/ハッシュ返却を CLI と同等に維持し、監査ログと成果物構成を変えない。
+  - ローカル開発と gunicorn 本番起動の手順を整備し、API/CLI 両経路で同一成果物が得られることを検証する。

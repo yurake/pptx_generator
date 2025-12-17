@@ -50,7 +50,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"pptx_generator.config" = ["*.json"]
+"pptx_generator.config" = ["*.json", "ai_policies/*.json"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

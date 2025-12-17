@@ -47,5 +47,5 @@
 # 9 サブディレクトリガイド
 - `docs/` 系: `docs/README.md`（カテゴリ索引）、`docs/runbooks/`（運用手順）、`docs/policies/`（ルール）。
 - コード系: `src/AGENTS.md`（実装ガイド）、`tests/AGENTS.md`（テスト設計）、`scripts/AGENTS.md`（スクリプト運用）。
-- その他: `samples/AGENTS.md`、`config/AGENTS.md` など各ディレクトリ固有のガイドを参照。
+- その他: `samples/AGENTS.md` など各ディレクトリ固有のガイドを参照。AI ポリシーのデフォルトはパッケージ同梱の `src/pptx_generator/config/ai_policies/` を参照。
 - 外部フック: `external/README.md`（構成と整備手順）、`external/AGENTS.md`（フック開発・検証の流れ）。

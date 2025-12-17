@@ -243,7 +243,7 @@ assets:
 
 **Template AI 連携**:
 - 環境変数 `PPTX_TEMPLATE_LLM_PROVIDER` で LLM プロバイダを指定
-- `config/usage_tags.json` の canonical タグを基に usage_tags を推定
+- `src/pptx_generator/config/usage_tags.json` の canonical タグを基に usage_tags を推定（環境変数 `PPTX_GENERATOR_USAGE_TAGS` で上書き可）
 - 推定結果は `diagnostics.json.template_ai` に記録
 - `mock` プロバイダ指定時は静的ルールで完結
 
@@ -322,7 +322,7 @@ Layout AI Scoring
          ↓
 適合度上位候補を選定
          ↓
-ルールベース調整 (config/rules.json)
+ルールベース調整 (同梱の `src/pptx_generator/config/pipeline_rules.json`)
          ↓
 フォールバック判定
          ↓
@@ -394,7 +394,7 @@ generate_ready.json へ確定
 
 **Open XML Polisher**:
 - .NET 8 SDK + Open XML SDK で実装
-- `config/polisher-rules.json` でルール管理
+- Polisher ルールは内蔵デフォルトを使用（カスタムする場合のみ任意の JSON を指定）
 - フォント最小値の再確認
 - テーマ色未リンクの RGB を Accent カラーへマップ
 - 段落間隔の最終調整（フォールバック用）
@@ -424,7 +424,7 @@ generate_ready.json へ確定
 
 | 項目 | ルール | 出典 |
 |------|--------|------|
-| 禁則語 | `config/rules.json` の `forbidden_words` リスト | Validator |
+| 禁則語 | `src/pptx_generator/config/pipeline_rules.json` の `forbidden_words` リスト | Validator |
 | 表記揺れ | 正式名称マッピング辞書で置換 | Validator |
 | タイトル文字数 | ≤ 25 文字（推奨） | レイアウト依存 |
 | 本文行文字数 | ≤ 40 文字（推奨） | レイアウト依存 |
@@ -577,10 +577,11 @@ generate_ready.json へ確定
 #### 3.3.3 プロンプト管理
 
 ```
-config/
-├── template_ai_policies.json  # Template AI のプロンプト・モデル設定
-├── slide_ai_policies.json     # Slide AI のポリシー定義
-├── layout_ai_policies.json    # Layout AI のスコアリングルール
+config/（任意で上書きする場合の例）
+├── ai_policies/
+│   ├── template.json          # Template AI のプロンプト・モデル設定
+│   ├── slide.json             # Slide AI のポリシー定義
+│   └── layout.json            # Layout AI のスコアリングルール
 └── usage_tags.json            # canonical タグ定義とシノニム
 ```
 
@@ -773,7 +774,7 @@ uv run pptx compose <jobspec.json> \
 | `--prepare-cards` | prepare_card.json のパス | `.pptx/prepare/prepare_card.json` |
 | `--output, -o <dir>` | `generate_ready.json` などの出力先 | `.pptx/compose` |
 | （自動） | ドラフト成果物の出力先 | `<output>/draft` |
-| `--rules` | マッピングルール設定 | `config/rules.json` |
+| `--rules` | マッピングルール設定 | `src/pptx_generator/config/pipeline_rules.json` |
 | `--show-layout-reasons` | スコア内訳を表示 | 無効 |
 
 **使用例**:
@@ -1297,7 +1298,7 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
 
 ### 7.3 設定ファイル
 
-#### config/rules.json
+#### src/pptx_generator/config/pipeline_rules.json
 
 ```json
 {
@@ -1329,13 +1330,12 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
   "polisher": {
     "enabled": true,
     "executable": "dotnet/OpenXmlPolish/bin/Release/net8.0/OpenXmlPolish.dll",
-    "rules_path": "config/polisher-rules.json",
     "timeout_sec": 60
   }
 }
 ```
 
-#### config/usage_tags.json
+#### src/pptx_generator/config/usage_tags.json
 
 ```json
 {
@@ -1807,7 +1807,7 @@ uv run pptx prepare samples/input/pitch.md --mode dynamic
 
 ### 12.3 カスタムバリデーションルール
 
-#### Step 1: rules.json 編集
+#### Step 1: pipeline_rules.json 編集
 
 ```json
 {
@@ -1886,14 +1886,14 @@ async def generate_pptx(spec: GenerateRequest):
 
 **回避策**:
 - `--no-polisher` で Polisher を無効化
-- `config/polisher-rules.json` で対象ルールを調整
+- Polisher ルールは内蔵デフォルトを使用（カスタムする場合のみ任意の JSON を指定）
 
 #### Issue 3: レイアウト適合度スコアの誤判定
 
 **症状**: 適切なレイアウトが選ばれない場合がある
 
 **回避策**:
-- `config/layout_ai_policies.json` でスコアリングルールを調整
+- パッケージ同梱の `src/pptx_generator/config/ai_policies/layout.json` をベースにレイアウトスコアリングを実施（上書き不要）
 - `--show-layout-reasons` でスコア内訳を確認
 
 ### 13.3 将来的な改善予定
@@ -1939,7 +1939,7 @@ async def generate_pptx(spec: GenerateRequest):
 
 #### DON'T
 
-❌ 禁則語を含めない（`config/rules.json` で定義）
+❌ 禁則語を含めない（`src/pptx_generator/config/pipeline_rules.json` で定義）
 ❌ 極端に長い段落（200 文字超）を避ける
 ❌ 文字装飾（太字・斜体）を多用しない
 

@@ -1,7 +1,7 @@
 # 設定・テンプレート管理ポリシー
 
 ## 対象範囲
-- `config/rules.json` など設定ファイル、および `pptx template` が出力するテンプレートスタイル（`branding.json` スナップショット）
+- `src/pptx_generator/config/pipeline_rules.json` など設定ファイル、および `pptx template` が出力するテンプレートスタイル（`branding.json` スナップショット）
 - `.pptx` テンプレートおよび `rules/polish.yaml`
   ※テンプレートは .pptx のみ対応（.potxは未対応）。.potxを利用したい場合はPowerPointで新規 .pptx として保存してください。
 
@@ -15,7 +15,8 @@
 - スキーマバージョンは `version: "layout-style-v1"` を既定とし、テンプレートのテーマやプレースホルダーから得られたフォント／カラー／配置のサマリを含む。
 - 詳細な設計背景と運用ルールは [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md) を参照する。
 
-## rules.json の構成
+## pipeline_rules.json の構成
+- 既定値はパッケージ同梱の `src/pptx_generator/config/pipeline_rules.json` を参照する。
 - タイトル・本文の文字数や階層を制御する `title` / `bullet` セクションは廃止し、レイアウト側の許容量とレンダリング stage での警告に委譲する。
 - `forbidden_words` は禁則語を列挙し、バリデーションで一致したテキストを拒否する。
 - `analyzer` セクションでは自動診断の閾値を管理する。
@@ -38,10 +39,10 @@
   - 既存の `static_rules` は廃止し、Intent / Media それぞれのルールに分離する。
 - シノニムは JSON に記載する（例: `title` の synonyms に `cover`, `headline` を追加）。`_SYNONYM_MAP` はコード内で自動生成されるため個別メンテナンスは不要。
 - 更新手順:
-  1. `config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する。
+  1. `src/pptx_generator/config/usage_tags.json` を編集し、Intent / Media / Synonym / Layout Rule を調整する（必要に応じて `PPTX_GENERATOR_USAGE_TAGS` で外部パスを指定）。
   2. `uv run --extra dev pytest tests/test_utils_usage_tags.py tests/test_template_ai.py tests/test_layout_recommender.py` を実行して整合性を確認する。  
      必要に応じて `scripts/test_template_ai.sh` を併用し、LLM プロンプトへの影響を確認する。
-  3. Layout AI / Template AI のポリシーテンプレート（`config/layout_ai_policies.json`, `config/template_ai_policies.json`）にタグ説明を反映する。
+  3. Layout AI / Template AI のポリシーテンプレート（パッケージ同梱の `src/pptx_generator/config/ai_policies/*.json`）にタグ説明を反映する。
   4. `docs/notes/20251122-usage-tag-taxonomy-plan.md` など関連ドキュメントを更新し、変更理由と影響範囲を記録する。
 - 変更後は ToDo とロードマップに記録し、PR の説明にもタグ体系更新を明記する。
 

@@ -102,7 +102,7 @@
 ## トラブルシューティング
 - **`analysis.json` が生成されない**: レンダリングに失敗している可能性がある。`Audit` のログや CLI エラーを確認し、テンプレや spec の整合を見直す。
 - **図形が特定できない**: テンプレートでアンカー名を変更した場合は JSON の `anchor` を同期させる。`SlideSnapshot` は図形名や ID を使用するため、命名変更があると紐付けが切れる。
-- **余白検出の閾値が合わない**: `config/rules.json` の `analyzer.margin_in` を調整し、ブランドガイドラインに適合させる。値を変更した場合は `docs/policies/config-and-templates.md` に理由を記録する。
+- **余白検出の閾値が合わない**: `src/pptx_generator/config/pipeline_rules.json` の `analyzer.margin_in` を調整し、ブランドガイドラインに適合させる。値を変更した場合は `docs/policies/config-and-templates.md` に理由を記録する。
 - **大規模スライドで時間がかかる**: 処理時間を `audit_log.json` に記録し、性能改善の検討事項として `docs/notes/` に追記する。必要であれば `uv run --extra dev pytest -k analyzer` で個別テストを行う。
 
 ## 参考資料

@@ -36,8 +36,8 @@
   - エラーコード `6` は Polisher ステップでの失敗を示す。`audit_log.json.polisher` の `status` と `stdout` / `stderr` を確認する。
   - チェックリスト:
     - 段落スタイル（揃え・行間・インデント）は Renderer がブランド設定から適用するため、Polisher はフォントサイズや色などフォールバック補正のみを担うことを前提に、ルール内容を確認する。
-    - `config/rules.json` の `polisher.enabled` と `polisher.executable` が正しいか、`POLISHER_EXECUTABLE` 環境変数で上書きしていないか確認。
-    - ルールファイル（例: `config/polisher-rules.json`）が存在し、JSON が壊れていないか検証（`jq` など）。
+    - `src/pptx_generator/config/pipeline_rules.json` の `polisher.enabled` と `polisher.executable` が正しいか、`POLISHER_EXECUTABLE` 環境変数で上書きしていないか確認。
+    - Polisher をカスタムルールで動かす場合は、指定パスの JSON が存在し壊れていないか確認（`--polisher-rules` 指定がない場合は内蔵デフォルトを使用）。
     - `uv run pptx gen ... --polisher-path <path> --polisher-timeout 180` などで再実行し、タイムアウト値を引き上げる。
     - `.NET 8` と Open XML SDK のバージョンがサポート対象か、`dotnet --info` の結果を共有してもらう。
     - CLI 標準出力の `Polisher: ...` および `Polisher Summary`、`audit_log.json.polisher.summary` を添付してもらう。処理時間は `elapsed_ms` を参照する。

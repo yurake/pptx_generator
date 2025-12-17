@@ -9,7 +9,7 @@
 - **Stage2**: `LayoutValidationSuite`（およびテンプレ検証 CLI）が `layouts.jsonl`・`diagnostics.json` を出力する stage。
 - **Stage3**: `DraftStructuringStep` と `CardLayoutRecommender` がレイアウト候補を決定する stage。
 - **Blueprint**: 静的モード向け slot 定義（`TemplateBlueprint`）。`prepare_generation_meta.mode == "static"` のとき必須。
-- **Canonical usage tags**: `config/usage_tags.json` で定義された語彙。全 stage で同一タグ集合を利用する。
+- **Canonical usage tags**: `src/pptx_generator/config/usage_tags.json` で定義された語彙。全 stage で同一タグ集合を利用する。
 
 ## アーティファクト間の役割整理
 | アーティファクト | 主な生成 stage | 主な利用 stage | 現在含まれる主な項目 | Stage3 への活用ポイント |
