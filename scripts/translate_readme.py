@@ -215,19 +215,26 @@ def auto_translate(
     base_blocks = split_markdown_blocks(base_text)
 
     if len(base_blocks) != len(current_blocks):
-        full_translate(client)
-        return
+        raise RuntimeError(
+            f"Block count mismatch between base and current README: "
+            f"base={len(base_blocks)}, current={len(current_blocks)}. "
+            "Adjust README.md so block counts match, then rerun."
+        )
 
     existing_translated: Dict[str, List[Block]] = {}
     for lang_code, path in TARGETS:
         if not path.exists():
-            full_translate(client)
-            return
+            raise RuntimeError(
+                f"{path} is missing. Ensure translated README exists before running auto mode."
+            )
         text = path.read_text(encoding="utf-8")
         blocks = split_markdown_blocks(text)
         if len(blocks) != len(current_blocks):
-            full_translate(client)
-            return
+            raise RuntimeError(
+                f"Block count mismatch for {path}: "
+                f"{len(blocks)} (translated) vs {len(current_blocks)} (current README). "
+                "Align block structure and rerun."
+            )
         existing_translated[lang_code] = blocks
 
     changed_indices: List[int] = []
