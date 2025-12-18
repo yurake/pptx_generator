@@ -241,9 +241,8 @@ def auto_translate(
     --mode auto 用。
     base_ref から README.md の旧版を取得し、ブロック単位で差分更新する。
     - base 的な README が取得できない
-    - ブロック数が大きく変わる
     - en/zh 既存ブロック数が合わない
-    といった場合は安全側で full 翻訳にフォールバックする。
+    といった場合はエラーとして終了する（full にはフォールバックしない）。
     """
     if not SOURCE_PATH.exists():
         raise FileNotFoundError("README.md not found")
@@ -256,8 +255,7 @@ def auto_translate(
 
     base_text = get_base_readme(base_ref)
     if base_text is None:
-        full_translate(client)
-        return
+        raise RuntimeError(f"Failed to fetch base README for ref {base_ref}")
 
     base_blocks = split_markdown_blocks(base_text)
 
@@ -266,10 +264,9 @@ def auto_translate(
         log_block_stats("base", base_blocks)
         log_block_stats("current", current_blocks)
         log_block_diff(base_blocks, current_blocks)
-        raise RuntimeError(
-            f"Block count mismatch between base and current README: "
-            f"base={len(base_blocks)}, current={len(current_blocks)}. "
-            "Adjust README.md so block counts match, then rerun."
+        # base と current のブロック数差異はログのみで続行
+        print(
+            f"Proceeding despite block count mismatch (base={len(base_blocks)}, current={len(current_blocks)})."
         )
 
     existing_translated: Dict[str, List[Block]] = {}
@@ -293,9 +290,13 @@ def auto_translate(
         existing_translated[lang_code] = blocks
 
     changed_indices: List[int] = []
-    for i, (base_b, cur_b) in enumerate(zip(base_blocks, current_blocks)):
-        if base_b.text() != cur_b.text():
+    min_len = min(len(base_blocks), len(current_blocks))
+    for i in range(min_len):
+        if base_blocks[i].text() != current_blocks[i].text():
             changed_indices.append(i)
+    # current に余剰ブロックがある場合はその分も翻訳対象に含める
+    if len(current_blocks) > min_len:
+        changed_indices.extend(range(min_len, len(current_blocks)))
 
     if not changed_indices:
         print("No block-level changes detected in README.md. Skip translation.")

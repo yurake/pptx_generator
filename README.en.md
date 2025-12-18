@@ -95,8 +95,6 @@ flowchart TD
 | 3. Mapping | Perform HITL approvals and layout assignments, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX Generation | Use `generate_ready.json` to output PPTX/PDF and audit logs | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-The output root can be switched with the environment variable `PPTX_OUTPUT_ROOT` (defaults to `.pptx/<stage>/`). In API/Web, history is stored under the convention `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`.
-
 ### Static generation (static mode)
 This mode automatically allocates and finalizes the presentation data to match the slide structure defined by the template. It is useful in cases where slide layout and rules are predetermined.
 

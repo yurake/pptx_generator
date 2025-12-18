@@ -95,8 +95,6 @@ flowchart TD
 | 3. 映射 | 进行 HITL 审核与布局分配，生成 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX、PDF 及审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-输出根目录可以通过环境变量 `PPTX_OUTPUT_ROOT` 切换（未指定时使用 `.pptx/<stage>/`）。在 API/Web 中，会按照 `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 的规则保存历史。
-
 ### 静态生成 (static mode)
 按照模板确定的幻灯片结构，自动分配资料数据并完成制作的模式。适用于幻灯片排布和规则已确定的场景。
 
