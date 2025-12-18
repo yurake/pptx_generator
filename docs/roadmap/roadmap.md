@@ -1172,11 +1172,12 @@ flowchart TB
 <a id="rm-094"></a>
 ### RM-094 ジョブ状態モデル＋非同期化
 - ゴール: ジョブ状態（pending/running/succeeded/failed/canceled）を明示し、compose/gen など長時間処理を非同期実行できるようにする。
-- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md), [docs/design/initiatives/rm094-job-state-async.md](../design/initiatives/rm094-job-state-async.md)
 - 依存: RM-091（実装時は RM-092 と整合を取る）
-- 状況: 未着手
+- 状況: 進行中（CLI 内部キュー＋メモリワーカー導入済み、job_id/transaction_id を PipelineContext に伝搬）
 - 対象: ジョブ状態ストア、非同期実行基盤（キュー/ワーカー）、ステータスAPI、ログ/メトリクス
-- 期待成果: job_id/transaction_id で状態を問い合わせ・追跡でき、compose/gen を非同期実行できるようにする
+- 現在の成果: CLI 各 stage が run_job_sync 経由でジョブ ID を付与し、メモリキュー＋同一プロセス内並列ワーカーで処理（CLI は完了まで待機）。job_id/transaction_id が pipeline_trace に記録される。
+- 残課題: Web/API 経路へのキュー組み込み、状態問い合わせ API、キャンセル／リトライ方針、永続化要否の検討。
 
 <a id="rm-095"></a>
 ### RM-095 Stage5 PPTX 編集反映

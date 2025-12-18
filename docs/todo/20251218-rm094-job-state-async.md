@@ -35,10 +35,10 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/runtime/test_job_queue.py tests/cli/test_cli_job_queue_flow.py`
 - [ ] ドキュメント更新
-  - メモ: cli-command-reference.md を更新済み。roadmap/requirements/design/runbook/README/AGENTS は未更新（必要に応じて別途）。
-  - [ ] docs/roadmap 配下
+  - メモ: cli-command-reference.md 更新済み。roadmap を進行中に更新済み。requirements/runbook/README/AGENTS は未更新（必要に応じて別途）。
+  - [x] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
