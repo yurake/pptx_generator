@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
         RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
         RM094["RM-094<br/>ジョブ状態＋非同期化<br/>(未着手)"]
     end
@@ -72,7 +71,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM092 --> RM094
 ```
 
 ## 個別状況
@@ -1158,7 +1156,7 @@ flowchart TB
 - ゴール: Web/API と CLI で出力ルート指定を `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に統一し、履歴を保持する。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-091
-- 状況: 未着手
+- 状況: 完了（2025-12-18 更新）
 - 対象: 出力先解決（PipelineContext/workdir）、CLI ハンドラ、設定ドキュメント
 - 期待成果: API/CLI の出力パス規約を統一し、履歴保持と成果物参照の一貫性を確保
 
