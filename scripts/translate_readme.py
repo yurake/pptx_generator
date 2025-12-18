@@ -126,6 +126,53 @@ def join_blocks(blocks: List[Block]) -> str:
     return "".join(b.text() for b in blocks)
 
 
+def log_block_stats(label: str, blocks: List[Block]) -> None:
+    """ブロック数と先頭数ブロックのプレビューを出力する。"""
+    total = len(blocks)
+    code = sum(1 for b in blocks if b.is_code)
+    text = total - code
+    print(f"[{label}] blocks: total={total}, text={text}, code={code}")
+    for i, blk in enumerate(blocks[:8]):
+        head = blk.text().strip().splitlines()[:1]
+        preview = head[0] if head else "(empty)"
+        kind = "code" if blk.is_code else "text"
+        print(f"  [{i:02d}] {kind}: {preview}")
+
+
+def log_block_diff(base_blocks: List[Block], current_blocks: List[Block]) -> None:
+    """
+    ブロック数が違う場合に、最初に差分が出る位置と余剰ブロックを出力する。
+    """
+    min_len = min(len(base_blocks), len(current_blocks))
+    diff_index = None
+    for i in range(min_len):
+        if base_blocks[i].text() != current_blocks[i].text():
+            diff_index = i
+            break
+
+    if diff_index is not None:
+        base_preview = base_blocks[diff_index].text().strip().splitlines()[:1]
+        cur_preview = current_blocks[diff_index].text().strip().splitlines()[:1]
+        print(f"First differing block at index {diff_index}:")
+        print(f"  base    : {base_preview[0] if base_preview else '(empty)'}")
+        print(f"  current : {cur_preview[0] if cur_preview else '(empty)'}")
+
+    if len(current_blocks) > len(base_blocks):
+        print("Extra blocks in current (not in base):")
+        for i in range(len(base_blocks), len(current_blocks)):
+            head = current_blocks[i].text().strip().splitlines()[:1]
+            preview = head[0] if head else "(empty)"
+            kind = "code" if current_blocks[i].is_code else "text"
+            print(f"  [{i:02d}] {kind}: {preview}")
+    elif len(base_blocks) > len(current_blocks):
+        print("Missing blocks in current (present in base):")
+        for i in range(len(current_blocks), len(base_blocks)):
+            head = base_blocks[i].text().strip().splitlines()[:1]
+            preview = head[0] if head else "(empty)"
+            kind = "code" if base_blocks[i].is_code else "text"
+            print(f"  [{i:02d}] {kind}: {preview}")
+
+
 def get_base_readme(base_ref: str) -> Optional[str]:
     """
     git show <base_ref>:README.md を実行して、その内容を取得する。
@@ -194,9 +241,8 @@ def auto_translate(
     --mode auto 用。
     base_ref から README.md の旧版を取得し、ブロック単位で差分更新する。
     - base 的な README が取得できない
-    - ブロック数が大きく変わる
     - en/zh 既存ブロック数が合わない
-    といった場合は安全側で full 翻訳にフォールバックする。
+    といった場合はエラーとして終了する（full にはフォールバックしない）。
     """
     if not SOURCE_PATH.exists():
         raise FileNotFoundError("README.md not found")
@@ -209,31 +255,48 @@ def auto_translate(
 
     base_text = get_base_readme(base_ref)
     if base_text is None:
-        full_translate(client)
-        return
+        raise RuntimeError(f"Failed to fetch base README for ref {base_ref}")
 
     base_blocks = split_markdown_blocks(base_text)
 
     if len(base_blocks) != len(current_blocks):
-        full_translate(client)
-        return
+        print("Block count details (base vs current):")
+        log_block_stats("base", base_blocks)
+        log_block_stats("current", current_blocks)
+        log_block_diff(base_blocks, current_blocks)
+        # base と current のブロック数差異はログのみで続行
+        print(
+            f"Proceeding despite block count mismatch (base={len(base_blocks)}, current={len(current_blocks)})."
+        )
 
     existing_translated: Dict[str, List[Block]] = {}
     for lang_code, path in TARGETS:
         if not path.exists():
-            full_translate(client)
-            return
+            raise RuntimeError(
+                f"{path} is missing. Ensure translated README exists before running auto mode."
+            )
         text = path.read_text(encoding="utf-8")
         blocks = split_markdown_blocks(text)
         if len(blocks) != len(current_blocks):
-            full_translate(client)
-            return
+            print("Block count details (current vs translation):")
+            log_block_stats("current", current_blocks)
+            log_block_stats(f"{path}", blocks)
+            log_block_diff(current_blocks, blocks)
+            raise RuntimeError(
+                f"Block count mismatch for {path}: "
+                f"{len(blocks)} (translated) vs {len(current_blocks)} (current README). "
+                "Align block structure and rerun."
+            )
         existing_translated[lang_code] = blocks
 
     changed_indices: List[int] = []
-    for i, (base_b, cur_b) in enumerate(zip(base_blocks, current_blocks)):
-        if base_b.text() != cur_b.text():
+    min_len = min(len(base_blocks), len(current_blocks))
+    for i in range(min_len):
+        if base_blocks[i].text() != current_blocks[i].text():
             changed_indices.append(i)
+    # current に余剰ブロックがある場合はその分も翻訳対象に含める
+    if len(current_blocks) > min_len:
+        changed_indices.extend(range(min_len, len(current_blocks)))
 
     if not changed_indices:
         print("No block-level changes detected in README.md. Skip translation.")

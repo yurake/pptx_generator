@@ -29,7 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
         RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
         RM094["RM-094<br/>ジョブ状態＋非同期化<br/>(未着手)"]
     end
@@ -72,7 +71,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM092 --> RM094
 ```
 
 ## 個別状況
@@ -1158,18 +1156,18 @@ flowchart TB
 - ゴール: Web/API と CLI で出力ルート指定を `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に統一し、履歴を保持する。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-091
-- 状況: 未着手
+- 状況: 完了（2025-12-18 更新）
 - 対象: 出力先解決（PipelineContext/workdir）、CLI ハンドラ、設定ドキュメント
 - 期待成果: API/CLI の出力パス規約を統一し、履歴保持と成果物参照の一貫性を確保
 
 <a id="rm-093"></a>
-### RM-093 入力配置・ダウンロードAPI
-- ゴール: 入力配置を `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に規約化し、job_id をキーに成果物をダウンロードできる API を提供する。
+### RM-093 入力配置規約
+- ゴール: 入力配置を `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に規約化し、後続ステージで参照できるようにする。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-091, RM-092
 - 状況: 未着手
-- 対象: 入力配置解決、ダウンロードAPI、入出力パスのドキュメント
-- 期待成果: 入出力の置き場を固定し、job_id をキーに PPTX/PDF をAPI経由で取得可能にする
+- 対象: 入力配置解決、入出力パスのドキュメント
+- 期待成果: 入出力の置き場を固定し、後続 API/CLI から安定参照できるようにする
 
 <a id="rm-094"></a>
 ### RM-094 ジョブ状態モデル＋非同期化
@@ -1191,3 +1189,12 @@ flowchart TB
   - mode static のスナップショットでグループ・表セル内のテキストも抽出し、shape_id/name/位置を安定取得する。
   - LLM から `{edit: bool, contents: string}` を最小出力で受け取り、shape_id 対応付けで既存ラン書式を維持したままテキスト差し替えを行う。
   - 並列推論＋シリアル書き込みのジョブ基盤を整備し、リトライや未対応指示のレポートを返却する。
+
+<a id="rm-096"></a>
+### RM-096 成果物ダウンロードAPI分離
+- ゴール: RM-089 の Web/API 基盤上で、生成済み PPTX/PDF を job_id でダウンロードできる API を提供し、出力パス規約（RM-092）と整合させる。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-089（Web/API 化基盤）、RM-092（出力ディレクトリ統一）
+- 状況: 新規（2025-12-18 起票）
+- 対象: ダウンロードエンドポイント実装、署名付き URL 発行方針、成果物メタ連携、ドキュメント更新
+- 期待成果: API 経由で `job_id` をキーに PPTX/PDF を取得でき、出力ルート規約に基づいたパス解決と認可方針が整理される

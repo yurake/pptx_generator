@@ -13,6 +13,7 @@
 - パイプラインは「テンプレ → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
+- 出力ルートは `PPTX_OUTPUT_ROOT` で切り替えられる（未指定は `.pptx/<stage>`）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を前提とする。
 
 ### stage 1: テンプレ
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。

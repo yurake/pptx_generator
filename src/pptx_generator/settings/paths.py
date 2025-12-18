@@ -6,12 +6,14 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 _PACKAGE_CONFIG_ROOT = _PACKAGE_ROOT / "config"
+_DEFAULT_OUTPUT_ROOT = Path(".pptx")
 
 
 def _iter_candidates(path: Path, *, base_dir: Path | None) -> Iterable[Path]:
@@ -51,4 +53,40 @@ def get_default_config_path(filename: str) -> Path:
     return resolved
 
 
-__all__ = ["find_config_path", "get_default_config_path"]
+def get_output_root() -> Path:
+    """出力ルートディレクトリを解決する。
+
+    - `PPTX_OUTPUT_ROOT` が指定されていればそのパスを利用
+    - 未指定の場合は `.pptx` を既定とする
+    """
+
+    env_root = os.getenv("PPTX_OUTPUT_ROOT")
+    if env_root:
+        return Path(env_root).expanduser()
+    return _DEFAULT_OUTPUT_ROOT
+
+
+def build_output_dir(
+    stage: str,
+    *,
+    transaction_id: str | None = None,
+    job_id: str | None = None,
+    root: Path | None = None,
+) -> Path:
+    """ステージ別の出力ディレクトリを組み立てる。
+
+    tx/job が渡された場合は `<root>/<tx>/<stage>/<job>/`、
+    それ以外は `<root>/<stage>/` を返す。
+    """
+
+    base = root or get_output_root()
+    segments = [base]
+    if transaction_id:
+        segments.append(Path(transaction_id))
+    segments.append(Path(stage))
+    if job_id:
+        segments.append(Path(job_id))
+    return Path().joinpath(*segments)
+
+
+__all__ = ["find_config_path", "get_default_config_path", "get_output_root", "build_output_dir"]
