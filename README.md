@@ -95,8 +95,6 @@ flowchart TD
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
 | 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-出力ルートは環境変数 `PPTX_OUTPUT_ROOT` で切り替え可能です（未指定時は `.pptx/<stage>/` を利用）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` の規約で履歴を保持します。
-
 ### 静的生成 (static mode)
 テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
 
