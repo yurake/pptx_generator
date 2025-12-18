@@ -18,10 +18,22 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
     - ロールバック方法: 非同期化一式を専用コミットにまとめ、問題時はそのコミットを revert。
     - 承認メッセージ ID／リンク: ユーザー承認（本チャット 2025-12-18 指示: 1,2 実施・実装前に設計）。
     - 参照済みドキュメント: docs/policies/context-engineering.md, CONTRIBUTING.md, docs/policies/task-management.md, docs/roadmap/roadmap.md (RM-094), docs/notes/20251217-rm089-web-if.md
-- [ ] 設計・実装方針の確定
-  - メモ: 非同期基盤/状態モデルの設計をまとめる。CLI/API でのステータス問い合わせ/キャンセル可否、キューの実体（in-memory/ファイル）とワーカー起動モデル、トレース出力のキー構成を整理して共有する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 設計・実装方針の確定
+  - メモ: 非同期基盤/状態モデルの設計をまとめた。docs/design/initiatives/rm094-job-state-async.md に記載。CLI/API でのステータス問い合わせ/キャンセル可否、キューの実体（ファイルベース）、ワーカー起動モデル、トレース出力のキー構成を定義。
+    - 状態モデル: pending → running → succeeded/failed/canceled。再実行は新 job_id を発行。キャンセルは pending/準備中のみ受け付け、running は best effort（ジョブ実行開始前チェック）。
+    - トレース/記録: pipeline_trace.json に `job_id`, `transaction_id`, `stage`, `status`, `started_at`, `finished_at`, `error` を追加。job レコード JSON を `.pptx/jobs/<tx>/<job_id>.json` に保持（状態・入力・出力パス・エラー・ログパス）。
+    - 出力配置: RM-092 に合わせ `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`。CLI 互換の `.pptx/<stage>` は transaction_id 未指定時に fallback として維持。
+    - キュー/ワーカー: ローカルファイルベースのシンプルキュー（例: `.pptx/queue/pending/*.json`）。`pptx worker run` でポーリングし、1 ジョブずつ処理。並列化は本対応では行わずシリアル。キューは in-memory 併用だが、ジョブはファイル化してクラッシュ後も再開可能とする。
+    - CLI インターフェース:
+      - `pptx template|prepare|compose|gen [既存引数] --transaction-id <tx?>` → enqueue のみ。即時で `{job_id, transaction_id, status=pending, status_url_hint}` を出力。同期実行経路は廃止。
+      - `pptx status --job-id <id>`: 状態・出力パス・エラーを表示。必要に応じて `--transaction-id` 併記可。
+      - `pptx cancel --job-id <id>`: pending のみキャンセル。running は開始前チェックで停止し failed/canceled を記録。
+      - `pptx worker run [--once]`: キューを消化。既存 stage 実行関数を呼び出し、ジョブレコードと trace を更新。
+    - エラー/リトライ: 失敗時は status=failed と error 詳細を job レコード/trace に記録。リトライは新しい job として再 enqueue（同じ tx を引き継ぐ）。
+    - 時刻/ID: job_id/transaction_id は UUID4 を標準。started_at/finished_at は ISO8601 UTC。
+    - 互換性: 同期実行は廃止。CLI ドキュメントに非同期化を明記し、既存スクリプトは対応が必要になる旨を記載。
+  - [x] 設計・実装方針メモの共有（docs/design/initiatives/rm094-job-state-async.md）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
   - メモ: （着手前に設計メモ確定）
 - [ ] テスト・検証
