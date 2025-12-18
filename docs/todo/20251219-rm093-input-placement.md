@@ -1,7 +1,7 @@
 ---
 目的: RM-093 入力配置規約の着手準備と入出力パス規約策定・実装方針整理
 関連ブランチ: feat/rm093-input-placement
-関連Issue: 未作成
+関連Issue: #443
 roadmap_item: RM-093 入力配置規約
 ---
 
@@ -33,7 +33,7 @@ roadmap_item: RM-093 入力配置規約
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
   - メモ: 
