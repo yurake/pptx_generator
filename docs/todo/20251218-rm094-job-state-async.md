@@ -45,7 +45,7 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: PR 作成以外のタスクをクローズ済み
-- [ ] PR 作成
-  - メモ: （未対応）
+- [x] PR 作成
+  - メモ: PR #442 https://github.com/yurake/pptx_generator/pull/442（2025-12-18 完了）
 
 ## メモ
