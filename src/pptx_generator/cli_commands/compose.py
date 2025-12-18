@@ -9,6 +9,7 @@ from pptx_generator.cli_handlers.compose import (
     ComposeCommandError,
     run_compose_command,
 )
+from pptx_generator.runtime.job_queue import run_job_sync
 
 from .utils import echo_command_errors
 from pptx_generator.cli_hooks import (
@@ -176,7 +177,10 @@ def create_compose_command(
             generate_ready_meta_filename=default_generate_ready_meta_filename,
         )
         try:
-            run_compose_command(config)
+            run_job_sync(
+                stage="compose",
+                func=lambda: run_compose_command(config),
+            )
         except ComposeCommandError as exc:
             message = str(exc)
             if exc.errors:
