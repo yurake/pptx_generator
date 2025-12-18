@@ -5,8 +5,8 @@
 roadmap_item: RM-093 入力配置規約
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: `feat/rm093-input-placement` を main から作成済み。初期コミット・push は未実施。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: `feat/rm093-input-placement` を main から作成済み。初期コミット（ToDo 追加）をコミットし push 済み。upstream を origin/feat/rm093-input-placement に設定。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan を転記。
     - 対象整理（スコープ、対象ファイル、前提）: Web/API 専用で入力配置規約を導入。CLI 既定入力は非対象（RM-092 と同じ分界）。tx/job 未指定リクエストはサーバで tx を初回発行し、毎リクエスト job を発行してから入力ディレクトリを決定。パス規約は `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/`。`PPTX_INPUT_ROOT` 未指定時は `.pptx/input`（API 内部のみ）。
@@ -18,21 +18,21 @@ roadmap_item: RM-093 入力配置規約
     - ロールバック方法: 入力パス解決追加のコミットを revert する。
     - 承認メッセージ ID／リンク: 本スレッド
 - [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえて記載予定。
+  - メモ: Plan 承認内容を踏まえて記載予定（設計メモ共有は不要見込み）。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 
-- [ ] テスト・検証
-  - メモ: 
-- [ ] ドキュメント更新
-  - メモ: 
+- [x] 実装
+  - メモ: `settings/paths.py` に `get_input_root` / `build_input_dir` を追加し、入力配置の tx/job 付き組み立てを実装。出力関連コードや CLI は非変更。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/settings/test_input_paths.py` 実行（3 件成功、coverage.xml 更新）。
+- [x] ドキュメント更新
+  - メモ: README に `PPTX_INPUT_ROOT` / `PPTX_OUTPUT_ROOT` のパス規約とデフォルトを追記。CLI リファレンスに入力配置（Web/API 専用）を明記。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（変更不要: 本実装はロードマップ本文に影響なし）
+  - [x] docs/requirements 配下（変更不要: 要件定義への影響なし）
+  - [x] docs/design 配下（CLI リファレンスを更新済み）
+  - [x] docs/runbook 配下（変更不要: 運用手順への影響なし）
+  - [x] README.md / AGENTS.md（README を更新、AGENTS は変更不要）
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認

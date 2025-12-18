@@ -14,6 +14,7 @@
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
 - 出力ルートは `PPTX_OUTPUT_ROOT` で切り替えられる（未指定は `.pptx/<stage>`）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を前提とする。
+- 入力ルートは Web/API 専用で `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` を利用する（未指定は `.pptx/input`）。CLI 既定の入力パスは従来どおりで変更しない。
 - CLI は内部的にメモリキュー＋ワーカーを用いるが、実行完了まで待機する同期挙動を維持する。API/Web は同一プロセス内の複数ワーカーで非同期実行を前提とし、ジョブ状態の永続化は行わない（必要ならクライアント側で保持）。
 
 ### stage 1: テンプレ
