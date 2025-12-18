@@ -34,7 +34,7 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
   - メモ: メモリキュー・ジョブコンテキストを追加し、PipelineContext へ job_id/tx_id を注入。CLI 各ステージ（template/prepare/compose/gen）を run_job_sync 経由に変更。CLI 設計ガイド更新。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/runtime/test_job_queue.py tests/cli/test_cli_job_queue_flow.py`
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
   - メモ: cli-command-reference.md 更新済み。roadmap を進行中に更新済み。requirements/runbook/README/AGENTS は未更新（必要に応じて別途）。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認）※仕様差分なしのため更新不要を確認
