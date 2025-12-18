@@ -126,6 +126,19 @@ def join_blocks(blocks: List[Block]) -> str:
     return "".join(b.text() for b in blocks)
 
 
+def log_block_stats(label: str, blocks: List[Block]) -> None:
+    """ブロック数と先頭数ブロックのプレビューを出力する。"""
+    total = len(blocks)
+    code = sum(1 for b in blocks if b.is_code)
+    text = total - code
+    print(f"[{label}] blocks: total={total}, text={text}, code={code}")
+    for i, blk in enumerate(blocks[:5]):
+        head = blk.text().strip().splitlines()[:1]
+        preview = head[0] if head else "(empty)"
+        kind = "code" if blk.is_code else "text"
+        print(f"  [{i:02d}] {kind}: {preview}")
+
+
 def get_base_readme(base_ref: str) -> Optional[str]:
     """
     git show <base_ref>:README.md を実行して、その内容を取得する。
@@ -215,6 +228,9 @@ def auto_translate(
     base_blocks = split_markdown_blocks(base_text)
 
     if len(base_blocks) != len(current_blocks):
+        print("Block count details (base vs current):")
+        log_block_stats("base", base_blocks)
+        log_block_stats("current", current_blocks)
         raise RuntimeError(
             f"Block count mismatch between base and current README: "
             f"base={len(base_blocks)}, current={len(current_blocks)}. "
@@ -230,6 +246,9 @@ def auto_translate(
         text = path.read_text(encoding="utf-8")
         blocks = split_markdown_blocks(text)
         if len(blocks) != len(current_blocks):
+            print("Block count details (current vs translation):")
+            log_block_stats("current", current_blocks)
+            log_block_stats(f"{path}", blocks)
             raise RuntimeError(
                 f"Block count mismatch for {path}: "
                 f"{len(blocks)} (translated) vs {len(current_blocks)} (current README). "
