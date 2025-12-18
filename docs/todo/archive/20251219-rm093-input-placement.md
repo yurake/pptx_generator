@@ -37,8 +37,8 @@ roadmap_item: RM-093 入力配置規約
   - メモ: 
 - [x] チェックリスト整合確認
   - メモ: PR 作成のみ未着手。その他項目は完了。
-- [ ] PR 作成
-  - メモ: 
+- [x] PR 作成
+  - メモ: PR #445 https://github.com/yurake/pptx_generator/pull/445（2025-12-18 完了）
 
 ## メモ
 -
