@@ -29,28 +29,28 @@
   </p>
 
 <p>
-  <a href="README.md"><img alt="Japanese" src="https://img.shields.io/badge/%F0%9F%87%AF%F0%9F%87%B5%E6%97%A5%E6%9C%AC%E8%AA%9E-white"></a>
-  <a href="README.zh.md"><img alt="Chinese" src="https://img.shields.io/badge/%F0%9F%87%A8%F0%9F%87%B3%E4%B8%AD%E6%96%87%E7%89%88-white"></a>
-  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/%F0%9F%87%BA%F0%9F%87%B8English-white"></a>
+<a href="README.md"><img alt="Japanese" src="https://img.shields.io/badge/%F0%9F%87%AF%F0%9F%87%B5%E6%97%A5%E6%9C%AC%E8%AA%9E-white"></a>
+<a href="README.zh.md"><img alt="Chinese" src="https://img.shields.io/badge/%F0%9F%87%A8%F0%9F%87%B3%E4%B8%AD%E6%96%87%E7%89%88-white"></a>
+<a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/%F0%9F%87%BA%F0%9F%87%B8English-white"></a>
 </p>
 
-<p>
-A CLI tool that ingests PowerPoint templates and material data (plain text, PDFs, etc.) and generates presentation materials that conform to the template.
-</p>
+  <p>
+  This CLI tool imports PowerPoint templates and data assets (plain text, PDFs, etc.) and generates presentation slides that conform to the template.
+  </p>
 </div>
 
 ## Overview
-- Extract the layout structure and brand settings from a template PPTX, and generate a reusable specification JSON.
-- Combine the extracted specifications with the document data to generate PPTX/PDF with an audit log (PDF conversion is also possible using LibreOffice).
+- Extract layout structure and branding settings from a template PPTX, and generate a reusable specification JSON.
+- Combine the extracted specifications with the document data to generate PPTX/PDF with audit logs (PDF conversion is also possible via LibreOffice).
 
 ## Quick Start
-1. Create a Python 3.12.x virtual environment and synchronize dependencies with `uv sync`.
+1. Create a Python 3.12 virtual environment and sync dependencies with `uv sync`.
 2. Run `uv run --help` to verify that the CLI entry point is available.
 3. Run the generation pipeline.
 
 ## Generation Pipeline Overview
 ### Dynamic generation (dynamic mode)
-Using layout information extracted from templates, this mode assembles the presentation data into draft slides and lets you iterate by adjusting content order and layout, regenerating as many times as needed. It is ideal when you want to flexibly create slides from the presentation data.
+Using layout information extracted from the template, assemble the presentation data into draft slides, and it is a flexible mode that can be regenerated any number of times while adjusting the order and layout of the content. It is suitable when you want to flexibly create slides from presentation data.
 
 ```mermaid
 flowchart TD
@@ -88,19 +88,19 @@ flowchart TD
   end
 ```
 
-| stage | Overview | Command Example |
+| stage | Overview | Example commands |
 | --- | --- | --- |
-| 1. Template | Extract and validate the template PPTX, and output foundational data such as `jobspec.json` to `.pptx/template/`. | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
-| 2. Content preparation | Normalize input materials into placeholder slides and generate drafts with AI logs and audit information. | `uv run pptx prepare samples/input/pitch.md` |
-| 3. Mapping | Perform HITL approvals and layout assignments, creating `.pptx/compose/generate_ready.json`. | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
-| 4. PPTX Generation | Generate PPTX/PDF and audit logs using `generate_ready.json`. | `uv run pptx gen .pptx/compose/generate_ready.json` |
+| 1. Template | Extract and validate the template PPTX, and output foundational data such as jobspec.json to `.pptx/template/` | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
+| 2. Content Preparation | Normalize input materials into provisional slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/input/pitch.md` |
+| 3. Mapping | Perform HITL approvals and layout assignments, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
+| 4. PPTX Generation | Use `generate_ready.json` to output PPTX/PDF and audit logs | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-Output paths can be switched via the environment variable `PPTX_OUTPUT_ROOT` (defaults to `.pptx/<stage>/`). For API/Web, history is kept under the convention `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`.
+The output root can be switched with the environment variable `PPTX_OUTPUT_ROOT` (defaults to `.pptx/<stage>/`). In API/Web, history is stored under the convention `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`.
 
 ### Static generation (static mode)
-This mode automatically allocates and assembles the content data to match the slide structure defined by the template. It is useful when slide layouts and rules are predefined.
+This mode automatically allocates and finalizes the presentation data to match the slide structure defined by the template. It is useful in cases where slide layout and rules are predetermined.
 
-The structures that appear in static mode are organized in the following hierarchy.
+The structures that appear in static mode are arranged in the following hierarchy.
 
 ```
 Blueprint（テンプレ全体の設計図）
@@ -148,13 +148,13 @@ flowchart TD
 | Stage | Overview | Command Examples |
 | --- | --- | --- |
 | 1. Template | Output the `.pptx/template/prompts/` (prompt templates) and `.pptx/slide_inputs.md` (slide input manifest) together with Blueprint information | `uv run pptx template samples/templates/templates.pptx --mode static` |
-| 2. Content Preparation | Edit the template (`.pptx/template/prompts/01_*.md`) and input manifest (`.pptx/slide_inputs.md`), and, if necessary, omit `<data file path>` to shape placeholder slides in accordance with the Blueprint Slot definitions | `uv run pptx prepare --mode static` |
-| 3. Mapping | Generate `generate_ready.json` while validating slot fulfillment | `uv run pptx compose .pptx/template/jobspec.json --static` |
-| 4. PPTX Generation | Output PPTX/PDF with a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` |
+| 2. Content Preparation | Edit the template (`.pptx/template/prompts/01_*.md`) and the input manifest (`.pptx/slide_inputs.md`), and if needed, omit `<data file path>` and shape dummy slides in accordance with the Blueprint Slot definitions | `uv run pptx prepare --mode static` |
+| 3. Mapping | Verify slot fulfillment status and generate `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` |
+| 4. PPTX Generation | Output PPTX/PDF in a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` |
 
-- With static templates, providing `external/<template_id>/hooks.json` lets you delegate per-stage processing to external hooks. For installation and operation procedures, refer to `external/README.md`; for operational guidelines, refer to `external/AGENTS.md`. For detailed configuration examples and the environment variables that will be passed, refer to the stage documents under `docs/design/stages/`.
+- In static templates, you can delegate per-stage processing to external hooks by preparing `external/<template_id>/hooks.json`. For installation and operation procedures, refer to `external/README.md`. For work guidelines, refer to `external/AGENTS.md`. For detailed configuration examples and the environment variables passed, refer to the stage documents under `docs/design/stages/`.
 
-The CLI commands for each stage and their main options are in `docs/design/cli/cli-command-reference.md`.
+The CLI commands for each stage and the main options are in `docs/design/cli/cli-command-reference.md`.
 
 ## Test
 - Test execution:
@@ -162,19 +162,19 @@ The CLI commands for each stage and their main options are in `docs/design/cli/c
   uv run --extra dev pytest
   ```
 - After testing, check the output directories such as `.pptx/compose/` and `.pptx/gen/` to verify that the expected artifacts have been generated.
-- Refer to `tests/AGENTS.md` for the detailed testing policy.
+- For detailed testing policy, please refer to `tests/AGENTS.md`.
 
-## Document Guide
+## Documentation Guide
 - `AGENTS.md`: Common rules that coding agents must follow and links to related documentation.
-- `docs/README.md`: Entry points to categories under `docs/` and links to detailed materials.
-- `docs/requirements/requirements.md`: Current business/functional requirements.
+- `docs/README.md`: Guidance to the categories and detailed documentation under `docs/`.
+- `docs/requirements/requirements.md`: Current business and functional requirements.
 - `docs/design/design.md`: Design overview of the 4-stage pipeline and major components.
-- `docs/runbooks/runbooks.md`: Procedures for operations, releases, troubleshooting, etc.
-- `docs/policies/policies.md`: An index summarizing the update procedures and reference order for policy documents.
-- `tests/AGENTS.md`: Guidelines for additional rules and test case design per testing hierarchy.
+- `docs/runbooks/runbooks.md`: Procedures for operations, releases, and troubleshooting.
+- `docs/policies/policies.md`: An index summarizing the update procedures and reference order for policy documents as a whole.
+- `tests/AGENTS.md`: Guidance on additional rules and test-case design per test level.
 
 ## Support and Inquiries
-- For release, support, and story outline operations, as well as other related procedures, refer to the individual procedures under `docs/runbooks/`.
+- For individual procedures such as release, support, and story skeleton operations, please refer to the `docs/runbooks/` directory.
 
 ## License
-- This project is provided under the MIT License. For details, please refer to the `LICENSE`.
+- This project is provided under the MIT License. For details, please refer to `LICENSE`.
