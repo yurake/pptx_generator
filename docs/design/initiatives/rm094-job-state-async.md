@@ -43,6 +43,12 @@ pending --------> canceled
 - 自動リトライなし。失敗時はクライアントが新しい job を enqueue。
 - worker での例外は pipeline_trace に error を記録し、キューに戻さない。
 
+## Web/API 完了通知の最小案
+- 受け付け: `POST /{stage}` は 202/200 で `{job_id, transaction_id, status: "pending"}` を返却。
+- 取得: `GET /jobs/{job_id}` で `status`（pending/running/succeeded/failed）と成果物 URL/エラーを返す。クライアントはポーリング（0.5s→1→2→3s バックオフなど）。
+- 拡張オプション: `GET /jobs/{job_id}?wait=30` のロングポーリング、または `callback_url` を受け付けて完了時に webhook POST。
+- ジョブ時間ばらつき（<500ms〜60s）を許容するため、基本はポーリング＋任意のロングポーリング/コールバックで運用。
+
 ## 移行と互換性
 - CLI は従来どおり完了まで待つが、内部でキュー/ワーカーを経由する。exit code で成功/失敗を判断可能。
 - キュー/ジョブの永続ディレクトリは作らない（メモリ管理のみ）。ファイルクリーンアップは不要。
