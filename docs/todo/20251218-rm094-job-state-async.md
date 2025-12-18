@@ -5,17 +5,17 @@
 roadmap_item: RM-094 ジョブ状態モデル＋非同期化
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: main から feat/rm094-job-state-async を作成済み。初期コミット・push は未実施。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan を転記。
-    - 対象整理（スコープ、対象ファイル、前提）: 4 stage (template/prepare/compose/gen) を非同期化し同期経路を廃止。job_id/transaction_id をキーに状態（pending/running/succeeded/failed/canceled）を管理するローカルキュー/ジョブストアを追加。ステータス問い合わせ CLI/API 最小形。出力配置は RM-092 規約に合わせ tx/job 階層を基本とする。破壊的変更を許容。
-    - ドキュメント／コード修正方針: CLI ハンドラを非同期投入に統一し同期実行削除。PipelineContext/trace へ状態と tx/job を記録。ローカルキュー実装・ステータス問い合わせハンドラを新設。README/CLI リファレンスで非同期化を反映。
-    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新とチャットで共有。設計メモを先にまとめてレビュー前提に実装着手。
-    - 想定影響ファイル: src/pptx_generator/pipeline/base.py, src/pptx_generator/pipeline/trace.py, src/pptx_generator/cli_handlers/*, 新規 runtime/job_queue.py・job_store.py（仮）、ドキュメント（README.md / cli-command-reference）。
-    - リスク: 同期 CLI 互換性の消失、パス/状態記録漏れによるトレース不整合、ローカルキューの耐久性は最小でクラッシュリカバリ非対応。
-    - テスト方針: job_queue/store の単体（状態遷移・キャンセル/失敗）、非同期 template→prepare→compose→gen の最小統合テスト（pending→running→succeeded）、失敗系で failed 確認、pipeline_trace キー/状態の検証。
-    - ロールバック方法: 非同期化一式を専用コミットにまとめ、問題時はそのコミットを revert。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: main から feat/rm094-job-state-async を作成、Plan 記載コミット済み。origin へ push 済み。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan を転記済み（設計反映）。内容は下記のとおり。
+    - 対象整理（スコープ、対象ファイル、前提）: 4 stage (template/prepare/compose/gen) をキュー経由で実行。job_id/transaction_id をキーに状態（pending/running/succeeded/failed）を扱い、CLI は同期完了待ち。出力配置は RM-092 規約。キャンセル/リトライ/永続ジョブ記録なし。
+    - ドキュメント／コード修正方針: CLI ハンドラをキュー経由に変更。PipelineContext/trace へ job_id/transaction_id を伝搬。メモリキュー・ジョブ実行ラッパを新設。CLI 設計ガイドを更新。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新とチャットで共有。設計メモを先にまとめて実装。
+    - 想定影響ファイル: src/pptx_generator/pipeline/base.py, src/pptx_generator/cli_commands/*, 新規 runtime/job_queue.py, runtime/job_context.py, docs/design/cli/cli-command-reference.md など。
+    - リスク: CLI 実行フロー変更、メモリキューによるクラッシュ時再開不可、ステータス/キャンセル未提供。
+    - テスト方針: キュー単体の状態遷移、CLI 各ステージで run_job_sync 経由になることを確認するテスト追加。
+    - ロールバック方法: キュー導入コミットを revert。
     - 承認メッセージ ID／リンク: ユーザー承認（本チャット 2025-12-18 指示: 1,2 実施・実装前に設計）。
     - 参照済みドキュメント: docs/policies/context-engineering.md, CONTRIBUTING.md, docs/policies/task-management.md, docs/roadmap/roadmap.md (RM-094), docs/notes/20251217-rm089-web-if.md
 - [x] 設計・実装方針の確定
@@ -30,12 +30,12 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
     - 互換性: CLI は完了まで待つ UX を維持しつつ内部はキュー化。status/cancel コマンドは提供しない。
   - [x] 設計・実装方針メモの共有（docs/design/initiatives/rm094-job-state-async.md）
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: （着手前に設計メモ確定）
-- [ ] テスト・検証
-  - メモ: 
+- [x] 実装
+  - メモ: メモリキュー・ジョブコンテキストを追加し、PipelineContext へ job_id/tx_id を注入。CLI 各ステージ（template/prepare/compose/gen）を run_job_sync 経由に変更。CLI 設計ガイド更新。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/runtime/test_job_queue.py tests/cli/test_cli_job_queue_flow.py`
 - [ ] ドキュメント更新
-  - メモ: 
+  - メモ: cli-command-reference.md を更新済み。roadmap/requirements/design/runbook/README/AGENTS は未更新（必要に応じて別途）。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
   - [ ] docs/design 配下（実装結果との整合再確認）
