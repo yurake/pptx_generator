@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from ..config_manager import ResolvedConfig
 from ..models import JobSpec
+from ..runtime.job_context import get_current_job
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,10 @@ class PipelineContext:
     artifacts: PipelineArtifacts = field(default_factory=PipelineArtifacts)
 
     def __post_init__(self) -> None:
+        current_job = get_current_job()
+        if current_job is not None:
+            self.job_id = current_job.job_id
+            self.transaction_id = current_job.transaction_id
         if not isinstance(self.artifacts, PipelineArtifacts):
             self.artifacts = PipelineArtifacts.from_mapping(self.artifacts)
 

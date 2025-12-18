@@ -11,6 +11,7 @@ from pptx_generator.cli_handlers.rendering import (
     echo_render_outputs,
     run_generate_command,
 )
+from pptx_generator.runtime.job_queue import run_job_sync
 
 from pptx_generator.cli_hooks import (
     STAGE_GEN,
@@ -235,7 +236,10 @@ def create_gen_command(
             emit_structure_snapshot=emit_structure_snapshot,
         )
         try:
-            result = run_generate_command(config)
+            result = run_job_sync(
+                stage="gen",
+                func=lambda: run_generate_command(config),
+            )
         except GenerateCommandError as exc:
             message = str(exc)
             if message:

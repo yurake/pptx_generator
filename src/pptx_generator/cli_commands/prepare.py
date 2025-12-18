@@ -19,6 +19,7 @@ from pptx_generator.cli_hooks import (
     load_hooks_for_template_id,
     slide_contexts_from_blueprint,
 )
+from pptx_generator.runtime.job_queue import run_job_sync
 
 
 def build_prepare_config(
@@ -174,7 +175,10 @@ def create_prepare_command(
                 return
 
         try:
-            result = run_prepare_command(config, dump_json=dump_json)
+            result = run_job_sync(
+                stage="prepare",
+                func=lambda: run_prepare_command(config, dump_json=dump_json),
+            )
         except PrepareCommandError as exc:
             click.echo(str(exc), err=True)
             raise click.exceptions.Exit(code=exc.exit_code) from exc

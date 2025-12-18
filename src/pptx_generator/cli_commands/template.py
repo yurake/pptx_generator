@@ -9,6 +9,7 @@ from pptx_generator.cli_handlers.template_commands import (
     TemplateCommandError,
     run_template_command,
 )
+from pptx_generator.runtime.job_queue import run_job_sync
 
 from pptx_generator.cli_handlers.common import log_current_llm_provider
 from pptx_generator.cli_hooks import (
@@ -232,7 +233,10 @@ def create_template_command(
         )
 
         try:
-            result = run_template_command(config)
+            result = run_job_sync(
+                stage="template",
+                func=lambda: run_template_command(config),
+            )
         except TemplateCommandError as exc:
             message = str(exc)
             if message:
