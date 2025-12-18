@@ -132,11 +132,45 @@ def log_block_stats(label: str, blocks: List[Block]) -> None:
     code = sum(1 for b in blocks if b.is_code)
     text = total - code
     print(f"[{label}] blocks: total={total}, text={text}, code={code}")
-    for i, blk in enumerate(blocks[:5]):
+    for i, blk in enumerate(blocks[:8]):
         head = blk.text().strip().splitlines()[:1]
         preview = head[0] if head else "(empty)"
         kind = "code" if blk.is_code else "text"
         print(f"  [{i:02d}] {kind}: {preview}")
+
+
+def log_block_diff(base_blocks: List[Block], current_blocks: List[Block]) -> None:
+    """
+    ブロック数が違う場合に、最初に差分が出る位置と余剰ブロックを出力する。
+    """
+    min_len = min(len(base_blocks), len(current_blocks))
+    diff_index = None
+    for i in range(min_len):
+        if base_blocks[i].text() != current_blocks[i].text():
+            diff_index = i
+            break
+
+    if diff_index is not None:
+        base_preview = base_blocks[diff_index].text().strip().splitlines()[:1]
+        cur_preview = current_blocks[diff_index].text().strip().splitlines()[:1]
+        print(f"First differing block at index {diff_index}:")
+        print(f"  base    : {base_preview[0] if base_preview else '(empty)'}")
+        print(f"  current : {cur_preview[0] if cur_preview else '(empty)'}")
+
+    if len(current_blocks) > len(base_blocks):
+        print("Extra blocks in current (not in base):")
+        for i in range(len(base_blocks), len(current_blocks)):
+            head = current_blocks[i].text().strip().splitlines()[:1]
+            preview = head[0] if head else "(empty)"
+            kind = "code" if current_blocks[i].is_code else "text"
+            print(f"  [{i:02d}] {kind}: {preview}")
+    elif len(base_blocks) > len(current_blocks):
+        print("Missing blocks in current (present in base):")
+        for i in range(len(current_blocks), len(base_blocks)):
+            head = base_blocks[i].text().strip().splitlines()[:1]
+            preview = head[0] if head else "(empty)"
+            kind = "code" if base_blocks[i].is_code else "text"
+            print(f"  [{i:02d}] {kind}: {preview}")
 
 
 def get_base_readme(base_ref: str) -> Optional[str]:
@@ -231,6 +265,7 @@ def auto_translate(
         print("Block count details (base vs current):")
         log_block_stats("base", base_blocks)
         log_block_stats("current", current_blocks)
+        log_block_diff(base_blocks, current_blocks)
         raise RuntimeError(
             f"Block count mismatch between base and current README: "
             f"base={len(base_blocks)}, current={len(current_blocks)}. "
@@ -249,6 +284,7 @@ def auto_translate(
             print("Block count details (current vs translation):")
             log_block_stats("current", current_blocks)
             log_block_stats(f"{path}", blocks)
+            log_block_diff(current_blocks, blocks)
             raise RuntimeError(
                 f"Block count mismatch for {path}: "
                 f"{len(blocks)} (translated) vs {len(current_blocks)} (current README). "
