@@ -37,10 +37,10 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
 - [ ] ドキュメント更新
   - メモ: cli-command-reference.md 更新済み。roadmap を進行中に更新済み。requirements/runbook/README/AGENTS は未更新（必要に応じて別途）。
   - [x] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/requirements 配下（実装結果との整合再確認）※仕様差分なしのため更新不要を確認
   - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/runbook 配下 ※本対応の運用手順差分なしのため更新不要を確認
+  - [x] README.md / AGENTS.md ※CLI UX は同期維持のため更新不要を確認
 - [x] 関連Issue 行の更新
   - メモ: 
 - [ ] チェックリスト整合確認
