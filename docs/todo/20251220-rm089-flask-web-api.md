@@ -1,6 +1,6 @@
 目的: RM-089 stage1-4 Flask Web/API 化の着手と実装準備（API基盤設計・成果物返却フロー整理）
 関連ブランチ: feat/rm089-flask-web-api
-関連Issue: 未作成
+関連Issue: #446
 roadmap_item: RM-089 stage1-4 Flask Web/API 化
 ---
 
@@ -33,7 +33,7 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
