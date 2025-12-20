@@ -30,6 +30,7 @@ def create_app() -> Flask:
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
     app.config["BEARER_TOKEN"] = os.environ.get("PPTX_API_BEARER_TOKEN")
     app.config["WORKER_COUNT"] = int(os.environ.get("PPTX_API_WORKERS", "1"))
+    app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("PPTX_API_MAX_BODY", str(10 * 1024 * 1024)))
     app.queue = get_queue()  # type: ignore[attr-defined]
     app.queue.ensure_workers(app.config["WORKER_COUNT"])
 
@@ -48,7 +49,7 @@ def create_app() -> Flask:
 
     @api.post("/templates")
     def post_templates():
-        payload = request.get_json(silent=True) or {}
+        payload = _require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
         state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -56,7 +57,7 @@ def create_app() -> Flask:
 
     @api.post("/prepare")
     def post_prepare():
-        payload = request.get_json(silent=True) or {}
+        payload = _require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("prep")
         state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -64,7 +65,7 @@ def create_app() -> Flask:
 
     @api.post("/compose")
     def post_compose():
-        payload = request.get_json(silent=True) or {}
+        payload = _require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("cmp")
         state = _enqueue_job(app.queue, stage="compose", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -72,7 +73,7 @@ def create_app() -> Flask:
 
     @api.post("/gen")
     def post_gen():
-        payload = request.get_json(silent=True) or {}
+        payload = _require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("gen")
         state = _enqueue_job(app.queue, stage="gen", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -144,11 +145,20 @@ def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
 
 
+def _require_json() -> dict:
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        abort(_error_response(400, "bad_request", "invalid json payload"))
+    return payload
+
+
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
     if stage == "template":
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_template():
+            if "template_path" not in payload:
+                abort(_error_response(422, "validation_error", "template_path is required"))
             config = TemplateCommandConfig(
                 template_path=Path(payload["template_path"]),
                 output_dir=Path(workdir),
@@ -184,6 +194,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
+            if "prepare_sources" not in payload:
+                abort(_error_response(422, "validation_error", "prepare_sources is required"))
             config = PrepareCommandConfig(
                 prepare_paths=[Path(p) for p in payload.get("prepare_sources", [])],
                 prepare_base_path=None,
@@ -219,6 +231,10 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         review_log = Path(workdir) / "draft_review_log.json"
 
         def _run_compose():
+            if "jobspec_path" not in payload:
+                abort(_error_response(422, "validation_error", "jobspec_path is required"))
+            if "prepare_cards" not in payload:
+                abort(_error_response(422, "validation_error", "prepare_cards is required"))
             config = ComposeCommandConfig(
                 spec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
                 draft_output=Path(workdir) / "draft.json",
@@ -253,6 +269,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
+            if "generate_ready_path" not in payload:
+                abort(_error_response(422, "validation_error", "generate_ready_path is required"))
             config = GenerateCommandConfig(
                 generate_ready_path=Path(payload.get("generate_ready_path", ".pptx/compose/generate_ready.json")),
                 output_dir=Path(workdir),
