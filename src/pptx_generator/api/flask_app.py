@@ -10,6 +10,7 @@ from typing import Iterable, Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request
 
+from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
@@ -176,6 +177,37 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             return {"artifacts": artifacts, "result": result}
 
         func = _run_template
+    elif stage == "prepare":
+        workdir = _resolve_output_root(transaction_id, stage, job_id)
+
+        def _run_prepare():
+            config = PrepareCommandConfig(
+                prepare_paths=[Path(p) for p in payload.get("prepare_sources", [])],
+                prepare_base_path=None,
+                jobspec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
+                output_dir=Path(workdir),
+                mode=payload.get("mode", "dynamic"),
+                page_limit=payload.get("page_limit"),
+                story_outline_path=None,
+                page_offset=None,
+                template_ai_policy=None,
+                disable_template_ai=False,
+                blueprint_override=None,
+                metadata=None,
+                analysis_summary=None,
+                layout_filter=None,
+            )
+            result = run_prepare_command(config)
+            artifacts = {
+                "prepare_card_url": str(Path(workdir) / "prepare_card.json"),
+                "prepare_log_url": str(Path(workdir) / "prepare_log.json"),
+                "prepare_ai_log_url": str(Path(workdir) / "prepare_ai_log.json"),
+                "ai_generation_meta_url": str(Path(workdir) / "ai_generation_meta.json"),
+                "audit_log_url": str(Path(workdir) / "audit_log.json"),
+            }
+            return {"artifacts": artifacts, "result": result}
+
+        func = _run_prepare
     else:
         def _noop_job():
             if stage == "gen":
