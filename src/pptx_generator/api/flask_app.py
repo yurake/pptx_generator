@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Iterable, Optional
 
-from flask import Blueprint, Flask, abort, g, jsonify, request
+from flask import Blueprint, Flask, abort, g, jsonify, request, send_file
 
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
@@ -96,7 +96,25 @@ def create_app() -> Flask:
 
     @api.get("/jobs/<job_id>/artifacts/<artifact_type>")
     def get_artifact(job_id: str, artifact_type: str):
-        return _error_response(404, "not_found", f"{artifact_type} not available for {job_id}")
+        state = app.queue.get_job(job_id)  # type: ignore[attr-defined]
+        if state is None:
+            return _error_response(404, "not_found", "job not found")
+        if not isinstance(state.result, dict):
+            return _error_response(404, "not_found", f"{artifact_type} not available")
+        artifacts = state.result.get("artifacts") or {}
+        path = artifacts.get(f"{artifact_type}_url")
+        if not path:
+            return _error_response(404, "not_found", f"{artifact_type} not available")
+        file_path = Path(path)
+        if not file_path.exists():
+            return _error_response(404, "not_found", f"{artifact_type} not found")
+        if artifact_type == "pptx":
+            mimetype = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        elif artifact_type == "pdf":
+            mimetype = "application/pdf"
+        else:
+            return _error_response(404, "not_found", f"{artifact_type} not available")
+        return send_file(file_path, mimetype=mimetype, as_attachment=True, download_name=file_path.name)
 
     app.register_blueprint(api)
     return app
