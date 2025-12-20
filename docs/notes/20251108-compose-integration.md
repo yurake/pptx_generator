@@ -19,5 +19,5 @@ tags:
 - README や CLI コマンドガイドを更新し、`render` と `gen` の役割分担、compose を軸とした stage 4/5フローを明記。
 
 ## 残課題・フォローアップ
-- `docs/design/archive/stage3-4-cli.md` などの検討メモは次回整理時に compose ベースの図表へ差し替える。
+- 旧 `docs/design/archive/stage3-4-cli.md` は削除済み。compose ベースの図表を `docs/design/stages/stage-03-compose.md` へ統合する。
 - `.egg-info` 配下の生成メタには旧 `rendering_ready` 文言が残っているため、次回の配布物生成時に `generate_ready` へ更新されることを確認する。

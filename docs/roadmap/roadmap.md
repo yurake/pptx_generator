@@ -404,7 +404,7 @@ flowchart TB
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）。
 - 目的: stage 3/4を独立CLIとして提供できるよう、インターフェース・テスト観点・運用手順を整理する。
 - 状況: 完了（2025-10-19 更新）
-- 参照ドキュメント: [docs/design/archive/stage3-4-cli.md](../design/archive/stage3-4-cli.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
+- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
 - マイルストーン:
   1. stage 3/4 CLI 分離要件の調査と設計方針整理（ToDo: フォローアップタスク）。
   2. テスト観点棚卸しと再実行手順のドキュメント化。
