@@ -12,6 +12,9 @@ from flask import Blueprint, Flask, abort, g, jsonify, request
 
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
+from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
+from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command, PrepareCommandError
+from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
@@ -208,6 +211,76 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             return {"artifacts": artifacts, "result": result}
 
         func = _run_prepare
+    elif stage == "compose":
+        workdir = _resolve_output_root(transaction_id, stage, job_id)
+        generate_ready_path = Path(workdir) / "generate_ready.json"
+        generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
+        draft_log = Path(workdir) / "draft_mapping_log.json"
+        review_log = Path(workdir) / "draft_review_log.json"
+
+        def _run_compose():
+            config = ComposeCommandConfig(
+                spec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
+                draft_output=Path(workdir) / "draft.json",
+                target_length=None,
+                structure_pattern=None,
+                appendix_limit=10,
+                analysis_summary_path=None,
+                show_layout_reasons=bool(payload.get("show_layout_reasons", False)),
+                output_dir=Path(workdir),
+                rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
+                prepare_cards=Path(payload.get("prepare_cards", ".pptx/prepare/prepare_card.json")),
+                draft_filename=str(draft_log.name),
+                approved_filename=str(review_log.name),
+                log_filename=str(draft_log.name),
+                meta_filename=str(review_log.name),
+                generate_ready_filename=str(generate_ready_path.name),
+                generate_ready_meta_filename=str(generate_ready_meta_path.name),
+            )
+            result = run_compose_command(config)
+            artifacts = {
+                "generate_ready_url": str(generate_ready_path),
+                "generate_ready_meta_url": str(generate_ready_meta_path),
+                "draft_mapping_log_url": str(draft_log),
+                "draft_review_log_url": str(review_log),
+            }
+            return {"artifacts": artifacts, "result": result}
+
+        func = _run_compose
+    elif stage == "gen":
+        workdir = _resolve_output_root(transaction_id, stage, job_id)
+        pptx_path = Path(workdir) / "proposal.pptx"
+        pdf_path = Path(workdir) / "proposal.pdf"
+
+        def _run_gen():
+            config = GenerateCommandConfig(
+                generate_ready_path=Path(payload.get("generate_ready_path", ".pptx/compose/generate_ready.json")),
+                output_dir=Path(workdir),
+                pptx_name=pptx_path.name,
+                rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
+                export_pdf=bool(payload.get("export_pdf", False)),
+                pdf_mode=payload.get("pdf_mode", "default"),
+                pdf_output=str(pdf_path),
+                libreoffice_path=None,
+                pdf_timeout=payload.get("pdf_timeout", 120),
+                pdf_retries=payload.get("pdf_retries", 1),
+                polisher_toggle=None,
+                polisher_path=None,
+                polisher_rules=None,
+                polisher_timeout=None,
+                polisher_args=(),
+                polisher_cwd=None,
+                emit_structure_snapshot=bool(payload.get("emit_structure_snapshot", False)),
+            )
+            result = run_generate_command(config)
+            artifacts = {
+                "pptx_url": str(pptx_path),
+            }
+            if payload.get("export_pdf"):
+                artifacts["pdf_url"] = str(pdf_path)
+            return {"artifacts": artifacts, "result": result}
+
+        func = _run_gen
     else:
         def _noop_job():
             if stage == "gen":
