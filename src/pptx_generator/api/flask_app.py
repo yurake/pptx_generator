@@ -9,6 +9,12 @@ from typing import Iterable, Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request
 
+from pptx_generator.runtime.job_queue import (
+    JobRequest,
+    JobStatus,
+    InProcessJobQueue,
+    get_queue,
+)
 
 def create_app() -> Flask:
     """Create Flask application for stage1-4 API."""
@@ -17,6 +23,9 @@ def create_app() -> Flask:
     app.config["HMAC_KEYS"] = _load_hmac_keys()
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
     app.config["BEARER_TOKEN"] = os.environ.get("PPTX_API_BEARER_TOKEN")
+    app.config["WORKER_COUNT"] = int(os.environ.get("PPTX_API_WORKERS", "1"))
+    app.queue = get_queue()  # type: ignore[attr-defined]
+    app.queue.ensure_workers(app.config["WORKER_COUNT"])
 
     @app.before_request
     def _authenticate() -> Optional[tuple]:
@@ -36,47 +45,45 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
-        return _job_response(job_id, tx_id, "template")
+        state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id)
+        return _job_response(state)
 
     @api.post("/prepare")
     def post_prepare():
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("prep")
-        return _job_response(job_id, tx_id, "prepare")
+        state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id)
+        return _job_response(state)
 
     @api.post("/compose")
     def post_compose():
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("cmp")
-        return _job_response(job_id, tx_id, "compose")
+        state = _enqueue_job(app.queue, stage="compose", job_id=job_id, transaction_id=tx_id)
+        return _job_response(state)
 
     @api.post("/gen")
     def post_gen():
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("gen")
-        return _job_response(job_id, tx_id, "gen")
+        state = _enqueue_job(app.queue, stage="gen", job_id=job_id, transaction_id=tx_id)
+        return _job_response(state)
 
     @api.get("/jobs/<job_id>")
     def get_job(job_id: str):
-        tx_id = request.args.get("transaction_id") or _generate_id("tx")
-        body = {
-            "job_id": job_id,
-            "transaction_id": tx_id,
-            "status": "pending",
-            "stage": "unknown",
-            "status_url": f"/jobs/{job_id}",
-            "transaction_url": f"/transactions/{tx_id}",
-        }
-        return jsonify(body)
+        state = app.queue.get_job(job_id)  # type: ignore[attr-defined]
+        if state is None:
+            return _error_response(404, "not_found", "job not found")
+        return jsonify(_job_status_body(state))
 
     @api.get("/transactions/<transaction_id>")
     def get_transaction(transaction_id: str):
         body = {
             "transaction_id": transaction_id,
-            "jobs": [],
+            "jobs": _jobs_by_transaction(app.queue, transaction_id),  # type: ignore[attr-defined]
         }
         return jsonify(body)
 
@@ -131,16 +138,51 @@ def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
 
 
-def _job_response(job_id: str, transaction_id: str, stage: str):
-    body = {
-        "job_id": job_id,
-        "transaction_id": transaction_id,
-        "status": "pending",
-        "stage": stage,
-        "status_url": f"/jobs/{job_id}",
-        "transaction_url": f"/transactions/{transaction_id}",
-    }
+def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str):
+    request = JobRequest(
+        stage=stage,
+        job_id=job_id,
+        transaction_id=transaction_id,
+        func=lambda: None,
+    )
+    state = queue.enqueue(request)
+    queue.ensure_workers(1)
+    return state
+
+
+def _job_response(state):
+    body = _job_status_body(state)
     return jsonify(body), 202
+
+
+def _job_status_body(state):
+    return {
+        "job_id": state.request.job_id,
+        "transaction_id": state.request.transaction_id,
+        "status": state.status,
+        "stage": state.request.stage,
+        "status_url": f"/jobs/{state.request.job_id}",
+        "transaction_url": f"/transactions/{state.request.transaction_id}",
+        "created_at": state.request.enqueued_at.isoformat(),
+        "started_at": state.started_at.isoformat() if state.started_at else None,
+        "finished_at": state.finished_at.isoformat() if state.finished_at else None,
+        "artifacts": {},
+        "error": _error_info(state),
+    }
+
+
+def _error_info(state):
+    if state.status != JobStatus.FAILED or state.error is None:
+        return None
+    return {"code": "job_failed", "message": str(state.error)}
+
+
+def _jobs_by_transaction(queue: InProcessJobQueue, transaction_id: str):
+    jobs = []
+    for state in list(queue._jobs.values()):  # type: ignore[attr-defined]
+        if state.request.transaction_id == transaction_id:
+            jobs.append(_job_status_body(state))
+    return jobs
 
 
 def _generate_id(prefix: str) -> str:
