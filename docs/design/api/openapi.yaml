@@ -206,11 +206,11 @@ components:
         status_url:
           type: string
           format: uri
-          description: このジョブの状態を取得するエンドポイント（例: /jobs/{job_id}）
+          description: "このジョブの状態を取得するエンドポイント（例: /jobs/{job_id}）"
         transaction_url:
           type: string
           format: uri
-          description: このジョブが属するトランザクション一覧を取得するエンドポイント（例: /transactions/{transaction_id}）
+          description: "このジョブが属するトランザクション一覧を取得するエンドポイント（例: /transactions/{transaction_id}）"
     JobStatus:
       allOf:
         - $ref: "#/components/schemas/JobHandle"
