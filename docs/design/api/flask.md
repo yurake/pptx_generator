@@ -59,3 +59,7 @@
 
 ## 保持期間・クリーンアップ
 - 保持期限は「未設定」。運用で定期的に `PPTX_OUTPUT_ROOT` を掃除する前提（自動削除は今回導入しない）。
+
+## Idempotency / 再送
+- 今回は idempotency 未対応。再送時も毎回新規 `job_id` を払い出す。
+- Idempotency-Key ヘッダ対応は将来検討（TODO）。
