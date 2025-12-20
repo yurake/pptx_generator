@@ -1,5 +1,7 @@
 # stage 3 Compose (HITL + 自動) 設計
 
+対応要件: `docs/requirements/stages/stage-03-compose.md`
+
 ## 目的
 - stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。
 - HITL 承認と割当ログを `generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約し、監査しやすい構造を維持する。
