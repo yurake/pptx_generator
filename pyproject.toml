@@ -17,6 +17,7 @@ dependencies = [
     "openai>=2.6.1",
     "boto3>=1.40.64",
     "anthropic>=0.72.0",
+    "flask>=3.0,<4",
 ]
 
 [project.optional-dependencies]
