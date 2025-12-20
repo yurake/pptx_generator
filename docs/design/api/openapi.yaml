@@ -288,7 +288,7 @@ components:
           type: array
           items:
             type: string
-          description: 入力ファイルやテキスト（例: md/txt/json のパス、文字列など）
+          description: "入力ファイルやテキスト（例: md/txt/json のパス、文字列など）"
         mode:
           type: string
           enum: [static, dynamic]
