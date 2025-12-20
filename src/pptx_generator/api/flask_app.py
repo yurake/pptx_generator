@@ -47,6 +47,10 @@ def create_app() -> Flask:
 
     api = Blueprint("api", __name__)
 
+    @app.errorhandler(413)
+    def handle_request_entity_too_large(e):
+        return _error_response(413, "too_large", "request body too large")
+
     @api.post("/templates")
     def post_templates():
         payload = _require_json()
