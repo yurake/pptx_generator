@@ -255,3 +255,40 @@ def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
     status_body = status_resp.get_json()
     # 現状は gen の実処理がファイル生成に失敗する前に artifacts を空で返しうるため、キー有無だけチェック
     assert "artifacts" in status_body
+
+
+def test_template_end_to_end(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+
+    resp = c.post(
+        "/templates",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "template_path": "samples/templates/templates.pptx",
+            "mode": "dynamic",
+        },
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    # poll for completion
+    status_body = None
+    for _ in range(30):
+        status_resp = c.get(job["status_url"], headers={"Authorization": "Bearer token-123"})
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(0.1)
+
+    assert status_body is not None
+    assert status_body["status"] == "succeeded", f"job failed: {status_body.get('error')}"
+    artifacts = status_body["artifacts"]
+    assert "jobspec_url" in artifacts
+    assert "template_spec_url" in artifacts
+    # ファイルが生成されていることを確認
+    for key in ("jobspec_url", "template_spec_url"):
+        assert (tmp_path / artifacts[key]).exists()
