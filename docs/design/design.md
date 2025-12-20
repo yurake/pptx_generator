@@ -7,8 +7,9 @@
 
 ## 関連設計ドキュメント
 - **CLI**: `docs/design/cli/cli-command-reference.md`
-- **ブランド・スタイル**: `docs/design/initiatives/template-style-governance.md`
-- **ストーリー整備**: `docs/design/initiatives/story-modeler.md`
+- **横断設計メモ**: `docs/design/architecture/README.md`
+- **stage 1 補足 (jobspec 抽出)**: `docs/design/stages/stage-01-jobspec-catalog.md`
+- **stage 3 補足 (ストーリー整備)**: `docs/design/stages/stage-03-story-modeler.md`
 - **テンプレ構造スキーマ**: `docs/design/schema/README.md`
 - **過去の検討メモ（アーカイブ）**: `docs/design/archive/`
 

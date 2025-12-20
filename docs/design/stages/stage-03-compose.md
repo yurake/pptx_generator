@@ -4,6 +4,7 @@
 - stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。
 - HITL 承認と割当ログを `generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約し、監査しやすい構造を維持する。
 - 再実行や差戻しが発生した際も `<output>/draft/` 配下の成果物を固定し、CLI／自動化から運用できるようにする（既定の `--output` は `.pptx/compose`）。
+- ストーリー骨子連携の補足は `docs/design/stages/stage-03-story-modeler.md` を参照。
 
 ## コンポーネント
 | コンポーネント | 役割 | 技術 | 備考 |

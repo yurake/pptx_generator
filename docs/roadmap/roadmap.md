@@ -181,7 +181,7 @@ flowchart TB
 ### RM-011 レイアウトスタイル統一
 - ゴール: テーブル・チャート・画像などのレイアウトスタイルを設定ファイルで統一管理し、ブランド統一感を維持できるようにする。
 - 対象 stage: 5（マッピング）・6（レンダリング）
-- 参照ドキュメント: [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md)
+- 参照ドキュメント: [docs/design/architecture/template-style-governance.md](../design/architecture/template-style-governance.md)
 - 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
@@ -660,7 +660,7 @@ flowchart TB
 ### RM-054 静的テンプレ構成統合プランニング
 - 対象 stage: 2〜3（コンテンツ準備 / マッピング）
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう stage 2 のカード生成と stage 3 のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
-- 参照ドキュメント: [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/initiatives/template-blueprint.md](../design/initiatives/template-blueprint.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/architecture/template-blueprint.md](../design/architecture/template-blueprint.md)
 - 参照 ToDo: [docs/todo/archive/20251109-rm054-static-blueprint-plan.md](../todo/archive/20251109-rm054-static-blueprint-plan.md)
 - 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-22 更新）

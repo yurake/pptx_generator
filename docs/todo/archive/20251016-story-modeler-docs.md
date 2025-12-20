@@ -6,11 +6,11 @@ roadmap_item: RM-005 プレゼンストーリーモデラー
 ---
 
 - [x] ブランチ作成と初期コミット
-  - メモ: `docs/design/initiatives/story-modeler`（仮）ブランチでドキュメント素案を管理する
+  - メモ: `docs/design/stages/stage-03-story-modeler`（仮）ブランチでドキュメント素案を管理する
 - [x] 計画策定（スコープ・前提・担当の整理）
   - メモ: 企画〜要件〜設計ドキュメントのみ対象とし、実装は別タスク。対象ファイルは stage-03 要件、RM-005 ロードマップ、設計資料（docs/design/配下）とする。
 - [x] 設計・実装方針の確定
-  - メモ: ストーリーフェーズ分類と `story_outline.json` スキーマ草案をレビュー可能な形にまとめる（docs/design/initiatives/story-modeler.md 参照）
+  - メモ: ストーリーフェーズ分類と `story_outline.json` スキーマ草案をレビュー可能な形にまとめる（docs/design/stages/stage-03-story-modeler.md 参照）
 - [x] ドキュメント更新（要件・設計）
   - メモ: stage-03 要件差分と stage 4 連携を整理し、迷う点はユーザーへ相談した結果を残す
   - [x] docs/requirements 配下

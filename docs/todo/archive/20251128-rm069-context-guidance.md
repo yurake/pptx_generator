@@ -50,4 +50,4 @@ roadmap_item: RM-069 コンテキスト設計ガイド整備
   - メモ: PR #333 https://github.com/yurake/pptx_generator/pull/333（2025-11-28 完了）
 
 ## メモ
-- 2025-11-29: `docs/design/` を CLI / initiatives / archive / stages へ整理し、関連ドキュメントの参照リンクを最新構成へ更新済み。
+- 2025-11-29: `docs/design/` を CLI / architecture / archive / stages へ整理し、関連ドキュメントの参照リンクを最新構成へ更新済み。

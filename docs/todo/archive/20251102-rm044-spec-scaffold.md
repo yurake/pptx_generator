@@ -15,7 +15,7 @@ roadmap_item: RM-044 ジョブスペック雛形自動生成
     - テスト: TemplateExtractor ユニットテストで雛形生成を検証し、`uv run pptx tpl-extract samples/templates/templates.pptx` を用いた CLI 統合テストで `jobspec.json` 出力とスキーマ整合、既存成果物への影響がないことを確認する。
     - ロールバック: 追加したモデル・生成処理・ CLI ログ出力・サンプル・ドキュメントを削除し、`pptx tpl-extract` の出力を従来のファイル構成へ戻す。
 - [x] 設計・実装方針の確定
-  - メモ: 設計内容を `docs/design/initiatives/jobspec-catalog.md` に整理し、jobspec.json のスキーマ・生成手順・テスト戦略・ロールバックを定義した。
+  - メモ: 設計内容を `docs/design/stages/stage-01-jobspec-catalog.md` に整理し、jobspec.json のスキーマ・生成手順・テスト戦略・ロールバックを定義した。
 - [x] ドキュメント更新（要件・設計）
   - メモ: 必要に応じて docs/requirements および docs/design を更新する。
   - [x] docs/requirements 配下
