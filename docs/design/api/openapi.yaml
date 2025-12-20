@@ -5,6 +5,7 @@ info:
   description: |
     Stage1-4 (template/prepare/compose/gen) を提供する Flask Web/API の草案。
     認証は HMAC 署名と Bearer の OR で許可する。
+    認証詳細は docs/design/api/auth.md を参照。
 servers:
   - url: http://localhost:8000
     description: Local dev
