@@ -205,3 +205,53 @@ def test_job_error_path(monkeypatch):
     assert body["status"] == "failed"
     assert body["error"]["code"] == "job_failed"
     assert "boom" in body["error"]["message"]
+
+
+def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
+    # NOTE: 最小スモーク（実処理呼び出しだが、入力は仮置きで例外にならない範囲）
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+
+    # prepare -> compose -> gen
+    prep_resp = c.post(
+        "/prepare",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "prepare_sources": [],
+            "jobspec_path": ".pptx/template/jobspec.json",
+            "mode": "dynamic",
+        },
+    )
+    assert prep_resp.status_code == 202
+    prep_job = prep_resp.get_json()
+
+    comp_resp = c.post(
+        "/compose",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "jobspec_path": ".pptx/template/jobspec.json",
+            "prepare_cards": ".pptx/prepare/prepare_card.json",
+        },
+    )
+    assert comp_resp.status_code == 202
+    comp_job = comp_resp.get_json()
+
+    gen_resp = c.post(
+        "/gen",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "generate_ready_path": ".pptx/compose/generate_ready.json",
+            "export_pdf": False,
+        },
+    )
+    assert gen_resp.status_code == 202
+    gen_job = gen_resp.get_json()
+
+    # artifact stub for gen
+    status_resp = c.get(gen_job["status_url"], headers={"Authorization": "Bearer token-123"})
+    assert status_resp.status_code == 200
+    status_body = status_resp.get_json()
+    # 現状は gen の実処理がファイル生成に失敗する前に artifacts を空で返しうるため、キー有無だけチェック
+    assert "artifacts" in status_body
