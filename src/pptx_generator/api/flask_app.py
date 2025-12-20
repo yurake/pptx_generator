@@ -139,11 +139,17 @@ def _error_response(status_code: int, code: str, message: str):
 
 
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str):
+    def _noop_job():
+        # TODO: 差し替え予定の実処理フック
+        if stage == "gen":
+            return {"artifacts": {"pptx_url": f"/jobs/{job_id}/artifacts/pptx"}}
+        return {}
+
     request = JobRequest(
         stage=stage,
         job_id=job_id,
         transaction_id=transaction_id,
-        func=lambda: None,
+        func=_noop_job,
     )
     state = queue.enqueue(request)
     queue.ensure_workers(1)
@@ -156,6 +162,9 @@ def _job_response(state):
 
 
 def _job_status_body(state):
+    artifacts = {}
+    if isinstance(state.result, dict):
+        artifacts = state.result.get("artifacts") or {}
     return {
         "job_id": state.request.job_id,
         "transaction_id": state.request.transaction_id,
@@ -166,7 +175,7 @@ def _job_status_body(state):
         "created_at": state.request.enqueued_at.isoformat(),
         "started_at": state.started_at.isoformat() if state.started_at else None,
         "finished_at": state.finished_at.isoformat() if state.finished_at else None,
-        "artifacts": {},
+        "artifacts": artifacts,
         "error": _error_info(state),
     }
 
