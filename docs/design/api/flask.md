@@ -3,10 +3,11 @@
 ## 構成
 - app factory（`create_app` 想定）で共通設定・ミドルウェアを注入。
 - Blueprint 分割:
-- `/templates`, `/prepare`, `/compose`, `/gen`（ジョブ登録）
-- `/jobs/{job_id}`（状態取得）
-- `/transactions/{transaction_id}`（トランザクション一覧）
-- `/jobs/{job_id}/artifacts/{pptx|pdf}`（成果物取得、認証あり）
+  - `/templates`, `/prepare`, `/compose`, `/gen`（ジョブ登録）
+  - `/jobs/{job_id}`（状態取得）
+  - `/transactions/{transaction_id}`（トランザクション一覧）
+  - `/jobs/{job_id}/artifacts/{pptx|pdf}`（成果物取得、認証あり）
+- 既存 FastAPI は本実装で置き換え、後方互換なしで完全削除予定。
 
 ## バリデーション / 制限
 - request body 上限（例: 10MB）を設定。超過時は 413。
@@ -49,8 +50,9 @@
 - スモーク: templates→prepare→compose→gen の happy path（最小モック実装でOK）。
 - アーティファクト取得: `/jobs/{job_id}/artifacts/pptx` が認証付きで取得できること。
 
-## API バージョニング
+## API バージョニング / 移行
 - 初期リリースは `/` 直配下。将来 `/v1` を付与する場合はルーティングで prefix を一括切替できる構成にする。
+- FastAPI 実装は本実装で置き換え、後方互換なしで削除する。移行後は Flask API を正とし、FastAPI ルートは廃止。
 
 ## CORS
 - 開発環境: 任意オリジン許可。
