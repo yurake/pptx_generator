@@ -13,7 +13,7 @@
 ## （参考）テンプレートスタイル（branding.json）について
 - ランタイムはテンプレートから TemplateStyle を抽出して利用するため、`branding.json` は `pptx template` 実行時に `.pptx/template/` 配下へ出力されるスナップショットのみを参考用途として扱う（リポジトリ直下に配置しない）。
 - スキーマバージョンは `version: "layout-style-v1"` を既定とし、テンプレートのテーマやプレースホルダーから得られたフォント／カラー／配置のサマリを含む。
-- 詳細な設計背景と運用ルールは [docs/design/architecture/template-style-governance.md](../design/architecture/template-style-governance.md) を参照する。
+- 詳細な設計背景と運用ルールは [docs/design/stages/stage-01-style-governance.md](../design/stages/stage-01-style-governance.md) を参照する。
 
 ## pipeline_rules.json の構成
 - 既定値はパッケージ同梱の `src/pptx_generator/config/pipeline_rules.json` を参照する。
