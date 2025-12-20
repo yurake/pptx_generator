@@ -5,10 +5,12 @@ import hmac
 import os
 import time
 import uuid
+from pathlib import Path
 from typing import Iterable, Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request
 
+from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
@@ -45,7 +47,7 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
-        state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id)
+        state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id, payload=payload)
         return _job_response(state)
 
     @api.post("/prepare")
@@ -53,7 +55,7 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("prep")
-        state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id)
+        state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id, payload=payload)
         return _job_response(state)
 
     @api.post("/compose")
@@ -61,7 +63,7 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("cmp")
-        state = _enqueue_job(app.queue, stage="compose", job_id=job_id, transaction_id=tx_id)
+        state = _enqueue_job(app.queue, stage="compose", job_id=job_id, transaction_id=tx_id, payload=payload)
         return _job_response(state)
 
     @api.post("/gen")
@@ -69,7 +71,7 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("gen")
-        state = _enqueue_job(app.queue, stage="gen", job_id=job_id, transaction_id=tx_id)
+        state = _enqueue_job(app.queue, stage="gen", job_id=job_id, transaction_id=tx_id, payload=payload)
         return _job_response(state)
 
     @api.get("/jobs/<job_id>")
@@ -138,18 +140,55 @@ def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
 
 
-def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str):
-    def _noop_job():
-        # TODO: 差し替え予定の実処理フック
-        if stage == "gen":
-            return {"artifacts": {"pptx_url": f"/jobs/{job_id}/artifacts/pptx"}}
-        return {}
+def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
+    if stage == "template":
+        workdir = _resolve_output_root(transaction_id, stage, job_id)
+
+        def _run_template():
+            config = TemplateCommandConfig(
+                template_path=Path(payload["template_path"]),
+                output_dir=Path(workdir),
+                format="json",
+                layout=payload.get("layout"),
+                anchor=payload.get("anchor"),
+                layout_mode=payload.get("mode", "static"),
+                static_source="template",
+                template_ai_policy=None,
+                template_ai_policy_id=None,
+                disable_template_ai=False,
+                with_release=bool(payload.get("with_release")),
+                brand=payload.get("brand"),
+                version=payload.get("version"),
+                template_id=payload.get("template_id"),
+                release_output=Path(workdir),
+                generated_by=None,
+                reviewed_by=None,
+                baseline_release=None,
+                golden_specs=(),
+                slide_snapshot=bool(payload.get("slide_snapshot")),
+                force=bool(payload.get("force")),
+            )
+            result = run_template_command(config)
+            artifacts = {
+                "jobspec_url": str(Path(workdir) / "jobspec.json"),
+                "template_spec_url": str(Path(workdir) / "template_spec.json"),
+            }
+            return {"artifacts": artifacts, "result": result}
+
+        func = _run_template
+    else:
+        def _noop_job():
+            if stage == "gen":
+                return {"artifacts": {"pptx_url": f"/jobs/{job_id}/artifacts/pptx"}}
+            return {}
+
+        func = _noop_job
 
     request = JobRequest(
         stage=stage,
         job_id=job_id,
         transaction_id=transaction_id,
-        func=_noop_job,
+        func=func,
     )
     state = queue.enqueue(request)
     queue.ensure_workers(1)
@@ -196,3 +235,10 @@ def _jobs_by_transaction(queue: InProcessJobQueue, transaction_id: str):
 
 def _generate_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4()}"
+
+
+def _resolve_output_root(transaction_id: str, stage: str, job_id: str) -> str:
+    base = os.environ.get("PPTX_OUTPUT_ROOT")
+    if base:
+        return str(Path(base) / transaction_id / stage / job_id)
+    return str(Path(".pptx") / stage)

@@ -180,7 +180,7 @@ def test_job_error_path(monkeypatch):
     # patch enqueue to produce an erroring job
     from pptx_generator.api import flask_app as module
 
-    def enqueue_error(queue, *, stage, job_id, transaction_id):
+    def enqueue_error(queue, *, stage, job_id, transaction_id, payload):
         request = module.JobRequest(
             stage=stage,
             job_id=job_id,
