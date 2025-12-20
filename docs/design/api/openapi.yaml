@@ -15,7 +15,7 @@ paths:
   /templates:
     post:
       summary: Stage1 テンプレ抽出のジョブ登録
-      description: テンプレ PPTX を抽出し、jobspec/template_spec を生成する。非同期実行を前提とし、job_id/transaction_id を返却する。
+      description: テンプレ PPTX を解析し、レイアウト仕様（template_spec）とジョブ雛形（jobspec）を生成するジョブを登録する。非同期実行で job_id/transaction_id を返却する。
       security:
         - HmacAuth: []
         - BearerAuth: []
@@ -41,7 +41,7 @@ paths:
   /prepare:
     post:
       summary: Stage2 Prepare のジョブ登録
-      description: prepare 入力を受け取り、prepare_card を生成する。
+      description: プレゼン入力を正規化したカード JSON（prepare_card）を生成するジョブを登録する。
       security:
         - HmacAuth: []
         - BearerAuth: []
@@ -67,7 +67,7 @@ paths:
   /compose:
     post:
       summary: Stage3 Compose のジョブ登録
-      description: prepare で生成したカードをもとに generate_ready を組み立てる。
+      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。
       security:
         - HmacAuth: []
         - BearerAuth: []
@@ -93,7 +93,7 @@ paths:
   /gen:
     post:
       summary: Stage4 gen のジョブ登録
-      description: generate_ready を受け取り、PPTX/PDF を生成する。完了後の成果物 URL は `GET /jobs/{job_id}` で取得する。
+      description: generate_ready を描画して PPTX/PDF を生成するジョブを登録する。完了後の成果物 URL は `GET /jobs/{job_id}` で取得する。
       security:
         - HmacAuth: []
         - BearerAuth: []
@@ -196,7 +196,7 @@ components:
           type: string
         transaction_id:
           type: string
-          description: 指定なしの場合はサーバが払い出す
+          description: 同じリクエスト系列をまとめる追跡用 ID。指定なしの場合はサーバが払い出す。
         status:
           type: string
           enum: [pending, running, succeeded, failed, canceled]
@@ -266,7 +266,7 @@ components:
           description: 省略時は新規発行
         template_path:
           type: string
-          description: サーバ側で解決できるテンプレ PPTX のパス
+          description: サーバから参照できるテンプレ PPTX のパス
         mode:
           type: string
           enum: [static, dynamic]
@@ -283,12 +283,12 @@ components:
           type: string
         template_job_id:
           type: string
-          description: /templates の job_id（テンプレ情報を再利用する場合）
+          description: /templates の job_id（テンプレ抽出結果を再利用する場合）
         prepare_sources:
           type: array
           items:
             type: string
-          description: ファイルパスやテキスト入力
+          description: 入力ファイルやテキスト（例: md/txt/json のパス、文字列など）
         mode:
           type: string
           enum: [static, dynamic]
