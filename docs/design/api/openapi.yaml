@@ -250,11 +250,11 @@ components:
         pptx_url:
           type: string
           format: uri
-          description: gen 完了時に返却。ジョブIDに紐づく固定パス（例: /jobs/{job_id}/artifacts/pptx）で、クライアントはそのまま GET するだけの契約。将来署名付き URL に差し替える場合も同フィールドに設定する。
+          description: "gen 完了時に返却。ジョブIDに紐づく固定パス（例: /jobs/{job_id}/artifacts/pptx）で、クライアントはそのまま GET するだけの契約。将来署名付き URL に差し替える場合も同フィールドに設定する。"
         pdf_url:
           type: string
           format: uri
-          description: PDF を生成した場合のみ。パスの扱いは pptx_url と同じ。
+          description: "PDF を生成した場合のみ。パスの扱いは pptx_url と同じ。"
     TemplateRequest:
       type: object
       required:
