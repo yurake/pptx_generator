@@ -265,7 +265,7 @@ components:
       properties:
         transaction_id:
           type: string
-          description: 省略時は新規発行
+          description: 同じリクエスト系列をまとめる追跡用 ID。指定なしの場合はサーバが払い出す。
         template_path:
           type: string
           description: サーバから参照できるテンプレ PPTX のパス
@@ -275,6 +275,9 @@ components:
         output_root:
           type: string
           description: 上書きしたい出力ルート（未指定時は設定値を使用）
+      description: |
+        テンプレ PPTX を解析し、レイアウト仕様（template_spec）とジョブ雛形（jobspec）を生成するジョブを登録する。
+        入力はサーバが参照できるパスのみを許可する。ファイルサイズ上限（例: 10MB）を超える場合は 413 を返す。
     PrepareRequest:
       type: object
       required:
@@ -299,6 +302,9 @@ components:
           minimum: 1
         output_root:
           type: string
+      description: |
+        プレゼン入力を正規化したカード JSON（prepare_card）を生成するジョブを登録する。
+        入力はファイルパスまたはプレーンテキストのみを許可し、外部URL取得は想定しない。
     ComposeRequest:
       type: object
       required:
@@ -313,6 +319,7 @@ components:
           description: 必要に応じてテンプレ情報を参照する場合に指定
         output_root:
           type: string
+      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。
     GenRequest:
       type: object
       required:
@@ -327,6 +334,7 @@ components:
           default: false
         output_root:
           type: string
+      description: generate_ready を描画し PPTX/PDF を生成するジョブを登録する。完了後は `/jobs/{job_id}` から成果物 URL を取得する。
   responses:
     BadRequest:
       description: 不正な入力
