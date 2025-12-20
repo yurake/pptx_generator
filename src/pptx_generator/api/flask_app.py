@@ -10,7 +10,6 @@ from typing import Iterable, Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request, send_file
 
-from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command, PrepareCommandError

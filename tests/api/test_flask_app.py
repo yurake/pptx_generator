@@ -260,6 +260,7 @@ def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
 def test_template_end_to_end(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
     monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.delenv("PPTX_API_MAX_BODY", raising=False)
     app = create_app()
     c = app.test_client()
 
