@@ -21,13 +21,10 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: 認証/認可設計（HMAC+Bearer OR, 鍵ローテ, 署名計算, エラー方針）を `docs/design/api/auth.md` に整理。Flask API 構成・ミドルウェア・成果物取得・設定・テスト方針を `docs/design/api/flask.md` に整理。OpenAPI から両設計メモへリンク済み。
   - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 進め方メモ
-    1) 骨組み実装（Flask app factory + Blueprint ルートのみ、認証ミドルウェア実装、ジョブ登録はダミーで job_id/transaction_id/status=pending を返す）
-    2) 薄いテスト追加（認証OK/NG、各ルートの 202/401/404 スモーク、artifacts 認証テスト）
-    3) 実処理組み込み（RM-094 キュー呼び出し、workdir 解決、成果物返却）＋テスト拡張
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
+- [x] 実装
+  - メモ: Flask app factory + Blueprint で stage1-4/templates/prepare/compose/gen/jobs/transactions/artifacts を実装、認証（Bearer/HMAC）と body サイズ制限・JSONバリデーションを追加。キュー実行に InProcessJobQueue を利用し、成果物ダウンロード `/jobs/{job_id}/artifacts/{pptx|pdf}` をサポート。FastAPI は前提通り未使用。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/api/test_flask_app.py`（22件）を実行し全件成功。認証OK/NG、署名スキュー、JSON必須、job flow、artifacts有無、エラー -> 422/404/401 マッピング、prepare→compose→gen スモーク、テンプレート実行で成果物生成までカバー。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける

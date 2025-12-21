@@ -62,6 +62,7 @@ def create_app() -> Flask:
     @api.post("/templates")
     def post_templates():
         payload = _require_json()
+        _require_fields(payload, ["template_path"])
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
         state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -178,8 +179,18 @@ def _error_response(status_code: int, code: str, message: str):
 def _require_json() -> dict:
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
-        abort(_error_response(400, "bad_request", "invalid json payload"))
+        resp = jsonify({"code": "bad_request", "message": "invalid json payload"})
+        resp.status_code = 400
+        abort(resp)
     return payload
+
+
+def _require_fields(payload: dict, fields: Iterable[str]) -> None:
+    missing = [field for field in fields if payload.get(field) in (None, "")]
+    if missing:
+        resp = jsonify({"code": "validation_error", "message": f"{', '.join(missing)} is required"})
+        resp.status_code = 422
+        abort(resp)
 
 
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
@@ -224,8 +235,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
-            if "prepare_sources" not in payload:
-                abort(_error_response(422, "validation_error", "prepare_sources is required"))
             config = PrepareCommandConfig(
                 prepare_paths=[Path(p) for p in payload.get("prepare_sources", [])],
                 prepare_base_path=None,
@@ -261,10 +270,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         review_log = Path(workdir) / "draft_review_log.json"
 
         def _run_compose():
-            if "jobspec_path" not in payload:
-                abort(_error_response(422, "validation_error", "jobspec_path is required"))
-            if "prepare_cards" not in payload:
-                abort(_error_response(422, "validation_error", "prepare_cards is required"))
             config = ComposeCommandConfig(
                 spec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
                 draft_output=Path(workdir) / "draft.json",
@@ -299,8 +304,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
-            if "generate_ready_path" not in payload:
-                abort(_error_response(422, "validation_error", "generate_ready_path is required"))
             config = GenerateCommandConfig(
                 generate_ready_path=Path(payload.get("generate_ready_path", ".pptx/compose/generate_ready.json")),
                 output_dir=Path(workdir),
