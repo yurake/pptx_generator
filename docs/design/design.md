@@ -1,17 +1,17 @@
 # pptx_generator 設計ドキュメント
 
 ## このドキュメントの読み方
-- 全体構成を把握したい場合は「1. システム全体像」と「2. コンポーネント構成」を先に確認してください。
-- stage ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
-- JSON スキーマやバリデーションルールなど詳細仕様は必要に応じて後半の章（4〜7 章）を確認する構成にしています。
+- 目的: pptx_generator の設計概要をつかむハブ。詳細は stage 設計・スキーマ・CLI へ委譲。
+- 先に読む: 「1. システム全体像」「2. コンポーネント構成」「3. データフロー」で全体像を把握。
+- 詳細は stage 別設計ドキュメント（下記 3.2）とスキーマ（4 章以降）を参照。
 
 ## 関連設計ドキュメント
 - **CLI**: `docs/design/cli/cli-command-reference.md`
 - **横断設計メモ**: なし（横断テーマは各 stage 補足へ分散）
-- **stage 1 補足 (jobspec 抽出)**: `docs/design/stages/stage-01-jobspec-catalog.md`
-- **stage 3 補足 (ストーリー整備)**: `docs/design/stages/stage-03-story-modeler.md`
+- **stage 1 補足**: `docs/design/stages/stage-01-jobspec-catalog.md`（jobspec 抽出）、`docs/design/stages/stage-01-style-governance.md`（スタイル）
+- **stage 2 補足**: `docs/design/stages/stage-02-static-blueprint.md`（静的テンプレ Blueprint）
+- **stage 3 補足**: `docs/design/stages/stage-03-story-modeler.md`（ストーリー整備）
 - **テンプレ構造スキーマ**: `docs/design/schema/README.md`
-- **過去の検討メモ（アーカイブ）**: `docs/design/archive/`
 
 ## 既存AIサービス比較・本プロジェクト選定理由
 
