@@ -50,6 +50,15 @@ def create_app() -> Flask:
     def handle_request_entity_too_large(e):
         return _error_response(413, "too_large", "request body too large")
 
+    @api.errorhandler(PrepareCommandError)
+    @api.errorhandler(ComposeCommandError)
+    @api.errorhandler(GenerateCommandError)
+    def handle_command_error(exc):
+        code = getattr(exc, "exit_code", 1)
+        if code in (4, 6):  # ファイル関連/検証エラー
+            return _error_response(422, "validation_error", str(exc))
+        return _error_response(500, "internal_error", str(exc))
+
     @api.post("/templates")
     def post_templates():
         payload = _require_json()
