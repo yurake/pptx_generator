@@ -69,7 +69,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - メモ: `tests/test_layout_recommender.py::test_build_layout_metadata_retains_stage1_payload` で placeholder_summary / blueprint / meta の引き渡しを検証。
   - メモ: `docs/notes/20251122-stage1-metadata-plan.md` に実装確認セクションを追記し、Stage1→Stage3 連携の完了状況を整理。
   - [x] Stage1 で付与する usage_tags とメタデータを Stage3 に引き渡すインターフェース案を作成する。
-    - メモ: 2025-11-23 `docs/design/stages/stage1-stage3-metadata-interface.md` にドラフト案を追加し、レビュー用ベースラインとした。
+    - メモ: 2025-11-23 `docs/design/schema/stage-02-template-structure-extraction.md` にドラフト案を反映し、レビュー用ベースラインとした。
     - メモ: 2025-11-23 LayoutValidationSuite / DraftStructuringStep / CardLayoutRecommender を更新し、`placeholder_summary`・Blueprint・`meta.heuristic_reason` を流通させる実装と pytest 188 件を完了。
 - [x] CLI / ログ / テスト整備
   - メモ: draft_mapping_log.json に `usage_tags_detail` を出力し、CLI テストでタグ説明が付与されることを確認。
