@@ -9,7 +9,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
   - メモ: feat/rm049-scope-docs を main から作成済み。本 ToDo の追加を初期コミットとして登録。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ:
-    - 対象整理（スコープ、対象ファイル、前提）: `AGENTS.md`／`src/AGENTS.md`／`config/AGENTS.md`／`docs/design/cli/cli-command-reference.md`／`docs/requirements/stages/stage-03-compose.md` などで `pptx gen` が旧仕様（jobspec 入力や `--template` 前提）になっている箇所を最新仕様へ更新する。その他関連ドキュメントは影響調査を行い、必要な場合のみ加筆修正する。
+    - 対象整理（スコープ、対象ファイル、前提）: `AGENTS.md`／`src/AGENTS.md`／`config/AGENTS.md`／`docs/design/architecture/cli-command-reference.md`／`docs/requirements/stages/stage-03-compose.md` などで `pptx gen` が旧仕様（jobspec 入力や `--template` 前提）になっている箇所を最新仕様へ更新する。その他関連ドキュメントは影響調査を行い、必要な場合のみ加筆修正する。
     - ドキュメント／コード修正方針: 最新実装（`generate_ready.json` 入力・テンプレ自動解決）に沿う記述へ書き換え、使用例は `compose` → `gen` の 2 段ステップで提示する。stage 5 の要件ドキュメントや各種ガイドも同じ観点で整合を取る。
     - 確認・共有方法（レビュー、ToDo 更新など）: 変更ファイルをセルフレビューし、本 ToDo に進捗を記録。必要に応じて追加の差分をユーザーへ共有する。
     - 想定影響ファイル: `AGENTS.md`, `src/AGENTS.md`, `config/AGENTS.md`, `docs/design/cli/cli-command-reference.md`, `docs/requirements/stages/stage-03-compose.md`, 関連参照部分。

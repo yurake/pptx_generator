@@ -7,7 +7,7 @@ Assistant:
 - `docs/policies/context-engineering.md`
 - `CONTRIBUTING.md`
 - `docs/policies/task-management.md`
-- `docs/design/cli/cli-command-reference.md`
+- `docs/design/architecture/cli-command-reference.md`
 
 以下の Plan で RM-079 を進めたいです（承認後に ToDo の計画欄へ転記します）。
 
@@ -23,7 +23,7 @@ Assistant:
 - `src/pptx_generator/prepare_ai/prompts.py`
 - `tests/cli/test_cli_prepare_stage_flow.py`
 - `tests/integration/test_cli_generate_pipeline_flow.py`（必要なら）
-- `docs/design/cli/cli-command-reference.md`, `README.md`
+- `docs/design/architecture/cli-command-reference.md`, `README.md`
 - 関連する `prepare_ai` / `prepare` テスト・ヘルパー
 
 **リスク・懸念**
@@ -73,7 +73,7 @@ Assistant:
 
 3. テスト & ドキュメント
    - `tests/cli/test_cli_prepare_stage_flow.py` を static ケースに絞って更新し、directive 指定あり・なしの差分を確認する。必要に応じて static 専用の orchestrator テスト（Mock LLM）を追加。
-   - `docs/design/cli/cli-command-reference.md` と README に、static モード限定の新オプション運用を説明。セキュリティ上の注意（第三者指示の監査など）も記載。
+   - `docs/design/architecture/cli-command-reference.md` と README に、static モード限定の新オプション運用を説明。セキュリティ上の注意（第三者指示の監査など）も記載。
    - 対象外となった dynamic モードの説明は変更しないが、static 限定である旨をドキュメントに明示。
 
 **リスク・懸念**

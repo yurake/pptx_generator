@@ -404,7 +404,7 @@ flowchart TB
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）。
 - 目的: stage 3/4を独立CLIとして提供できるよう、インターフェース・テスト観点・運用手順を整理する。
 - 状況: 完了（2025-10-19 更新）
-- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
 - マイルストーン:
   1. stage 3/4 CLI 分離要件の調査と設計方針整理（ToDo: フォローアップタスク）。
   2. テスト観点棚卸しと再実行手順のドキュメント化。
@@ -599,7 +599,7 @@ flowchart TB
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、stage 4/5 テレメトリの確認。
-- 補足 (2025-11-08): `docs/design/cli/cli-command-reference.md` など一部ドキュメントのオプション表記が旧仕様 (`--generate-ready-filename` 等) のままであり、実装とのギャップ解消が必要です。
+- 補足 (2025-11-08): `docs/design/architecture/cli-command-reference.md` など一部ドキュメントのオプション表記が旧仕様 (`--generate-ready-filename` 等) のままであり、実装とのギャップ解消が必要です。
 
 <a id="rm-049"></a>
 ### RM-049 pptx gen スコープ最適化
@@ -627,7 +627,7 @@ flowchart TB
 ### RM-051 テンプレ 統合集約
 - 対象 stage: 1（テンプレ準備）
 - ゴール: 現行の stage 1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
-- 参照ドキュメント: [README.md](../README.md), [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
+- 参照ドキュメント: [README.md](../README.md), [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
 - 参照 ToDo: [docs/todo/archive/20251103-rm-051-template-integration.md](../todo/archive/20251103-rm-051-template-integration.md)
 - 依存: RM-043（サンプルテンプレ拡充）・RM-045（テンプレ抽出検証ラッパー）
 - 状況: 完了（2025-11-03 更新）
@@ -771,7 +771,7 @@ flowchart TB
 ### RM-062 pptx prepare 承認モード整備
 - 対象 stage: 2（コンテンツ準備）
 - ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
-- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-11-24 更新）
 - 期待成果:
@@ -988,7 +988,7 @@ flowchart TB
 ### RM-078 stage 表記統一
 - 対象領域: Cross-Stage ドキュメント・ログ
 - ゴール: パイプライン stage の表記を「stage」で統一し、ドキュメント／CLI 表示の一貫性を確保する。
-- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md)
 - 参照 ToDo: [docs/todo/archive/20251124-rm078-stage-terminology.md](../todo/archive/20251124-rm078-stage-terminology.md)
 - 状況: 完了（2025-11-27 更新）
 - 期待成果:
@@ -1000,7 +1000,7 @@ flowchart TB
 ### RM-079 pptx prepare directive 拡張
 - 対象 stage: Stage 2（コンテンツ準備）
 - ゴール: `pptx prepare` で LLM プロンプトへ外部要望を安全に注入できる仕組みを提供し、柔軟なドラフト生成を可能にする。
-- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md)
 - 参照 ToDo: [docs/todo/archive/20251124-rm079-prepare-directives.md](../todo/archive/20251124-rm079-prepare-directives.md)
 - 状況: 完了（2025-11-29 更新）
 - 期待成果:
