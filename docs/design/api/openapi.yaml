@@ -40,6 +40,10 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /prepare:
     post:
       summary: Stage2 Prepare のジョブ登録
@@ -66,6 +70,10 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /compose:
     post:
       summary: Stage3 Compose のジョブ登録
@@ -92,6 +100,10 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /gen:
     post:
       summary: Stage4 gen のジョブ登録
@@ -118,6 +130,10 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /jobs/{job_id}:
     get:
       summary: ジョブステータスと成果物取得
@@ -138,6 +154,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JobStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -342,6 +360,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    RequestTooLarge:
+      description: リクエストボディが上限を超過
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: 認証エラー
       content:
@@ -356,6 +380,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: リソースが存在しない
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnprocessableEntity:
+      description: 入力検証エラー
       content:
         application/json:
           schema:
