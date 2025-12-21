@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import logging
 import hashlib
 import hmac
 import os
 import time
 import uuid
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -25,6 +27,7 @@ def create_app() -> Flask:
     """Create Flask application for stage1-4 API."""
 
     app = Flask(__name__)
+    _configure_logging(app)
     app.config["HMAC_KEYS"] = _load_hmac_keys()
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
     app.config["BEARER_TOKEN"] = os.environ.get("PPTX_API_BEARER_TOKEN")
@@ -35,14 +38,39 @@ def create_app() -> Flask:
 
     @app.before_request
     def _authenticate() -> Optional[tuple]:
+        g.request_id = request.headers.get("X-Request-ID") or _generate_id("req")
+        app.logger.info(
+            "request start method=%s path=%s request_id=%s",
+            request.method,
+            request.path,
+            g.request_id,
+        )
         error = _verify_auth(
             bearer_token=app.config["BEARER_TOKEN"],
             hmac_keys=app.config["HMAC_KEYS"],
             skew_sec=app.config["HMAC_SKEW_SEC"],
         )
         if error is not None:
+            app.logger.warning(
+                "auth failed method=%s path=%s request_id=%s",
+                request.method,
+                request.path,
+                g.request_id,
+            )
             return error
         return None
+
+    @app.after_request
+    def _log_response(response):
+        app.logger.info(
+            "request end method=%s path=%s status=%s request_id=%s",
+            request.method,
+            request.path,
+            response.status_code,
+            getattr(g, "request_id", None),
+        )
+        response.headers.setdefault("X-Request-ID", getattr(g, "request_id", ""))
+        return response
 
     api = Blueprint("api", __name__)
 
@@ -174,6 +202,36 @@ def _verify_auth(bearer_token: Optional[str], hmac_keys: Iterable[str], skew_sec
 
 def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
+
+
+def _configure_logging(app: Flask) -> None:
+    logger = logging.getLogger("pptx_generator.api")
+    level_name = os.environ.get("PPTX_API_LOG_LEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    logger.setLevel(level)
+
+    if not logger.handlers:
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(level)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+        log_path = Path("logs") / "out.log"
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            file_handler = RotatingFileHandler(log_path, maxBytes=10 * 1024 * 1024, backupCount=5)
+            file_handler.setLevel(level)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except OSError:
+            logger.warning("log file handler setup failed; continuing with stdout only")
+
+    app.logger.handlers = logger.handlers  # type: ignore[assignment]
+    app.logger.setLevel(level)
+    app.logger.propagate = False
+    app.config["API_LOGGER"] = logger
 
 
 def _require_json() -> dict:
@@ -345,6 +403,9 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         job_id=job_id,
         transaction_id=transaction_id,
         func=func,
+    )
+    logging.getLogger("pptx_generator.api").info(
+        "job enqueued stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id
     )
     state = queue.enqueue(request)
     queue.ensure_workers(1)
