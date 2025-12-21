@@ -246,7 +246,7 @@ assets:
 
 ## 9. 技術スタック
 - 言語: Python 3.11, TypeScript (将来的な Office.js), C# (.NET 8)。
-- フレームワーク: FastAPI (REST), Azure Functions / AWS Lambda (サーバーレス)、Docker。
+- フレームワーク: Flask (REST), Azure Functions / AWS Lambda (サーバーレス)、Docker。
 - ライブラリ: `python-pptx`, `Pillow`, `pydantic`, `ruff`, `mypy`, Open XML SDK, LibreOffice。
 - インフラ: Azure Storage (Blob/Queue), Key Vault, App Insights, Azure Container Apps（候補）。
 
