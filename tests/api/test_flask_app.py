@@ -293,3 +293,19 @@ def test_template_end_to_end(monkeypatch, tmp_path):
     # ファイルが生成されていることを確認
     for key in ("jobspec_url", "template_spec_url"):
         assert (tmp_path / artifacts[key]).exists()
+
+
+def test_output_root_default(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
+    app = create_app()
+    c = app.test_client()
+    resp = c.post(
+        "/templates",
+        headers={"Authorization": "Bearer token-123"},
+        json={"template_path": "samples/templates/templates.pptx", "mode": "dynamic"},
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+    status_resp = c.get(job["status_url"], headers={"Authorization": "Bearer token-123"})
+    assert status_resp.status_code == 200
