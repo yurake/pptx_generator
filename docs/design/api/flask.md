@@ -30,6 +30,7 @@
 - artifacts URL は固定パスを返す（署名付きURL導入時も同フィールド差し替えで対応）。
 - Content-Type/Disposition: PPTX は `application/vnd.openxmlformats-officedocument.presentationml.presentation`、PDF は `application/pdf`。`Content-Disposition` は `attachment; filename="proposal-{job_id}.pptx"` の形で返却。
 - ダウンロード: `/jobs/{job_id}/artifacts/{pptx|pdf}` で認証付きダウンロード。存在しない場合は 404。
+- エラー: JSON 不正は 400、必須フィールド欠落は 422、ボディ超過は 413、認証は 401/403、成果物欠如/パス不正は 404。
 
 ## 設定（例）
 - 認証: `PPTX_API_HMAC_KEY_CURRENT`, `PPTX_API_HMAC_KEY_NEXT`, `PPTX_API_HMAC_CLOCK_SKEW_SEC`, `PPTX_API_HMAC_NONCE_TTL_SEC`, `PPTX_API_BEARER_TOKEN`
