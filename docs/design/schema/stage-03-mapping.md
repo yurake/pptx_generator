@@ -15,7 +15,9 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 
 ## ファイル
 - `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
-- `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
+- `generate_ready_meta.json`: 章別ステータス、AI 推薦採用数、監査メタ。
+- `draft_mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
+- `draft_review_log.json`: HITL 操作ログ。
 - `fallback_report.json`: 収容不能など重大フォールバックの詳細（任意）。
 
 ## generate_ready.json
