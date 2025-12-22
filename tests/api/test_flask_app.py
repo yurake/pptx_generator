@@ -347,7 +347,7 @@ def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
         "/templates",
         headers={"Authorization": "Bearer token-123"},
         json={
-            "template_path": "samples/templates/templates.pptx",
+            "template_path": "samples/templates/dynamic_template.pptx",
             "mode": "dynamic",
         },
     )
@@ -382,9 +382,17 @@ def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
     assert gen_resp.status_code == 202
     gen_job = gen_resp.get_json()
 
-    status_resp = c.get(gen_job["status_url"], headers={"Authorization": "Bearer token-123"})
-    assert status_resp.status_code == 200
-    status_body = status_resp.get_json()
+    # wait for completion
+    status_body = None
+    for _ in range(50):
+        status_resp = c.get(gen_job["status_url"], headers={"Authorization": "Bearer token-123"})
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(0.1)
+    assert status_body is not None
+    assert status_body["status"] == "succeeded"
     assert "artifacts" in status_body
 
 
@@ -399,7 +407,7 @@ def test_template_end_to_end(monkeypatch, tmp_path):
         "/templates",
         headers={"Authorization": "Bearer token-123"},
         json={
-            "template_path": "samples/templates/templates.pptx",
+            "template_path": "samples/templates/dynamic_template.pptx",
             "mode": "dynamic",
         },
     )
