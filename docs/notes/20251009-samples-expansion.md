@@ -16,7 +16,7 @@
 - テンプレート: `samples/templates/templates.pptx`（サンプル用に整備）
   - アンカー例: `cover-visual`, `milestone-table`, `metric-chart`, `team-photo`
   - レイアウト名: `Title`, `Section Agenda`, `Two Column Detail`, `Metric Highlight` など
-- アセット: 既存の `samples/assets/logo.png` を継続利用しつつ、チーム画像などのダミー素材を追加（例: `team.png`）
+- アセット: 既存の `docs/assets/logo_white.png` を継続利用しつつ、チーム画像などのダミー素材を追加（例: `team.png`）
 - 目的: テンプレート作成時の要件（レイアウト名合わせ、アンカー指定、ブランド設定の反映確認）を説明する実例にする
 
 ### ドキュメント / テスト更新方針
