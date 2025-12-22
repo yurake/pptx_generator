@@ -48,7 +48,7 @@ roadmap_item: RM-048 stage 4+5 統合CLI整備
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、`test_cli_compose_generates_stage45_outputs` を含む30ケースが成功。
 - [x] ドキュメント更新
-  - メモ: `docs/design/cli/cli-command-reference.md` に compose を追記し、`docs/runbooks/story-outline-ops.md` の stage 手順を更新。`docs/roadmap/roadmap.md` で RM-048 を進行中へ更新し、`docs/requirements` は影響なし。README には追記準備中のため別途検討。
+  - メモ: `docs/design/architecture/cli-command-reference.md` に compose を追記し、`docs/runbooks/story-outline-ops.md` の stage 手順を更新。`docs/roadmap/roadmap.md` で RM-048 を進行中へ更新し、`docs/requirements` は影響なし。README には追記準備中のため別途検討。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認：影響なし）
   - [x] docs/design 配下（実装結果との整合再確認）
@@ -81,7 +81,7 @@ roadmap_item: RM-048 stage 4+5 統合CLI整備
       - 統合前のドキュメント（旧 stage-04/05）を git revert で復元し、README 等の stage 数表記を 6 stage に戻す。
     - 調査メモ
       - README.md: stage 数紹介、Mermaid 図、CLI チートシート、stage 別ガイド概要、補足コメント。
-      - docs/design/design.md / cli/cli-command-reference.md / archive/stage3-4-cli.md / initiatives/story-modeler.md など、stage 3/4/5 を明記している設計資料。
+      - docs/design/design.md / cli/cli-command-reference.md / archive/stage3-4-cli.md / stages/stage-03-story-modeler.md など、stage 3/4/5 を明記している設計資料。
       - docs/requirements/stages/stage-04-mapping.md および対応する design/stages ファイル。
       - docs/runbooks/story-outline-ops.md、support.md、pptx-analyzer.md など stage を参照する運用手順。
       - docs/notes/20251011-roadmap-refresh.md、20251012-readme-refactor.md、20251019-rm033-scope.md 等、6 stage を前提としたノート。

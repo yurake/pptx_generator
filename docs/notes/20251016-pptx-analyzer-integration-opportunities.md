@@ -9,7 +9,7 @@
 
 ### stage 1 テンプレ準備
 - 既存ドキュメント  
-  - `docs/design/stages/stage-01-template-preparation.md:11-21` で Golden Sample Runner がレンダリング→Analyzer→LibreOffice を通す想定を言及済み。
+  - `docs/design/stages/stage-01-template.md:11-21` で Golden Sample Runner がレンダリング→Analyzer→LibreOffice を通す想定を言及済み。
 - 追加アイデア  
   - Analyzer 出力を release レポートへ集約し、テンプレ受け渡し時に指摘件数や種別の推移を追跡するメトリクス化。
   - 診断に落ちたテンプレ向けの修正手順を runbook 化し、制作チームへのフィードバックを定型化。

@@ -303,7 +303,7 @@ Datacamp や LLM コスト最適化の記事では、コンテキスト設計と
 
      * テンプレ タスク
        → `docs/requirements/stages/stage-01-template.md`
-       → `docs/design/initiatives/template-style-governance.md`
+       → `docs/design/stages/stage-01-style-governance.md`
        → `templates/libraries/**/`
      * コンテンツ準備タスク
        → `docs/requirements/stages/stage-02-prepare.md`
@@ -351,7 +351,7 @@ Claude Code の best practices やサブエージェント活用記事をベー�
 
      * `templates/`
      * `docs/requirements/stages/stage-01-*`
-    * `docs/design/initiatives/template-style-governance.md`
+    * `docs/design/stages/stage-01-style-governance.md`
      * `docs/policies/config-and-templates.md`
    * 役割:
 

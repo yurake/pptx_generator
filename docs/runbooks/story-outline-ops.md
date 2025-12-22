@@ -5,7 +5,7 @@
 - HITL 承認者がストーリー情報を確認・更新する際の手順を標準化し、差戻しコストを抑える。
 
 ## 事前準備
-- 仕様把握: `docs/requirements/stages/stage-02-prepare.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/requirements/stages/stage-04-gen.md` と設計メモ `docs/design/initiatives/story-modeler.md` を確認し、骨子メタの流れを把握する。
+- 仕様把握: `docs/requirements/stages/stage-02-prepare.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/requirements/stages/stage-04-gen.md` と設計メモ `docs/design/stages/stage-03-story-modeler.md` を確認し、骨子メタの流れを把握する。
 - アセット確認: `story_outline.json` をリポジトリ内（または案件共有ストレージ）に配置し、`title`・`version`・発行元 ToDo / Issue を最新化しておく。
 - 入力前チェック: stage 2 のカード生成設定に骨子パスが渡せる状態か確認し、`prepare_card.json` のサンプルで `story.phase` / `story.chapter_id` / `story.angle` などが付与されていることを確かめる。
 

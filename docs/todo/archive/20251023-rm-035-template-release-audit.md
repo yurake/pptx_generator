@@ -12,7 +12,7 @@ roadmap_item: RM-035 テンプレートリリース監査強化
 - [x] 設計・実装方針の確定
   - メモ: 2025-10-23 `docs/notes/20251023-rm035-template-release-audit-plan.md` に設計方針とテスト計画を整理済み。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/requirements/stages/stage-01-template-preparation.md` に summary/environment 要件を追記済み。
+  - メモ: `docs/requirements/stages/stage-01-template.md` に summary/environment 要件を追記済み。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

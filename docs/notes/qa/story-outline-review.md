@@ -1,7 +1,7 @@
 # ストーリー骨子整合チェック結果（2025-10-16）
 
 ## 対象
-- `docs/design/initiatives/story-modeler.md`
+- `docs/design/stages/stage-03-story-modeler.md`
 - `docs/requirements/stages/stage-02-prepare.md`
 - `docs/requirements/stages/stage-03-compose.md`
 - `docs/requirements/stages/stage-04-gen.md`
