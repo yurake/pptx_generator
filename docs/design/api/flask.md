@@ -21,7 +21,7 @@
 
 ## ジョブ実行
 - RM-094 のキューラッパを利用（enqueue / run_job_sync）。`job_id`/`transaction_id` を払い出して PipelineContext に渡す。
-- workdir 解決: RM-092 の `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を利用。未設定は従来 `.pptx/<stage>` 互換。
+- workdir 解決: RM-092 の `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を利用。**transaction_id をキーに前段成果物を解決するため、PPTX_OUTPUT_ROOT 設定を前提とする**。
 - レスポンス: 202 で `job_id, transaction_id, status=pending, stage, status_url, transaction_url` を返却。
 - enqueue タイムアウト値とワーカー側リトライ（RM-094 設計）を確認し、API 層では即 202 返却のみとする。
 
@@ -34,7 +34,7 @@
 
 ## 設定（例）
 - 認証: `PPTX_API_HMAC_KEY_CURRENT`, `PPTX_API_HMAC_KEY_NEXT`, `PPTX_API_HMAC_CLOCK_SKEW_SEC`, `PPTX_API_HMAC_NONCE_TTL_SEC`, `PPTX_API_BEARER_TOKEN`
-- 出力: `PPTX_OUTPUT_ROOT`（未設定時は `.pptx` 互換）
+- 出力: `PPTX_OUTPUT_ROOT`（tx→前段成果物解決のため設定を推奨）
 - ログ: `PPTX_API_LOG_LEVEL`（任意）、`X-Request-ID` ログ出力
 
 ## ログ / 監査
@@ -50,6 +50,7 @@
 ## テスト方針
 - ルート単体: auth 成否、202/404/401/403 のレスポンススキーマ、JobStatus のフィールド。
 - スモーク: templates→prepare→compose→gen の happy path（最小モック実装でOK）。
+- tx のみ指定で前段成果物を自動解決するフロー（パス未指定）。前段成果物が無い場合の 422、tx 不明の 404。
 - アーティファクト取得: `/jobs/{job_id}/artifacts/pptx` が認証付きで取得できること。
 
 ## API バージョニング / 移行
@@ -70,5 +71,8 @@
 - 今回は idempotency 未対応。再送時も毎回新規 `job_id` を払い出す。
 - Idempotency-Key ヘッダ対応は将来検討（TODO）。
 
-## 実装段階メモ
-- 現状のジョブはダミー func（即完了）でキュー投入。API 契約（認証/レスポンス形/ステータス）の整合を優先し、その後で RM-094 経由の実処理に差し替える。
+## 成果物レジストリ（tx 起点のルックアップ方針）
+- `PPTX_OUTPUT_ROOT/<transaction_id>/registry.json` に各 stage の最新 job_id と標準成果物パス（tx ルートからの相対パス）を記録する。
+- ステージ完了時にレジストリを更新し、次ステージは transaction_id のみで前段成果物を解決する。リクエストから内部生成物パス指定は廃止する。
+- ルックアップ失敗時のエラー: tx 不明は 404、前段成果物未登録/未完は 422。
+- tx 内で複数ジョブがある場合は「最後に成功した job」を採用（必要なら将来 job_id 明示指定オプションを検討）。
