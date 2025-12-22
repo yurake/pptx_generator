@@ -98,5 +98,5 @@
 - LibreOffice / Open XML Polisher のバージョン固定戦略。
 
 ## 関連スキーマ
-- [docs/design/schema/stage-01-template-preparation.md](../schema/stage-01-template-preparation.md)
+- [docs/design/schema/stage-01-template.md](../schema/stage-01-template.md)
 - サンプル: `docs/design/schema/samples/template_release.jsonc`, `docs/design/schema/samples/template_release_report.jsonc`

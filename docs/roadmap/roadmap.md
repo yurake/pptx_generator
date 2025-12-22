@@ -283,7 +283,7 @@ flowchart TB
 ### RM-021 テンプレ資産監査パイプライン
 - ゴール: テンプレ改訂時に差分と品質を自動診断し、stage 1 の受け渡しを自動化する。
 - 対象 stage: 1（テンプレ準備）
-- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template.md](../requirements/stages/stage-01-template.md)
 - 参照 ToDo: [docs/todo/archive/20251012-template-audit-pipeline.md](../todo/archive/20251012-template-audit-pipeline.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。

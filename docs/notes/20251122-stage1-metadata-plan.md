@@ -42,7 +42,7 @@
 - `src/pptx_generator/pipeline/template_extractor.py`（placeholder summary / slot info 集約）
 - `src/pptx_generator/layout_validation/suite.py`（Template AI 呼び出しと `layouts.jsonl` 出力ロジック）
 - `src/pptx_generator/template_ai/service.py`（LLM ペイロード生成）
-- `docs/design/schema/stage-01-template-preparation.md`（スキーマの更新）
+- `docs/design/schema/stage-01-template.md`（スキーマの更新）
 - テスト: `tests/test_template_ai.py`, `tests/test_layout_validation_template_ai.py`, `tests/test_layout_recommender.py`
 - **Stage2 静的モード**: `src/pptx_generator/prepare/orchestrator.py` と Blueprint 参照ロジック（slot 情報を Stage2 でも利用するため、追加メタがあれば `template_spec.blueprint` から参照できるよう整合を取る）。
 
