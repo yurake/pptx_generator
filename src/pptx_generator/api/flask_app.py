@@ -207,7 +207,7 @@ def _error_response(status_code: int, code: str, message: str):
 
 def _configure_logging(app: Flask) -> None:
     logger = logging.getLogger("pptx_generator.api")
-    level_name = os.environ.get("PPTX_API_LOG_LEVEL", "INFO").upper()
+    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
     logger.setLevel(level)
 
@@ -422,7 +422,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     state = queue.enqueue(request)
     queue.ensure_workers(1)
     state = queue.wait(job_id)
-    if stage in ("template", "prepare", "compose", "gen"):
+    if stage in ("template", "prepare", "compose", "gen") and state.status == JobStatus.SUCCEEDED:
         _update_registry(tx_root, stage, state)
     return state
 
