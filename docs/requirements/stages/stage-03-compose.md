@@ -5,20 +5,17 @@
 - 章構成・差戻しを手動で操作でき、フォールバックや Analyzer 結果を含む監査ログを `draft_review_log.json`・`draft_mapping_log.json` に残す。
 - CLI (`pptx compose` / `pptx outline`) と将来の UI から共通 API を利用できるよう、成果物構造とオプションを統一する。
 
-> **2025-12-06 注記**  
-> 本ドキュメントに含まれる章テンプレート関連の項目は撤廃済み機能の記録です。最新仕様では章テンプレート辞書は利用しません。
-
 ## 入力
 - Stage1: `jobspec.json`, `layouts.jsonl`, `template_spec.json`（テンプレートのスタイル情報を直接参照）。
   - テンプレ抽出 (`pptx template`) で生成された `jobspec.json` も CLI 側で JobSpec へ自動変換して受け付ける。
 - Stage2: `prepare_card.json`, `prepare_log.json`, `ai_generation_meta.json`。`ai_generation_meta.json.mode` で `dynamic` / `static` を判定し、処理分岐へ引き渡す。静的モードでは `ai_generation_meta.blueprint_path` と `slot_coverage` を必須とする。`dynamic` モードは `prepare_card.json.cards[*].order` 昇順でスライドを構成し、`static` モードは Blueprint / JobSpec 順を優先する。`mode` が未定義・未知値の場合はエラーとし stage 3 を停止する。
-- 章テンプレート辞書 `config/chapter_templates/*.json`（※ 過去の PoC 機能。現行仕様では未使用）。
+- Stage2 補助: `prepare_story_outline.json` があれば章の初期構成を合わせる（未提供時はカード順のみを使用）。
 - 差戻し理由テンプレートは CLI 内蔵の定義を利用し、外部ファイル入力は不要。
 - （任意）`analysis_summary.json` など Analyzer 連携ファイル。
 
 ## 出力
 - `generate_ready.json`: レイアウト割付済みの描画直前仕様。スライドごとに `layout_id`, `elements`, `meta.sources` を保持し、スライド数は `prepare_card.json.cards` と一致する。静的モードでは Blueprint slot を `meta.blueprint_slot` に記録し、`elements` は slot ベースに構成する。
-- `generate_ready_meta.json`: 章テンプレ適合率、承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。静的モードでは `layout_mode=static`、`blueprint_path`、`blueprint_hash`、`slot_summary`（必須/任意 slot カバレッジ）を保持する。
+- `generate_ready_meta.json`: 承認統計、Analyzer サマリ、AI 推薦採用件数、監査メタ情報を記録する。静的モードでは `layout_mode=static`、`blueprint_path`、`blueprint_hash`、`slot_summary`（必須/任意 slot カバレッジ）を保持する。
 - `draft_review_log.json`: 承認・差戻し履歴。`action`, `actor`, `timestamp`, `reason_code` を必須とする。
 - `draft_mapping_log.json`: レイアウト候補スコア、フォールバック履歴、AI 補完履歴、Analyzer 情報を記録する。静的モードでは `mode=static` とし、スロット配列を反映した `slides[*].slots` と `static_slot_checks.unused_slots` / `static_slot_checks.orphan_cards` を出力する。
 - `fallback_report.json`: 重大フォールバック（例: 章統合、付録送り）を詳細化した任意ファイル。
@@ -31,17 +28,16 @@
    - このステップは stage 3 開始前に実施され、以降のレイアウト候補評価・フォールバック処理とは独立して動作する。
 
 2. **章構成管理**
-   - 章テンプレートの適合率を計算し、過不足章は `generate_ready_meta.template.mismatch[]` に出力する。
    - `layout_hint` 候補ごとにスコア (`layout_score_detail`) を算出。指標: 用途タグ一致度、容量適合度、多様性、Analyzer 支援度、テンプレ適合度。
-- 差戻し時は `return_reason_code` を必須化し、自由記述は `draft_review_log.json` の `notes` に記録する。
+   - 章構成の変更・差戻し時は `return_reason_code` を必須化し、自由記述は `draft_review_log.json` の `notes` に記録する。`prepare_story_outline.json` がある場合は章順の初期化に活用し、差戻し後も整合性を保つ。
    - 承認完了後に章順・スライド順・付録情報を `generate_ready.json` に保存し、章ステータスを `generate_ready_meta.sections[*].status` へ反映。
 
 3. **レイアウト割付（自動）**
-  - PrepareCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
-  - スコア上位候補から割付を試み、収容不可の場合は `shrink_text` → `split_slide` → `appendix` の順でフォールバック。
-  - フォールバック結果と理由を `draft_mapping_log.json.fallback` と `fallback_report.json` に記録する。
-  - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
-  - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする。slot 未充足時は `DraftStructuringError` を送出し、差戻し理由を `static_slot_checks` に格納する。
+   - PrepareCard の intent / story_phase とテンプレ構造を突合し、最適レイアウトを選定する。
+   - スコア上位候補から割付を試み、収容不可の場合は `shrink_text` → `split_slide` → `appendix` の順でフォールバック。
+   - フォールバック結果と理由を `draft_mapping_log.json.fallback` と `fallback_report.json` に記録する。
+   - AI 補完（例: 箇条書き要約）を適用した場合は `draft_mapping_log.json.ai_patch` に差分 ID・説明を残す。
+   - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする。slot 未充足時は `DraftStructuringError` を送出し、差戻し理由を `static_slot_checks` に格納する。
 
 4. **カード順序とモードエラーハンドリング**
   - Dynamic フローは `prepare_card.json.cards[*].order` をそのまま `generate_ready.slides[*]` の順序へ反映する。HITL が順序を調整した場合もこの値を更新して引き渡すこと。

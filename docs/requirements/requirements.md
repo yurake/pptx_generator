@@ -82,6 +82,11 @@
 - フォーマット別に検証・サニタイズを行い、共通中間フォーマットへ正規化して `content_draft.json` 相当の情報へ変換できること。
 - 取得元、取得時刻、利用許諾などのメタ情報を監査ログに残し、失敗時は再試行・通知ポリシーに従って処理されること。
 
+### 4.12 Stage 2〜4 ハンドオーバ概要
+- Stage2（Prepare）: `prepare_card.json` / `prepare_log.json` / `ai_generation_meta.json` を出力し、`ai_generation_meta.mode` に `dynamic` / `static` を記録する。`prepare_story_outline.json` があれば章順初期化に使う。静的モードは `blueprint_path` と slot カバレッジを必須。
+- Stage3（Compose）: Stage1 のテンプレ抽出成果物（`jobspec.json` 等）と Stage2 成果物を入力に、`generate_ready.json` / `generate_ready_meta.json` と監査ログ群を生成する。`layout_mode` は `ai_generation_meta.mode` と一致させ、静的モードは Blueprint の slot 充足を検証する。
+- Stage4（Gen）: Stage3 の `generate_ready.json` とテンプレ PPTX を入力に描画し、`output.pptx` と監査ログ（Analyzer before/after、Polisher/PDF メタ）を出力する。必要に応じて Polisher や PDF 変換を有効化する。
+
 ## 5. 非機能要件
 - パフォーマンス: 30 スライド程度の提案書を 1 分以内に生成できることを目標とする。テンプレ構造抽出は 1 ファイル 30 秒以内を目標とする。
 - 可用性: 失敗時に再実行できる冪等性とジョブ管理を備えること。
