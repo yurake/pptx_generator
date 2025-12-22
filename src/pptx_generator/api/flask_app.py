@@ -298,7 +298,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_template
     elif stage == "prepare":
-        template_artifacts = _resolve_stage_artifacts(tx_root, "template", ["jobspec_url"])
+        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
@@ -330,8 +330,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_prepare
     elif stage == "compose":
-        prepare_artifacts = _resolve_stage_artifacts(tx_root, "prepare", ["prepare_card_url"])
-        template_artifacts = _resolve_stage_artifacts(tx_root, "template", ["jobspec_url"])
+        prepare_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"])
+        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         generate_ready_path = Path(workdir) / "generate_ready.json"
         generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
@@ -368,7 +368,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_compose
     elif stage == "gen":
-        compose_artifacts = _resolve_stage_artifacts(tx_root, "compose", ["generate_ready_url"])
+        compose_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         pptx_path = Path(workdir) / "proposal.pptx"
         pdf_path = Path(workdir) / "proposal.pdf"
@@ -421,9 +421,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     )
     state = queue.enqueue(request)
     queue.ensure_workers(1)
-    state = queue.wait(job_id)
-    if stage in ("template", "prepare", "compose", "gen") and state.status == JobStatus.SUCCEEDED:
-        _update_registry(tx_root, stage, state)
     return state
 
 
@@ -516,13 +513,77 @@ def _update_registry(tx_root: Path, stage: str, state) -> None:
     _registry_path(tx_root).write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _resolve_stage_artifacts(tx_root: Path, stage: str, keys: list[str]) -> dict[str, str]:
+def _resolve_stage_artifacts(tx_root: Path, stage: str, keys: list[str], allow_missing: bool = False) -> dict[str, str]:
     registry = _load_registry(tx_root)
     if registry is None:
+        if allow_missing:
+            return {}
         resp = jsonify({"code": "not_found", "message": "transaction not found"})
         resp.status_code = 404
         abort(resp)
     entry = registry.get(stage)
+    if not entry or "artifacts" not in entry:
+        if allow_missing:
+            return {}
+        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+        resp.status_code = 422
+        abort(resp)
+    artifacts = entry["artifacts"]
+    resolved = {}
+    for key in keys:
+        path = artifacts.get(key)
+        if not path:
+            if allow_missing:
+                continue
+            resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+            resp.status_code = 422
+            abort(resp)
+        resolved[key] = str((tx_root / path).resolve())
+    return resolved
+
+
+def _maybe_update_registry(queue: InProcessJobQueue, job_id: str, tx_root: Path, stage: str) -> None:
+    state = queue.get_job(job_id)  # type: ignore[attr-defined]
+    if state is None or state.status != JobStatus.SUCCEEDED:
+        return
+    if stage in ("template", "prepare", "compose", "gen"):
+        _update_registry(tx_root, stage, state)
+
+
+def _latest_job(queue: InProcessJobQueue, transaction_id: str, stage: str):
+    latest = None
+    for state in list(queue._jobs.values()):  # type: ignore[attr-defined]
+        if state.request.transaction_id != transaction_id or state.request.stage != stage:
+            continue
+        if latest is None:
+            latest = state
+            continue
+        if state.finished_at and latest.finished_at and state.finished_at > latest.finished_at:
+            latest = state
+    return latest
+
+
+def _ensure_stage_artifacts(
+    queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str]
+) -> dict[str, str]:
+    registry = _load_registry(tx_root)
+    entry = registry.get(stage) if registry else None
+    if entry is None:
+        state = _latest_job(queue, transaction_id, stage)
+        if state is not None and state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
+            queue.wait(state.request.job_id)
+            state = queue.get_job(state.request.job_id)  # type: ignore[attr-defined]
+        if state is not None and state.status == JobStatus.SUCCEEDED:
+            _update_registry(tx_root, stage, state)
+            entry = {"artifacts": state.result.get("artifacts") if isinstance(state.result, dict) else {}}
+        elif state is not None and state.status == JobStatus.FAILED:
+            resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+            resp.status_code = 422
+            abort(resp)
+    if registry is None and entry is None:
+        resp = jsonify({"code": "not_found", "message": "transaction not found"})
+        resp.status_code = 404
+        abort(resp)
     if not entry or "artifacts" not in entry:
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
