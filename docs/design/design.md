@@ -297,8 +297,7 @@ project/
  │       ├─ Program.cs
  │       └─ rules/polish.yaml
  ├─ templates/
- │   ├─ corporate_default_v1.pptx
- │   └─ layout_map.yaml
+ │   └─ corporate_default_v1.pptx
  ├─ docs/
  │   ├─ requirements/
  │   │   └─ overview.md

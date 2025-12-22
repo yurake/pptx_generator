@@ -46,7 +46,7 @@
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit` など。詳細は CLI リファレンスを参照。
-- 込み入った診断を確認する場合は `--show-layout-reasons`・`--preflight` を併用し、レイアウト判定根拠を CLI で即時確認できるようにする。差戻し理由コードは内蔵テンプレートを参照する。
+- 込み入った診断を確認する場合は `--show-layout-reasons` を併用し、レイアウト判定根拠を CLI で即時確認できるようにする。差戻し理由コードは内蔵テンプレートを参照する。
 - Analyzer 連携を再評価したい場合は `--import-analysis <path>` を指定し、`analysis_summary.json` の重大度情報を取り込む。
 
 ### `pptx outline`
