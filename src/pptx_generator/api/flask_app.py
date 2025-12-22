@@ -6,6 +6,7 @@ import hmac
 import os
 import time
 import uuid
+import json
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Iterable, Optional
@@ -252,6 +253,13 @@ def _require_fields(payload: dict, fields: Iterable[str]) -> None:
 
 
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
+    output_root = _require_output_root()
+    tx_root = Path(output_root) / transaction_id
+    tx_root.mkdir(parents=True, exist_ok=True)
+    template_artifacts = None
+    prepare_artifacts = None
+    compose_artifacts = None
+
     if stage == "template":
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
@@ -290,13 +298,14 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_template
     elif stage == "prepare":
+        template_artifacts = _resolve_stage_artifacts(tx_root, "template", ["jobspec_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
             config = PrepareCommandConfig(
                 prepare_paths=[Path(p) for p in payload.get("prepare_sources", [])],
                 prepare_base_path=None,
-                jobspec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
+                jobspec_path=Path(template_artifacts["jobspec_url"]),
                 output_dir=Path(workdir),
                 mode=payload.get("mode", "dynamic"),
                 page_limit=payload.get("page_limit"),
@@ -321,6 +330,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_prepare
     elif stage == "compose":
+        prepare_artifacts = _resolve_stage_artifacts(tx_root, "prepare", ["prepare_card_url"])
+        template_artifacts = _resolve_stage_artifacts(tx_root, "template", ["jobspec_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         generate_ready_path = Path(workdir) / "generate_ready.json"
         generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
@@ -329,7 +340,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         def _run_compose():
             config = ComposeCommandConfig(
-                spec_path=Path(payload.get("jobspec_path", ".pptx/template/jobspec.json")),
+                spec_path=Path(template_artifacts["jobspec_url"]),
                 draft_output=Path(workdir) / "draft.json",
                 target_length=None,
                 structure_pattern=None,
@@ -338,7 +349,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
                 show_layout_reasons=bool(payload.get("show_layout_reasons", False)),
                 output_dir=Path(workdir),
                 rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
-                prepare_cards=Path(payload.get("prepare_cards", ".pptx/prepare/prepare_card.json")),
+                prepare_cards=Path(prepare_artifacts["prepare_card_url"]),
                 draft_filename=str(draft_log.name),
                 approved_filename=str(review_log.name),
                 log_filename=str(draft_log.name),
@@ -357,13 +368,14 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _run_compose
     elif stage == "gen":
+        compose_artifacts = _resolve_stage_artifacts(tx_root, "compose", ["generate_ready_url"])
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         pptx_path = Path(workdir) / "proposal.pptx"
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
             config = GenerateCommandConfig(
-                generate_ready_path=Path(payload.get("generate_ready_path", ".pptx/compose/generate_ready.json")),
+                generate_ready_path=Path(compose_artifacts["generate_ready_url"]),
                 output_dir=Path(workdir),
                 pptx_name=pptx_path.name,
                 rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
@@ -409,6 +421,9 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     )
     state = queue.enqueue(request)
     queue.ensure_workers(1)
+    state = queue.wait(job_id)
+    if stage in ("template", "prepare", "compose", "gen"):
+        _update_registry(tx_root, stage, state)
     return state
 
 
@@ -455,7 +470,70 @@ def _generate_id(prefix: str) -> str:
 
 
 def _resolve_output_root(transaction_id: str, stage: str, job_id: str) -> str:
+    base = _require_output_root()
+    return str(Path(base) / transaction_id / stage / job_id)
+
+
+def _require_output_root() -> str:
     base = os.environ.get("PPTX_OUTPUT_ROOT")
-    if base:
-        return str(Path(base) / transaction_id / stage / job_id)
-    return str(Path(".pptx") / stage)
+    if not base:
+        resp = jsonify({"code": "validation_error", "message": "PPTX_OUTPUT_ROOT is required"})
+        resp.status_code = 422
+        abort(resp)
+    return base
+
+
+def _registry_path(tx_root: Path) -> Path:
+    return tx_root / "registry.json"
+
+
+def _load_registry(tx_root: Path) -> Optional[dict]:
+    path = _registry_path(tx_root)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _update_registry(tx_root: Path, stage: str, state) -> None:
+    registry = _load_registry(tx_root) or {}
+    artifacts = {}
+    if isinstance(state.result, dict):
+        artifacts = state.result.get("artifacts") or {}
+    # store relative paths when under tx_root
+    rel_artifacts = {}
+    for key, value in artifacts.items():
+        p = Path(value)
+        try:
+            rel = p.relative_to(tx_root)
+            rel_artifacts[key] = str(rel)
+        except ValueError:
+            rel_artifacts[key] = value
+    registry[stage] = {"job_id": state.request.job_id, "artifacts": rel_artifacts}
+    tx_root.mkdir(parents=True, exist_ok=True)
+    _registry_path(tx_root).write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _resolve_stage_artifacts(tx_root: Path, stage: str, keys: list[str]) -> dict[str, str]:
+    registry = _load_registry(tx_root)
+    if registry is None:
+        resp = jsonify({"code": "not_found", "message": "transaction not found"})
+        resp.status_code = 404
+        abort(resp)
+    entry = registry.get(stage)
+    if not entry or "artifacts" not in entry:
+        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+        resp.status_code = 422
+        abort(resp)
+    artifacts = entry["artifacts"]
+    resolved = {}
+    for key in keys:
+        path = artifacts.get(key)
+        if not path:
+            resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+            resp.status_code = 422
+            abort(resp)
+        resolved[key] = str((tx_root / path).resolve())
+    return resolved
