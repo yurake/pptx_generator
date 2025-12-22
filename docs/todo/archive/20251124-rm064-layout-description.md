@@ -27,7 +27,7 @@ roadmap_item: RM-064 レイアウト候補メタ情報拡充
   - [x] docs/requirements 配下
     - メモ: `docs/requirements/stages/stage-01-template.md` に layout_description 必須化を追記。
   - [x] docs/design 配下
-    - メモ: `docs/design/schema/stage-02-template-structure-extraction.md` / `docs/design/stages/stage1-stage3-metadata-interface.md` へ説明文フィールドと LLM 要件を反映。
+    - メモ: `docs/design/schema/stage-02-template-structure-extraction.md` へ説明文フィールドと LLM 要件を反映。
 - [x] 実装
   - メモ: `utils/layout_metadata.py` に説明文ヘルパーを追加し、`template_extractor.py`・`layout_validation/suite.py`・`draft_recommender.py`・`draft_structuring.py`・`pipeline/mapping.py` で layout_description を連携。`MappingSlideMeta` / `MappingLogSlide` へ説明文を保持。
 - [x] テスト・検証

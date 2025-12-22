@@ -21,7 +21,7 @@
    - 自動追加分とユーザー指定分をユニーク化し、ゴールデン実行ログを従来通り保存。
 
 4. **ドキュメント更新**
-   - `docs/design/stages/stage-01-template-preparation.md` にサマリ計算と環境メタ格納手順を追記。
+   - `docs/design/stages/stage-01-template.md` にサマリ計算と環境メタ格納手順を追記。
    - `docs/runbooks/release.md` へ LibreOffice / Polisher バージョン固定戦略とゴールデンサンプル廃棄ポリシーを追加。
    - `README.md` の `pptx tpl-release` セクションへ自動ゴールデンサンプル実行と新出力項目を記載。
 

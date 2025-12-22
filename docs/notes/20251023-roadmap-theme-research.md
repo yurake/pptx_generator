@@ -12,7 +12,7 @@
 
 ### 1. テンプレートリリース監査強化
 - 概要: テンプレ資産の差分検出・ゴールデンサンプル管理・LibreOffice/Polisher バージョン固定を体系化し、Analyzer 指標を Release レポートに取り込む。
-- 根拠: テンプレ の未解決事項（`docs/design/stages/stage-01-template-preparation.md`）と Analyzer 活用メモの追加要件。
+- 根拠: テンプレ の未解決事項（`docs/design/stages/stage-01-template.md`）と Analyzer 活用メモの追加要件。
 - 提案成果物: 差分アルゴリズム設計書、ゴールデンサンプル自動生成ガイド、LibreOffice/Polisher バージョン管理ポリシー、Analyzer 指標集計の runbook。
 - 依存/前提: Analyzer 出力の集計仕様、テンプレ配布フローの既存スクリプト。
 - 優先度メモ: 高（テンプレ更新ごとに手戻りリスクが高いため）。

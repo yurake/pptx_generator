@@ -29,9 +29,6 @@ flowchart TB
         GOV_ANCHOR(( ))
         RM003["RM-003<br/>ビジュアルフィードバック<br/>コパイロット<br/>(保留)"]
         RM006["RM-006<br/>ライブ共同編集アシスト<br/>(保留)"]
-        RM091["RM-091<br/>transaction_id 導入<br/>(未着手)"]
-        RM092["RM-092<br/>出力ディレクトリ統一<br/>(未着手)"]
-        RM093["RM-093<br/>入力配置・DL API<br/>(未着手)"]
         RM094["RM-094<br/>ジョブ状態＋非同期化<br/>(未着手)"]
     end
 
@@ -73,8 +70,6 @@ flowchart TB
     GOV_ANCHOR --> ST1_ANCHOR --> ST2_ANCHOR --> ST3_ANCHOR --> ST4_ANCHOR
 
     RM003 --> RM006
-    RM091 --> RM094 --> RM093
-    RM092 --> RM094
 ```
 
 ## 個別状況
@@ -181,7 +176,7 @@ flowchart TB
 ### RM-011 レイアウトスタイル統一
 - ゴール: テーブル・チャート・画像などのレイアウトスタイルを設定ファイルで統一管理し、ブランド統一感を維持できるようにする。
 - 対象 stage: 5（マッピング）・6（レンダリング）
-- 参照ドキュメント: [docs/design/initiatives/template-style-governance.md](../design/initiatives/template-style-governance.md)
+- 参照ドキュメント: [docs/design/stages/stage-01-style-governance.md](../design/stages/stage-01-style-governance.md)
 - 参照 ToDo: [docs/todo/20251011-layout-style-governance.md](../todo/20251011-layout-style-governance.md)
 - 状況: 完了（2025-10-17 更新）
 - 期待成果: レイアウト用設定スキーマ整備、レンダラーでのスタイル適用、サンプルとテストの更新。
@@ -283,7 +278,7 @@ flowchart TB
 ### RM-021 テンプレ資産監査パイプライン
 - ゴール: テンプレ改訂時に差分と品質を自動診断し、stage 1 の受け渡しを自動化する。
 - 対象 stage: 1（テンプレ準備）
-- 参照ドキュメント: [docs/requirements/stages/stage-01-template-preparation.md](../requirements/stages/stage-01-template-preparation.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-01-template.md](../requirements/stages/stage-01-template.md)
 - 参照 ToDo: [docs/todo/archive/20251012-template-audit-pipeline.md](../todo/archive/20251012-template-audit-pipeline.md)
 - 状況: 完了（2025-10-16 更新）
 - 期待成果: `uv run pptx tpl-release` による `template_release.json` / `release_report.json` 自動生成と、`golden_runs.json` によるゴールデンサンプル検証ログの取得（達成済み）。
@@ -404,7 +399,7 @@ flowchart TB
 - 依存: RM-023（コンテンツ承認オーサリング基盤）、RM-005（プレゼンストーリーモデラー）。
 - 目的: stage 3/4を独立CLIとして提供できるよう、インターフェース・テスト観点・運用手順を整理する。
 - 状況: 完了（2025-10-19 更新）
-- 参照ドキュメント: [docs/design/archive/stage3-4-cli.md](../design/archive/stage3-4-cli.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [docs/design/stages/stage-03-compose.md](../design/stages/stage-03-compose.md), [docs/notes/20251019-rm033-scope.md](../notes/20251019-rm033-scope.md)
 - マイルストーン:
   1. stage 3/4 CLI 分離要件の調査と設計方針整理（ToDo: フォローアップタスク）。
   2. テスト観点棚卸しと再実行手順のドキュメント化。
@@ -599,7 +594,7 @@ flowchart TB
 - 状況: 完了（2025-11-02 更新）
 - 期待成果: 新 CLI サブコマンド仕様、`generate_ready.json` 生成テスト、個別コマンドとの互換保証。
 - 次アクション: `pptx compose` サブコマンドのドキュメント整備と CI フロー連携案の検討、stage 4/5 テレメトリの確認。
-- 補足 (2025-11-08): `docs/design/cli/cli-command-reference.md` など一部ドキュメントのオプション表記が旧仕様 (`--generate-ready-filename` 等) のままであり、実装とのギャップ解消が必要です。
+- 補足 (2025-11-08): `docs/design/architecture/cli-command-reference.md` など一部ドキュメントのオプション表記が旧仕様 (`--generate-ready-filename` 等) のままであり、実装とのギャップ解消が必要です。
 
 <a id="rm-049"></a>
 ### RM-049 pptx gen スコープ最適化
@@ -627,7 +622,7 @@ flowchart TB
 ### RM-051 テンプレ 統合集約
 - 対象 stage: 1（テンプレ準備）
 - ゴール: 現行の stage 1/2を統合し、`uv run pptx template` による抽出・検証の自動実行を標準化する。
-- 参照ドキュメント: [README.md](../README.md), [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
+- 参照ドキュメント: [README.md](../README.md), [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [docs/notes/20251103-template-pipeline-integration.md](../notes/20251103-template-pipeline-integration.md)
 - 参照 ToDo: [docs/todo/archive/20251103-rm-051-template-integration.md](../todo/archive/20251103-rm-051-template-integration.md)
 - 依存: RM-043（サンプルテンプレ拡充）・RM-045（テンプレ抽出検証ラッパー）
 - 状況: 完了（2025-11-03 更新）
@@ -660,7 +655,7 @@ flowchart TB
 ### RM-054 静的テンプレ構成統合プランニング
 - 対象 stage: 2〜3（コンテンツ準備 / マッピング）
 - ゴール: 静的テンプレート向けに Blueprint 情報を扱えるよう stage 2 のカード生成と stage 3 のマッピング責務を再設計し、動的テンプレートとの二重運用を確立する。
-- 参照ドキュメント: [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/initiatives/template-blueprint.md](../design/initiatives/template-blueprint.md)
+- 参照ドキュメント: [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/notes/20251105-static-template-integration.md](../notes/20251105-static-template-integration.md), [docs/design/stages/stage-02-static-blueprint.md](../design/stages/stage-02-static-blueprint.md)
 - 参照 ToDo: [docs/todo/archive/20251109-rm054-static-blueprint-plan.md](../todo/archive/20251109-rm054-static-blueprint-plan.md)
 - 依存: RM-044（ジョブスペック雛形自動生成）・RM-047（テンプレ統合構成生成AI連携）
 - 状況: 完了（2025-11-22 更新）
@@ -771,7 +766,7 @@ flowchart TB
 ### RM-062 pptx prepare 承認モード整備
 - 対象 stage: 2（コンテンツ準備）
 - ゴール: `pptx prepare` におけるカード承認モードを廃止し、承認状態は PrepareStore / prepare_log 側で管理する方針へ更新する。
-- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md), [README.md](../README.md), [docs/runbooks/story-outline-ops.md](../runbooks/story-outline-ops.md)
 - 参照 ToDo: （未作成 — 着手時に `docs/todo/` へ登録）
 - 状況: 完了（2025-11-24 更新）
 - 期待成果:
@@ -988,7 +983,7 @@ flowchart TB
 ### RM-078 stage 表記統一
 - 対象領域: Cross-Stage ドキュメント・ログ
 - ゴール: パイプライン stage の表記を「stage」で統一し、ドキュメント／CLI 表示の一貫性を確保する。
-- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
+- 参照ドキュメント: [AGENTS.md](../AGENTS.md), [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md)
 - 参照 ToDo: [docs/todo/archive/20251124-rm078-stage-terminology.md](../todo/archive/20251124-rm078-stage-terminology.md)
 - 状況: 完了（2025-11-27 更新）
 - 期待成果:
@@ -1000,7 +995,7 @@ flowchart TB
 ### RM-079 pptx prepare directive 拡張
 - 対象 stage: Stage 2（コンテンツ準備）
 - ゴール: `pptx prepare` で LLM プロンプトへ外部要望を安全に注入できる仕組みを提供し、柔軟なドラフト生成を可能にする。
-- 参照ドキュメント: [docs/design/cli/cli-command-reference.md](../design/cli/cli-command-reference.md)
+- 参照ドキュメント: [docs/design/architecture/cli-command-reference.md](../design/architecture/cli-command-reference.md)
 - 参照 ToDo: [docs/todo/archive/20251124-rm079-prepare-directives.md](../todo/archive/20251124-rm079-prepare-directives.md)
 - 状況: 完了（2025-11-29 更新）
 - 期待成果:
@@ -1151,7 +1146,7 @@ flowchart TB
 - ゴール: 4 stage をまたぐ一意 ID（transaction_id）を公式化し、job_id を束ねて追跡できるようにする。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-090
-- 状況: 未着手
+- 状況: 完了（2025-12-17 更新）
 - 対象: パイプライン基盤（PipelineContext/pipeline_trace）、API 入出力メタ
 - 期待成果: job_id と併せた transaction_id を払い出し・保存し、ステージ横断の追跡を可能にする
 
@@ -1160,24 +1155,46 @@ flowchart TB
 - ゴール: Web/API と CLI で出力ルート指定を `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に統一し、履歴を保持する。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-091
-- 状況: 未着手
+- 状況: 完了（2025-12-18 更新）
 - 対象: 出力先解決（PipelineContext/workdir）、CLI ハンドラ、設定ドキュメント
 - 期待成果: API/CLI の出力パス規約を統一し、履歴保持と成果物参照の一貫性を確保
 
 <a id="rm-093"></a>
-### RM-093 入力配置・ダウンロードAPI
-- ゴール: 入力配置を `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に規約化し、job_id をキーに成果物をダウンロードできる API を提供する。
+### RM-093 入力配置規約
+- ゴール: 入力配置を `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に規約化し、後続ステージで参照できるようにする。
 - 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
 - 依存: RM-091, RM-092
-- 状況: 未着手
-- 対象: 入力配置解決、ダウンロードAPI、入出力パスのドキュメント
-- 期待成果: 入出力の置き場を固定し、job_id をキーに PPTX/PDF をAPI経由で取得可能にする
+- 状況: 完了（2025-12-18 更新）
+- 対象: 入力配置解決、入出力パスのドキュメント
+- 期待成果: 入出力の置き場を固定し、後続 API/CLI から安定参照できるようにする
 
 <a id="rm-094"></a>
 ### RM-094 ジョブ状態モデル＋非同期化
 - ゴール: ジョブ状態（pending/running/succeeded/failed/canceled）を明示し、compose/gen など長時間処理を非同期実行できるようにする。
-- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md), [docs/design/initiatives/rm094-job-state-async.md](../design/initiatives/rm094-job-state-async.md)
 - 依存: RM-091（実装時は RM-092 と整合を取る）
-- 状況: 未着手
+- 状況: 進行中（CLI 内部キュー＋メモリワーカー導入済み、job_id/transaction_id を PipelineContext に伝搬）
 - 対象: ジョブ状態ストア、非同期実行基盤（キュー/ワーカー）、ステータスAPI、ログ/メトリクス
-- 期待成果: job_id/transaction_id で状態を問い合わせ・追跡でき、compose/gen を非同期実行できるようにする
+- 現在の成果: CLI 各 stage が run_job_sync 経由でジョブ ID を付与し、メモリキュー＋同一プロセス内並列ワーカーで処理（CLI は完了まで待機）。job_id/transaction_id が pipeline_trace に記録される。
+- 残課題: Web/API 経路へのキュー組み込み、状態問い合わせ API、キャンセル／リトライ方針、永続化要否の検討。
+
+<a id="rm-095"></a>
+### RM-095 Stage5 PPTX 編集反映
+- ゴール: Stage4 生成済み PPTX に対し、スライド内オブジェクトの指示文を LLM で解釈し、テキスト修正を反映した新版 PPTX を返せるようにする。
+- 対象 stage: 5（PPTX編集適用）
+- 参照ドキュメント: [docs/notes/20251217-pptx-edit-stage5.md](../notes/20251217-pptx-edit-stage5.md)
+- 依存: RM-080（スライドスナップショット強化）※グループ・表セル対応を前提に拡張
+- 状況: 新規（2025-12-17 起票）
+- 期待成果:
+  - mode static のスナップショットでグループ・表セル内のテキストも抽出し、shape_id/name/位置を安定取得する。
+  - LLM から `{edit: bool, contents: string}` を最小出力で受け取り、shape_id 対応付けで既存ラン書式を維持したままテキスト差し替えを行う。
+  - 並列推論＋シリアル書き込みのジョブ基盤を整備し、リトライや未対応指示のレポートを返却する。
+
+<a id="rm-096"></a>
+### RM-096 成果物ダウンロードAPI分離
+- ゴール: RM-089 の Web/API 基盤上で、生成済み PPTX/PDF を job_id でダウンロードできる API を提供し、出力パス規約（RM-092）と整合させる。
+- 参照ドキュメント: [docs/notes/20251217-rm089-web-if.md](../notes/20251217-rm089-web-if.md)
+- 依存: RM-089（Web/API 化基盤）、RM-092（出力ディレクトリ統一）
+- 状況: 新規（2025-12-18 起票）
+- 対象: ダウンロードエンドポイント実装、署名付き URL 発行方針、成果物メタ連携、ドキュメント更新
+- 期待成果: API 経由で `job_id` をキーに PPTX/PDF を取得でき、出力ルート規約に基づいたパス解決と認可方針が整理される

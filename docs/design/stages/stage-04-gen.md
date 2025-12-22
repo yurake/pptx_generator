@@ -1,5 +1,7 @@
 # stage 4 PPTX レンダリング 設計
 
+対応要件: `docs/requirements/stages/stage-04-gen.md`
+
 ## 目的
 - `generate_ready.json` とテンプレートを用いて最終 `output.pptx` を生成し、軽量整合チェックと監査ログを出力する。stage 3/4の成果物は `generate_ready` 内の `job_meta` / `job_auth` を通じて参照する。
 - CLI からの実行は `uv run pptx gen .pptx/compose/generate_ready.json --output .pptx/gen` を前提とし、stage 4 の成果物確認には `pptx compose` / `pptx mapping` を用いる。テンプレートからスタイルを自動抽出するため、追加のブランド設定ファイルは不要。

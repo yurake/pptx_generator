@@ -13,6 +13,9 @@
 - パイプラインは「テンプレ → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
+- 出力ルートは `PPTX_OUTPUT_ROOT` で切り替えられる（未指定は `.pptx/<stage>`）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を前提とする。
+- 入力ルートは Web/API 専用で `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` を利用する（未指定は `.pptx/input`）。CLI 既定の入力パスは従来どおりで変更しない。
+- CLI は内部的にメモリキュー＋ワーカーを用いるが、実行完了まで待機する同期挙動を維持する。API/Web は同一プロセス内の複数ワーカーで非同期実行を前提とし、ジョブ状態の永続化は行わない（必要ならクライアント側で保持）。
 
 ### stage 1: テンプレ
 テンプレートの整備・抽出・検証・リリースメタ生成を一括で実行する。
@@ -145,7 +148,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 章構成の承認とレイアウト割付をまとめて実行し、`generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` を整備する。Prepare 成果物を必須入力とし、HITL 差戻しや再実行時も出力ディレクトリを固定できる。
 
 #### 推奨: `pptx compose`
-- stage 3 全体を一括で実行し、`--output` で指定したディレクトリに `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。ドラフト成果物（`draft_draft.json` など）は自動的に `<output>/draft/` 配下へ出力される。
+- stage 3 全体を一括で実行し、`--output` で指定したディレクトリに `generate_ready.json`・`generate_ready_meta.json`・`draft_mapping_log.json` を生成する。ドラフト関連ログは `<output>/draft/` 配下へ出力される。
 - `--prepare-cards` で stage 2 の成果物を指定すると、CLI が `prepare_card.json.meta` に記録されたパスを使ってログや AI メタを読み込む。
 - 承認状態（差戻し含む）は PrepareStore の管理下にあり、CLI は読み取りのみを行う。
 - `jobspec.meta.template_path` と `jobspec.meta.layouts_path` を必ず埋め込む。欠落している場合はエラーになる。
@@ -182,7 +185,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 ドラフト成果物を任意ディレクトリへ分離したい場合は、`--output` を `<root>` に設定したうえで `<root>/draft` を参照する。
 
 #### 補助: `pptx mapping`
-- stage 4（レンダリング）で利用する。`generate_ready.json` とテンプレートを入力に PPTX を生成し、旧 `draft_*` ファイルには依存しない。
+- stage 3 のマッピング処理だけを個別実行し、`generate_ready.json` 系とドラフトログを出力する。レンダリングは実行しない。
 
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |

@@ -10,6 +10,7 @@ from pptx_generator.pipeline import (
     DraftStructuringError,
     DraftStructuringOptions,
     PipelineContext,
+    PipelineStage,
     PrepareNormalizationError,
 )
 from pptx_generator.models import SpecValidationError
@@ -33,6 +34,7 @@ from .mapping import (
     run_mapping_pipeline,
 )
 from .outline import OutlineResult, execute_outline, print_outline_result
+from .trace_utils import record_stage_trace
 
 logger = logging.getLogger(__name__)
 
@@ -262,6 +264,8 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         logger.exception("compose 実行中にマッピング stage でエラーが発生しました")
         raise ComposeCommandError("compose 実行中にマッピング stage でエラーが発生しました", exit_code=1) from exc
 
+    mapping_context.current_stage = PipelineStage.MAPPING
+    record_stage_trace(context=mapping_context, stage="compose", output_dir=config.output_dir)
     echo_mapping_outputs(mapping_context)
 
     return ComposeCommandResult(outline=outline_result, mapping_context=mapping_context)

@@ -1,0 +1,20 @@
+[
+  {
+    "target_type": "slide",
+    "target_id": "card-001",
+    "action": "approve",
+    "actor": "operator-a",
+    "timestamp": "2025-01-01T00:05:00Z"
+  },
+  {
+    "target_type": "slide",
+    "target_id": "card-002",
+    "action": "return",
+    "actor": "operator-b",
+    "timestamp": "2025-01-01T00:07:00Z",
+    "changes": {
+      "return_reason_code": "LAYOUT_CAPACITY",
+      "notes": "本文を2カラムに分割してください"
+    }
+  }
+]

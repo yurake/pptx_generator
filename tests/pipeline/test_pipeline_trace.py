@@ -31,6 +31,7 @@ def test_write_pipeline_trace_outputs_json(tmp_path: Path) -> None:
 
     assert path.exists()
     assert payload["job_id"] == context.job_id
+    assert payload["transaction_id"] == context.transaction_id
     assert payload["current_stage"] == "prepare"
     assert payload["stage_results"][0]["stage"] == "prepare"
     assert payload["error_history"] == ["failure"]

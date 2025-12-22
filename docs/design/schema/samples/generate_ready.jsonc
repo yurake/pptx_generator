@@ -1,0 +1,33 @@
+{
+  "slides": [
+    {
+      "layout_id": "title__cover_v1",
+      "elements": {
+        "title": "次期プロジェクト提案",
+        "subtitle": "ACME株式会社向け"
+      },
+      "meta": {
+        "section": "intro",
+        "page_no": 1,
+        "sources": ["card-001"],
+        "fallback": "none"
+      }
+    }
+  ],
+  "meta": {
+    "template_version": "v1.0.0",
+    "content_hash": "sha256:deadbeef",
+    "generated_at": "2025-01-01T00:00:00Z",
+    "job_meta": {
+      "schema_version": "1.1",
+      "title": "提案書ドラフト",
+      "client": "ACME",
+      "theme": "corporate",
+      "locale": "ja-JP"
+    },
+    "job_auth": {
+      "created_by": "operator-a",
+      "department": "sales"
+    }
+  }
+}

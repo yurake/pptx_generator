@@ -42,7 +42,7 @@
 - `src/pptx_generator/pipeline/template_extractor.py`（placeholder summary / slot info 集約）
 - `src/pptx_generator/layout_validation/suite.py`（Template AI 呼び出しと `layouts.jsonl` 出力ロジック）
 - `src/pptx_generator/template_ai/service.py`（LLM ペイロード生成）
-- `docs/design/schema/stage-01-template-preparation.md`（スキーマの更新）
+- `docs/design/schema/stage-01-template.md`（スキーマの更新）
 - テスト: `tests/test_template_ai.py`, `tests/test_layout_validation_template_ai.py`, `tests/test_layout_recommender.py`
 - **Stage2 静的モード**: `src/pptx_generator/prepare/orchestrator.py` と Blueprint 参照ロジック（slot 情報を Stage2 でも利用するため、追加メタがあれば `template_spec.blueprint` から参照できるよう整合を取る）。
 
@@ -53,11 +53,11 @@
 4. Stage3 側（`draft_recommender.py` / `pipeline/draft_structuring.py`）で新メタを参照し、ログ/診断に活用する。  
 5. Stage2 静的モードで Blueprint 追加メタを利用できるよう確認し、必要に応じて `prepare` オーケストレーターへ反映。  
 6. テストとドキュメントを更新し、ToDo の実装タスクに反映する。
-7. Stage1 → Stage3 メタデータ受け渡し仕様のドラフトを `docs/design/stages/stage1-stage3-metadata-interface.md` に集約し、設計レビューのベースラインとする。
+7. Stage1 → Stage3 メタデータ受け渡し仕様は `docs/design/schema/stage-02-template-structure-extraction.md`（スキーマ）と `docs/design/stages/stage-03-compose.md`（利用側）をベースに集約し、設計レビューのベースラインとする。
 
 ## 6. layouts.jsonl スキーマ更新計画
 1. **仕様整理**
-   - `docs/design/stages/stage1-stage3-metadata-interface.md` を基準に、追加フィールド（`placeholder_summary.counts/area_ratio`、`blueprint.slots[*]`、`meta.heuristic_reason`）ごとの必須／任意条件を明文化する。
+- `docs/design/schema/stage-02-template-structure-extraction.md` を基準に、追加フィールド（`placeholder_summary.counts/area_ratio`、`blueprint.slots[*]`、`meta.heuristic_reason`）ごとの必須／任意条件を明文化する。
    - JSON Schema 変更案を `docs/design/schema/stage-02-template-structure-extraction.md` に反映し、`SUITE_VERSION` を 1.1.0 に引き上げる草案を作成。
 2. **実装タスク分解**
    - Stage1 (`TemplateExtractor`)：Blueprint slot 情報を `LayoutInfo` → `TemplateBlueprint` → `layout_validation` へ伝搬させる。

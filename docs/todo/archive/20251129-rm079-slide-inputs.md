@@ -12,7 +12,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
     - 対象整理（スコープ、対象ファイル、前提）: static モードの `pptx template` / `pptx prepare`。`src/pptx_generator/cli.py`、`src/pptx_generator/prepare_ai/orchestrator.py`、`src/pptx_generator/prepare/models.py`、関連テスト・ドキュメントを更新する。
     - ドキュメント／コード修正方針: `.pptx/slide_inputs.md` を template 実行時に生成し、`01_system-layout` など雛形と同じ命名で入力ファイルを割り当てる。全スライド分が記載されていれば `pptx prepare` の `<data file path>` を省略可。未指定スライドがある場合はエラーとする。
     - 確認・共有方法（レビュー、ToDo 更新など）: Plan 承認後に ToDo へ転記し、必要に応じて docs/notes へ仕様メモを追加する。進捗は本 ToDo に記録。
-    - 想定影響ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare_ai/orchestrator.py`, `src/pptx_generator/prepare/models.py`, `tests/cli/test_cli_static_prompt_templates.py`, README, `docs/design/cli/cli-command-reference.md`, `docs/design/stages/stage-02-prepare.md` など。
+    - 想定影響ファイル: `src/pptx_generator/cli.py`, `src/pptx_generator/prepare_ai/orchestrator.py`, `src/pptx_generator/prepare/models.py`, `tests/cli/test_cli_static_prompt_templates.py`, README, `docs/design/architecture/cli-command-reference.md`, `docs/design/stages/stage-02-prepare.md` など。
     - リスク: マニフェスト記述ミスやファイル欠落によるエラー、既存利用者への互換性影響。
     - テスト方針: `uv run --extra dev pytest` に加え、CLI で `.pptx/slide_inputs.md` を使ったケース（省略可/未指定エラー）を手動確認。
     - ロールバック方法: マニフェスト生成・読込・ログ追記のコミットを revert し旧挙動へ戻す。
@@ -22,7 +22,7 @@ roadmap_item: RM-079 pptx prepare directive 拡張
 - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - メモ: `docs/notes/20251127-rm079-static-prompt-discussion.md` を確認し、今回の仕様が合意内容と一致していることを再確認済み。
 - [x] ドキュメント更新（要件・設計）
-  - メモ: `docs/design/cli/cli-command-reference.md`, `docs/design/stages/stage-02-prepare.md` に雛形生成フローとスライド入力マニフェストの利用手順を追記。
+  - メモ: `docs/design/architecture/cli-command-reference.md`, `docs/design/stages/stage-02-prepare.md` に雛形生成フローとスライド入力マニフェストの利用手順を追記。
   - [x] docs/requirements 配下
   - [x] docs/design 配下
 - [x] 実装

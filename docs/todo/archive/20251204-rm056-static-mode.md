@@ -40,7 +40,7 @@ roadmap_item: RM-056 多形式インポートCLI統合
   - [x] docs/requirements 配下（実装結果との整合再確認）
     - メモ: `docs/requirements/stages/stage-02-prepare.md` に多形式インポート要件が既に掲載されており追加変更不要。
   - [x] docs/design 配下（実装結果との整合再確認）
-    - メモ: `docs/design/cli/cli-command-reference.md` に静的モードの複数入力例が記載済みで変更不要。
+    - メモ: `docs/design/architecture/cli-command-reference.md` に静的モードの複数入力例が記載済みで変更不要。
   - [x] docs/runbook 配下
     - メモ: 運用手順に今回の変更影響なし。
   - [x] README.md / AGENTS.md

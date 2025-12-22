@@ -21,6 +21,7 @@ from pptx_generator.pipeline import (
     PdfExportStep,
     PipelineContext,
     PipelineRunner,
+    PipelineStage,
     PolisherError,
     PolisherOptions,
     PolisherStep,
@@ -35,6 +36,7 @@ from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.settings.paths import find_config_path
 from pptx_generator.template_style import extract_template_style
+from .trace_utils import record_stage_trace
 
 logger = logging.getLogger(__name__)
 
@@ -285,6 +287,8 @@ def run_generate_command(config: GenerateCommandConfig) -> GenerateCommandResult
     analysis_path = render_context.artifacts.get("analysis_path")
     review_engine_path = emit_review_engine_analysis(render_context, analysis_path)
     audit_path = write_audit_log(render_context)
+    render_context.current_stage = PipelineStage.RENDER
+    record_stage_trace(context=render_context, stage="gen", output_dir=config.output_dir)
 
     return GenerateCommandResult(
         context=render_context,

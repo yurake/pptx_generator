@@ -98,7 +98,7 @@ stage 2 で生成する `layouts.jsonl`、`diagnostics.json`、`diff_report.json
 - `style_hint`: レンダリング・AI 補完のヒントであり、必須ではない。
 - `usage_tags`: stage 5 のスコアリングに利用する用途タグ。
 - `text_hint.max_chars`: 面積から算出した推奨文字数。
-- `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。詳細は `docs/design/stages/stage1-stage3-metadata-interface.md` を参照。
+- `placeholder_summary`: Stage3 での容量推定・意図タグ推定に利用する統計情報。stage 3 での利用は `docs/design/stages/stage-03-compose.md` を参照。
 - `meta.layout_description`: Stage1 Template で生成するレイアウト説明メタ。`overview`（全体概要）と `elements[*]`（個別プレースホルダーの説明リスト）で構成され、Template AI / Layout AI のプロンプトおよびマッピングログで利用する。
 
 ## diagnostics.json
@@ -154,4 +154,4 @@ stage 2 で生成する `layouts.jsonl`、`diagnostics.json`、`diff_report.json
 - 差分レポート出力の標準化とサンプル追加。
 - `usage_tags` 推定ロジックの指標化とテスト整備。
 - JSON Lines サンプルを `docs/design/schema/samples/` に追加し、レポート生成例を整備する。
-- Stage1 → Stage3 連携フィールド（`placeholder_summary.area_ratio` や Blueprint slot 情報など）をスキーマへ反映し、`docs/design/stages/stage1-stage3-metadata-interface.md` に沿って検証を追加する。
+- Stage1 → Stage3 連携フィールド（`placeholder_summary.area_ratio` や Blueprint slot 情報など）をスキーマへ反映し、`docs/design/stages/stage-03-compose.md` の利用要件と整合させる。
