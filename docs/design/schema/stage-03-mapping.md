@@ -137,7 +137,7 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 - 推奨フィールド: `ref_id`, `applied_strategy`, `reason`, `details`。
 
 - `samples/generate_ready.jsonc`
-- サンプル未整備（旧サンプルは削除）
+- サンプル: `samples/generate_ready.jsonc`, `samples/generate_ready_meta.jsonc`, `samples/draft_mapping_log.jsonc`, `samples/draft_review_log.jsonc`
 
 ## バリデーション
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。

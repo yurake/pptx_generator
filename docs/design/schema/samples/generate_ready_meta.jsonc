@@ -1,0 +1,19 @@
+{
+  "sections": [
+    {
+      "id": "intro",
+      "title": "導入",
+      "status": "approved",
+      "slide_count": 1,
+      "ai_recommendations": 1,
+      "fallback_count": 0
+    }
+  ],
+  "meta": {
+    "total_slides": 1,
+    "approved_slides": 1,
+    "fallback_count": 0,
+    "ai_recommendation_count": 1,
+    "generated_at": "2025-01-01T00:00:00Z"
+  }
+}

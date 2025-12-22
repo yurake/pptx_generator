@@ -1,0 +1,28 @@
+{
+  "slides": [
+    {
+      "ref_id": "card-001",
+      "selected_layout": "title__cover_v1",
+      "candidates": [
+        {"layout_id": "title__cover_v1", "score": 0.94},
+        {"layout_id": "overview__one_col_v1", "score": 0.61}
+      ],
+      "fallback": {
+        "applied": false,
+        "history": []
+      },
+      "warnings": [],
+      "analyzer": {
+        "issue_count": 0,
+        "issue_counts_by_type": {},
+        "issue_counts_by_severity": {}
+      }
+    }
+  ],
+  "meta": {
+    "mapping_time_ms": 320,
+    "fallback_count": 0,
+    "ai_patch_count": 0,
+    "analyzer_issue_count": 0
+  }
+}
