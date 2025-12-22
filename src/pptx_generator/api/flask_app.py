@@ -323,6 +323,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             jobspec_path = None
             if template_artifacts.get("jobspec_url"):
                 jobspec_path = Path(template_artifacts["jobspec_url"])
+                _require_path_exists(jobspec_path, "jobspec_path")
             default_jobspec = Path(tx_root) / "template" / "jobspec.json"
             prompts_dir = Path(tx_root) / "template" / "prompts"
             config = PrepareCommandConfig(
@@ -357,6 +358,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         review_log = Path(workdir) / "draft_review_log.json"
 
         def _run_compose():
+            _require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
+            _require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
             config = ComposeCommandConfig(
                 spec_path=Path(template_artifacts["jobspec_url"]),
                 draft_output=Path(workdir) / "draft.json",
@@ -392,6 +395,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
+            _require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
             config = GenerateCommandConfig(
                 generate_ready_path=Path(compose_artifacts["generate_ready_url"]),
                 output_dir=Path(workdir),
