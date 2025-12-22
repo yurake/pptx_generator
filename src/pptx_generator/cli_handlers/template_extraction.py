@@ -33,9 +33,16 @@ from pptx_generator.models import (
     TemplateBlueprintSlide,
     TemplateSpec,
 )
-from pptx_generator.pipeline import TemplateExtractor, TemplateExtractorOptions
+from pptx_generator.pipeline import (
+    PipelineContext,
+    PipelineStage,
+    TemplateExtractor,
+    TemplateExtractorOptions,
+)
 from pptx_generator.pipeline.analyzer import SlideSnapshot
 from pptx_generator.settings.ai_policy import resolve_template_ai_policy_path
+from pptx_generator.cli_handlers.trace_utils import record_stage_trace
+from pptx_generator.models import JobMeta, JobAuth, JobSpec
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +178,25 @@ def run_template_extraction(
     jobspec_path = output_dir / "jobspec.json"
     extractor.save_jobspec_scaffold(jobspec_scaffold, jobspec_path)
     logger.info("Saved jobspec scaffold to %s", jobspec_path.resolve())
+
+    scaffold_meta = getattr(jobspec_scaffold, "meta", None)
+    schema_version = getattr(scaffold_meta, "schema_version", None) or "1.0"
+    template_id = getattr(scaffold_meta, "template_id", None)
+    template_spec_path = getattr(scaffold_meta, "template_spec_path", None)
+    stub_spec = JobSpec(
+        meta=JobMeta(
+            schema_version=schema_version,
+            title=template_id or Path(template_path).stem,
+            template_path=str(template_path),
+            template_id=template_id,
+            template_spec_path=template_spec_path,
+        ),
+        auth=JobAuth(created_by="cli"),
+        slides=[],
+    )
+    context = PipelineContext(spec=stub_spec, workdir=output_dir)
+    context.current_stage = PipelineStage.TEMPLATE
+    record_stage_trace(context=context, stage="template", output_dir=output_dir)
 
     slide_snapshot_path: Path | None = None
     if emit_slide_snapshot:

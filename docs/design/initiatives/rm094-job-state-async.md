@@ -1,0 +1,59 @@
+# ジョブ状態モデル＋非同期化設計（RM-094）
+
+## 目的
+- 4 stage（template / prepare / compose / gen）をジョブとして扱い、キュー/ワーカー経由で実行する。
+- job_id / transaction_id を公式化し、並列ワーカーでも重複実行せず結果を返せるようにする。
+- CLI は同期 UX を維持しつつ内部はキュー経由、API は非同期＋並列ワーカーを許容する。
+
+## スコープ / 非スコープ
+- 対象: 4 stage の enqueue / 実行 / 状態管理（メモリ管理）、pipeline_trace 出力。
+- 非対象: 外部メッセージキュー、ジョブ状態の永続化、キャンセル、自動リトライ、署名付き URL 発行。
+
+## 前提
+- ID: job_id / transaction_id は UUID4 を採用（RM-091 整合）。
+- 出力配置: RM-092 の `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` を基本。tx 未指定時は `.pptx/<stage>` にフォールバック。
+- 言語・I/F: CLI を正とし、同期実行経路は廃止する。
+
+## コンポーネント
+- job_queue: メモリキュー（FIFO）。揮発メモリのみで管理し、永続化しない。
+- worker: 同一プロセス内で複数ワーカーを起動可能（スレッド/async）。キューからジョブを取り出し stage を実行し、pipeline_trace を出力。
+- cli handlers: `pptx template/prepare/compose/gen` は enqueue の上で自前ワーカーを起動し完了まで待つ（同期 UX）。API からの enqueue は常駐ワーカーが非同期に処理。
+
+## 状態モデル
+```
+pending -> running -> succeeded
+                 └-> failed
+pending --------> canceled
+```
+- 再実行は新しい job_id を発行（同一 transaction_id を引き継ぎ可）。
+- cancel: pending のみ即キャンセル。running は開始前チェックで best effort 停止。
+- 失敗時は error 詳細を記録し failed へ遷移。
+
+## データ構造
+- ジョブリクエスト（queue entry; JSON）
+  - job_id, transaction_id, stage, args（CLI 引数変換後の設定一式）, enqueued_at
+- ジョブレコード: 永続ファイルは残さない（必要時はクライアント側で保持）。実行中の状態はメモリ保持のみ。
+- trace: `pipeline_trace.json` に `job_id, transaction_id, stage, status, started_at, finished_at, error` を追加（stage の output_dir 配下に従来どおり書き出し）。
+
+## CLI I/F と同期挙動
+- CLI: キューに積んで自前ワーカーで即実行し完了まで待つ（同期）。`pptx status`/`cancel` は実装しない。
+- API/外部: enqueue のみ。常駐ワーカー（同一プロセス内で複数並列可）が非同期に処理。
+
+## エラー/リトライ方針
+- 自動リトライなし。失敗時はクライアントが新しい job を enqueue。
+- worker での例外は pipeline_trace に error を記録し、キューに戻さない。
+
+## Web/API 完了通知の最小案
+- 受け付け: `POST /{stage}` は 202/200 で `{job_id, transaction_id, status: "pending"}` を返却。
+- 取得: `GET /jobs/{job_id}` で `status`（pending/running/succeeded/failed）と成果物 URL/エラーを返す。クライアントはポーリング（0.5s→1→2→3s バックオフなど）。
+- 拡張オプション: `GET /jobs/{job_id}?wait=30` のロングポーリング、または `callback_url` を受け付けて完了時に webhook POST。
+- ジョブ時間ばらつき（<500ms〜60s）を許容するため、基本はポーリング＋任意のロングポーリング/コールバックで運用。
+
+## 移行と互換性
+- CLI は従来どおり完了まで待つが、内部でキュー/ワーカーを経由する。exit code で成功/失敗を判断可能。
+- キュー/ジョブの永続ディレクトリは作らない（メモリ管理のみ）。ファイルクリーンアップは不要。
+
+## テスト計画（実装とセットで追加）
+- 単体: job_queue（enqueue/dequeue/cancel）、job_store の状態更新、状態遷移バリデーション。
+- 統合: template→prepare→compose→gen を enqueue → worker run → status 確認で succeeded を検証。失敗シナリオで failed を確認。
+- trace: `pipeline_trace.json` に job_id/transaction_id/status が出力されることを検証。

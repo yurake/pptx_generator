@@ -1,0 +1,45 @@
+---
+目的: RM-091 で pipeline_trace を全ステージに統一し、PipelineContext を共通化して job_id/transaction_id を横断管理する
+関連ブランチ: chore/rm091-transaction-id
+関連Issue: #436
+roadmap_item: RM-091 transaction_id 導入
+---
+
+- [x] ブランチ作成・初期コミット・push
+  - メモ: ブランチ chore/rm091-transaction-id を継続利用（済）
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan を転記
+    - 対象整理（スコープ、対象ファイル、前提）: template/prepare/compose/gen の CLI ハンドラを PipelineContext ベースに揃え、各ステージで pipeline_trace.json を出力する。job_id はステージごとに発行、transaction_id はステージ横断で共通。CLI オプション追加は避け、自動発行＋生成物内に埋め込み、後続ステージで継承する形にする。
+    - ドキュメント／コード修正方針: コンテキスト生成のヘルパを用意し、各ステージ終了時に write_pipeline_trace を呼ぶ。出力は stage ディレクトリ配下に配置。transaction_id は初回ステージで発行し、成果物メタや出力ディレクトリから後続ステージが継承する。
+    - 確認・共有方法: 本 ToDo に進捗を記録し、PR で変更概要・影響範囲を共有。
+    - 想定影響ファイル: `src/pptx_generator/cli_handlers/template_*.py`, `prepare.py`, `compose.py`, `rendering.py`、`pipeline/base.py`, `pipeline/trace.py`、CLI コマンド定義部、関連テスト。
+    - リスク: CLI 互換性（引数追加/出力構成変更）、コンテキスト生成漏れ、外部スクリプト依存の破壊。LLM 呼び出しによるレート制限影響。
+    - テスト方針: `uv run --extra dev pytest tests/pipeline/test_pipeline_trace.py` を最小実行。時間許せば `uv run --extra dev pytest` 全体または統合テストを実施。
+    - ロールバック方法: コンテキスト統一をまとまったコミットにし、revert 可能な単位で管理する。
+    - 承認メッセージ ID／リンク: チャット承認（RM-091 trace リファクタ）
+- [x] 設計・実装方針の確定
+  - メモ: Plan に基づき、CLI オプション追加とコンテキスト初期化ヘルパの形を決めて記載する（コンテキスト共通化・trace append 採用）
+  - [x] 設計・実装方針メモの共有（本 ToDo メモで管理）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: 全ステージで pipeline_trace を append。静的テンプレート抽出のフォールバック追加。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest --cov --cov-report=term --cov-report=xml`（390 passed, 1 skipped, coverage 82%）
+- [x] ドキュメント更新
+  - メモ: コード変更は内部挙動の統一のみで既存ドキュメント整合性に影響なし。追加記載不要。
+  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
+- [x] 関連Issue 行の更新
+  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] チェックリスト整合確認
+  - メモ: 子タスク完了を確認し親タスクのチェックを更新済み。
+- [x] PR 作成
+  - メモ: PR #437 https://github.com/yurake/pptx_generator/pull/437（2025-12-17 完了）
+
+## メモ
+- UAT 予定: ステージごとに pipeline_trace.json が出力されることを確認（静的/動的モード）。出力先は各ステージの output ディレクトリ配下。
+- static モードでスライドが空の場合に template 抽出へフォールバックし、jobspec/blueprint を生成するよう修正。templates/static_template.pptx で再現したエラーを解消済み。
