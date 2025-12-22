@@ -209,7 +209,7 @@ assets:
 - **リンク検証**: 設定で切り替え可能な HEAD リクエスト。
 
 ## 6. テンプレート設計
-- `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
+- テンプレ構造は `template_spec.json` / `jobspec.json` / `layouts.jsonl` に集約し、レイアウト名・プレースホルダ ID・座標・サイズ・用途タグを管理。
 - ブランドカラー・フォントおよびレイアウト別スタイルはテンプレートから抽出した TemplateStyle（`branding.json` スナップショットの `theme` / `components` / `layouts`）で共有し、Renderer・Analyzer・Polisher が利用する。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
 - 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
@@ -246,7 +246,7 @@ assets:
   5. 保存後に差分ログを出力。
 
 ## 9. 技術スタック
-- 言語: Python 3.11, TypeScript (将来的な Office.js), C# (.NET 8)。
+- 言語: Python 3.12, TypeScript (将来的な Office.js), C# (.NET 8)。
 - フレームワーク: FastAPI (REST), Azure Functions / AWS Lambda (サーバーレス)、Docker。
 - ライブラリ: `python-pptx`, `Pillow`, `pydantic`, `ruff`, `mypy`, Open XML SDK, LibreOffice。
 - インフラ: Azure Storage (Blob/Queue), Key Vault, App Insights, Azure Container Apps（候補）。

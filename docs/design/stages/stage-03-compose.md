@@ -86,7 +86,7 @@
 - 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が定義されている場合、`pptx compose` / `pptx mapping` / `pptx gen` 各ステージでフックを呼び出せる。環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`, `PPTX_GENERATE_READY_PATH`。スライド別フックでは `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を提供し、`continue_default=false` 指定により既存処理をスキップして外部スクリプトで `generate_ready.json` などを生成できる。
 
 ## Analyzer 連携
-- `analysis_summary.json` を `--analysis-summary` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
+- `analysis_summary.json` を `--import-analysis` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
 - Analyzer 指摘件数が閾値を超える場合は候補スコアを減点し、差戻しを優先表示する。
 - CLI `--show-analyzer` オプション（検討中）で章/スライド単位の重大度サマリを一覧表示し、HITL が優先対応すべき箇所を把握できるようにする。
 - 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が存在する場合、`pptx compose` / `pptx mapping` / `pptx gen` はステージ前後で外部スクリプトを呼び出す。共通環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`。スライド別フックは、`generate_ready.json` に基づいて `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を受け取る。`continue_default=false` 指定により既存の内部処理をスキップし、外部スクリプトで `generate_ready.json` 等を生成することも可能。
