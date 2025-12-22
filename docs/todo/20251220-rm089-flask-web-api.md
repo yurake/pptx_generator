@@ -29,7 +29,7 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: Flask への統一に伴い、FastAPI 言及を除去・整合。現時点で README/AGENTS/runbook/roadmap/requirements は追加変更不要と判断し、理由を明記する。
   - [x] docs/roadmap 配下（フレームワークを Flask 前提に確認。追加変更なし。）
   - [x] docs/requirements 配下（API 仕様整合を再確認。追加変更なし。）
-  - [x] docs/design 配下（Flask 設計メモを最新化済み。）
+  - [x] docs/design 配下（Flask 設計メモを最新化済み。OpenAPI を tx レジストリ方式へ更新済み。） 
   - [x] docs/runbook 配下（追加変更不要を確認。）
   - [x] README.md / AGENTS.md（FastAPI 依存がないことを確認。追加変更不要。）
 - [x] 関連Issue 行の更新

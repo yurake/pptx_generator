@@ -70,6 +70,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "413":
           $ref: "#/components/responses/RequestTooLarge"
         "422":
@@ -100,6 +102,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "413":
           $ref: "#/components/responses/RequestTooLarge"
         "422":
@@ -130,6 +134,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "413":
           $ref: "#/components/responses/RequestTooLarge"
         "422":
@@ -304,9 +310,7 @@ components:
       properties:
         transaction_id:
           type: string
-        template_job_id:
-          type: string
-          description: /templates の job_id（テンプレ抽出結果を再利用する場合）
+          description: 指定しない場合はサーバが発行。指定すると tx 内の前段成果物（jobspec 等）を自動解決する。
         prepare_sources:
           type: array
           items:
@@ -318,41 +322,32 @@ components:
         page_limit:
           type: integer
           minimum: 1
-        output_root:
-          type: string
       description: |
         プレゼン入力を正規化したカード JSON（prepare_card）を生成するジョブを登録する。
-        入力はファイルパスまたはプレーンテキストのみを許可し、外部URL取得は想定しない。
+        前段成果物（jobspec 等）は transaction_id からサーバ側で解決する。ユーザーはパス指定不要。
     ComposeRequest:
       type: object
       required:
-        - prepare_job_id
+        - transaction_id
       properties:
         transaction_id:
           type: string
-        prepare_job_id:
-          type: string
-        template_job_id:
-          type: string
-          description: 必要に応じてテンプレ情報を参照する場合に指定
-        output_root:
-          type: string
-      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。
+          description: 前段 (template/prepare) の最新成果物をサーバが解決するため必須。
+        show_layout_reasons:
+          type: boolean
+      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。前段成果物パスの指定は不要。
     GenRequest:
       type: object
       required:
-        - compose_job_id
+        - transaction_id
       properties:
         transaction_id:
           type: string
-        compose_job_id:
-          type: string
+          description: compose の最新成果物をサーバが解決するため必須。
         export_pdf:
           type: boolean
           default: false
-        output_root:
-          type: string
-      description: generate_ready を描画し PPTX/PDF を生成するジョブを登録する。完了後は `/jobs/{job_id}` から成果物 URL を取得する。
+      description: generate_ready を描画し PPTX/PDF を生成するジョブを登録する。前段成果物パスの指定は不要。完了後は `/jobs/{job_id}` から成果物 URL を取得する。
   responses:
     BadRequest:
       description: 不正な入力
