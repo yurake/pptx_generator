@@ -15,7 +15,12 @@ from flask import Blueprint, Flask, abort, g, jsonify, request, send_file
 
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
-from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, run_prepare_command, PrepareCommandError
+from pptx_generator.cli_handlers.prepare import (
+    PrepareCommandConfig,
+    run_prepare_command,
+    PrepareCommandError,
+    SLIDE_INPUTS_FILENAME,
+)
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
@@ -302,21 +307,34 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
+            prepare_inputs = tuple(payload.get("prepare_sources", []))
+            prepare_path = None
+            if len(prepare_inputs) == 1:
+                prepare_path = Path(prepare_inputs[0])
+                prepare_inputs = ()
+            if payload.get("mode", "dynamic").lower() == "dynamic" and not prepare_inputs and prepare_path is None:
+                resp = jsonify({"code": "validation_error", "message": "prepare_sources is required"})
+                resp.status_code = 422
+                abort(resp)
+            if prepare_path and not prepare_path.exists():
+                resp = jsonify({"code": "validation_error", "message": "prepare_sources not found"})
+                resp.status_code = 422
+                abort(resp)
+            jobspec_path = None
+            if template_artifacts.get("jobspec_url"):
+                jobspec_path = Path(template_artifacts["jobspec_url"])
+            default_jobspec = Path(tx_root) / "template" / "jobspec.json"
+            prompts_dir = Path(tx_root) / "template" / "prompts"
             config = PrepareCommandConfig(
-                prepare_paths=[Path(p) for p in payload.get("prepare_sources", [])],
-                prepare_base_path=None,
-                jobspec_path=Path(template_artifacts["jobspec_url"]),
+                prepare_path=prepare_path,
+                prepare_inputs=prepare_inputs,
                 output_dir=Path(workdir),
+                jobspec_path=jobspec_path,
                 mode=payload.get("mode", "dynamic"),
                 page_limit=payload.get("page_limit"),
-                story_outline_path=None,
-                page_offset=None,
-                template_ai_policy=None,
-                disable_template_ai=False,
-                blueprint_override=None,
-                metadata=None,
-                analysis_summary=None,
-                layout_filter=None,
+                default_jobspec_path=default_jobspec,
+                prompts_dirname=prompts_dir,
+                slide_inputs_filename=SLIDE_INPUTS_FILENAME,
             )
             result = run_prepare_command(config)
             artifacts = {
@@ -564,7 +582,7 @@ def _latest_job(queue: InProcessJobQueue, transaction_id: str, stage: str):
 
 
 def _ensure_stage_artifacts(
-    queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str]
+    queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str], allow_missing: bool = False
 ) -> dict[str, str]:
     registry = _load_registry(tx_root)
     entry = registry.get(stage) if registry else None
@@ -581,10 +599,14 @@ def _ensure_stage_artifacts(
             resp.status_code = 422
             abort(resp)
     if registry is None and entry is None:
+        if allow_missing:
+            return {}
         resp = jsonify({"code": "not_found", "message": "transaction not found"})
         resp.status_code = 404
         abort(resp)
     if not entry or "artifacts" not in entry:
+        if allow_missing:
+            return {}
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
