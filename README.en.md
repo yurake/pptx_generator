@@ -1,9 +1,9 @@
 <div align="center">
   <p>
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/pptx_generator_logo_black.png">
-      <source media="(prefers-color-scheme: light)" srcset="docs/assets/pptx_generator_logo_white.png">
-      <img src="docs/assets/pptx_generator_logo_white.png" alt="PPTX GENERATOR">
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/background_black.png">
+      <source media="(prefers-color-scheme: light)" srcset="docs/assets/background_white.png">
+      <img src="docs/assets/background_white.png" alt="PPTX GENERATOR">
     </picture>
   </p>
 
