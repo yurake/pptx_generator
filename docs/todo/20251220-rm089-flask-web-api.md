@@ -25,18 +25,17 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: Flask app factory + Blueprint で stage1-4/templates/prepare/compose/gen/jobs/transactions/artifacts を実装、認証（Bearer/HMAC）と body サイズ制限・JSONバリデーションを追加。キュー実行に InProcessJobQueue を利用し、成果物ダウンロード `/jobs/{job_id}/artifacts/{pptx|pdf}` をサポート。FastAPI は前提通り未使用。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/api/test_flask_app.py`（22件）を実行し全件成功。認証OK/NG、署名スキュー、JSON必須、job flow、artifacts有無、エラー -> 422/404/401 マッピング、prepare→compose→gen スモーク、テンプレート実行で成果物生成までカバー。
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [x] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: Flask への統一に伴い、FastAPI 言及を除去・整合。現時点で README/AGENTS/runbook/roadmap/requirements は追加変更不要と判断し、理由を明記する。
+  - [x] docs/roadmap 配下（フレームワークを Flask 前提に確認。追加変更なし。）
+  - [x] docs/requirements 配下（API 仕様整合を再確認。追加変更なし。）
+  - [x] docs/design 配下（Flask 設計メモを最新化済み。）
+  - [x] docs/runbook 配下（追加変更不要を確認。）
+  - [x] README.md / AGENTS.md（FastAPI 依存がないことを確認。追加変更不要。）
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: ドキュメント更新以外の親子タスクを再確認し整合完了。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
