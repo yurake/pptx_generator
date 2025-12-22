@@ -257,6 +257,18 @@ def _require_fields(payload: dict, fields: Iterable[str]) -> None:
         abort(resp)
 
 
+def _require_path_exists(path: str | Path | None, field: str) -> None:
+    if path is None:
+        resp = jsonify({"code": "validation_error", "message": f"{field} is required"})
+        resp.status_code = 422
+        abort(resp)
+    p = Path(path)
+    if not p.exists():
+        resp = jsonify({"code": "validation_error", "message": f"{field} not found"})
+        resp.status_code = 422
+        abort(resp)
+
+
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
     output_root = _require_output_root()
     tx_root = Path(output_root) / transaction_id
@@ -304,26 +316,21 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         func = _run_template
     elif stage == "prepare":
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
+        jobspec_path_resolved = Path(template_artifacts["jobspec_url"])
+        _require_path_exists(jobspec_path_resolved, "jobspec_path")
+        prepare_inputs = tuple(payload.get("prepare_sources", []))
+        prepare_path = None
+        if len(prepare_inputs) == 1:
+            prepare_path = Path(prepare_inputs[0])
+            prepare_inputs = ()
+        if prepare_path and not prepare_path.exists():
+            resp = jsonify({"code": "validation_error", "message": "prepare_sources not found"})
+            resp.status_code = 422
+            abort(resp)
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_prepare():
-            prepare_inputs = tuple(payload.get("prepare_sources", []))
-            prepare_path = None
-            if len(prepare_inputs) == 1:
-                prepare_path = Path(prepare_inputs[0])
-                prepare_inputs = ()
-            if payload.get("mode", "dynamic").lower() == "dynamic" and not prepare_inputs and prepare_path is None:
-                resp = jsonify({"code": "validation_error", "message": "prepare_sources is required"})
-                resp.status_code = 422
-                abort(resp)
-            if prepare_path and not prepare_path.exists():
-                resp = jsonify({"code": "validation_error", "message": "prepare_sources not found"})
-                resp.status_code = 422
-                abort(resp)
-            jobspec_path = None
-            if template_artifacts.get("jobspec_url"):
-                jobspec_path = Path(template_artifacts["jobspec_url"])
-                _require_path_exists(jobspec_path, "jobspec_path")
+            jobspec_path = jobspec_path_resolved
             default_jobspec = Path(tx_root) / "template" / "jobspec.json"
             prompts_dir = Path(tx_root) / "template" / "prompts"
             config = PrepareCommandConfig(
@@ -351,6 +358,8 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     elif stage == "compose":
         prepare_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"])
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
+        _require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
+        _require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         generate_ready_path = Path(workdir) / "generate_ready.json"
         generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
@@ -358,8 +367,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         review_log = Path(workdir) / "draft_review_log.json"
 
         def _run_compose():
-            _require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
-            _require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
             config = ComposeCommandConfig(
                 spec_path=Path(template_artifacts["jobspec_url"]),
                 draft_output=Path(workdir) / "draft.json",
@@ -390,12 +397,12 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         func = _run_compose
     elif stage == "gen":
         compose_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"])
+        _require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         pptx_path = Path(workdir) / "proposal.pptx"
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
-            _require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
             config = GenerateCommandConfig(
                 generate_ready_path=Path(compose_artifacts["generate_ready_url"]),
                 output_dir=Path(workdir),
