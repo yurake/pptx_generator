@@ -21,6 +21,7 @@ from pptx_generator.cli_handlers.prepare import (
     PrepareCommandError,
     SLIDE_INPUTS_FILENAME,
 )
+from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
@@ -344,7 +345,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
                 prompts_dirname=prompts_dir,
                 slide_inputs_filename=SLIDE_INPUTS_FILENAME,
             )
-            result = run_prepare_command(config)
+            result = run_prepare_command(config, dump_json=dump_json)
             artifacts = {
                 "prepare_card_url": str(Path(workdir) / "prepare_card.json"),
                 "prepare_log_url": str(Path(workdir) / "prepare_log.json"),
