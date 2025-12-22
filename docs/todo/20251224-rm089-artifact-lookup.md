@@ -1,7 +1,7 @@
 ---
 目的: RM-089 API の成果物パス自動解決（transaction_id 起点、パス指定廃止）
 関連ブランチ: feat/rm089-flask-web-api
-関連Issue: 未作成
+関連Issue: #449
 roadmap_item: RM-089 stage1-4 Flask Web/API 化
 ---
 
@@ -32,7 +32,7 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
