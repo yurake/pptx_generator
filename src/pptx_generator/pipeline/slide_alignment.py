@@ -42,6 +42,7 @@ class SlideIdAlignerOptions:
 
     confidence_threshold: float = 0.6
     max_candidates: int = 12
+    allow_slide_cloning: bool = True
 
 
 class SlideIdAligner:

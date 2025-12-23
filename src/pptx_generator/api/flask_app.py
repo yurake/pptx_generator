@@ -311,6 +311,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             artifacts = {
                 "jobspec_url": str(Path(workdir) / "jobspec.json"),
                 "template_spec_url": str(Path(workdir) / "template_spec.json"),
+                "diagnostics_url": str(Path(workdir) / "diagnostics.json"),
             }
             return {"artifacts": artifacts, "result": result}
 
@@ -363,9 +364,10 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         func = _run_prepare
     elif stage == "compose":
         prepare_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"])
-        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
+        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url", "diagnostics_url"])
         _require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
         _require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
+        _require_path_exists(template_artifacts["diagnostics_url"], "diagnostics_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         generate_ready_path = Path(workdir) / "generate_ready.json"
         generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
@@ -382,7 +384,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
                 analysis_summary_path=None,
                 show_layout_reasons=bool(payload.get("show_layout_reasons", False)),
                 output_dir=Path(workdir),
-                rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
+                rules_path=Path(payload.get("rules_path") or template_artifacts["diagnostics_url"]),
                 prepare_cards=Path(prepare_artifacts["prepare_card_url"]),
                 draft_filename=str(draft_log.name),
                 approved_filename=str(review_log.name),
