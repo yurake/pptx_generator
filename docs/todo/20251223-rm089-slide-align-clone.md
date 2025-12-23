@@ -20,8 +20,8 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
     - 承認メッセージ ID／リンク: （未記入）
 - [x] 設計・実装方針の確定
   - メモ: SlideIdAligner にクローン許可オプションを追加し、未割当カードに対し元レイアウトを複製して新IDで割当。meta に cloned を記録。診断（diagnostics_url）を compose/gen で必須参照し、gen の pdf_mode を export_pdf=false の場合は both に固定。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: SlideIdAligner のクローン生成・メタ拡張、compose/gen で diagnostics 必須、pdf_mode デフォルト固定。
 - [x] テスト・検証
