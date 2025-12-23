@@ -395,6 +395,67 @@ def test_prepare_compose_gen_stub(monkeypatch, tmp_path):
         time.sleep(0.1)
     assert status_body is not None
     assert status_body["status"] == "succeeded"
+
+
+def test_prepare_compose_gen_static_stub(monkeypatch, tmp_path):
+    """static テンプレートでもテンプレ→prepare→compose→gen が通ることを確認。"""
+
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+
+    tpl_resp = c.post(
+        "/templates",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "template_path": "samples/templates/static_slide.pptx",
+            "mode": "static",
+        },
+    )
+    assert tpl_resp.status_code == 202
+    tx = tpl_resp.get_json()["transaction_id"]
+
+    prep_resp = c.post(
+        "/prepare",
+        headers={"Authorization": "Bearer token-123"},
+        json={
+            "transaction_id": tx,
+            "prepare_sources": ["samples/input/pitch.md"],
+            "mode": "static",
+        },
+    )
+    assert prep_resp.status_code == 202
+
+    comp_resp = c.post(
+        "/compose",
+        headers={"Authorization": "Bearer token-123"},
+        json={"transaction_id": tx},
+    )
+    assert comp_resp.status_code == 202
+
+    gen_resp = c.post(
+        "/gen",
+        headers={"Authorization": "Bearer token-123"},
+        json={"transaction_id": tx, "export_pdf": False},
+    )
+    assert gen_resp.status_code in (202, 422)
+    if gen_resp.status_code != 202:
+        body = gen_resp.get_json()
+        assert body["code"] in ("validation_error", "not_found")
+        return
+    gen_job = gen_resp.get_json()
+
+    status_body = None
+    for _ in range(100):
+        status_resp = c.get(gen_job["status_url"], headers={"Authorization": "Bearer token-123"})
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(0.1)
+    assert status_body is not None
+    assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
     assert "pptx_url" in artifacts
 
