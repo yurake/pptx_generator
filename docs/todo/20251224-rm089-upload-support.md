@@ -1,7 +1,7 @@
 ---
 目的: RM-089 Web/API で templates/prepare のファイル添付入力に対応する
 関連ブランチ: feat/rm089-flask-web-api
-関連Issue: 未採番
+関連Issue: #455
 roadmap_item: RM-089 stage1-4 Flask Web/API 化
 ---
 
@@ -32,7 +32,7 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 番号確定後に `関連Issue` を更新する
 - [ ] チェックリスト整合確認
   - メモ: 親子タスクの完了状況を再確認する
