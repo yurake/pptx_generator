@@ -449,7 +449,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         stage=stage,
         job_id=job_id,
         transaction_id=transaction_id,
-        func=func,
+        func=_wrap_job(stage, job_id, transaction_id, func),
     )
     logging.getLogger("pptx_generator.api").info(
         "job enqueued stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id
@@ -517,6 +517,22 @@ def _require_output_root() -> str:
 
 def _registry_path(tx_root: Path) -> Path:
     return tx_root / "registry.json"
+
+
+def _wrap_job(stage: str, job_id: str, transaction_id: str, func):
+    logger = logging.getLogger("pptx_generator.api")
+
+    def _runner():
+        logger.info("job start stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id)
+        try:
+            result = func()
+            logger.info("job succeed stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id)
+            return result
+        except BaseException:  # noqa: BLE001
+            logger.exception("job failed stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id)
+            raise
+
+    return _runner
 
 
 def _load_registry(tx_root: Path) -> Optional[dict]:

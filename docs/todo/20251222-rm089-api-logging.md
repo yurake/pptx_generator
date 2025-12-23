@@ -18,14 +18,14 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
     - テスト方針: `uv run --extra dev pytest tests/api/test_flask_app.py` を実行。必要に応じてログ出力確認のテストを追加。
     - ロールバック方法: ログ追加コミットを単独にし、問題時は当該コミットを revert する。
     - 承認メッセージ ID／リンク: チャット承認（本スレッド）
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
+- [x] 設計・実装方針の確定
+  - メモ: ロガーを共通使用し、ジョブ実行を `_wrap_job` でラップして start/succeed/failed を出力（例外は stacktrace 含む）。API応答仕様は変更せず、RotatingFileHandler に従い stdout と logs/out.log へ出力。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
+- [x] 実装
+  - メモ: `_wrap_job` 追加し、enqueue 時にジョブをラップ。stage/job_id/tx_id付きで start/succeed/failed をログ出力。例外時は logger.exception。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest tests/api/test_flask_app.py`（22件）成功。coverage.xml 生成。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
