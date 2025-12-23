@@ -324,6 +324,11 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         if len(prepare_inputs) == 1:
             prepare_path = Path(prepare_inputs[0])
             prepare_inputs = ()
+        mode_value = payload.get("mode", "dynamic").lower()
+        if mode_value == "dynamic" and not prepare_inputs and prepare_path is None:
+            resp = jsonify({"code": "validation_error", "message": "prepare_sources is required in dynamic mode"})
+            resp.status_code = 422
+            abort(resp)
         if prepare_path and not prepare_path.exists():
             resp = jsonify({"code": "validation_error", "message": "prepare_sources not found"})
             resp.status_code = 422
@@ -339,7 +344,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
                 prepare_inputs=prepare_inputs,
                 output_dir=Path(workdir),
                 jobspec_path=jobspec_path,
-                mode=payload.get("mode", "dynamic"),
+                mode=mode_value,
                 page_limit=payload.get("page_limit"),
                 default_jobspec_path=default_jobspec,
                 prompts_dirname=prompts_dir,
