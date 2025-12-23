@@ -5,7 +5,7 @@
 roadmap_item: RM-089 stage1-4 Flask Web/API 化
 ---
 
-- [ ] ブランチ作成・初期コミット・push
+- [x] ブランチ作成・初期コミット・push
   - メモ: 既存ブランチ feat/rm089-flask-web-api を継続利用。新規ブランチなし。
     - 必ずmainからブランチを切る
 - [ ] 計画策定（スコープ・前提の整理）
