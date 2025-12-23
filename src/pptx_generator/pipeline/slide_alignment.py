@@ -79,6 +79,7 @@ class SlideIdAligner:
         }
         slide_assignments: dict[str, int] = {}
         records: list[SlideAlignmentRecord] = []
+        clone_counters: dict[str, int] = {}
 
         for slide in content_document.slides:
             record = self._process_content_slide(
@@ -91,6 +92,20 @@ class SlideIdAligner:
             records.append(record)
 
         fallback_applied = self._apply_fallback_assignments(records, slide_assignments)
+        cloned = 0
+        if self._options.allow_slide_cloning:
+            cloned = self._apply_cloning(
+                records=records,
+                slide_assignments=slide_assignments,
+                candidates=candidate_slides,
+                clone_counters=clone_counters,
+            )
+            if cloned:
+                relevant_spec_ids.update(
+                    record.recommended_slide_id
+                    for record in records
+                    if record.recommended_slide_id
+                )
         updated_slides, applied = self._build_aligned_slides(content_document, records)
         unmatched_spec_slides = self._collect_unmatched_spec_slides(
             relevant_spec_ids, slide_assignments
@@ -105,6 +120,7 @@ class SlideIdAligner:
             applied=applied,
             fallback=fallback_applied,
             pending=sum(1 for record in records if record.status == "pending"),
+            cloned=cloned,
         )
         logger.info(
             "SlideIdAligner: cards_total=%d jobspec_total=%d jobspec_unassigned=%d applied=%d pending=%d threshold=%.2f",
@@ -260,6 +276,38 @@ class SlideIdAligner:
     ) -> list[str]:
         return [slide_id for slide_id in relevant_spec_ids if slide_id not in slide_assignments]
 
+    def _apply_cloning(
+        self,
+        *,
+        records: list[SlideAlignmentRecord],
+        slide_assignments: dict[str, int],
+        candidates: list[Slide],
+        clone_counters: dict[str, int],
+    ) -> int:
+        """未割当カード向けにスライドを複製し、割当を完了させる。"""
+
+        candidate_map = {slide.id: slide for slide in candidates}
+        cloned = 0
+        for index, record in enumerate(records):
+            if record.status != "pending":
+                continue
+            base_id = (record.recommended_slide_id or (record.candidates[0] if record.candidates else None))
+            if not base_id:
+                continue
+            base = candidate_map.get(base_id)
+            if base is None:
+                continue
+            clone_id = self._next_clone_id(base_id, clone_counters)
+            clone_slide = base.model_copy(update={"id": clone_id})
+            candidates.append(clone_slide)
+            candidate_map[clone_id] = clone_slide
+            record.recommended_slide_id = clone_id
+            record.status = "applied"
+            record.reason = self._append_reason(record.reason, f"cloned_from:{base_id}")
+            slide_assignments[clone_id] = index
+            cloned += 1
+        return cloned
+
     @staticmethod
     def _build_unmatched_records(slide_ids: Iterable[str]) -> list[SlideAlignmentRecord]:
         return [
@@ -282,6 +330,7 @@ class SlideIdAligner:
         applied: int,
         fallback: int,
         pending: int,
+        cloned: int,
     ) -> dict[str, object]:
         return {
             "status": "completed",
@@ -292,7 +341,13 @@ class SlideIdAligner:
             "applied": applied,
             "fallback": fallback,
             "pending": pending,
+            "cloned": cloned,
         }
+
+    @staticmethod
+    def _next_clone_id(base_id: str, counters: dict[str, int]) -> str:
+        counters[base_id] = counters.get(base_id, 0) + 1
+        return f"{base_id}-clone{counters[base_id]:02d}"
 
     @staticmethod
     def _append_reason(origin: str | None, note: str) -> str:

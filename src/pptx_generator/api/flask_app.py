@@ -405,20 +405,23 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         func = _run_compose
     elif stage == "gen":
         compose_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"])
+        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True)
         _require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         pptx_path = Path(workdir) / "proposal.pptx"
         pdf_path = Path(workdir) / "proposal.pdf"
 
         def _run_gen():
+            export_pdf = bool(payload.get("export_pdf", False))
+            pdf_mode = payload.get("pdf_mode", "both") if export_pdf else "both"
             config = GenerateCommandConfig(
                 generate_ready_path=Path(compose_artifacts["generate_ready_url"]),
                 output_dir=Path(workdir),
                 pptx_name=pptx_path.name,
-                rules_path=Path(payload.get("rules_path", ".pptx/template/diagnostics.json")),
-                export_pdf=bool(payload.get("export_pdf", False)),
-                pdf_mode=payload.get("pdf_mode", "default"),
-                pdf_output=str(pdf_path),
+                rules_path=Path(payload.get("rules_path") or template_artifacts.get("diagnostics_url") or ".pptx/template/diagnostics.json"),
+                export_pdf=export_pdf,
+                pdf_mode=pdf_mode,
+                pdf_output=str(pdf_path) if export_pdf else None,
                 libreoffice_path=None,
                 pdf_timeout=payload.get("pdf_timeout", 120),
                 pdf_retries=payload.get("pdf_retries", 1),
