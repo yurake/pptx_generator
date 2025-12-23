@@ -1,3 +1,4 @@
+---
 目的: RM-089 stage1-4 Flask Web/API 化の着手と実装準備（API基盤設計・成果物返却フロー整理）
 関連ブランチ: feat/rm089-flask-web-api
 関連Issue: #446
