@@ -39,7 +39,7 @@ wait_job() {
       echo "$body" >&2
       return 1
     elif [[ "$status" == "pending" || "$status" == "running" ]]; then
-      sleep 0.5
+      sleep 1
     else
       echo "job ${job_id} unexpected status: ${status}" >&2
       echo "$body" >&2
