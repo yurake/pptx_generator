@@ -39,7 +39,9 @@ def create_app() -> Flask:
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
     app.config["BEARER_TOKEN"] = os.environ.get("PPTX_API_BEARER_TOKEN")
     app.config["WORKER_COUNT"] = int(os.environ.get("PPTX_API_WORKERS", "1"))
-    app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("PPTX_API_MAX_BODY", str(10 * 1024 * 1024)))
+    app.config["MAX_CONTENT_LENGTH"] = int(
+        os.environ.get("PPTX_API_MAX_BODY", str(500 * 1024 * 1024))
+    )
     app.queue = get_queue()  # type: ignore[attr-defined]
     app.queue.ensure_workers(app.config["WORKER_COUNT"])
 

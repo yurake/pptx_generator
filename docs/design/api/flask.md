@@ -46,6 +46,7 @@
 ## 設定（例）
 - 認証: `PPTX_API_HMAC_KEY_CURRENT`, `PPTX_API_HMAC_KEY_NEXT`, `PPTX_API_HMAC_CLOCK_SKEW_SEC`, `PPTX_API_HMAC_NONCE_TTL_SEC`, `PPTX_API_BEARER_TOKEN`
 - 出力: `PPTX_OUTPUT_ROOT`（tx→前段成果物解決のため設定を推奨）
+- 本文・添付サイズ: `PPTX_API_MAX_BODY`（既定 500MB）を `MAX_CONTENT_LENGTH` に設定。超過時は 413。
 - ログ: `LOG_LEVEL`（任意）、`X-Request-ID` ログ出力
 
 ## ログ / 監査
