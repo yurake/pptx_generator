@@ -456,8 +456,72 @@ def test_prepare_compose_gen_static_stub(monkeypatch, tmp_path):
         time.sleep(0.1)
     assert status_body is not None
     assert status_body["status"] == "succeeded"
-    artifacts = status_body["artifacts"]
-    assert "pptx_url" in artifacts
+
+
+def test_parallel_dynamic_and_static(monkeypatch, tmp_path):
+    """dynamic と static を並列実行し、双方 succeeded になることを確認。"""
+
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    # dynamic
+    tpl_dyn = c.post(
+        "/templates",
+        headers=headers,
+        json={"template_path": "samples/templates/dynamic_template.pptx", "mode": "dynamic"},
+    ).get_json()
+    tx_dyn = tpl_dyn["transaction_id"]
+
+    # static
+    tpl_sta = c.post(
+        "/templates",
+        headers=headers,
+        json={"template_path": "samples/templates/static_slide.pptx", "mode": "static"},
+    ).get_json()
+    tx_sta = tpl_sta["transaction_id"]
+
+    # wait templates
+    app.queue.wait(tpl_dyn["job_id"])
+    app.queue.wait(tpl_sta["job_id"])
+
+    # prepare
+    prep_dyn = c.post(
+        "/prepare",
+        headers=headers,
+        json={"transaction_id": tx_dyn, "prepare_sources": ["samples/input/pitch.md"], "mode": "dynamic"},
+    ).get_json()
+    prep_sta = c.post(
+        "/prepare",
+        headers=headers,
+        json={"transaction_id": tx_sta, "prepare_sources": ["samples/input/pitch.md"], "mode": "static"},
+    ).get_json()
+    app.queue.wait(prep_dyn["job_id"])
+    app.queue.wait(prep_sta["job_id"])
+
+    # compose
+    cmp_dyn = c.post("/compose", headers=headers, json={"transaction_id": tx_dyn}).get_json()
+    cmp_sta = c.post("/compose", headers=headers, json={"transaction_id": tx_sta}).get_json()
+    app.queue.wait(cmp_dyn["job_id"])
+    app.queue.wait(cmp_sta["job_id"])
+
+    # gen
+    gen_dyn = c.post("/gen", headers=headers, json={"transaction_id": tx_dyn}).get_json()
+    gen_sta = c.post("/gen", headers=headers, json={"transaction_id": tx_sta}).get_json()
+    app.queue.wait(gen_dyn["job_id"])
+    app.queue.wait(gen_sta["job_id"])
+
+    status_dyn = c.get(gen_dyn["status_url"], headers=headers).get_json()
+    status_sta = c.get(gen_sta["status_url"], headers=headers).get_json()
+
+    assert status_dyn["status"] == "succeeded"
+    assert status_sta["status"] == "succeeded"
+    for status in (status_dyn, status_sta):
+        artifacts = status["artifacts"]
+        assert "pptx_url" in artifacts
 
 
 def test_template_end_to_end(monkeypatch, tmp_path):
