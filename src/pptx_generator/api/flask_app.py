@@ -517,7 +517,7 @@ def _require_output_root() -> str:
         resp = jsonify({"code": "validation_error", "message": "PPTX_OUTPUT_ROOT is required"})
         resp.status_code = 422
         abort(resp)
-    return base
+    return str(Path(base).resolve())
 
 
 def _registry_path(tx_root: Path) -> Path:
