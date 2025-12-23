@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request, send_file
+from werkzeug.utils import secure_filename
 
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
@@ -29,6 +30,8 @@ from pptx_generator.runtime.job_queue import (
     InProcessJobQueue,
     get_queue,
 )
+
+ALLOWED_UPLOAD_EXT = {".pptx", ".md", ".txt", ".json"}
 
 def create_app() -> Flask:
     """Create Flask application for stage1-4 API."""
@@ -98,8 +101,7 @@ def create_app() -> Flask:
 
     @api.post("/templates")
     def post_templates():
-        payload = _require_json()
-        _require_fields(payload, ["template_path"])
+        payload = _parse_payload(stage="template")
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
         state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -107,7 +109,7 @@ def create_app() -> Flask:
 
     @api.post("/prepare")
     def post_prepare():
-        payload = _require_json()
+        payload = _parse_payload(stage="prepare")
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("prep")
         state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -213,6 +215,12 @@ def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
 
 
+def _abort_error(status_code: int, code: str, message: str) -> None:
+    resp = jsonify({"code": code, "message": message})
+    resp.status_code = status_code
+    abort(resp)
+
+
 def _configure_logging(app: Flask) -> None:
     logger = logging.getLogger("pptx_generator.api")
     level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -252,6 +260,21 @@ def _require_json() -> dict:
     return payload
 
 
+def _parse_payload(stage: str) -> dict:
+    """JSON を基本とし、templates/prepare は multipart も受け付ける。"""
+    if stage in {"template", "prepare"} and request.mimetype and request.mimetype.startswith("multipart/"):
+        data: dict = {}
+        for key, values in request.form.lists():
+            if key == "prepare_sources":
+                data[key] = values
+            elif len(values) == 1:
+                data[key] = values[0]
+            else:
+                data[key] = values
+        return data
+    return _require_json()
+
+
 def _require_fields(payload: dict, fields: Iterable[str]) -> None:
     missing = [field for field in fields if payload.get(field) in (None, "")]
     if missing:
@@ -272,6 +295,33 @@ def _require_path_exists(path: str | Path | None, field: str) -> None:
         abort(resp)
 
 
+def _save_uploaded_files(tx_root: Path, files: Iterable) -> list[Path]:
+    uploads_dir = tx_root / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    saved: list[Path] = []
+    logger = logging.getLogger("pptx_generator.api")
+    for f in files:
+        filename = getattr(f, "filename", "") or ""
+        if not filename:
+            continue
+        safe = secure_filename(filename)
+        if not safe:
+            continue
+        ext = Path(safe).suffix.lower()
+        if ext and ext not in ALLOWED_UPLOAD_EXT:
+            _abort_error(422, "validation_error", "unsupported file extension")
+        new_name = f"{Path(safe).stem}_{uuid.uuid4().hex}{ext}"
+        dest = uploads_dir / new_name
+        f.save(dest)
+        try:
+            size = dest.stat().st_size
+        except OSError:
+            size = None
+        logger.info("upload saved path=%s size=%s", dest, size)
+        saved.append(dest)
+    return saved
+
+
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
     output_root = _require_output_root()
     tx_root = Path(output_root) / transaction_id
@@ -281,6 +331,15 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     compose_artifacts = None
 
     if stage == "template":
+        uploads = _save_uploaded_files(tx_root, request.files.values())
+        if len(uploads) > 1:
+            _abort_error(422, "validation_error", "only one template file allowed")
+        payload_path = payload.get("template_path")
+        if uploads and payload_path:
+            _abort_error(422, "validation_error", "template_path conflict: file or path, not both")
+        template_path: str | Path | None = uploads[0] if uploads else payload_path
+        _require_path_exists(template_path, "template_path")
+        payload["template_path"] = str(template_path)
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
         def _run_template():
@@ -322,7 +381,14 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
         jobspec_path_resolved = Path(template_artifacts["jobspec_url"])
         _require_path_exists(jobspec_path_resolved, "jobspec_path")
-        prepare_inputs = tuple(payload.get("prepare_sources", []))
+        uploads = _save_uploaded_files(tx_root, request.files.values())
+        prepare_sources = payload.get("prepare_sources", [])
+        if isinstance(prepare_sources, str):
+            prepare_sources = [prepare_sources]
+        combined_inputs = [str(p) for p in uploads] + list(prepare_sources)
+        for src in combined_inputs:
+            _require_path_exists(src, "prepare_sources")
+        prepare_inputs = tuple(combined_inputs)
         prepare_path = None
         if len(prepare_inputs) == 1:
             prepare_path = Path(prepare_inputs[0])
@@ -330,10 +396,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         mode_value = payload.get("mode", "dynamic").lower()
         if mode_value == "dynamic" and not prepare_inputs and prepare_path is None:
             resp = jsonify({"code": "validation_error", "message": "prepare_sources is required in dynamic mode"})
-            resp.status_code = 422
-            abort(resp)
-        if prepare_path and not prepare_path.exists():
-            resp = jsonify({"code": "validation_error", "message": "prepare_sources not found"})
             resp.status_code = 422
             abort(resp)
         workdir = _resolve_output_root(transaction_id, stage, job_id)
@@ -452,7 +514,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
 
         func = _noop_job
 
-    request = JobRequest(
+    job_request = JobRequest(
         stage=stage,
         job_id=job_id,
         transaction_id=transaction_id,
@@ -461,7 +523,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     logging.getLogger("pptx_generator.api").info(
         "job enqueued stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id
     )
-    state = queue.enqueue(request)
+    state = queue.enqueue(job_request)
     queue.ensure_workers(1)
     return state
 

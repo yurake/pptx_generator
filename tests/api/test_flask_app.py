@@ -31,7 +31,7 @@ def test_bearer_auth_success(monkeypatch, tmp_path):
     resp = c.post(
         "/templates",
         headers={"Authorization": "Bearer token-123"},
-        json={"template_path": "x", "mode": "static"},
+        json={"template_path": "samples/templates/dynamic_template.pptx", "mode": "static"},
     )
     assert resp.status_code == 202
     body = resp.get_json()
@@ -47,7 +47,7 @@ def test_hmac_auth_success(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
     app = create_app()
     c = app.test_client()
-    payload = {"template_path": "x", "mode": "static"}
+    payload = {"template_path": "samples/templates/dynamic_template.pptx", "mode": "static"}
     body_bytes = json.dumps(payload, separators=(",", ":")).encode()
     ts = str(int(time.time()))
     signing_str = f"{ts}\nPOST\n/templates\n{hashlib.sha256(body_bytes).hexdigest()}"
@@ -118,7 +118,7 @@ def test_job_flow_status(monkeypatch, tmp_path):
     resp = c.post(
         "/templates",
         headers={"Authorization": "Bearer token-123"},
-        json={"template_path": "x", "mode": "static"},
+        json={"template_path": "samples/templates/dynamic_template.pptx", "mode": "static"},
     )
     assert resp.status_code == 202
     job = resp.get_json()
@@ -560,6 +560,78 @@ def test_template_end_to_end(monkeypatch, tmp_path):
     # ファイルが生成されていることを確認
     for key in ("jobspec_url", "template_spec_url"):
         assert (tmp_path / artifacts[key]).exists()
+
+
+def test_template_upload_multipart(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    with open("samples/templates/dynamic_template.pptx", "rb") as f:
+        resp = c.post(
+            "/templates",
+            headers=headers,
+            data={"mode": "dynamic", "file": (f, "dynamic_template.pptx")},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 202
+    body = resp.get_json()
+    app.queue.wait(body["job_id"])
+    status_body = c.get(body["status_url"], headers=headers).get_json()
+    assert status_body["status"] == "succeeded"
+
+
+def test_template_upload_conflict(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    with open("samples/templates/dynamic_template.pptx", "rb") as f:
+        resp = c.post(
+            "/templates",
+            headers=headers,
+            data={
+                "mode": "dynamic",
+                "file": (f, "dynamic_template.pptx"),
+                "template_path": "samples/templates/dynamic_template.pptx",
+            },
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 422
+    body = resp.get_json()
+    assert body["code"] == "validation_error"
+
+
+def test_prepare_upload_multipart(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    with open("samples/templates/dynamic_template.pptx", "rb") as f:
+        tpl_resp = c.post(
+            "/templates",
+            headers=headers,
+            data={"mode": "dynamic", "file": (f, "dynamic_template.pptx")},
+            content_type="multipart/form-data",
+        ).get_json()
+    app.queue.wait(tpl_resp["job_id"])
+
+    with open("samples/input/pitch.md", "rb") as f:
+        prep_resp = c.post(
+            "/prepare",
+            headers=headers,
+            data={"transaction_id": tpl_resp["transaction_id"], "mode": "dynamic", "file": (f, "pitch.md")},
+            content_type="multipart/form-data",
+        ).get_json()
+    app.queue.wait(prep_resp["job_id"])
+    status_body = c.get(prep_resp["status_url"], headers=headers).get_json()
+    assert status_body["status"] == "succeeded"
 
 
 def test_output_root_default(monkeypatch, tmp_path):
