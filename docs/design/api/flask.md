@@ -13,6 +13,17 @@
 - request body 上限（例: 10MB）を設定。超過時は 413。
 - `prepare_sources` の許可形式を明記（例: md/txt/json のファイルパス、プレーン文字列）。URL 経由の取得は今回許可しない前提。
 - payload スキーマは Pydantic/attrs 等でサーバ側検証し、422 で返す。
+- templates 入力: 添付ファイル1つまたは path 文字列のどちらか一方必須。両方指定は 422、両方未指定も 422。
+- prepare 入力: 添付ファイル複数可、path 文字列も複数可で併用可。どちらも無い場合は 422。
+- ジョブ投入前に入力存在チェック（ステージ毎に必要ファイルの有無を確認）。存在しない場合は同期バリデーションで 422。
+
+## ファイル添付入力（templates / prepare）
+- 受け付け形式: multipart/form-data（`file` パートを想定）。JSON の path 指定は互換維持。
+- 保存先: `PPTX_OUTPUT_ROOT/<transaction_id>/uploads/`。`secure_filename` + UUID で衝突回避し、サニタイズ後のパスを内部で利用。
+- templates: 添付ファイルを `template_path` とみなし、path 指定と同時指定時は 422。どちらか一方があればそれを採用。
+- prepare: 添付ファイルを `prepare_sources` に追加する。path 指定と合わせて複数扱い。両方無い場合は 422。
+- バリデーション: 拡張子ホワイトリスト（pptx / md / txt / json など必要最小限）、`MAX_CONTENT_LENGTH` を超える場合は 413。保存前に存在チェックを行い、非同期キュー投入前に同期 422 を返す。
+- ログ: 保存ファイル名・サイズ・tx/job を INFO で記録し、添付が無い場合も判別できるようにする。
 
 ## ミドルウェア
 - 認証: HMAC → Bearer の順に検証（auth.md 参照）。失敗で 401、権限不足は 403 予約。
