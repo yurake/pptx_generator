@@ -55,11 +55,17 @@ echo "$tpl_resp"
 tpl_job=$(echo "$tpl_resp" | jq -r .job_id)
 tx=$(echo "$tpl_resp" | jq -r .transaction_id)
 wait_job "$tpl_job"
+tpl_spec=$(curl -sS "${BASE_URL}/jobs/${tpl_job}" -H "Authorization: Bearer ${TOKEN}" | jq -r '.artifacts.template_spec_url // empty')
+MODE="static"
+if [[ -n "$tpl_spec" && -f "$tpl_spec" ]]; then
+  MODE=$(jq -r '.layout_mode // "static"' "$tpl_spec")
+  echo "detected layout_mode=${MODE} from ${tpl_spec}"
+fi
 echo ""
 
 echo "[2/4] prepare"
 prep_resp=$(curl_json POST "${BASE_URL}/prepare" \
-  -d "{\"transaction_id\":\"${tx}\",\"prepare_sources\":[\"${PREPARE_SOURCE}\"],\"mode\":\"static\"}")
+  -d "{\"transaction_id\":\"${tx}\",\"prepare_sources\":[\"${PREPARE_SOURCE}\"],\"mode\":\"${MODE}\"}")
 echo "$prep_resp"
 prep_job=$(echo "$prep_resp" | jq -r .job_id)
 wait_job "$prep_job"
