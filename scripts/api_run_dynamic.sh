@@ -80,3 +80,10 @@ wait_job "$gen_job"
 echo ""
 
 echo "done: transaction=${tx}"
+# download artifacts
+if curl -sS "$BASE_URL/jobs/$gen_job/artifacts/pptx" -H "Authorization: Bearer $TOKEN" -o "/tmp/${tx}_dynamic.pptx"; then
+  size=$(stat -f%z "/tmp/${tx}_dynamic.pptx" 2>/dev/null || stat -c%s "/tmp/${tx}_dynamic.pptx" 2>/dev/null)
+  echo "[ok] downloaded pptx size=${size:-unknown}"
+else
+  echo "[error] failed to download pptx"; exit 1
+fi

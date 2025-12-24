@@ -634,6 +634,46 @@ def test_prepare_upload_multipart(monkeypatch, tmp_path):
     assert status_body["status"] == "succeeded"
 
 
+def test_gen_artifact_download(monkeypatch, tmp_path):
+    """テンプレ→prepare→compose→gen 実行後、artifact pptx をダウンロードできることを確認。"""
+
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    tpl_resp = c.post(
+        "/templates",
+        headers=headers,
+        json={"template_path": "samples/templates/static_slide.pptx", "mode": "static"},
+    ).get_json()
+    app.queue.wait(tpl_resp["job_id"])
+
+    prep_resp = c.post(
+        "/prepare",
+        headers=headers,
+        json={
+            "transaction_id": tpl_resp["transaction_id"],
+            "prepare_sources": ["samples/input/pitch.md"],
+            "mode": "static",
+        },
+    ).get_json()
+    app.queue.wait(prep_resp["job_id"])
+
+    cmp_resp = c.post("/compose", headers=headers, json={"transaction_id": tpl_resp["transaction_id"]}).get_json()
+    app.queue.wait(cmp_resp["job_id"])
+
+    gen_resp = c.post("/gen", headers=headers, json={"transaction_id": tpl_resp["transaction_id"]}).get_json()
+    app.queue.wait(gen_resp["job_id"])
+
+    status_body = c.get(gen_resp["status_url"], headers=headers).get_json()
+    assert status_body["status"] == "succeeded"
+    download = c.get(f"/jobs/{gen_resp['job_id']}/artifacts/pptx", headers=headers)
+    assert download.status_code == 200
+    assert download.data
+
+
 def test_output_root_default(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
     monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
