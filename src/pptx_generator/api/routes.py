@@ -13,11 +13,16 @@ from typing import Iterable, Optional
 from flask import Blueprint, abort, g, jsonify, request, send_file
 
 from pptx_generator.api.utils import abort_error, parse_payload, require_json, require_fields, require_path_exists, save_uploaded_files
-from pptx_generator.cli_handlers.common import dump_json
-from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
-from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
-from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
-from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
+from pptx_generator.api.stages import (
+    build_template_job,
+    build_prepare_job,
+    build_compose_job,
+    build_gen_job,
+    TemplateCommandError,
+    PrepareCommandError,
+    ComposeCommandError,
+    GenerateCommandError,
+)
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
@@ -29,6 +34,36 @@ ALLOWED_UPLOAD_EXT = {".pptx", ".md", ".txt", ".json"}
 
 
 api_blueprint = Blueprint("api", __name__)
+
+
+def _prepare_template_payload(tx_root: Path, payload: dict) -> dict:
+    uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT) if request.files else []
+    if uploads and payload.get("template_path"):
+        abort_error(422, "validation_error", "template_path and file cannot both be set")
+    if len(uploads) > 1:
+        abort_error(422, "validation_error", "only one template file is allowed")
+    if uploads:
+        payload["template_path"] = str(uploads[0])
+    require_fields(payload, ["template_path"])
+    require_path_exists(payload.get("template_path"), "template_path")
+    return payload
+
+
+def _prepare_prepare_payload(queue: InProcessJobQueue, tx_root: Path, transaction_id: str, payload: dict) -> dict:
+    uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT) if request.files else []
+    sources = payload.get("prepare_sources") or []
+    if isinstance(sources, str):
+        sources = [sources]
+    sources = list(sources) + [str(p) for p in uploads]
+    if payload.get("prepare_path"):
+        require_path_exists(payload["prepare_path"], "prepare_path")
+    if not sources:
+        abort_error(422, "validation_error", "prepare_sources is required")
+    for src in sources:
+        require_path_exists(src, "prepare_sources")
+    payload["prepare_inputs"] = sources
+    payload["mode"] = (payload.get("mode") or "dynamic").lower()
+    return payload
 
 
 @api_blueprint.record_once
@@ -199,186 +234,32 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     output_root = _require_output_root()
     tx_root = Path(output_root) / transaction_id
     tx_root.mkdir(parents=True, exist_ok=True)
-    template_artifacts = None
-    prepare_artifacts = None
-    compose_artifacts = None
-
     if stage == "template":
-        uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT)
-        if len(uploads) > 1:
-            abort_error(422, "validation_error", "only one template file allowed")
-        payload_path = payload.get("template_path")
-        if uploads and payload_path:
-            abort_error(422, "validation_error", "template_path conflict: file or path, not both")
-        template_path: str | Path | None = uploads[0] if uploads else payload_path
-        require_path_exists(template_path, "template_path")
-        payload["template_path"] = str(template_path)
-        workdir = _resolve_output_root(transaction_id, stage, job_id)
-
-        def _run_template():
-            if "template_path" not in payload:
-                abort(_error_response(422, "validation_error", "template_path is required"))
-            config = TemplateCommandConfig(
-                template_path=Path(payload["template_path"]),
-                output_dir=Path(workdir),
-                format="json",
-                layout=payload.get("layout"),
-                anchor=payload.get("anchor"),
-                layout_mode=payload.get("mode", "static"),
-                static_source="template",
-                template_ai_policy=None,
-                template_ai_policy_id=None,
-                disable_template_ai=False,
-                with_release=bool(payload.get("with_release")),
-                brand=payload.get("brand"),
-                version=payload.get("version"),
-                template_id=payload.get("template_id"),
-                release_output=Path(workdir),
-                generated_by=None,
-                reviewed_by=None,
-                baseline_release=None,
-                golden_specs=(),
-                slide_snapshot=bool(payload.get("slide_snapshot")),
-                force=bool(payload.get("force")),
-            )
-            result = run_template_command(config)
-            artifacts = {
-                "jobspec_url": str(Path(workdir) / "jobspec.json"),
-                "template_spec_url": str(Path(workdir) / "template_spec.json"),
-                "diagnostics_url": str(Path(workdir) / "diagnostics.json"),
-            }
-            return {"artifacts": artifacts, "result": result}
-
-        func = _run_template
+        func = build_template_job(
+            payload=_prepare_template_payload(tx_root, payload),
+            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
+        )
     elif stage == "prepare":
-        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
-        jobspec_path_resolved = Path(template_artifacts["jobspec_url"])
-        require_path_exists(jobspec_path_resolved, "jobspec_path")
-        uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT)
-        prepare_sources = payload.get("prepare_sources", [])
-        if isinstance(prepare_sources, str):
-            prepare_sources = [prepare_sources]
-        combined_inputs = [str(p) for p in uploads] + list(prepare_sources)
-        for src in combined_inputs:
-            require_path_exists(src, "prepare_sources")
-        prepare_inputs = tuple(combined_inputs)
-        prepare_path = None
-        if len(prepare_inputs) == 1:
-            prepare_path = Path(prepare_inputs[0])
-            prepare_inputs = ()
-        mode_value = payload.get("mode", "dynamic").lower()
-        if mode_value == "dynamic" and not prepare_inputs and prepare_path is None:
-            resp = jsonify({"code": "validation_error", "message": "prepare_sources is required in dynamic mode"})
-            resp.status_code = 422
-            abort(resp)
-        workdir = _resolve_output_root(transaction_id, stage, job_id)
-
-        def _run_prepare():
-            jobspec_path = jobspec_path_resolved
-            default_jobspec = Path(tx_root) / "template" / "jobspec.json"
-            prompts_dir = Path(tx_root) / "template" / "prompts"
-            config = PrepareCommandConfig(
-                prepare_path=prepare_path,
-                prepare_inputs=prepare_inputs,
-                output_dir=Path(workdir),
-                jobspec_path=jobspec_path,
-                mode=mode_value,
-                page_limit=payload.get("page_limit"),
-                default_jobspec_path=default_jobspec,
-                prompts_dirname=prompts_dir,
-                slide_inputs_filename=SLIDE_INPUTS_FILENAME,
-            )
-            result = run_prepare_command(config, dump_json=dump_json)
-            artifacts = {
-                "prepare_card_url": str(Path(workdir) / "prepare_card.json"),
-                "prepare_log_url": str(Path(workdir) / "prepare_log.json"),
-                "prepare_ai_log_url": str(Path(workdir) / "prepare_ai_log.json"),
-                "ai_generation_meta_url": str(Path(workdir) / "ai_generation_meta.json"),
-                "audit_log_url": str(Path(workdir) / "audit_log.json"),
-            }
-            return {"artifacts": artifacts, "result": result}
-
-        func = _run_prepare
+        func = build_prepare_job(
+            payload=_prepare_prepare_payload(queue, tx_root, transaction_id, payload),
+            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
+            jobspec_path=Path(_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])["jobspec_url"]),
+            tx_root=tx_root,
+        )
     elif stage == "compose":
-        prepare_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"])
-        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url", "diagnostics_url"])
-        require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
-        require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
-        require_path_exists(template_artifacts["diagnostics_url"], "diagnostics_path")
-        workdir = _resolve_output_root(transaction_id, stage, job_id)
-        generate_ready_path = Path(workdir) / "generate_ready.json"
-        generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
-        draft_log = Path(workdir) / "draft_mapping_log.json"
-        review_log = Path(workdir) / "draft_review_log.json"
-
-        def _run_compose():
-            config = ComposeCommandConfig(
-                spec_path=Path(template_artifacts["jobspec_url"]),
-                draft_output=Path(workdir) / "draft.json",
-                target_length=None,
-                structure_pattern=None,
-                appendix_limit=10,
-                analysis_summary_path=None,
-                show_layout_reasons=bool(payload.get("show_layout_reasons", False)),
-                output_dir=Path(workdir),
-                rules_path=Path(payload.get("rules_path") or template_artifacts["diagnostics_url"]),
-                prepare_cards=Path(prepare_artifacts["prepare_card_url"]),
-                draft_filename=str(draft_log.name),
-                approved_filename=str(review_log.name),
-                log_filename=str(draft_log.name),
-                meta_filename=str(review_log.name),
-                generate_ready_filename=str(generate_ready_path.name),
-                generate_ready_meta_filename=str(generate_ready_meta_path.name),
-            )
-            result = run_compose_command(config)
-            artifacts = {
-                "generate_ready_url": str(generate_ready_path),
-                "generate_ready_meta_url": str(generate_ready_meta_path),
-                "draft_mapping_log_url": str(draft_log),
-                "draft_review_log_url": str(review_log),
-            }
-            return {"artifacts": artifacts, "result": result}
-
-        func = _run_compose
+        func = build_compose_job(
+            payload=payload,
+            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
+            template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url", "diagnostics_url"]),
+            prepare_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"]),
+        )
     elif stage == "gen":
-        compose_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"])
-        template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True)
-        require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
-        workdir = _resolve_output_root(transaction_id, stage, job_id)
-        pptx_path = Path(workdir) / "proposal.pptx"
-        pdf_path = Path(workdir) / "proposal.pdf"
-
-        def _run_gen():
-            export_pdf = bool(payload.get("export_pdf", False))
-            pdf_mode = payload.get("pdf_mode", "both") if export_pdf else "both"
-            config = GenerateCommandConfig(
-                generate_ready_path=Path(compose_artifacts["generate_ready_url"]),
-                output_dir=Path(workdir),
-                pptx_name=pptx_path.name,
-                rules_path=Path(payload.get("rules_path") or template_artifacts.get("diagnostics_url") or ".pptx/template/diagnostics.json"),
-                export_pdf=export_pdf,
-                pdf_mode=pdf_mode,
-                pdf_output=str(pdf_path) if export_pdf else None,
-                libreoffice_path=None,
-                pdf_timeout=payload.get("pdf_timeout", 120),
-                pdf_retries=payload.get("pdf_retries", 1),
-                polisher_toggle=None,
-                polisher_path=None,
-                polisher_rules=None,
-                polisher_timeout=None,
-                polisher_args=(),
-                polisher_cwd=None,
-                emit_structure_snapshot=bool(payload.get("emit_structure_snapshot", False)),
-            )
-            result = run_generate_command(config)
-            artifacts = {
-                "pptx_url": str(pptx_path),
-            }
-            if payload.get("export_pdf"):
-                artifacts["pdf_url"] = str(pdf_path)
-            return {"artifacts": artifacts, "result": result}
-
-        func = _run_gen
+        func = build_gen_job(
+            payload=payload,
+            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
+            compose_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"]),
+            template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True),
+        )
     else:
         def _noop_job():
             if stage == "gen":
