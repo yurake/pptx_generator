@@ -58,8 +58,12 @@ wait_job "$tpl_job"
 echo ""
 
 echo "[2/4] prepare"
-prep_resp=$(curl_json POST "${BASE_URL}/prepare" \
-  -d "{\"transaction_id\":\"${tx}\",\"prepare_sources\":[\"${PREPARE_SOURCE}\"],\"mode\":\"static\"}")
+prep_resp=$(curl -sS -X POST "${BASE_URL}/prepare" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: multipart/form-data" \
+  -F "transaction_id=${tx}" \
+  -F "mode=static" \
+  -F "file=@${PREPARE_SOURCE}")
 echo "$prep_resp"
 prep_job=$(echo "$prep_resp" | jq -r .job_id)
 wait_job "$prep_job"
