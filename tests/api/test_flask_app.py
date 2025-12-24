@@ -260,7 +260,7 @@ def test_job_error_path(monkeypatch):
     c = app.test_client()
 
     # patch enqueue to produce an erroring job
-    from pptx_generator.api import flask_app as module
+    from pptx_generator.api import routes as module
 
     def enqueue_error(queue, *, stage, job_id, transaction_id, payload):
         request = module.JobRequest(
@@ -296,7 +296,7 @@ def test_prepare_error_mapped_to_422(monkeypatch, tmp_path):
     c = app.test_client()
 
     from pptx_generator.cli_handlers.prepare import PrepareCommandError
-    from pptx_generator import api as api_module
+    from pptx_generator.api import routes as api_module
 
     def raise_prepare_error(*args, **kwargs):
         raise PrepareCommandError("prepare failed", exit_code=6)
@@ -304,7 +304,7 @@ def test_prepare_error_mapped_to_422(monkeypatch, tmp_path):
     def enqueue_error(queue, *, stage, job_id, transaction_id, payload):
         raise PrepareCommandError("prepare failed", exit_code=6)
 
-    monkeypatch.setattr(api_module.flask_app, "_enqueue_job", enqueue_error)
+    monkeypatch.setattr(api_module, "_enqueue_job", enqueue_error)
 
     resp = c.post(
         "/prepare",
