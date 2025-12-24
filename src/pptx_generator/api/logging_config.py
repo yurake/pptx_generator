@@ -27,10 +27,12 @@ def configure_api_logging(level_name: str = "INFO") -> logging.Logger:
         except OSError:
             logger.warning("log file handler setup failed; continuing with stdout only")
 
-    # propagate the same handlers to pipeline loggers
+    # avoid clobbering other loggers; only set level and attach handlers if absent
     root = logging.getLogger("pptx_generator")
     root.setLevel(level)
-    root.handlers = logger.handlers
-    root.propagate = False
+    if not root.handlers:
+        for h in logger.handlers:
+            root.addHandler(h)
+    root.propagate = True
 
     return logger
