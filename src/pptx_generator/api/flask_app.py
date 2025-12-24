@@ -245,6 +245,12 @@ def _configure_logging(app: Flask) -> None:
         except OSError:
             logger.warning("log file handler setup failed; continuing with stdout only")
 
+    # パイプライン側（pptx_generator.* 全体）も同じハンドラで出力させる
+    root = logging.getLogger("pptx_generator")
+    root.setLevel(level)
+    root.handlers = logger.handlers
+    root.propagate = False
+
     app.logger.handlers = logger.handlers  # type: ignore[assignment]
     app.logger.setLevel(level)
     app.logger.propagate = False
