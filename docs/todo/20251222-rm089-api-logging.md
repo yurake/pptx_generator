@@ -20,24 +20,24 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
     - 承認メッセージ ID／リンク: チャット承認（本スレッド）
 - [x] 設計・実装方針の確定
   - メモ: ロガーを共通使用し、ジョブ実行を `_wrap_job` でラップして start/succeed/failed を出力（例外は stacktrace 含む）。API応答仕様は変更せず、RotatingFileHandler に従い stdout と logs/out.log へ出力。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+    - メモ: ログ設計と挙動を `docs/design/api/flask.md` に追記済み（非同期ジョブ開始/成功/失敗の出力、RotatingFileHandler 併用、api logger から pipeline logger への伝播を明示）。
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: `_wrap_job` 追加し、enqueue 時にジョブをラップ。stage/job_id/tx_id付きで start/succeed/failed をログ出力。例外時は logger.exception。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/api/test_flask_app.py`（22件）成功。coverage.xml 生成。
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: API ロギングの仕様を `docs/design/api/flask.md` に反映。既存ロードマップ/requirements/runbook/README/AGENTS は変更不要（ログ出力方針のみで機能仕様に影響しないため）。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] チェックリスト整合確認
+  - メモ: すべて完了（PR 作成のみ未）
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
