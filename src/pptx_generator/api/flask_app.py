@@ -1,29 +1,24 @@
 from __future__ import annotations
 
-import logging
 import hashlib
 import hmac
+import json
+import logging
 import os
 import time
 import uuid
-import json
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 from flask import Blueprint, Flask, abort, g, jsonify, request, send_file
-from werkzeug.utils import secure_filename
 
-from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, run_template_command
-from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
-from pptx_generator.cli_handlers.prepare import (
-    PrepareCommandConfig,
-    run_prepare_command,
-    PrepareCommandError,
-    SLIDE_INPUTS_FILENAME,
-)
+from pptx_generator.api.logging_config import configure_api_logging
+from pptx_generator.api.utils import abort_error, parse_payload, require_json, require_fields, require_path_exists, save_uploaded_files
 from pptx_generator.cli_handlers.common import dump_json
+from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
+from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
+from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
@@ -37,7 +32,8 @@ def create_app() -> Flask:
     """Create Flask application for stage1-4 API."""
 
     app = Flask(__name__)
-    _configure_logging(app)
+    logger = configure_api_logging(os.environ.get("LOG_LEVEL", "INFO"))
+    app.config["API_LOGGER"] = logger
     app.config["HMAC_KEYS"] = _load_hmac_keys()
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
     app.config["BEARER_TOKEN"] = os.environ.get("PPTX_API_BEARER_TOKEN")
@@ -101,7 +97,7 @@ def create_app() -> Flask:
 
     @api.post("/templates")
     def post_templates():
-        payload = _parse_payload(stage="template")
+        payload = parse_payload(stage="template")
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("tpl")
         state = _enqueue_job(app.queue, stage="template", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -109,7 +105,7 @@ def create_app() -> Flask:
 
     @api.post("/prepare")
     def post_prepare():
-        payload = _parse_payload(stage="prepare")
+        payload = parse_payload(stage="prepare")
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("prep")
         state = _enqueue_job(app.queue, stage="prepare", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -117,7 +113,7 @@ def create_app() -> Flask:
 
     @api.post("/compose")
     def post_compose():
-        payload = _require_json()
+        payload = require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("cmp")
         state = _enqueue_job(app.queue, stage="compose", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -125,7 +121,7 @@ def create_app() -> Flask:
 
     @api.post("/gen")
     def post_gen():
-        payload = _require_json()
+        payload = require_json()
         tx_id = payload.get("transaction_id") or _generate_id("tx")
         job_id = _generate_id("gen")
         state = _enqueue_job(app.queue, stage="gen", job_id=job_id, transaction_id=tx_id, payload=payload)
@@ -214,120 +210,6 @@ def _verify_auth(bearer_token: Optional[str], hmac_keys: Iterable[str], skew_sec
 def _error_response(status_code: int, code: str, message: str):
     return jsonify({"code": code, "message": message}), status_code
 
-
-def _abort_error(status_code: int, code: str, message: str) -> None:
-    resp = jsonify({"code": code, "message": message})
-    resp.status_code = status_code
-    abort(resp)
-
-
-def _configure_logging(app: Flask) -> None:
-    logger = logging.getLogger("pptx_generator.api")
-    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
-    level = getattr(logging, level_name, logging.INFO)
-    logger.setLevel(level)
-
-    if not logger.handlers:
-        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(level)
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
-
-        log_path = Path("logs") / "out.log"
-        try:
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            file_handler = RotatingFileHandler(log_path, maxBytes=10 * 1024 * 1024, backupCount=5)
-            file_handler.setLevel(level)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-        except OSError:
-            logger.warning("log file handler setup failed; continuing with stdout only")
-
-    # パイプライン側（pptx_generator.* 全体）も同じハンドラで出力させる
-    root = logging.getLogger("pptx_generator")
-    root.setLevel(level)
-    root.handlers = logger.handlers
-    root.propagate = False
-
-    app.logger.handlers = logger.handlers  # type: ignore[assignment]
-    app.logger.setLevel(level)
-    app.logger.propagate = False
-    app.config["API_LOGGER"] = logger
-
-
-def _require_json() -> dict:
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        resp = jsonify({"code": "bad_request", "message": "invalid json payload"})
-        resp.status_code = 400
-        abort(resp)
-    return payload
-
-
-def _parse_payload(stage: str) -> dict:
-    """JSON を基本とし、templates/prepare は multipart も受け付ける。"""
-    if stage in {"template", "prepare"} and request.mimetype and request.mimetype.startswith("multipart/"):
-        data: dict = {}
-        for key, values in request.form.lists():
-            if key == "prepare_sources":
-                data[key] = values
-            elif len(values) == 1:
-                data[key] = values[0]
-            else:
-                data[key] = values
-        return data
-    return _require_json()
-
-
-def _require_fields(payload: dict, fields: Iterable[str]) -> None:
-    missing = [field for field in fields if payload.get(field) in (None, "")]
-    if missing:
-        resp = jsonify({"code": "validation_error", "message": f"{', '.join(missing)} is required"})
-        resp.status_code = 422
-        abort(resp)
-
-
-def _require_path_exists(path: str | Path | None, field: str) -> None:
-    if path is None:
-        resp = jsonify({"code": "validation_error", "message": f"{field} is required"})
-        resp.status_code = 422
-        abort(resp)
-    p = Path(path)
-    if not p.exists():
-        resp = jsonify({"code": "validation_error", "message": f"{field} not found"})
-        resp.status_code = 422
-        abort(resp)
-
-
-def _save_uploaded_files(tx_root: Path, files: Iterable) -> list[Path]:
-    uploads_dir = tx_root / "uploads"
-    uploads_dir.mkdir(parents=True, exist_ok=True)
-    saved: list[Path] = []
-    logger = logging.getLogger("pptx_generator.api")
-    for f in files:
-        filename = getattr(f, "filename", "") or ""
-        if not filename:
-            continue
-        safe = secure_filename(filename)
-        if not safe:
-            continue
-        ext = Path(safe).suffix.lower()
-        if ext and ext not in ALLOWED_UPLOAD_EXT:
-            _abort_error(422, "validation_error", "unsupported file extension")
-        new_name = f"{Path(safe).stem}_{uuid.uuid4().hex}{ext}"
-        dest = uploads_dir / new_name
-        f.save(dest)
-        try:
-            size = dest.stat().st_size
-        except OSError:
-            size = None
-        logger.info("upload saved path=%s size=%s", dest, size)
-        saved.append(dest)
-    return saved
-
-
 def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transaction_id: str, payload: dict):
     output_root = _require_output_root()
     tx_root = Path(output_root) / transaction_id
@@ -337,14 +219,14 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     compose_artifacts = None
 
     if stage == "template":
-        uploads = _save_uploaded_files(tx_root, request.files.values())
+        uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT)
         if len(uploads) > 1:
-            _abort_error(422, "validation_error", "only one template file allowed")
+            abort_error(422, "validation_error", "only one template file allowed")
         payload_path = payload.get("template_path")
         if uploads and payload_path:
-            _abort_error(422, "validation_error", "template_path conflict: file or path, not both")
+            abort_error(422, "validation_error", "template_path conflict: file or path, not both")
         template_path: str | Path | None = uploads[0] if uploads else payload_path
-        _require_path_exists(template_path, "template_path")
+        require_path_exists(template_path, "template_path")
         payload["template_path"] = str(template_path)
         workdir = _resolve_output_root(transaction_id, stage, job_id)
 
@@ -386,14 +268,14 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     elif stage == "prepare":
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"])
         jobspec_path_resolved = Path(template_artifacts["jobspec_url"])
-        _require_path_exists(jobspec_path_resolved, "jobspec_path")
-        uploads = _save_uploaded_files(tx_root, request.files.values())
+        require_path_exists(jobspec_path_resolved, "jobspec_path")
+        uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT)
         prepare_sources = payload.get("prepare_sources", [])
         if isinstance(prepare_sources, str):
             prepare_sources = [prepare_sources]
         combined_inputs = [str(p) for p in uploads] + list(prepare_sources)
         for src in combined_inputs:
-            _require_path_exists(src, "prepare_sources")
+            require_path_exists(src, "prepare_sources")
         prepare_inputs = tuple(combined_inputs)
         prepare_path = None
         if len(prepare_inputs) == 1:
@@ -435,9 +317,9 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     elif stage == "compose":
         prepare_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "prepare", ["prepare_card_url"])
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url", "diagnostics_url"])
-        _require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
-        _require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
-        _require_path_exists(template_artifacts["diagnostics_url"], "diagnostics_path")
+        require_path_exists(prepare_artifacts["prepare_card_url"], "prepare_card_url")
+        require_path_exists(template_artifacts["jobspec_url"], "jobspec_path")
+        require_path_exists(template_artifacts["diagnostics_url"], "diagnostics_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         generate_ready_path = Path(workdir) / "generate_ready.json"
         generate_ready_meta_path = Path(workdir) / "generate_ready_meta.json"
@@ -476,7 +358,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
     elif stage == "gen":
         compose_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"])
         template_artifacts = _ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True)
-        _require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
+        require_path_exists(compose_artifacts["generate_ready_url"], "generate_ready_path")
         workdir = _resolve_output_root(transaction_id, stage, job_id)
         pptx_path = Path(workdir) / "proposal.pptx"
         pdf_path = Path(workdir) / "proposal.pdf"
