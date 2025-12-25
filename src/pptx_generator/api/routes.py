@@ -481,7 +481,13 @@ def _ensure_stage_artifacts(
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
-    artifacts = entry["artifacts"]
+    artifacts = entry.get("artifacts") if isinstance(entry, dict) else None
+    if not artifacts:
+        if allow_missing:
+            return {}
+        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+        resp.status_code = 422
+        abort(resp)
     resolved = {}
     for key in keys:
         path = artifacts.get(key)
