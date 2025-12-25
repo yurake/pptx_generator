@@ -73,6 +73,8 @@ def setup_state(setup_state):
 
     @app.before_request
     def _authenticate() -> Optional[tuple]:
+        if request.method in ("POST", "PUT", "PATCH", "DELETE") and request.cookies:
+            return _error_response(401, "unauthorized", "cookie-based authentication is not allowed")
         g.request_id = request.headers.get("X-Request-ID") or _generate_id("req")
         app.logger.info(
             "request start method=%s path=%s request_id=%s",
