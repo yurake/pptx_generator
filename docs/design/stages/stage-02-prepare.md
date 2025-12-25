@@ -1,5 +1,7 @@
 # stage 2 Prepare (HITL) 設計
 
+対応要件: `docs/requirements/stages/stage-02-prepare.md`
+
 ## 目的
 - プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、後続 stage が直接利用できる構造化データを提供する。
 - AI 生成と HITL 承認を組み合わせ、監査可能なログと統計情報を残す。

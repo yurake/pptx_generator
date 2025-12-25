@@ -15,7 +15,9 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 
 ## ファイル
 - `generate_ready.json`: レンダリングに必要なレイアウト決定済みデータ。
-- `mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
+- `generate_ready_meta.json`: 章別ステータス、AI 推薦採用数、監査メタ。
+- `draft_mapping_log.json`: 候補スコア、フォールバック、AI 補完履歴のログ。
+- `draft_review_log.json`: HITL 操作ログ。
 - `fallback_report.json`: 収容不能など重大フォールバックの詳細（任意）。
 
 ## generate_ready.json
@@ -67,7 +69,7 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 - `meta.fallback`: `none` / `shrink_text` / `split_slide` / `appendix` など。重大フォールバックは `fallback_report.json` と併用。
 - `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または null の場合は仕様外としてエラーで停止する。CLI は exit code 6 を返却する実装とする。
 
-## mapping_log.json
+## draft_mapping_log.json
 ```jsonc
 {
   "slides": [
@@ -135,7 +137,7 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 - 推奨フィールド: `ref_id`, `applied_strategy`, `reason`, `details`。
 
 - `samples/generate_ready.jsonc`
-- `samples/mapping_log.jsonc`
+- サンプル: `samples/generate_ready.jsonc`, `samples/generate_ready_meta.jsonc`, `samples/draft_mapping_log.jsonc`, `samples/draft_review_log.jsonc`
 
 ## バリデーション
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。

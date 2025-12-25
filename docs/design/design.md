@@ -1,16 +1,17 @@
 # pptx_generator 設計ドキュメント
 
 ## このドキュメントの読み方
-- 全体構成を把握したい場合は「1. システム全体像」と「2. コンポーネント構成」を先に確認してください。
-- stage ごとの振る舞いは「3. データフロー」と付属のステージ別設計ドキュメントを参照します。
-- JSON スキーマやバリデーションルールなど詳細仕様は必要に応じて後半の章（4〜7 章）を確認する構成にしています。
+- 目的: pptx_generator の設計概要をつかむハブ。詳細は stage 設計・スキーマ・CLI へ委譲。
+- 先に読む: 「1. システム全体像」「2. コンポーネント構成」「3. データフロー」で全体像を把握。
+- 詳細は stage 別設計ドキュメント（下記 3.2）とスキーマ（4 章以降）を参照。
 
 ## 関連設計ドキュメント
-- **CLI**: `docs/design/cli/cli-command-reference.md`
-- **ブランド・スタイル**: `docs/design/initiatives/template-style-governance.md`
-- **ストーリー整備**: `docs/design/initiatives/story-modeler.md`
+- **CLI**: `docs/design/architecture/cli-command-reference.md`
+- **横断設計メモ**: `docs/design/architecture/README.md`
+- **stage 1 補足**: `docs/design/stages/stage-01-jobspec-catalog.md`（jobspec 抽出）、`docs/design/stages/stage-01-style-governance.md`（スタイル）
+- **stage 2 補足**: `docs/design/stages/stage-02-static-blueprint.md`（静的テンプレ Blueprint）
+- **stage 3 補足**: `docs/design/stages/stage-03-story-modeler.md`（ストーリー整備）
 - **テンプレ構造スキーマ**: `docs/design/schema/README.md`
-- **過去の検討メモ（アーカイブ）**: `docs/design/archive/`
 
 ## 既存AIサービス比較・本プロジェクト選定理由
 
@@ -208,7 +209,7 @@ assets:
 - **リンク検証**: 設定で切り替え可能な HEAD リクエスト。
 
 ## 6. テンプレート設計
-- `templates/layout_map.yaml` でレイアウト名・プレースホルダ ID・座標・サイズを管理。
+- テンプレ構造は `template_spec.json` / `jobspec.json` / `layouts.jsonl` に集約し、レイアウト名・プレースホルダ ID・座標・サイズ・用途タグを管理。
 - ブランドカラー・フォントおよびレイアウト別スタイルはテンプレートから抽出した TemplateStyle（`branding.json` スナップショットの `theme` / `components` / `layouts`）で共有し、Renderer・Analyzer・Polisher が利用する。
 - 共通フッター: 文言、日付プレースホルダ、ページ番号、ロゴの固定配置。
 - 更新フロー: テンプレート改訂時に差分を `docs/adr/` に記録、`TemplateVersion` をインクリメント
@@ -245,8 +246,8 @@ assets:
   5. 保存後に差分ログを出力。
 
 ## 9. 技術スタック
-- 言語: Python 3.11, TypeScript (将来的な Office.js), C# (.NET 8)。
-- フレームワーク: Flask (REST), Azure Functions / AWS Lambda (サーバーレス)、Docker。
+- 言語: Python 3.12, TypeScript (将来的な Office.js), C# (.NET 8)。
+- フレームワーク: FastAPI (REST), Azure Functions / AWS Lambda (サーバーレス)、Docker。
 - ライブラリ: `python-pptx`, `Pillow`, `pydantic`, `ruff`, `mypy`, Open XML SDK, LibreOffice。
 - インフラ: Azure Storage (Blob/Queue), Key Vault, App Insights, Azure Container Apps（候補）。
 
@@ -296,8 +297,7 @@ project/
  │       ├─ Program.cs
  │       └─ rules/polish.yaml
  ├─ templates/
- │   ├─ corporate_default_v1.pptx
- │   └─ layout_map.yaml
+ │   └─ corporate_default_v1.pptx
  ├─ docs/
  │   ├─ requirements/
  │   │   └─ overview.md

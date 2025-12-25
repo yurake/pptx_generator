@@ -1,9 +1,12 @@
 # stage 3 Compose (HITL + 自動) 設計
 
+対応要件: `docs/requirements/stages/stage-03-compose.md`
+
 ## 目的
 - stage 2 の PrepareCard とテンプレ構造（`jobspec.json` / `layouts.jsonl`）を突合し、stage 4（PPTX 作成）が参照する `generate_ready.json` を生成する。
 - HITL 承認と割当ログを `generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約し、監査しやすい構造を維持する。
 - 再実行や差戻しが発生した際も `<output>/draft/` 配下の成果物を固定し、CLI／自動化から運用できるようにする（既定の `--output` は `.pptx/compose`）。
+- ストーリー骨子連携の補足は `docs/design/stages/stage-03-story-modeler.md` を参照。
 
 ## コンポーネント
 | コンポーネント | 役割 | 技術 | 備考 |
@@ -43,7 +46,7 @@
 | `--show-layout-reasons` | レイアウト候補のスコア内訳を表示 | 無効 |
 
 - ドラフト関連の追加オプション: `--target-length`, `--structure-pattern`, `--appendix-limit` など。詳細は CLI リファレンスを参照。
-- 込み入った診断を確認する場合は `--show-layout-reasons`・`--preflight` を併用し、レイアウト判定根拠を CLI で即時確認できるようにする。差戻し理由コードは内蔵テンプレートを参照する。
+- 込み入った診断を確認する場合は `--show-layout-reasons` を併用し、レイアウト判定根拠を CLI で即時確認できるようにする。差戻し理由コードは内蔵テンプレートを参照する。
 - Analyzer 連携を再評価したい場合は `--import-analysis <path>` を指定し、`analysis_summary.json` の重大度情報を取り込む。
 
 ### `pptx outline`
@@ -83,7 +86,7 @@
 - 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が定義されている場合、`pptx compose` / `pptx mapping` / `pptx gen` 各ステージでフックを呼び出せる。環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`, `PPTX_GENERATE_READY_PATH`。スライド別フックでは `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を提供し、`continue_default=false` 指定により既存処理をスキップして外部スクリプトで `generate_ready.json` などを生成できる。
 
 ## Analyzer 連携
-- `analysis_summary.json` を `--analysis-summary` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
+- `analysis_summary.json` を `--import-analysis` で読み込み、重大度 High の指摘があるカードには `analyzer_context` を付与する。
 - Analyzer 指摘件数が閾値を超える場合は候補スコアを減点し、差戻しを優先表示する。
 - CLI `--show-analyzer` オプション（検討中）で章/スライド単位の重大度サマリを一覧表示し、HITL が優先対応すべき箇所を把握できるようにする。
 - 静的テンプレ用外部フック: 静的モードで `external/<template_id>/hooks.json` が存在する場合、`pptx compose` / `pptx mapping` / `pptx gen` はステージ前後で外部スクリプトを呼び出す。共通環境変数例: `PPTX_STAGE=compose`, `PPTX_TEMPLATE_ID`, `PPTX_SPEC_PATH`, `PPTX_OUTPUT_DIR`, `PPTX_DRAFT_OUTPUT`, `PPTX_RULES_PATH`, `PPTX_PREPARE_CARDS_PATH`。スライド別フックは、`generate_ready.json` に基づいて `PPTX_SLIDE_KEY=01_system-layout`, `PPTX_SLIDE_ID`, `PPTX_SLIDE_LAYOUT`, `PPTX_SLIDE_PAGE_NO` を受け取る。`continue_default=false` 指定により既存の内部処理をスキップし、外部スクリプトで `generate_ready.json` 等を生成することも可能。

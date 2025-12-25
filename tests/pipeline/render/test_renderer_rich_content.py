@@ -932,7 +932,7 @@ def test_renderer_handles_object_placeholders(tmp_path: Path) -> None:
     assert {"Body Left", "Body Right"} <= set(placeholders)
     assert "Logo" in agenda_placeholders
 
-    image_path = Path("samples/assets/logo.png")
+    image_path = Path("docs/assets/logo_white.png")
     spec = JobSpec(
         meta=JobMeta(schema_version="1.0", title="Object Placeholder Test"),
         auth=JobAuth(created_by="tester"),

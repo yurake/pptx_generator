@@ -1,8 +1,11 @@
 # stage 1 テンプレ準備 設計
 
+対応要件: `docs/requirements/stages/stage-01-template.md`
+
 ## 目的とスコープ
 - ブランドごとのテンプレ資産を安定して提供し、後続 stage が追加メタ無しで利用できる状態を作る。
 - テンプレ構築は PowerPoint 操作（人手）が主体だが、品質担保と受け渡しは自動化を前提に設計する。
+- 補足設計: jobspec 抽出の詳細は `docs/design/stages/stage-01-jobspec-catalog.md` を参照。
 
 ## アーキテクチャ構成
 | モジュール | 役割 | 主な技術 / ツール |
@@ -95,5 +98,5 @@
 - LibreOffice / Open XML Polisher のバージョン固定戦略。
 
 ## 関連スキーマ
-- [docs/design/schema/stage-01-template-preparation.md](../schema/stage-01-template-preparation.md)
+- [docs/design/schema/stage-01-template.md](../schema/stage-01-template.md)
 - サンプル: `docs/design/schema/samples/template_release.jsonc`, `docs/design/schema/samples/template_release_report.jsonc`

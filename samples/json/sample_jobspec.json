@@ -28,7 +28,7 @@
       "images": [
         {
           "id": "title-01-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -49,7 +49,7 @@
       "images": [
         {
           "id": "title-02-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -63,7 +63,7 @@
       "images": [
         {
           "id": "section_covor_left-01-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -77,7 +77,7 @@
       "images": [
         {
           "id": "section_covor_left-02-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -91,7 +91,7 @@
       "images": [
         {
           "id": "section_covor_center-01-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -105,7 +105,7 @@
       "images": [
         {
           "id": "section_covor_center-02-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -135,7 +135,7 @@
       "images": [
         {
           "id": "agenda-01-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -165,7 +165,7 @@
       "images": [
         {
           "id": "agenda-02-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -1287,7 +1287,7 @@
       "images": [
         {
           "id": "closin_covor-01-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }
@@ -1300,7 +1300,7 @@
       "images": [
         {
           "id": "closin_covor-02-logo",
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "anchor": "Logo",
           "sizing": "fit"
         }

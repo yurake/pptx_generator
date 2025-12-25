@@ -48,7 +48,7 @@ stage 5（マッピング）で利用する JSON 仕様を定義する。
 }
 ```
 
-## mapping_log.json
+## draft_mapping_log.json
 ```jsonc
 {
   "slides": [
@@ -127,7 +127,9 @@ stage 5（マッピング）で利用する JSON 仕様を定義する。
 
 ## サンプル
 - `samples/generate_ready.jsonc`
-- `samples/mapping_log.jsonc`
+- `samples/generate_ready_meta.jsonc`
+- `samples/draft_mapping_log.jsonc`
+- `samples/draft_review_log.jsonc`
 
 ## バリデーション
 - `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
