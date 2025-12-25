@@ -455,8 +455,8 @@ def _latest_job(queue: InProcessJobQueue, transaction_id: str, stage: str):
 def _ensure_stage_artifacts(
     queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str], allow_missing: bool = False
 ) -> dict[str, str]:
-    registry = _load_registry(tx_root)
-    entry = registry.get(stage) if registry else None
+    registry = _load_registry(tx_root) or {}
+    entry = registry.get(stage)
     if entry is None:
         state = _latest_job(queue, transaction_id, stage)
         if state is not None and state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
