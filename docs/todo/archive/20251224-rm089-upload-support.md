@@ -36,8 +36,8 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: Issue 番号確定後に `関連Issue` を更新する
 - [x] チェックリスト整合確認
   - メモ: PR 作成以外完了を確認。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+- [x] PR 作成
+  - メモ: PR #456 https://github.com/yurake/pptx_generator/pull/456（2025-12-25 完了）
 
 ## メモ
 - 参照済み: docs/policies/context-engineering.md / CONTRIBUTING.md / docs/policies/task-management.md
