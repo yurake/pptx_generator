@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -275,7 +276,10 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         func=_wrap_job(stage, job_id, transaction_id, func),
     )
     logging.getLogger("pptx_generator.api").info(
-        "job enqueued stage=%s job_id=%s transaction_id=%s", stage, job_id, transaction_id
+        "job enqueued stage=%s job_id=%s transaction_id=%s",
+        _sanitize_for_log(stage),
+        _sanitize_for_log(job_id),
+        _sanitize_for_log(transaction_id),
     )
     state = queue.enqueue(job_request)
     queue.ensure_workers(1)
@@ -336,6 +340,15 @@ def _require_output_root() -> str:
         resp.status_code = 422
         abort(resp)
     return str(Path(base).resolve())
+
+
+def _sanitize_for_log(value: str | None) -> str:
+    if not value:
+        return "-"
+    sanitized = re.sub(r"[^\w.-]", "_", str(value))
+    if len(sanitized) > 128:
+        sanitized = sanitized[:128] + "..."
+    return sanitized
 
 
 def _registry_path(tx_root: Path) -> Path:
