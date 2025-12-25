@@ -1125,7 +1125,7 @@ flowchart TB
 - 対象 stage: 1〜4（テンプレ準備・コンテンツ準備・マッピング・PPTX生成）
 - 参照ドキュメント: [docs/requirements/stages/stage-01-template.md](../requirements/stages/stage-01-template.md), [docs/requirements/stages/stage-02-prepare.md](../requirements/stages/stage-02-prepare.md), [docs/requirements/stages/stage-03-compose.md](../requirements/stages/stage-03-compose.md), [docs/requirements/stages/stage-04-gen.md](../requirements/stages/stage-04-gen.md), [docs/design/stages/stage-04-gen.md](../design/stages/stage-04-gen.md)
 - 依存: RM-084（CLI/Pipeline リファクタビリティ向上）、RM-086（静的テンプレ外部フック統合）
-- 状況: 新規（2025-12-17 起票）
+- 状況: 完了（2025-12-25 更新）
 - 期待成果:
   - Flask アプリファクトリと Blueprint（content/draft API＋stage1-4 ジョブ API）を用意し、FastAPI ルートを移植する。
   - ジョブ登録/ステータス参照 API とジョブキュー（RQ または Celery + Redis）を導入し、各 stage を非同期実行する。
