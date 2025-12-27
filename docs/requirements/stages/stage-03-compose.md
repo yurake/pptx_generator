@@ -40,16 +40,16 @@
    - `mode=static` の場合は Blueprint ベースの slot 充足確認を優先し、レイアウト探索をスキップする。slot 未充足時は `DraftStructuringError` を送出し、差戻し理由を `static_slot_checks` に格納する。
 
 4. **カード順序とモードエラーハンドリング**
-  - Dynamic フローは `prepare_card.json.cards[*].order` をそのまま `generate_ready.slides[*]` の順序へ反映する。HITL が順序を調整した場合もこの値を更新して引き渡すこと。
-  - Static フローはテンプレ Blueprint / JobSpec の順序を優先し、カード側の `order` は補助情報として扱う。未使用 slot がある場合は `static_slot_checks.unused_slots` に記録する。
-  - `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または欠落している場合は `DraftStructuringError` を送出する。CLI では exit code 6 を返し、モード不整合を修正後に再実行する。
+   - Dynamic フローは `prepare_card.json.cards[*].order` をそのまま `generate_ready.slides[*]` の順序へ反映する。HITL が順序を調整した場合もこの値を更新して引き渡すこと。
+   - Static フローはテンプレ Blueprint / JobSpec の順序を優先し、カード側の `order` は補助情報として扱う。未使用 slot がある場合は `static_slot_checks.unused_slots` に記録する。
+   - `ai_generation_meta.mode` が `dynamic` / `static` 以外の値、または欠落している場合は `DraftStructuringError` を送出する。CLI では exit code 6 を返し、モード不整合を修正後に再実行する。
 
 5. **Analyzer 連携**
    - `analysis_summary.json` を `--analysis-summary` で読み込み、重大度に応じて候補スコアを補正する。
    - Analyzer 指摘サマリは `generate_ready_meta.sections[*].analyzer_summary` と `draft_mapping_log.json.analyzer` に保存する。
 
 6. **監査・再現性**
-   - すべての成果物ファイルを監査ログに記録し、将来的に SHA256 ハッシュで突合できるようにする。
+   - すべての成果物ファイルを監査ログに記録し、ハッシュで突合できるようにする。
    - `pptx compose` / `pptx outline` / `pptx mapping` のいずれを用いても同じ成果物構成とログが得られること。
    - CLI は `--show-layout-reasons` オプションで候補理由を可視化し、CI / ダッシュボードでも確認できるよう JSON 出力を提供する。
    - Stage2 から引き継いだ `mode` を監査ログへ残し、静的・動的それぞれのフォールバック指標を切り替えられるようにする。
