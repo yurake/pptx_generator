@@ -1,0 +1,425 @@
+openapi: 3.1.0
+info:
+  title: PPTX Generator API
+  version: 0.1.0
+  description: |
+    Stage1-4 (template/prepare/compose/gen) を提供する Flask Web/API の草案。
+    認証は HMAC 署名と Bearer の OR で許可する。
+    - 認証詳細: docs/design/api/auth.md
+    - Flask 実装方針: docs/design/api/flask.md
+servers:
+  - url: http://localhost:8000
+    description: Local dev
+security:
+  - HmacAuth: []
+  - BearerAuth: []
+paths:
+  /templates:
+    post:
+      summary: Stage1 テンプレ抽出のジョブ登録
+      description: テンプレ PPTX を解析し、レイアウト仕様（template_spec）とジョブ雛形（jobspec）を生成するジョブを登録する。非同期実行で job_id/transaction_id を返却する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateRequest"
+      responses:
+        "202":
+          description: ジョブ受付
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobHandle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /prepare:
+    post:
+      summary: Stage2 Prepare のジョブ登録
+      description: プレゼン入力を正規化したカード JSON（prepare_card）を生成するジョブを登録する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrepareRequest"
+      responses:
+        "202":
+          description: ジョブ受付
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobHandle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /compose:
+    post:
+      summary: Stage3 Compose のジョブ登録
+      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeRequest"
+      responses:
+        "202":
+          description: ジョブ受付
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobHandle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /gen:
+    post:
+      summary: Stage4 gen のジョブ登録
+      description: generate_ready を描画して PPTX/PDF を生成するジョブを登録する。完了後の成果物 URL は `GET /jobs/{job_id}` で取得する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenRequest"
+      responses:
+        "202":
+          description: ジョブ受付
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobHandle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /jobs/{job_id}:
+    get:
+      summary: ジョブステータスと成果物取得
+      description: 任意ステージのジョブ状態を返却する。gen ジョブの場合、完了時に成果物 URL を含む。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ジョブ状態
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /transactions/{transaction_id}:
+    get:
+      summary: トランザクション単位のジョブ一覧
+      description: transaction_id 配下のジョブ概要を返却する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: トランザクションのジョブ一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /jobs/{job_id}/artifacts/{artifact_type}:
+    get:
+      summary: 生成された成果物をダウンロードする
+      description: `pptx` または `pdf` を認証付きで返却する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: artifact_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [pptx, pdf]
+      responses:
+        "200":
+          description: 成功時は成果物をバイナリで返却
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+components:
+  securitySchemes:
+    HmacAuth:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: |
+        HMAC-SHA256 署名。ヘッダに `X-Signature` と `X-Timestamp`（epoch秒）を送信する。
+        署名例: `hex(hmac_sha256(secret, timestamp + "\n" + method + "\n" + path + "\n" + sha256(body)))`
+        時刻許容ウィンドウ ±300 秒、nonce を付与する場合は `X-Nonce` も送信する。
+        鍵は current/next の2本ローテーションで検証する。
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    JobHandle:
+      type: object
+      required:
+        - job_id
+        - transaction_id
+        - status
+        - stage
+      properties:
+        job_id:
+          type: string
+        transaction_id:
+          type: string
+          description: 同じリクエスト系列をまとめる追跡用 ID。指定なしの場合はサーバが払い出す。
+        status:
+          type: string
+          enum: [pending, running, succeeded, failed, canceled]
+        stage:
+          type: string
+          enum: [template, prepare, compose, gen]
+        status_url:
+          type: string
+          format: uri
+          description: "このジョブの状態を取得するエンドポイント（例: /jobs/{job_id}）"
+        transaction_url:
+          type: string
+          format: uri
+          description: "このジョブが属するトランザクション一覧を取得するエンドポイント（例: /transactions/{transaction_id}）"
+    JobStatus:
+      allOf:
+        - $ref: "#/components/schemas/JobHandle"
+        - type: object
+          properties:
+            artifacts:
+              $ref: "#/components/schemas/ArtifactLinks"
+            error:
+              $ref: "#/components/schemas/ErrorResponse"
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            started_at:
+              type: string
+              format: date-time
+            finished_at:
+              type: string
+              format: date-time
+    TransactionStatus:
+      type: object
+      required:
+        - transaction_id
+        - jobs
+      properties:
+        transaction_id:
+          type: string
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobHandle"
+    ArtifactLinks:
+      type: object
+      properties:
+        pptx_url:
+          type: string
+          format: uri
+          description: "gen 完了時に返却。ジョブIDに紐づく固定パス（例: /jobs/{job_id}/artifacts/pptx）で、クライアントはそのまま GET するだけの契約。将来署名付き URL に差し替える場合も同フィールドに設定する。"
+        pdf_url:
+          type: string
+          format: uri
+          description: "PDF を生成した場合のみ。パスの扱いは pptx_url と同じ。"
+    TemplateRequest:
+      type: object
+      required:
+        - template_path
+        - mode
+      properties:
+        transaction_id:
+          type: string
+          description: 同じリクエスト系列をまとめる追跡用 ID。指定なしの場合はサーバが払い出す。
+        template_path:
+          type: string
+          description: サーバから参照できるテンプレ PPTX のパス
+        mode:
+          type: string
+          enum: [static, dynamic]
+        output_root:
+          type: string
+          description: 上書きしたい出力ルート（未指定時は設定値を使用）
+      description: |
+        テンプレ PPTX を解析し、レイアウト仕様（template_spec）とジョブ雛形（jobspec）を生成するジョブを登録する。
+        入力はサーバが参照できるパスのみを許可する。ファイルサイズ上限（例: 10MB）を超える場合は 413 を返す。
+    PrepareRequest:
+      type: object
+      required:
+        - prepare_sources
+        - mode
+      properties:
+        transaction_id:
+          type: string
+          description: 指定しない場合はサーバが発行。指定すると tx 内の前段成果物（jobspec 等）を自動解決する。
+        prepare_sources:
+          type: array
+          items:
+            type: string
+          description: "入力ファイルやテキスト（例: md/txt/json のパス、文字列など）"
+        mode:
+          type: string
+          enum: [static, dynamic]
+        page_limit:
+          type: integer
+          minimum: 1
+      description: |
+        プレゼン入力を正規化したカード JSON（prepare_card）を生成するジョブを登録する。
+        前段成果物（jobspec 等）は transaction_id からサーバ側で解決する。ユーザーはパス指定不要。
+    ComposeRequest:
+      type: object
+      required:
+        - transaction_id
+      properties:
+        transaction_id:
+          type: string
+          description: 前段 (template/prepare) の最新成果物をサーバが解決するため必須。
+        show_layout_reasons:
+          type: boolean
+      description: 準備済みカードをテンプレレイアウトに割り当てた generate_ready を生成するジョブを登録する。前段成果物パスの指定は不要。
+    GenRequest:
+      type: object
+      required:
+        - transaction_id
+      properties:
+        transaction_id:
+          type: string
+          description: compose の最新成果物をサーバが解決するため必須。
+        export_pdf:
+          type: boolean
+          default: false
+      description: generate_ready を描画し PPTX/PDF を生成するジョブを登録する。前段成果物パスの指定は不要。完了後は `/jobs/{job_id}` から成果物 URL を取得する。
+  responses:
+    BadRequest:
+      description: 不正な入力
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RequestTooLarge:
+      description: リクエストボディが上限を超過
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: 認可エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: リソースが存在しない
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnprocessableEntity:
+      description: 入力検証エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  examples: {}

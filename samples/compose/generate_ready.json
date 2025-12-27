@@ -6,7 +6,7 @@
         "title": "提案表紙A",
         "subtitle": "サブタイトル 1",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         },
         "Text1": {
@@ -28,7 +28,7 @@
         "title": "提案表紙B",
         "subtitle": "サブタイトル 2",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         },
         "Text1": {
@@ -50,7 +50,7 @@
         "title": "章扉 左配置A",
         "subtitle": "サブタイトル 1",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -69,7 +69,7 @@
         "title": "章扉 左配置B",
         "subtitle": "サブタイトル 2",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -88,7 +88,7 @@
         "title": "章扉 中央A",
         "subtitle": "サブタイトル 1",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -107,7 +107,7 @@
         "title": "章扉 中央B",
         "subtitle": "サブタイトル 2",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -129,7 +129,7 @@
           "Agenda トピック 1-2"
         ],
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -151,7 +151,7 @@
           "Agenda トピック 2-2"
         ],
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -1230,7 +1230,7 @@
       "elements": {
         "title": "クロージング扉A",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },
@@ -1248,7 +1248,7 @@
       "elements": {
         "title": "クロージング扉B",
         "Logo": {
-          "source": "samples/assets/logo.png",
+          "source": "docs/assets/logo_white.png",
           "sizing": "fit"
         }
       },

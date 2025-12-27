@@ -5,7 +5,8 @@
 - 機微情報を含まないサンプル資産のみを配布し、公開リポジトリへ誤って実データをコミットしないようガバナンスを整える。
 
 ## フォルダ構成
-- `pptx_generator_logo_white.png` / `pptx_generator_logo_black.png`: README や資料に配置するプロジェクト公式ロゴ。ブラウザのテーマ（ライト/ダーク）に合わせて表示色が切り替えられるよう、背景色に応じた 2 種類を用意している。
+- `background_white.png` / `background_black.png`: 背景付きのロゴ画像。README やランディングページのメインビジュアルで利用する。
+- `logo_white.png` / `logo_black.png`: 単体ロゴ。ドキュメントやサンプルでシンプルなロゴが必要な場合に利用する。
 - `logo.pptx`: ロゴ専用テンプレート。2 ページ構成で白背景用・黒背景用を収録し、png 生成時のソースとして利用する。
 
 ## 命名規則とファイル種別
@@ -16,4 +17,4 @@
 1. `logo.pptx` を開き、利用したい配色（white / black）のページを選択する。
 2. プロジェクト名と鹿のアイコンで構成されたロゴ図形をまとめて選択し、右クリックから「図として保存」を実行する。
 3. ファイル形式に `PNG` を選択して書き出すと、背景が透過されたロゴ画像を取得できる。
-4. 白背景用は `pptx_generator_logo_white.png`、黒背景用は `pptx_generator_logo_black.png` のファイル名で保存し、README などから参照する。
+4. 白背景用は `logo_white.png`、黒背景用は `logo_black.png` のファイル名で保存し、README などから参照する。旧ロゴを保持する場合は `background_white.png` / `background_black.png` として管理する。
