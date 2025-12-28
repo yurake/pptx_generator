@@ -6,8 +6,8 @@
 - 詳細は stage 別設計ドキュメント（下記 3.2）とスキーマ（4 章以降）を参照。
 
 ## 関連設計ドキュメント
-- **CLI**: `docs/design/architecture/cli-command-reference.md`
-- **横断設計メモ**: `docs/design/architecture/README.md`
+- **CLI**: `docs/design/cli/cli-command-reference.md`
+- **Web API**: `docs/design/api/flask.md`（構成メモ）, `docs/design/api/openapi.yaml`（OpenAPI 3.1 草案）
 - **stage 1 補足**: `docs/design/stages/stage-01-jobspec-catalog.md`（jobspec 抽出）、`docs/design/stages/stage-01-style-governance.md`（スタイル）
 - **stage 2 補足**: `docs/design/stages/stage-02-static-blueprint.md`（静的テンプレ Blueprint）
 - **stage 3 補足**: `docs/design/stages/stage-03-story-modeler.md`（ストーリー整備）

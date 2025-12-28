@@ -455,33 +455,42 @@ def _latest_job(queue: InProcessJobQueue, transaction_id: str, stage: str):
 def _ensure_stage_artifacts(
     queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str], allow_missing: bool = False
 ) -> dict[str, str]:
-    registry = _load_registry(tx_root) or {}
-    entry = registry.get(stage)
-    if entry is None:
-        state = _latest_job(queue, transaction_id, stage)
-        if state is not None and state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
-            queue.wait(state.request.job_id)
-            state = queue.get_job(state.request.job_id)  # type: ignore[attr-defined]
-        if state is not None and state.status == JobStatus.SUCCEEDED:
+    registry = _load_registry(tx_root)
+    entry = registry.get(stage) if registry else None
+
+    state = _latest_job(queue, transaction_id, stage)
+    if state is not None and state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
+        queue.wait(state.request.job_id)
+        state = queue.get_job(state.request.job_id)  # type: ignore[attr-defined]
+    if state is not None and state.status == JobStatus.SUCCEEDED:
+        current_job_id = entry.get("job_id") if isinstance(entry, dict) else None
+        if entry is None or current_job_id != state.request.job_id:
             _update_registry(tx_root, stage, state)
-            entry = {"artifacts": state.result.get("artifacts") if isinstance(state.result, dict) else {}}
-        elif state is not None and state.status == JobStatus.FAILED:
-            resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-            resp.status_code = 422
-            abort(resp)
-    if registry is None and entry is None:
+            registry = _load_registry(tx_root)
+            entry = registry.get(stage) if registry else None
+    elif entry is None and state is not None and state.status == JobStatus.FAILED:
+        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+        resp.status_code = 422
+        abort(resp)
+
+    if entry is None:
         if allow_missing:
             return {}
-        resp = jsonify({"code": "not_found", "message": "transaction not found"})
-        resp.status_code = 404
+        if registry is None:
+            resp = jsonify({"code": "not_found", "message": "transaction not found"})
+            resp.status_code = 404
+            abort(resp)
+        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
+        resp.status_code = 422
         abort(resp)
-    if not entry or "artifacts" not in entry:
+    if not isinstance(entry, dict) or "artifacts" not in entry:
         if allow_missing:
             return {}
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
-    artifacts = entry.get("artifacts") if isinstance(entry, dict) else None
+
+    artifacts = entry.get("artifacts")
     if not artifacts:
         if allow_missing:
             return {}

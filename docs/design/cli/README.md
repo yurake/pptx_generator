@@ -1,3 +1,4 @@
 # このディレクトリについて
 
-- CLI 設計ガイドは `docs/design/architecture/cli-command-reference.md` へ移動しました（旧パス互換用）。
+- CLI 設計ガイド本体: `docs/design/cli/cli-command-reference.md`
+- stage や設計概要など他ドキュメントと併せて参照してください。
