@@ -155,7 +155,7 @@ def test_template_ai_client_provider_resolution(monkeypatch):
         "pptx_generator.template_ai.client.AzureOpenAITemplateAIClient",
         DummyAzureTemplateClient,
     )
-    monkeypatch.setenv("PPTX_TEMPLATE_LLM_PROVIDER", "azure-openai")
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "azure-openai")
     monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "dummy")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "dummy-key")
@@ -165,7 +165,7 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     assert client is dummy_client
     assert provider == "azure-openai"
 
-    monkeypatch.delenv("PPTX_TEMPLATE_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("PPTX_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
