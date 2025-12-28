@@ -472,6 +472,7 @@ def _ensure_stage_artifacts(
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
+        return {}
 
     if entry is None:
         if allow_missing:
@@ -480,15 +481,18 @@ def _ensure_stage_artifacts(
             resp = jsonify({"code": "not_found", "message": "transaction not found"})
             resp.status_code = 404
             abort(resp)
+            return {}
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
+        return {}
     if not isinstance(entry, dict) or "artifacts" not in entry:
         if allow_missing:
             return {}
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
+        return {}
 
     artifacts = entry.get("artifacts")
     if not artifacts:
@@ -497,6 +501,7 @@ def _ensure_stage_artifacts(
         resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
         resp.status_code = 422
         abort(resp)
+        return {}
     resolved = {}
     for key in keys:
         path = artifacts.get(key)
@@ -504,5 +509,6 @@ def _ensure_stage_artifacts(
             resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
             resp.status_code = 422
             abort(resp)
+            return {}
         resolved[key] = str((tx_root / path).resolve())
     return resolved
