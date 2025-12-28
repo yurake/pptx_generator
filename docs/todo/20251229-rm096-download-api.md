@@ -43,9 +43,9 @@ roadmap_item: RM-096 成果物ダウンロードAPI分離
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする。別ファイルは作らない）
-  - 前提/制約: 
-  - 決定と理由: 
-  - リスク(UNCONFIRMED): 
-  - Now/Next: 
-  - テスト実績/抜け: 
+  - 前提/制約: PPTX_OUTPUT_ROOT 配下で tx/job に紐づく成果物のみ配布。認証は Bearer/HMAC 維持。
+  - 決定と理由: gen artifacts は API パスで返却し、ダウンロード時は queue/registry から安全に解決（ディレクトリ逸脱防止）— RM-096 方針。
+  - リスク(UNCONFIRMED): registry 未更新時の解決漏れの可能性（現状 SUCCEEDED 時に更新、scan フォールバックあり）。
+  - Now/Next: PR 作成待ち。レビュー依頼前に todo-auto-complete 連動を確認。
+  - テスト実績/抜け: pytest で artifacts API パス返却と registry フォールバックを確認（2件）。総合 API フロー再実行は未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
