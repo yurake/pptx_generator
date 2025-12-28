@@ -686,6 +686,64 @@ def test_gen_artifact_download(monkeypatch, tmp_path):
     assert download.data
 
 
+def test_gen_artifacts_response_uses_api_url(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    from pptx_generator.runtime.job_queue import JobRequest, JobState, JobStatus, get_queue
+
+    queue = get_queue()
+    queue.reset()
+
+    job_id = "job-api-url"
+    tx_id = "tx-api-url"
+    pptx_path = tmp_path / tx_id / "gen" / job_id / "proposal.pptx"
+    pptx_path.parent.mkdir(parents=True, exist_ok=True)
+    pptx_path.write_bytes(b"dummy")
+
+    state = JobState(
+        request=JobRequest(stage="gen", func=lambda: None, job_id=job_id, transaction_id=tx_id),
+        status=JobStatus.SUCCEEDED,
+        result={"artifacts": {"pptx_url": str(pptx_path)}},
+    )
+    queue._jobs[job_id] = state  # type: ignore[attr-defined]
+
+    resp = c.get(f"/jobs/{job_id}", headers=headers)
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["artifacts"]["pptx_url"] == f"/jobs/{job_id}/artifacts/pptx"
+
+
+def test_download_uses_registry_when_queue_missing(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    from pptx_generator.runtime.job_queue import get_queue
+
+    queue = get_queue()
+    queue.reset()
+
+    job_id = "job-registry"
+    tx_id = "tx-registry"
+    tx_root = tmp_path / tx_id
+    pptx_path = tx_root / "gen" / job_id / "proposal.pptx"
+    pptx_path.parent.mkdir(parents=True, exist_ok=True)
+    pptx_path.write_bytes(b"registry")
+
+    registry = {"gen": {"job_id": job_id, "artifacts": {"pptx_url": str(pptx_path.relative_to(tx_root))}}}
+    (tx_root / "registry.json").write_text(json.dumps(registry))
+
+    resp = c.get(f"/jobs/{job_id}/artifacts/pptx", headers=headers)
+    assert resp.status_code == 200
+    assert resp.data == b"registry"
+
+
 def test_output_root_default(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
     monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)

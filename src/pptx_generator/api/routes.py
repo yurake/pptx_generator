@@ -32,6 +32,7 @@ from pptx_generator.runtime.job_queue import (
 )
 
 ALLOWED_UPLOAD_EXT = {".pptx", ".md", ".txt", ".json"}
+ARTIFACT_KEYS = {"pptx": "pptx_url", "pdf": "pdf_url"}
 
 
 api_blueprint = Blueprint("api", __name__)
@@ -180,16 +181,11 @@ def get_transaction(transaction_id: str):
 
 @api_blueprint.get("/jobs/<job_id>/artifacts/<artifact_type>")
 def get_artifact(job_id: str, artifact_type: str):
-    state = get_queue().get_job(job_id)  # type: ignore[attr-defined]
-    if state is None:
-        return _error_response(404, "not_found", "job not found")
-    if not isinstance(state.result, dict):
+    if artifact_type not in ARTIFACT_KEYS:
         return _error_response(404, "not_found", f"{artifact_type} not available")
-    artifacts = state.result.get("artifacts") or {}
-    path = artifacts.get(f"{artifact_type}_url")
-    if not path:
+    file_path = _resolve_artifact_path(job_id, artifact_type)
+    if not file_path:
         return _error_response(404, "not_found", f"{artifact_type} not available")
-    file_path = Path(path)
     if not file_path.exists():
         return _error_response(404, "not_found", f"{artifact_type} not found")
     if artifact_type == "pptx":
@@ -294,8 +290,16 @@ def _job_response(state):
 
 
 def _job_status_body(state):
+    tx_root = _output_root() / state.request.transaction_id
+    if state.status == JobStatus.SUCCEEDED:
+        _update_registry(tx_root, state.request.stage, state)
     artifacts = {}
-    if isinstance(state.result, dict):
+    if state.request.stage == "gen":
+        for artifact_type in ARTIFACT_KEYS:
+            path = _resolve_artifact_path(state.request.job_id, artifact_type, state=state, tx_root=tx_root)
+            if path:
+                artifacts[ARTIFACT_KEYS[artifact_type]] = _artifact_api_path(state.request.job_id, artifact_type)
+    elif isinstance(state.result, dict):
         artifacts = state.result.get("artifacts") or {}
     return {
         "job_id": state.request.job_id,
@@ -318,6 +322,78 @@ def _error_info(state):
     return {"code": "job_failed", "message": str(state.error)}
 
 
+def _artifact_api_path(job_id: str, artifact_type: str) -> str:
+    return f"/jobs/{job_id}/artifacts/{artifact_type}"
+
+
+def _normalize_artifact_path(tx_root: Path, path_value: str) -> Optional[Path]:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path.resolve()
+    resolved = (tx_root / path).resolve()
+    try:
+        resolved.relative_to(tx_root)
+    except ValueError:
+        return None
+    return resolved
+
+
+def _artifact_path_from_state(state, tx_root: Path, artifact_type: str) -> Optional[Path]:
+    if not isinstance(state.result, dict):
+        return None
+    artifacts = state.result.get("artifacts") or {}
+    key = ARTIFACT_KEYS[artifact_type]
+    path_value = artifacts.get(key)
+    if not path_value:
+        return None
+    path = Path(path_value)
+    if path.is_absolute():
+        return path.resolve()
+    return _normalize_artifact_path(tx_root, path_value)
+
+
+def _artifact_path_from_registry(tx_root: Path, job_id: str, artifact_type: str) -> Optional[Path]:
+    registry = _load_registry(tx_root)
+    if not registry:
+        return None
+    key = ARTIFACT_KEYS[artifact_type]
+    for entry in registry.values():
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("job_id") and entry["job_id"] != job_id:
+            continue
+        artifacts = entry.get("artifacts") or {}
+        path_value = artifacts.get(key)
+        if not path_value:
+            continue
+        path = _normalize_artifact_path(tx_root, path_value)
+        if path:
+            return path
+    return None
+
+
+def _resolve_artifact_path(job_id: str, artifact_type: str, state=None, tx_root: Optional[Path] = None) -> Optional[Path]:
+    queue = get_queue()
+    queue_state = state or queue.get_job(job_id)  # type: ignore[attr-defined]
+    if queue_state is not None:
+        tx_root = tx_root or (_output_root() / queue_state.request.transaction_id)
+        if queue_state.status == JobStatus.SUCCEEDED:
+            _update_registry(tx_root, queue_state.request.stage, queue_state)
+        path = _artifact_path_from_state(queue_state, tx_root, artifact_type)
+        if path:
+            return path
+        path = _artifact_path_from_registry(tx_root, job_id, artifact_type)
+        if path:
+            return path
+    base = _output_root()
+    for registry_path in base.glob("*/registry.json"):
+        tx_root = registry_path.parent
+        path = _artifact_path_from_registry(tx_root, job_id, artifact_type)
+        if path:
+            return path
+    return None
+
+
 def _jobs_by_transaction(queue: InProcessJobQueue, transaction_id: str):
     jobs = []
     for state in list(queue._jobs.values()):  # type: ignore[attr-defined]
@@ -331,8 +407,8 @@ def _generate_id(prefix: str) -> str:
 
 
 def _resolve_output_root(transaction_id: str, stage: str, job_id: str) -> str:
-    base = _require_output_root()
-    return str(Path(base) / transaction_id / stage / job_id)
+    base = _output_root()
+    return str(base / transaction_id / stage / job_id)
 
 
 def _require_output_root() -> str:
@@ -342,6 +418,10 @@ def _require_output_root() -> str:
         resp.status_code = 422
         abort(resp)
     return str(Path(base).resolve())
+
+
+def _output_root() -> Path:
+    return Path(_require_output_root())
 
 
 def _sanitize_for_log(value: str | None) -> str:
