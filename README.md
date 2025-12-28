@@ -35,7 +35,7 @@
   </p>
 
   <p>
-  PowerPoint テンプレートと資料データ（プレーンテキストや PDF など）を取り込み、テンプレートに沿ったプレゼン資料を生成する CLI ツールです。
+  PowerPoint テンプレートと資料データ（プレーンテキストや PDF など）を取り込み、テンプレートに沿ったプレゼン資料を生成します。
   </p>
 </div>
 
@@ -43,14 +43,19 @@
 - テンプレート PPTX からレイアウト構造・ブランド設定を抽出し、再利用可能な仕様 JSON を生成します。
 - 抽出した仕様と資料データを組み合わせ、監査ログ付きの PPTX／PDF を生成します（LibreOffice を利用することで PDF 変換も可能）。
 
-## クイックスタート
+## クイックスタート: CLI
 1. Python 3.12 系の仮想環境を用意し、`uv sync` で依存を同期する。
-2. `uv run --help` を実行して CLI エントリーポイントが利用可能であることを確認する。
-3. 生成パイプラインを実行する。
+2. `uv run --help` で CLI エントリーポイントを確認する。
+3. 下記パイプライン概要のCLIコマンド例に沿って実行する。
 
-### パス設定（環境変数）
-- 出力: `PPTX_OUTPUT_ROOT` を設定すると `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` を基点に出力する（未指定は `.pptx/<stage>`）。CLI 既定の挙動は従来どおり。
-- 入力: Web/API 経由で受け取る入力は `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` に配置する（未指定は `.pptx/input`）。CLI の入力パスは変更しない。
+## クイックスタート: API
+1. Python 3.12 系の仮想環境を用意し、`uv sync` で依存を同期する。
+2. `cp .env.example .env` で環境変数を用意する。
+3. API を起動する。
+   ```bash
+   uv run flask --app pptx_generator.api.flask_app run --host 0.0.0.0 --port 8000
+   ```
+4. 下記パイプライン概要のAPIコマンド例に沿って実行する。
 
 ## 生成パイプライン概要
 ### 動的生成 (dynamic mode)
@@ -92,12 +97,14 @@ flowchart TD
   end
 ```
 
-| stage | 概要 | コマンド例 |
-| --- | --- | --- |
-| 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/template/` に出力 | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
-| 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/input/pitch.md` |
-| 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
-| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
+※ API コマンド例は Bearer 認証（`$PPTX_API_BEARER_TOKEN`）とローカルパス参照前提です。
+
+| stage | 概要 | CLIコマンド例 | APIコマンド例 |
+| --- | --- | --- | --- |
+| 1. テンプレ | テンプレート PPTX を抽出・検証し、`jobspec.json` などの基盤データを `.pptx/template/` に出力 | `uv run pptx template samples/templates/dynamic_template.pptx --mode dynamic` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/dynamic_template.pptx","mode":"dynamic","transaction_id":"tx-dynamic"}'` |
+| 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
+| 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic"}'` |
+| 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","export_pdf":false}'` |
 
 ### 静的生成 (static mode)
 テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
@@ -147,16 +154,17 @@ flowchart TD
   end
 ```
 
-| stage | 概要 | コマンド例 |
-| --- | --- | --- |
-| 1. テンプレ | Blueprint 情報とあわせて `.pptx/template/prompts/`（プロンプト雛形）と `.pptx/slide_inputs.md`（スライド入力マニフェスト）を出力 | `uv run pptx template samples/templates/templates.pptx --mode static` |
-| 2. コンテンツ準備 | 雛形 (`.pptx/template/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の Slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` |
-| 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/template/jobspec.json --static` |
-| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` |
+| stage | 概要 | CLIコマンド例 | APIコマンド例 |
+| --- | --- | --- | --- |
+| 1. テンプレ | Blueprint 情報とあわせて `.pptx/template/prompts/`（プロンプト雛形）と `.pptx/slide_inputs.md`（スライド入力マニフェスト）を出力 | `uv run pptx template samples/templates/static_template.pptx --mode static` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/static_template.pptx","mode":"static","transaction_id":"tx-static"}'` |
+| 2. コンテンツ準備 | 雛形 (`.pptx/template/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の Slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
+| 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static"}'` |
+| 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","export_pdf":false}'` |
 
+## 詳細オプション
+- CLI: `docs/design/cli/cli-command-reference.md`
+- Web API: 設計メモは `docs/design/api/flask.md`、契約は `docs/design/api/openapi.yaml`
 - 静的テンプレートでは `external/<template_id>/hooks.json` を用意すると Stage ごとの処理を外部フックへ委譲できます。導入・運用手順は `external/README.md`、作業指針は `external/AGENTS.md` を参照してください。詳細な設定例や渡される環境変数は `docs/design/stages/` の各ステージドキュメントを参照してください。
-
-各 stage の CLI コマンドと主要オプションは `docs/design/cli/cli-command-reference.md`。
 
 ## テスト
 - テスト実行:

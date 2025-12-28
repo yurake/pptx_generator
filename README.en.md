@@ -35,7 +35,7 @@
 </p>
 
   <p>
-  This CLI tool imports PowerPoint templates and data assets (plain text, PDFs, etc.) and generates presentation slides that conform to the template.
+  This project provides both a CLI and a Web API to import PowerPoint templates and data assets (plain text, PDFs, etc.) and generate presentation slides that conform to the template.
   </p>
 </div>
 
@@ -43,10 +43,19 @@
 - Extract layout structure and branding settings from a template PPTX, and generate a reusable specification JSON.
 - Combine the extracted specifications with the document data to generate PPTX/PDF with audit logs (PDF conversion is also possible via LibreOffice).
 
-## Quick Start
+## Quick Start: CLI
 1. Create a Python 3.12 virtual environment and sync dependencies with `uv sync`.
 2. Run `uv run --help` to verify that the CLI entry point is available.
-3. Run the generation pipeline.
+3. Follow the CLI examples in the pipeline tables below.
+
+## Quick Start: API
+1. Create a Python 3.12 virtual environment and sync dependencies with `uv sync`.
+2. Prepare environment variables (e.g., `PPTX_API_BEARER_TOKEN`) via `.env`.
+3. Start the API.
+   ```bash
+   uv run flask --app pptx_generator.api.flask_app run --host 0.0.0.0 --port 8000
+   ```
+4. Follow the API examples in the pipeline tables below.
 
 ## Generation Pipeline Overview
 ### Dynamic generation (dynamic mode)
@@ -61,39 +70,41 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 テンプレ**"]:::stage
-  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
+  Tmpl["**Template PPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 Template**"]:::stage
+  S1 --> Jobspec["**Template spec (jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 コンテンツ準備**"]:::stage
-  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  Prepare["**Content data (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 Content Prep**"]:::stage
+  S2 --> PrepareCards["**Draft (prepare_card.json)**"]:::file
   PrepareCards --> S3
 
   %% ======= Stage 3 =======
-  S3["**stage 3 マッピング**"]:::stage
+  S3["**stage 3 Mapping**"]:::stage
   Jobspec --> S3
-  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
+  S3 --> Ready["**generate_ready.json**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**stage 4 PPTX生成**"]:::stage
+  Ready --> S4["**stage 4 PPTX Generation**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
     direction LR
-    A1["**stage（自動/HITL）**"]:::stage
-    A2["**システム生成ファイル**"]:::file
-    A3["**ユーザー準備ファイル**"]:::userfile
-    A4["**最終成果物**"]:::final
+    A1["**stage (auto/HITL)**"]:::stage
+    A2["**System-generated file**"]:::file
+    A3["**User-provided file**"]:::userfile
+    A4["**Final artifact**"]:::final
   end
 ```
 
-| stage | Overview | Example commands |
-| --- | --- | --- |
-| 1. Template | Extract and validate the template PPTX, and output foundational data such as jobspec.json to `.pptx/template/` | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
-| 2. Content Preparation | Normalize input materials into provisional slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/input/pitch.md` |
-| 3. Mapping | Perform HITL approvals and layout assignments, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
-| 4. PPTX Generation | Use `generate_ready.json` to output PPTX/PDF and audit logs | `uv run pptx gen .pptx/compose/generate_ready.json` |
+*API examples assume Bearer auth (`$PPTX_API_BEARER_TOKEN`) and local paths; `transaction_id=tx-local` is used as an example.*
+
+| stage | Overview | CLI example | API example |
+| --- | --- | --- | --- |
+| 1. Template | Extract and validate the template PPTX, and output foundational data such as jobspec.json to `.pptx/template/` | `uv run pptx template samples/templates/templates.pptx --mode dynamic` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/templates.pptx","mode":"dynamic","transaction_id":"tx-local"}'` |
+| 2. Content Preparation | Normalize input materials into provisional slides and generate a draft with AI logs and audit information | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
+| 3. Mapping | Perform HITL approvals and layout assignments, creating `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
+| 4. PPTX Generation | Use `generate_ready.json` to output PPTX/PDF and audit logs | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
 ### Static generation (static mode)
 This mode automatically allocates and finalizes the presentation data to match the slide structure defined by the template. It is useful in cases where slide layout and rules are predetermined.
@@ -101,9 +112,9 @@ This mode automatically allocates and finalizes the presentation data to match t
 The structures that appear in static mode are arranged in the following hierarchy.
 
 ```
-Blueprint（テンプレ全体の設計図）
-└─ Slide（スライドごとの枠組み）
-    └─ Slot（コンテンツ差し込み枠）
+Blueprint (overall template plan)
+└─ Slide (each slide frame)
+    └─ Slot (content insertion frame)
 ```
 
 ```mermaid
@@ -115,44 +126,45 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 テンプレ**"]:::stage
-  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+  TmplStatic["**Template PPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 Template**"]:::stage
+  S1Static --> SpecStatic["**Template spec (jobspec.json)**<br/>**Template structure (template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (Slot 生成)**"]:::stage
+  PrepareStatic["**Content data (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 Content Prep (Slot creation)**"]:::stage
   SpecStatic --> S2Static
-  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  S2Static --> PrepareCardsStatic["**Draft (prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
 
   %% ======= Stage 3 =======
-  S3Static["**stage 3 マッピング (Blueprint 検証)**"]:::stage
+  S3Static["**stage 3 Mapping (Blueprint validation)**"]:::stage
   SpecStatic --> S3Static
-  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+  S3Static --> ReadyStatic["**generate_ready.json**"]:::file
 
   %% ======= Stage 4 =======
-  ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
+  ReadyStatic --> S4Static["**stage 4 PPTX Generation**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
   subgraph LegendStatic[凡例]
     direction LR
-    B1["**stage（自動/HITL）**"]:::stage
-    B2["**テンプレ仕様 / 構造ファイル**"]:::file
-    B3["**ユーザー準備ファイル**"]:::userfile
-    B4["**最終成果物**"]:::final
+    B1["**stage (auto/HITL)**"]:::stage
+    B2["**Template spec / structure file**"]:::file
+    B3["**User-provided file**"]:::userfile
+    B4["**Final artifact**"]:::final
   end
 ```
 
-| Stage | Overview | Command Examples |
-| --- | --- | --- |
-| 1. Template | Output the `.pptx/template/prompts/` (prompt templates) and `.pptx/slide_inputs.md` (slide input manifest) together with Blueprint information | `uv run pptx template samples/templates/templates.pptx --mode static` |
-| 2. Content Preparation | Edit the template (`.pptx/template/prompts/01_*.md`) and the input manifest (`.pptx/slide_inputs.md`), and if needed, omit `<data file path>` and shape dummy slides in accordance with the Blueprint Slot definitions | `uv run pptx prepare --mode static` |
-| 3. Mapping | Verify slot fulfillment status and generate `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` |
-| 4. PPTX Generation | Output PPTX/PDF in a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` |
+| Stage | Overview | CLI example | API example |
+| --- | --- | --- | --- |
+| 1. Template | Output the `.pptx/template/prompts/` (prompt templates) and `.pptx/slide_inputs.md` (slide input manifest) together with Blueprint information | `uv run pptx template samples/templates/templates.pptx --mode static` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/templates.pptx","mode":"static","transaction_id":"tx-local"}'` |
+| 2. Content Preparation | Edit the template (`.pptx/template/prompts/01_*.md`) and the input manifest (`.pptx/slide_inputs.md`), and if needed, omit `<data file path>` and shape dummy slides in accordance with the Blueprint Slot definitions | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
+| 3. Mapping | Verify slot fulfillment status and generate `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
+| 4. PPTX Generation | Output PPTX/PDF in a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
-- In static templates, you can delegate per-stage processing to external hooks by preparing `external/<template_id>/hooks.json`. For installation and operation procedures, refer to `external/README.md`. For work guidelines, refer to `external/AGENTS.md`. For detailed configuration examples and the environment variables passed, refer to the stage documents under `docs/design/stages/`.
-
-The CLI commands for each stage and the main options are in `docs/design/cli/cli-command-reference.md`.
+## Detailed Options
+- CLI: `docs/design/cli/cli-command-reference.md`
+- Web API: design note `docs/design/api/flask.md`, contract `docs/design/api/openapi.yaml`
+- Static templates: you can delegate per-stage processing via `external/<template_id>/hooks.json`. See `external/README.md` (how to introduce/use) and `external/AGENTS.md` (guidance). Stage-specific config examples and environment variables are in `docs/design/stages/`.
 
 ## Test
 - Test execution:

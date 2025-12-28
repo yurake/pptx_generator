@@ -242,7 +242,7 @@ assets:
 | diagnostics.json | 抽出・検証時の診断結果 |
 
 **Template AI 連携**:
-- 環境変数 `PPTX_TEMPLATE_LLM_PROVIDER` で LLM プロバイダを指定
+- 環境変数 `PPTX_LLM_PROVIDER` で LLM プロバイダを指定
 - `src/pptx_generator/config/usage_tags.json` の canonical タグを基に usage_tags を推定（環境変数 `PPTX_GENERATOR_USAGE_TAGS` で上書き可）
 - 推定結果は `diagnostics.json.template_ai` に記録
 - `mock` プロバイダ指定時は静的ルールで完結

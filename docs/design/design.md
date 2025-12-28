@@ -6,8 +6,8 @@
 - 詳細は stage 別設計ドキュメント（下記 3.2）とスキーマ（4 章以降）を参照。
 
 ## 関連設計ドキュメント
-- **CLI**: `docs/design/architecture/cli-command-reference.md`
-- **横断設計メモ**: `docs/design/architecture/README.md`
+- **CLI**: `docs/design/cli/cli-command-reference.md`
+- **Web API**: `docs/design/api/flask.md`（構成メモ）, `docs/design/api/openapi.yaml`（OpenAPI 3.1 草案）
 - **stage 1 補足**: `docs/design/stages/stage-01-jobspec-catalog.md`（jobspec 抽出）、`docs/design/stages/stage-01-style-governance.md`（スタイル）
 - **stage 2 補足**: `docs/design/stages/stage-02-static-blueprint.md`（静的テンプレ Blueprint）
 - **stage 3 補足**: `docs/design/stages/stage-03-story-modeler.md`（ストーリー整備）
@@ -44,7 +44,7 @@ README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化�
 
 1. **テンプレ**（自動＋HITL）  
   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/template/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
-  - usage_tags は Template AI（LLM）を既定で呼び出し、`src/pptx_generator/config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_TEMPLATE_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
+  - usage_tags は Template AI（LLM）を既定で呼び出し、`src/pptx_generator/config/usage_tags.json` に定義した canonical 語彙と説明をプロンプトへ埋め込んで正規化する。`PPTX_LLM_PROVIDER=mock` 指定時のみ静的ルールで完結させ、`diagnostics.json.template_ai` に応答要約を記録する。
 2. **コンテンツ準備 (Prepare)**（HITL）  
   プレペア入力（Markdown / JSON など）を PrepareCard モデルへ整形し、`.pptx/prepare/` に `prepare_card.json`・`prepare_log.json`・`prepare_ai_log.json`・`ai_generation_meta.json`・`prepare_story_outline.json`・`audit_log.json` を出力する。AI レビューと監査ログの仕様は `docs/requirements/requirements.md` を参照。
 3. **マッピング（HITL + 自動）**  

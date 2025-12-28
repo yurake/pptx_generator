@@ -8,12 +8,33 @@ import pytest
 from pptx_generator.api.flask_app import create_app
 
 
-@pytest.fixture
-def client(monkeypatch):
-    monkeypatch.delenv("PPTX_API_BEARER_TOKEN", raising=False)
+@pytest.fixture(autouse=True)
+def api_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
     monkeypatch.delenv("PPTX_API_HMAC_KEY_CURRENT", raising=False)
+    return tmp_path
+
+
+@pytest.fixture
+def client():
     app = create_app()
     return app.test_client()
+
+
+def test_create_app_missing_output_root(monkeypatch):
+    monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
+    with pytest.raises(RuntimeError) as exc:
+        create_app()
+    assert "PPTX_OUTPUT_ROOT" in str(exc.value)
+
+
+def test_create_app_missing_auth(monkeypatch):
+    monkeypatch.delenv("PPTX_API_BEARER_TOKEN", raising=False)
+    monkeypatch.delenv("PPTX_API_HMAC_KEY_CURRENT", raising=False)
+    with pytest.raises(RuntimeError) as exc:
+        create_app()
+    assert "PPTX_API_BEARER_TOKEN or PPTX_API_HMAC_KEY_CURRENT" in str(exc.value)
 
 
 def test_auth_missing_returns_401(client):
@@ -104,15 +125,6 @@ def test_hmac_load_keys(monkeypatch):
 
 
 def test_job_flow_status(monkeypatch, tmp_path):
-    monkeypatch.delenv("PPTX_API_BEARER_TOKEN", raising=False)
-    monkeypatch.delenv("PPTX_API_HMAC_KEY_CURRENT", raising=False)
-    app = create_app()
-    c = app.test_client()
-    resp = c.post("/templates", json={"template_path": "x", "mode": "static"})
-    assert resp.status_code == 401
-
-    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
-    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
     app = create_app()
     c = app.test_client()
     resp = c.post(
@@ -677,11 +689,6 @@ def test_gen_artifact_download(monkeypatch, tmp_path):
 def test_output_root_default(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
     monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
-    app = create_app()
-    c = app.test_client()
-    resp = c.post(
-        "/templates",
-        headers={"Authorization": "Bearer token-123"},
-        json={"template_path": "samples/templates/templates.pptx", "mode": "dynamic"},
-    )
-    assert resp.status_code == 422
+    with pytest.raises(RuntimeError) as exc:
+        create_app()
+    assert "PPTX_OUTPUT_ROOT" in str(exc.value)

@@ -23,7 +23,7 @@
 1. CLI がプレペア入力（複数指定可）を読み込み、JSON/Markdown/TXT は `PrepareSourceDocument` へパースし、PDF・URL・data URI は ContentImportService でテキスト化した上で章へ変換する。Markdown の見出しや箇条書きはカード候補に変換される。
 2. `PrepareAIOrchestrator` がポリシー定義を評価し、カードを生成。生成枚数は `-p/--page-limit` が指定されていない限りポリシーまたは LLM 任せで、動的モードかつページ指定が無い場合はタイトルページ（`content.title` を持つカード）を自動挿入する。`--page-limit` を指定した場合はタイトルページを追加しない。
 3. 生成結果を Pydantic モデルで検証し、`prepare_card.json` と関連ログファイルを出力する。
-4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。将来的に SHA256 ハッシュを追加し改ざん検知を行う。
+4. 監査ログ (`audit_log.json`) に成果物パスと統計情報を記録する。ハッシュを保持し、改ざん検知に利用できる。
 5. stage 3 `pptx compose` は `--prepare-cards` でカード成果物を受け取り、`prepare_card.json.meta` に記録されたログ／AIメタ／アウトラインのパスを自動解決して章構成とマッピングを実行する。compose 以降は新スキーマに沿って本文ブロックをテンプレートへ配置する。
 
 ## 監査・品質要件
