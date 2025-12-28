@@ -1,0 +1,28 @@
+# ログ出力ポリシー（標準出力・標準エラー・ファイル・監査ログ）
+
+## 目的とスコープ
+- CLI / API / ワーカーのログ出力先とレベルの使い分けを統一し、運用時に「どこを見れば良いか」を明確にする。
+- 対象: 人が読む実行ログ（stdout/stderr）、設定で向きを変えられるファイルログ、機械可読な監査ログ（JSON）。
+
+## 出力先ルール
+- stdout: 進捗・サマリ・警告などユーザー向け情報を INFO レベル中心に出力する。
+- stderr: 例外や失敗サマリなどエラー情報を出力する。正常系メッセージは流さない。
+- ファイル出力: デフォルトでは行わない。必要に応じてロガー設定でハンドラを追加し、API では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 配下を既定の書き先とすることを推奨。
+- 監査ログ（JSON）: `pipeline_trace.json` など機械可読の成果物は従来どおり各ステージ出力ディレクトリに書き出す。人向けログとは役割を分離する。
+
+## ログレベルと設定
+- CLI: `--debug` > `--verbose` > `LOG_LEVEL` 環境変数（数値または `debug/info/warning/error/critical`）。`OPENAI_LOG` は非推奨で警告を出す。
+- API: Flask logger を使用し、認証失敗・job enqueue 結果・開始/終了を INFO で出力。スタックトレースは例外時のみ。
+- LLM ログ: プロンプト/レスポンスなど機微情報は監査ログ（例: `prepare_ai_log.json`）に限定し、人向けログには出さない。
+
+## ID / トレーサビリティ
+- job_id / transaction_id: キュー経由で払い出し、PipelineContext と `pipeline_trace.json` に記録する。API 応答とアーティファクト URL も同 ID を返す。
+- request_id: API では `X-Request-ID` を受け取り、無い場合は生成してログに出力する。
+
+## エラーと終了コードの扱い
+- CLI: 例外発生時は stderr にサマリを出し、例外を再送出して終了コードで失敗を伝える。
+- API: enqueue 失敗や実行失敗は HTTP 4xx/5xx として返却し、エラーログは API 層で出す。ジョブ失敗は `/jobs/{job_id}` の `status=failed` と `error` で返す。
+
+## 運用メモ
+- ファイルローテーションが必要な場合はハンドラ追加で対応する（現状デフォルト実装なし）。パスは transaction/job 単位で `PPTX_OUTPUT_ROOT` 配下にまとめ、権限と容量を運用側で確保する。
+- 監査ログと人向けログの役割を混在させない（機械可読な JSON は監査ログ、進捗/警告は stdout/stderr）。

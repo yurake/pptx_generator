@@ -5,3 +5,4 @@
 
 ## ドキュメント一覧
 - `job-state-and-async.md`: ジョブ状態モデルと非同期実行の共通設計。
+- `log-output-policy.md`: stdout/stderr/ファイル/監査ログの出力先ポリシー。
