@@ -161,6 +161,10 @@ flowchart TD
 | 3. 映射 | 在验证 Slot 满足情况的同时生成 `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
 | 4. PPTX 生成 | 以固定布局输出 PPTX / PDF | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
+## 详细选项
+- CLI: `docs/design/cli/cli-command-reference.md`
+- Web API: 设计说明 `docs/design/api/flask.md`，契约 `docs/design/api/openapi.yaml`
+- 静态模板: 通过 `external/<template_id>/hooks.json` 可将各阶段处理委托给外部钩子。引入与运维步骤参阅 `external/README.md`，工作指引参阅 `external/AGENTS.md`，各阶段的配置示例与环境变量说明参阅 `docs/design/stages/`。
 
 ## 测试
 - 测试执行:

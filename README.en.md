@@ -161,6 +161,10 @@ flowchart TD
 | 3. Mapping | Verify slot fulfillment status and generate `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
 | 4. PPTX Generation | Output PPTX/PDF in a fixed layout | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
+## Detailed Options
+- CLI: `docs/design/cli/cli-command-reference.md`
+- Web API: design note `docs/design/api/flask.md`, contract `docs/design/api/openapi.yaml`
+- Static templates: you can delegate per-stage processing via `external/<template_id>/hooks.json`. See `external/README.md` (how to introduce/use) and `external/AGENTS.md` (guidance). Stage-specific config examples and environment variables are in `docs/design/stages/`.
 
 ## Test
 - Test execution:
