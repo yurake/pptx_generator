@@ -23,7 +23,6 @@ def test_determine_log_level_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_determine_log_level_invalid_env_warns(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("OPENAI_LOG", raising=False)
     monkeypatch.setenv("LOG_LEVEL", "loud")
 
     level, logs = determine_log_level(verbose=False, debug=False)
@@ -31,14 +30,3 @@ def test_determine_log_level_invalid_env_warns(monkeypatch: pytest.MonkeyPatch) 
     assert level == logging.WARNING
     messages = _extract_messages(logs)
     assert any("LOG_LEVEL='loud'" in message for message in messages)
-
-
-def test_determine_log_level_openai_log_deprecated(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("LOG_LEVEL", raising=False)
-    monkeypatch.setenv("OPENAI_LOG", "debug")
-
-    level, logs = determine_log_level(verbose=False, debug=False)
-
-    assert level == logging.WARNING
-    messages = _extract_messages(logs)
-    assert any("OPENAI_LOG" in message for message in messages)

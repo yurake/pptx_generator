@@ -64,14 +64,6 @@ def determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int
             )
         )
 
-    if os.getenv("OPENAI_LOG"):
-        deferred_logs.append(
-            (
-                logging.WARNING,
-                "OPENAI_LOG 環境変数は廃止されました。LOG_LEVEL を利用してください。",
-            )
-        )
-
     return logging.WARNING, deferred_logs
 
 
