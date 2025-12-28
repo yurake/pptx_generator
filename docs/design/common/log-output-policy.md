@@ -11,7 +11,7 @@
 - 監査ログ（JSON）: `pipeline_trace.json` など機械可読の成果物は従来どおり各ステージ出力ディレクトリに書き出す。人向けログとは役割を分離する。
 
 ## ログレベルと設定
-- CLI: `--debug` > `--verbose` > `LOG_LEVEL` 環境変数（数値または `debug/info/warning/error/critical`）。`OPENAI_LOG` は非推奨で警告を出す。
+- CLI: `--debug` > `--verbose` > `LOG_LEVEL` 環境変数（数値または `debug/info/warning/error/critical`）。
 - API: Flask logger を使用し、認証失敗・job enqueue 結果・開始/終了を INFO で出力。スタックトレースは例外時のみ。
 - LLM ログ: プロンプト/レスポンスは監査ログ（例: `prepare_ai_log.json`）に必ず記録し、マスキングを適用する。デバッグ時のみ標準出力/ファイルログへ出す場合は、PII/機微情報を除去したサニタイズ版を出力する。
 
