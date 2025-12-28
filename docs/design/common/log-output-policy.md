@@ -13,7 +13,7 @@
 ## ログレベルと設定
 - CLI: `--debug` > `--verbose` > `LOG_LEVEL` 環境変数（数値または `debug/info/warning/error/critical`）。`OPENAI_LOG` は非推奨で警告を出す。
 - API: Flask logger を使用し、認証失敗・job enqueue 結果・開始/終了を INFO で出力。スタックトレースは例外時のみ。
-- LLM ログ: プロンプト/レスポンスなど機微情報は監査ログ（例: `prepare_ai_log.json`）に限定し、人向けログには出さない。
+- LLM ログ: プロンプト/レスポンスは監査ログ（例: `prepare_ai_log.json`）に必ず記録し、マスキングを適用する。デバッグ時のみ標準出力/ファイルログへ出す場合は、PII/機微情報を除去したサニタイズ版を出力する。
 
 ## ID / トレーサビリティ
 - job_id / transaction_id: キュー経由で払い出し、PipelineContext と `pipeline_trace.json` に記録する。API 応答とアーティファクト URL も同 ID を返す。
@@ -26,10 +26,12 @@
 ## ログを出すタイミングと粒度（ガイド）
 - ステージ/ジョブ単位の開始・終了: `stage`/`job_id`/`transaction_id` を含めて INFO で出す（API enqueue、ワーカー開始・完了）。失敗時は stacktrace を含め ERROR。
 - 入力検証や設定読込: 重要な警告のみ WARN（例: 設定値の解釈失敗、必須パス未解決）。正常系の詳細は出さない。
+- ファイル読み込み: パス解決の結果や存在確認の警告のみを出す。中身はログに出さない。
 - 主要処理ステップ: ステップ名を INFO で開始ログ（例: テンプレ抽出開始、レイアウト割付開始、Polisher 実行開始）。不要な大量ログは避ける。
 - 成果物書き込み: 出力先パスと主要ファイル名を INFO で一度だけ記録（例: `generate_ready.json`、`pipeline_trace.json`）。同一ステージ内で多重出力する場合は最後の確定地点のみ。
 - 例外捕捉: stderr/ERROR でメッセージと context（stage/job_id/tx、対象ファイル、スライドIDなど）を出す。再送出して終了コードや API レスポンスで失敗を伝える。
-- トレーサビリティ: `job_id`/`transaction_id`/`request_id` を含める。人向けログには LLM 入出力を出さない（監査ログ専用）。
+- トレーサビリティ: `job_id`/`transaction_id`/`request_id` を含める。LLM 入出力は監査ログに記録し、必要に応じてマスキングする。
+- 生成 AI 呼び出し: 呼び出し開始と完了時にモデル名・ステータス・レイテンシを INFO/WARN で出す。プロンプト/レスポンス本体は監査ログ（例: `prepare_ai_log.json`）に記録し、PII/機微情報は必ずマスキングする。デバッグ出力（stdout/ファイル）を有効にする場合はサニタイズ版のみ許可し、通常モードでは人向けログに出さない。
 
 ## 運用メモ
 - ファイルローテーションが必要な場合はハンドラ追加で対応する（現状デフォルト実装なし）。パスは transaction/job 単位で `PPTX_OUTPUT_ROOT` 配下にまとめ、権限と容量を運用側で確保する。
