@@ -328,15 +328,14 @@ def _artifact_api_path(job_id: str, artifact_type: str) -> str:
 
 def _normalize_artifact_path(tx_root: Path, path_value: str) -> Optional[Path]:
     path = Path(path_value)
-    if not path.is_absolute():
-        path = (tx_root / path).resolve()
-    else:
-        path = path.resolve()
+    if path.is_absolute():
+        return path.resolve()
+    resolved = (tx_root / path).resolve()
     try:
-        path.relative_to(tx_root)
+        resolved.relative_to(tx_root)
     except ValueError:
         return None
-    return path
+    return resolved
 
 
 def _artifact_path_from_state(state, tx_root: Path, artifact_type: str) -> Optional[Path]:
@@ -347,6 +346,9 @@ def _artifact_path_from_state(state, tx_root: Path, artifact_type: str) -> Optio
     path_value = artifacts.get(key)
     if not path_value:
         return None
+    path = Path(path_value)
+    if path.is_absolute():
+        return path.resolve()
     return _normalize_artifact_path(tx_root, path_value)
 
 
