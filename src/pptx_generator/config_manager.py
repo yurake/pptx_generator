@@ -23,7 +23,7 @@ class ResolvedConfig:
 class ConfigManager:
     """複数の設定ソースを優先度付きで扱うマネージャ。"""
 
-    PRIORITY_ORDER: PriorityOrder = (
+    DEFAULT_PRIORITY: PriorityOrder = (
         "cli_options",
         "env_variables",
         "project_config",
@@ -32,7 +32,7 @@ class ConfigManager:
     )
 
     def __init__(self, priority_order: PriorityOrder | None = None) -> None:
-        self.priority_order: PriorityOrder = priority_order or self.PRIORITY_ORDER
+        self.priority_order: PriorityOrder = priority_order or self.DEFAULT_PRIORITY
         self._sources: dict[str, dict[str, Any]] = {name: {} for name in self.priority_order}
         self._resolved: dict[str, Any] = {}
         self._resolved_sources: dict[str, str] = {}
