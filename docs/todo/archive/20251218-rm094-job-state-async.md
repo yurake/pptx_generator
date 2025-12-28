@@ -19,7 +19,7 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
     - 承認メッセージ ID／リンク: ユーザー承認（本チャット 2025-12-18 指示: 1,2 実施・実装前に設計）。
     - 参照済みドキュメント: docs/policies/context-engineering.md, CONTRIBUTING.md, docs/policies/task-management.md, docs/roadmap/roadmap.md (RM-094), docs/notes/20251217-rm089-web-if.md
 - [x] 設計・実装方針の確定
-  - メモ: 非同期基盤/状態モデルの設計をまとめた。docs/design/initiatives/rm094-job-state-async.md に記載。CLI は内部キュー経由で同期完了待ち、API はキュー＋並列ワーカー（同一プロセス内）で非同期。キャンセル/自動リトライ/ジョブ記録ファイルは実装しない。
+  - メモ: 非同期基盤/状態モデルの設計をまとめた。docs/design/common/job-state-and-async.md に記載。CLI は内部キュー経由で同期完了待ち、API はキュー＋並列ワーカー（同一プロセス内）で非同期。キャンセル/自動リトライ/ジョブ記録ファイルは実装しない。
     - 状態モデル: pending → running → succeeded/failed。再実行は新 job_id を発行。キャンセル機能なし。
     - トレース/記録: pipeline_trace.json に `job_id`, `transaction_id`, `stage`, `status`, `started_at`, `finished_at`, `error` を追加。ジョブ記録ファイルは出力しない（必要ならクライアント側で保持）。
     - 出力配置: RM-092 に合わせ `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`。CLI 互換の `.pptx/<stage>` は transaction_id 未指定時に fallback として維持。
@@ -28,7 +28,7 @@ roadmap_item: RM-094 ジョブ状態モデル＋非同期化
     - エラー/リトライ: 自動リトライなし。失敗時は新しい job で再 enqueue。trace に error を記録。
     - 時刻/ID: job_id/transaction_id は UUID4 を標準。started_at/finished_at は ISO8601 UTC。
     - 互換性: CLI は完了まで待つ UX を維持しつつ内部はキュー化。status/cancel コマンドは提供しない。
-  - [x] 設計・実装方針メモの共有（docs/design/initiatives/rm094-job-state-async.md）
+  - [x] 設計・実装方針メモの共有（docs/design/common/job-state-and-async.md）
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: メモリキュー・ジョブコンテキストを追加し、PipelineContext へ job_id/tx_id を注入。CLI 各ステージ（template/prepare/compose/gen）を run_job_sync 経由に変更。CLI 設計ガイド更新。
