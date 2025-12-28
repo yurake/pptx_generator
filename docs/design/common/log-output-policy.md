@@ -23,6 +23,14 @@
 - CLI: 例外発生時は stderr にサマリを出し、例外を再送出して終了コードで失敗を伝える。
 - API: enqueue 失敗や実行失敗は HTTP 4xx/5xx として返却し、エラーログは API 層で出す。ジョブ失敗は `/jobs/{job_id}` の `status=failed` と `error` で返す。
 
+## ログを出すタイミングと粒度（ガイド）
+- ステージ/ジョブ単位の開始・終了: `stage`/`job_id`/`transaction_id` を含めて INFO で出す（API enqueue、ワーカー開始・完了）。失敗時は stacktrace を含め ERROR。
+- 入力検証や設定読込: 重要な警告のみ WARN（例: 設定値の解釈失敗、必須パス未解決）。正常系の詳細は出さない。
+- 主要処理ステップ: ステップ名を INFO で開始ログ（例: テンプレ抽出開始、レイアウト割付開始、Polisher 実行開始）。不要な大量ログは避ける。
+- 成果物書き込み: 出力先パスと主要ファイル名を INFO で一度だけ記録（例: `generate_ready.json`、`pipeline_trace.json`）。同一ステージ内で多重出力する場合は最後の確定地点のみ。
+- 例外捕捉: stderr/ERROR でメッセージと context（stage/job_id/tx、対象ファイル、スライドIDなど）を出す。再送出して終了コードや API レスポンスで失敗を伝える。
+- トレーサビリティ: `job_id`/`transaction_id`/`request_id` を含める。人向けログには LLM 入出力を出さない（監査ログ専用）。
+
 ## 運用メモ
 - ファイルローテーションが必要な場合はハンドラ追加で対応する（現状デフォルト実装なし）。パスは transaction/job 単位で `PPTX_OUTPUT_ROOT` 配下にまとめ、権限と容量を運用側で確保する。
 - 監査ログと人向けログの役割を混在させない（機械可読な JSON は監査ログ、進捗/警告は stdout/stderr）。
