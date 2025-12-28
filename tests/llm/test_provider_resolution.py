@@ -36,14 +36,20 @@ def test_resolve_provider_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_resolve_provider_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("PPTX_TEMPLATE_LLM_PROVIDER", raising=False)
-    monkeypatch.setenv("PPTX_LLM_PROVIDER", "bedrock")
     info = resolve_llm_provider(
-        primary_env="PPTX_TEMPLATE_LLM_PROVIDER",
-        fallback_env="PPTX_LLM_PROVIDER",
+        primary_env="PRIMARY_PROVIDER",
+        fallback_env="SECONDARY_PROVIDER",
+    )
+    assert info.provider == "mock"
+    assert info.source == "default"
+
+    monkeypatch.setenv("SECONDARY_PROVIDER", "bedrock")
+    info = resolve_llm_provider(
+        primary_env="PRIMARY_PROVIDER",
+        fallback_env="SECONDARY_PROVIDER",
     )
     assert info.provider == "aws-claude"
-    assert info.source == "PPTX_LLM_PROVIDER"
+    assert info.source == "SECONDARY_PROVIDER"
 
 
 def test_resolve_provider_blank_value(monkeypatch: pytest.MonkeyPatch) -> None:

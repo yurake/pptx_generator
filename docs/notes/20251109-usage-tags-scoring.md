@@ -55,6 +55,6 @@
 - 体系バージョン `2.0` に移行し、Intent / Media 二軸・Synonym・Layout Rules を `config/usage_tags.json` へ集約。Stage1/Stage3 のプロンプトから共通のタグ説明を参照するよう整備した（`src/pptx_generator/utils/usage_tags.py`）。
 
 ## 追加検証メモ（2025-11-10）
-- `PPTX_TEMPLATE_LLM_PROVIDER=mock uv run pptx --debug template samples/templates/templates.pptx` を実行し、`diagnostics.json.template_ai` に静的ルール採用状況が記録されること、DEBUG ログにレイアウトごとの推定結果が出力されることを確認。
+- `PPTX_LLM_PROVIDER=mock uv run pptx --debug template samples/templates/templates.pptx` を実行し、`diagnostics.json.template_ai` に静的ルール採用状況が記録されること、DEBUG ログにレイアウトごとの推定結果が出力されることを確認。
 - `uv run --extra dev pytest` を完走し、Stage3 (`draft_recommender` / `mapping`) を含む 170 件のテストが成功することを確認。usage_tags 正規化の変更によるスコアリング回帰は発生していない。
 - layout_ai policy は `config/layout_ai_policies.json` に従来どおり残り、canonical usage_tags は Stage3 コードで `utils/usage_tags` を通じて正規化済みのため追加変更不要と判断。RM-064 でのポリシー拡張時に再評価する。

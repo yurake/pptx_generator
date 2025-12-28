@@ -58,8 +58,7 @@ def create_template_ai_client() -> tuple[TemplateAIClient, str]:
     """ポリシー設定から適切なクライアントを生成し、利用プロバイダ名を返す。"""
 
     resolution = resolve_llm_provider(
-        primary_env="PPTX_TEMPLATE_LLM_PROVIDER",
-        fallback_env="PPTX_LLM_PROVIDER",
+        primary_env="PPTX_LLM_PROVIDER",
     )
     log_provider_resolution(
         logger,

@@ -3,7 +3,7 @@
 ## 事前準備
 - テンプレートおよび設定ファイルのバージョンを確認し、必要に応じてインクリメントする。
 - `pptx template` の出力物（`.pptx/template/branding.json` など）が `version: "layout-style-v1"` であり、`docs/design/stages/stage-01-style-governance.md` に記載のスタイル定義と整合していることを確認する。
-- Template AI 用の環境変数（`PPTX_TEMPLATE_LLM_PROVIDER`、`PPTX_TEMPLATE_LLM_MODEL` など）が本番想定と一致しているか確認し、`src/pptx_generator/config/usage_tags.json` にある canonical タグと説明が最新であることをレビューする。`mock` 以外を利用する場合は API キーやエンドポイントを secrets に登録済みか再確認する。
+- Template AI 用の環境変数（`PPTX_LLM_PROVIDER`、`PPTX_TEMPLATE_LLM_MODEL` など）が本番想定と一致しているか確認し、`src/pptx_generator/config/usage_tags.json` にある canonical タグと説明が最新であることをレビューする。`mock` 以外を利用する場合は API キーやエンドポイントを secrets に登録済みか再確認する。
 - `docs/todo/` の対応タスクを最新化し、残作業が無いことを確認する。
 - `uv run --extra dev pytest` を実行し、スタイル設定を含む全テストがグリーンであることを確認する。
 - CI がグリーンであることをダッシュボードで確認する。

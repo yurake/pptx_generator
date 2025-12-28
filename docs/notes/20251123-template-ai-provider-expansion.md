@@ -8,7 +8,7 @@
 ## 2. 現状整理（2025-11-23 時点）
 | 機能 | 対応プロバイダ | 主な実装 | 備考 |
 | --- | --- | --- | --- |
-| Template AI | `mock`, `openai` | `src/pptx_generator/template_ai/client.py` | `PPTX_TEMPLATE_LLM_PROVIDER`（未設定時は `PPTX_LLM_PROVIDER`）を参照するが、分岐は限定的で Responses API 固定。 |
+| Template AI | `mock`, `openai` | `src/pptx_generator/template_ai/client.py` | `PPTX_LLM_PROVIDER` を参照する。Responses API 固定。 |
 | Content AI | `mock`, `openai`, `azure-openai`, `anthropic`, `aws-claude` | `src/pptx_generator/slide_ai/client.py` | プロバイダごとに専用クライアントを実装済み。 |
 | Layout AI | 同上 | `src/pptx_generator/layout_ai/client.py` | JSON 応答ベースで共通クライアントを切り替える設計。 |
 
@@ -29,7 +29,7 @@ Template AI 側で不足している要素:
    - JSON 以外の応答や拒否が発生した場合はヒューリスティックへフォールバックし、ログに明示する。
 
 2. **設定項目の拡張**  
-   - `PPTX_TEMPLATE_LLM_PROVIDER` を優先し、未設定時は `PPTX_LLM_PROVIDER` を利用する現行仕様を維持。  
+   - `PPTX_LLM_PROVIDER` に統一し、Template AI 固有の環境変数は持たない。  
    - `config/template_ai_policies.json` で policy 単位に `provider` / `model` / `temperature` / `max_tokens` などを上書き可能にし、Azure（deployment）や AWS（modelId）など固有設定を扱えるようにする。  
    - README、`docs/design/stages/stage-01-template.md`、`docs/requirements/stages/stage-01-template.md` 等に必要な環境変数（`OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `ANTHROPIC_API_KEY`, `AWS_REGION` など）と手順を追記する。
 
