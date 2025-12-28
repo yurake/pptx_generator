@@ -35,7 +35,7 @@
 </p>
 
   <p>
-  这是一个 CLI 工具，用于导入 PowerPoint 模板和资料数据（纯文本、PDF 等），并按模板生成演示文稿。
+  本项目提供 CLI 与 Web API，可导入 PowerPoint 模板和资料数据（纯文本、PDF 等），并按模板生成演示文稿。
   </p>
 </div>
 
@@ -43,10 +43,19 @@
 - 从模板 PPTX 中提取布局结构和品牌设定，生成可重复使用的规格 JSON。
 - 将提取的规格与资料数据结合，生成带有审计日志的 PPTX/PDF（可使用 LibreOffice 进行 PDF 转换）。
 
-## 快速入门
+## 快速入门：CLI
 1. 为 Python 3.12 系的虚拟环境做好准备，并使用 `uv sync` 同步依赖项。
 2. 执行 `uv run --help` 以确认 CLI 入口点可用。
-3. 运行生成流水线。
+3. 按下方管线表中的 CLI 示例运行。
+
+## 快速入门：API
+1. 为 Python 3.12 系的虚拟环境做好准备，并使用 `uv sync` 同步依赖项。
+2. 通过 `.env` 等准备环境变量（如 `PPTX_API_BEARER_TOKEN`）。
+3. 启动 API。
+   ```bash
+   uv run flask --app pptx_generator.api.flask_app run --host 0.0.0.0 --port 8000
+   ```
+4. 按下方管线表中的 API 示例调用。
 
 ## 生成管线概览
 ### 动态生成 (dynamic mode)
@@ -61,39 +70,41 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  Tmpl["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 テンプレ**"]:::stage
-  S1 --> Jobspec["**テンプレ仕様(jobspec.json)**"]:::file
+  Tmpl["**模板 PPTX (templates.pptx)**"]:::userfile --> S1["**stage 1 模板**"]:::stage
+  S1 --> Jobspec["**模板规格 (jobspec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  Prepare["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 コンテンツ準備**"]:::stage
-  S2 --> PrepareCards["**ドラフト(prepare_card.json)**"]:::file
+  Prepare["**内容数据 (prepare_source.md / .json)**"]:::userfile --> S2["**stage 2 内容准备**"]:::stage
+  S2 --> PrepareCards["**草稿 (prepare_card.json)**"]:::file
   PrepareCards --> S3
 
   %% ======= Stage 3 =======
-  S3["**stage 3 マッピング**"]:::stage
+  S3["**stage 3 映射**"]:::stage
   Jobspec --> S3
-  S3 --> Ready["**パワポ.json (generate_ready.json)**"]:::file
+  S3 --> Ready["**generate_ready.json**"]:::file
 
   %% ======= Stage 4 =======
-  Ready --> S4["**stage 4 PPTX生成**"]:::stage
+  Ready --> S4["**stage 4 PPTX 生成**"]:::stage
   S4 --> PPTX["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
   subgraph Legend[凡例]
     direction LR
-    A1["**stage（自動/HITL）**"]:::stage
-    A2["**システム生成ファイル**"]:::file
-    A3["**ユーザー準備ファイル**"]:::userfile
-    A4["**最終成果物**"]:::final
+    A1["**阶段（自动/HITL）**"]:::stage
+    A2["**系统生成文件**"]:::file
+    A3["**用户准备文件**"]:::userfile
+    A4["**最终成果物**"]:::final
   end
 ```
 
-| 阶段 | 概述 | 命令示例 |
-| --- | --- | --- |
-| 1. 模板 | 提取并验证模板 PPTX，将 `jobspec.json` 等基础数据输出到 `.pptx/template/` 目录 | `uv run pptx template samples/templates/templates.pptx --mode dynamic` |
-| 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成包含 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/input/pitch.md` |
-| 3. 映射 | 进行 HITL 审核与布局分配，生成 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` |
-| 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX、PDF 及审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` |
+*API 示例假设使用 Bearer 认证（`$PPTX_API_BEARER_TOKEN`）且可访问本地路径，`transaction_id=tx-local` 仅为示例。*
+
+| 阶段 | 概述 | CLI 示例 | API 示例 |
+| --- | --- | --- | --- |
+| 1. 模板 | 提取并验证模板 PPTX，将 `jobspec.json` 等基础数据输出到 `.pptx/template/` 目录 | `uv run pptx template samples/templates/templates.pptx --mode dynamic` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/templates.pptx","mode":"dynamic","transaction_id":"tx-local"}'` |
+| 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成包含 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
+| 3. 映射 | 进行 HITL 审核与布局分配，生成 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
+| 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX、PDF 及审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
 ### 静态生成 (static mode)
 按照模板确定的幻灯片结构，自动分配资料数据并完成制作的模式。适用于幻灯片排布和规则已确定的场景。
@@ -101,9 +112,9 @@ flowchart TD
 在静态模式中出现的结构具有如下层次结构。
 
 ```
-Blueprint（テンプレ全体の設計図）
-└─ Slide（スライドごとの枠組み）
-    └─ Slot（コンテンツ差し込み枠）
+Blueprint（模板整体设计图）
+└─ Slide（每页幻灯片框架）
+    └─ Slot（内容插槽）
 ```
 
 ```mermaid
@@ -115,44 +126,45 @@ flowchart TD
   classDef final fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#78350f,font-weight:bold;
 
   %% ======= Stage 1 =======
-  TmplStatic["**テンプレートPPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 テンプレ**"]:::stage
-  S1Static --> SpecStatic["**テンプレ仕様(jobspec.json)**<br/>**テンプレ構造(template_spec.json)**"]:::file
+  TmplStatic["**模板 PPTX (templates.pptx)**"]:::userfile --> S1Static["**stage 1 模板**"]:::stage
+  S1Static --> SpecStatic["**模板规格 (jobspec.json)**<br/>**模板结构 (template_spec.json)**"]:::file
 
   %% ======= Stage 2 =======
-  PrepareStatic["**資料データ (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 コンテンツ準備 (Slot 生成)**"]:::stage
+  PrepareStatic["**内容数据 (prepare_source.md / .json)**"]:::userfile --> S2Static["**stage 2 内容准备（生成 Slot）**"]:::stage
   SpecStatic --> S2Static
-  S2Static --> PrepareCardsStatic["**ドラフト(prepare_card.json)**"]:::file
+  S2Static --> PrepareCardsStatic["**草稿 (prepare_card.json)**"]:::file
   PrepareCardsStatic --> S3Static
 
   %% ======= Stage 3 =======
-  S3Static["**stage 3 マッピング (Blueprint 検証)**"]:::stage
+  S3Static["**stage 3 映射（Blueprint 验证）**"]:::stage
   SpecStatic --> S3Static
-  S3Static --> ReadyStatic["**パワポ.json (generate_ready.json)**"]:::file
+  S3Static --> ReadyStatic["**generate_ready.json**"]:::file
 
   %% ======= Stage 4 =======
-  ReadyStatic --> S4Static["**stage 4 PPTX生成**"]:::stage
+  ReadyStatic --> S4Static["**stage 4 PPTX 生成**"]:::stage
   S4Static --> PPTXStatic["**proposal.pptx**"]:::final
 
   %% ======= Legend =======
   subgraph LegendStatic[凡例]
     direction LR
-    B1["**stage（自動/HITL）**"]:::stage
-    B2["**テンプレ仕様 / 構造ファイル**"]:::file
-    B3["**ユーザー準備ファイル**"]:::userfile
-    B4["**最終成果物**"]:::final
+    B1["**阶段（自动/HITL）**"]:::stage
+    B2["**模板规格 / 结构文件**"]:::file
+    B3["**用户准备文件**"]:::userfile
+    B4["**最终成果物**"]:::final
   end
 ```
 
-| 阶段 | 概要 | 命令示例 |
-| --- | --- | --- |
-| 1. 模板 | 与 Blueprint 信息一起输出 `.pptx/template/prompts/`（提示模板）和 `.pptx/slide_inputs.md`（幻灯片输入清单） | `uv run pptx template samples/templates/templates.pptx --mode static` |
-| 2. 内容准备 | 编辑模板 (`.pptx/template/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`)，如有必要省略 `<数据文件路径>`，并按照 Blueprint 的 Slot 定义整理临时幻灯片 | `uv run pptx prepare --mode static` |
-| 3. 映射 | 在验证 Slot 满足情况的同时生成 `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` |
-| 4. PPTX 生成 | 以固定布局输出 PPTX / PDF | `uv run pptx gen .pptx/compose/generate_ready.json` |
+| 阶段 | 概要 | CLI 示例 | API 示例 |
+| --- | --- | --- | --- |
+| 1. 模板 | 与 Blueprint 信息一起输出 `.pptx/template/prompts/`（提示模板）和 `.pptx/slide_inputs.md`（幻灯片输入清单） | `uv run pptx template samples/templates/templates.pptx --mode static` | `curl -X POST http://localhost:8000/templates -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"template_path":"samples/templates/templates.pptx","mode":"static","transaction_id":"tx-local"}'` |
+| 2. 内容准备 | 编辑模板 (`.pptx/template/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`)，如有必要省略 `<数据文件路径>`，并按照 Blueprint 的 Slot 定义整理临时幻灯片 | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
+| 3. 映射 | 在验证 Slot 满足情况的同时生成 `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
+| 4. PPTX 生成 | 以固定布局输出 PPTX / PDF | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
 
-- 在静态模板中，准备好 `external/<template_id>/hooks.json` 即可将各阶段的处理委托给外部钩子。请参考 `external/README.md` 了解引入与运维步骤；请参考 `external/AGENTS.md` 了解工作指引。有关详细的设定示例和传入的环境变量，请参考 `docs/design/stages/` 下的各阶段文档。
-
-各阶段的 CLI 命令及主要选项，请参阅 `docs/design/cli/cli-command-reference.md`。
+## 详细选项
+- CLI: `docs/design/cli/cli-command-reference.md`
+- Web API: 设计说明 `docs/design/api/flask.md`，契约 `docs/design/api/openapi.yaml`
+- 静态模板: 通过 `external/<template_id>/hooks.json` 可将各阶段处理委托给外部钩子。引入与运维步骤参阅 `external/README.md`，工作指引参阅 `external/AGENTS.md`，各阶段的配置示例与环境变量说明参阅 `docs/design/stages/`。
 
 ## 测试
 - 测试执行:

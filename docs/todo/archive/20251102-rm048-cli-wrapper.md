@@ -48,7 +48,7 @@ roadmap_item: RM-048 stage 4+5 統合CLI整備
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/test_cli_integration.py` を実行し、`test_cli_compose_generates_stage45_outputs` を含む30ケースが成功。
 - [x] ドキュメント更新
-  - メモ: `docs/design/architecture/cli-command-reference.md` に compose を追記し、`docs/runbooks/story-outline-ops.md` の stage 手順を更新。`docs/roadmap/roadmap.md` で RM-048 を進行中へ更新し、`docs/requirements` は影響なし。README には追記準備中のため別途検討。
+  - メモ: `docs/design/cli/cli-command-reference.md` に compose を追記し、`docs/runbooks/story-outline-ops.md` の stage 手順を更新。`docs/roadmap/roadmap.md` で RM-048 を進行中へ更新し、`docs/requirements` は影響なし。README には追記準備中のため別途検討。
   - [x] docs/roadmap 配下
   - [x] docs/requirements 配下（実装結果との整合再確認：影響なし）
   - [x] docs/design 配下（実装結果との整合再確認）

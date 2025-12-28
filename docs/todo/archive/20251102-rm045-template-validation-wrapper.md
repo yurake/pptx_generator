@@ -9,8 +9,8 @@ roadmap_item: RM-045 テンプレ抽出検証ラッパー整備
   - メモ: feat/rm045-template-validation-wrapper を main から作成し、ToDo 追加の初期コミットを実施（docs(todo): add RM-045 task tracker）。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 
-    - スコープ: tpl-extract 実行後に layout-validate を自動実行し、抽出成果物と同じ出力ディレクトリへ検証結果（layouts.jsonl / diagnostics.json 等）を保存。既存 layout-validate コマンドは従来どおり利用可能。CLI 出力に検証サマリを追記し、README・docs/design/architecture/cli-command-reference.md（必要に応じ docs/runbooks/）を更新。
-    - 想定変更ファイル: src/pptx_generator/cli.py、tests/test_cli_integration.py、README.md、docs/design/architecture/cli-command-reference.md（必要に応じ docs/runbooks/）。
+    - スコープ: tpl-extract 実行後に layout-validate を自動実行し、抽出成果物と同じ出力ディレクトリへ検証結果（layouts.jsonl / diagnostics.json 等）を保存。既存 layout-validate コマンドは従来どおり利用可能。CLI 出力に検証サマリを追記し、README・docs/design/cli/cli-command-reference.md（必要に応じ docs/runbooks/）を更新。
+    - 想定変更ファイル: src/pptx_generator/cli.py、tests/test_cli_integration.py、README.md、docs/design/cli/cli-command-reference.md（必要に応じ docs/runbooks/）。
     - 前提・制約: LayoutValidationSuite の API と終了コードを現状維持。検証成果物は抽出出力ディレクトリへ上書き保存。新オプションは追加しない。
     - 進め方: (1) tpl_extract の終端に LayoutValidationSuite 呼び出しを組み込み、例外・ログ・メッセージを整備。(2) 検証成果物パスと警告件数の出力を追加。(3) 自動検証を確認する統合テストを追加・更新。(4) README/CLI ドキュメント（必要なら runbook）を更新。(5) ToDo へ進捗を反映。
     - テスト: 既存 CLI 統合テストの回帰確認、新規ケースで検証成果物生成とメッセージを確認、可能なら検証エラー時の終了コード確認。
