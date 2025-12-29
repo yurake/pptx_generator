@@ -8,25 +8,19 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
-from collections import Counter
 from pathlib import Path
 
 import click
 import pytest
 from click.testing import CliRunner
 from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator import cli
 from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
-from pptx_generator.layout_validation import (LayoutValidationResult,
-                                              LayoutValidationSuite)
-from pptx_generator.models import (JobAuth, JobMeta, JobSpec, Slide, TemplateRelease,
-                                   TemplateReleaseGoldenRun,
-                                   TemplateReleaseReport, TemplateSpec,
-                                   TemplateStyle, PipelineFallbackError)
+from pptx_generator.layout_validation import LayoutValidationSuite
+from pptx_generator.models import (JobAuth, JobMeta, JobSpec, Slide, TemplateStyle,
+                                   PipelineFallbackError)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.cli_handlers.mapping import TemplateStylePayload
@@ -691,6 +685,7 @@ def test_cli_compose_fails_when_layouts_mismatch(tmp_path: Path) -> None:
             str(output_dir),
             *_prepare_args(prepare_paths),
         ],
+        env={"PPTX_STRICT_LAYOUTS": "1"},
         catch_exceptions=False,
     )
 
@@ -717,6 +712,7 @@ def test_cli_mapping_fails_when_layouts_mismatch(tmp_path: Path) -> None:
             str(mapping_dir),
             *_prepare_args(prepare_paths),
         ],
+        env={"PPTX_STRICT_LAYOUTS": "1"},
         catch_exceptions=False,
     )
 

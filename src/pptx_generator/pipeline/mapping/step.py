@@ -59,8 +59,10 @@ class MappingStep:
                 "layouts.jsonl に一致するレイアウトが見つかりませんでした: "
                 + ", ".join(sorted(missing_layouts))
             )
-            logger.error(msg)
-            raise PipelineFallbackError(msg)
+            if self.options.strict_layouts:
+                logger.error(msg)
+                raise PipelineFallbackError(msg)
+            logger.warning(msg)
 
         section_lookup = build_section_lookup(draft_document)
         card_lookup = build_card_lookup(draft_document)

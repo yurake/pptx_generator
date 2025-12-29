@@ -13,8 +13,7 @@ from pptx_generator.pipeline import (
     PipelineStage,
     PrepareNormalizationError,
 )
-from pptx_generator.models import SpecValidationError
-from pptx_generator.settings import RulesConfig
+from pptx_generator.models import JobSpec, SpecValidationError
 from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.models import PipelineFallbackError
 
