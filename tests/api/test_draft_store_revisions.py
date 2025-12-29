@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pytest
@@ -148,3 +149,38 @@ def test_revision_mismatch(tmp_path: Path, draft_board: DraftDocument) -> None:
             expected_etag='W/"draft-999"',
             actor=None,
         )
+
+
+def test_concurrent_updates_are_rejected(tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-3", draft_board)
+
+    def update(expected: str) -> str:
+        return store.update_layout_hint(
+            spec_id="spec-3",
+            slide_id="s1",
+            layout_hint="Parallel",
+            notes=None,
+            expected_etag=expected,
+            actor="parallel-user",
+        )
+
+    futures = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures.append(executor.submit(update, etag))
+        futures.append(executor.submit(update, etag))
+
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+
+    board, current_etag = store.get_board("spec-3")
+    assert board.sections[0].slides[0].layout_hint == "Parallel"
+    assert current_etag == results[0]
