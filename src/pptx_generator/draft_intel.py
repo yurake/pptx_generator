@@ -131,47 +131,12 @@ def load_chapter_template(base_dir: Path, template_id: str) -> ChapterTemplate |
     if not isinstance(payload, dict):
         raise ValueError(f"テンプレートファイルの形式が不正です: {template_path}")
 
-    def _load_sections(items: Iterable[Mapping[str, object]]) -> list[ChapterTemplateSection]:
-        sections: list[ChapterTemplateSection] = []
-        for item in items:
-            section_id = str(item.get("id", "")).strip()
-            if not section_id:
-                continue
-            title = str(item.get("title", "")).strip() or None
-            min_slides = int(item.get("min_slides", 0) or 0)
-            max_value = item.get("max_slides")
-            max_slides: int | None = None
-            if isinstance(max_value, (int, float)):
-                max_slides = int(max_value)
-            sections.append(
-                ChapterTemplateSection(
-                    section_id=section_id,
-                    title=title,
-                    min_slides=min_slides,
-                    max_slides=max_slides,
-                )
-            )
-        return sections
-
     required_items = payload.get("required_sections") or []
     optional_items = payload.get("optional_sections") or []
     if not isinstance(required_items, list) or not isinstance(optional_items, list):
         raise ValueError(f"テンプレートのセクション定義が不正です: {template_path}")
 
-    constraints = payload.get("constraints") or {}
-    max_main_pages = None
-    appendix_policy = "overflow"
-    tags: tuple[str, ...] = ()
-    if isinstance(constraints, dict):
-        max_value = constraints.get("max_main_pages")
-        if isinstance(max_value, (int, float)) and max_value > 0:
-            max_main_pages = int(max_value)
-        appendix_policy_value = constraints.get("appendix_policy")
-        if isinstance(appendix_policy_value, str) and appendix_policy_value:
-            appendix_policy = appendix_policy_value
-        tags_value = constraints.get("tags")
-        if isinstance(tags_value, list):
-            tags = tuple(str(tag) for tag in tags_value if str(tag).strip())
+    max_main_pages, appendix_policy, tags = _parse_template_constraints(payload.get("constraints"))
 
     template = ChapterTemplate(
         template_id=str(payload.get("template_id") or template_path.stem),
@@ -200,80 +165,26 @@ def evaluate_chapter_template(
     normalized_counts = {key.lower(): count for key, count in section_counts.items()}
 
     for section in template.required_sections:
-        key = section.section_id.lower()
-        count = normalized_counts.get(key, 0)
-        score = 0.0
-        if count == 0:
-            mismatches.append(
-                DraftTemplateMismatch(
-                    section_id=section.section_id,
-                    issue="missing",
-                    severity="blocker",
-                    detail="必須章が不足しています",
-                )
-            )
-        else:
-            if section.max_slides is not None and count > section.max_slides:
-                mismatches.append(
-                    DraftTemplateMismatch(
-                        section_id=section.section_id,
-                        issue="excess",
-                        severity="warn",
-                        detail=f"許容枚数 {section.max_slides} を超過 (actual={count})",
-                    )
-                )
-                score = min(1.0, section.max_slides / count)
-            elif count < max(1, section.min_slides):
-                mismatches.append(
-                    DraftTemplateMismatch(
-                        section_id=section.section_id,
-                        issue="insufficient",
-                        severity="blocker",
-                        detail=f"必要枚数 {section.min_slides} 未満 (actual={count})",
-                    )
-                )
-                score = count / max(1, section.min_slides)
-            else:
-                score = 1.0
-                matched_required += 1
-        section_scores[section.section_id] = round(max(0.0, min(1.0, score)), 3)
+        count = normalized_counts.get(section.section_id.lower(), 0)
+        score, section_mismatches, matched = _score_required_section(section, count)
+        mismatches.extend(section_mismatches)
+        matched_required += matched
+        section_scores[section.section_id] = score
 
     for section in template.optional_sections:
-        key = section.section_id.lower()
-        count = normalized_counts.get(key, 0)
-        if count == 0:
-            section_scores.setdefault(section.section_id, 0.0)
-            continue
-        score = 1.0
-        if section.max_slides is not None and count > section.max_slides:
-            mismatches.append(
-                DraftTemplateMismatch(
-                    section_id=section.section_id,
-                    issue="excess",
-                    severity="warn",
-                    detail=f"任意章が許容枚数 {section.max_slides} を超過 (actual={count})",
-                )
-            )
-            score = min(1.0, section.max_slides / count)
-        section_scores[section.section_id] = round(max(0.0, min(1.0, score)), 3)
+        count = normalized_counts.get(section.section_id.lower(), 0)
+        score, section_mismatches = _score_optional_section(section, count)
+        mismatches.extend(section_mismatches)
+        section_scores[section.section_id] = score
 
-    if template.max_main_pages is not None and total_main_pages > template.max_main_pages:
-        severity = "blocker" if template.appendix_policy == "block" else "warn"
-        mismatches.append(
-            DraftTemplateMismatch(
-                section_id="__capacity__",
-                issue="capacity",
-                severity=severity,
-                detail=f"許容枚数 {template.max_main_pages} を超過 (actual={total_main_pages})",
-            )
-        )
+    capacity_mismatch = _capacity_mismatch(template, total_main_pages)
+    if capacity_mismatch:
+        mismatches.append(capacity_mismatch)
 
-    match_score = 1.0
-    if required_total:
-        match_score = max(0.0, min(1.0, matched_required / required_total))
+    match_score = _calculate_match_score(required_total, matched_required)
 
     return ChapterTemplateEvaluation(
-        match_score=round(match_score, 3),
+        match_score=match_score,
         section_scores=section_scores,
         mismatches=mismatches,
     )
@@ -289,41 +200,18 @@ def load_analysis_summary(path: Path) -> dict[str, DraftAnalyzerSummary]:
     payload = _load_json(path)
     if not isinstance(payload, dict):
         raise ValueError(f"analysis_summary.json の形式が不正です: {path}")
+
     slides = payload.get("slides")
     if not isinstance(slides, list):
         return {}
+
     summary: dict[str, DraftAnalyzerSummary] = {}
     for item in slides:
-        if not isinstance(item, dict):
+        parsed = _parse_slide_summary(item)
+        if parsed is None:
             continue
-        slide_uid = str(item.get("slide_uid", "")).strip()
-        if not slide_uid:
-            continue
-        severity_counts = item.get("severity_counts") or {}
-        high = int(severity_counts.get("high", 0) or 0)
-        medium = int(severity_counts.get("medium", 0) or 0)
-        low = int(severity_counts.get("low", 0) or 0)
-        layout_consistency = item.get("layout_consistency")
-        if isinstance(layout_consistency, str):
-            value = layout_consistency.lower()
-            if value in {"ok", "warn", "error"}:
-                layout_consistency = value
-            else:
-                layout_consistency = None
-        else:
-            layout_consistency = None
-        blocking_tags: tuple[str, ...] = ()
-        tags = item.get("blocking_tags")
-        if isinstance(tags, list):
-            blocking_tags = tuple(str(tag) for tag in tags if str(tag).strip())
-
-        summary[slide_uid] = DraftAnalyzerSummary(
-            severity_high=high,
-            severity_medium=medium,
-            severity_low=low,
-            layout_consistency=layout_consistency,
-            blocking_tags=blocking_tags,
-        )
+        slide_uid, analyzer_summary = parsed
+        summary[slide_uid] = analyzer_summary
     return summary
 
 
@@ -368,3 +256,168 @@ def clamp_score_detail(detail: DraftLayoutScoreDetail) -> DraftLayoutScoreDetail
         detail.analyzer_support = round(max(-0.5, detail.analyzer_support), 3)
         detail.ai_recommendation = round(max(0.0, detail.ai_recommendation), 3)
     return detail
+
+
+def _parse_template_constraints(constraints: object) -> tuple[int | None, str, tuple[str, ...]]:
+    max_main_pages = None
+    appendix_policy = "overflow"
+    tags: tuple[str, ...] = ()
+    if not isinstance(constraints, dict):
+        return max_main_pages, appendix_policy, tags
+
+    max_value = constraints.get("max_main_pages")
+    if isinstance(max_value, (int, float)) and max_value > 0:
+        max_main_pages = int(max_value)
+
+    appendix_policy_value = constraints.get("appendix_policy")
+    if isinstance(appendix_policy_value, str) and appendix_policy_value:
+        appendix_policy = appendix_policy_value
+
+    tags_value = constraints.get("tags")
+    if isinstance(tags_value, list):
+        tags = tuple(str(tag) for tag in tags_value if str(tag).strip())
+
+    return max_main_pages, appendix_policy, tags
+
+
+def _load_sections(items: Iterable[Mapping[str, object]]) -> list[ChapterTemplateSection]:
+    sections: list[ChapterTemplateSection] = []
+    for item in items:
+        section_id = str(item.get("id", "")).strip()
+        if not section_id:
+            continue
+        title = str(item.get("title", "")).strip() or None
+        min_slides = int(item.get("min_slides", 0) or 0)
+        max_value = item.get("max_slides")
+        max_slides: int | None = None
+        if isinstance(max_value, (int, float)):
+            max_slides = int(max_value)
+        sections.append(
+            ChapterTemplateSection(
+                section_id=section_id,
+                title=title,
+                min_slides=min_slides,
+                max_slides=max_slides,
+            )
+        )
+    return sections
+
+
+def _score_required_section(
+    section: ChapterTemplateSection, count: int
+) -> tuple[float, list[DraftTemplateMismatch], int]:
+    mismatches: list[DraftTemplateMismatch] = []
+    if count == 0:
+        mismatches.append(
+            DraftTemplateMismatch(
+                section_id=section.section_id,
+                issue="missing",
+                severity="blocker",
+                detail="必須章が不足しています",
+            )
+        )
+        return 0.0, mismatches, 0
+
+    if section.max_slides is not None and count > section.max_slides:
+        mismatches.append(
+            DraftTemplateMismatch(
+                section_id=section.section_id,
+                issue="excess",
+                severity="warn",
+                detail=f"許容枚数 {section.max_slides} を超過 (actual={count})",
+            )
+        )
+        return round(min(1.0, section.max_slides / count), 3), mismatches, 0
+
+    if count < max(1, section.min_slides):
+        mismatches.append(
+            DraftTemplateMismatch(
+                section_id=section.section_id,
+                issue="insufficient",
+                severity="blocker",
+                detail=f"必要枚数 {section.min_slides} 未満 (actual={count})",
+            )
+        )
+        score = count / max(1, section.min_slides)
+        return round(max(0.0, min(1.0, score)), 3), mismatches, 0
+
+    return 1.0, mismatches, 1
+
+
+def _score_optional_section(
+    section: ChapterTemplateSection, count: int
+) -> tuple[float, list[DraftTemplateMismatch]]:
+    if count == 0:
+        return 0.0, []
+
+    if section.max_slides is not None and count > section.max_slides:
+        mismatch = DraftTemplateMismatch(
+            section_id=section.section_id,
+            issue="excess",
+            severity="warn",
+            detail=f"任意章が許容枚数 {section.max_slides} を超過 (actual={count})",
+        )
+        return round(min(1.0, section.max_slides / count), 3), [mismatch]
+
+    return 1.0, []
+
+
+def _capacity_mismatch(
+    template: ChapterTemplate, total_main_pages: int
+) -> DraftTemplateMismatch | None:
+    if template.max_main_pages is None or total_main_pages <= template.max_main_pages:
+        return None
+    severity = "blocker" if template.appendix_policy == "block" else "warn"
+    return DraftTemplateMismatch(
+        section_id="__capacity__",
+        issue="capacity",
+        severity=severity,
+        detail=f"許容枚数 {template.max_main_pages} を超過 (actual={total_main_pages})",
+    )
+
+
+def _calculate_match_score(required_total: int, matched_required: int) -> float:
+    if not required_total:
+        return 1.0
+    return round(max(0.0, min(1.0, matched_required / required_total)), 3)
+
+
+def _parse_slide_summary(item: object) -> tuple[str, DraftAnalyzerSummary] | None:
+    if not isinstance(item, dict):
+        return None
+
+    slide_uid = str(item.get("slide_uid", "")).strip()
+    if not slide_uid:
+        return None
+
+    severity_counts = item.get("severity_counts") or {}
+    high = int(severity_counts.get("high", 0) or 0)
+    medium = int(severity_counts.get("medium", 0) or 0)
+    low = int(severity_counts.get("low", 0) or 0)
+
+    layout_consistency = _normalize_layout_consistency(item.get("layout_consistency"))
+    blocking_tags = _normalize_blocking_tags(item.get("blocking_tags"))
+
+    analyzer_summary = DraftAnalyzerSummary(
+        severity_high=high,
+        severity_medium=medium,
+        severity_low=low,
+        layout_consistency=layout_consistency,
+        blocking_tags=blocking_tags,
+    )
+    return slide_uid, analyzer_summary
+
+
+def _normalize_layout_consistency(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.lower()
+    if normalized in {"ok", "warn", "error"}:
+        return normalized
+    return None
+
+
+def _normalize_blocking_tags(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        return ()
+    return tuple(str(tag) for tag in value if str(tag).strip())
