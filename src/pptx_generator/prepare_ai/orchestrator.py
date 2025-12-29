@@ -145,6 +145,21 @@ class PrepareAIOrchestrator:
         cards: list[PrepareCard] = []
         ai_records: list[PrepareAIRecord] = []
 
+        truncated = False
+        response_text = llm_result.text
+        if response_text and len(response_text) > 2000:
+            response_text = response_text[:2000]
+            truncated = True
+        logging.getLogger("pptx_generator.prepare_ai.llm").info(
+            "prepare AI call: model=%s prompt_len=%s response_len=%s truncated=%s prompt=%s response=%s",
+            llm_result.model,
+            len(prompt),
+            len(llm_result.text),
+            truncated,
+            prompt,
+            response_text,
+        )
+
         for index, entry in enumerate(chapters_payload):
             is_title_card = include_title_page and index == 0
             card = self._build_card_from_llm_entry(

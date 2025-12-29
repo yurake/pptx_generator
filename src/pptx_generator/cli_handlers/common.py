@@ -253,13 +253,13 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
             "%(asctime)s %(levelname)s %(name)s "
             "slide_id=%(slide_id)s card_id=%(card_id)s model=%(model)s intent=%(intent)s "
             "reason=%(reason)s finish=%(finish_reason)s refusal=%(refusal)s warnings=%(warnings)s "
-            "message=%(message)s prompt=%(prompt_excerpt)s raw_response=%(raw_response_excerpt)s"
+            "prompt_len=%(prompt_len)s response_len=%(response_len)s truncated=%(truncated)s message=%(message)s"
         ),
     )
 
     class _LLMLogFilter(logging.Filter):
         def filter(self, record: logging.LogRecord) -> bool:
-            return bool(getattr(record, "raw_response", None) or getattr(record, "prompt", None))
+            return True
 
     if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
         llm_logger.addFilter(_LLMLogFilter())

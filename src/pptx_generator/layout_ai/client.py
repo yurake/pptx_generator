@@ -209,6 +209,22 @@ class OpenAIChatLayoutClient:
             )
             raise LayoutAIResponseFormatError("OpenAI layout AI の応答が空でした")
 
+        raw = content
+        truncated = False
+        if len(raw) > 2000:
+            raw = raw[:2000]
+            truncated = True
+
+        _LAYOUT_LLM_LOGGER.info(
+            "layout AI call: model=%s prompt_len=%s response_len=%s truncated=%s prompt=%s response=%s",
+            getattr(response, "model", self._model),
+            len(request.prompt),
+            len(content),
+            truncated,
+            request.prompt,
+            raw,
+        )
+
         try:
             parsed = _parse_layout_response(content, model=getattr(response, "model", self._model))
         except LayoutAIResponseFormatError as exc:
