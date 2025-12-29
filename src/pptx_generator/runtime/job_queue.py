@@ -68,12 +68,13 @@ class InProcessJobQueue:
                 job_id = self._queue.get(timeout=1.0)
             except Empty:
                 continue
-            state = self._jobs.get(job_id)
-            if state is None:
+            try:
+                state = self._jobs.get(job_id)
+                if state is None:
+                    continue
+                self._run_job(state)
+            finally:
                 self._queue.task_done()
-                continue
-            self._run_job(state)
-            self._queue.task_done()
 
     def _run_job(self, state: JobState[object]) -> None:
         state.status = JobStatus.RUNNING
@@ -82,9 +83,13 @@ class InProcessJobQueue:
         try:
             state.result = state.request.func()
             state.status = JobStatus.SUCCEEDED
+        except Exception as exc:
+            state.error = exc
+            state.status = JobStatus.FAILED
         except BaseException as exc:  # noqa: BLE001
             state.error = exc
             state.status = JobStatus.FAILED
+            raise
         finally:
             reset_current_job(token)
             state.finished_at = datetime.now(timezone.utc)
