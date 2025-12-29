@@ -184,6 +184,11 @@ class OpenAIPrepareLLMClient:
 
     def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.model
+        start = time.perf_counter()
+        logger.info(
+            "prepare_ai call start: provider=openai model=%s",
+            target_model,
+        )
         messages = [
             {"role": "system", "content": "You are a helpful assistant that returns JSON only."},
             {"role": "user", "content": prompt},
@@ -197,6 +202,7 @@ class OpenAIPrepareLLMClient:
         if self.max_tokens > 0:
             kwargs["max_completion_tokens"] = self.max_tokens
         response = self.client.chat.completions.create(**kwargs)  # type: ignore[attr-defined]
+        latency_ms = (time.perf_counter() - start) * 1000
         choice = response.choices[0]
         content = getattr(choice.message, "content", "")
         if isinstance(content, list):
@@ -209,6 +215,12 @@ class OpenAIPrepareLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
+        logger.info(
+            "prepare_ai call done: provider=openai model=%s latency_ms=%.1f finish_reason=%s",
+            target_model,
+            latency_ms,
+            getattr(choice, "finish_reason", None),
+        )
         return PrepareLLMResult(text=str(content or ""), model=target_model, warnings=[], tokens=tokens)
 
 
@@ -247,6 +259,11 @@ class AzureOpenAIPrepareLLMClient:
 
     def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
         target_model = model_hint or self.deployment
+        start = time.perf_counter()
+        logger.info(
+            "prepare_ai call start: provider=azure model=%s",
+            target_model,
+        )
         messages = [
             {
                 "role": "system",
@@ -265,6 +282,7 @@ class AzureOpenAIPrepareLLMClient:
         if self.max_tokens > 0:
             kwargs["max_output_tokens"] = self.max_tokens
         response = self.client.responses.create(**kwargs)  # type: ignore[attr-defined]
+        latency_ms = (time.perf_counter() - start) * 1000
         output = getattr(response, "output", []) or []
         texts: list[str] = []
         for item in output:
@@ -295,4 +313,9 @@ class AzureOpenAIPrepareLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
+        logger.info(
+            "prepare_ai call done: provider=azure model=%s latency_ms=%.1f",
+            target_model,
+            latency_ms,
+        )
         return PrepareLLMResult(text="".join(texts), model=self.deployment, warnings=[], tokens=tokens)

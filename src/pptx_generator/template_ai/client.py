@@ -256,6 +256,11 @@ class AnthropicTemplateAIClient:
 
     def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:
         model_name = self._model or ""
+        start = time.perf_counter()
+        logger.info(
+            "template_ai call start: provider=anthropic model=%s",
+            model_name,
+        )
         try:
             response = self._client.messages.create(  # type: ignore[attr-defined]
                 model=model_name,
@@ -283,6 +288,7 @@ class AnthropicTemplateAIClient:
             )
             raise TemplateAIClientConfigurationError(str(exc)) from exc
 
+        latency_ms = (time.perf_counter() - start) * 1000
         text_parts = [
             block.text for block in response.content if getattr(block, "type", None) == "text" and getattr(block, "text", None)
         ]
@@ -290,6 +296,11 @@ class AnthropicTemplateAIClient:
         if raw_text is None:
             raise TemplateAIClientConfigurationError("Anthropic 応答が空でした")
         usage_tags, reason = _parse_template_ai_response(raw_text)
+        logger.info(
+            "template_ai call done: provider=anthropic model=%s latency_ms=%.1f",
+            model_name,
+            latency_ms,
+        )
         return TemplateAIResponse(
             model=f"anthropic:{model_name}",
             usage_tags=usage_tags,
