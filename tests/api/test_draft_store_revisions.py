@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pytest
@@ -148,3 +149,166 @@ def test_revision_mismatch(tmp_path: Path, draft_board: DraftDocument) -> None:
             expected_etag='W/"draft-999"',
             actor=None,
         )
+
+
+def test_concurrent_updates_are_rejected(tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-3", draft_board)
+
+    def update(expected: str) -> str:
+        return store.update_layout_hint(
+            spec_id="spec-3",
+            slide_id="s1",
+            layout_hint="Parallel",
+            notes=None,
+            expected_etag=expected,
+            actor="parallel-user",
+        )
+
+    futures = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures.append(executor.submit(update, etag))
+        futures.append(executor.submit(update, etag))
+
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+
+    board, current_etag = store.get_board("spec-3")
+    assert board.sections[0].slides[0].layout_hint == "Parallel"
+    assert current_etag == results[0]
+
+
+def test_concurrent_move_slide_rejected(tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-4", draft_board)
+
+    def move(expected: str) -> str:
+        return store.move_slide(
+            spec_id="spec-4",
+            slide_id="s1",
+            target_section="Section B",
+            position=1,
+            expected_etag=expected,
+            actor="parallel-user",
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(move, etag), executor.submit(move, etag)]
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+    board, current_etag = store.get_board("spec-4")
+    assert board.sections[1].slides[0].ref_id == "s1"
+    assert current_etag == results[0]
+
+
+def test_concurrent_approve_section_rejected(tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-5", draft_board)
+
+    def approve(expected: str) -> str:
+        return store.approve_section(
+            spec_id="spec-5",
+            section_name="Section A",
+            expected_etag=expected,
+            actor="approver",
+            notes=None,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(approve, etag), executor.submit(approve, etag)]
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+    board, current_etag = store.get_board("spec-5")
+    section_a = next(section for section in board.sections if section.name == "Section A")
+    assert all(slide.locked is True for slide in section_a.slides)
+    assert current_etag == results[0]
+
+
+def test_concurrent_set_appendix_rejected(tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-6", draft_board)
+
+    def set_appendix(expected: str) -> str:
+        return store.set_appendix(
+            spec_id="spec-6",
+            slide_id="s1",
+            appendix=True,
+            expected_etag=expected,
+            actor="parallel-user",
+            notes=None,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(set_appendix, etag), executor.submit(set_appendix, etag)]
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+    board, current_etag = store.get_board("spec-6")
+    section_a = next(section for section in board.sections if section.name == "Section A")
+    assert section_a.slides[0].appendix is True
+    assert current_etag == results[0]
+
+
+def test_concurrent_updates_non_posix_lock(monkeypatch, tmp_path: Path, draft_board: DraftDocument) -> None:
+    store = DraftStore(base_dir=tmp_path)
+    etag = store.create_board("spec-7", draft_board)
+
+    # 非POSIX想定: fcntl を使わない分岐を通す
+    monkeypatch.setattr("pptx_generator.api.draft_store.os.name", "nt")
+
+    def update(expected: str) -> str:
+        return store.update_layout_hint(
+            spec_id="spec-7",
+            slide_id="s1",
+            layout_hint="ParallelNonPosix",
+            notes=None,
+            expected_etag=expected,
+            actor="parallel-user",
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(update, etag), executor.submit(update, etag)]
+        results: list[str] = []
+        errors: list[RevisionMismatchError] = []
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except RevisionMismatchError as exc:
+                errors.append(exc)
+
+    assert len(results) == 1
+    assert len(errors) == 1
+    board, current_etag = store.get_board("spec-7")
+    assert board.sections[0].slides[0].layout_hint == "ParallelNonPosix"
+    assert current_etag == results[0]

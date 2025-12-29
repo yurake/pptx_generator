@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import os
+import contextlib
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator, Tuple
+from typing import Any, ClassVar, Iterator, Tuple
 
 from ..models import DraftDocument, DraftLogEntry
 
@@ -84,6 +86,9 @@ class DraftState:
 class DraftStore:
     """ドラフト構成用のストア。"""
 
+    _locks: ClassVar[dict[str, threading.Lock]] = {}
+    _locks_guard: ClassVar[threading.Lock] = threading.Lock()
+
     def __init__(self, base_dir: Path | None = None) -> None:
         env_dir = os.environ.get("DRAFT_STORE_DIR")
         default_dir = Path(".pptx/draft/store")
@@ -94,28 +99,30 @@ class DraftStore:
     # 公開 API
     # ------------------------------------------------------------------ #
     def create_board(self, spec_id: str, board: DraftDocument) -> str:
-        state_path = self._spec_path(spec_id)
-        if state_path.exists():
-            raise BoardAlreadyExistsError(f"spec '{spec_id}' は既に存在します")
+        with self._spec_lock(spec_id):
+            state_path = self._spec_path(spec_id)
+            if state_path.exists():
+                raise BoardAlreadyExistsError(f"spec '{spec_id}' は既に存在します")
 
-        state = DraftState(
-            spec_id=spec_id,
-            revision=1,
-            board=board.model_dump(mode="json"),
-            logs=[],
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+            state = DraftState(
+                spec_id=spec_id,
+                revision=1,
+                board=board.model_dump(mode="json"),
+                logs=[],
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def overwrite_board(self, spec_id: str, board: DraftDocument) -> str:
-        state = DraftState(
-            spec_id=spec_id,
-            revision=1,
-            board=board.model_dump(mode="json"),
-            logs=[],
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+        with self._spec_lock(spec_id):
+            state = DraftState(
+                spec_id=spec_id,
+                revision=1,
+                board=board.model_dump(mode="json"),
+                logs=[],
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def get_board(self, spec_id: str) -> Tuple[DraftDocument, str]:
         state = self._load_state(spec_id)
@@ -132,34 +139,35 @@ class DraftStore:
         expected_etag: str,
         actor: str | None,
     ) -> str:
-        state = self._load_state(spec_id)
-        expected_revision = _parse_etag(expected_etag)
-        self._ensure_revision(state, expected_revision)
+        with self._spec_lock(spec_id):
+            state = self._load_state(spec_id)
+            expected_revision = _parse_etag(expected_etag)
+            self._ensure_revision(state, expected_revision)
 
-        section, slide = self._find_slide(state.board, slide_id)
-        if bool(slide.get("locked")):
-            raise LockedContentError(f"slide '{slide_id}' はロックされています")
-        slide["layout_hint"] = layout_hint
+            section, slide = self._find_slide(state.board, slide_id)
+            if bool(slide.get("locked")):
+                raise LockedContentError(f"slide '{slide_id}' はロックされています")
+            slide["layout_hint"] = layout_hint
 
-        candidates = slide.setdefault("layout_candidates", [])
-        if not any(candidate.get("layout_id") == layout_hint for candidate in candidates):
-            candidates.append({"layout_id": layout_hint, "score": 1.0})
+            candidates = slide.setdefault("layout_candidates", [])
+            if not any(candidate.get("layout_id") == layout_hint for candidate in candidates):
+                candidates.append({"layout_id": layout_hint, "score": 1.0})
 
-        state.revision += 1
-        self._append_log(
-            state,
-            DraftLogEntry(
-                target_type="slide",
-                target_id=slide_id,
-                action="hint",
-                actor=actor,
-                timestamp=datetime.now(timezone.utc),
-                notes=notes,
-                changes={"layout_hint": layout_hint},
-            ).model_dump(mode="json"),
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+            state.revision += 1
+            self._append_log(
+                state,
+                DraftLogEntry(
+                    target_type="slide",
+                    target_id=slide_id,
+                    action="hint",
+                    actor=actor,
+                    timestamp=datetime.now(timezone.utc),
+                    notes=notes,
+                    changes={"layout_hint": layout_hint},
+                ).model_dump(mode="json"),
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def move_slide(
         self,
@@ -171,42 +179,43 @@ class DraftStore:
         expected_etag: str,
         actor: str | None,
     ) -> str:
-        state = self._load_state(spec_id)
-        expected_revision = _parse_etag(expected_etag)
-        self._ensure_revision(state, expected_revision)
+        with self._spec_lock(spec_id):
+            state = self._load_state(spec_id)
+            expected_revision = _parse_etag(expected_etag)
+            self._ensure_revision(state, expected_revision)
 
-        source_section, slide = self._find_slide(state.board, slide_id)
-        if bool(slide.get("locked")):
-            raise LockedContentError(f"slide '{slide_id}' はロックされています")
-        source_section["slides"] = [item for item in source_section["slides"] if item["ref_id"] != slide_id]
+            source_section, slide = self._find_slide(state.board, slide_id)
+            if bool(slide.get("locked")):
+                raise LockedContentError(f"slide '{slide_id}' はロックされています")
+            source_section["slides"] = [item for item in source_section["slides"] if item["ref_id"] != slide_id]
 
-        destination = self._find_section(state.board, target_section)
-        insert_at = len(destination["slides"]) if position is None else max(0, min(position - 1, len(destination["slides"])))
-        destination["slides"].insert(insert_at, slide)
+            destination = self._find_section(state.board, target_section)
+            insert_at = len(destination["slides"]) if position is None else max(0, min(position - 1, len(destination["slides"])))
+            destination["slides"].insert(insert_at, slide)
 
-        self._reorder_slides(source_section["slides"])
-        if destination is not source_section:
-            self._reorder_slides(destination["slides"])
+            self._reorder_slides(source_section["slides"])
+            if destination is not source_section:
+                self._reorder_slides(destination["slides"])
 
-        state.revision += 1
-        self._append_log(
-            state,
-            DraftLogEntry(
-                target_type="slide",
-                target_id=slide_id,
-                action="move",
-                actor=actor,
-                timestamp=datetime.now(timezone.utc),
-                notes=None,
-                changes={
-                    "from_section": source_section["name"],
-                    "to_section": destination["name"],
-                    "position": insert_at + 1,
-                },
-            ).model_dump(mode="json"),
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+            state.revision += 1
+            self._append_log(
+                state,
+                DraftLogEntry(
+                    target_type="slide",
+                    target_id=slide_id,
+                    action="move",
+                    actor=actor,
+                    timestamp=datetime.now(timezone.utc),
+                    notes=None,
+                    changes={
+                        "from_section": source_section["name"],
+                        "to_section": destination["name"],
+                        "position": insert_at + 1,
+                    },
+                ).model_dump(mode="json"),
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def approve_section(
         self,
@@ -217,31 +226,32 @@ class DraftStore:
         actor: str | None,
         notes: str | None,
     ) -> str:
-        state = self._load_state(spec_id)
-        expected_revision = _parse_etag(expected_etag)
-        self._ensure_revision(state, expected_revision)
+        with self._spec_lock(spec_id):
+            state = self._load_state(spec_id)
+            expected_revision = _parse_etag(expected_etag)
+            self._ensure_revision(state, expected_revision)
 
-        section = self._find_section(state.board, section_name)
-        section["status"] = "approved"
-        for slide in section.get("slides", []):
-            slide["status"] = "approved"
-            slide["locked"] = True
+            section = self._find_section(state.board, section_name)
+            section["status"] = "approved"
+            for slide in section.get("slides", []):
+                slide["status"] = "approved"
+                slide["locked"] = True
 
-        state.revision += 1
-        self._append_log(
-            state,
-            DraftLogEntry(
-                target_type="section",
-                target_id=section_name,
-                action="approve",
-                actor=actor,
-                timestamp=datetime.now(timezone.utc),
-                notes=notes,
-                changes=None,
-            ).model_dump(mode="json"),
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+            state.revision += 1
+            self._append_log(
+                state,
+                DraftLogEntry(
+                    target_type="section",
+                    target_id=section_name,
+                    action="approve",
+                    actor=actor,
+                    timestamp=datetime.now(timezone.utc),
+                    notes=notes,
+                    changes=None,
+                ).model_dump(mode="json"),
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def set_appendix(
         self,
@@ -253,30 +263,31 @@ class DraftStore:
         actor: str | None,
         notes: str | None,
     ) -> str:
-        state = self._load_state(spec_id)
-        expected_revision = _parse_etag(expected_etag)
-        self._ensure_revision(state, expected_revision)
+        with self._spec_lock(spec_id):
+            state = self._load_state(spec_id)
+            expected_revision = _parse_etag(expected_etag)
+            self._ensure_revision(state, expected_revision)
 
-        _, slide = self._find_slide(state.board, slide_id)
-        if bool(slide.get("locked")):
-            raise LockedContentError(f"slide '{slide_id}' はロックされています")
-        slide["appendix"] = appendix
+            _, slide = self._find_slide(state.board, slide_id)
+            if bool(slide.get("locked")):
+                raise LockedContentError(f"slide '{slide_id}' はロックされています")
+            slide["appendix"] = appendix
 
-        state.revision += 1
-        self._append_log(
-            state,
-            DraftLogEntry(
-                target_type="slide",
-                target_id=slide_id,
-                action="appendix",
-                actor=actor,
-                timestamp=datetime.now(timezone.utc),
-                notes=notes,
-                changes={"appendix": appendix},
-            ).model_dump(mode="json"),
-        )
-        self._write_state(state)
-        return _etag_from_revision(state.revision)
+            state.revision += 1
+            self._append_log(
+                state,
+                DraftLogEntry(
+                    target_type="slide",
+                    target_id=slide_id,
+                    action="appendix",
+                    actor=actor,
+                    timestamp=datetime.now(timezone.utc),
+                    notes=notes,
+                    changes={"appendix": appendix},
+                ).model_dump(mode="json"),
+            )
+            self._write_state(state)
+            return _etag_from_revision(state.revision)
 
     def list_logs(
         self,
@@ -340,3 +351,40 @@ class DraftStore:
     @staticmethod
     def _append_log(state: DraftState, entry: dict[str, Any]) -> None:
         state.logs.append(entry)
+
+    @classmethod
+    def _get_lock(cls, spec_id: str) -> threading.Lock:
+        with cls._locks_guard:
+            if spec_id not in cls._locks:
+                cls._locks[spec_id] = threading.Lock()
+            return cls._locks[spec_id]
+
+    @contextlib.contextmanager
+    def _spec_lock(self, spec_id: str) -> Iterator[None]:
+        lock = self._get_lock(spec_id)
+        lock.acquire()
+        try:
+            with self._file_lock(spec_id):
+                yield
+        finally:
+            lock.release()
+
+    @contextlib.contextmanager
+    def _file_lock(self, spec_id: str) -> Iterator[None]:
+        lock_path = self._base_dir / f"{spec_id}.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = lock_path.open("a+")
+        try:
+            if os.name == "posix":
+                import fcntl
+
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            else:
+                # ベストエフォート: Windows 等ではスレッドロックのみで保護する
+                yield
+        finally:
+            handle.close()
