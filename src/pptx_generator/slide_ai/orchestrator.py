@@ -97,10 +97,10 @@ class SlideAIOrchestrator:
                     response.body,
                     response.warnings,
                 )
-            raw_text = response.raw_text or ""
+            response_text = response.raw_text or ""
             truncated = False
-            if raw_text and len(raw_text) > 2000:
-                raw_text = raw_text[:2000]
+            if response_text and len(response_text) > 2000:
+                response_text = response_text[:2000]
                 truncated = True
 
             log_entry = {
@@ -111,18 +111,19 @@ class SlideAIOrchestrator:
                 "model": response.model,
                 "intent": content_slide.intent,
                 "warnings": response.warnings,
-                "response_text": raw_text,
+                "response_text": response_text,
                 "response_text_truncated": truncated,
             }
             logs.append(log_entry)
             logging.getLogger("pptx_generator.slide_ai.llm").info(
-                "slide_id=%s model=%s intent=%s warnings=%s prompt=%s response=%s",
+                "slide_id=%s model=%s intent=%s warnings=%s prompt_len=%s response_len=%s truncated=%s",
                 spec_slide.id,
                 response.model,
                 content_slide.intent,
                 ",".join(response.warnings) if response.warnings else "",
-                prompt,
-                raw_text,
+                len(prompt),
+                len(response.raw_text or ""),
+                truncated,
             )
 
         document = ContentApprovalDocument(
