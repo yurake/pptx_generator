@@ -613,6 +613,52 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     )
 
 
+def test_cli_compose_missing_layouts_path(tmp_path: Path) -> None:
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["meta"]["layouts_path"] = "missing/layouts.jsonl"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(tmp_path / "compose"),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 2
+    assert "layouts_path" in result.output
+
+
+def test_cli_compose_schema_validation_failure(tmp_path: Path) -> None:
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = tmp_path / "invalid_jobspec.json"
+    spec_path.write_text(json.dumps({"meta": {}}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(tmp_path / "compose"),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 2
+    assert "スキーマ検証に失敗しました" in result.output
+
+
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
     output_dir = tmp_path / "compose-gen"
     runner = CliRunner()
@@ -821,6 +867,48 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
+
+
+def test_cli_gen_pdf_skips_when_converter_unavailable(tmp_path: Path, monkeypatch) -> None:
+    mapping_dir = tmp_path / "mapping"
+    output_dir = tmp_path / "gen-pdf-fallback"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        prepare_paths=prepare_paths,
+    )
+
+    monkeypatch.setattr(
+        pdf_exporter.LibreOfficeConverter,
+        "convert",
+        lambda self, pptx_path, output_dir: (_ for _ in ()).throw(pdf_exporter.PdfExportError("libreoffice missing")),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+            "--export-pdf",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert (output_dir / "proposal.pptx").exists()
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "skipped"
+    assert "libreoffice" in pdf_meta.get("converter", "")
 
 
 def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
@@ -10,6 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .base import PipelineContext
+
+logger = logging.getLogger(__name__)
 
 
 class PdfExportError(RuntimeError):
@@ -71,7 +74,22 @@ class PdfExportStep:
             timeout_sec=self.options.timeout_sec,
             max_retries=self.options.max_retries,
         )
-        result = converter.convert(pptx_path, output_dir)
+        try:
+            result = converter.convert(pptx_path, output_dir)
+        except PdfExportError as exc:
+            logger.warning("PDF 変換をスキップします: %s", exc)
+            context.add_artifact(
+                "pdf_export_metadata",
+                {
+                    "status": "skipped",
+                    "attempts": 0,
+                    "elapsed_sec": 0.0,
+                    "converter": "libreoffice",
+                    "mode": self.options.mode,
+                    "error": str(exc),
+                },
+            )
+            return
         pdf_path = result.path
 
         target_path = output_dir / self.options.output_filename
