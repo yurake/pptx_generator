@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import click
@@ -105,6 +106,7 @@ def app(verbose: bool, debug: bool) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        handlers=[logging.StreamHandler(stream=sys.stdout)],
         force=True,
     )
     logging.getLogger("openai").setLevel(level)

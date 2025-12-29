@@ -1,4 +1,5 @@
 import logging
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -12,7 +13,7 @@ def configure_api_logging(level_name: str = "INFO") -> logging.Logger:
     if not logger.handlers:
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 
-        stream_handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
         stream_handler.setLevel(level)
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)

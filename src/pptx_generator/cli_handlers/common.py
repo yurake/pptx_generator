@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
+from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel
 
 from pptx_generator.config_manager import ConfigManager
@@ -274,7 +276,12 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
     if existing_handler:
         existing_handler.setFormatter(formatter)
     else:
-        handler = logging.FileHandler(target_dir / "out.log", encoding="utf-8")
+        handler = RotatingFileHandler(
+            target_dir / "out.log",
+            encoding="utf-8",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+        )
         handler.setFormatter(formatter)
         llm_logger.addHandler(handler)
 
@@ -283,7 +290,7 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
         for handler in llm_logger.handlers
     )
     if not stream_handler_exists:
-        stream_handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
         stream_handler.setFormatter(formatter)
         llm_logger.addHandler(stream_handler)
     llm_logger.setLevel(logging.INFO)
@@ -302,7 +309,12 @@ def configure_file_logging(log_dir: Path | None = None) -> None:
         and getattr(handler, "baseFilename", None) == str(file_path)
         for handler in root_logger.handlers
     ):
-        handler = logging.FileHandler(file_path, encoding="utf-8")
+        handler = RotatingFileHandler(
+            file_path,
+            encoding="utf-8",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+        )
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
