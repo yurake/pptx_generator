@@ -14,7 +14,7 @@ def configure_api_logging(level_name: str = "INFO") -> logging.Logger:
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 
         stdout_handler = logging.StreamHandler(stream=sys.stdout)
-        stdout_handler.setLevel(logging.INFO)
+        stdout_handler.setLevel(logging.DEBUG)
         stdout_handler.setFormatter(formatter)
         logger.addHandler(stdout_handler)
 
