@@ -13,10 +13,15 @@ def configure_api_logging(level_name: str = "INFO") -> logging.Logger:
     if not logger.handlers:
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 
-        stream_handler = logging.StreamHandler(stream=sys.stdout)
-        stream_handler.setLevel(level)
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
+        stdout_handler = logging.StreamHandler(stream=sys.stdout)
+        stdout_handler.setLevel(logging.INFO)
+        stdout_handler.setFormatter(formatter)
+        logger.addHandler(stdout_handler)
+
+        stderr_handler = logging.StreamHandler(stream=sys.stderr)
+        stderr_handler.setLevel(logging.ERROR)
+        stderr_handler.setFormatter(formatter)
+        logger.addHandler(stderr_handler)
 
         log_path = Path("logs") / "out.log"
         try:
@@ -28,12 +33,7 @@ def configure_api_logging(level_name: str = "INFO") -> logging.Logger:
         except OSError:
             logger.warning("log file handler setup failed; continuing with stdout only")
 
-    # avoid clobbering other loggers; only set level and attach handlers if absent
-    root = logging.getLogger("pptx_generator")
-    root.setLevel(level)
-    if not root.handlers:
-        for h in logger.handlers:
-            root.addHandler(h)
-    root.propagate = True
+    # avoid clobbering other loggers; keep API logger isolated
+    logger.propagate = False
 
     return logger
