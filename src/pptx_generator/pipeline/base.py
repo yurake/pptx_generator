@@ -193,7 +193,17 @@ class PipelineRunner:
 
     def execute(self, context: PipelineContext) -> None:
         for step in self._steps:
-            logger.info("step 開始: %s", step.name)
+            next_stage = getattr(step, "stage", None)
+            stage_value = next_stage.value if isinstance(next_stage, PipelineStage) else getattr(
+                context.current_stage, "value", None
+            )
+            logger.info(
+                "step 開始: %s job_id=%s tx=%s stage=%s",
+                step.name,
+                context.job_id,
+                context.transaction_id,
+                stage_value,
+            )
             stage = getattr(step, "stage", None)
             if isinstance(stage, PipelineStage):
                 context.advance_stage(stage)
@@ -203,4 +213,10 @@ class PipelineRunner:
             except Exception as exc:  # noqa: BLE001
                 context.record_error(str(exc))
                 raise
-            logger.info("step 完了: %s", step.name)
+            logger.info(
+                "step 完了: %s job_id=%s tx=%s stage=%s",
+                step.name,
+                context.job_id,
+                context.transaction_id,
+                getattr(context.current_stage, "value", None),
+            )
