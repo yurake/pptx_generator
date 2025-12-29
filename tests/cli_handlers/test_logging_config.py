@@ -89,7 +89,7 @@ def test_configure_api_logging_uses_stdout_and_rotating(tmp_path, _restore_loggi
     stream = next(h for h in api_logger.handlers if isinstance(h, logging.StreamHandler) and not isinstance(h, RotatingFileHandler))
     assert getattr(stream, "stream", None) is sys.stdout
 
-    # configure_api_logging attaches handlers to pptx_generator root when absent
+    # API ロガーは root に伝播しない（二重出力防止）
     pg_logger = logging.getLogger("pptx_generator")
-    assert _count_handlers(pg_logger, RotatingFileHandler) == 1
-    assert any(isinstance(h, logging.StreamHandler) and not isinstance(h, RotatingFileHandler) for h in pg_logger.handlers)
+    assert _count_handlers(pg_logger, RotatingFileHandler) == 0
+    assert not any(isinstance(h, logging.StreamHandler) and not isinstance(h, RotatingFileHandler) for h in pg_logger.handlers)
