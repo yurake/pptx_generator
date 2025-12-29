@@ -33,6 +33,17 @@ def test_ensure_stage_artifacts_allows_missing_flag(api_app, tmp_path):
     assert resolved == {}
 
 
+def test_allow_missing_returns_empty_when_entry_has_no_artifacts(api_app, tmp_path):
+    registry_path = _registry_path(tmp_path)
+    registry_path.write_text(json.dumps({"template": {"job_id": "123"}}, ensure_ascii=False), encoding="utf-8")
+    queue = InProcessJobQueue()
+    with api_app.app_context():
+        resolved = _ensure_stage_artifacts(
+            queue, tmp_path, "tx-2a", "template", ["jobspec_url"], allow_missing=True
+        )
+    assert resolved == {}
+
+
 def test_ensure_stage_artifacts_returns_422_when_stage_not_in_registry(api_app, tmp_path):
     registry_path = _registry_path(tmp_path)
     registry_path.write_text(json.dumps({"other": {"artifacts": {}}}), encoding="utf-8")
@@ -48,6 +59,36 @@ def test_ensure_stage_artifacts_requires_artifacts_field(api_app, tmp_path):
     queue = InProcessJobQueue()
     with api_app.app_context(), pytest.raises(HTTPException) as excinfo:
         _ensure_stage_artifacts(queue, tmp_path, "tx-4", "template", ["jobspec_url"])
+    assert excinfo.value.response.status_code == 422
+
+
+def test_missing_requested_artifact_key_returns_422(api_app, tmp_path):
+    registry_path = _registry_path(tmp_path)
+    registry_path.write_text(
+        json.dumps({"template": {"artifacts": {"jobspec_url": "template/job.json"}}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    queue = InProcessJobQueue()
+    with api_app.app_context(), pytest.raises(HTTPException) as excinfo:
+        _ensure_stage_artifacts(queue, tmp_path, "tx-4a", "template", ["prepare_card_url"])
+    assert excinfo.value.response.status_code == 422
+
+
+def test_entry_not_dict_returns_empty_when_allow_missing(api_app, tmp_path):
+    registry_path = _registry_path(tmp_path)
+    registry_path.write_text(json.dumps({"template": []}, ensure_ascii=False), encoding="utf-8")
+    queue = InProcessJobQueue()
+    with api_app.app_context():
+        resolved = _ensure_stage_artifacts(queue, tmp_path, "tx-4b", "template", ["jobspec_url"], allow_missing=True)
+    assert resolved == {}
+
+
+def test_entry_not_dict_returns_422_when_not_allow_missing(api_app, tmp_path):
+    registry_path = _registry_path(tmp_path)
+    registry_path.write_text(json.dumps({"template": []}, ensure_ascii=False), encoding="utf-8")
+    queue = InProcessJobQueue()
+    with api_app.app_context(), pytest.raises(HTTPException) as excinfo:
+        _ensure_stage_artifacts(queue, tmp_path, "tx-4c", "template", ["jobspec_url"])
     assert excinfo.value.response.status_code == 422
 
 
@@ -152,3 +193,31 @@ def test_failed_latest_job_without_entry_returns_422(api_app, tmp_path):
         _ensure_stage_artifacts(queue, tmp_path, "tx-8", "template", ["jobspec_url"])
 
     assert excinfo.value.response.status_code == 422
+
+
+def test_failed_latest_job_with_entry_without_artifacts_returns_422(api_app, tmp_path):
+    request = JobRequest(stage="template", func=lambda: None, transaction_id="tx-9", job_id="failed-job")
+    state = JobState(
+        request=request,
+        status=JobStatus.FAILED,
+        result=None,
+        finished_at=datetime.now(timezone.utc),
+    )
+    queue = InProcessJobQueue()
+    queue._jobs[request.job_id] = state  # type: ignore[attr-defined]
+
+    registry_path = _registry_path(tmp_path)
+    registry_path.write_text(json.dumps({"template": {"job_id": "old-job"}}, ensure_ascii=False), encoding="utf-8")
+
+    with api_app.app_context(), pytest.raises(HTTPException) as excinfo:
+        _ensure_stage_artifacts(queue, tmp_path, "tx-9", "template", ["jobspec_url"])
+
+    assert excinfo.value.response.status_code == 422
+
+
+def test_missing_registry_returns_404(api_app, tmp_path):
+    # registry file not created -> should return 404 when allow_missing is False
+    queue = InProcessJobQueue()
+    with api_app.app_context(), pytest.raises(HTTPException) as excinfo:
+        _ensure_stage_artifacts(queue, tmp_path, "tx-10", "template", ["jobspec_url"])
+    assert excinfo.value.response.status_code == 404

@@ -27,6 +27,7 @@ from pptx_generator.api.stages import (
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
+    JobState,
     InProcessJobQueue,
     get_queue,
 )
@@ -532,63 +533,88 @@ def _latest_job(queue: InProcessJobQueue, transaction_id: str, stage: str):
     return latest
 
 
+def _abort_response(status_code: int, code: str, message: str) -> None:
+    resp = jsonify({"code": code, "message": message})
+    resp.status_code = status_code
+    abort(resp)
+
+
+def _abort_transaction_not_found() -> None:
+    _abort_response(404, "not_found", "transaction not found")
+
+
+def _abort_stage_artifacts_not_found(stage: str) -> None:
+    _abort_response(422, "validation_error", f"{stage} artifacts not found")
+
+
+def _await_latest_state(queue: InProcessJobQueue, state: JobState | None) -> JobState | None:
+    if state is None:
+        return None
+    if state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
+        queue.wait(state.request.job_id)
+        return queue.get_job(state.request.job_id)  # type: ignore[attr-defined]
+    return state
+
+
+def _refresh_registry_from_state(
+    tx_root: Path, stage: str, entry: dict | None, registry: dict | None, state: JobState | None
+) -> tuple[dict | None, dict | None]:
+    if state is None:
+        return entry, registry
+    if state.status == JobStatus.SUCCEEDED:
+        current_job_id = entry.get("job_id") if isinstance(entry, dict) else None
+        if entry is None or current_job_id != state.request.job_id:
+            _update_registry(tx_root, stage, state)
+            registry = _load_registry(tx_root)
+            entry = registry.get(stage) if registry else None
+        return entry, registry
+    if entry is None and state.status == JobStatus.FAILED:
+        _abort_stage_artifacts_not_found(stage)
+    return entry, registry
+
+
+def _handle_missing_entry(allow_missing: bool, registry: dict | None, stage: str) -> dict[str, str]:
+    if allow_missing:
+        return {}
+    if registry is None:
+        _abort_transaction_not_found()
+    _abort_stage_artifacts_not_found(stage)
+    return {}
+
+
+def _extract_artifacts(entry: dict | None, allow_missing: bool, stage: str) -> dict:
+    if not isinstance(entry, dict):
+        return _handle_missing_entry(allow_missing, {}, stage)
+    artifacts = entry.get("artifacts")
+    if artifacts:
+        return artifacts
+    return _handle_missing_entry(allow_missing, {}, stage)
+
+
+def _resolve_artifacts_paths(tx_root: Path, artifacts: dict, stage: str, keys: list[str]) -> dict[str, str]:
+    resolved = {}
+    for key in keys:
+        path = artifacts.get(key)
+        if not path:
+            _abort_stage_artifacts_not_found(stage)
+        resolved[key] = str((tx_root / path).resolve())
+    return resolved
+
+
 def _ensure_stage_artifacts(
     queue: InProcessJobQueue, tx_root: Path, transaction_id: str, stage: str, keys: list[str], allow_missing: bool = False
 ) -> dict[str, str]:
     registry = _load_registry(tx_root)
     entry = registry.get(stage) if registry else None
 
-    state = _latest_job(queue, transaction_id, stage)
-    if state is not None and state.status not in (JobStatus.SUCCEEDED, JobStatus.FAILED):
-        queue.wait(state.request.job_id)
-        state = queue.get_job(state.request.job_id)  # type: ignore[attr-defined]
-    if state is not None and state.status == JobStatus.SUCCEEDED:
-        current_job_id = entry.get("job_id") if isinstance(entry, dict) else None
-        if entry is None or current_job_id != state.request.job_id:
-            _update_registry(tx_root, stage, state)
-            registry = _load_registry(tx_root)
-            entry = registry.get(stage) if registry else None
-    elif entry is None and state is not None and state.status == JobStatus.FAILED:
-        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-        resp.status_code = 422
-        abort(resp)
-        return {}
+    state = _await_latest_state(queue, _latest_job(queue, transaction_id, stage))
+    entry, registry = _refresh_registry_from_state(tx_root, stage, entry, registry, state)
 
     if entry is None:
-        if allow_missing:
-            return {}
-        if registry is None:
-            resp = jsonify({"code": "not_found", "message": "transaction not found"})
-            resp.status_code = 404
-            abort(resp)
-            return {}
-        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-        resp.status_code = 422
-        abort(resp)
-        return {}
-    if not isinstance(entry, dict) or "artifacts" not in entry:
-        if allow_missing:
-            return {}
-        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-        resp.status_code = 422
-        abort(resp)
+        return _handle_missing_entry(allow_missing, registry, stage)
+
+    artifacts = _extract_artifacts(entry, allow_missing, stage)
+    if not artifacts:
         return {}
 
-    artifacts = entry.get("artifacts")
-    if not artifacts:
-        if allow_missing:
-            return {}
-        resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-        resp.status_code = 422
-        abort(resp)
-        return {}
-    resolved = {}
-    for key in keys:
-        path = artifacts.get(key)
-        if not path:
-            resp = jsonify({"code": "validation_error", "message": f"{stage} artifacts not found"})
-            resp.status_code = 422
-            abort(resp)
-            return {}
-        resolved[key] = str((tx_root / path).resolve())
-    return resolved
+    return _resolve_artifacts_paths(tx_root, artifacts, stage, keys)
