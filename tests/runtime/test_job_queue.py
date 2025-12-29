@@ -48,3 +48,16 @@ def test_run_job_sync_raises_exceptions(tmp_path) -> None:
     queue = get_queue()
     job_states = [state for state in queue._jobs.values()]  # type: ignore[attr-defined]
     assert any(state.status == JobStatus.FAILED for state in job_states)
+
+
+def test_run_job_sync_reraises_base_exception(tmp_path) -> None:
+    def task() -> None:
+        _ = PipelineContext(spec=_build_stub_spec(), workdir=tmp_path)
+        raise KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        run_job_sync(stage="gen", func=task)
+
+    queue = get_queue()
+    job_states = [state for state in queue._jobs.values()]  # type: ignore[attr-defined]
+    assert any(state.status == JobStatus.FAILED for state in job_states)
