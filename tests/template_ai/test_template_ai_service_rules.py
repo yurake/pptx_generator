@@ -8,6 +8,7 @@ import pytest
 from pptx_generator.template_ai import TemplateAIOptions, TemplateAIService
 from pptx_generator.template_ai.client import (AnthropicTemplateAIClient,
                                                TemplateAIClientConfigurationError,
+                                               TemplateAIResponse,
                                                TemplateAIRequest,
                                                create_template_ai_client)
 from pptx_generator.template_ai.policy import TemplateAIPolicy
@@ -169,3 +170,54 @@ def test_template_ai_client_provider_resolution(monkeypatch):
     monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
+
+
+def test_template_ai_logs_prompt_and_response(monkeypatch, tmp_path, caplog):
+    # set up policy
+    policy_path = tmp_path / "template_ai_policy.json"
+    policy_payload = {
+        "version": "1",
+        "default_policy_id": "default",
+        "policies": [
+            {
+                "id": "default",
+                "name": "dummy",
+                "prompt_template": "describe tags for {layout_name}",
+                "static_rules": [],
+            }
+        ],
+    }
+    policy_path.write_text(json.dumps(policy_payload), encoding="utf-8")
+
+    # dummy client that returns raw response
+    class DummyClient:
+        def classify(self, request: TemplateAIRequest) -> TemplateAIResponse:  # noqa: D401
+            return TemplateAIResponse(
+                model="dummy-model",
+                usage_tags=("cover",),
+                reason=None,
+                raw_text="RAW_RESPONSE_TEXT",
+            )
+
+    monkeypatch.setattr(
+        "pptx_generator.template_ai.service.create_template_ai_client",
+        lambda: (DummyClient(), "dummy"),
+    )
+
+    service = TemplateAIService(TemplateAIOptions(policy_path=policy_path))
+
+    with caplog.at_level(logging.INFO, logger="pptx_generator.template_ai.llm"):
+        result = service.classify_layout(
+            template_id="tpl",
+            layout_id="l01",
+            layout_name="Cover",
+            placeholders=[],
+            text_hint={},
+            media_hint={},
+            heuristic_usage_tags=[],
+        )
+
+    assert result.success
+    assert "template AI call" in caplog.text
+    assert "RAW_RESPONSE_TEXT" in caplog.text
+    assert "describe tags for" in caplog.text
