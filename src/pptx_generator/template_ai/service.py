@@ -185,12 +185,22 @@ class TemplateAIService:
                 unknown,
                 response.reason,
             )
-            if response.raw_text:
-                _TEMPLATE_LLM_LOGGER.debug(
-                    "template AI raw response (layout=%s): %s",
-                    layout_id,
-                    response.raw_text,
-                )
+        if _TEMPLATE_LLM_LOGGER.isEnabledFor(logging.INFO):
+            raw = (response.raw_text or "").strip()
+            truncated = False
+            if len(raw) > 2000:
+                raw = raw[:2000]
+                truncated = True
+            _TEMPLATE_LLM_LOGGER.info(
+                "template AI call: layout=%s model=%s prompt_len=%s response_len=%s truncated=%s prompt=%s response=%s",
+                layout_id,
+                response.model,
+                len(prompt),
+                len(response.raw_text or ""),
+                truncated,
+                prompt,
+                raw,
+            )
 
         return TemplateAIResult(
             usage_tags=canonical if canonical else None,

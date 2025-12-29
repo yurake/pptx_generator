@@ -4,6 +4,7 @@ import json
 import time
 
 import pytest
+import logging
 
 from pptx_generator.api.flask_app import create_app
 
@@ -20,6 +21,26 @@ def api_env(monkeypatch, tmp_path):
 def client():
     app = create_app()
     return app.test_client()
+
+
+def test_request_id_logging_truncated(client, caplog):
+    rid = "req-1234567890"
+    api_logger = logging.getLogger("pptx_generator.api.flask_app")
+    orig_propagate = api_logger.propagate
+    api_logger.propagate = True
+    api_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.INFO):
+            resp = client.get(
+                "/transactions/tx-no-record",
+                headers={"X-Request-ID": rid, "Authorization": "Bearer token-123"},
+            )
+    finally:
+        api_logger.removeHandler(caplog.handler)
+        api_logger.propagate = orig_propagate
+    assert resp.status_code in (200, 404)
+    truncated = rid[:8]
+    assert truncated in caplog.text
 
 
 def test_create_app_missing_output_root(monkeypatch):

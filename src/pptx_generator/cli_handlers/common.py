@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
+from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel
 
 from pptx_generator.config_manager import ConfigManager
@@ -213,51 +215,17 @@ def log_current_llm_provider(context: str) -> None:
     )
 
 
-class _LLMLogFormatter(logging.Formatter):
-    """slide_ai ログ用の安全なフォーマッタ。"""
-
-    def __init__(self, *args, max_chars: int = 2000, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._max_chars = max_chars
-
-    def _sanitize(self, value: object) -> str:
-        if value is None:
-            return "-"
-        text = str(value).replace("\n", "\\n")
-        if len(text) > self._max_chars:
-            return f"{text[: self._max_chars]}...(truncated)"
-        return text
-
-    def format(self, record: logging.LogRecord) -> str:  # noqa: D401
-        for attr in ("slide_id", "card_id", "model", "intent", "reason", "finish_reason", "refusal"):
-            if not hasattr(record, attr):
-                setattr(record, attr, "-")
-
-        record.warnings = self._sanitize(getattr(record, "warnings", None))
-        record.prompt_excerpt = self._sanitize(getattr(record, "prompt", None))
-        record.raw_response_excerpt = self._sanitize(getattr(record, "raw_response", None))
-
-        return super().format(record)
-
-
 def configure_llm_logger(log_dir: Path | None = None) -> None:
-    """slide_ai LLm ログのファイル・ストリーム出力を準備する。"""
+    """LLM ログのファイル・ストリーム出力を準備する。"""
 
     target_dir = log_dir or Path("logs")
     target_dir.mkdir(parents=True, exist_ok=True)
     llm_logger = logging.getLogger("pptx_generator.slide_ai.llm")
-    formatter = _LLMLogFormatter(
-        fmt=(
-            "%(asctime)s %(levelname)s %(name)s "
-            "slide_id=%(slide_id)s card_id=%(card_id)s model=%(model)s intent=%(intent)s "
-            "reason=%(reason)s finish=%(finish_reason)s refusal=%(refusal)s warnings=%(warnings)s "
-            "message=%(message)s prompt=%(prompt_excerpt)s raw_response=%(raw_response_excerpt)s"
-        ),
-    )
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 
     class _LLMLogFilter(logging.Filter):
         def filter(self, record: logging.LogRecord) -> bool:
-            return bool(getattr(record, "raw_response", None) or getattr(record, "prompt", None))
+            return True
 
     if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
         llm_logger.addFilter(_LLMLogFilter())
@@ -274,7 +242,12 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
     if existing_handler:
         existing_handler.setFormatter(formatter)
     else:
-        handler = logging.FileHandler(target_dir / "out.log", encoding="utf-8")
+        handler = RotatingFileHandler(
+            target_dir / "out.log",
+            encoding="utf-8",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+        )
         handler.setFormatter(formatter)
         llm_logger.addHandler(handler)
 
@@ -283,7 +256,7 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
         for handler in llm_logger.handlers
     )
     if not stream_handler_exists:
-        stream_handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
         stream_handler.setFormatter(formatter)
         llm_logger.addHandler(stream_handler)
     llm_logger.setLevel(logging.INFO)
@@ -302,7 +275,12 @@ def configure_file_logging(log_dir: Path | None = None) -> None:
         and getattr(handler, "baseFilename", None) == str(file_path)
         for handler in root_logger.handlers
     ):
-        handler = logging.FileHandler(file_path, encoding="utf-8")
+        handler = RotatingFileHandler(
+            file_path,
+            encoding="utf-8",
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+        )
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
