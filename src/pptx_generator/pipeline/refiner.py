@@ -36,6 +36,13 @@ class SimpleRefinerStep:
         self.options = options or RefinerOptions()
 
     def run(self, context: PipelineContext) -> None:
+        logger.info(
+            "refiner start: slides=%d max_bullet_level=%d font_raise=%s color_adjust=%s",
+            len(context.spec.slides),
+            self.options.max_bullet_level,
+            self.options.enable_font_raise,
+            self.options.enable_color_adjust,
+        )
         adjustments: list[dict[str, Any]] = []
 
         for slide in context.spec.slides:
@@ -50,7 +57,7 @@ class SimpleRefinerStep:
                 logger.debug("フォント・カラー自動調整を無効化しています: slide=%s", slide.id)
 
         context.add_artifact("refiner_adjustments", adjustments)
-        logger.info("Refiner を実行しました: %d 件調整", len(adjustments))
+        logger.info("refiner completed: adjustments=%d", len(adjustments))
 
     def _apply_bullet_reindent(self, slide: Slide) -> list[dict[str, Any]]:
         adjustments: list[dict[str, Any]] = []

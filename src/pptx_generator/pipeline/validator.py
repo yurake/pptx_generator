@@ -35,12 +35,13 @@ class SpecValidatorStep(StageContract):
 
     def execute(self, context: PipelineContext) -> StageResult:
         spec = context.spec
-        logger.debug("slide count=%s", len(spec.slides))
+        logger.info("validator start: slide count=%s", len(spec.slides))
         self._validate_slide_presence(spec)
         self._validate_title_length(spec)
         self._validate_bullet_length(spec)
         self._validate_bullet_level(spec)
         self._validate_forbidden_words(spec)
+        logger.info("validator completed: slides=%s", len(spec.slides))
         return StageResult(stage=self.stage, success=True, details={"slides": len(spec.slides)})
 
     def _validate_slide_presence(self, spec: JobSpec) -> None:
@@ -64,6 +65,7 @@ class SpecValidatorStep(StageContract):
                     msg = (
                         f"スライド '{slide.id}' の箇条書き '{bullet.id}' が {self.max_bullet_length} 文字を超えています"
                     )
+                    logger.warning(msg)
                     raise SpecValidationError(msg)
 
     def _validate_bullet_level(self, spec: JobSpec) -> None:
@@ -75,6 +77,7 @@ class SpecValidatorStep(StageContract):
                     msg = (
                         f"スライド '{slide.id}' の箇条書き '{bullet.id}' のレベルが {self.max_bullet_level} を超えています"
                     )
+                    logger.warning(msg)
                     raise SpecValidationError(msg)
 
     def _validate_forbidden_words(self, spec: JobSpec) -> None:
