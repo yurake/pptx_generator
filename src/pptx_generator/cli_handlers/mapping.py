@@ -16,6 +16,7 @@ from pptx_generator.models import (
     GenerateReadyDocument,
     JobMeta,
     JobSpec,
+    PipelineFallbackError,
     SpecValidationError,
     TemplateStyle,
 )
@@ -267,6 +268,8 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
             generate_ready_filename=config.generate_ready_filename,
             generate_ready_meta_filename=config.generate_ready_meta_filename,
         )
+    except PipelineFallbackError as exc:
+        raise MappingCommandError(str(exc), exit_code=4) from exc
     except ValueError as exc:
         raise MappingCommandError(str(exc), exit_code=2) from exc
     except SpecValidationError as exc:

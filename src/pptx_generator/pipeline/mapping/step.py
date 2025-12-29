@@ -49,6 +49,18 @@ class MappingStep:
         draft_document = self._require_draft_document(context)
         content_document = self._optional_content_document(context)
         layout_catalog = load_layout_catalog(self.options.layouts_path)
+        missing_layouts = {
+            slide.layout
+            for slide in context.spec.slides
+            if slide.layout and slide.layout not in layout_catalog
+        }
+        if missing_layouts:
+            msg = (
+                "layouts.jsonl に一致するレイアウトが見つかりませんでした: "
+                + ", ".join(sorted(missing_layouts))
+            )
+            logger.error(msg)
+            raise PipelineFallbackError(msg)
 
         section_lookup = build_section_lookup(draft_document)
         card_lookup = build_card_lookup(draft_document)

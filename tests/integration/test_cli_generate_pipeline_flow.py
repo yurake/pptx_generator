@@ -160,6 +160,19 @@ def _create_matching_jobspec(root: Path, prepare_paths: dict[str, Path], *, file
         + "\n",
         encoding="utf-8",
     )
+    layouts_path.write_text(
+        layouts_path.read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "layout_id": "Content",
+                "usage_tags": ["body"],
+                "text_hint": {"max_lines": 8},
+                "media_hint": {"allow_table": True},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return spec_path
 
 
@@ -659,6 +672,58 @@ def test_cli_compose_schema_validation_failure(tmp_path: Path) -> None:
     assert "スキーマ検証に失敗しました" in result.output
 
 
+def test_cli_compose_fails_when_layouts_mismatch(tmp_path: Path) -> None:
+    output_dir = tmp_path / "compose-layout-mismatch"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["slides"][0]["layout"] = "UnknownLayout"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "レイアウト" in result.output
+
+
+def test_cli_mapping_fails_when_layouts_mismatch(tmp_path: Path) -> None:
+    mapping_dir = tmp_path / "mapping-layout-mismatch"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["slides"][0]["layout"] = "UnknownLayout"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--output",
+            str(mapping_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "レイアウト" in result.output
+
+
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
     output_dir = tmp_path / "compose-gen"
     runner = CliRunner()
@@ -909,6 +974,43 @@ def test_cli_gen_pdf_skips_when_converter_unavailable(tmp_path: Path, monkeypatc
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
     assert "libreoffice" in pdf_meta.get("converter", "")
+
+
+def test_cli_template_reports_validation_errors(tmp_path: Path, monkeypatch) -> None:
+    template_path = tmp_path / "broken_template.pptx"
+    _create_template_with_slide(template_path)
+    output_dir = tmp_path / "extract"
+    runner = CliRunner()
+
+    class DummyValidationResult:
+        def __init__(self, base_dir: Path) -> None:
+            self.layouts_path = base_dir / "layouts.jsonl"
+            self.layouts_path.write_text("{}", encoding="utf-8")
+            self.diagnostics_path = base_dir / "diagnostics.json"
+            self.diagnostics_path.write_text("{}", encoding="utf-8")
+            self.diff_report_path = None
+            self.record_count = 0
+            self.warnings_count = 0
+            self.errors_count = 1
+
+    def fake_run(self):  # noqa: ANN001
+        return DummyValidationResult(output_dir)
+
+    monkeypatch.setattr(LayoutValidationSuite, "run", fake_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(template_path),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 6
+    assert "レイアウト検証でエラーが検出されました" in result.output
 
 
 def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:
