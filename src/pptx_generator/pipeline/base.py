@@ -200,8 +200,8 @@ class PipelineRunner:
             logger.info(
                 "step 開始: %s job_id=%s tx=%s stage=%s",
                 step.name,
-                context.job_id,
-                context.transaction_id,
+                context.job_id[:8],
+                context.transaction_id[:8],
                 stage_value,
             )
             stage = getattr(step, "stage", None)
@@ -216,7 +216,7 @@ class PipelineRunner:
             logger.info(
                 "step 完了: %s job_id=%s tx=%s stage=%s",
                 step.name,
-                context.job_id,
-                context.transaction_id,
+                context.job_id[:8],
+                context.transaction_id[:8],
                 getattr(context.current_stage, "value", None),
             )

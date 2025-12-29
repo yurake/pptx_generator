@@ -81,7 +81,7 @@ def setup_state(setup_state):
             "request start method=%s path=%s request_id=%s",
             request.method,
             request.path,
-            g.request_id,
+            (g.request_id or "")[:8],
         )
         error = _verify_auth(
             bearer_token=app.config["BEARER_TOKEN"],
@@ -105,7 +105,7 @@ def setup_state(setup_state):
             request.method,
             request.path,
             response.status_code,
-            getattr(g, "request_id", None),
+            (getattr(g, "request_id", None) or "")[:8],
         )
         response.headers.setdefault("X-Request-ID", getattr(g, "request_id", ""))
         return response
