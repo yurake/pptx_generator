@@ -23,10 +23,10 @@ from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
 from pptx_generator.layout_validation import (LayoutValidationResult,
                                               LayoutValidationSuite)
-from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
+from pptx_generator.models import (JobAuth, JobMeta, JobSpec, Slide, TemplateRelease,
                                    TemplateReleaseGoldenRun,
                                    TemplateReleaseReport, TemplateSpec,
-                                   TemplateStyle)
+                                   TemplateStyle, PipelineFallbackError)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.cli_handlers.mapping import TemplateStylePayload
@@ -805,6 +805,59 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
     assert "プレペア成果物の読み込みに失敗しました" in result.output
 
 
+def test_cli_compose_invalid_prepare_fails(tmp_path: Path) -> None:
+    output_dir = tmp_path / "compose-invalid-prepare"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    invalid_cards = tmp_path / "prepare_card.json"
+    invalid_cards.write_text(json.dumps({"cards": "invalid"}, ensure_ascii=False), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--prepare-cards",
+            str(invalid_cards),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "プレペア成果物の読み込みに失敗しました" in result.output
+
+
+def test_cli_compose_propagates_mapping_fallback(tmp_path: Path, monkeypatch) -> None:
+    output_dir = tmp_path / "compose-fallback"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.run_mapping_pipeline",
+        lambda **kwargs: (_ for _ in ()).throw(PipelineFallbackError("forced fallback")),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "forced fallback" in result.output
+
+
 def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
     mapping_dir = tmp_path / "mapping"
     output_dir = tmp_path / "gen-pdf"
@@ -934,6 +987,57 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     assert pdf_meta.get("status") == "skipped"
 
 
+def test_cli_gen_pdf_retries_after_timeout(tmp_path: Path, monkeypatch) -> None:
+    mapping_dir = tmp_path / "mapping"
+    output_dir = tmp_path / "gen-pdf-timeout"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        prepare_paths=prepare_paths,
+    )
+
+    calls = {"count": 0}
+
+    def fake_run(*args, **kwargs):  # noqa: ANN401
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise subprocess.TimeoutExpired(cmd=args, timeout=1)
+        (Path(output_dir) / "proposal.pdf").write_bytes(b"%PDF-1.4 fake")
+        return subprocess.CompletedProcess(args, returncode=0)
+
+    monkeypatch.setattr(pdf_exporter.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        pdf_exporter.shutil,
+        "which",
+        lambda cmd: sys.executable if cmd == "soffice" else shutil.which(cmd),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+            "--export-pdf",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "success"
+    assert pdf_meta.get("attempts") == 2
+
+
 def test_cli_gen_pdf_skips_when_converter_unavailable(tmp_path: Path, monkeypatch) -> None:
     mapping_dir = tmp_path / "mapping"
     output_dir = tmp_path / "gen-pdf-fallback"
@@ -974,6 +1078,27 @@ def test_cli_gen_pdf_skips_when_converter_unavailable(tmp_path: Path, monkeypatc
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
     assert "libreoffice" in pdf_meta.get("converter", "")
+
+
+def test_pdf_export_step_skips_on_error(tmp_path: Path, monkeypatch) -> None:
+    pptx_path = tmp_path / "input.pptx"
+    pptx_path.write_bytes(b"pptx")
+    spec = JobSpec(meta=JobMeta(schema_version="1.0", title="deck"), auth=JobAuth(created_by="tester"), slides=[])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    context.add_artifact("pptx_path", pptx_path)
+
+    monkeypatch.setattr(
+        pdf_exporter.LibreOfficeConverter,
+        "convert",
+        lambda self, pptx_path, output_dir: (_ for _ in ()).throw(pdf_exporter.PdfExportError("fail")),
+    )
+
+    step = pdf_exporter.PdfExportStep(pdf_exporter.PdfExportOptions(enabled=True))
+    step.run(context)
+
+    pdf_meta = context.artifacts.get("pdf_export_metadata")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "skipped"
 
 
 def test_cli_template_reports_validation_errors(tmp_path: Path, monkeypatch) -> None:
