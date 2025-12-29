@@ -125,13 +125,13 @@ def run_template_extraction(
         )
 
     spec_path.write_text(spec_content, encoding="utf-8")
-    logger.info("Saved template spec to %s", spec_path.resolve())
+    logger.info("Artifact written: template_spec %s", spec_path.resolve())
 
     branding_path = output_dir / "branding.json"
     branding_payload = branding_result.to_branding_payload()
     branding_text = json.dumps(branding_payload, ensure_ascii=False, indent=2)
     branding_path.write_text(branding_text, encoding="utf-8")
-    logger.info("Saved branding payload to %s", branding_path.resolve())
+    logger.info("Artifact written: branding %s", branding_path.resolve())
 
     validation_result: LayoutValidationResult | None = None
     if not skip_validation:

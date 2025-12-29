@@ -200,6 +200,7 @@ class LibreOfficeConverter:
             if candidate.exists():
                 return candidate
             msg = f"指定された LibreOffice パスが見つかりません: {candidate}"
+            logger.warning(msg)
             raise PdfExportError(msg)
 
         env_path = os.environ.get("LIBREOFFICE_PATH")
@@ -213,4 +214,5 @@ class LibreOfficeConverter:
             return Path(resolved)
 
         msg = "LibreOffice (soffice) が見つかりません。PATH または LIBREOFFICE_PATH を確認してください"
+        logger.warning(msg)
         raise PdfExportError(msg)
