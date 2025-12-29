@@ -22,6 +22,7 @@ class MappingOptions:
     """マッピング stage の設定。"""
 
     layouts_path: Path | None = None
+    strict_layouts: bool = False
     output_dir: Path | None = None
     generate_ready_filename: str = "generate_ready.json"
     mapping_log_filename: str = "mapping_log.json"

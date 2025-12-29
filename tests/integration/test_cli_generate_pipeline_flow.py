@@ -8,25 +8,19 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
-from collections import Counter
 from pathlib import Path
 
 import click
 import pytest
 from click.testing import CliRunner
 from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from pptx_generator import cli
 from pptx_generator.branding_extractor import BrandingExtractionError
 from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
-from pptx_generator.layout_validation import (LayoutValidationResult,
-                                              LayoutValidationSuite)
-from pptx_generator.models import (JobSpec, Slide, TemplateRelease,
-                                   TemplateReleaseGoldenRun,
-                                   TemplateReleaseReport, TemplateSpec,
-                                   TemplateStyle)
+from pptx_generator.layout_validation import LayoutValidationSuite
+from pptx_generator.models import (JobAuth, JobMeta, JobSpec, Slide, TemplateStyle,
+                                   PipelineFallbackError)
 from pptx_generator.pipeline import pdf_exporter
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.cli_handlers.mapping import TemplateStylePayload
@@ -155,6 +149,19 @@ def _create_matching_jobspec(root: Path, prepare_paths: dict[str, Path], *, file
                 "usage_tags": ["intro"],
                 "text_hint": {"max_lines": 5},
                 "media_hint": {"allow_table": False},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    layouts_path.write_text(
+        layouts_path.read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "layout_id": "Content",
+                "usage_tags": ["body"],
+                "text_hint": {"max_lines": 8},
+                "media_hint": {"allow_table": True},
             }
         )
         + "\n",
@@ -613,6 +620,106 @@ def test_cli_mapping_requires_template(tmp_path: Path) -> None:
     )
 
 
+def test_cli_compose_missing_layouts_path(tmp_path: Path) -> None:
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["meta"]["layouts_path"] = "missing/layouts.jsonl"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(tmp_path / "compose"),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 2
+    assert "layouts_path" in result.output
+
+
+def test_cli_compose_schema_validation_failure(tmp_path: Path) -> None:
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = tmp_path / "invalid_jobspec.json"
+    spec_path.write_text(json.dumps({"meta": {}}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(tmp_path / "compose"),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 2
+    assert "スキーマ検証に失敗しました" in result.output
+
+
+def test_cli_compose_fails_when_layouts_mismatch(tmp_path: Path) -> None:
+    output_dir = tmp_path / "compose-layout-mismatch"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["slides"][0]["layout"] = "UnknownLayout"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        env={"PPTX_STRICT_LAYOUTS": "1"},
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "レイアウト" in result.output
+
+
+def test_cli_mapping_fails_when_layouts_mismatch(tmp_path: Path) -> None:
+    mapping_dir = tmp_path / "mapping-layout-mismatch"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    payload = json.loads(spec_path.read_text(encoding="utf-8"))
+    payload["slides"][0]["layout"] = "UnknownLayout"
+    spec_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "mapping",
+            str(spec_path),
+            "--output",
+            str(mapping_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        env={"PPTX_STRICT_LAYOUTS": "1"},
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "レイアウト" in result.output
+
+
 def test_cli_compose_generates_stage45_outputs(tmp_path: Path) -> None:
     output_dir = tmp_path / "compose-gen"
     runner = CliRunner()
@@ -692,6 +799,59 @@ def test_cli_mapping_invalid_prepare_fails(tmp_path: Path) -> None:
 
     assert result.exit_code == 4
     assert "プレペア成果物の読み込みに失敗しました" in result.output
+
+
+def test_cli_compose_invalid_prepare_fails(tmp_path: Path) -> None:
+    output_dir = tmp_path / "compose-invalid-prepare"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    invalid_cards = tmp_path / "prepare_card.json"
+    invalid_cards.write_text(json.dumps({"cards": "invalid"}, ensure_ascii=False), encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            "--prepare-cards",
+            str(invalid_cards),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "プレペア成果物の読み込みに失敗しました" in result.output
+
+
+def test_cli_compose_propagates_mapping_fallback(tmp_path: Path, monkeypatch) -> None:
+    output_dir = tmp_path / "compose-fallback"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_handlers.compose.run_mapping_pipeline",
+        lambda **kwargs: (_ for _ in ()).throw(PipelineFallbackError("forced fallback")),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "compose",
+            str(spec_path),
+            "--output",
+            str(output_dir),
+            *_prepare_args(prepare_paths),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 4
+    assert "forced fallback" in result.output
 
 
 def test_cli_gen_exports_pdf(tmp_path: Path, monkeypatch) -> None:
@@ -821,6 +981,157 @@ def test_cli_gen_pdf_skip_env(tmp_path: Path, monkeypatch) -> None:
     pdf_meta = audit_payload.get("pdf_export")
     assert pdf_meta is not None
     assert pdf_meta.get("status") == "skipped"
+
+
+def test_cli_gen_pdf_retries_after_timeout(tmp_path: Path, monkeypatch) -> None:
+    mapping_dir = tmp_path / "mapping"
+    output_dir = tmp_path / "gen-pdf-timeout"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        prepare_paths=prepare_paths,
+    )
+
+    calls = {"count": 0}
+
+    def fake_run(*args, **kwargs):  # noqa: ANN401
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise subprocess.TimeoutExpired(cmd=args, timeout=1)
+        (Path(output_dir) / "proposal.pdf").write_bytes(b"%PDF-1.4 fake")
+        return subprocess.CompletedProcess(args, returncode=0)
+
+    monkeypatch.setattr(pdf_exporter.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        pdf_exporter.shutil,
+        "which",
+        lambda cmd: sys.executable if cmd == "soffice" else shutil.which(cmd),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+            "--export-pdf",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "success"
+    assert pdf_meta.get("attempts") == 2
+
+
+def test_cli_gen_pdf_skips_when_converter_unavailable(tmp_path: Path, monkeypatch) -> None:
+    mapping_dir = tmp_path / "mapping"
+    output_dir = tmp_path / "gen-pdf-fallback"
+    runner = CliRunner()
+    prepare_paths = _prepare_inputs(runner, tmp_path)
+    spec_path = _create_matching_jobspec(tmp_path, prepare_paths)
+
+    ready_path = _prepare_generate_ready(
+        runner,
+        spec_path,
+        mapping_dir,
+        prepare_paths=prepare_paths,
+    )
+
+    monkeypatch.setattr(
+        pdf_exporter.LibreOfficeConverter,
+        "convert",
+        lambda self, pptx_path, output_dir: (_ for _ in ()).throw(pdf_exporter.PdfExportError("libreoffice missing")),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gen",
+            str(ready_path),
+            "--output",
+            str(output_dir),
+            "--export-pdf",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert (output_dir / "proposal.pptx").exists()
+    audit_payload = json.loads(
+        (output_dir / "audit_log.json").read_text(encoding="utf-8"))
+    pdf_meta = audit_payload.get("pdf_export")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "skipped"
+    assert "libreoffice" in pdf_meta.get("converter", "")
+
+
+def test_pdf_export_step_skips_on_error(tmp_path: Path, monkeypatch) -> None:
+    pptx_path = tmp_path / "input.pptx"
+    pptx_path.write_bytes(b"pptx")
+    spec = JobSpec(meta=JobMeta(schema_version="1.0", title="deck"), auth=JobAuth(created_by="tester"), slides=[])
+    context = PipelineContext(spec=spec, workdir=tmp_path)
+    context.add_artifact("pptx_path", pptx_path)
+
+    monkeypatch.setattr(
+        pdf_exporter.LibreOfficeConverter,
+        "convert",
+        lambda self, pptx_path, output_dir: (_ for _ in ()).throw(pdf_exporter.PdfExportError("fail")),
+    )
+
+    step = pdf_exporter.PdfExportStep(pdf_exporter.PdfExportOptions(enabled=True))
+    step.run(context)
+
+    pdf_meta = context.artifacts.get("pdf_export_metadata")
+    assert pdf_meta is not None
+    assert pdf_meta.get("status") == "skipped"
+
+
+def test_cli_template_reports_validation_errors(tmp_path: Path, monkeypatch) -> None:
+    template_path = tmp_path / "broken_template.pptx"
+    _create_template_with_slide(template_path)
+    output_dir = tmp_path / "extract"
+    runner = CliRunner()
+
+    class DummyValidationResult:
+        def __init__(self, base_dir: Path) -> None:
+            self.layouts_path = base_dir / "layouts.jsonl"
+            self.layouts_path.write_text("{}", encoding="utf-8")
+            self.diagnostics_path = base_dir / "diagnostics.json"
+            self.diagnostics_path.write_text("{}", encoding="utf-8")
+            self.diff_report_path = None
+            self.record_count = 0
+            self.warnings_count = 0
+            self.errors_count = 1
+
+    def fake_run(self):  # noqa: ANN001
+        return DummyValidationResult(output_dir)
+
+    monkeypatch.setattr(LayoutValidationSuite, "run", fake_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "template",
+            str(template_path),
+            "--output",
+            str(output_dir),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 6
+    assert "レイアウト検証でエラーが検出されました" in result.output
 
 
 def test_cli_gen_with_polisher_stub(tmp_path: Path) -> None:

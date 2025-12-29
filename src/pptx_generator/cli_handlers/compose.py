@@ -13,9 +13,9 @@ from pptx_generator.pipeline import (
     PipelineStage,
     PrepareNormalizationError,
 )
-from pptx_generator.models import SpecValidationError
-from pptx_generator.settings import RulesConfig
+from pptx_generator.models import JobSpec, SpecValidationError
 from pptx_generator.settings.loader import load_rules_config
+from pptx_generator.models import PipelineFallbackError
 
 from .common import (
     load_jobspec,
@@ -247,6 +247,8 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
             generate_ready_filename=config.generate_ready_filename,
             generate_ready_meta_filename=config.generate_ready_meta_filename,
         )
+    except PipelineFallbackError as exc:
+        raise ComposeCommandError(str(exc), exit_code=4) from exc
     except ValueError as exc:
         raise ComposeCommandError(str(exc), exit_code=2) from exc
     except SpecValidationError as exc:

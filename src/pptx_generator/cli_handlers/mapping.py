@@ -16,6 +16,7 @@ from pptx_generator.models import (
     GenerateReadyDocument,
     JobMeta,
     JobSpec,
+    PipelineFallbackError,
     SpecValidationError,
     TemplateStyle,
 )
@@ -101,6 +102,10 @@ class MappingCommandError(Exception):
         super().__init__(message)
         self.exit_code = exit_code
         self.errors = errors
+
+
+def _should_enforce_layouts() -> bool:
+    return os.getenv("PPTX_STRICT_LAYOUTS", "0") in {"1", "true", "True"}
 
 
 def prepare_template_style(template: Path) -> TemplateStylePayload:
@@ -267,6 +272,8 @@ def run_mapping_command(config: MappingCommandConfig) -> MappingCommandResult:
             generate_ready_filename=config.generate_ready_filename,
             generate_ready_meta_filename=config.generate_ready_meta_filename,
         )
+    except PipelineFallbackError as exc:
+        raise MappingCommandError(str(exc), exit_code=4) from exc
     except ValueError as exc:
         raise MappingCommandError(str(exc), exit_code=2) from exc
     except SpecValidationError as exc:
@@ -297,6 +304,7 @@ def run_mapping_pipeline(
 
     mapping_options = MappingOptions(
         layouts_path=params.layouts,
+        strict_layouts=_should_enforce_layouts(),
         output_dir=params.output_dir,
         template_path=params.template,
     )
