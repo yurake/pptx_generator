@@ -53,6 +53,7 @@ class PrepareNormalizationStep:
         self.options = options or PrepareNormalizationOptions()
 
     def run(self, context: PipelineContext) -> None:
+        logger.info("prepare_normalization start cards_path=%s", self.options.cards_path)
         document = self._load_document(self.options.cards_path)
         if document is None:
             if self.options.require_document:
@@ -64,6 +65,7 @@ class PrepareNormalizationStep:
         context.add_artifact("prepare_document", document)
         if self.options.cards_path:
             context.add_artifact("prepare_document_path", str(self.options.cards_path.resolve()))
+            logger.info("prepare_normalization loaded prepare_cards=%s", self.options.cards_path.resolve())
 
         base_dir = self.options.cards_path.parent if self.options.cards_path else Path.cwd()
         document_meta = document.meta if isinstance(document.meta, dict) else {}
@@ -82,6 +84,7 @@ class PrepareNormalizationStep:
         logs = self._load_logs(log_path)
         if logs is not None:
             context.add_artifact("prepare_log", logs)
+            logger.info("prepare_normalization loaded prepare_log=%s", log_path.resolve())
 
         ai_meta_path = self.options.ai_meta_path
         if ai_meta_path is None:
@@ -97,11 +100,13 @@ class PrepareNormalizationStep:
         meta = self._load_generation_meta(ai_meta_path)
         if meta is not None:
             context.add_artifact("prepare_generation_meta", meta)
+            logger.info("prepare_normalization loaded ai_generation_meta=%s", ai_meta_path.resolve())
 
         # 互換用: ContentApprovalDocument を生成して既存ステップへ渡す
         compatibility_document, compatibility_meta = self._build_compatibility_content(document)
         context.add_artifact("content_approved", compatibility_document)
         context.add_artifact("content_approved_meta", compatibility_meta)
+        logger.info("prepare_normalization completed")
 
     # ------------------------------------------------------------------ #
     # private helpers
