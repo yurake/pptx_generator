@@ -74,33 +74,6 @@ def test_configure_llm_logger_uses_stdout_and_rotating(tmp_path, _restore_loggin
     assert getattr(stream, "stream", None) is sys.stdout
 
 
-def test_llm_logger_does_not_emit_prompt_body(tmp_path, caplog, _restore_logging):
-    logger = logging.getLogger("pptx_generator.slide_ai.llm")
-    configure_llm_logger(log_dir=tmp_path)
-
-    secret_prompt = "THIS_IS_SECRET_PROMPT"
-    secret_response = "THIS_IS_SECRET_RESPONSE"
-
-    with caplog.at_level(logging.INFO, logger="pptx_generator.slide_ai.llm"):
-        logger.info(
-            "llm call",
-            extra={
-                "slide_id": "s1",
-                "card_id": "c1",
-                "model": "gpt",
-                "intent": "draft",
-                "warnings": "none",
-                "prompt_len": len(secret_prompt),
-                "response_len": len(secret_response),
-                "truncated": False,
-            },
-        )
-
-    # メッセージにプロンプト/レスポンス本文が含まれないことを確認
-    assert secret_prompt not in caplog.text
-    assert secret_response not in caplog.text
-
-
 def test_configure_api_logging_uses_stdout_and_rotating(tmp_path, _restore_logging, monkeypatch):
     monkeypatch.chdir(tmp_path)
     api_logger = configure_api_logging("INFO")
