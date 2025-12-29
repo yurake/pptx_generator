@@ -6,10 +6,23 @@ import json
 import logging
 import os
 import re
+import tempfile
+import threading
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterable, Optional
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows
+    fcntl = None
+
+try:
+    import msvcrt
+except ImportError:  # pragma: no cover - non-Windows
+    msvcrt = None
 
 from flask import Blueprint, abort, g, jsonify, request, send_file
 
@@ -438,6 +451,72 @@ def _registry_path(tx_root: Path) -> Path:
     return tx_root / "registry.json"
 
 
+def _registry_lock_path(tx_root: Path) -> Path:
+    return tx_root / ".registry.lock"
+
+
+def _registry_backup_path(tx_root: Path) -> Path:
+    return tx_root / "registry.json.bak"
+
+
+class RegistryCorruptedError(RuntimeError):
+    """既存 registry.json が破損している場合の保護用例外。"""
+
+
+class RegistryBackupCorruptedError(RuntimeError):
+    """バックアップも破損している場合の保護用例外。"""
+
+
+_registry_thread_locks: dict[str, threading.Lock] = {}
+_registry_thread_locks_guard = threading.Lock()
+
+
+def _get_registry_thread_lock(tx_root: Path) -> threading.Lock:
+    key = str(tx_root.resolve())
+    with _registry_thread_locks_guard:
+        lock = _registry_thread_locks.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _registry_thread_locks[key] = lock
+        return lock
+
+
+def _acquire_file_lock(tx_root: Path):
+    lock_path = _registry_lock_path(tx_root)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = lock_path.open("a+")
+    if fcntl is not None:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+    elif msvcrt is not None:  # pragma: no cover - Windows
+        msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+    return lock_file
+
+
+def _release_file_lock(lock_file):
+    try:
+        if fcntl is not None:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        elif msvcrt is not None:  # pragma: no cover - Windows
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+    finally:
+        lock_file.close()
+
+
+@contextmanager
+def _lock_registry(tx_root: Path):
+    thread_lock = _get_registry_thread_lock(tx_root)
+    lock_file = None
+    thread_lock.acquire()
+    try:
+        lock_file = _acquire_file_lock(tx_root)
+        yield
+    finally:
+        if lock_file is not None:
+            _release_file_lock(lock_file)
+        thread_lock.release()
+
+
 def _wrap_job(stage: str, job_id: str, transaction_id: str, func):
     logger = logging.getLogger("pptx_generator.api")
 
@@ -460,27 +539,58 @@ def _load_registry(tx_root: Path) -> Optional[dict]:
         return None
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
+    except json.JSONDecodeError as exc:
+        logger = logging.getLogger("pptx_generator.api")
+        logger.warning("registry decode failed path=%s", path)
+        backup_path = _registry_backup_path(tx_root)
+        if backup_path.exists():
+            try:
+                return json.loads(backup_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as backup_exc:
+                logger.error("registry backup decode failed path=%s", backup_path)
+                raise RegistryBackupCorruptedError(str(backup_path)) from backup_exc
+        raise RegistryCorruptedError(str(path)) from exc
+
+
+def _atomic_write_json(path: Path, content: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        backup_path = path.parent / f"{path.name}.bak"
+        try:
+            backup_path.write_bytes(path.read_bytes())
+        except OSError:
+            # バックアップが取れなくても本処理は続行する（ログのみ）
+            logging.getLogger("pptx_generator.api").warning("registry backup failed path=%s", backup_path)
+    fd, tmp_name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            json.dump(content, tmp_file, ensure_ascii=False, indent=2)
+            tmp_file.flush()
+            os.fsync(tmp_file.fileno())
+        os.replace(tmp_path, path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def _update_registry(tx_root: Path, stage: str, state) -> None:
-    registry = _load_registry(tx_root) or {}
-    artifacts = {}
-    if isinstance(state.result, dict):
-        artifacts = state.result.get("artifacts") or {}
-    # store relative paths when under tx_root
-    rel_artifacts = {}
-    for key, value in artifacts.items():
-        p = Path(value)
-        try:
-            rel = p.relative_to(tx_root)
-            rel_artifacts[key] = str(rel)
-        except ValueError:
-            rel_artifacts[key] = value
-    registry[stage] = {"job_id": state.request.job_id, "artifacts": rel_artifacts}
     tx_root.mkdir(parents=True, exist_ok=True)
-    _registry_path(tx_root).write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
+    with _lock_registry(tx_root):
+        registry = _load_registry(tx_root) or {}
+        artifacts = {}
+        if isinstance(state.result, dict):
+            artifacts = state.result.get("artifacts") or {}
+        # store relative paths when under tx_root
+        rel_artifacts = {}
+        for key, value in artifacts.items():
+            p = Path(value)
+            try:
+                rel = p.relative_to(tx_root)
+                rel_artifacts[key] = str(rel)
+            except ValueError:
+                rel_artifacts[key] = value
+        registry[stage] = {"job_id": state.request.job_id, "artifacts": rel_artifacts}
+        _atomic_write_json(_registry_path(tx_root), registry)
 
 
 def _resolve_stage_artifacts(tx_root: Path, stage: str, keys: list[str], allow_missing: bool = False) -> dict[str, str]:
