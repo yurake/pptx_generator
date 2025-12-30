@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 from pptx import Presentation
+from pptx.presentation import Presentation as PptxPresentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 import json
@@ -109,8 +110,16 @@ def generate_edits_template(pptx_path: Path | str, output_path: Path | str | Non
     presentation = Presentation(pptx_path)
     output_path = Path(output_path) if output_path is not None else pptx_path.with_name(f"{pptx_path.stem}_edits.json")
 
-    edits: list[dict[str, object]] = []
+    edits = snapshot_shapes_for_edit(presentation)
+    payload = {"edits": edits}
+    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return output_path
 
+
+def snapshot_shapes_for_edit(pptx: Path | Presentation) -> List[dict[str, object]]:
+    """LLM 入力やテンプレ生成向けに shape_id とテキストを抽出する。"""
+    presentation = pptx if isinstance(pptx, PptxPresentation) else Presentation(pptx)
+    edits: list[dict[str, object]] = []
     for slide_index, slide in enumerate(presentation.slides):
         for shape in _iter_shapes(slide.shapes):
             if getattr(shape, "has_text_frame", False):
@@ -138,10 +147,7 @@ def generate_edits_template(pptx_path: Path | str, output_path: Path | str | Non
                                 "contents": cell.text,
                             }
                         )
-
-    payload = {"edits": edits}
-    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return output_path
+    return edits
 
 
 def _snapshot_run_style(font) -> dict[str, object | None]:
