@@ -10,6 +10,8 @@ SYSTEM_PROMPT = """あなたはプレゼン編集アシスタントです。以�
 - 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
 - 余計なキーやテキストは出力しない
 - edit=false のときは contents に元テキストをそのまま入れてよい
+- 箇条書きは元の構造をできるだけ保つ（改行・リスト記号を維持）
+- 会社名や固有名詞は改変しない
 """
 
 
