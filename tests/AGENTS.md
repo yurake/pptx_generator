@@ -25,7 +25,8 @@
 - フィクスチャやテストデータには目的・利用条件をコメント化し、重複データの生成を避ける。
 
 ## 実行コマンド
-- すべてのテスト: `uv run --extra dev pytest`
+- すべてのテスト（デフォルトで `-n auto` により並列実行）: `uv run --extra dev pytest`
+- シーケンシャル実行でデバッグする場合: `uv run --extra dev pytest -n 0`
 - 単一テストモジュール: `uv run --extra dev pytest tests/pipeline/render/test_renderer_rich_content.py`
 - 統合テストのみ: `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py -k "not pdf" --maxfail=1`
 - PDF 変換を含むテストは LibreOffice が必要なため、実行前に `soffice --headless --version` で環境確認する。
@@ -36,6 +37,7 @@
 - 新機能やバグフィックスでは必ず失敗パターンを先に再現させるテストを追加し、緑化を確認する。承認フローや AI レビューのテストを追加する場合は、仕様を `docs/design/design.md`・`docs/design/schema/README.md`・`docs/requirements/requirements.md` で確認する。
 - 大きな生成物（PPTX/PDF）の内容確認は、ハッシュ比較や `analysis.json` のメタ情報で検証し、バイナリをリポジトリに含めない。
 - テストデータを追加する場合は `samples/` に配置し、目的や前提条件をファイル冒頭にコメントとして記載する。
+- 並列実行で競合するテストは `@pytest.mark.serial` を付与し、共有ファイルやグローバル状態の衝突を避ける。
 
 ## レビュー時確認ポイント
 - テスト名・アサーションが意図を明確に伝えているか。中間 JSON の検証では `docs/design/schema/README.md` に示されたスキーマとの差異がないかをチェックする。

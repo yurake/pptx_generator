@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: Run pytest with coverage
-        run: uv run --extra dev --with pytest-cov pytest --cov=src --cov-report=xml
+        run: uv run --extra dev pytest -n auto --cov=src --cov-report=xml
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4

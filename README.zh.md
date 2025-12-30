@@ -167,9 +167,13 @@ flowchart TD
 - 静态模板: 通过 `external/<template_id>/hooks.json` 可将各阶段处理委托给外部钩子。引入与运维步骤参阅 `external/README.md`，工作指引参阅 `external/AGENTS.md`，各阶段的配置示例与环境变量说明参阅 `docs/design/stages/`。
 
 ## 测试
-- 测试执行:
+- 默认并行执行 (`-n auto`):
   ```bash
   uv run --extra dev pytest
+  ```
+- 调试时可切换为串行执行:
+  ```bash
+  uv run --extra dev pytest -n 0
   ```
 - 测试完成后，请检查输出目录，如 `.pptx/compose/`、`.pptx/gen/` 等，确保已生成期望的产物。
 - 请参考 `tests/AGENTS.md` 了解详细的测试方针。
