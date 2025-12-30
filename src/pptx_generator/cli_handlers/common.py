@@ -29,6 +29,8 @@ LOG_LEVEL_ALIASES = {
     "critical": logging.CRITICAL,
 }
 
+OUT_LOG_FILENAME = "out.log"
+
 
 def parse_log_level(value: str | None) -> int | None:
     if value is None:
@@ -235,7 +237,7 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
             handler
             for handler in llm_logger.handlers
             if isinstance(handler, logging.FileHandler)
-            and getattr(handler, "baseFilename", None) == str(target_dir / "out.log")
+            and getattr(handler, "baseFilename", None) == str(target_dir / OUT_LOG_FILENAME)
         ),
         None,
     )
@@ -245,7 +247,7 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
     else:
         ensure_rotating_file_handler(
             llm_logger,
-            file_path=target_dir / "out.log",
+            file_path=target_dir / OUT_LOG_FILENAME,
             level=logging.INFO,
             formatter=formatter,
         )
@@ -270,7 +272,7 @@ def configure_file_logging(log_dir: Path | None = None) -> None:
 
     target_dir = log_dir or Path("logs")
     target_dir.mkdir(parents=True, exist_ok=True)
-    file_path = target_dir / "out.log"
+    file_path = target_dir / OUT_LOG_FILENAME
     root_logger = logging.getLogger()
     formatter = logging.Formatter(LOG_FORMAT)
     ensure_stream_handler(

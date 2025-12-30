@@ -47,6 +47,7 @@ DEFAULT_GEN_PDF_TIMEOUT = 120
 DEFAULT_GEN_PDF_RETRIES = 2
 DEFAULT_TEMPLATE_LAYOUT_MODE = "dynamic"
 DEFAULT_APPENDIX_LIMIT = 5
+PREPARE_CARD_FILENAME = "prepare_card.json"
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ app.add_command(template)
 outline = create_outline_command(
     default_output_dir=DEFAULT_DRAFT_OUTPUT_DIR,
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
-    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
+    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / PREPARE_CARD_FILENAME,
     default_draft_filename=DEFAULT_DRAFT_FILENAME,
     default_approved_filename=DEFAULT_APPROVED_FILENAME,
     default_draft_log_filename=DEFAULT_DRAFT_LOG_FILENAME,
@@ -155,7 +156,7 @@ compose = create_compose_command(
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
     default_output_dir=DEFAULT_COMPOSE_OUTPUT_DIR,
     default_rules_path=DEFAULT_RULES_PATH,
-    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
+    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / PREPARE_CARD_FILENAME,
     default_draft_filename=DEFAULT_DRAFT_FILENAME,
     default_approved_filename=DEFAULT_APPROVED_FILENAME,
     default_draft_log_filename=DEFAULT_DRAFT_LOG_FILENAME,
@@ -169,7 +170,7 @@ app.add_command(compose)
 mapping = create_mapping_command(
     default_output_dir=DEFAULT_GEN_OUTPUT_DIR,
     default_rules_path=DEFAULT_RULES_PATH,
-    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / "prepare_card.json",
+    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / PREPARE_CARD_FILENAME,
 )
 app.add_command(mapping)
 
