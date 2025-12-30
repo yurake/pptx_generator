@@ -35,13 +35,24 @@ def create_edit_command(default_output_dir: Path | None = None):
             return
 
         shapes = snapshot_shapes_for_edit(pptx_path)
-        prompt = build_user_prompt(slide_title=None, shape_contexts=shapes)
         client = create_edit_ai_client()
-        request = EditAIRequest(prompt=prompt, shape_contexts=shapes)
-        response = client.rewrite(request)
-        applied, missing = apply_shape_text_edits(pptx_path, response.edits, output_path=resolved_output)
+        all_edits: list[dict[str, object]] = []
+        models: set[str] = set()
+
+        slides: dict[int, list[dict[str, object]]] = {}
+        for shape in shapes:
+            slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
+
+        for slide_idx, contexts in slides.items():
+            prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
+            request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
+            response = client.rewrite(request)
+            models.add(response.model)
+            all_edits.extend(response.edits)
+
+        applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=resolved_output)
         click.echo(f"適用件数: {applied}, 未適用 shape_id: {missing}")
-        click.echo(f"モデル: {response.model}")
+        click.echo(f"モデル: {', '.join(sorted(models))}")
         click.echo(f"出力: {resolved_output}")
 
     return command
