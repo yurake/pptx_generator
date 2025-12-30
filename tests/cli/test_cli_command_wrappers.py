@@ -11,6 +11,8 @@ from pptx_generator.cli_commands import (
     create_tpl_extract_command,
     create_tpl_release_command,
 )
+from pptx_generator.cli_commands.compose import ComposeCommandError, create_compose_command
+from pptx_generator.cli_commands.mapping import MappingCommandError, create_mapping_command
 from pptx_generator.cli_commands.utils import echo_command_errors
 from pptx_generator.pipeline import PrepareNormalizationError
 from pptx_generator.pipeline.draft_structuring import DraftStructuringError
@@ -127,6 +129,100 @@ def test_outline_command_error_paths(monkeypatch, tmp_path: Path, exc_type, mess
     exit_code, _, stderr = _invoke(command, [str(spec_path)])
     assert exit_code == 4
     assert message in stderr
+
+
+def test_compose_command_error_paths(monkeypatch, tmp_path: Path) -> None:
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text("{}", encoding="utf-8")
+    prepare_cards = tmp_path / "prepare" / "prepare_card.json"
+    prepare_cards.parent.mkdir(parents=True, exist_ok=True)
+    prepare_cards.write_text("{}", encoding="utf-8")
+    rules_path = tmp_path / "pipeline_rules.json"
+    rules_path.write_text("{}", encoding="utf-8")
+
+    def raise_error() -> None:
+        raise ComposeCommandError("boom", exit_code=9, errors=[{"msg": "x"}])
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_compose_command",
+        lambda config: raise_error(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_job_sync",
+        lambda *, stage, func, **_: func(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda spec: (None, None),
+    )
+
+    command = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=rules_path,
+        default_prepare_cards_path=prepare_cards,
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    exit_code, _, stderr = _invoke(
+        command,
+        [
+            str(spec_path),
+            "--prepare-cards",
+            str(prepare_cards),
+            "--rules",
+            str(rules_path),
+        ],
+    )
+    assert exit_code == 9
+    assert "boom" in stderr
+    assert '"msg": "x"' in stderr
+
+
+def test_mapping_command_error_paths(monkeypatch, tmp_path: Path) -> None:
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text("{}", encoding="utf-8")
+    rules_path = tmp_path / "pipeline_rules.json"
+    rules_path.write_text("{}", encoding="utf-8")
+    prepare_cards = tmp_path / "prepare_card.json"
+    prepare_cards.write_text("{}", encoding="utf-8")
+
+    def raise_error() -> None:
+        raise MappingCommandError("mapping boom", exit_code=7, errors=[{"field": "x"}])
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.mapping.run_mapping_command",
+        lambda config: raise_error(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.mapping.load_stage_hooks",
+        lambda spec: (None, None),
+    )
+
+    command = create_mapping_command(
+        default_output_dir=tmp_path / "out",
+        default_rules_path=rules_path,
+        default_prepare_cards_path=prepare_cards,
+    )
+
+    exit_code, _, stderr = _invoke(
+        command,
+        [
+            str(spec_path),
+            "--rules",
+            str(rules_path),
+            "--prepare-cards",
+            str(prepare_cards),
+        ],
+    )
+    assert exit_code == 7
+    assert "mapping boom" in stderr
+    assert '"field": "x"' in stderr
 
 
 def test_layout_validate_command_success(monkeypatch, tmp_path: Path) -> None:

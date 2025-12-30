@@ -10,14 +10,17 @@ from pptx_generator.cli_handlers.mapping import (
     echo_mapping_outputs,
     run_mapping_command,
 )
-
-from .utils import echo_command_errors
 from pptx_generator.cli_hooks import (
     STAGE_MAPPING,
     slide_contexts_from_generate_ready,
-    extract_template_id_from_json_file,
-    load_hooks_for_template_id,
 )
+from pptx_generator.cli_commands.hook_runner import (
+    load_stage_hooks,
+    run_post_stage_slide_hooks,
+    run_slide_hooks,
+    run_stage_hook,
+)
+from .utils import handle_command_error
 
 
 def create_mapping_command(
@@ -63,10 +66,7 @@ def create_mapping_command(
         """stage 5 マッピングを実行し generate_ready.json を生成する。"""
 
         draft_output = output_dir / "draft"
-        hook_manager = None
-        template_id = extract_template_id_from_json_file(spec_path)
-        if template_id:
-            hook_manager = load_hooks_for_template_id(template_id)
+        hook_manager, template_id = load_stage_hooks(spec_path)
         stage_env = {
             "PPTX_STAGE": STAGE_MAPPING,
             "PPTX_SPEC_PATH": str(spec_path.resolve()),
@@ -77,29 +77,23 @@ def create_mapping_command(
         }
         if template_id:
             stage_env["PPTX_TEMPLATE_ID"] = template_id
-        if hook_manager:
-            executed, continue_default = hook_manager.run_stage_hook(
-                STAGE_MAPPING,
-                env=stage_env,
-            )
-            if executed:
-                click.echo(
-                    f"[hooks] mapping stage executed via external hook (template_id={template_id})"
-                )
-                if not continue_default:
-                    return
+        if run_stage_hook(
+            STAGE_MAPPING,
+            hook_manager=hook_manager,
+            template_id=template_id,
+            stage_env=stage_env,
+        ):
+            return
 
         contexts = slide_contexts_from_generate_ready(prepare_cards)
-        if hook_manager:
-            executed = hook_manager.run_slide_hooks(
-                STAGE_MAPPING,
-                slides=contexts,
-                env=stage_env,
-                continue_default_filter=False,
-                allow_fallback_context=True,
-            )
-            if executed:
-                return
+        if run_slide_hooks(
+            STAGE_MAPPING,
+            hook_manager=hook_manager,
+            stage_env=stage_env,
+            slides=contexts,
+            continue_default_filter=False,
+        ):
+            return
 
         config = MappingCommandConfig(
             spec_path=spec_path,
@@ -112,27 +106,19 @@ def create_mapping_command(
         try:
             result = run_mapping_command(config)
         except MappingCommandError as exc:
-            message = str(exc)
-            if exc.errors:
-                echo_command_errors(message or "エラーが発生しました", exc.errors)
-            elif message:
-                click.echo(message, err=True)
+            handle_command_error(exc, default_message="エラーが発生しました")
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
         echo_mapping_outputs(result.context)
 
-        if hook_manager and template_id:
-            stage_env_with_outputs = dict(stage_env)
-            generate_ready_path = output_dir / config.generate_ready_filename
-            stage_env_with_outputs["PPTX_GENERATE_READY_PATH"] = str(generate_ready_path.resolve())
-            contexts = slide_contexts_from_generate_ready(generate_ready_path)
-            hook_manager.run_slide_hooks(
-                STAGE_MAPPING,
-                slides=contexts,
-                env=stage_env_with_outputs,
-                continue_default_filter=True,
-                allow_fallback_context=True,
-            )
+        run_post_stage_slide_hooks(
+            STAGE_MAPPING,
+            hook_manager=hook_manager,
+            template_id=template_id,
+            base_stage_env=stage_env,
+            generate_ready_path=output_dir / config.generate_ready_filename,
+            slide_context_loader=slide_contexts_from_generate_ready,
+        )
 
     return mapping
 
