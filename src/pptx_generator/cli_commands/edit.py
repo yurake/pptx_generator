@@ -48,7 +48,10 @@ def create_edit_command(default_output_dir: Path | None = None):
             request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
             response = client.rewrite(request)
             models.add(response.model)
-            all_edits.extend(response.edits)
+            for edit in response.edits:
+                if isinstance(edit, dict):
+                    edit["slide_index"] = slide_idx
+                all_edits.append(edit)
 
         applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=resolved_output)
         click.echo(f"適用件数: {applied}, 未適用 shape_id: {missing}")

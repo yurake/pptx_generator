@@ -92,6 +92,32 @@ def test_apply_shape_text_edits_updates_table_cell(tmp_path) -> None:
     assert reloaded.slides[0].shapes[0].table.cell(1, 0).text == "updated"
 
 
+def test_apply_shape_text_edits_with_slide_index(tmp_path) -> None:
+    pptx_path = tmp_path / "input_slide_index.pptx"
+    presentation = Presentation()
+    slide1 = presentation.slides.add_slide(presentation.slide_layouts[6])
+    slide2 = presentation.slides.add_slide(presentation.slide_layouts[6])
+    shape1 = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    shape1.text = "s1"
+    shape2 = slide2.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    shape2.text = "s2"
+    presentation.save(pptx_path)
+
+    applied, missing = apply_shape_text_edits(
+        pptx_path,
+        [
+            {"slide_index": 1, "shape_id": shape1.shape_id, "contents": "wrong slide"},
+            {"slide_index": 1, "shape_id": shape2.shape_id, "contents": "target slide"},
+        ],
+    )
+
+    assert applied == 1
+    assert missing == ["1:" + str(shape1.shape_id)]
+    reloaded = Presentation(pptx_path)
+    assert reloaded.slides[0].shapes[0].text == "s1"
+    assert reloaded.slides[1].shapes[0].text == "target slide"
+
+
 def test_generate_edits_template_outputs_json(tmp_path) -> None:
     pptx_path = tmp_path / "input_template.pptx"
     presentation = Presentation()
