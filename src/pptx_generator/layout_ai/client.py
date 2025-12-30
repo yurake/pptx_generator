@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass, field
 import re
 from typing import Callable, Iterable, Protocol, Tuple
+import time
 
 from pptx_generator.llm import (
     log_provider_resolution,
@@ -154,6 +155,12 @@ class OpenAIChatLayoutClient:
     def recommend(self, request: LayoutAIRequest) -> LayoutAIResponse:
         from openai.types.responses import ResponseOutputMessage, ResponseOutputRefusal, ResponseOutputText
 
+        start = time.perf_counter()
+        _LAYOUT_LLM_LOGGER.info(
+            "layout AI call start: model=%s layout_candidates=%s",
+            self._model,
+            request.layout_candidates,
+        )
         messages = [
             {"role": "system", "content": build_system_prompt(request)},
             {"role": "user", "content": build_user_prompt(request)},
@@ -180,6 +187,7 @@ class OpenAIChatLayoutClient:
             )
             raise LayoutAIClientExecutionError(str(exc)) from exc
 
+        latency_ms = (time.perf_counter() - start) * 1000
         logger.debug("OpenAI layout raw response: %s", response)
         text_segments: list[str] = []
         incomplete = False
@@ -216,11 +224,12 @@ class OpenAIChatLayoutClient:
             truncated = True
 
         _LAYOUT_LLM_LOGGER.info(
-            "layout AI call: model=%s prompt_len=%s response_len=%s truncated=%s prompt=%s response=%s",
+            "layout AI call done: model=%s prompt_len=%s response_len=%s truncated=%s latency_ms=%.1f prompt=%s response=%s",
             getattr(response, "model", self._model),
             len(request.prompt),
             len(content),
             truncated,
+            latency_ms,
             request.prompt,
             raw,
         )

@@ -41,6 +41,7 @@ class PdfExportStep:
 
     def run(self, context: PipelineContext) -> None:
         if not self.options.enabled:
+            logger.info("pdf_export skipped: disabled")
             return
 
         pptx_object = context.require_artifact("pptx_path")
@@ -113,6 +114,12 @@ class PdfExportStep:
 
         if self.options.mode == "only":
             context.add_artifact("pdf_cleanup_pptx_path", str(pptx_path))
+        logger.info(
+            "pdf_export completed: pdf=%s attempts=%s elapsed=%.2fs",
+            pdf_path,
+            result.attempts,
+            result.elapsed_sec,
+        )
 
 
 @dataclass(slots=True)
@@ -160,6 +167,12 @@ class LibreOfficeConverter:
                     timeout=self._timeout_sec,
                 )
             except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+                logger.warning(
+                    "pdf_export attempt failed (%s/%s): %s",
+                    attempt,
+                    self._max_retries,
+                    exc,
+                )
                 if attempt >= self._max_retries:
                     raise PdfExportError(f"LibreOffice 変換に失敗しました: {exc}") from exc
                 time.sleep(1)
@@ -187,6 +200,7 @@ class LibreOfficeConverter:
             if candidate.exists():
                 return candidate
             msg = f"指定された LibreOffice パスが見つかりません: {candidate}"
+            logger.warning(msg)
             raise PdfExportError(msg)
 
         env_path = os.environ.get("LIBREOFFICE_PATH")
@@ -200,4 +214,5 @@ class LibreOfficeConverter:
             return Path(resolved)
 
         msg = "LibreOffice (soffice) が見つかりません。PATH または LIBREOFFICE_PATH を確認してください"
+        logger.warning(msg)
         raise PdfExportError(msg)

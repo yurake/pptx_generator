@@ -16,7 +16,6 @@ from .cli_handlers import (
     PrepareCommandConfig,
 )
 from .cli_handlers.common import (
-    configure_file_logging,
     configure_llm_logger,
     determine_log_level,
 )
@@ -33,6 +32,7 @@ from .cli_commands import (
     create_tpl_release_command,
 )
 from .pipeline import DraftStructuringOptions
+from .logging import configure_root_logging
 from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
 from .cli_handlers.template_extraction import (
     PROMPT_TEMPLATE_DIRNAME,
@@ -103,17 +103,11 @@ DEFAULT_VALIDATION_OUTPUT_DIR = build_output_dir("validation", root=_OUTPUT_ROOT
 def app(verbose: bool, debug: bool) -> None:
     """CLI ルートエントリ。"""
     level, deferred_logs = determine_log_level(verbose, debug)
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-        handlers=[logging.StreamHandler(stream=sys.stdout)],
-        force=True,
-    )
+    configure_root_logging(level=level)
     logging.getLogger("openai").setLevel(level)
     cli_logger = logging.getLogger("pptx_generator.cli")
     for message_level, message in deferred_logs:
         cli_logger.log(message_level, message)
-    configure_file_logging()
     configure_llm_logger()
 
 

@@ -43,7 +43,7 @@ class PolisherStep:
 
     def run(self, context: PipelineContext) -> None:
         if not self.options.enabled:
-            logger.debug("Polisher は無効化されています")
+            logger.info("polisher skipped: disabled")
             context.add_artifact(
                 "polisher_metadata",
                 {
@@ -62,7 +62,7 @@ class PolisherStep:
         command = self._build_command(pptx_path)
         cwd = str(self.options.working_dir) if self.options.working_dir else None
 
-        logger.info("Polisher を実行します: %s", " ".join(command))
+        logger.info("polisher start: %s", " ".join(command))
         start = time.perf_counter()
         try:
             completed = subprocess.run(  # noqa: S603, S607
@@ -109,6 +109,11 @@ class PolisherStep:
             metadata["rules_path"] = str(self.options.rules_path)
 
         context.add_artifact("polisher_metadata", metadata)
+        logger.info(
+            "polisher completed: elapsed=%.2fs returncode=%s",
+            metadata["elapsed_sec"],
+            metadata["returncode"],
+        )
 
     def _build_command(self, pptx_path: Path) -> list[str]:
         executable = self._resolve_executable()

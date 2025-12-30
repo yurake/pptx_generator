@@ -9,6 +9,7 @@ import textwrap
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Callable, Protocol
+import time
 
 from ..llm import (
     log_provider_resolution,
@@ -513,6 +514,12 @@ class OpenAIChatClient:
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
+        start = time.perf_counter()
+        _LLM_LOGGER.info(
+            "slide_ai call start model=%s slide_id=%s",
+            self._model,
+            request.slide.id,
+        )
         model_name = request.policy.model or self._model
         if model_name == "mock-local":
             model_name = self._model
@@ -538,6 +545,7 @@ class OpenAIChatClient:
                 },
             )
             raise RuntimeError("OpenAI API call failed") from exc
+        latency_ms = (time.perf_counter() - start) * 1000
         choice = response.choices[0]  # type: ignore[index]
         message = choice.message
         content = getattr(message, "content", None)
@@ -547,13 +555,21 @@ class OpenAIChatClient:
             text = ""
         else:
             text = "".join(str(part) for part in content)
-        return _build_response_from_text(
+        result = _build_response_from_text(
             text,
             request,
             model=model_name,
             finish_reason=getattr(choice, "finish_reason", None),
             refusal=getattr(message, "refusal", None),
         )
+        _LLM_LOGGER.info(
+            "slide_ai call done model=%s slide_id=%s latency_ms=%.1f finish_reason=%s",
+            model_name,
+            request.slide.id,
+            latency_ms,
+            getattr(choice, "finish_reason", None),
+        )
+        return result
 
     def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
         messages = [

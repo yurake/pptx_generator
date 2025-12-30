@@ -45,49 +45,57 @@ class ContentApprovalStep:
         self.options = options or ContentApprovalOptions()
 
     def run(self, context: PipelineContext) -> None:
+        logger.info("content_approval start approved_path=%s", self.options.approved_path)
         document: ContentApprovalDocument | None = None
         meta: dict[str, object] | None = None
         loaded_from_file = False
         generated_from_spec = False
 
-        if self.options.approved_path is not None:
-            document, meta = self._load_document_with_meta(self.options.approved_path)
-            loaded_from_file = True
-        elif self.options.fallback_builder is not None:
-            document = self.options.fallback_builder(context.spec)
-            meta = self._build_generated_meta(document)
-            generated_from_spec = True
+        try:
+            if self.options.approved_path is not None:
+                document, meta = self._load_document_with_meta(self.options.approved_path)
+                loaded_from_file = True
+            elif self.options.fallback_builder is not None:
+                document = self.options.fallback_builder(context.spec)
+                meta = self._build_generated_meta(document)
+                generated_from_spec = True
 
-        if document is not None and meta is not None:
-            if self.options.require_all_approved:
-                self._ensure_all_approved(document)
+            if document is not None and meta is not None:
+                if self.options.require_all_approved:
+                    self._ensure_all_approved(document)
 
-            updated_ids = self._apply_to_spec(context.spec, document)
-            meta["applied_to_spec"] = bool(updated_ids)
-            meta["updated_slide_ids"] = updated_ids
+                updated_ids = self._apply_to_spec(context.spec, document)
+                meta["applied_to_spec"] = bool(updated_ids)
+                meta["updated_slide_ids"] = updated_ids
 
-            context.add_artifact("content_approved", document)
-            context.add_artifact("content_approved_meta", meta)
+                context.add_artifact("content_approved", document)
+                context.add_artifact("content_approved_meta", meta)
 
-            if loaded_from_file:
-                logger.info(
-                    "承認済みコンテンツを読み込みました: slides=%d",
-                    len(document.slides),
-                )
-            elif generated_from_spec:
-                logger.info(
-                    "承認済みコンテンツを Spec から生成しました: slides=%d",
-                    len(document.slides),
-                )
-        elif self.options.require_document:
-            msg = "承認済みコンテンツファイルが指定されていません"
-            raise ContentApprovalError(msg)
+                if loaded_from_file:
+                    logger.info(
+                        "承認済みコンテンツを読み込みました: slides=%d path=%s",
+                        len(document.slides),
+                        self.options.approved_path,
+                    )
+                elif generated_from_spec:
+                    logger.info(
+                        "承認済みコンテンツを Spec から生成しました: slides=%d",
+                        len(document.slides),
+                    )
+            elif self.options.require_document:
+                msg = "承認済みコンテンツファイルが指定されていません"
+                logger.error(msg)
+                raise ContentApprovalError(msg)
 
-        if self.options.review_log_path is not None:
-            logs, meta = self._load_review_logs_with_meta(self.options.review_log_path)
-            context.add_artifact("content_review_log", logs)
-            context.add_artifact("content_review_log_meta", meta)
-            logger.info("承認ログを読み込みました: events=%d", len(logs))
+            if self.options.review_log_path is not None:
+                logs, meta = self._load_review_logs_with_meta(self.options.review_log_path)
+                context.add_artifact("content_review_log", logs)
+                context.add_artifact("content_review_log_meta", meta)
+                logger.info("承認ログを読み込みました: events=%d path=%s", len(logs), self.options.review_log_path)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("content_approval failed: %s", exc, exc_info=True)
+            raise
+        logger.info("content_approval completed")
 
     @staticmethod
     def _load_document_with_meta(

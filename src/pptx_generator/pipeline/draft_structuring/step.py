@@ -138,15 +138,18 @@ class DraftStructuringStep:
     def _write_document(path: Path, document: DraftDocument) -> None:
         payload = document.model_dump(mode="json")
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.info("Artifact written: draft_document %s", path.resolve())
 
     @staticmethod
     def _write_json(path: Path, payload: object) -> None:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.info("Artifact written: json %s", path.resolve())
 
     @staticmethod
     def _write_log(path: Path, entries: Iterable[dict[str, object]]) -> None:
         payload = list(entries)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.info("Artifact written: log %s", path.resolve())
 
     @staticmethod
     def _spec_id_from_title(title: str | None) -> str:

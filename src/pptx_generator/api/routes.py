@@ -37,6 +37,7 @@ from pptx_generator.api.stages import (
     ComposeCommandError,
     GenerateCommandError,
 )
+from pptx_generator.logging import set_current_request_id, reset_current_request_id
 from pptx_generator.runtime.job_queue import (
     JobRequest,
     JobStatus,
@@ -91,6 +92,7 @@ def setup_state(setup_state):
         if request.method in ("POST", "PUT", "PATCH", "DELETE") and request.cookies:
             return _error_response(401, "unauthorized", "cookie-based authentication is not allowed")
         g.request_id = request.headers.get("X-Request-ID") or _generate_id("req")
+        g._request_ctx_token = set_current_request_id(g.request_id)
         app.logger.info(
             "request start method=%s path=%s request_id=%s",
             request.method,
@@ -122,6 +124,9 @@ def setup_state(setup_state):
             (getattr(g, "request_id", None) or "")[:8],
         )
         response.headers.setdefault("X-Request-ID", getattr(g, "request_id", ""))
+        token = getattr(g, "_request_ctx_token", None)
+        if token is not None:
+            reset_current_request_id(token)
         return response
 
 

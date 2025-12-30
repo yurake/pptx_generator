@@ -12,6 +12,7 @@ from uuid import uuid4
 from ..config_manager import ResolvedConfig
 from ..models import JobSpec
 from ..runtime.job_context import get_current_job
+from ..logging import set_current_stage
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,7 @@ class PipelineContext:
     def advance_stage(self, stage: PipelineStage) -> None:
         self.current_stage = stage
         self.execution_trace.append(stage.value)
+        set_current_stage(stage.value)
 
     def record_step(self, name: str) -> None:
         self.execution_trace.append(name)

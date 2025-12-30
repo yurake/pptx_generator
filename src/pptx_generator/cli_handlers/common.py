@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel
 
 from pptx_generator.config_manager import ConfigManager
 from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
+from pptx_generator.logging import LOG_FORMAT, ensure_rotating_file_handler, ensure_stream_handler
 from pptx_generator.models import JobSpec
 from pptx_generator.spec_loader import load_jobspec_from_path
 
@@ -240,25 +240,27 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
         None,
     )
     if existing_handler:
+        existing_handler.setLevel(logging.INFO)
         existing_handler.setFormatter(formatter)
     else:
-        handler = RotatingFileHandler(
-            target_dir / "out.log",
-            encoding="utf-8",
-            maxBytes=10 * 1024 * 1024,
-            backupCount=5,
+        ensure_rotating_file_handler(
+            llm_logger,
+            file_path=target_dir / "out.log",
+            level=logging.INFO,
+            formatter=formatter,
         )
-        handler.setFormatter(formatter)
-        llm_logger.addHandler(handler)
 
     stream_handler_exists = any(
         isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
         for handler in llm_logger.handlers
     )
     if not stream_handler_exists:
-        stream_handler = logging.StreamHandler(stream=sys.stdout)
-        stream_handler.setFormatter(formatter)
-        llm_logger.addHandler(stream_handler)
+        ensure_stream_handler(
+            llm_logger,
+            level=logging.INFO,
+            formatter=formatter,
+            stream=sys.stdout,
+        )
     llm_logger.setLevel(logging.INFO)
     llm_logger.propagate = False
 
@@ -270,20 +272,19 @@ def configure_file_logging(log_dir: Path | None = None) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
     file_path = target_dir / "out.log"
     root_logger = logging.getLogger()
-    if not any(
-        isinstance(handler, logging.FileHandler)
-        and getattr(handler, "baseFilename", None) == str(file_path)
-        for handler in root_logger.handlers
-    ):
-        handler = RotatingFileHandler(
-            file_path,
-            encoding="utf-8",
-            maxBytes=10 * 1024 * 1024,
-            backupCount=5,
-        )
-        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-        handler.setFormatter(formatter)
-        root_logger.addHandler(handler)
+    formatter = logging.Formatter(LOG_FORMAT)
+    ensure_stream_handler(
+        root_logger,
+        level=root_logger.getEffectiveLevel(),
+        formatter=formatter,
+        stream=sys.stdout,
+    )
+    ensure_rotating_file_handler(
+        root_logger,
+        file_path=file_path,
+        level=root_logger.getEffectiveLevel(),
+        formatter=formatter,
+    )
 
 
 def dump_json(path: Path, payload: object) -> None:
