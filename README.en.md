@@ -167,9 +167,13 @@ flowchart TD
 - Static templates: you can delegate per-stage processing via `external/<template_id>/hooks.json`. See `external/README.md` (how to introduce/use) and `external/AGENTS.md` (guidance). Stage-specific config examples and environment variables are in `docs/design/stages/`.
 
 ## Test
-- Test execution:
+- Test execution (parallel by default with `-n auto`):
   ```bash
   uv run --extra dev pytest
+  ```
+- Sequential mode for debugging:
+  ```bash
+  uv run --extra dev pytest -n 0
   ```
 - After testing, check the output directories such as `.pptx/compose/` and `.pptx/gen/` to verify that the expected artifacts have been generated.
 - For detailed testing policy, please refer to `tests/AGENTS.md`.
