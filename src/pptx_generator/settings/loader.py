@@ -5,10 +5,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pathlib import Path
-
 from .paths import find_config_path
 from .rules import RulesConfig
+
+PIPELINE_RULES_FILENAME = "pipeline_rules.json"
+LEGACY_RULES_FILENAME = "rules.json"
 
 __all__ = ["load_rules_config"]
 
@@ -19,11 +20,11 @@ def load_rules_config(path: Path | str) -> RulesConfig:
 
     candidate = Path(path)
     package_root = Path(__file__).resolve().parent.parent
-    packaged_pipeline = package_root / "config" / "pipeline_rules.json"
-    packaged_legacy = package_root / "config" / "rules.json"
+    packaged_pipeline = package_root / "config" / PIPELINE_RULES_FILENAME
+    packaged_legacy = package_root / "config" / LEGACY_RULES_FILENAME
 
     # デフォルト指定（pipeline_rules.json / rules.json）はパッケージ同梱のみを参照する
-    if candidate.name in {"pipeline_rules.json", "rules.json"} and (
+    if candidate.name in {PIPELINE_RULES_FILENAME, LEGACY_RULES_FILENAME} and (
         candidate.parent == Path("config") or candidate.parent == Path(".") or candidate.parent == Path()
     ):
         if packaged_pipeline.exists():
@@ -37,10 +38,10 @@ def load_rules_config(path: Path | str) -> RulesConfig:
 
     # 互換性維持: 明示的に旧名を指定された場合は新名へもフォールバック
     fallback_names = []
-    if candidate.name == "pipeline_rules.json":
-        fallback_names.append(candidate.with_name("rules.json"))
-    elif candidate.name == "rules.json":
-        fallback_names.append(candidate.with_name("pipeline_rules.json"))
+    if candidate.name == PIPELINE_RULES_FILENAME:
+        fallback_names.append(candidate.with_name(LEGACY_RULES_FILENAME))
+    elif candidate.name == LEGACY_RULES_FILENAME:
+        fallback_names.append(candidate.with_name(PIPELINE_RULES_FILENAME))
 
     for fallback in fallback_names:
         resolved_fallback = find_config_path(fallback)

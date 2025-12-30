@@ -31,6 +31,8 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_FONT_FAMILY = "Meiryo UI"
+
 
 @dataclass(slots=True)
 class BrandingFont:
@@ -239,8 +241,8 @@ class BrandingConfig:
 
     @classmethod
     def default(cls) -> "BrandingConfig":
-        heading = BrandingFont(name="Meiryo UI", size_pt=32.0, color_hex="#1A1A1A")
-        body = BrandingFont(name="Meiryo UI", size_pt=18.0, color_hex="#333333")
+        heading = BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=32.0, color_hex="#1A1A1A")
+        body = BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=18.0, color_hex="#333333")
         colors = ColorPalette(
             primary="#005BAC",
             secondary="#0097A7",
@@ -250,11 +252,11 @@ class BrandingConfig:
         table = TableComponentStyle(
             fallback_box=BoxSpec(left_in=1.0, top_in=1.5, width_in=8.5, height_in=3.0),
             header=TableHeaderStyle(
-                font=BrandingFont(name="Meiryo UI", size_pt=18.0, color_hex="#FFFFFF", bold=True),
+                font=BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=18.0, color_hex="#FFFFFF", bold=True),
                 fill_color="#005BAC",
             ),
             body=TableBodyStyle(
-                font=BrandingFont(name="Meiryo UI", size_pt=16.0, color_hex="#333333"),
+                font=BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=16.0, color_hex="#333333"),
                 fill_color="#FFFFFF",
                 zebra_fill_color="#F4F7FB",
             ),
@@ -270,7 +272,7 @@ class BrandingConfig:
                 "#8D6E63",
             ),
             data_labels=ChartDataLabelsStyle(enabled=True, format="0"),
-            axis=ChartAxisStyle(font=BrandingFont(name="Meiryo UI", size_pt=14.0, color_hex="#333333")),
+            axis=ChartAxisStyle(font=BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=14.0, color_hex="#333333")),
         )
         image = ImageComponentStyle(
             fallback_box=BoxSpec(left_in=1.0, top_in=1.75, width_in=8.0, height_in=4.5),
@@ -278,7 +280,7 @@ class BrandingConfig:
         )
         textbox = TextboxComponentStyle(
             fallback_box=BoxSpec(left_in=1.0, top_in=1.0, width_in=8.0, height_in=1.5),
-            font=BrandingFont(name="Meiryo UI", size_pt=18.0, color_hex="#333333"),
+            font=BrandingFont(name=DEFAULT_FONT_FAMILY, size_pt=18.0, color_hex="#333333"),
             paragraph=ParagraphStyle(
                 align="left",
                 line_spacing_pt=22.0,

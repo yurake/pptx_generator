@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 _LLM_LOGGER = logging.getLogger("pptx_generator.slide_ai.llm")
 
 DEFAULT_MAX_TOKENS = 32000
+APPLICATION_JSON = "application/json"
 
 
 class LLMClientConfigurationError(RuntimeError):
@@ -903,8 +904,8 @@ class AwsClaudeClient:
         invoke_kwargs = {
             "modelId": model_id,
             "body": json.dumps(payload),
-            "contentType": "application/json",
-            "accept": "application/json",
+            "contentType": APPLICATION_JSON,
+            "accept": APPLICATION_JSON,
         }
         if self._inference_profile_arn:
             invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
@@ -954,8 +955,8 @@ class AwsClaudeClient:
         invoke_kwargs = {
             "modelId": model_id,
             "body": json.dumps(payload),
-            "contentType": "application/json",
-            "accept": "application/json",
+            "contentType": APPLICATION_JSON,
+            "accept": APPLICATION_JSON,
         }
         if self._inference_profile_arn:
             invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
