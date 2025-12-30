@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import sys
+import types
 from types import SimpleNamespace
 
 import pytest
@@ -33,6 +35,10 @@ def test_slide_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
         def __init__(self) -> None:
             self.chat = _FakeChat()
 
+    for name in ["pptx_generator.slide_ai.client", "pptx_generator.slide_ai.llm"]:
+        lg = logging.getLogger(name)
+        lg.handlers.clear()
+        lg.propagate = True
     caplog.clear()
     client = OpenAIChatClient(client=_FakeOpenAI(), model="gpt-4o-mini", temperature=0.0, max_tokens=64)
     policy = SlideAIPolicy(id="default", name="default", model="gpt-4o-mini")
@@ -50,11 +56,32 @@ def test_slide_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
 
 def test_layout_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
     payload = '{"recommended": [{"layout_id": "cover", "score": 0.9}]}'
-    text = SimpleNamespace(text=payload)
-    message = SimpleNamespace(status="complete", content=[text])
+
+    # Fake openai.types.responses classes to satisfy isinstance checks
+    ResponseOutputText = type("ResponseOutputText", (), {"__init__": lambda self, text: setattr(self, "text", text)})
+    ResponseOutputMessage = type(
+        "ResponseOutputMessage",
+        (),
+        {
+            "__init__": lambda self, content, status="complete": (setattr(self, "content", content), setattr(self, "status", status)),
+        },
+    )
+    ResponseOutputRefusal = type("ResponseOutputRefusal", (), {})
+    fake_module = types.SimpleNamespace(
+        ResponseOutputText=ResponseOutputText,
+        ResponseOutputMessage=ResponseOutputMessage,
+        ResponseOutputRefusal=ResponseOutputRefusal,
+    )
+    sys.modules["openai.types.responses"] = fake_module
+
+    message = ResponseOutputMessage([ResponseOutputText(payload)])
     mock_response = SimpleNamespace(output=[message], model="layout-model", status="complete")
 
     fake_client = SimpleNamespace(responses=SimpleNamespace(create=lambda **kwargs: mock_response))
+    for name in ["pptx_generator.layout_ai.client", "pptx_generator.layout_ai.llm"]:
+        lg = logging.getLogger(name)
+        lg.handlers.clear()
+        lg.propagate = True
     client = OpenAIChatLayoutClient(fake_client, model="layout-model", temperature=0.0, max_tokens=128)
     policy = LayoutAIPolicy(id="p", name="n")
     request = LayoutAIRequest(prompt="prompt", policy=policy, card_payload={}, layout_candidates=["cover"], layout_metadata={})
