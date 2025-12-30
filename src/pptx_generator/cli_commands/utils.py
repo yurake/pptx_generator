@@ -19,7 +19,7 @@ def echo_command_errors(message: str, errors: list[dict[str, Any]] | None) -> No
 def handle_command_error(exc: Exception, *, default_message: str) -> None:
     """CLI コマンド例外を共通の形式で標準エラー出力へ表示する。"""
 
-    message = str(exc)
+    message = str(exc) or default_message
     errors = getattr(exc, "errors", None)
     if errors:
         echo_command_errors(message or default_message, errors)
