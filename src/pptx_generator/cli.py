@@ -22,7 +22,7 @@ from .cli_handlers.common import (
 from .cli_commands import (
     build_prepare_config as _build_prepare_config,
     create_compose_command,
-    create_edit_apply_command,
+    create_edit_command,
     create_gen_command,
     create_layout_validate_command,
     create_mapping_command,
@@ -186,8 +186,8 @@ layout_validate = create_layout_validate_command(
 )
 app.add_command(layout_validate)
 
-edit_apply = create_edit_apply_command()
-app.add_command(edit_apply)
+edit = create_edit_command()
+app.add_command(edit)
 
 
 tpl_release = create_tpl_release_command(

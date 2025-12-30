@@ -18,8 +18,8 @@ def _load_edits(edits_path: Path) -> Iterable[dict]:
     raise ValueError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
 
 
-def create_edit_apply_command(default_output_dir: Path | None = None):
-    @click.command("edit-apply", help="shape_id ベースでテキスト差し替えを適用する")
+def create_edit_command(default_output_dir: Path | None = None):
+    @click.command("edit", help="shape_id ベースでテキスト差し替えを適用する")
     @click.option("--pptx-path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="適用対象の PPTX パス")
     @click.option("--edits-json", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="差分JSON（shape_id, edit, contents を含むリスト）")
     @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は <元ファイル名>_edited.pptx）")
@@ -33,4 +33,4 @@ def create_edit_apply_command(default_output_dir: Path | None = None):
     return command
 
 
-__all__ = ["create_edit_apply_command"]
+__all__ = ["create_edit_command"]
