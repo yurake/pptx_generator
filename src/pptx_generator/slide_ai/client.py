@@ -555,7 +555,7 @@ class OpenAIChatClient:
             text = ""
         else:
             text = "".join(str(part) for part in content)
-        return _build_response_from_text(
+        result = _build_response_from_text(
             text,
             request,
             model=model_name,

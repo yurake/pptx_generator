@@ -35,10 +35,11 @@ def test_slide_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
         def __init__(self) -> None:
             self.chat = _FakeChat()
 
-    for name in ["pptx_generator.slide_ai.client", "pptx_generator.slide_ai.llm"]:
+    for name in ["pptx_generator.slide_ai", "pptx_generator.slide_ai.client", "pptx_generator.slide_ai.llm"]:
         lg = logging.getLogger(name)
         lg.handlers.clear()
         lg.propagate = True
+        lg.setLevel(logging.INFO)
     caplog.clear()
     client = OpenAIChatClient(client=_FakeOpenAI(), model="gpt-4o-mini", temperature=0.0, max_tokens=64)
     policy = SlideAIPolicy(id="default", name="default", model="gpt-4o-mini")
