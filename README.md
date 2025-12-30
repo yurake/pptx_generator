@@ -105,7 +105,7 @@ flowchart TD
 | 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic"}'` |
 | 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","export_pdf":false}'` |
-| 5. 編集反映 (検証中) | 生成済み PPTX に差分を適用し、書式を保持したままテキスト置換 | `uv run pptx edit --pptx-path .pptx/gen/proposal.pptx` (edits テンプレ生成) → `uv run pptx edit --pptx-path .pptx/gen/proposal.pptx --edits-json edits.json` | - |
+| 5. 編集反映 (検証中) | 生成済み PPTX に差分を適用し、書式を保持したままテキスト置換 | `uv run pptx edit --pptx-path .pptx/gen/proposal.pptx`（edits JSON 未指定なら snapshot→LLM→適用） / `--edits-json` 指定で手動差分適用 | - |
 | 5. 編集反映 (任意) | 生成済み PPTX に差分 JSON を適用し、書式を保持したままテキスト置換 | `uv run pptx edit --pptx-path .pptx/gen/proposal.pptx --edits-json edits.json` | - |
 
 ### 静的生成 (static mode)
@@ -121,7 +121,7 @@ Blueprint（テンプレ全体の設計図）
 
 #### 編集反映 (Stage5 検証中)
 - `uv run pptx template <template.pptx> --mode static --slide` で `slide_snapshot.json` を出力可能。グループや表セルも `parent_shape_id`／`table_cell` メタ付きで展開される。
-- Stage4 生成済み `proposal.pptx` に対する差分は、`pptx edit --pptx-path proposal.pptx` で生成される `<stem>_edits.json` を起点に `{ "shape_id": 256, "edit": true, "contents": "新しい本文" }` を書き換えて指定する。`edit=false` はスキップ。
+- Stage4 生成済み `proposal.pptx` に対する差分は、`pptx edit --pptx-path proposal.pptx` 実行時に LLM が `{ "shape_id": 256, "edit": true, "contents": "新しい本文" }` 配列を生成して適用する。`edit=false` はスキップ。`--edits-json` を指定した場合は LLM を呼ばず指定差分のみ適用。
 - 表セルは `table_cell_shape_id(parent_shape_id, row, col)` で shape_id を組み立てる。
 - 適用コマンド例: `uv run pptx edit --pptx-path proposal.pptx --edits-json edits.json --output proposal_edited.pptx`（`--output` 省略時は `<元名>_edited.pptx`）。
 
