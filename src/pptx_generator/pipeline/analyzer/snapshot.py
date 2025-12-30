@@ -40,6 +40,7 @@ class ShapeSnapshot:
     width_in: float
     height_in: float
     paragraphs: list[ParagraphSnapshot] = field(default_factory=list)
+    parent_shape_id: int | None = None
     is_placeholder: bool = False
     placeholder_type: int | None = None
     placeholder_index: int | None = None
@@ -49,6 +50,7 @@ class ShapeSnapshot:
     text_frame_word_wrap: bool | None = None
     text_frame_vertical_anchor: str | None = None
     text_frame_auto_size: str | None = None
+    table_cell: dict[str, int] | None = None
 
 
 @dataclass(slots=True)
@@ -62,10 +64,9 @@ class SlideSnapshot:
         shapes: list[ShapeSnapshot] = []
         body_placeholder_id: int | None = None
 
-        for shape in slide.shapes:
-            snapshot = _build_shape_snapshot(shape)
+        for snapshot in _collect_shape_snapshots(slide.shapes):
             shapes.append(snapshot)
-            if _is_body_placeholder(snapshot):
+            if _is_body_placeholder(snapshot) and body_placeholder_id is None:
                 body_placeholder_id = snapshot.shape_id
 
         return cls(index=index, shapes=shapes, body_placeholder_id=body_placeholder_id)
@@ -114,9 +115,54 @@ class BulletParagraphResolver:
         return next(self._fallback_iter, None)
 
 
-def _build_shape_snapshot(shape) -> ShapeSnapshot:
-    shape_id = _shape_id(shape)
-    left_in, top_in, width_in, height_in = _extract_geometry(shape)
+def _collect_shape_snapshots(
+    shapes, *, parent_shape_id: int | None = None, left_offset_in: float = 0.0, top_offset_in: float = 0.0
+) -> list[ShapeSnapshot]:
+    snapshots: list[ShapeSnapshot] = []
+    for shape in shapes:
+        snapshot = _build_shape_snapshot(
+            shape,
+            parent_shape_id=parent_shape_id,
+            left_offset_in=left_offset_in,
+            top_offset_in=top_offset_in,
+        )
+        snapshots.append(snapshot)
+
+        if getattr(shape, "has_table", False):
+            snapshots.extend(
+                _build_table_cell_snapshots(
+                    shape,
+                    parent_shape_id=snapshot.shape_id,
+                    left_offset_in=left_offset_in,
+                    top_offset_in=top_offset_in,
+                )
+            )
+
+        is_group = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE)) == int(MSO_SHAPE_TYPE.GROUP)
+        if is_group:
+            group_left, group_top, _, _ = _extract_geometry(shape, left_offset_in, top_offset_in)
+            snapshots.extend(
+                _collect_shape_snapshots(
+                    getattr(shape, "shapes", []),
+                    parent_shape_id=snapshot.shape_id,
+                    left_offset_in=group_left,
+                    top_offset_in=group_top,
+                )
+            )
+    return snapshots
+
+
+def _build_shape_snapshot(
+    shape,
+    *,
+    parent_shape_id: int | None = None,
+    left_offset_in: float = 0.0,
+    top_offset_in: float = 0.0,
+    table_cell: dict[str, int] | None = None,
+    override_shape_id: int | None = None,
+) -> ShapeSnapshot:
+    shape_id = override_shape_id if override_shape_id is not None else _shape_id(shape)
+    left_in, top_in, width_in, height_in = _extract_geometry(shape, left_offset_in, top_offset_in)
     shape_name = getattr(shape, "name", None)
     shape_type = int(getattr(shape, "shape_type", MSO_SHAPE_TYPE.AUTO_SHAPE))
     is_placeholder = bool(getattr(shape, "is_placeholder", False))
@@ -141,6 +187,7 @@ def _build_shape_snapshot(shape) -> ShapeSnapshot:
         width_in=width_in,
         height_in=height_in,
         paragraphs=paragraphs,
+        parent_shape_id=parent_shape_id,
         is_placeholder=is_placeholder,
         placeholder_type=placeholder_type,
         placeholder_index=placeholder_index,
@@ -150,6 +197,7 @@ def _build_shape_snapshot(shape) -> ShapeSnapshot:
         text_frame_word_wrap=text_frame_word_wrap,
         text_frame_vertical_anchor=text_frame_vertical_anchor,
         text_frame_auto_size=text_frame_auto_size,
+        table_cell=table_cell,
     )
 
 
@@ -157,9 +205,9 @@ def _shape_id(shape) -> int:
     return getattr(shape, "shape_id", id(shape))
 
 
-def _extract_geometry(shape) -> tuple[float, float, float, float]:
-    left = utils.emu_to_inches(int(getattr(shape, "left", 0)))
-    top = utils.emu_to_inches(int(getattr(shape, "top", 0)))
+def _extract_geometry(shape, left_offset_in: float = 0.0, top_offset_in: float = 0.0) -> tuple[float, float, float, float]:
+    left = left_offset_in + utils.emu_to_inches(int(getattr(shape, "left", 0)))
+    top = top_offset_in + utils.emu_to_inches(int(getattr(shape, "top", 0)))
     width = utils.emu_to_inches(int(getattr(shape, "width", 0)))
     height = utils.emu_to_inches(int(getattr(shape, "height", 0)))
     return left, top, width, height
@@ -197,9 +245,11 @@ def _extract_rotation(shape) -> float | None:
 
 
 def _get_text_frame(shape):
-    if not getattr(shape, "has_text_frame", False):
-        return None
-    return getattr(shape, "text_frame", None)
+    if getattr(shape, "has_text_frame", False):
+        return getattr(shape, "text_frame", None)
+    if hasattr(shape, "text_frame"):
+        return getattr(shape, "text_frame", None)
+    return None
 
 
 def _build_paragraph_snapshots(
@@ -283,3 +333,52 @@ __all__ = [
     "SlideSnapshot",
     "BulletParagraphResolver",
 ]
+
+
+def _build_table_cell_snapshots(table_shape, *, parent_shape_id: int, left_offset_in: float, top_offset_in: float) -> list[ShapeSnapshot]:
+    snapshots: list[ShapeSnapshot] = []
+    table = getattr(table_shape, "table", None)
+    if table is None:
+        return snapshots
+
+    for row_idx, row in enumerate(getattr(table, "rows", [])):
+        for col_idx, cell in enumerate(getattr(row, "cells", [])):
+            shape_id = _table_cell_shape_id(parent_shape_id, row_idx, col_idx)
+            text_frame = getattr(cell, "text_frame", None)
+            paragraphs = _build_paragraph_snapshots(
+                shape_id,
+                getattr(table_shape, "name", None),
+                int(getattr(table_shape, "shape_type", MSO_SHAPE_TYPE.TABLE)),
+                text_frame,
+            )
+            padding, word_wrap, vertical_anchor, auto_size = _extract_text_frame_metadata(text_frame)
+            left_in, top_in, width_in, height_in = _extract_geometry(cell, left_offset_in, top_offset_in)
+
+            snapshots.append(
+                ShapeSnapshot(
+                    shape_id=shape_id,
+                    name=f"{getattr(table_shape, 'name', '')}:r{row_idx}c{col_idx}",
+                    shape_type=int(MSO_SHAPE_TYPE.TABLE),
+                    left_in=left_in,
+                    top_in=top_in,
+                    width_in=width_in,
+                    height_in=height_in,
+                    paragraphs=paragraphs,
+                    parent_shape_id=parent_shape_id,
+                    is_placeholder=False,
+                    placeholder_type=None,
+                    placeholder_index=None,
+                    z_order=_extract_z_order(cell),
+                    rotation_deg=_extract_rotation(cell),
+                    text_frame_padding=padding,
+                    text_frame_word_wrap=word_wrap,
+                    text_frame_vertical_anchor=vertical_anchor,
+                    text_frame_auto_size=auto_size,
+                    table_cell={"row": row_idx, "col": col_idx},
+                )
+            )
+    return snapshots
+
+
+def _table_cell_shape_id(parent_shape_id: int, row_idx: int, col_idx: int) -> int:
+    return parent_shape_id * 10000 + row_idx * 100 + col_idx
