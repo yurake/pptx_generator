@@ -498,10 +498,8 @@ class OpenAIChatClient:
         self._max_tokens = max_tokens
 
     def _resolve_model_name(self, override: str | None) -> str:
-        model_name = override or self._model
-        if model_name == "mock-local":
-            return self._model
-        return model_name
+        model_name = override if override and override.strip() else self._model
+        return self._model if model_name == "mock-local" else model_name
 
     def _chat_completion(
         self,
@@ -527,8 +525,18 @@ class OpenAIChatClient:
             text = content
         elif content is None:
             text = ""
+        elif isinstance(content, (list, tuple)):
+            segments: list[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    segments.append(part)
+                elif isinstance(part, dict):
+                    segments.append(json.dumps(part, ensure_ascii=False))
+                else:
+                    segments.append(str(part))
+            text = "".join(segments)
         else:
-            text = "".join(str(part) for part in content)
+            text = str(content)
         return text, getattr(choice, "finish_reason", None), getattr(message, "refusal", None)
 
     @classmethod
@@ -637,10 +645,8 @@ class AzureOpenAIChatClient:
         self._max_tokens = max_tokens
 
     def _resolve_deployment(self, override: str | None) -> str:
-        deployment = override or self._deployment
-        if deployment == "mock-local":
-            return self._deployment
-        return deployment
+        deployment = override if override and override.strip() else self._deployment
+        return self._deployment if deployment == "mock-local" else deployment
 
     def _run_response(
         self,
@@ -675,7 +681,10 @@ class AzureOpenAIChatClient:
 
         raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
         refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
-        finish_reason = response.incomplete_details.reason if getattr(response, "incomplete_details", None) else None
+        incomplete_details = getattr(response, "incomplete_details", None)
+        finish_reason = None
+        if incomplete_details is not None:
+            finish_reason = getattr(incomplete_details, "reason", None) or "unknown"
         return raw_text, refusal_text, finish_reason
 
     @classmethod
@@ -830,10 +839,8 @@ class AwsClaudeClient:
         self._temperature = temperature
 
     def _resolve_model_id(self, override: str | None) -> str:
-        model_id = override or self._model_id
-        if model_id == "mock-local":
-            return self._model_id
-        return model_id
+        model_id = override if override and override.strip() else self._model_id
+        return self._model_id if model_id == "mock-local" else model_id
 
     def _invoke_bedrock(self, *, model_id: str, payload: dict[str, object]) -> str:
         invoke_kwargs = {
@@ -851,6 +858,8 @@ class AwsClaudeClient:
             body_text = body.read()
         else:  # pragma: no cover - unexpected response type
             body_text = body
+        if isinstance(body_text, (bytes, bytearray)):
+            body_text = body_text.decode("utf-8")
         data = json.loads(body_text)
         contents = data.get("content", [])
         text_parts = [item.get("text", "") for item in contents if isinstance(item, dict)]

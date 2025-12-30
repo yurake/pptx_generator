@@ -46,6 +46,7 @@ class _FakeChat:
 class _FakeOpenAIClient:
     def __init__(self, response) -> None:
         self.chat = _FakeChat(response)
+        self.responses = None
 
 
 def test_openai_chat_completion_handles_none_content() -> None:
@@ -60,14 +61,22 @@ def test_openai_chat_completion_handles_none_content() -> None:
 
 
 def test_openai_chat_completion_joins_non_string_parts() -> None:
-    response = _FakeChatResponse([_FakeChoice(_FakeMessage(["a", 2]), finish_reason=None)])
+    response = _FakeChatResponse([_FakeChoice(_FakeMessage(["a", {"text": "b"}, 2]), finish_reason=None)])
     client = OpenAIChatClient(_FakeOpenAIClient(response), model="base", temperature=0.0, max_tokens=0)
 
     text, finish_reason, refusal = client._chat_completion(messages=[], model_name="base")
 
-    assert text == "a2"
+    assert text == 'a{"text": "b"}2'
     assert finish_reason is None
     assert refusal is None
+
+
+def test_openai_model_resolution_falls_back_on_blank() -> None:
+    client = OpenAIChatClient(_FakeOpenAIClient(_FakeChatResponse([])), model="base", temperature=0.0, max_tokens=0)
+
+    resolved = client._resolve_model_name("  ")
+
+    assert resolved == "base"
 
 
 def test_azure_run_response_collects_text_and_refusal(monkeypatch) -> None:
@@ -84,9 +93,10 @@ def test_azure_run_response_collects_text_and_refusal(monkeypatch) -> None:
             self.content = content
 
     class _StubOutput:
-        def __init__(self) -> None:
+        def __init__(self, with_reason: bool = True) -> None:
             self.output = [_StubMessage([_StubText("hello "), _StubRefusal("deny")])]
-            self.incomplete_details = type("Incomplete", (), {"reason": "length"})
+            reason_value = "length" if with_reason else None
+            self.incomplete_details = type("Incomplete", (), {"reason": reason_value})
 
     class _StubResponses:
         def __init__(self, output) -> None:
@@ -127,6 +137,56 @@ def test_azure_run_response_collects_text_and_refusal(monkeypatch) -> None:
     assert finish_reason == "length"
 
 
+def test_azure_run_response_sets_unknown_when_reason_missing(monkeypatch) -> None:
+    class _StubText:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+    class _StubMessage:
+        def __init__(self, content) -> None:
+            self.content = content
+
+    class _StubOutput:
+        def __init__(self) -> None:
+            self.output = [_StubMessage([_StubText("ok")])]
+            self.incomplete_details = type("Incomplete", (), {"reason": None})
+
+    class _StubResponses:
+        def __init__(self, output) -> None:
+            self._output = output
+
+        def create(self, **kwargs):
+            return self._output
+
+    import sys
+    import types
+
+    monkeypatch.setitem(sys.modules, "openai.types.responses", types.SimpleNamespace(ResponseOutputMessage=_StubMessage))
+    monkeypatch.setitem(
+        sys.modules,
+        "openai.types.responses.response_output_text",
+        types.SimpleNamespace(ResponseOutputText=_StubText),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "openai.types.responses.response_output_refusal",
+        types.SimpleNamespace(ResponseOutputRefusal=type("Refusal", (), {})),
+    )
+
+    stub_output = _StubOutput()
+    client = AzureOpenAIChatClient(
+        client=type("StubClient", (), {"responses": _StubResponses(stub_output)})(),
+        deployment="dep",
+        api_version="v",
+        temperature=0.0,
+        max_tokens=0,
+    )
+
+    _, _, finish_reason = client._run_response(model_name="dep", input_messages=[])
+
+    assert finish_reason == "unknown"
+
+
 def test_bedrock_invoke_reads_body_and_adds_profile() -> None:
     class _Body:
         def __init__(self, payload: str) -> None:
@@ -144,7 +204,7 @@ def test_bedrock_invoke_reads_body_and_adds_profile() -> None:
             self.last_kwargs = kwargs
             return {"body": self._body}
 
-    body = _Body(json.dumps({"content": [{"text": "ok"}]}))
+    body = _Body(json.dumps({"content": [{"text": "ok"}]}).encode())
     runtime_client = _RuntimeClient(body)
     client = AwsClaudeClient(
         runtime_client=runtime_client,
