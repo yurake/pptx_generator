@@ -11,7 +11,7 @@ from pptx_generator.prepare_ai.client import OpenAIPrepareLLMClient, AzureOpenAI
 from pptx_generator.prepare_ai.client import PrepareLLMResult
 from pptx_generator.slide_ai.client import OpenAIChatClient, AIGenerationRequest
 from pptx_generator.slide_ai.policy import SlideAIPolicy
-from pptx_generator.models import JobSpec, Slide
+from pptx_generator.models import JobSpec, Slide, JobMeta, JobAuth
 from pptx_generator.template_ai.client import AnthropicTemplateAIClient
 from pptx_generator.template_ai.client import TemplateAIRequest
 from pptx_generator.template_ai.policy import TemplateAIPolicy
@@ -36,7 +36,9 @@ def test_slide_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
     caplog.clear()
     client = OpenAIChatClient(client=_FakeOpenAI(), model="gpt-4o-mini", temperature=0.0, max_tokens=64)
     policy = SlideAIPolicy(id="default", name="default", model="gpt-4o-mini")
-    spec = JobSpec(meta=SimpleNamespace(title="t"), slides=[Slide(id="s1", title="T", bullets=[], tables=[], charts=[], textboxes=[], auto_draw_anchors=[], auto_draw_boxes={})])
+    meta = JobMeta(schema_version="1.0", title="t")
+    auth = JobAuth(created_by="tester")
+    spec = JobSpec(meta=meta, auth=auth, slides=[Slide(id="s1", layout="cover", title="T", bullets=[], tables=[], charts=[], textboxes=[], auto_draw_anchors=[], auto_draw_boxes={})])
     req = AIGenerationRequest(prompt="p", policy=policy, spec=spec, slide=spec.slides[0], intent="overview")
 
     with caplog.at_level(logging.INFO):
@@ -55,7 +57,7 @@ def test_layout_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
     fake_client = SimpleNamespace(responses=SimpleNamespace(create=lambda **kwargs: mock_response))
     client = OpenAIChatLayoutClient(fake_client, model="layout-model", temperature=0.0, max_tokens=128)
     policy = LayoutAIPolicy(id="p", name="n")
-    request = LayoutAIRequest(prompt="prompt", policy=policy, layout_candidates=["cover"], layout_metadata={})
+    request = LayoutAIRequest(prompt="prompt", policy=policy, card_payload={}, layout_candidates=["cover"], layout_metadata={})
 
     caplog.clear()
     with caplog.at_level(logging.INFO):

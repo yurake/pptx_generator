@@ -8,11 +8,13 @@ import pytest
 
 from pptx_generator.pipeline.content_approval import ContentApprovalStep, ContentApprovalOptions, ContentApprovalError
 from pptx_generator.pipeline.base import PipelineContext, PipelineArtifacts
-from pptx_generator.models import JobSpec
+from pptx_generator.models import JobSpec, JobMeta, JobAuth
 
 
 def _make_context(tmp_path: Path) -> PipelineContext:
-    spec = JobSpec(meta=SimpleNamespace(title="t"), slides=[])
+    meta = JobMeta(schema_version="1.0", title="t")
+    auth = JobAuth(created_by="tester")
+    spec = JobSpec(meta=meta, auth=auth, slides=[])
     ctx = PipelineContext(spec=spec, workdir=tmp_path, artifacts=PipelineArtifacts())
     return ctx
 
