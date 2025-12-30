@@ -16,6 +16,8 @@ NS = {
     "p": "http://schemas.openxmlformats.org/presentationml/2006/main",
 }
 
+SCHEME_COLOR_TAG = "a:schemeClr"
+
 
 class BrandingExtractionError(Exception):
     """テンプレートからブランド情報を取得できない場合に送出する例外。"""
@@ -310,7 +312,7 @@ def _color_from_def(
     if rgb is not None and rgb.get("val"):
         return _format_hex(rgb.get("val"))
 
-    scheme = solid.find("a:schemeClr", NS)
+    scheme = solid.find(SCHEME_COLOR_TAG, NS)
     if scheme is None or scheme.get("val") is None:
         return None
 
@@ -334,7 +336,7 @@ def _resolve_background_color(
 ) -> str:
     bg_ref = master_root.find(".//p:bgRef", NS)
     if bg_ref is not None:
-        scheme = bg_ref.find("a:schemeClr", NS)
+        scheme = bg_ref.find(SCHEME_COLOR_TAG, NS)
         if scheme is not None and scheme.get("val"):
             base = color_map.get(scheme.get("val"), scheme.get("val"))
             hex_value = theme_colors.get(base)
@@ -346,7 +348,7 @@ def _resolve_background_color(
         solid = bg.find(".//a:srgbClr", NS)
         if solid is not None and solid.get("val"):
             return _format_hex(solid.get("val"))
-        scheme = bg.find(".//a:schemeClr", NS)
+        scheme = bg.find(f".//{SCHEME_COLOR_TAG}", NS)
         if scheme is not None and scheme.get("val"):
             base = color_map.get(scheme.get("val"), scheme.get("val"))
             hex_value = theme_colors.get(base)
@@ -377,7 +379,7 @@ def _color_value(node: ET.Element) -> str:
     srgb = node.find("a:srgbClr", NS)
     if srgb is not None and srgb.get("val"):
         return srgb.get("val")
-    scheme = node.find("a:schemeClr", NS)
+    scheme = node.find(SCHEME_COLOR_TAG, NS)
     if scheme is not None and scheme.get("val"):
         return scheme.get("val")
     sys_clr = node.find("a:sysClr", NS)

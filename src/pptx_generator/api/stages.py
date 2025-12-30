@@ -8,6 +8,7 @@ from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCom
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 
+DRAFT_DIRNAME = "draft.json"
 
 __all__ = [
     "build_template_job",
@@ -92,15 +93,15 @@ def build_prepare_job(payload: dict, workdir: Path, jobspec_path: Path, tx_root:
 
 
 def build_compose_job(payload: dict, workdir: Path, template_artifacts: dict, prepare_artifacts: dict):
-    draft_log = workdir / "draft.json" / "draft_mapping_log.json"
+    draft_log = workdir / DRAFT_DIRNAME / "draft_mapping_log.json"
     draft_log.parent.mkdir(parents=True, exist_ok=True)
-    review_log = workdir / "draft.json" / "draft_review_log.json"
+    review_log = workdir / DRAFT_DIRNAME / "draft_review_log.json"
     generate_ready_path = workdir / "generate_ready.json"
     generate_ready_meta_path = workdir / "generate_ready_meta.json"
 
     config = ComposeCommandConfig(
         spec_path=Path(template_artifacts["jobspec_url"]),
-        draft_output=Path(workdir) / "draft.json",
+        draft_output=Path(workdir) / DRAFT_DIRNAME,
         target_length=None,
         structure_pattern=None,
         appendix_limit=10,
