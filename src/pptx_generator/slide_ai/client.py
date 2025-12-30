@@ -497,6 +497,48 @@ class OpenAIChatClient:
         self._temperature = temperature
         self._max_tokens = max_tokens
 
+    def _resolve_model_name(self, override: str | None) -> str:
+        model_name = override if override and override.strip() else self._model
+        return self._model if model_name == "mock-local" else model_name
+
+    def _chat_completion(
+        self,
+        *,
+        messages: list[dict[str, str]],
+        model_name: str,
+    ) -> tuple[str, str | None, str | None]:
+        kwargs: dict[str, object] = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": self._temperature,
+            "response_format": {"type": "json_object"},
+        }
+        if self._max_tokens > 0:
+            kwargs["max_completion_tokens"] = self._max_tokens
+        response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+            **kwargs,
+        )
+        choice = response.choices[0]  # type: ignore[index]
+        message = choice.message
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            text = content
+        elif content is None:
+            text = ""
+        elif isinstance(content, (list, tuple)):
+            segments: list[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    segments.append(part)
+                elif isinstance(part, dict):
+                    segments.append(json.dumps(part, ensure_ascii=False))
+                else:
+                    segments.append(str(part))
+            text = "".join(segments)
+        else:
+            text = str(content)
+        return text, getattr(choice, "finish_reason", None), getattr(message, "refusal", None)
+
     @classmethod
     def from_env(cls) -> "OpenAIChatClient":
         from openai import OpenAI
@@ -515,26 +557,17 @@ class OpenAIChatClient:
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
+        model_name = self._resolve_model_name(request.policy.model)
         start = time.perf_counter()
         _LLM_LOGGER.info(
             "slide_ai call start model=%s slide_id=%s",
-            self._model,
+            model_name,
             request.slide.id,
         )
-        model_name = request.policy.model or self._model
-        if model_name == "mock-local":
-            model_name = self._model
-        kwargs: dict[str, object] = {
-            "model": model_name,
-            "messages": messages,
-            "temperature": self._temperature,
-            "response_format": {"type": "json_object"},
-        }
-        if self._max_tokens > 0:
-            kwargs["max_completion_tokens"] = self._max_tokens
         try:
-            response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-                **kwargs,
+            text, finish_reason, refusal = self._chat_completion(
+                messages=messages,
+                model_name=model_name,
             )
         except Exception as exc:  # noqa: BLE001
             _LLM_LOGGER.error(
@@ -547,28 +580,19 @@ class OpenAIChatClient:
             )
             raise RuntimeError("OpenAI API call failed") from exc
         latency_ms = (time.perf_counter() - start) * 1000
-        choice = response.choices[0]  # type: ignore[index]
-        message = choice.message
-        content = getattr(message, "content", None)
-        if isinstance(content, str):
-            text = content
-        elif content is None:
-            text = ""
-        else:
-            text = "".join(str(part) for part in content)
         result = _build_response_from_text(
             text,
             request,
             model=model_name,
-            finish_reason=getattr(choice, "finish_reason", None),
-            refusal=getattr(message, "refusal", None),
+            finish_reason=finish_reason,
+            refusal=refusal,
         )
         _LLM_LOGGER.info(
             "slide_ai call done model=%s slide_id=%s latency_ms=%.1f finish_reason=%s",
             model_name,
             request.slide.id,
             latency_ms,
-            getattr(choice, "finish_reason", None),
+            finish_reason,
         )
         return result
 
@@ -577,20 +601,11 @@ class OpenAIChatClient:
             {"role": "system", "content": request.system_prompt},
             {"role": "user", "content": request.prompt},
         ]
-        model_name = request.model or self._model
-        if model_name == "mock-local":
-            model_name = self._model
-        kwargs: dict[str, object] = {
-            "model": model_name,
-            "messages": messages,
-            "temperature": self._temperature,
-            "response_format": {"type": "json_object"},
-        }
-        if self._max_tokens > 0:
-            kwargs["max_completion_tokens"] = self._max_tokens
+        model_name = self._resolve_model_name(request.model)
         try:
-            response = self._client.chat.completions.create(  # type: ignore[attr-defined]
-                **kwargs,
+            text, finish_reason, refusal = self._chat_completion(
+                messages=messages,
+                model_name=model_name,
             )
         except Exception as exc:  # noqa: BLE001
             _LLM_LOGGER.error(
@@ -602,21 +617,12 @@ class OpenAIChatClient:
                 },
             )
             raise RuntimeError("OpenAI API match call failed") from exc
-        choice = response.choices[0]  # type: ignore[index]
-        message = choice.message
-        content = getattr(message, "content", None)
-        if isinstance(content, str):
-            text = content
-        elif content is None:
-            text = ""
-        else:
-            text = "".join(str(part) for part in content)
         return _build_slide_match_response(
             text,
             request,
             model=model_name,
-            finish_reason=getattr(choice, "finish_reason", None),
-            refusal=getattr(message, "refusal", None),
+            finish_reason=finish_reason,
+            refusal=refusal,
         )
 
 
@@ -637,6 +643,49 @@ class AzureOpenAIChatClient:
         self._api_version = api_version
         self._temperature = temperature
         self._max_tokens = max_tokens
+
+    def _resolve_deployment(self, override: str | None) -> str:
+        deployment = override if override and override.strip() else self._deployment
+        return self._deployment if deployment == "mock-local" else deployment
+
+    def _run_response(
+        self,
+        *,
+        model_name: str,
+        input_messages: list[dict[str, str]],
+    ) -> tuple[str, str | None, str | None]:
+        from openai.types.responses import ResponseOutputMessage
+        from openai.types.responses.response_output_text import ResponseOutputText
+        from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+
+        kwargs: dict[str, object] = {
+            "model": model_name,
+            "input": input_messages,
+            "temperature": self._temperature,
+        }
+        if self._max_tokens > 0:
+            kwargs["max_output_tokens"] = self._max_tokens
+        response = self._client.responses.create(  # type: ignore[attr-defined]
+            **kwargs,
+        )
+
+        text_segments: list[str] = []
+        refusal_segments: list[str] = []
+        for item in getattr(response, "output", []) or []:
+            if isinstance(item, ResponseOutputMessage):
+                for content in item.content:
+                    if isinstance(content, ResponseOutputText):
+                        text_segments.append(content.text)
+                    elif isinstance(content, ResponseOutputRefusal):
+                        refusal_segments.append(content.refusal)
+
+        raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
+        refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
+        incomplete_details = getattr(response, "incomplete_details", None)
+        finish_reason = None
+        if incomplete_details is not None:
+            finish_reason = getattr(incomplete_details, "reason", None) or "unknown"
+        return raw_text, refusal_text, finish_reason
 
     @classmethod
     def from_env(cls) -> "AzureOpenAIChatClient":
@@ -666,83 +715,33 @@ class AzureOpenAIChatClient:
             {"role": "system", "content": _build_system_prompt(request)},
             {"role": "user", "content": _build_user_prompt(request)},
         ]
-        deployment = request.policy.model or self._deployment
-        if deployment == "mock-local":
-            deployment = self._deployment
-        from openai.types.responses import ResponseOutputMessage
-        from openai.types.responses.response_output_text import ResponseOutputText
-        from openai.types.responses.response_output_refusal import ResponseOutputRefusal
-
-        kwargs: dict[str, object] = {
-            "model": deployment,
-            "input": messages,
-            "temperature": self._temperature,
-        }
-        if self._max_tokens > 0:
-            kwargs["max_output_tokens"] = self._max_tokens
-        response = self._client.responses.create(  # type: ignore[attr-defined]
-            **kwargs,
+        deployment = self._resolve_deployment(request.policy.model)
+        raw_text, refusal_text, finish_reason = self._run_response(
+            model_name=deployment,
+            input_messages=messages,
         )
-
-        text_segments: list[str] = []
-        refusal_segments: list[str] = []
-        for item in getattr(response, "output", []) or []:
-            if isinstance(item, ResponseOutputMessage):
-                for content in item.content:
-                    if isinstance(content, ResponseOutputText):
-                        text_segments.append(content.text)
-                    elif isinstance(content, ResponseOutputRefusal):
-                        refusal_segments.append(content.refusal)
-
-        raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
-        refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
         return _build_response_from_text(
             raw_text,
             request,
             model=deployment,
-            finish_reason=(response.incomplete_details.reason if getattr(response, "incomplete_details", None) else None),
+            finish_reason=finish_reason,
             refusal=refusal_text,
         )
 
     def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
-        from openai.types.responses import ResponseOutputMessage
-        from openai.types.responses.response_output_text import ResponseOutputText
-        from openai.types.responses.response_output_refusal import ResponseOutputRefusal
-
-        deployment = request.model or self._deployment
-        if deployment == "mock-local":
-            deployment = self._deployment
-        kwargs: dict[str, object] = {
-            "model": deployment,
-            "input": [
+        deployment = self._resolve_deployment(request.model)
+        raw_text, refusal_text, finish_reason = self._run_response(
+            model_name=deployment,
+            input_messages=[
                 {"role": "system", "content": request.system_prompt},
                 {"role": "user", "content": request.prompt},
             ],
-            "temperature": self._temperature,
-        }
-        if self._max_tokens > 0:
-            kwargs["max_output_tokens"] = self._max_tokens
-        response = self._client.responses.create(  # type: ignore[attr-defined]
-            **kwargs,
         )
-
-        text_segments: list[str] = []
-        refusal_segments: list[str] = []
-        for item in getattr(response, "output", []) or []:
-            if isinstance(item, ResponseOutputMessage):
-                for content in item.content:
-                    if isinstance(content, ResponseOutputText):
-                        text_segments.append(content.text)
-                    elif isinstance(content, ResponseOutputRefusal):
-                        refusal_segments.append(content.refusal)
-
-        raw_text = "\n".join(segment.strip() for segment in text_segments if segment.strip())
-        refusal_text = "\n".join(segment.strip() for segment in refusal_segments if segment.strip()) or None
         return _build_slide_match_response(
             raw_text,
             request,
             model=deployment,
-            finish_reason=(response.incomplete_details.reason if getattr(response, "incomplete_details", None) else None),
+            finish_reason=finish_reason,
             refusal=refusal_text,
         )
 
@@ -839,6 +838,33 @@ class AwsClaudeClient:
         self._inference_profile_arn = inference_profile_arn
         self._temperature = temperature
 
+    def _resolve_model_id(self, override: str | None) -> str:
+        model_id = override if override and override.strip() else self._model_id
+        return self._model_id if model_id == "mock-local" else model_id
+
+    def _invoke_bedrock(self, *, model_id: str, payload: dict[str, object]) -> str:
+        invoke_kwargs = {
+            "modelId": model_id,
+            "body": json.dumps(payload),
+            "contentType": APPLICATION_JSON,
+            "accept": APPLICATION_JSON,
+        }
+        if self._inference_profile_arn:
+            invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
+
+        response = self._client.invoke_model(**invoke_kwargs)
+        body = response.get("body")
+        if hasattr(body, "read"):
+            body_text = body.read()
+        else:  # pragma: no cover - unexpected response type
+            body_text = body
+        if isinstance(body_text, (bytes, bytearray)):
+            body_text = body_text.decode("utf-8")
+        data = json.loads(body_text)
+        contents = data.get("content", [])
+        text_parts = [item.get("text", "") for item in contents if isinstance(item, dict)]
+        return "\n".join(text_parts)
+
     @classmethod
     def from_env(cls) -> "AwsClaudeClient":
         import boto3
@@ -898,20 +924,10 @@ class AwsClaudeClient:
                 }
             ],
         }
-        model_id = request.policy.model or self._model_id
-        if model_id == "mock-local":
-            model_id = self._model_id
-        invoke_kwargs = {
-            "modelId": model_id,
-            "body": json.dumps(payload),
-            "contentType": APPLICATION_JSON,
-            "accept": APPLICATION_JSON,
-        }
-        if self._inference_profile_arn:
-            invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
+        model_id = self._resolve_model_id(request.policy.model)
 
         try:
-            response = self._client.invoke_model(**invoke_kwargs)
+            text = self._invoke_bedrock(model_id=model_id, payload=payload)
         except Exception as exc:  # pragma: no cover - AWS runtime errors
             from botocore.exceptions import NoCredentialsError
 
@@ -920,15 +936,6 @@ class AwsClaudeClient:
                     "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
                 ) from exc
             raise
-        body = response.get("body")
-        if hasattr(body, "read"):
-            body_text = body.read()
-        else:  # pragma: no cover - unexpected response type
-            body_text = body
-        data = json.loads(body_text)
-        contents = data.get("content", [])
-        text_parts = [item.get("text", "") for item in contents if isinstance(item, dict)]
-        text = "\n".join(text_parts)
         return _build_response_from_text(text, request, model=model_id)
 
     def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
@@ -949,29 +956,10 @@ class AwsClaudeClient:
                 }
             ],
         }
-        model_id = request.model or self._model_id
-        if model_id == "mock-local":
-            model_id = self._model_id
-        invoke_kwargs = {
-            "modelId": model_id,
-            "body": json.dumps(payload),
-            "contentType": APPLICATION_JSON,
-            "accept": APPLICATION_JSON,
-        }
-        if self._inference_profile_arn:
-            invoke_kwargs["inferenceProfileArn"] = self._inference_profile_arn
+        model_id = self._resolve_model_id(request.model)
 
-        response = self._client.invoke_model(**invoke_kwargs)
-        body = response.get("body")
-        if hasattr(body, "read"):
-            body_text = body.read()
-        else:  # pragma: no cover - unexpected response type
-            body_text = body
-        data = json.loads(body_text)
-        contents = data.get("content", [])
-        text_parts = [item.get("text", "") for item in contents if isinstance(item, dict)]
-        text = "\n".join(text_parts)
-        return _build_slide_match_response(text, request, model=model_id)
+        response_text = self._invoke_bedrock(model_id=model_id, payload=payload)
+        return _build_slide_match_response(response_text, request, model=model_id)
 
 
 __all__ = [
