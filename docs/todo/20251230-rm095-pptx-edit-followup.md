@@ -28,7 +28,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 - [x] 実装
   - メモ: `pptx edit` に LLM 自動適用を追加（edits JSON なしで snapshot→LLM→適用）。手動適用は `--edits-json` で従来どおり。残タスク: (1) CLI E2E テスト追加、(2) プロンプト精緻化、(3) 並列LLM/スクショ連携は後置き（RM-097 でスクショ）。
 - [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
+  - メモ: `uv run --extra dev pytest tests/pipeline/test_text_edit.py` 実行（5件成功）。`pptx edit` モック LLM 実行: `PPTX_LLM_PROVIDER=mock uv run pptx edit --pptx-path samples/templates/edit_sample.pptx --output .pptx/edit_sample_edited.pptx`（適用0件、モデル: mock-edit）。
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
