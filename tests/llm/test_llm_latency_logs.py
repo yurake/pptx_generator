@@ -58,15 +58,18 @@ def test_layout_ai_logs_latency(caplog: pytest.LogCaptureFixture) -> None:
     payload = '{"recommended": [{"layout_id": "cover", "score": 0.9}]}'
 
     # Fake openai.types.responses classes to satisfy isinstance checks
-    ResponseOutputText = type("ResponseOutputText", (), {"__init__": lambda self, text: setattr(self, "text", text)})
-    ResponseOutputMessage = type(
-        "ResponseOutputMessage",
-        (),
-        {
-            "__init__": lambda self, content, status="complete": (setattr(self, "content", content), setattr(self, "status", status)),
-        },
-    )
-    ResponseOutputRefusal = type("ResponseOutputRefusal", (), {})
+    class ResponseOutputText:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+    class ResponseOutputMessage:
+        def __init__(self, content, status: str = "complete") -> None:
+            self.content = content
+            self.status = status
+
+    class ResponseOutputRefusal:
+        def __init__(self, refusal: str | None = None) -> None:
+            self.refusal = refusal
     fake_module = types.SimpleNamespace(
         ResponseOutputText=ResponseOutputText,
         ResponseOutputMessage=ResponseOutputMessage,

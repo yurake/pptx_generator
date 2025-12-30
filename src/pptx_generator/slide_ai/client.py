@@ -515,6 +515,11 @@ class OpenAIChatClient:
             {"role": "user", "content": _build_user_prompt(request)},
         ]
         start = time.perf_counter()
+        _LLM_LOGGER.info(
+            "slide_ai call start model=%s slide_id=%s",
+            self._model,
+            request.slide.id,
+        )
         model_name = request.policy.model or self._model
         if model_name == "mock-local":
             model_name = self._model
@@ -564,6 +569,7 @@ class OpenAIChatClient:
             latency_ms,
             getattr(choice, "finish_reason", None),
         )
+        return result
 
     def match_slide(self, request: SlideMatchRequest) -> SlideMatchResponse:
         messages = [
