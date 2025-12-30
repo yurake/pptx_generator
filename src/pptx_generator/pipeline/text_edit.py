@@ -6,6 +6,7 @@ from typing import Iterable
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+import json
 
 from .analyzer.snapshot import table_cell_shape_id
 
@@ -98,6 +99,49 @@ def apply_shape_text_edits(
 
     presentation.save(output_path)
     return applied, missing
+
+
+def generate_edits_template(pptx_path: Path | str, output_path: Path | str | None = None) -> Path:
+    """
+    PPTX から shape_id ごとのテキストを抽出し、差分定義のテンプレート(JSON)を出力する。
+    """
+    pptx_path = Path(pptx_path)
+    presentation = Presentation(pptx_path)
+    output_path = Path(output_path) if output_path is not None else pptx_path.with_name(f"{pptx_path.stem}_edits.json")
+
+    edits: list[dict[str, object]] = []
+
+    for slide_index, slide in enumerate(presentation.slides):
+        for shape in _iter_shapes(slide.shapes):
+            if getattr(shape, "has_text_frame", False):
+                edits.append(
+                    {
+                        "shape_id": int(shape.shape_id),
+                        "slide_index": slide_index,
+                        "name": getattr(shape, "name", ""),
+                        "table_cell": None,
+                        "edit": False,
+                        "contents": shape.text,
+                    }
+                )
+            if getattr(shape, "has_table", False):
+                for row_idx, row in enumerate(getattr(shape.table, "rows", [])):
+                    for col_idx, cell in enumerate(getattr(row, "cells", [])):
+                        cell_id = table_cell_shape_id(int(shape.shape_id), row_idx, col_idx)
+                        edits.append(
+                            {
+                                "shape_id": cell_id,
+                                "slide_index": slide_index,
+                                "name": getattr(shape, "name", ""),
+                                "table_cell": {"row": row_idx, "col": col_idx},
+                                "edit": False,
+                                "contents": cell.text,
+                            }
+                        )
+
+    payload = {"edits": edits}
+    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return output_path
 
 
 def _snapshot_run_style(font) -> dict[str, object | None]:
@@ -208,4 +252,4 @@ def _edit_applied(target_shape_id: int, presentation) -> bool:
     return False
 
 
-__all__ = ["overwrite_text_frame_preserving_style", "apply_shape_text_edits"]
+__all__ = ["overwrite_text_frame_preserving_style", "apply_shape_text_edits", "generate_edits_template"]

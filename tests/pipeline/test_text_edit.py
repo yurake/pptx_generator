@@ -4,7 +4,13 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.util import Inches, Pt
 
-from pptx_generator.pipeline.text_edit import apply_shape_text_edits, overwrite_text_frame_preserving_style
+import json
+
+from pptx_generator.pipeline.text_edit import (
+    apply_shape_text_edits,
+    generate_edits_template,
+    overwrite_text_frame_preserving_style,
+)
 from pptx_generator.pipeline.analyzer.snapshot import table_cell_shape_id
 
 
@@ -84,3 +90,18 @@ def test_apply_shape_text_edits_updates_table_cell(tmp_path) -> None:
     assert missing == []
     reloaded = Presentation(pptx_path)
     assert reloaded.slides[0].shapes[0].table.cell(1, 0).text == "updated"
+
+
+def test_generate_edits_template_outputs_json(tmp_path) -> None:
+    pptx_path = tmp_path / "input_template.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    textbox.text = "hello"
+    presentation.save(pptx_path)
+
+    output = generate_edits_template(pptx_path)
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert "edits" in payload
+    assert any(edit["contents"] == "hello" for edit in payload["edits"])

@@ -26,7 +26,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
-  - メモ: `pptx edit` コマンドと `apply_shape_text_edits` 追加済み。snapshot 互換確認（既存利用箇所で破損なしを確認、仕様追記で足りる）、並列LLM適用パス、プロンプト整備、統合テストは未対応。
+  - メモ: `pptx edit` コマンドと `apply_shape_text_edits` 追加済み。snapshot 互換確認（既存利用箇所で破損なしを確認、仕様追記で足りる）。残タスク: (1) 編集差分適用パスの入出力確定と実装（レポート出力、軽量バリデーション）、(2) CLI を使った適用エンドツーエンドテスト追加、(3) edits JSON スキーマ例と CLI 使用例の README/ノート追記、(4) 並列 LLM 適用パスは後置きで検討。
 - [ ] テスト・検証
   - メモ: 実施したテスト内容と結果を記入する
 - [ ] ドキュメント更新
@@ -49,6 +49,6 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - 前提/制約: Stage5 フォローアップ。slide_snapshot 互換性に注意（parent_shape_id/table_cell）。
   - 決定と理由: table_cell_shape_id を公開し、テーブルセルへのテキスト置換を shape_id 基準で扱う方針。text_edit に書式維持での apply_shape_text_edits を追加して差分適用基盤とする。
   - リスク(UNCONFIRMED): snapshot JSON 互換影響が未確認。適用パス実装時に LLM 出力のマッピング漏れの可能性。差分適用コマンドのI/O仕様が固まっていない。
-  - Now/Next: Now=基盤ヘルパ実装＋ユニットテスト追加完了。互換確認は analyzer/prompt/export の読み取りで破綻なしを確認。Next=並列LLM適用パス実装→指示フォーマット/プロンプト整備→統合テスト追加。
+  - Now/Next: Now=基盤ヘルパ実装＋ユニットテスト追加完了。互換確認は analyzer/prompt/export の読み取りで破綻なしを確認。Next= (1) 編集差分適用パスの入出力確定＋実装（レポート出力・軽バリデーション）、(2) CLI エンドツーエンドテスト追加、(3) edits JSON スキーマ例・CLI 使用例の README/ノート追記、(4) 並列 LLM 適用パス検討。
   - テスト実績/抜け: `uv run --extra dev pytest tests/pipeline/test_text_edit.py` (3件成功)。統合テスト未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
