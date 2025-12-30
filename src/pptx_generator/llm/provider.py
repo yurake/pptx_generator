@@ -90,4 +90,8 @@ def log_provider_resolution(
         **extra_fields,
     }
     formatted = " ".join(f"{key}={value}" for key, value in payload.items())
-    logger.info("LLM provider resolved: %s", formatted)
+    try:
+        logger.info("LLM provider resolved: %s", formatted)
+    except Exception:  # noqa: BLE001
+        # logging ハンドラの状態に依存して落ちないようにする
+        pass

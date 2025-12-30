@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass, field
 import re
 from typing import Callable, Iterable, Protocol, Tuple
+import time
 
 from pptx_generator.llm import (
     log_provider_resolution,

@@ -9,6 +9,7 @@ import textwrap
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Callable, Protocol
+import time
 
 from ..llm import (
     log_provider_resolution,

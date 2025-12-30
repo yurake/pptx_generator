@@ -6,6 +6,7 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
+import time
 
 from pptx_generator.llm import (
     log_provider_resolution,
