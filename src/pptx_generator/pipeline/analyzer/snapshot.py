@@ -332,6 +332,7 @@ __all__ = [
     "ShapeSnapshot",
     "SlideSnapshot",
     "BulletParagraphResolver",
+    "table_cell_shape_id",
 ]
 
 
@@ -343,7 +344,7 @@ def _build_table_cell_snapshots(table_shape, *, parent_shape_id: int, left_offse
 
     for row_idx, row in enumerate(getattr(table, "rows", [])):
         for col_idx, cell in enumerate(getattr(row, "cells", [])):
-            shape_id = _table_cell_shape_id(parent_shape_id, row_idx, col_idx)
+            shape_id = table_cell_shape_id(parent_shape_id, row_idx, col_idx)
             text_frame = getattr(cell, "text_frame", None)
             paragraphs = _build_paragraph_snapshots(
                 shape_id,
@@ -380,5 +381,5 @@ def _build_table_cell_snapshots(table_shape, *, parent_shape_id: int, left_offse
     return snapshots
 
 
-def _table_cell_shape_id(parent_shape_id: int, row_idx: int, col_idx: int) -> int:
+def table_cell_shape_id(parent_shape_id: int, row_idx: int, col_idx: int) -> int:
     return parent_shape_id * 10000 + row_idx * 100 + col_idx

@@ -42,9 +42,9 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
-  - 前提/制約: 
-  - 決定と理由: 
-  - リスク(UNCONFIRMED): 
-  - Now/Next: 
-  - テスト実績/抜け: 
+  - 前提/制約: Stage5 フォローアップ。slide_snapshot 互換性に注意（parent_shape_id/table_cell）。
+  - 決定と理由: table_cell_shape_id を公開し、テーブルセルへのテキスト置換を shape_id 基準で扱う方針。text_edit に書式維持での apply_shape_text_edits を追加して差分適用基盤とする。
+  - リスク(UNCONFIRMED): snapshot JSON 互換影響が未確認。適用パス実装時に LLM 出力のマッピング漏れの可能性。
+  - Now/Next: Now=基盤ヘルパ実装＋ユニットテスト追加完了。Next=snapshot 利用箇所の互換確認、Stage5 適用パス組み込み、指示フォーマット/プロンプト整備、統合テスト追加。
+  - テスト実績/抜け: `uv run --extra dev pytest tests/pipeline/test_text_edit.py` (3件成功)。統合テスト未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。

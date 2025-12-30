@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Iterable
+
+from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+from .analyzer.snapshot import table_cell_shape_id
 
 
 def overwrite_text_frame_preserving_style(text_frame, new_text: str) -> None:
@@ -34,6 +41,63 @@ def overwrite_text_frame_preserving_style(text_frame, new_text: str) -> None:
             paragraph.add_run()
         run = paragraph.runs[0]
         _apply_run_style(run.font, run_style)
+
+
+def apply_shape_text_edits(
+    pptx_path: Path | str,
+    edits: Iterable[dict[str, object]],
+    *,
+    output_path: Path | str | None = None,
+) -> tuple[int, list[int]]:
+    """
+    shape_id をキーにテキスト差し替えを適用する。書式は overwrite_text_frame_preserving_style で保持する。
+    戻り値: (適用件数, 未適用 shape_id リスト)
+    """
+    pptx_path = Path(pptx_path)
+    presentation = Presentation(pptx_path)
+    output_path = Path(output_path) if output_path is not None else pptx_path
+
+    edits_by_id: dict[int, str] = {}
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        shape_id = edit.get("shape_id")
+        contents = edit.get("contents")
+        edit_flag = edit.get("edit", True)
+        if not edit_flag:
+            continue
+        if shape_id is None or contents is None:
+            continue
+        try:
+            shape_id_int = int(shape_id)
+        except (TypeError, ValueError):
+            continue
+        edits_by_id[shape_id_int] = str(contents)
+
+    applied = 0
+    missing: list[int] = []
+
+    for slide in presentation.slides:
+        for shape in _iter_shapes(slide.shapes):
+            shape_id = getattr(shape, "shape_id", None)
+            if shape_id in edits_by_id and hasattr(shape, "text_frame"):
+                overwrite_text_frame_preserving_style(shape.text_frame, edits_by_id[shape_id])
+                applied += 1
+        # table cells
+        for shape in slide.shapes:
+            if not getattr(shape, "has_table", False):
+                continue
+            for row_idx, row in enumerate(getattr(shape.table, "rows", [])):
+                for col_idx, cell in enumerate(getattr(row, "cells", [])):
+                    cell_id = table_cell_shape_id(int(shape.shape_id), row_idx, col_idx)
+                    if cell_id in edits_by_id:
+                        overwrite_text_frame_preserving_style(cell.text_frame, edits_by_id[cell_id])
+                        applied += 1
+
+    missing = [shape_id for shape_id in edits_by_id if not _edit_applied(shape_id, presentation)]
+
+    presentation.save(output_path)
+    return applied, missing
 
 
 def _snapshot_run_style(font) -> dict[str, object | None]:
@@ -124,4 +188,24 @@ def _apply_text_frame_style(text_frame, style: dict[str, object | None]) -> None
         text_frame.margin_bottom = style["margin_bottom"]
 
 
-__all__ = ["overwrite_text_frame_preserving_style"]
+def _iter_shapes(shapes):
+    for shape in shapes:
+        yield shape
+        if int(getattr(shape, "shape_type", 0)) == int(MSO_SHAPE_TYPE.GROUP) and hasattr(shape, "shapes"):
+            yield from _iter_shapes(shape.shapes)
+
+
+def _edit_applied(target_shape_id: int, presentation) -> bool:
+    for slide in presentation.slides:
+        for shape in _iter_shapes(slide.shapes):
+            if getattr(shape, "shape_id", None) == target_shape_id:
+                return True
+            if getattr(shape, "has_table", False):
+                for row_idx, row in enumerate(getattr(shape.table, "rows", [])):
+                    for col_idx, _cell in enumerate(getattr(row, "cells", [])):
+                        if table_cell_shape_id(int(shape.shape_id), row_idx, col_idx) == target_shape_id:
+                            return True
+    return False
+
+
+__all__ = ["overwrite_text_frame_preserving_style", "apply_shape_text_edits"]
