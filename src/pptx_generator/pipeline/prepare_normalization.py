@@ -100,7 +100,8 @@ class PrepareNormalizationStep:
         meta = self._load_generation_meta(ai_meta_path)
         if meta is not None:
             context.add_artifact("prepare_generation_meta", meta)
-            logger.info("prepare_normalization loaded ai_generation_meta=%s", ai_meta_path.resolve())
+            meta_path_str = str(ai_meta_path.resolve()) if ai_meta_path else "auto-resolved"
+            logger.info("prepare_normalization loaded ai_generation_meta=%s", meta_path_str)
 
         # 互換用: ContentApprovalDocument を生成して既存ステップへ渡す
         compatibility_document, compatibility_meta = self._build_compatibility_content(document)
