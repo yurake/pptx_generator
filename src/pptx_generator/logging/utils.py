@@ -85,7 +85,7 @@ def ensure_rotating_file_handler(
 
 
 def clear_handlers(logger: logging.Logger) -> None:
-    for handler in list(logger.handlers):
+    for handler in tuple(logger.handlers):
         logger.removeHandler(handler)
 
 
