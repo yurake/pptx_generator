@@ -18,7 +18,11 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
     - ロールバック方法: 変更を粒度の小さいコミットで分割し revert 容易にする。
     - 承認メッセージ ID／リンク: 本スレッド「ok」
 - [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
+  - メモ: Plan 承認内容を踏まえた設計・実装方針
+    - snapshot互換: 利用箇所(analyzer/prompt生成/外部出力)を洗い、parent_shape_id/table_cell追加でパースが壊れないか確認。必要なら仕様追記だけで済ませ、コード改修は最小。
+    - 適用パス: CLI/関数で差分JSON( shape_id, edit, contents ) を受け取り、apply_shape_text_edits でシリアル適用。並列LLMは後置きし、まずは「差分適用のみ」コマンド/関数を用意。
+    - 指示フォーマット/プロンプト: README/ノートにサンプルJSONと指示パターン例を掲載し、`edit=false` の扱いと shape_id 起点であることを明示。
+    - テスト: 差分適用のエンドツーエンド（簡易PPTX＋差分JSON→出力）を追加。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
@@ -44,7 +48,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
   - 前提/制約: Stage5 フォローアップ。slide_snapshot 互換性に注意（parent_shape_id/table_cell）。
   - 決定と理由: table_cell_shape_id を公開し、テーブルセルへのテキスト置換を shape_id 基準で扱う方針。text_edit に書式維持での apply_shape_text_edits を追加して差分適用基盤とする。
-  - リスク(UNCONFIRMED): snapshot JSON 互換影響が未確認。適用パス実装時に LLM 出力のマッピング漏れの可能性。
-  - Now/Next: Now=基盤ヘルパ実装＋ユニットテスト追加完了。Next=snapshot 利用箇所の互換確認、Stage5 適用パス組み込み、指示フォーマット/プロンプト整備、統合テスト追加。
+  - リスク(UNCONFIRMED): snapshot JSON 互換影響が未確認。適用パス実装時に LLM 出力のマッピング漏れの可能性。差分適用コマンドのI/O仕様が固まっていない。
+  - Now/Next: Now=基盤ヘルパ実装＋ユニットテスト追加完了。Next=互換確認→差分適用コマンド実装→指示フォーマット/プロンプト整備→統合テスト追加。
   - テスト実績/抜け: `uv run --extra dev pytest tests/pipeline/test_text_edit.py` (3件成功)。統合テスト未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
