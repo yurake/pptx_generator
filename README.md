@@ -175,9 +175,13 @@ flowchart TD
 - 静的テンプレートでは `external/<template_id>/hooks.json` を用意すると Stage ごとの処理を外部フックへ委譲できます。導入・運用手順は `external/README.md`、作業指針は `external/AGENTS.md` を参照してください。詳細な設定例や渡される環境変数は `docs/design/stages/` の各ステージドキュメントを参照してください。
 
 ## テスト
-- テスト実行:
+- テスト実行（デフォルトでCPUコア数に合わせて並列実行されます）:
   ```bash
   uv run --extra dev pytest
+  ```
+- シーケンシャル実行でデバッグしたい場合:
+  ```bash
+  uv run --extra dev pytest -n 0
   ```
 - テスト後は `.pptx/compose/` や `.pptx/gen/` などの出力ディレクトリを確認し、期待する成果物が生成されたかをチェックしてください。
 - 詳細なテスト方針は `tests/AGENTS.md` を参照してください。
