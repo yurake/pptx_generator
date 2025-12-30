@@ -99,21 +99,24 @@ def test_apply_shape_text_edits_with_slide_index(tmp_path) -> None:
     slide2 = presentation.slides.add_slide(presentation.slide_layouts[6])
     shape1 = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
     shape1.text = "s1"
+    shape1.name = "slide1_box"
     shape2 = slide2.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
     shape2.text = "s2"
+    shape2.name = "slide2_box"
     presentation.save(pptx_path)
 
     applied, missing = apply_shape_text_edits(
-        pptx_path,
-        [
-            {"slide_index": 1, "shape_id": shape1.shape_id, "contents": "wrong slide"},
-            {"slide_index": 1, "shape_id": shape2.shape_id, "contents": "target slide"},
-        ],
-    )
+            pptx_path,
+            [
+                {"slide_index": 1, "shape_id": shape1.shape_id, "contents": "wrong slide", "name": shape1.name},
+                {"slide_index": 1, "shape_id": shape2.shape_id, "contents": "target slide", "name": shape2.name},
+            ],
+        )
 
     assert applied == 1
     assert missing == ["1:" + str(shape1.shape_id)]
     reloaded = Presentation(pptx_path)
+    # slide_index を指定した場合、指定スライド内の shape_id にマッチした場合のみ適用される
     assert reloaded.slides[0].shapes[0].text == "s1"
     assert reloaded.slides[1].shapes[0].text == "target slide"
 
