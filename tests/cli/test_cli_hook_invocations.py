@@ -115,10 +115,9 @@ def test_prepare_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
 
 def test_mapping_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
     hook_manager = DummyHookManager()
-    monkeypatch.setattr("pptx_generator.cli_commands.mapping.load_hooks_for_template_id", lambda tpl: hook_manager)
     monkeypatch.setattr(
-        "pptx_generator.cli_commands.mapping.extract_template_id_from_json_file",
-        lambda path: "demo_tpl",
+        "pptx_generator.cli_commands.mapping.load_stage_hooks",
+        lambda path: (hook_manager, "demo_tpl"),
     )
     monkeypatch.setattr(
         "pptx_generator.cli_commands.mapping.slide_contexts_from_generate_ready",
@@ -160,10 +159,9 @@ def test_mapping_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
 
 def test_compose_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
     hook_manager = DummyHookManager()
-    monkeypatch.setattr("pptx_generator.cli_commands.compose.load_hooks_for_template_id", lambda tpl: hook_manager)
     monkeypatch.setattr(
-        "pptx_generator.cli_commands.compose.extract_template_id_from_json_file",
-        lambda path: "demo_tpl",
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: (hook_manager, "demo_tpl"),
     )
     monkeypatch.setattr(
         "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
