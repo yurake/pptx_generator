@@ -150,7 +150,7 @@ def test_pptx_edit_cli_runs_with_mock_llm(tmp_path) -> None:
     runner = CliRunner()
     cmd = create_edit_command()
     output_path = tmp_path / "output_cli.pptx"
-    result = runner.invoke(cmd, ["--pptx-path", str(pptx_path), "--output", str(output_path)])
+    result = runner.invoke(cmd, [str(pptx_path), "--output", str(output_path)])
 
     assert result.exit_code == 0
     assert output_path.exists()

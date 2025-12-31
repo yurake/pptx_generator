@@ -21,7 +21,7 @@ def _load_edits(edits_path: Path) -> Iterable[dict]:
 
 def create_edit_command(default_output_dir: Path | None = None):
     @click.command("edit", help="PPTX を入力し、shape_id ベースでテキスト差し替えを適用する。edits JSON 未指定時は LLM で自動適用。")
-    @click.option("--pptx-path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="対象の PPTX パス")
+    @click.argument("pptx_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
     @click.option("--edits-json", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="差分JSON（shape_id, edit, contents を含むリスト）。指定時は LLM を呼び出さず適用のみ実施")
     @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は <元ファイル名>_edited.pptx）")
     def command(pptx_path: Path, edits_json: Path | None, output_path: Path | None) -> None:
