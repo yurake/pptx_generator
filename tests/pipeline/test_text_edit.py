@@ -157,3 +157,22 @@ def test_pptx_edit_cli_runs_with_mock_llm(tmp_path) -> None:
     reloaded = Presentation(output_path)
     reloaded_text = reloaded.slides[0].shapes[0].text
     assert reloaded_text == "keep"
+
+
+def test_pptx_edit_cli_fails_with_legacy_option(tmp_path) -> None:
+    from click.testing import CliRunner
+    from pptx_generator.cli_commands.edit import create_edit_command
+
+    pptx_path = tmp_path / "input_cli.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    textbox.text = "keep"
+    presentation.save(pptx_path)
+
+    runner = CliRunner()
+    cmd = create_edit_command()
+    result = runner.invoke(cmd, ["--pptx-path", str(pptx_path)])
+
+    assert result.exit_code != 0
+    assert "No such option" in result.output or "no such option" in result.output
