@@ -4,8 +4,11 @@ import os
 
 import pytest
 
-from pptx_generator.slide_ai import (LLMClientConfigurationError,
-                                     MockLLMClient, create_llm_client)
+from pptx_generator.slide_ai import (
+    LLMClientConfigurationError,
+    MockLLMClient,
+    create_llm_client,
+)
 
 
 def test_create_llm_client_default_returns_mock(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -8,9 +8,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from pptx_generator.slide_ai.client import (AIGenerationRequest,
-                                            OpenAIChatClient, SlideMatchCandidate,
-                                            SlideMatchRequest)
+from pptx_generator.slide_ai.client import (
+    AIGenerationRequest,
+    OpenAIChatClient,
+    SlideMatchCandidate,
+    SlideMatchRequest,
+)
 from pptx_generator.slide_ai.policy import SlideAIPolicy
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide
 

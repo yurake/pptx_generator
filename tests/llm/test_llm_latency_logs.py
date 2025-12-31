@@ -11,7 +11,7 @@ from pptx_generator.layout_ai.client import OpenAIChatLayoutClient, LayoutAIRequ
 from pptx_generator.layout_ai.policy import LayoutAIPolicy
 from pptx_generator.prepare_ai.client import OpenAIPrepareLLMClient, AzureOpenAIPrepareLLMClient
 from pptx_generator.prepare_ai.client import PrepareLLMResult
-from pptx_generator.slide_ai.client import OpenAIChatClient, AIGenerationRequest
+from pptx_generator.slide_ai.client import AIGenerationRequest, OpenAIChatClient
 from pptx_generator.slide_ai.policy import SlideAIPolicy
 from pptx_generator.models import JobSpec, Slide, JobMeta, JobAuth
 from pptx_generator.template_ai.client import AnthropicTemplateAIClient
