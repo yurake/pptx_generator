@@ -10,14 +10,18 @@ from pptx_generator.cli_handlers.compose import (
     run_compose_command,
 )
 from pptx_generator.runtime.job_queue import run_job_sync
-
-from .utils import echo_command_errors
 from pptx_generator.cli_hooks import (
     STAGE_COMPOSE,
     slide_contexts_from_generate_ready,
-    extract_template_id_from_json_file,
-    load_hooks_for_template_id,
 )
+from pptx_generator.cli_commands.hook_runner import (
+    load_stage_hooks,
+    run_post_stage_slide_hooks,
+    run_slide_hooks,
+    run_stage_hook,
+)
+
+from .utils import draft_common_options, handle_command_error
 
 
 def create_compose_command(
@@ -38,37 +42,10 @@ def create_compose_command(
         "spec_path",
         type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     )
-    @click.option(
-        "--target-length",
-        type=int,
-        default=None,
-        help="目標スライド枚数",
-    )
-    @click.option(
-        "--structure-pattern",
-        type=str,
-        default=None,
-        help="章構成パターン名",
-    )
-    @click.option(
-        "--appendix-limit",
-        type=int,
-        default=default_appendix_limit,
-        show_default=True,
-        help="付録枚数の上限",
-    )
-    @click.option(
-        "--import-analysis",
-        "analysis_summary_path",
-        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-        default=None,
-        help="analysis_summary.json のパス",
-    )
-    @click.option(
-        "--show-layout-reasons",
-        is_flag=True,
-        default=False,
-        help="layout_hint 候補のスコア内訳を表示する",
+    @draft_common_options(
+        default_appendix_limit=default_appendix_limit,
+        default_prepare_cards_path=default_prepare_cards_path,
+        prepare_cards_exists=True,
     )
     @click.option(
         "--output",
@@ -86,13 +63,6 @@ def create_compose_command(
         show_default=True,
         help="検証ルール設定ファイル",
     )
-    @click.option(
-        "--prepare-cards",
-        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-        default=default_prepare_cards_path,
-        show_default=True,
-        help="stage 2 の prepare_card.json",
-    )
     def compose(  # noqa: PLR0913
         spec_path: Path,
         target_length: int | None,
@@ -107,10 +77,7 @@ def create_compose_command(
         """stage 4+5 を連続実行しドラフトとマッピング成果物を生成する。"""
 
         draft_output = output_dir / "draft"
-        hook_manager = None
-        template_id = extract_template_id_from_json_file(spec_path)
-        if template_id:
-            hook_manager = load_hooks_for_template_id(template_id)
+        hook_manager, template_id = load_stage_hooks(spec_path)
         chapter_templates_dir: Path | None = None
         chapter_template: str | None = structure_pattern
         stage_env = {
@@ -134,29 +101,23 @@ def create_compose_command(
         stage_env["PPTX_CHAPTER_TEMPLATE"] = chapter_template or ""
         if template_id:
             stage_env["PPTX_TEMPLATE_ID"] = template_id
-        if hook_manager:
-            executed, continue_default = hook_manager.run_stage_hook(
-                STAGE_COMPOSE,
-                env=stage_env,
-            )
-            if executed:
-                click.echo(
-                    f"[hooks] compose stage executed via external hook (template_id={template_id})"
-                )
-                if not continue_default:
-                    return
+        if run_stage_hook(
+            STAGE_COMPOSE,
+            hook_manager=hook_manager,
+            template_id=template_id,
+            stage_env=stage_env,
+        ):
+            return
 
         contexts = slide_contexts_from_generate_ready(prepare_cards)
-        if hook_manager:
-            executed = hook_manager.run_slide_hooks(
-                STAGE_COMPOSE,
-                slides=contexts,
-                env=stage_env,
-                continue_default_filter=False,
-                allow_fallback_context=True,
-            )
-            if executed:
-                return
+        if run_slide_hooks(
+            STAGE_COMPOSE,
+            hook_manager=hook_manager,
+            stage_env=stage_env,
+            slides=contexts,
+            continue_default_filter=False,
+        ):
+            return
 
         config = ComposeCommandConfig(
             spec_path=spec_path,
@@ -182,25 +143,17 @@ def create_compose_command(
                 func=lambda: run_compose_command(config),
             )
         except ComposeCommandError as exc:
-            message = str(exc)
-            if exc.errors:
-                echo_command_errors(message or "エラーが発生しました", exc.errors)
-            elif message:
-                click.echo(message, err=True)
+            handle_command_error(exc, default_message="エラーが発生しました")
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-        if hook_manager and template_id:
-            stage_env_with_outputs = dict(stage_env)
-            generate_ready_path = output_dir / default_generate_ready_filename
-            stage_env_with_outputs["PPTX_GENERATE_READY_PATH"] = str(generate_ready_path.resolve())
-            contexts = slide_contexts_from_generate_ready(generate_ready_path)
-            hook_manager.run_slide_hooks(
-                STAGE_COMPOSE,
-                slides=contexts,
-                env=stage_env_with_outputs,
-                continue_default_filter=True,
-                allow_fallback_context=True,
-            )
+        run_post_stage_slide_hooks(
+            STAGE_COMPOSE,
+            hook_manager=hook_manager,
+            template_id=template_id,
+            base_stage_env=stage_env,
+            generate_ready_path=output_dir / default_generate_ready_filename,
+            slide_context_loader=slide_contexts_from_generate_ready,
+        )
 
     return compose
 

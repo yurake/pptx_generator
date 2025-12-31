@@ -11,6 +11,8 @@ from pptx_generator.cli_handlers.outline import (
 from pptx_generator.pipeline import PrepareNormalizationError
 from pptx_generator.pipeline.draft_structuring import DraftStructuringError
 
+from .utils import draft_common_options
+
 
 def create_outline_command(
     *,
@@ -38,44 +40,10 @@ def create_outline_command(
         show_default=True,
         help="ドラフト成果物を保存するディレクトリ",
     )
-    @click.option(
-        "--target-length",
-        type=int,
-        default=None,
-        help="目標スライド枚数",
-    )
-    @click.option(
-        "--structure-pattern",
-        type=str,
-        default=None,
-        help="章構成パターン名",
-    )
-    @click.option(
-        "--appendix-limit",
-        type=int,
-        default=default_appendix_limit,
-        show_default=True,
-        help="付録枚数の上限",
-    )
-    @click.option(
-        "--import-analysis",
-        "analysis_summary_path",
-        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-        default=None,
-        help="analysis_summary.json のパス",
-    )
-    @click.option(
-        "--show-layout-reasons",
-        is_flag=True,
-        default=False,
-        help="layout_hint 候補のスコア内訳を表示する",
-    )
-    @click.option(
-        "--prepare-cards",
-        type=click.Path(exists=False, dir_okay=False, readable=True, path_type=Path),
-        default=default_prepare_cards_path,
-        show_default=True,
-        help="stage 2 の prepare_card.json",
+    @draft_common_options(
+        default_appendix_limit=default_appendix_limit,
+        default_prepare_cards_path=default_prepare_cards_path,
+        prepare_cards_exists=False,
     )
     def outline(
         spec_path: Path,
