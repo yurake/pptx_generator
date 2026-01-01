@@ -7,8 +7,8 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 
 - [x] ブランチ作成・初期コミット・push
   - メモ: 既存ブランチ feat/rm095-stage5-edit を流用。初期コミット済み。
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: Plan 承認待ち。REST エンドポイント `/edit` 追加範囲、入力（pptxアップロード/参照パス、edits_json）、認証（Bearer/HMAC）、出力（artifacts: pptx_url）、ジョブキュー統合を整理。
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: REST `/edit` を追加し、既存ステージと同じ認証 (Bearer/HMAC)・job_queue を利用。入力は PPTX（アップロードまたはパス）、任意で edits_json。LLM自動適用と手動適用の両方を許容。出力は `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/` 配下の PPTX を artifacts.pptx_url で返す。
 - [ ] 設計・実装方針の確定
   - メモ: API 仕様（リクエスト/レスポンス/ステータス取得）、job builder、artifact登録、エラーハンドリング、既存 CLI とのコード共通化方針を記載。
   - [ ] 設計・実装方針メモの共有（必要に応じて docs/notes 等へのリンク）
