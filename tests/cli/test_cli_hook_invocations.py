@@ -113,6 +113,59 @@ def test_prepare_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
     assert post_call["continue_default_filter"] is True
 
 
+def test_prepare_missing_template_id_does_not_call_hooks(monkeypatch, tmp_path: Path) -> None:
+    called = {}
+
+    def fake_run_prepare_command(config, dump_json):  # noqa: ANN001
+        called["ran"] = True
+        return type(
+            "Result",
+            (),
+            {
+                "messages": [],
+                "cards_path": tmp_path / "cards.json",
+                "log_path": tmp_path / "log.json",
+                "ai_log_path": tmp_path / "ai_log.json",
+                "meta_path": tmp_path / "meta.json",
+                "story_outline_path": tmp_path / "story.json",
+                "audit_path": tmp_path / "audit.json",
+            },
+        )()
+
+    monkeypatch.setattr("pptx_generator.cli_commands.prepare.run_prepare_command", fake_run_prepare_command)
+    monkeypatch.setattr("pptx_generator.cli_commands.prepare.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.prepare.load_hooks_for_template_id",
+        lambda tpl: (_ for _ in ()).throw(AssertionError("should not load hooks when template_id missing")),
+    )
+
+    command = create_prepare_command(
+        default_output_dir=tmp_path / ".pptx/prepare",
+        default_jobspec_path=tmp_path / "jobspec.json",
+        prompts_dirname=tmp_path / ".pptx/template/prompts",
+        slide_inputs_filename=Path("slide_inputs.md"),
+    )
+
+    jobspec = tmp_path / "jobspec.json"
+    jobspec.write_text("{}", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        command,
+        [
+            "--mode",
+            "static",
+            "--jobspec",
+            str(jobspec),
+            "--output",
+            str(tmp_path / ".pptx/prepare"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert called.get("ran") is True
+
+
 def test_mapping_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
     hook_manager = DummyHookManager()
     monkeypatch.setattr(
@@ -253,6 +306,53 @@ def test_gen_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> N
     assert pre_call["continue_default_filter"] is False
     assert post_call["allow_fallback_context"] is True
     assert post_call["continue_default_filter"] is True
+
+
+def test_gen_missing_template_id_does_not_call_hooks(monkeypatch, tmp_path: Path) -> None:
+    class DummyContext:
+        def __init__(self) -> None:
+            self.artifacts = {"pptx_path": tmp_path / "out" / "out.pptx"}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: type("R", (), {"context": DummyContext(), "audit_path": tmp_path / "audit.json"})(),
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.load_hooks_for_template_id",
+        lambda tpl: (_ for _ in ()).throw(AssertionError("should not load hooks when template_id missing")),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: [],
+    )
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+    generate_ready.write_text("{}", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
 
 
 def test_template_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
