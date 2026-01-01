@@ -1,7 +1,7 @@
 ---
 目的: RM-095 PPTX edit を Web API から呼び出せるようにする（CLI と同等のジョブキュー実行）
 関連ブランチ: feat/rm095-stage5-edit
-関連Issue: 未作成
+関連Issue: #515
 roadmap_item: RM-095 Stage5 PPTX 編集反映
 ---
 
@@ -24,7 +24,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 未作成のため対応後に更新。
 - [ ] チェックリスト整合確認
   - メモ: 子タスク完了後に整合チェック。
