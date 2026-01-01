@@ -229,7 +229,7 @@ paths:
   /jobs/{job_id}/artifacts/{artifact_type}:
     get:
       summary: 生成された成果物をダウンロードする
-      description: `pptx` または `pdf` を認証付きで返却する。
+      description: pptx または pdf を認証付きで返却する。
       security:
         - HmacAuth: []
         - BearerAuth: []
