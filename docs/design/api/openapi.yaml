@@ -140,6 +140,38 @@ paths:
           $ref: "#/components/responses/RequestTooLarge"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  /edit:
+    post:
+      summary: Stage5 edit のジョブ登録
+      description: 生成済み PPTX に差分を適用し、書式を保持したままテキストを置換するジョブを登録する。`edits_json` 未指定時は LLM で差分を自動生成する。
+      security:
+        - HmacAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditRequest"
+      responses:
+        "202":
+          description: ジョブ受付
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobHandle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /jobs/{job_id}:
     get:
       summary: ジョブステータスと成果物取得
@@ -307,6 +339,47 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/JobHandle"
+    EditRequest:
+      type: object
+      required:
+        - pptx_path
+      properties:
+        transaction_id:
+          type: string
+          description: トランザクションID。省略時はサーバが付与。
+        pptx_path:
+          type: string
+          description: 差分適用対象の PPTX パス（サーバ上パス）。将来的に multipart でのアップロード拡張を想定。
+        edits_json:
+          type: string
+          description: 差分 JSON ファイルパス（サーバ上パス）。指定時は LLM を呼ばず適用のみ。
+        edits:
+          type: array
+          description: 差分定義を直接指定。`edits_json` より優先。shape_id/edit/contents/slide_index/name を含む。
+          items:
+            $ref: "#/components/schemas/EditItem"
+        output:
+          type: string
+          description: 出力先 PPTX パス。省略時は `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/<元ファイル名>`。
+    EditItem:
+      type: object
+      required:
+        - shape_id
+        - contents
+      properties:
+        shape_id:
+          type: integer
+        slide_index:
+          type: integer
+          description: 0-based スライド番号。未指定時は shape_id のみで照合。
+        name:
+          type: string
+          description: 形状名。照合厳格化に利用可能。
+        edit:
+          type: boolean
+          default: true
+        contents:
+          type: string
     ArtifactLinks:
       type: object
       properties:
