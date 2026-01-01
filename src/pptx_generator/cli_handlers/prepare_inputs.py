@@ -8,6 +8,8 @@ from typing import Any, Sequence
 
 from pydantic import ValidationError
 
+from urllib.parse import urlparse
+
 from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
 from pptx_generator.prepare.source import (
     PrepareSourceChapter,
@@ -51,14 +53,16 @@ def load_prepare_input(
     value: str,
     service: ContentImportService,
 ) -> tuple[PrepareSourceDocument, list[dict[str, Any]], list[str]]:
-    lower_value = value.lower()
-    if lower_value.startswith("http://"):
+    parsed = urlparse(value)
+    scheme = parsed.scheme.lower()
+    if scheme == "http":
         raise PrepareCommandError(
             "http:// は許可されていません。HTTPS を利用してください",
             exit_code=2,
         )
-    is_url = lower_value.startswith("https://")
-    is_data_uri = lower_value.startswith("data:")
+    lower_value = value.lower()
+    is_url = scheme == "https"
+    is_data_uri = scheme == "data"
     candidate_path = Path(value).expanduser()
     path_exists = candidate_path.exists() and candidate_path.is_file()
 
