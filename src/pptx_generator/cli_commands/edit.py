@@ -9,6 +9,7 @@ import click
 from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
 from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
 from pptx_generator.runtime.job_queue import run_job_sync
+from pptx_generator.runtime.paths import ensure_stage_output_dir
 
 
 def _load_edits(edits_path: Path) -> Iterable[dict]:
@@ -24,10 +25,12 @@ def create_edit_command(default_output_dir: Path | None = None):
     @click.command("edit", help="PPTX を入力し、shape_id ベースでテキスト差し替えを適用する。edits JSON 未指定時は LLM で自動適用。")
     @click.argument("pptx_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
     @click.option("--edits-json", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="差分JSON（shape_id, edit, contents を含むリスト）。指定時は LLM を呼び出さず適用のみ実施")
-    @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は <元ファイル名>_edited.pptx）")
+    @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は既定の stage 出力ディレクトリ配下）")
     def command(pptx_path: Path, edits_json: Path | None, output_path: Path | None) -> None:
         def _run_edit() -> dict[str, object]:
-            resolved_output = output_path or pptx_path.with_name(f"{pptx_path.stem}_edited{pptx_path.suffix}")
+            resolved_dir = ensure_stage_output_dir("edit")
+            resolved_output = output_path or (resolved_dir / pptx_path.name)
+            resolved_output.parent.mkdir(parents=True, exist_ok=True)
 
             if edits_json is not None:
                 edits = _load_edits(edits_json)

@@ -121,9 +121,9 @@ Blueprint（テンプレ全体の設計図）
 
 #### 編集反映 (Stage5 検証中)
 - `uv run pptx template <template.pptx> --mode static --slide` で `slide_snapshot.json` を出力可能。グループや表セルも `parent_shape_id`／`table_cell` メタ付きで展開される。
-- Stage4 生成済み `proposal.pptx` に対する差分は、`pptx edit proposal.pptx` 実行時に LLM が `{ "shape_id": 256, "edit": true, "contents": "新しい本文" }` 配列を生成して適用する。`edit=false` はスキップ。`--edits-json` を指定した場合は LLM を呼ばず指定差分のみ適用。
+- Stage4 生成済み `proposal.pptx` に対する差分は、`pptx edit proposal.pptx` 実行時に LLM が `{ "shape_id": 256, "edit": true, "contents": "新しい本文" }` 配列を生成して適用する。`edit=false` はスキップ。`--edits-json` を指定した場合は LLM を呼ばず指定差分のみ適用。出力先は既定で `PPTX_OUTPUT_ROOT/<tx>/edit/proposal.pptx`。
 - 表セルは `table_cell_shape_id(parent_shape_id, row, col)` で shape_id を組み立てる。
-- 適用コマンド例: `uv run pptx edit proposal.pptx --edits-json edits.json --output proposal_edited.pptx`（`--output` 省略時は `<元名>_edited.pptx`）。
+- 適用コマンド例: `uv run pptx edit proposal.pptx --edits-json edits.json --output proposal_edited.pptx`（`--output` 省略時は `PPTX_OUTPUT_ROOT/<tx>/edit/proposal.pptx`）。
 
 ```mermaid
 flowchart TD
