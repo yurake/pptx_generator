@@ -18,7 +18,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest tests/pipeline/test_text_edit.py`（7件成功、CLI位置引数・レガシーオプションエラー含む）。
 - [x] ドキュメント更新
-  - メモ: notes に job_queue 基盤利用を追記。その他は影響なしとして更新不要。
+  - メモ: notes に job_queue 基盤利用を追記。README/notes を `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/` の出力パスに更新済み。その他は影響なし。
   - [x] docs/roadmap 配下（影響なし）
   - [x] docs/requirements 配下（影響なし）
   - [x] docs/design 配下（影響なし）
