@@ -213,7 +213,6 @@ def test_pptx_edit_cli_llm_failure(tmp_path, monkeypatch) -> None:
 def test_pptx_edit_cli_default_output_dir(tmp_path, monkeypatch) -> None:
     from click.testing import CliRunner
     from pptx_generator.cli_commands.edit import create_edit_command
-    from pathlib import Path
 
     pptx_path = tmp_path / "input_cli_default.pptx"
     presentation = Presentation()
@@ -222,16 +221,15 @@ def test_pptx_edit_cli_default_output_dir(tmp_path, monkeypatch) -> None:
     textbox.text = "keep"
     presentation.save(pptx_path)
 
-    monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
+    out_root = tmp_path / "out"
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(out_root))
     runner = CliRunner()
     cmd = create_edit_command()
     result = runner.invoke(cmd, [str(pptx_path)])
 
     assert result.exit_code == 0
-    # 出力は .pptx/<tx>/edit/<job_id>/input_cli_default.pptx 配下
-    out_dir = Path(".pptx")
-    outputs = list(out_dir.glob("*/edit/*/input_cli_default.pptx"))
-    assert outputs, "expected output file under .pptx/<tx>/edit/<job_id>/"
+    expected_output = out_root / "edit" / pptx_path.name
+    assert expected_output.exists()
 
 
 def test_pptx_edit_cli_same_name_multiple_runs(tmp_path, monkeypatch) -> None:
@@ -251,10 +249,12 @@ def test_pptx_edit_cli_same_name_multiple_runs(tmp_path, monkeypatch) -> None:
     cmd = create_edit_command()
 
     res1 = runner.invoke(cmd, [str(pptx_path)])
+    first_output = out_root / "edit" / pptx_path.name
     res2 = runner.invoke(cmd, [str(pptx_path)])
 
     assert res1.exit_code == 0
     assert res2.exit_code == 0
 
-    outputs = list(out_root.glob("*/edit/*/input_cli_multi.pptx"))
-    assert len(outputs) == 2, "should create separate files under different job_id"
+    assert first_output.exists()
+    outputs = list(out_root.rglob("input_cli_multi.pptx"))
+    assert outputs == [first_output]

@@ -9,7 +9,7 @@ import click
 from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
 from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
 from pptx_generator.runtime.job_queue import run_job_sync
-from pptx_generator.runtime.paths import ensure_stage_output_dir
+from pptx_generator.settings.paths import build_output_dir
 
 
 def _load_edits(edits_path: Path) -> Iterable[dict]:
@@ -28,8 +28,8 @@ def create_edit_command(default_output_dir: Path | None = None):
     @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は既定の stage 出力ディレクトリ配下）")
     def command(pptx_path: Path, edits_json: Path | None, output_path: Path | None) -> None:
         def _run_edit() -> dict[str, object]:
-            resolved_dir = ensure_stage_output_dir("edit")
-            resolved_output = output_path or (resolved_dir / pptx_path.name)
+            base_output_dir = default_output_dir or build_output_dir("edit")
+            resolved_output = output_path or (base_output_dir / pptx_path.name)
             resolved_output.parent.mkdir(parents=True, exist_ok=True)
 
             if edits_json is not None:
