@@ -57,7 +57,7 @@ def load_prepare_input(
     scheme = parsed.scheme.lower()
     if scheme == "http":
         raise PrepareCommandError(
-            "http:// は許可されていません。HTTPS を利用してください",
+            "HTTP スキームは許可されていません。HTTPS を利用してください",
             exit_code=2,
         )
     lower_value = value.lower()
