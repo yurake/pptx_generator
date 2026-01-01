@@ -3,7 +3,7 @@
 ## 構成
 - app factory（`create_app` 想定）で共通設定・ミドルウェアを注入。
 - Blueprint 分割:
-  - `/templates`, `/prepare`, `/compose`, `/gen`（ジョブ登録）
+  - `/templates`, `/prepare`, `/compose`, `/gen`, `/edit`（ジョブ登録）
   - `/jobs/{job_id}`（状態取得）
   - `/transactions/{transaction_id}`（トランザクション一覧）
   - `/jobs/{job_id}/artifacts/{pptx|pdf}`（成果物取得、認証あり）
@@ -76,7 +76,7 @@
 ## 入出力ディレクトリ規約（API）
 - 出力: `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に成果物を配置する。未設定時は `.pptx/<stage>` を利用する実装もあるが、API 経路では tx/job 付きパスを前提とする。
 - 入力: `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` にクライアントから受け取った入力（テンプレや prepare ソース）を保存する。未設定時は `.pptx/input`。
-- CLI は従来どおり tx/job なしの `.pptx/<stage>` 出力を既定とするため、API と CLI の出力パスは異なる（tx/job を付与したい場合は API を利用する）。
+- CLI は従来どおり tx/job なしの `.pptx/<stage>` 出力を既定とするため、API と CLI の出力パスは異なる（tx/job を付与したい場合は API を利用する）。edit は CLI も `PPTX_OUTPUT_ROOT/<tx>/<stage>/<job_id>/` に揃え済み。
 
 ## ヘルスチェック
 - `/health` を 200 で返却（簡易ヘルス）。メトリクスは今回は提供しない。

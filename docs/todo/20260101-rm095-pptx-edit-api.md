@@ -10,7 +10,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: REST `/edit` を追加し、既存ステージと同じ認証 (Bearer/HMAC)・job_queue を利用。入力は PPTX（アップロードまたはパス）、任意で edits_json。LLM自動適用と手動適用の両方を許容。出力は `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/` 配下の PPTX を artifacts.pptx_url で返す。
 - [ ] 設計・実装方針の確定
-  - メモ: API 仕様（リクエスト/レスポンス/ステータス取得）、job builder、artifact登録、エラーハンドリング、既存 CLI とのコード共通化方針を記載。
+  - メモ: API 仕様（POST /edit）。入力: pptx（アップロード or パス, 排他）、任意の edits_json（パス or JSON配列）、transaction_id（任意）、output（任意、未指定時 `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/`）。認証: Bearer/HMAC。処理: job_queue enqueue stage=edit（CLIと同ロジック）。レスポンス: genと同じ 202 ボディ形式（job_id/tx/status/stage/status_url/transaction_url/timestamps/artifacts/error）。artifacts に pptx_url を登録。GET /jobs/<id> で状態確認、/jobs/<id>/artifacts/pptx で取得。エラー: 422 (入力), 401 (認証), ジョブ失敗時は error フィールド。
   - [ ] 設計・実装方針メモの共有（必要に応じて docs/notes 等へのリンク）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
