@@ -1,9 +1,16 @@
 """Slide AI（旧 content_ai）関連の公開 API。"""
 
-from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
-                     LLMClientConfigurationError, MockLLMClient,
-                     SlideMatchCandidate, SlideMatchRequest,
-                     SlideMatchResponse, create_llm_client)
+from .client import (
+    AIGenerationRequest,
+    AIGenerationResponse,
+    LLMClient,
+    LLMClientConfigurationError,
+    MockLLMClient,
+    SlideMatchCandidate,
+    SlideMatchRequest,
+    SlideMatchResponse,
+    create_llm_client,
+)
 from .orchestrator import SlideAIOrchestrationError, SlideAIOrchestrator
 from .policy import (
     SlideAIPolicy,

@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import json
 
-from pptx_generator.slide_ai.client import (
-    AzureOpenAIChatClient,
-    AwsClaudeClient,
-    OpenAIChatClient,
-)
+from pptx_generator.slide_ai.client import AzureOpenAIChatClient, AwsClaudeClient, OpenAIChatClient
 
 
 class _FakeMessage:

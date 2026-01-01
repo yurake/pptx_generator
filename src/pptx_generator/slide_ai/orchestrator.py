@@ -10,8 +10,7 @@ from typing import Any
 
 from ..models import (ContentApprovalDocument, ContentDocumentMeta,
                       ContentElements, ContentSlide, JobSpec)
-from .client import (AIGenerationRequest, AIGenerationResponse, LLMClient,
-                     create_llm_client)
+from .client import AIGenerationRequest, AIGenerationResponse, LLMClient, create_llm_client
 from .policy import SlideAIPolicy, SlideAIPolicyError, SlideAIPolicySet
 
 
