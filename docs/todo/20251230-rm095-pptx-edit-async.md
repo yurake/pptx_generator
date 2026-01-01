@@ -1,7 +1,7 @@
 ---
 目的: RM-095 PPTX edit を非同期基盤で実行できるようにする
 関連ブランチ: feat/rm095-stage5-edit
-関連Issue: 未作成
+関連Issue: #513
 roadmap_item: RM-095 Stage5 PPTX 編集反映
 ---
 
