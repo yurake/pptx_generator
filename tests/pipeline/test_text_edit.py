@@ -199,7 +199,12 @@ def test_pptx_edit_cli_llm_failure(tmp_path, monkeypatch) -> None:
     runner = CliRunner()
     cmd = create_edit_command()
     output_path = pptx_path.with_name(f"{pptx_path.stem}_edited{pptx_path.suffix}")
+    # 出力先を固定できるようにルートを指定
+    out_root = tmp_path / "out"
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(out_root))
+
     result = runner.invoke(cmd, [str(pptx_path)])
 
     assert result.exit_code != 0
-    assert not output_path.exists()
+    # エラー時は出力PPTXが作成されない
+    assert not any(out_root.rglob("*.pptx"))
