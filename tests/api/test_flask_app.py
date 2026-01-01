@@ -791,3 +791,61 @@ def test_edit_job_submission(monkeypatch, tmp_path):
     assert job["stage"] == "edit"
     status_resp = c.get(job["status_url"], headers={"Authorization": "Bearer token-123"})
     assert status_resp.status_code == 200
+
+
+def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    # path とファイルを両方送った場合は 422 を期待
+    with open("samples/templates/edit_sample.pptx", "rb") as f:
+        resp = c.post(
+            "/edit",
+            headers=headers,
+            data={"pptx_path": "samples/templates/edit_sample.pptx", "file": (f, "edit_sample.pptx")},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 422
+
+
+def test_edit_llm_failure_returns_failed(monkeypatch, tmp_path):
+    from pptx_generator.api import stages as stages_module
+
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    # モッククライアントでエラーを投げる
+    class DummyClient:
+        def rewrite(self, request):
+            raise RuntimeError("llm-fail")
+    monkeypatch.setattr(stages_module, "create_edit_ai_client", lambda: DummyClient())
+
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={"pptx_path": "samples/templates/edit_sample.pptx"},
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+    assert job["stage"] == "edit"
+
+    # ポーリング（失敗完了まで待つ）
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] in ("failed", "succeeded")
+    if status_body["status"] == "failed":
+        assert status_body["error"] is not None

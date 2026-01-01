@@ -90,6 +90,9 @@ def _prepare_edit_payload(payload: dict) -> dict:
     require_path_exists(payload.get("pptx_path"), "pptx_path")
     if payload.get("edits_json"):
         require_path_exists(payload.get("edits_json"), "edits_json")
+    if request.files:
+        # ファイルアップロードと pptx_path 同時指定は 422
+        abort_error(422, "validation_error", "pptx_path and file cannot both be set")
     return payload
 
 
@@ -194,7 +197,16 @@ def post_gen():
 
 @api_blueprint.post("/edit")
 def post_edit():
-    payload = require_json()
+    if request.mimetype and request.mimetype.startswith("multipart/"):
+        data: dict = {}
+        for key, values in request.form.lists():
+            if len(values) == 1:
+                data[key] = values[0]
+            else:
+                data[key] = values
+        payload = data
+    else:
+        payload = require_json()
     tx_id = payload.get("transaction_id") or _generate_id("tx")
     job_id = _generate_id("edit")
     _prepare_edit_payload(payload)
