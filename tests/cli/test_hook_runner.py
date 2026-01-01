@@ -84,6 +84,16 @@ def test_load_stage_hooks_propagates_exceptions(monkeypatch, tmp_path) -> None:
         load_stage_hooks(spec_path)
 
 
+def test_load_stage_hooks_returns_none_for_missing_template(monkeypatch, tmp_path) -> None:
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text("{}", encoding="utf-8")
+
+    hook_manager, template_id = load_stage_hooks(spec_path)
+
+    assert hook_manager is None
+    assert template_id is None
+
+
 def test_run_post_stage_slide_hooks_propates_loader_error(tmp_path) -> None:
     class DummyHM:
         def run_slide_hooks(self, *_, **__):  # noqa: ANN001, ARG002

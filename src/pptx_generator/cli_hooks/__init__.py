@@ -15,6 +15,7 @@ from .manager import (
 from .template_id import (
     derive_template_id_from_template_path,
     extract_template_id_from_json_file,
+    TemplateIdExtractionError,
 )
 from .slides import (
     build_slide_key,
@@ -29,6 +30,7 @@ __all__ = [
     "SlideContext",
     "derive_template_id_from_template_path",
     "extract_template_id_from_json_file",
+    "TemplateIdExtractionError",
     "STAGE_TEMPLATE",
     "STAGE_PREPARE",
     "STAGE_COMPOSE",

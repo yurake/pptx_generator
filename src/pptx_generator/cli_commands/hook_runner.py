@@ -16,6 +16,7 @@ def load_stage_hooks(spec_path: Path) -> tuple[ExternalHookManager | None, str |
     """jobspec から template_id を抽出し、対応する HookManager を返す。"""
 
     template_id = extract_template_id_from_json_file(spec_path)
+
     hook_manager = load_hooks_for_template_id(template_id) if template_id else None
     return hook_manager, template_id
 
