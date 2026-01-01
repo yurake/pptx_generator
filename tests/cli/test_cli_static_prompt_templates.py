@@ -215,6 +215,29 @@ def test_load_prompt_overrides_reads_user_section(tmp_path) -> None:
     assert overrides[0].instructions == "- 章構成に沿って3点まとめる"
 
 
+def test_load_prompt_overrides_accepts_single_digit_prefix(tmp_path) -> None:
+    prompts_dir = tmp_path / PROMPT_TEMPLATE_DIRNAME
+    prompts_dir.mkdir()
+    sample = prompts_dir / "1_title.md"
+    sample.write_text(
+        "\n".join(
+            [
+                "header",
+                PROMPT_USER_SECTION_START,
+                "- 章構成に沿って3点まとめる",
+                PROMPT_USER_SECTION_END,
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    template_spec = _build_static_template_spec()
+    overrides = load_prompt_overrides(prompts_dir=prompts_dir, blueprint=template_spec.blueprint)
+
+    assert overrides, "1桁プレフィックスでも override が検出されること"
+    assert overrides[0].slide_index == 1
+
+
 def test_cli_template_reports_prompt_directory(monkeypatch, tmp_path) -> None:
     template_file = tmp_path / "dummy.pptx"
     template_file.write_bytes(b"pptx")
