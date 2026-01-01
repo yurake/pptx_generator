@@ -208,3 +208,53 @@ def test_pptx_edit_cli_llm_failure(tmp_path, monkeypatch) -> None:
     assert result.exit_code != 0
     # エラー時は出力PPTXが作成されない
     assert not any(out_root.rglob("*.pptx"))
+
+
+def test_pptx_edit_cli_default_output_dir(tmp_path, monkeypatch) -> None:
+    from click.testing import CliRunner
+    from pptx_generator.cli_commands.edit import create_edit_command
+    from pathlib import Path
+
+    pptx_path = tmp_path / "input_cli_default.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    textbox.text = "keep"
+    presentation.save(pptx_path)
+
+    monkeypatch.delenv("PPTX_OUTPUT_ROOT", raising=False)
+    runner = CliRunner()
+    cmd = create_edit_command()
+    result = runner.invoke(cmd, [str(pptx_path)])
+
+    assert result.exit_code == 0
+    # 出力は .pptx/<tx>/edit/<job_id>/input_cli_default.pptx 配下
+    out_dir = Path(".pptx")
+    outputs = list(out_dir.glob("*/edit/*/input_cli_default.pptx"))
+    assert outputs, "expected output file under .pptx/<tx>/edit/<job_id>/"
+
+
+def test_pptx_edit_cli_same_name_multiple_runs(tmp_path, monkeypatch) -> None:
+    from click.testing import CliRunner
+    from pptx_generator.cli_commands.edit import create_edit_command
+
+    pptx_path = tmp_path / "input_cli_multi.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    textbox.text = "keep"
+    presentation.save(pptx_path)
+
+    out_root = tmp_path / "out"
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(out_root))
+    runner = CliRunner()
+    cmd = create_edit_command()
+
+    res1 = runner.invoke(cmd, [str(pptx_path)])
+    res2 = runner.invoke(cmd, [str(pptx_path)])
+
+    assert res1.exit_code == 0
+    assert res2.exit_code == 0
+
+    outputs = list(out_root.glob("*/edit/*/input_cli_multi.pptx"))
+    assert len(outputs) == 2, "should create separate files under different job_id"
