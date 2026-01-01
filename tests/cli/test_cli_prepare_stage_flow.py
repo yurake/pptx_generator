@@ -17,6 +17,7 @@ from pptx_generator.cli_handlers.prepare import (
     PrepareStaticContext,
     _load_prepare_inputs,
     _load_prepare_input,
+    _select_source_document,
     resolve_static_context,
 )
 from pptx_generator.cli_hooks import STAGE_PREPARE
@@ -197,6 +198,62 @@ def test_resolve_static_context_imports_slide_inputs(monkeypatch, tmp_path: Path
     assert str(context.import_metadata[0]["source"]).endswith("dummy.pdf")
     assert dummy_document is context.source_document
     assert any("インポートを完了しました" in message for message in context.messages)
+
+
+def test_select_source_document_requires_any_source(tmp_path: Path) -> None:
+    static_context = PrepareStaticContext(
+        blueprint_spec=None,
+        blueprint_ref=None,
+        template_spec_path=None,
+        prompt_overrides=[],
+        slide_input_sources=None,
+        slide_input_refs=None,
+        source_document=None,
+        messages=[],
+        import_metadata=[],
+    )
+
+    with pytest.raises(PrepareCommandError) as exc_info:
+        _select_source_document(
+            inline_document=None,
+            inline_metadata=[],
+            static_context=static_context,
+            prepare_path=None,
+        )
+
+    assert "プレペア入力を指定する必要があります" in str(exc_info.value)
+
+
+def test_select_source_document_preserves_metadata_order(tmp_path: Path) -> None:
+    inline_doc = PrepareSourceDocument(
+        meta=PrepareSourceMeta(title="inline", prepare_id=None),
+        chapters=[],
+        raw_text="inline",
+    )
+    static_context = PrepareStaticContext(
+        blueprint_spec=None,
+        blueprint_ref=None,
+        template_spec_path=None,
+        prompt_overrides=[],
+        slide_input_sources=None,
+        slide_input_refs=None,
+        source_document=None,
+        messages=[],
+        import_metadata=[{"source": "static", "via": "static"}],
+    )
+
+    source_document, metadata = _select_source_document(
+        inline_document=inline_doc,
+        inline_metadata=[{"source": "inline", "via": "inline"}],
+        static_context=static_context,
+        prepare_path=None,
+    )
+
+    assert source_document is inline_doc
+    assert metadata == [
+        {"source": "inline", "via": "inline"},
+        {"source": "static", "via": "static"},
+    ]
 
 
 def test_resolve_static_context_placeholder_manifest_allows_cli_inputs(tmp_path: Path) -> None:
