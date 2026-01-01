@@ -61,3 +61,33 @@ def test_run_job_sync_reraises_base_exception(tmp_path) -> None:
     queue = get_queue()
     job_states = [state for state in queue._jobs.values()]  # type: ignore[attr-defined]
     assert any(state.status == JobStatus.FAILED for state in job_states)
+
+
+def test_run_job_sync_sets_done_event_even_on_error(tmp_path) -> None:
+    def task() -> None:
+        _ = PipelineContext(spec=_build_stub_spec(), workdir=tmp_path)
+        raise RuntimeError("fail-done")
+
+    with pytest.raises(RuntimeError, match="fail-done"):
+        run_job_sync(stage="prepare", func=task)
+
+    queue = get_queue()
+    job_states = [state for state in queue._jobs.values()]  # type: ignore[attr-defined]
+    assert any(state.done.is_set() for state in job_states)
+    assert any(state.status == JobStatus.FAILED for state in job_states)
+
+
+def test_run_job_sync_handles_multiple_jobs(tmp_path) -> None:
+    def task(payload: str) -> str:
+        _ = PipelineContext(spec=_build_stub_spec(), workdir=tmp_path)
+        return payload
+
+    queue = get_queue()
+    res1 = run_job_sync(stage="gen", func=lambda: task("a"))
+    res2 = run_job_sync(stage="prepare", func=lambda: task("b"))
+
+    assert res1 == "a"
+    assert res2 == "b"
+    job_states = [state for state in queue._jobs.values()]  # type: ignore[attr-defined]
+    assert all(state.status == JobStatus.SUCCEEDED for state in job_states)
+    assert all(state.done.is_set() for state in job_states)

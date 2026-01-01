@@ -176,3 +176,30 @@ def test_pptx_edit_cli_fails_with_legacy_option(tmp_path) -> None:
 
     assert result.exit_code != 0
     assert "No such option" in result.output or "no such option" in result.output
+
+
+def test_pptx_edit_cli_llm_failure(tmp_path, monkeypatch) -> None:
+    from click.testing import CliRunner
+    from pptx_generator.cli_commands import edit as edit_module
+    from pptx_generator.cli_commands.edit import create_edit_command
+
+    pptx_path = tmp_path / "input_cli_fail.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    textbox.text = "keep"
+    presentation.save(pptx_path)
+
+    class DummyClient:
+        def rewrite(self, request):
+            raise RuntimeError("llm fail")
+
+    monkeypatch.setattr(edit_module, "create_edit_ai_client", lambda: DummyClient())
+
+    runner = CliRunner()
+    cmd = create_edit_command()
+    output_path = pptx_path.with_name(f"{pptx_path.stem}_edited{pptx_path.suffix}")
+    result = runner.invoke(cmd, [str(pptx_path)])
+
+    assert result.exit_code != 0
+    assert not output_path.exists()
