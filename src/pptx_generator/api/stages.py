@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
+from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
+from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
+from pptx_generator.edit_ai.client import EditAIResponseFormatError
 
 DRAFT_DIRNAME = "draft.json"
 
@@ -15,11 +19,19 @@ __all__ = [
     "build_prepare_job",
     "build_compose_job",
     "build_gen_job",
+    "build_edit_job",
     "TemplateCommandError",
     "PrepareCommandError",
     "ComposeCommandError",
     "GenerateCommandError",
+    "EditCommandError",
 ]
+
+
+class EditCommandError(RuntimeError):
+    def __init__(self, message: str, exit_code: int = 1):
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 def build_template_job(payload: dict, workdir: Path):
@@ -166,3 +178,67 @@ def build_gen_job(payload: dict, workdir: Path, compose_artifacts: dict, templat
         return {"artifacts": artifacts, "result": result}
 
     return run
+
+
+def build_edit_job(payload: dict, workdir: Path):
+    pptx_path = Path(payload["pptx_path"]).expanduser()
+    if not pptx_path.exists():
+        raise EditCommandError(f"pptx_path not found: {pptx_path}")
+
+    edits_json = payload.get("edits_json")
+    edits_inline = payload.get("edits")
+    output_path = Path(payload.get("output") or (workdir / pptx_path.name)).expanduser()
+
+    def run():
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        # LLM不要ケース（edits_json or edits inline）
+        if edits_json:
+            json_path = Path(edits_json).expanduser()
+            if not json_path.exists():
+                raise EditCommandError(f"edits_json not found: {json_path}")
+            edits = _load_edits(json_path)
+            applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
+            return {"artifacts": {"pptx_url": str(output_path)}, "applied": applied, "missing": missing, "models": []}
+        if edits_inline:
+            if not isinstance(edits_inline, list):
+                raise EditCommandError("edits must be a list when provided inline")
+            applied, missing = apply_shape_text_edits(pptx_path, edits_inline, output_path=output_path)
+            return {"artifacts": {"pptx_url": str(output_path)}, "applied": applied, "missing": missing, "models": []}
+
+        shapes = snapshot_shapes_for_edit(pptx_path)
+        client = create_edit_ai_client()
+        all_edits: list[dict[str, object]] = []
+        models: set[str] = set()
+
+        slides: dict[int, list[dict[str, object]]] = {}
+        for shape in shapes:
+            slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
+
+        for slide_idx, contexts in slides.items():
+            prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
+            request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
+            response = client.rewrite(request)
+            models.add(response.model)
+            for edit in response.edits:
+                if isinstance(edit, dict):
+                    edit["slide_index"] = slide_idx
+                all_edits.append(edit)
+
+        applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=output_path)
+        return {
+            "artifacts": {"pptx_url": str(output_path)},
+            "applied": applied,
+            "missing": missing,
+            "models": sorted(models),
+        }
+
+    return run
+
+
+def _load_edits(edits_path: Path):
+    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    if isinstance(payload, dict) and "edits" in payload:
+        return payload.get("edits", [])
+    if isinstance(payload, list):
+        return payload
+    raise EditCommandError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")

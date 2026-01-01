@@ -297,7 +297,7 @@ components:
           enum: [pending, running, succeeded, failed, canceled]
         stage:
           type: string
-          enum: [template, prepare, compose, gen]
+          enum: [template, prepare, compose, gen, edit]
         status_url:
           type: string
           format: uri

@@ -771,3 +771,23 @@ def test_output_root_default(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError) as exc:
         create_app()
     assert "PPTX_OUTPUT_ROOT" in str(exc.value)
+
+
+def test_edit_job_submission(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+
+    resp = c.post(
+        "/edit",
+        headers={"Authorization": "Bearer token-123"},
+        json={"pptx_path": "samples/templates/edit_sample.pptx"},
+    )
+
+    assert resp.status_code == 202
+    job = resp.get_json()
+    assert job["stage"] == "edit"
+    status_resp = c.get(job["status_url"], headers={"Authorization": "Bearer token-123"})
+    assert status_resp.status_code == 200
