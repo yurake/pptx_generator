@@ -1,7 +1,7 @@
 ---
 目的: RM-095 PPTX edit コマンドの PPTX 引数を必須の位置引数へ変更する
 関連ブランチ: feat/rm095-stage5-edit
-関連Issue: #513
+関連Issue: <#123 の形式で記載 / 未作成の場合は作成次第更新>
 roadmap_item: RM-095 Stage5 PPTX 編集反映
 ---
 
