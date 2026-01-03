@@ -9,9 +9,11 @@ from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCom
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
 from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
-from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
+from pptx_generator.edit_ai import EditAIRequest, create_edit_ai_client
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.edit_ai.client import EditAIResponseFormatError
+from pptx_generator.pipeline import edit_runner
+from pptx_generator.pipeline.edit_runner import apply_and_save_edits, generate_edits_via_llm, resolve_explicit_edits, load_edits, EditRunError
 
 DRAFT_DIRNAME = "draft.json"
 
@@ -205,27 +207,21 @@ def build_edit_job(payload: dict, workdir: Path):
 
 
 def _load_edits(edits_path: Path):
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
-    if isinstance(payload, dict) and "edits" in payload:
-        return payload.get("edits", [])
-    if isinstance(payload, list):
-        return payload
-    raise EditCommandError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
+    try:
+        return load_edits(edits_path, error_cls=EditCommandError)
+    except EditRunError as exc:
+        raise EditCommandError(str(exc)) from exc
 
 
 def _resolve_explicit_edits(config: dict) -> list[dict] | None:
-    edits_json = config.get("edits_json")
-    edits_inline = config.get("edits_inline")
-    if edits_json:
-        json_path = Path(edits_json).expanduser()
-        if not json_path.exists():
-            raise EditCommandError(f"edits_json not found: {json_path}")
-        return _load_edits(json_path)
-    if edits_inline is not None:
-        if not isinstance(edits_inline, list):
-            raise EditCommandError("edits must be a list when provided inline")
-        return edits_inline
-    return None
+    try:
+        return resolve_explicit_edits(
+            config.get("edits_json"),
+            config.get("edits_inline"),
+            error_cls=EditCommandError,
+        )
+    except EditRunError as exc:
+        raise EditCommandError(str(exc)) from exc
 
 
 def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
@@ -270,8 +266,9 @@ def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
 def _apply_and_save_edits(
     pptx_path: Path, edits: list[dict], *, output_path: Path, models: Iterable[str] | set[str] | list[str]
 ):
+    # _save_applied_edits をパッチしやすくするためラッパーを経由
     applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
-    normalized_edits = _normalize_edits_for_save(edits)
+    normalized_edits = edit_runner._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
     edits_path = _save_applied_edits(output_path, normalized_edits)
     return {
         "artifacts": {"pptx_url": str(output_path)},
@@ -283,23 +280,12 @@ def _apply_and_save_edits(
 
 
 def _generate_edits_via_llm(pptx_path: Path) -> tuple[list[dict], set[str]]:
-    shapes = snapshot_shapes_for_edit(pptx_path)
-    client = create_edit_ai_client()
-    all_edits: list[dict[str, object]] = []
-    models: set[str] = set()
+    return generate_edits_via_llm(
+        pptx_path,
+        snapshot_fn=snapshot_shapes_for_edit,
+        client_factory=create_edit_ai_client,
+    )
 
-    slides: dict[int, list[dict[str, object]]] = {}
-    for shape in shapes:
-        slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
 
-    for slide_idx, contexts in slides.items():
-        prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
-        request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
-        response = client.rewrite(request)
-        models.add(response.model)
-        for edit in response.edits:
-            if isinstance(edit, dict):
-                edit["slide_index"] = slide_idx
-            all_edits.append(edit)
-
-    return all_edits, models
+def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
+    return edit_runner._save_applied_edits(output_path, applied)  # type: ignore[attr-defined]

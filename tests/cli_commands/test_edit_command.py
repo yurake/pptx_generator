@@ -3,6 +3,7 @@ from pathlib import Path
 import click.testing
 
 from pptx_generator.cli_commands import edit as edit_cmd
+from pptx_generator.pipeline import edit_runner
 
 
 def _dummy_apply(pptx_path, edits, output_path):
@@ -15,9 +16,10 @@ def test_edit_command_explicit_edits(tmp_path, monkeypatch):
     edits_file = tmp_path / "edits.json"
     edits_file.write_text('[{"shape_id": 1, "contents": "x"}]', encoding="utf-8")
 
-    monkeypatch.setattr(edit_cmd, "apply_shape_text_edits", _dummy_apply)
+    monkeypatch.setattr(edit_runner, "apply_shape_text_edits", _dummy_apply)
     monkeypatch.setattr(edit_cmd, "snapshot_shapes_for_edit", lambda pptx: [])
     monkeypatch.setattr(edit_cmd, "create_edit_ai_client", lambda: None)
+    monkeypatch.setattr(edit_cmd, "generate_edits_via_llm", lambda *args, **kwargs: ([], set()))
 
     runner = click.testing.CliRunner()
     cmd = edit_cmd.create_edit_command(default_output_dir=tmp_path)

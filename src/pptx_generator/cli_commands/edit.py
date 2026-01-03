@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Iterable
 
@@ -10,24 +9,12 @@ from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_s
 from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
 from pptx_generator.runtime.job_queue import run_job_sync
 from pptx_generator.settings.paths import build_output_dir
-
-
-def _load_edits(edits_path: Path) -> Iterable[dict]:
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
-    if isinstance(payload, dict) and "edits" in payload:
-        return payload.get("edits", [])
-    if isinstance(payload, list):
-        return payload
-    raise ValueError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
-
-
-def _load_explicit_edits(edits_json: Path | None) -> list[dict] | None:
-    if edits_json is None:
-        return None
-    edits = _load_edits(edits_json)
-    if not isinstance(edits, list):
-        raise ValueError("edits JSON は配列または {\"edits\": [...]} 形式である必要があります。")
-    return edits
+from pptx_generator.pipeline.edit_runner import (
+    resolve_explicit_edits,
+    generate_edits_via_llm,
+    apply_and_save_edits,
+    EditRunError,
+)
 
 
 def _resolve_output_path(default_output_dir: Path | None, output_path: Path | None, pptx_path: Path) -> Path:
@@ -38,11 +25,11 @@ def _resolve_output_path(default_output_dir: Path | None, output_path: Path | No
 
 
 def _apply_edits(pptx_path: Path, edits: list[dict], resolved_output: Path) -> dict[str, object]:
-    applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=resolved_output)
+    result = apply_and_save_edits(pptx_path, edits, output_path=resolved_output, models=[])
     return {
-        "applied": applied,
-        "missing": missing,
-        "models": [],
+        "applied": result["applied"],
+        "missing": result["missing"],
+        "models": result.get("models", []),
         "output": resolved_output,
     }
 
@@ -56,29 +43,15 @@ def create_edit_command(default_output_dir: Path | None = None):
         def _run_edit() -> dict[str, object]:
             resolved_output = _resolve_output_path(default_output_dir, output_path, pptx_path)
 
-            explicit_edits = _load_explicit_edits(edits_json)
+            explicit_edits = resolve_explicit_edits(edits_json, None, error_cls=ValueError)
             if explicit_edits is not None:
                 return _apply_edits(pptx_path, explicit_edits, resolved_output)
 
-            shapes = snapshot_shapes_for_edit(pptx_path)
-            client = create_edit_ai_client()
-            all_edits: list[dict[str, object]] = []
-            models: set[str] = set()
-
-            slides: dict[int, list[dict[str, object]]] = {}
-            for shape in shapes:
-                slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
-
-            for slide_idx, contexts in slides.items():
-                prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
-                request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
-                response = client.rewrite(request)
-                models.add(response.model)
-                for edit in response.edits:
-                    if isinstance(edit, dict):
-                        edit["slide_index"] = slide_idx
-                    all_edits.append(edit)
-
+            all_edits, models = generate_edits_via_llm(
+                pptx_path,
+                snapshot_fn=snapshot_shapes_for_edit,
+                client_factory=create_edit_ai_client,
+            )
             applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=resolved_output)
             return {
                 "applied": applied,

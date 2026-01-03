@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from pptx_generator.api import stages
+from pptx_generator.pipeline import edit_runner
 
 
 def test_apply_and_save_edits_writes_json(tmp_path, monkeypatch):
@@ -11,9 +11,9 @@ def test_apply_and_save_edits_writes_json(tmp_path, monkeypatch):
         calls["args"] = (pptx_path, tuple(edits), output_path)
         return ["applied"], []
 
-    monkeypatch.setattr(stages, "apply_shape_text_edits", fake_apply)
+    monkeypatch.setattr(edit_runner, "apply_shape_text_edits", fake_apply)
 
-    output = stages._apply_and_save_edits(  # type: ignore[attr-defined]
+    output = edit_runner.apply_and_save_edits(
         tmp_path / "input.pptx",
         [{"shape_id": 1, "contents": "hello"}],
         output_path=tmp_path / "out.pptx",
@@ -36,7 +36,7 @@ def test_normalize_edits_for_save_filters_invalid():
         {"shape_id": None, "contents": "ng"},
         {"shape_id": "x", "contents": "ng"},
     ]
-    normalized = stages._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
+    normalized = edit_runner._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
     assert normalized == [
         {"shape_id": 1, "slide_index": None, "name": None, "contents": "ok"},
     ]
