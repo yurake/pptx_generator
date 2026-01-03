@@ -12,7 +12,7 @@
 - パイプラインは「テンプレ → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
-- Stage5（編集反映, WIP）向けに `pptx edit` を用意。Stage4 生成済み PPTX と差分 JSON（`shape_id`, `edit`, `contents`）を入力し、書式を保持したままテキスト差し替えを行う。
+- Stage5（編集反映）向けに `pptx edit` を用意。Stage4 生成済み PPTX と差分 JSON（`shape_id`, `edit`, `contents`）を入力し、書式を保持したままテキスト差し替えを行う。位置引数で PPTX を指定し、`--edits-json`（または `--edits` 直接指定）が無い場合は LLM で差分を生成して適用する。
 - 出力ルートは `PPTX_OUTPUT_ROOT` で切り替えられる（未指定は `.pptx/<stage>`）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を前提とする。
 - 入力ルートは Web/API 専用で `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` を利用する（未指定は `.pptx/input`）。CLI 既定の入力パスは従来どおりで変更しない。
 - CLI は内部的にメモリキュー＋ワーカーを用いるが、実行完了まで待機する同期挙動を維持する。API/Web は同一プロセス内の複数ワーカーで非同期実行を前提とし、ジョブ状態の永続化は行わない（必要ならクライアント側で保持）。
@@ -198,6 +198,20 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
 ### stage 4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
+
+### stage 5: 編集反映
+生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、以下のいずれかで差分を与える:
+- `--edits-json <path>`: 差分 JSON（`edits` 配列か配列単体）。LLM 呼び出しは行わない。
+- `--edits '[...]'`: 直接差分を指定。LLM 呼び出しは行わない。
+- 何も指定しない場合: スライド単位で LLM に shape 情報を渡し、差分を自動生成して適用。
+
+出力:
+- PPTX（書式保持で差し替え済み）
+- `applied_edits.json`（適用した差分の実体。`edits` 配列を保存）
+
+出力先既定:
+- CLI: `.pptx/edit/<pptxファイル名>`（PPTX と JSON を同階層に出力）
+- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX と `applied_edits.json`
 
 #### `pptx gen`
 - `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
