@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import time
+from pathlib import Path
 
 import pytest
 import logging
@@ -791,6 +792,46 @@ def test_edit_job_submission(monkeypatch, tmp_path):
     assert job["stage"] == "edit"
     status_resp = c.get(job["status_url"], headers={"Authorization": "Bearer token-123"})
     assert status_resp.status_code == 200
+
+
+def test_edit_outputs_applied_edits_json(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={
+            "pptx_path": "samples/templates/edit_sample.pptx",
+            "edits": [{"shape_id": 1, "contents": "Updated by test"}],
+        },
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    artifacts = status_body["artifacts"]
+    assert "edits_json_url" in artifacts
+    edits_path = Path(artifacts["edits_json_url"])
+    if not edits_path.is_absolute():
+        edits_path = tmp_path / edits_path
+    assert edits_path.exists()
+    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    assert isinstance(payload.get("edits"), list)
+    # applied_edits が空でも JSON が生成されていることを確認
+    assert payload["edits"] is not None
 
 
 def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):

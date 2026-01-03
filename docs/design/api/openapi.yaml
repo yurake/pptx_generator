@@ -391,6 +391,10 @@ components:
           type: string
           format: uri
           description: "PDF を生成した場合のみ。パスの扱いは pptx_url と同じ。"
+        edits_json_url:
+          type: string
+          format: uri
+          description: "edit 完了時に返却。適用済み差分 JSON（例: applied_edits.json）。"
     TemplateRequest:
       type: object
       required:

@@ -197,13 +197,27 @@ def build_edit_job(payload: dict, workdir: Path):
             if not json_path.exists():
                 raise EditCommandError(f"edits_json not found: {json_path}")
             edits = _load_edits(json_path)
+            normalized_edits = _normalize_edits_for_save(edits)
             applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
-            return {"artifacts": {"pptx_url": str(output_path)}, "applied": applied, "missing": missing, "models": []}
+            edits_path = _save_applied_edits(output_path, normalized_edits)
+            return {
+                "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
+                "applied": applied,
+                "missing": missing,
+                "models": [],
+            }
         if edits_inline:
             if not isinstance(edits_inline, list):
                 raise EditCommandError("edits must be a list when provided inline")
             applied, missing = apply_shape_text_edits(pptx_path, edits_inline, output_path=output_path)
-            return {"artifacts": {"pptx_url": str(output_path)}, "applied": applied, "missing": missing, "models": []}
+            normalized_edits = _normalize_edits_for_save(edits_inline)
+            edits_path = _save_applied_edits(output_path, normalized_edits)
+            return {
+                "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
+                "applied": applied,
+                "missing": missing,
+                "models": [],
+            }
 
         shapes = snapshot_shapes_for_edit(pptx_path)
         client = create_edit_ai_client()
@@ -225,8 +239,10 @@ def build_edit_job(payload: dict, workdir: Path):
                 all_edits.append(edit)
 
         applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=output_path)
+        normalized_edits = _normalize_edits_for_save(all_edits)
+        edits_path = _save_applied_edits(output_path, normalized_edits)
         return {
-            "artifacts": {"pptx_url": str(output_path)},
+            "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
             "applied": applied,
             "missing": missing,
             "models": sorted(models),
@@ -242,3 +258,42 @@ def _load_edits(edits_path: Path):
     if isinstance(payload, list):
         return payload
     raise EditCommandError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
+
+
+def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
+    edits_path = output_path.parent / "applied_edits.json"
+    edits_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"edits": applied}
+    edits_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return edits_path
+
+
+def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
+    normalized: list[dict] = []
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        if not edit.get("edit", True):
+            continue
+        shape_id = edit.get("shape_id")
+        contents = edit.get("contents")
+        if shape_id is None or contents is None:
+            continue
+        try:
+            shape_id_int = int(shape_id)
+        except (TypeError, ValueError):
+            continue
+        try:
+            slide_idx = int(edit.get("slide_index")) if edit.get("slide_index") is not None else None
+        except (TypeError, ValueError):
+            slide_idx = None
+        name_val = edit.get("name")
+        normalized.append(
+            {
+                "shape_id": shape_id_int,
+                "slide_index": slide_idx,
+                "name": str(name_val) if name_val is not None else None,
+                "contents": str(contents),
+            }
+        )
+    return normalized

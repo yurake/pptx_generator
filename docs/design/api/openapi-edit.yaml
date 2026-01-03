@@ -257,6 +257,10 @@ components:
           type: string
           format: uri
           description: /jobs/{job_id}/artifacts/pdf に相当する URL（PDF を生成した場合のみ）。
+        edits_json_url:
+          type: string
+          format: uri
+          description: 適用済み差分 JSON（例: applied_edits.json）への URL。
     ErrorResponse:
       type: object
       properties:
