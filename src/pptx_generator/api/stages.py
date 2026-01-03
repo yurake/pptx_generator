@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+from typing import Iterable
 
 from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
@@ -192,34 +193,19 @@ def build_edit_job(payload: dict, workdir: Path):
     def run():
         output_path.parent.mkdir(parents=True, exist_ok=True)
         # LLM不要ケース（edits_json or edits inline）
+        explicit_edits: list[dict] | None = None
         if edits_json:
             json_path = Path(edits_json).expanduser()
             if not json_path.exists():
                 raise EditCommandError(f"edits_json not found: {json_path}")
-            edits = _load_edits(json_path)
-            normalized_edits = _normalize_edits_for_save(edits)
-            applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
-            edits_path = _save_applied_edits(output_path, normalized_edits)
-            return {
-                "artifacts": {"pptx_url": str(output_path)},
-                "applied": applied,
-                "missing": missing,
-                "models": [],
-                "edits_path": str(edits_path),
-            }
-        if edits_inline:
+            explicit_edits = _load_edits(json_path)
+        elif edits_inline is not None:
             if not isinstance(edits_inline, list):
                 raise EditCommandError("edits must be a list when provided inline")
-            applied, missing = apply_shape_text_edits(pptx_path, edits_inline, output_path=output_path)
-            normalized_edits = _normalize_edits_for_save(edits_inline)
-            edits_path = _save_applied_edits(output_path, normalized_edits)
-            return {
-                "artifacts": {"pptx_url": str(output_path)},
-                "applied": applied,
-                "missing": missing,
-                "models": [],
-                "edits_path": str(edits_path),
-            }
+            explicit_edits = edits_inline
+
+        if explicit_edits is not None:
+            return _apply_and_save_edits(pptx_path, explicit_edits, output_path=output_path, models=[])
 
         shapes = snapshot_shapes_for_edit(pptx_path)
         client = create_edit_ai_client()
@@ -240,16 +226,7 @@ def build_edit_job(payload: dict, workdir: Path):
                     edit["slide_index"] = slide_idx
                 all_edits.append(edit)
 
-        applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=output_path)
-        normalized_edits = _normalize_edits_for_save(all_edits)
-        edits_path = _save_applied_edits(output_path, normalized_edits)
-        return {
-            "artifacts": {"pptx_url": str(output_path)},
-            "applied": applied,
-            "missing": missing,
-            "models": sorted(models),
-            "edits_path": str(edits_path),
-        }
+        return _apply_and_save_edits(pptx_path, all_edits, output_path=output_path, models=models)
 
     return run
 
@@ -300,3 +277,18 @@ def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
             }
         )
     return normalized
+
+
+def _apply_and_save_edits(
+    pptx_path: Path, edits: list[dict], *, output_path: Path, models: Iterable[str] | set[str] | list[str]
+):
+    applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
+    normalized_edits = _normalize_edits_for_save(edits)
+    edits_path = _save_applied_edits(output_path, normalized_edits)
+    return {
+        "artifacts": {"pptx_url": str(output_path)},
+        "applied": applied,
+        "missing": missing,
+        "models": sorted(models),
+        "edits_path": str(edits_path),
+    }

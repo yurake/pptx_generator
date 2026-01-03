@@ -23,6 +23,14 @@ DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_AZURE_API_VERSION = "2024-02-15-preview"
 DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-20240620"
 DEFAULT_AWS_CLAUDE_MODEL = "anthropic.claude-3-sonnet-20240229-v1:0"
+EDIT_SYSTEM_PROMPT = """あなたはプレゼン編集アシスタントです。以下の指示に従って JSON を返してください。
+- 入力: shape_id と元テキストのリスト、およびスライド情報
+- 各要素について、編集指示が含まれているかを判定し、必要なら書き換えた contents を返す
+- 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
+- 余計なキーやテキストは出力しないこと
+- 箇条書きは元の構造をできるだけ保つ（改行・リスト記号を維持）
+- 固有名詞は改変しない
+"""
 
 
 @dataclass(slots=True)
@@ -232,33 +240,15 @@ class AwsClaudeEditClient(AnthropicEditClient):
 
 
 def _build_messages(request: EditAIRequest):
-    system = """あなたはプレゼン編集アシスタントです。以下の指示に従って JSON を返してください。
-- 入力: shape_id と元テキストのリスト、およびスライド情報
-- 各要素について、編集指示が含まれているかを判定し、必要なら書き換えた contents を返す
-- 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
-- 余計なキーやテキストは出力しないこと
-- 箇条書きは元の構造をできるだけ保つ（改行・リスト記号を維持）
-- 固有名詞は改変しない
-"""
-    user = request.prompt
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
+    return [
+        {"role": "system", "content": EDIT_SYSTEM_PROMPT},
+        {"role": "user", "content": request.prompt},
     ]
-    return messages
 
 
 def _build_claude_messages(request: EditAIRequest):
-    system = """あなたはプレゼン編集アシスタントです。以下の指示に従って JSON を返してください。
-- 入力: shape_id と元テキストのリスト、およびスライド情報
-- 各要素について、編集指示が含まれているかを判定し、必要なら書き換えた contents を返す
-- 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
-- 余計なキーやテキストは出力しないこと
-- 箇条書きは元の構造をできるだけ保つ（改行・リスト記号を維持）
-- 固有名詞は改変しない
-"""
     return [
-        {"role": "system", "content": system},
+        {"role": "system", "content": EDIT_SYSTEM_PROMPT},
         {"role": "user", "content": request.prompt},
     ]
 

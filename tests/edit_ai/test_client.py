@@ -39,3 +39,25 @@ def test_create_edit_ai_client_aws_claude(monkeypatch):
 
     client = edit_ai_client.create_edit_ai_client()
     assert isinstance(client, edit_ai_client.AwsClaudeEditClient)
+
+
+def test_parse_edits_accepts_edits_wrapper():
+    raw = '{"edits": [{"shape_id": 1, "contents": "x", "edit": false}, {"shape_id": 2, "contents": "y"}]}'
+    parsed = edit_ai_client._parse_edits(raw)
+    assert parsed == [
+        {"shape_id": 1, "edit": False, "contents": "x"},
+        {"shape_id": 2, "edit": True, "contents": "y"},
+    ]
+
+
+def test_parse_edits_invalid_json_raises():
+    with pytest.raises(edit_ai_client.EditAIResponseFormatError):
+        edit_ai_client._parse_edits("not-json")
+
+
+def test_create_edit_ai_client_unknown_provider(monkeypatch):
+    monkeypatch.setattr(
+        edit_ai_client, "resolve_llm_provider", lambda: edit_ai_client.ProviderResolution("unknown", "test", None)
+    )
+    with pytest.raises(edit_ai_client.EditAIClientConfigurationError):
+        edit_ai_client.create_edit_ai_client()
