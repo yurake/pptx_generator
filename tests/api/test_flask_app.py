@@ -899,6 +899,40 @@ def test_edit_artifacts_absolute_path(monkeypatch, tmp_path):
     assert resp.status_code == 200
 
 
+def test_edit_artifact_missing_returns_404(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={"pptx_path": "samples/templates/edit_sample.pptx", "edits": [{"shape_id": 1, "contents": "Updated"}]},
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    artifacts = status_body["artifacts"]
+    tx_id = job["transaction_id"]
+    job_id = job["job_id"]
+    edits_path = tmp_path / tx_id / "edit" / job_id / "applied_edits.json"
+    if edits_path.exists():
+        edits_path.unlink()
+    missing_resp = c.get(artifacts["edits_json_url"], headers=headers)
+    assert missing_resp.status_code == 404
+
+
 def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
     monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
