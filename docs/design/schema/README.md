@@ -9,6 +9,7 @@ stage 別の利用シーンに応じてファイルを分割し、仕様変更�
 - `stage-02-prepare.md`: `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json`。
 - `stage-03-compose.md`: `generate_ready.json` / `generate_ready_meta.json` / `draft_mapping_log.json` / `draft_review_log.json` など stage 3 の成果物。
 - `stage-04-gen.md`: `rendering_log.json`, `audit_log.json`, `monitoring_report.json`。
+- `stage-05-edit.md`: `edit` リクエスト／差分スキーマと適用済み差分ログ（applied_edits）。
 - `samples/`: 代表的な JSON サンプル（`.jsonc`）。
 
 ## 運用ルール
