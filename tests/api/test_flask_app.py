@@ -830,8 +830,75 @@ def test_edit_outputs_applied_edits_json(monkeypatch, tmp_path):
     assert edits_path.exists()
     payload = json.loads(edits_path.read_text(encoding="utf-8"))
     assert isinstance(payload.get("edits"), list)
-    # applied_edits が空でも JSON が生成されていることを確認
-    assert payload["edits"] is not None
+    assert len(payload["edits"]) == 1
+
+
+def test_edit_outputs_applied_edits_json_empty_edits(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={"pptx_path": "samples/templates/edit_sample.pptx", "edits": []},
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    artifacts = status_body["artifacts"]
+    edits_path = Path(artifacts["edits_json_url"])
+    if not edits_path.is_absolute():
+        edits_path = tmp_path / edits_path
+    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    assert isinstance(payload.get("edits"), list)
+    assert payload["edits"] == []
+
+
+def test_edit_artifacts_absolute_path(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={
+            "pptx_path": "samples/templates/edit_sample.pptx",
+            "edits": [{"shape_id": 1, "contents": "Updated by test"}],
+        },
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    artifacts = status_body["artifacts"]
+    edits_path = Path(artifacts["edits_json_url"])
+    assert edits_path.is_absolute()
+    assert edits_path.exists()
 
 
 def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):
@@ -890,3 +957,91 @@ def test_edit_llm_failure_returns_failed(monkeypatch, tmp_path):
     assert status_body["status"] in ("failed", "succeeded")
     if status_body["status"] == "failed":
         assert status_body["error"] is not None
+
+
+def test_edit_save_failure_marks_job_failed(monkeypatch, tmp_path):
+    from pptx_generator.api import stages as stages_module
+
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+
+    def _raise(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(stages_module, "_save_applied_edits", _raise)
+
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={
+            "pptx_path": "samples/templates/edit_sample.pptx",
+            "edits": [{"shape_id": 1, "contents": "Updated by test"}],
+        },
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "failed"
+    assert status_body["error"] is not None
+    assert status_body["artifacts"] == {}
+
+
+def test_edit_llm_returns_empty_edits(monkeypatch, tmp_path):
+    from pptx_generator.api import stages as stages_module
+
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+
+    class DummyClient:
+        def __init__(self):
+            self.model = "mock-empty"
+
+        def rewrite(self, request):
+            class Resp:
+                edits = []
+                model = "mock-empty"
+            return Resp()
+
+    monkeypatch.setattr(stages_module, "create_edit_ai_client", lambda: DummyClient())
+
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    resp = c.post(
+        "/edit",
+        headers=headers,
+        json={"pptx_path": "samples/templates/edit_sample.pptx"},
+    )
+    assert resp.status_code == 202
+    job = resp.get_json()
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    artifacts = status_body["artifacts"]
+    edits_path = Path(artifacts["edits_json_url"])
+    if not edits_path.is_absolute():
+        edits_path = tmp_path / edits_path
+    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    assert payload.get("edits") == []

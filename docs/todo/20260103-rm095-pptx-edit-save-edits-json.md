@@ -6,7 +6,7 @@ roadmap_item: RM-095 pptx edit
 ---
 
 - [ ] ブランチ作成・初期コミット・push
-  - メモ: feat/rm095-stage5-edit を流用。初期コミット済み。
+  - メモ: feat/rm095-stage5-edit を流用済み。
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 承認済みPlan:
     - 対象整理（スコープ、対象ファイル、前提）: Stage5 edit に適用した差分を JSON として保存し、成果物に含める。現行の PPTX 出力に加えて JSON 出力を追加する。
@@ -21,15 +21,15 @@ roadmap_item: RM-095 pptx edit
   - メモ: 出力先案 `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/applied_edits.json`。/jobs artifacts に JSON URL を含める方向。OpenAPI も最小反映する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 適用済み edits を保存する処理と artifacts への URL 追加を行う。必要なら CLI/async 実行パスも確認。
-- [ ] テスト・検証
-  - メモ: /edit ジョブ完了後に JSON 出力が存在し内容が適用済み edits と一致すること、/jobs artifacts に URL が載ることを確認。既存テストへの影響なしを確認。
+- [x] 実装
+  - メモ: applied_edits.json を出力し artifacts に `edits_json_url` を追加。LLM/edits_json/edits 各経路で保存。CLI/async も共通パスで出力。
+- [x] テスト・検証
+  - メモ: `uv run --extra dev pytest -q` 実行。追加テストで JSON 出力と artifacts 反映を確認。カバレッジ 0.8607。
 - [ ] ドキュメント更新
-  - メモ: 変更点を設計/API docs に反映予定。必要な箇所のみ更新。
+  - メモ: OpenAPI（全体・edit専用）に edits_json_url を追記。その他は影響なしのため未更新。
   - [ ] docs/roadmap 配下
   - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
 - [x] 関連Issue 行の更新
@@ -43,5 +43,5 @@ roadmap_item: RM-095 pptx edit
 - 前提/制約: PPTX 出力は従来通り。JSON は追加成果物として扱う。
 - 決定と理由: applied_edits.json を出力し artifacts で配信する方向。
 - リスク(UNCONFIRMED): JSON出力が不要なケースの扱い、成果物URL命名の整合。
-- Now/Next: Now=ToDo作成。Next=設計詳細を詰めて実装。
-- テスト実績/抜け: 未着手。
+- Now/Next: Now=実装完了。Next=未更新ドキュメントの要否確認とPR作成。
+- テスト実績/抜け: `uv run --extra dev pytest -q` 実行。警告は既存 (KeyboardInterrupt テスト) のみ。
