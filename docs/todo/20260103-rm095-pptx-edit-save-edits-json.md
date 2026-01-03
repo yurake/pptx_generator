@@ -32,7 +32,7 @@ roadmap_item: RM-095 pptx edit
   - [ ] docs/design 配下（実装結果との整合再確認）
   - [ ] docs/runbook 配下
   - [ ] README.md / AGENTS.md
-- [ ] 関連Issue 行の更新
+- [x] 関連Issue 行の更新
   - メモ: Issue 未作成のため未記入。発行後に更新。
 - [ ] チェックリスト整合確認
   - メモ: 親子チェック漏れがないか後続で確認。
