@@ -28,6 +28,40 @@ from .slide_elements import convert_slide_elements, merge_slide_elements
 logger = logging.getLogger(__name__)
 
 
+def _build_auto_draw_payload(spec_slide: Slide) -> list[dict[str, float | str]]:
+    return [
+        {
+            "anchor": anchor,
+            "left_in": box.left_in,
+            "top_in": box.top_in,
+            "width_in": box.width_in,
+            "height_in": box.height_in,
+        }
+        for anchor, box in spec_slide.auto_draw_boxes.items()
+    ]
+
+
+def _build_generate_ready_meta(
+    *,
+    draft: DraftDocument,
+    spec: JobSpec,
+    template_path: Path | None,
+    content_hash: str | None,
+) -> GenerateReadyMeta:
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    meta = GenerateReadyMeta(
+        template_version=draft.meta.template_id,
+        template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
+        content_hash=content_hash,
+        generated_at=timestamp,
+        job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
+        job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
+    )
+    if meta.template_path is None and getattr(spec.meta, "template_path", None):
+        meta.template_path = getattr(spec.meta, "template_path", None)
+    return meta
+
+
 def build_generate_ready_document(
     *,
     step: "DraftStructuringStep",
@@ -87,16 +121,7 @@ def build_generate_ready_document(
         sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
         auto_draw_payload = []
         if spec_slide is not None:
-            auto_draw_payload = [
-                {
-                    "anchor": anchor,
-                    "left_in": box.left_in,
-                    "top_in": box.top_in,
-                    "width_in": box.width_in,
-                    "height_in": box.height_in,
-                }
-                for anchor, box in spec_slide.auto_draw_boxes.items()
-            ]
+            auto_draw_payload = _build_auto_draw_payload(spec_slide)
         slides.append(
             GenerateReadySlide(
                 layout_id=layout_id,
@@ -112,17 +137,12 @@ def build_generate_ready_document(
             )
         )
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = GenerateReadyMeta(
-        template_version=draft.meta.template_id,
-        template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
+    meta = _build_generate_ready_meta(
+        draft=draft,
+        spec=spec,
+        template_path=template_path,
         content_hash=content_hash,
-        generated_at=timestamp,
-        job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
-        job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
     )
-    if meta.template_path is None and getattr(spec.meta, "template_path", None):
-        meta.template_path = getattr(spec.meta, "template_path", None)
     return GenerateReadyDocument(slides=slides, meta=meta)
 
 
@@ -243,16 +263,7 @@ def _build_empty_generate_ready(
     slides: List[GenerateReadySlide] = []
     for index, spec_slide in enumerate(spec.slides, start=1):
         layout_name = layout_name_lookup.get(spec_slide.layout, spec_slide.layout)
-        auto_draw_payload = [
-            {
-                "anchor": anchor,
-                "left_in": box.left_in,
-                "top_in": box.top_in,
-                "width_in": box.width_in,
-                "height_in": box.height_in,
-            }
-            for anchor, box in spec_slide.auto_draw_boxes.items()
-        ]
+        auto_draw_payload = _build_auto_draw_payload(spec_slide)
         slides.append(
             GenerateReadySlide(
                 layout_id=spec_slide.layout,
@@ -268,17 +279,12 @@ def _build_empty_generate_ready(
             )
         )
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = GenerateReadyMeta(
-        template_version=draft.meta.template_id,
-        template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
+    meta = _build_generate_ready_meta(
+        draft=draft,
+        spec=spec,
+        template_path=template_path,
         content_hash=content_hash,
-        generated_at=timestamp,
-        job_meta=spec.meta if isinstance(spec.meta, JobMeta) else JobMeta.model_validate(spec.meta.model_dump()),
-        job_auth=spec.auth if isinstance(spec.auth, JobAuth) else JobAuth.model_validate(spec.auth.model_dump()),
     )
-    if meta.template_path is None and getattr(spec.meta, "template_path", None):
-        meta.template_path = getattr(spec.meta, "template_path", None)
     return GenerateReadyDocument(slides=slides, meta=meta)
 
 
