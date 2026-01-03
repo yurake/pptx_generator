@@ -41,7 +41,7 @@
 - artifacts URL は固定パスを返す（署名付きURL導入時も同フィールド差し替えで対応）。
 - Content-Type/Disposition: PPTX は `application/vnd.openxmlformats-officedocument.presentationml.presentation`、PDF は `application/pdf`。`Content-Disposition` は `attachment; filename="proposal-{job_id}.pptx"` の形で返却。
 - ダウンロード: `/jobs/{job_id}/artifacts/{pptx|pdf}` で認証付きダウンロード。存在しない場合は 404。
-- edit 成果物: PPTX に加えて `applied_edits.json`（artifacts の `edits_json_url`）を返却する。JSON は `/jobs` 応答で URL を返す想定で、バイナリダウンロードルートは pptx/pdf のみ。
+- edit 成果物: PPTX を返却する。適用差分の JSON は内部保存のみ（外部配布なし）。
 - エラー: JSON 不正は 400、必須フィールド欠落は 422、ボディ超過は 413、認証は 401/403、成果物欠如/パス不正は 404。
 
 ## 設定（例）
@@ -75,7 +75,7 @@
 - 本番: 許可リストのみ（デフォルト拒否）に切り替える。
 
 ## 入出力ディレクトリ規約（API）
-- 出力: `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に成果物を配置する。未設定時は `.pptx/<stage>` を利用する実装もあるが、API 経路では tx/job 付きパスを前提とする。edit では PPTX と `applied_edits.json` を同階層に出力する。
+- 出力: `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に成果物を配置する。未設定時は `.pptx/<stage>` を利用する実装もあるが、API 経路では tx/job 付きパスを前提とする。edit は PPTX のみを返却し、適用差分の JSON は内部保存とする。
 - 入力: `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` にクライアントから受け取った入力（テンプレや prepare ソース）を保存する。未設定時は `.pptx/input`。
 - CLI は従来どおり tx/job なしの `.pptx/<stage>` 出力を既定とするため、API と CLI の出力パスは異なる（tx/job を付与したい場合は API を利用する）。edit も CLI 既定は `.pptx/<stage>`（API 経路のみ `PPTX_OUTPUT_ROOT/<tx>/<stage>/<job_id>/`）。
 

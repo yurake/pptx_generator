@@ -229,12 +229,11 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、`--edits-json` 未指定なら LLM が差分を自動生成して適用する（CLI は `--edits` 直接指定を持たない）。
 
 出力:
-- PPTX（書式保持で差し替え済み）
-- `applied_edits.json`（適用した差分の実体。`edits` 配列を保存）
+- PPTX（書式保持で差し替え済み。差分 JSON は内部保存のみ）
 
 出力先既定:
-- CLI: `.pptx/edit/<pptxファイル名>`（PPTX と JSON を同階層に出力）
-- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX と `applied_edits.json`
+- CLI: `.pptx/edit/<pptxファイル名>`
+- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX（JSON は内部保存）
 
 #### `pptx edit`
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |

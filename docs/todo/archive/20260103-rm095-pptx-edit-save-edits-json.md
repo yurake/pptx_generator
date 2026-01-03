@@ -10,7 +10,7 @@ roadmap_item: RM-095 pptx edit
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済みPlan:
     - 対象整理（スコープ、対象ファイル、前提）: Stage5 edit に適用した差分を JSON として保存し、成果物に含める。現行の PPTX 出力に加えて JSON 出力を追加する。
-    - ドキュメント／コード修正方針: 出力パスに `applied_edits.json` を保存し、/jobs 応答の artifacts に URL を追加する。必要に応じて OpenAPI と docs を更新。
+    - ドキュメント／コード修正方針: 出力パスに `applied_edits.json` を保存し、/jobs 応答の artifacts に URL を追加する。必要に応じて OpenAPI と docs を更新。→ 仕様見直しで「JSON は内部保存のみ／API返却なし」に変更。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo更新とPRレビューで共有。
     - 想定影響ファイル: src/pptx_generator/edit系処理、api artifacts周り、OpenAPI、テスト。
     - リスク: 出力パス仕様の整合、既存成果物の互換性。LLM未使用時もJSON出力するかの扱い。
@@ -18,15 +18,15 @@ roadmap_item: RM-095 pptx edit
     - ロールバック方法: JSON保存処理とschema変更を元に戻す。
     - 承認メッセージ ID／リンク: ユーザー承認済み（本スレッド）。
 - [x] 設計・実装方針の確定
-  - メモ: 出力先 `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/applied_edits.json`。/jobs artifacts に JSON URL を含める方針で実装済み。
+  - メモ: 出力先 `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/applied_edits.json` に内部保存する。API では JSON URL を返さない方針に更新。
   - [x] 設計・実装方針メモの共有（本ToDoに記載）
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: applied_edits.json を出力し artifacts に `edits_json_url` を追加。LLM/edits_json/edits 各経路で保存。CLI/async も共通パスで出力。
+  - メモ: applied_edits.json を内部保存するのみ。artifacts に URL は追加しない。LLM/edits_json/edits 各経路で保存は継続。
 - [x] テスト・検証
   - メモ: `uv run --extra dev pytest -q` 実行。追加テストで JSON 出力と artifacts 反映を確認。カバレッジ 0.8607。
 - [x] ドキュメント更新
-  - メモ: OpenAPI（全体・edit専用）に edits_json_url を追記済み。その他は影響なしのため更新不要。
+  - メモ: OpenAPI（全体・edit専用）から edits_json_url を削除し「PPTX のみ返却」に整合。その他は影響なしのため更新不要。
   - [x] docs/roadmap 配下（影響なしのため更新不要）
   - [x] docs/requirements 配下（影響なしのため更新不要）
   - [x] docs/design 配下（OpenAPI更新済み）
