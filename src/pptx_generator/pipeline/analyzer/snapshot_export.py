@@ -9,6 +9,13 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from .snapshot import SlideSnapshot
 
 
+def _write_json_payload(payload: dict[str, Any], workdir: Path, filename: str) -> Path:
+    workdir.mkdir(parents=True, exist_ok=True)
+    path = workdir / filename
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
 def export_snapshot_slide(slide_spec, snapshot: SlideSnapshot) -> dict[str, Any]:
     named_shapes: list[dict[str, Any]] = []
     placeholders: list[dict[str, Any]] = []
@@ -83,16 +90,11 @@ def save_snapshot(slides: list[dict[str, Any]], workdir: Path, filename: str) ->
         "schema_version": "1.0.0",
         "slides": slides,
     }
-    path = workdir / filename
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return path
+    return _write_json_payload(payload, workdir, filename)
 
 
 def save_analysis(payload: dict[str, Any], workdir: Path, filename: str) -> Path:
-    workdir.mkdir(parents=True, exist_ok=True)
-    output_path = workdir / filename
-    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return output_path
+    return _write_json_payload(payload, workdir, filename)
 
 
 def _shape_type_name(shape_type: int | None) -> str:
