@@ -7,6 +7,7 @@ due: ""
 related_issue: ""
 branch: feat/rm095-stage5-edit
 ---
+関連Issue: #520
 
 ## 背景・目的
 - Stage5 edit で適用した差分（edits_json/LLM生成）を成果物として保存し、後続の検証や再適用に使えるようにする。
