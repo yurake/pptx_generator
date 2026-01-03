@@ -28,8 +28,8 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - メモ: Issue 未作成のため対応後に更新。
 - [x] チェックリスト整合確認
   - メモ: 残タスクは PR 作成のみ。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載。
+- [x] PR 作成
+  - メモ: PR #525 https://github.com/yurake/pptx_generator/pull/525（2026-01-03 完了）
 
 ## メモ
 - 前提/制約: 既存 edit は同期/直列。非同期化で LLM 呼び出しと適用処理をジョブ化する必要あり。

@@ -36,8 +36,8 @@ roadmap_item: RM-095 pptx edit
   - メモ: Issue 未作成のため未記入。発行後に更新。
 - [x] チェックリスト整合確認
   - メモ: PR 作成以外を完了しチェック済み。
-- [ ] PR 作成
-  - メモ: 完了後に記載。自動更新に任せる。
+- [x] PR 作成
+  - メモ: PR #525 https://github.com/yurake/pptx_generator/pull/525（2026-01-03 完了）
 
 ## メモ
 - 前提/制約: PPTX 出力は従来通り。JSON は追加成果物として扱う。

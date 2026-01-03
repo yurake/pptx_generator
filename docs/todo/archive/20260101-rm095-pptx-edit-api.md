@@ -28,8 +28,8 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - メモ: Issue 未作成のため対応後に更新。
 - [x] チェックリスト整合確認
   - メモ: PR作成以外を完了済み。親子チェック整合 OK。
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載。
+- [x] PR 作成
+  - メモ: PR #525 https://github.com/yurake/pptx_generator/pull/525（2026-01-03 完了）
 
 ## メモ
 - 前提/制約: CLI では job_queue 経由で同期実行済み。API は既存ステージ (templates/prepare/compose/gen) と同じ認証/HMAC・ジョブ管理に倣う。

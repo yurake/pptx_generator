@@ -1184,7 +1184,7 @@ flowchart TB
 - 対象 stage: 5（PPTX編集適用）
 - 参照ドキュメント: [docs/notes/20251217-pptx-edit-stage5.md](../notes/20251217-pptx-edit-stage5.md)
 - 依存: RM-080（スライドスナップショット強化）※グループ・表セル対応を前提に拡張
-- 状況: 新規（2025-12-17 起票）
+- 状況: 完了（2026-01-03 更新）
 - 期待成果:
   - mode static のスナップショットでグループ・表セル内のテキストも抽出し、shape_id/name/位置を安定取得する。
   - LLM から `{edit: bool, contents: string}` を最小出力で受け取り、shape_id 対応付けで既存ラン書式を維持したままテキスト差し替えを行う。
