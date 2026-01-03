@@ -822,13 +822,9 @@ def test_edit_outputs_applied_edits_json(monkeypatch, tmp_path):
             break
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
+    # edits_json_url は返さない
     artifacts = status_body["artifacts"]
-    assert "edits_json_url" in artifacts
-    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
-    assert edits_resp.status_code == 200
-    payload = json.loads(edits_resp.data)
-    assert isinstance(payload.get("edits"), list)
-    assert len(payload["edits"]) == 1
+    assert "pptx_url" in artifacts
 
 
 def test_edit_outputs_applied_edits_json_empty_edits(monkeypatch, tmp_path):
@@ -857,11 +853,7 @@ def test_edit_outputs_applied_edits_json_empty_edits(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
-    assert edits_resp.status_code == 200
-    payload = json.loads(edits_resp.data)
-    assert isinstance(payload.get("edits"), list)
-    assert payload["edits"] == []
+    assert "pptx_url" in artifacts
 
 
 def test_edit_artifacts_absolute_path(monkeypatch, tmp_path):
@@ -893,10 +885,7 @@ def test_edit_artifacts_absolute_path(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_url = artifacts["edits_json_url"]
-    assert edits_url.startswith("/jobs/")
-    resp = c.get(edits_url, headers=headers)
-    assert resp.status_code == 200
+    assert artifacts["pptx_url"].startswith("/jobs/")
 
 
 def test_edit_artifact_missing_returns_404(monkeypatch, tmp_path):
@@ -926,10 +915,10 @@ def test_edit_artifact_missing_returns_404(monkeypatch, tmp_path):
     artifacts = status_body["artifacts"]
     tx_id = job["transaction_id"]
     job_id = job["job_id"]
-    edits_path = tmp_path / tx_id / "edit" / job_id / "applied_edits.json"
-    if edits_path.exists():
-        edits_path.unlink()
-    missing_resp = c.get(artifacts["edits_json_url"], headers=headers)
+    pptx_path = tmp_path / tx_id / "edit" / job_id / "edit_sample.pptx"
+    if pptx_path.exists():
+        pptx_path.unlink()
+    missing_resp = c.get(artifacts["pptx_url"], headers=headers)
     assert missing_resp.status_code == 404
 
 
@@ -1072,7 +1061,4 @@ def test_edit_llm_returns_empty_edits(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
-    assert edits_resp.status_code == 200
-    payload = json.loads(edits_resp.data)
-    assert payload.get("edits") == []
+    assert "pptx_url" in artifacts

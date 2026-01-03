@@ -201,10 +201,11 @@ def build_edit_job(payload: dict, workdir: Path):
             applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
             edits_path = _save_applied_edits(output_path, normalized_edits)
             return {
-                "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
+                "artifacts": {"pptx_url": str(output_path)},
                 "applied": applied,
                 "missing": missing,
                 "models": [],
+                "edits_path": str(edits_path),
             }
         if edits_inline:
             if not isinstance(edits_inline, list):
@@ -213,10 +214,11 @@ def build_edit_job(payload: dict, workdir: Path):
             normalized_edits = _normalize_edits_for_save(edits_inline)
             edits_path = _save_applied_edits(output_path, normalized_edits)
             return {
-                "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
+                "artifacts": {"pptx_url": str(output_path)},
                 "applied": applied,
                 "missing": missing,
                 "models": [],
+                "edits_path": str(edits_path),
             }
 
         shapes = snapshot_shapes_for_edit(pptx_path)
@@ -242,10 +244,11 @@ def build_edit_job(payload: dict, workdir: Path):
         normalized_edits = _normalize_edits_for_save(all_edits)
         edits_path = _save_applied_edits(output_path, normalized_edits)
         return {
-            "artifacts": {"pptx_url": str(output_path), "edits_json_url": str(edits_path)},
+            "artifacts": {"pptx_url": str(output_path)},
             "applied": applied,
             "missing": missing,
             "models": sorted(models),
+            "edits_path": str(edits_path),
         }
 
     return run
