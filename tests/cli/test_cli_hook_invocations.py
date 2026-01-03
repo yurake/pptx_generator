@@ -260,6 +260,298 @@ def test_compose_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) 
     assert post_call["continue_default_filter"] is True
 
 
+def test_compose_stage_hook_can_short_circuit(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {}
+
+    def short_circuit_stage_hook(stage, *, hook_manager, template_id, stage_env):  # noqa: ANN001
+        called["stage_env"] = dict(stage_env)
+        return True
+
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_stage_hook", short_circuit_stage_hook)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: ("dummy_manager", "demo_tpl"),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("slide contexts should not run")),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_compose_command",
+        lambda config: (_ for _ in ()).throw(AssertionError("compose should not run when stage hook short-circuits")),
+    )
+
+    cmd = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    spec = _touch(tmp_path / "spec.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(spec),
+            "--output",
+            str(tmp_path / "out"),
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--prepare-cards",
+            str(tmp_path / "prepare_card.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    stage_env = called.get("stage_env")
+    assert isinstance(stage_env, dict)
+    assert stage_env["PPTX_STAGE"] == "compose"
+    assert "PPTX_SPEC_PATH" in stage_env
+
+
+def test_compose_slide_hook_can_short_circuit(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {"slides": None}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: ("dummy_manager", "demo_tpl"),
+    )
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_stage_hook",
+        lambda *args, **kwargs: False,
+    )
+
+    def short_circuit_slide_hook(stage, *, hook_manager, stage_env, slides, continue_default_filter):  # noqa: ANN001
+        called["slides"] = slides
+        return True
+
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_slide_hooks", short_circuit_slide_hook)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: ["ctx"],
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_compose_command",
+        lambda config: (_ for _ in ()).throw(AssertionError("compose should not run when slide hook short-circuits")),
+    )
+
+    cmd = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    spec = _touch(tmp_path / "spec.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(spec),
+            "--output",
+            str(tmp_path / "out"),
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--prepare-cards",
+            str(tmp_path / "prepare_card.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert called["slides"] == ["ctx"]
+
+
+def test_compose_runs_when_stage_hook_allows(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {"stage": False, "slide": False, "compose": False, "post": False}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: ("dummy_manager", "demo_tpl"),
+    )
+
+    def stage_hook(*args, **kwargs):  # noqa: ANN001
+        called["stage"] = kwargs.get("stage_env")
+        return False
+
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_stage_hook", stage_hook)
+
+    def slide_hook(*args, **kwargs):  # noqa: ANN001
+        called["slide"] = kwargs.get("slides")
+        return False
+
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_slide_hooks", slide_hook)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: ["ctx1", "ctx2"],
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_compose_command",
+        lambda config: called.update({"compose": True}),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_post_stage_slide_hooks",
+        lambda *args, **kwargs: called.update({"post": True}),
+    )
+
+    cmd = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    spec = _touch(tmp_path / "spec.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(spec),
+            "--output",
+            str(tmp_path / "out"),
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--prepare-cards",
+            str(tmp_path / "prepare_card.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert called["stage"] is not False
+    assert called["slide"] == ["ctx1", "ctx2"]
+    assert called["compose"] is True
+    assert called["post"] is True
+
+
+def test_compose_stage_env_includes_optional_keys(monkeypatch, tmp_path: Path) -> None:
+    captured_env: dict[str, str] = {}
+
+    def capture_stage_hook(stage, *, hook_manager, template_id, stage_env):  # noqa: ANN001
+        captured_env.update(stage_env)
+        return False
+
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_stage_hook", capture_stage_hook)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: ("dummy_manager", None),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_slide_hooks", lambda *a, **k: False)
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_compose_command", lambda config: None)
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_post_stage_slide_hooks", lambda *a, **k: None)
+
+    cmd = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    spec = _touch(tmp_path / "spec.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(spec),
+            "--output",
+            str(tmp_path / "out"),
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--prepare-cards",
+            str(tmp_path / "prepare_card.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert captured_env["PPTX_TARGET_LENGTH"] == ""
+    assert captured_env["PPTX_STRUCTURE_PATTERN"] == ""
+    assert captured_env["PPTX_ANALYSIS_SUMMARY_PATH"] == ""
+    assert captured_env["PPTX_CHAPTER_TEMPLATE"] == ""
+    assert captured_env["PPTX_CHAPTER_TEMPLATES_DIR"] == ""
+    assert "PPTX_TEMPLATE_ID" not in captured_env or captured_env["PPTX_TEMPLATE_ID"] == ""
+
+
+def test_compose_post_stage_skipped_when_stage_hook_short_circuits(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, bool] = {"post": False}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.load_stage_hooks",
+        lambda path: ("dummy_manager", "demo_tpl"),
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.compose.run_stage_hook", lambda *a, **k: True)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_post_stage_slide_hooks",
+        lambda *a, **k: called.update({"post": True}),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("slide hooks should not run")),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.compose.run_compose_command",
+        lambda config: (_ for _ in ()).throw(AssertionError("compose should not run when stage hook short-circuits")),
+    )
+
+    cmd = create_compose_command(
+        default_appendix_limit=0,
+        default_output_dir=tmp_path / "out",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_prepare_cards_path=_touch(tmp_path / "prepare_card.json"),
+        default_draft_filename="draft.json",
+        default_approved_filename="approved.json",
+        default_draft_log_filename="draft_log.json",
+        default_draft_meta_filename="draft_meta.json",
+        default_generate_ready_filename="generate_ready.json",
+        default_generate_ready_meta_filename="generate_ready_meta.json",
+    )
+
+    spec = _touch(tmp_path / "spec.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(spec),
+            "--output",
+            str(tmp_path / "out"),
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--prepare-cards",
+            str(tmp_path / "prepare_card.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert called["post"] is False
+
+
 def test_gen_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
     hook_manager = DummyHookManager()
     monkeypatch.setattr("pptx_generator.cli_commands.gen.load_hooks_for_template_id", lambda tpl: hook_manager)
