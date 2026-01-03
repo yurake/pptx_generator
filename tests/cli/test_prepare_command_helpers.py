@@ -256,53 +256,6 @@ def test_load_hook_manager_if_static_adds_template(monkeypatch, tmp_path: Path) 
     assert stage_env["PPTX_TEMPLATE_ID"] == "demo"
 
 
-def test_prepare_command_requires_inputs(monkeypatch, tmp_path: Path) -> None:
-    command = cli_prepare.create_prepare_command(
-        default_output_dir=tmp_path / "out",
-        default_jobspec_path=tmp_path / "jobspec.json",
-        prompts_dirname=Path("prompts"),
-        slide_inputs_filename=Path("prepare_card.json"),
-    )
-
-    result = CliRunner().invoke(
-        command,
-        [
-            "--mode",
-            "dynamic",
-            "--output",
-            str(tmp_path / "out"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code != 0
-    assert "プレペア入力を指定する必要があります" in result.output
-
-
-def test_prepare_command_requires_jobspec_in_static_mode(tmp_path: Path) -> None:
-    command = cli_prepare.create_prepare_command(
-        default_output_dir=tmp_path / "out",
-        default_jobspec_path=tmp_path / "missing.json",
-        prompts_dirname=Path("prompts"),
-        slide_inputs_filename=Path("prepare_card.json"),
-    )
-
-    result = CliRunner().invoke(
-        command,
-        [
-            "input-a.md",
-            "--mode",
-            "static",
-            "--output",
-            str(tmp_path / "out"),
-        ],
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code != 0
-    assert "jobspec" in result.output
-
-
 def test_prepare_command_runs_dynamic_flow(monkeypatch, tmp_path: Path) -> None:
     prepared = {}
 

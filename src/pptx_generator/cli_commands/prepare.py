@@ -255,14 +255,10 @@ def create_prepare_command(
         """stage 2 コンテンツ準備: PrepareCard 成果物を生成する。"""
 
         normalized_inputs = normalize_prepare_inputs(prepare_inputs)
-        if not normalized_inputs:
-            raise click.BadParameter("プレペア入力を指定する必要があります", param_hint="prepare_inputs")
         primary_prepare_path = determine_primary_prepare_path(normalized_inputs)
         jobspec_path = jobspec or default_jobspec_path
 
         mode_normalized = mode.lower()
-        if mode_normalized == "static" and not jobspec_path.exists():
-            raise click.BadParameter("静的モードでは --jobspec を指定してください", param_hint="--jobspec")
         stage_env = build_stage_env(
             mode=mode_normalized,
             primary_prepare_path=primary_prepare_path,
