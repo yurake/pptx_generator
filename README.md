@@ -105,8 +105,7 @@ flowchart TD
 | 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic"}'` |
 | 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","export_pdf":false}'` |
-| 5. 編集反映 (検証中) | 生成済み PPTX に差分を適用し、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx`（edits JSON 未指定なら snapshot→LLM→適用） / `--edits-json` 指定で手動差分適用 | - |
-| 5. 編集反映 (任意) | 生成済み PPTX に差分 JSON を適用し、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx --edits-json edits.json` | - |
+| 5. 編集反映 | 生成済み PPTX に差分を自動適用（LLMで差分生成）、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ### 静的生成 (static mode)
 テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
@@ -118,12 +117,6 @@ Blueprint（テンプレ全体の設計図）
 └─ Slide（スライドごとの枠組み）
     └─ Slot（コンテンツ差し込み枠）
 ```
-
-#### 編集反映 (Stage5 検証中)
-- `uv run pptx template <template.pptx> --mode static --slide` で `slide_snapshot.json` を出力可能。グループや表セルも `parent_shape_id`／`table_cell` メタ付きで展開される。
-- Stage4 生成済み `proposal.pptx` に対する差分は、`pptx edit proposal.pptx` 実行時に LLM が `{ "shape_id": 256, "edit": true, "contents": "新しい本文" }` 配列を生成して適用する。`edit=false` はスキップ。`--edits-json` を指定した場合は LLM を呼ばず指定差分のみ適用。出力先は既定で `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/proposal.pptx`。
-- 表セルは `table_cell_shape_id(parent_shape_id, row, col)` で shape_id を組み立てる。
-- 適用コマンド例: `uv run pptx edit proposal.pptx --edits-json edits.json --output proposal_edited.pptx`（`--output` 省略時は `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/proposal.pptx`）。
 
 ```mermaid
 flowchart TD
@@ -168,6 +161,7 @@ flowchart TD
 | 2. コンテンツ準備 | 雛形 (`.pptx/template/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の Slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
 | 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static"}'` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","export_pdf":false}'` |
+| 5. 編集反映 | 生成済み PPTX に差分を自動適用（LLMで差分生成）、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ## 詳細オプション
 - CLI: `docs/design/cli/cli-command-reference.md`

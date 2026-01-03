@@ -105,6 +105,7 @@ flowchart TD
 | 2. 内容准备 | 将输入资料规范化为临时幻灯片，并生成包含 AI 日志和审计信息的草稿 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
 | 3. 映射 | 进行 HITL 审核与布局分配，生成 `.pptx/compose/generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
 | 4. PPTX 生成 | 使用 `generate_ready.json` 输出 PPTX、PDF 及审计日志 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
+| 5. 编辑 | 对已有 PPTX 进行文本差分替换并保持格式 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ### 静态生成 (static mode)
 按照模板确定的幻灯片结构，自动分配资料数据并完成制作的模式。适用于幻灯片排布和规则已确定的场景。
@@ -160,6 +161,7 @@ flowchart TD
 | 2. 内容准备 | 编辑模板 (`.pptx/template/prompts/01_*.md`) 与输入清单 (`.pptx/slide_inputs.md`)，如有必要省略 `<数据文件路径>`，并按照 Blueprint 的 Slot 定义整理临时幻灯片 | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
 | 3. 映射 | 在验证 Slot 满足情况的同时生成 `generate_ready.json` | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local"}'` |
 | 4. PPTX 生成 | 以固定布局输出 PPTX / PDF | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","export_pdf":false}'` |
+| 5. 编辑 | 对已有 PPTX 进行文本差分替换并保持格式 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-local","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ## 详细选项
 - CLI: `docs/design/cli/cli-command-reference.md`
