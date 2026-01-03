@@ -24,6 +24,7 @@ src/pptx_generator.egg-info/
 
 # Logs and caches
 *.log
+logs/
 .cache/
 .coverage
 coverage.xml
