@@ -157,7 +157,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
-| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json`。省略時は `.pptx/prepare/prepare_card.json` を探索し、存在しなければエラー |  |  | `.pptx/prepare/prepare_card.json` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
 | `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  |  | `draft_review_log.json` |
@@ -176,7 +176,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json`。省略時は `.pptx/prepare/prepare_card.json` を探索し、存在しなければエラー |  |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
