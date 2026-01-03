@@ -991,6 +991,7 @@ def test_edit_save_failure_marks_job_failed(monkeypatch, tmp_path):
         raise OSError("disk full")
 
     monkeypatch.setattr(stages_module, "_save_applied_edits", _raise)
+    monkeypatch.setattr(stages_module, "apply_shape_text_edits", lambda *a, **k: ([], []))
 
     app = create_app()
     c = app.test_client()

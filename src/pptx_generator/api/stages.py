@@ -215,6 +215,9 @@ def build_edit_job(payload: dict, workdir: Path):
             )
         except EditRunError as exc:
             raise EditCommandError(str(exc)) from exc
+        except EditAIResponseFormatError as exc:
+            # LLM 応答不正もユーザー向けエラーとして扱う
+            raise EditCommandError(str(exc)) from exc
 
     return run
 

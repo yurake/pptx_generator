@@ -1,0 +1,91 @@
+import sys
+import types
+import pytest
+
+from pptx_generator.edit_ai import client as edit_ai_client
+
+
+class DummyCompletionChoice:
+    def __init__(self, content):
+        self.message = types.SimpleNamespace(content=content)
+
+
+def test_openai_client_execution_error(monkeypatch):
+    class DummyCompletions:
+        def create(self, **kwargs):
+            raise RuntimeError("boom")
+
+    class DummyOpenAI:
+        def __init__(self):
+            self.chat = types.SimpleNamespace(completions=DummyCompletions())
+
+    monkeypatch.setattr(edit_ai_client, "load_openai_chat_config", lambda **k: types.SimpleNamespace(model="m", max_tokens=10))
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=DummyOpenAI))
+
+    client = edit_ai_client.OpenAIEditClient.from_env()
+    with pytest.raises(edit_ai_client.EditAIClientExecutionError):
+        client.rewrite(edit_ai_client.EditAIRequest(prompt="p", shape_contexts=[]))
+
+
+def test_openai_client_parse_error(monkeypatch):
+    class DummyCompletions:
+        def create(self, **kwargs):
+            return types.SimpleNamespace(model="m", choices=[DummyCompletionChoice("not-json")])
+
+    class DummyOpenAI:
+        def __init__(self):
+            self.chat = types.SimpleNamespace(completions=DummyCompletions())
+
+    monkeypatch.setattr(edit_ai_client, "load_openai_chat_config", lambda **k: types.SimpleNamespace(model="m", max_tokens=10))
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=DummyOpenAI))
+
+    client = edit_ai_client.OpenAIEditClient.from_env()
+    with pytest.raises(edit_ai_client.EditAIResponseFormatError):
+        client.rewrite(edit_ai_client.EditAIRequest(prompt="p", shape_contexts=[]))
+
+
+def test_anthropic_client_execution_error(monkeypatch):
+    class DummyMessages:
+        def create(self, **kwargs):
+            raise RuntimeError("anthropic-boom")
+
+    class DummyAnthropic:
+        def __init__(self, **kwargs):
+            self.messages = DummyMessages()
+
+    monkeypatch.setattr(edit_ai_client, "load_anthropic_config", lambda **k: types.SimpleNamespace(model="m", max_tokens=10))
+    dummy_types = types.SimpleNamespace(MessageParam=dict)
+    monkeypatch.setitem(sys.modules, "anthropic.types", dummy_types)
+    monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=DummyAnthropic, types=dummy_types))
+
+    client = edit_ai_client.AnthropicEditClient.from_env()
+    with pytest.raises(edit_ai_client.EditAIClientExecutionError):
+        client.rewrite(edit_ai_client.EditAIRequest(prompt="p", shape_contexts=[]))
+
+
+def test_aws_claude_client_execution_error(monkeypatch):
+    class DummyMessages:
+        def create(self, **kwargs):
+            raise RuntimeError("aws-boom")
+
+    class DummyAnthropic:
+        def __init__(self, **kwargs):
+            self.messages = DummyMessages()
+
+    monkeypatch.setattr(
+        edit_ai_client,
+        "load_aws_claude_config",
+        lambda **k: types.SimpleNamespace(model="m", max_tokens=10, api_key="k", endpoint="e", model_id="mid", temperature=0.0),
+    )
+    dummy_types = types.SimpleNamespace(MessageParam=dict)
+    monkeypatch.setitem(sys.modules, "anthropic.types", dummy_types)
+    monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=DummyAnthropic, types=dummy_types))
+
+    client = edit_ai_client.AwsClaudeEditClient.from_env()
+    with pytest.raises(edit_ai_client.EditAIClientExecutionError):
+        client.rewrite(edit_ai_client.EditAIRequest(prompt="p", shape_contexts=[]))
+
+
+def test_parse_edits_invalid_type():
+    with pytest.raises(edit_ai_client.EditAIResponseFormatError):
+        edit_ai_client._parse_edits("{\"edits\": {\"bad\": 1}}")

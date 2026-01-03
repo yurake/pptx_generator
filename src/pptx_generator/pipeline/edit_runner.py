@@ -6,6 +6,7 @@ from typing import Iterable, Callable
 
 from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
 from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
+from pptx_generator.edit_ai.client import EditAIResponseFormatError
 
 
 class EditRunError(RuntimeError):
@@ -101,11 +102,14 @@ def run_edit_job(
     explicit = resolve_explicit_edits(edits_json, edits_inline, error_cls=error_cls)
     if explicit is not None:
         return (apply_fn or apply_and_save_edits)(pptx_path, explicit, output_path=output_path, models=[])
-    llm_edits, models = generate_edits_via_llm(
-        pptx_path,
-        snapshot_fn=snapshot_fn,
-        client_factory=client_factory,
-    )
+    try:
+        llm_edits, models = generate_edits_via_llm(
+            pptx_path,
+            snapshot_fn=snapshot_fn,
+            client_factory=client_factory,
+        )
+    except EditAIResponseFormatError as exc:
+        raise error_cls(str(exc)) from exc
     return (apply_fn or apply_and_save_edits)(pptx_path, llm_edits, output_path=output_path, models=models)
 
 
