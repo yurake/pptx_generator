@@ -49,7 +49,7 @@ from pptx_generator.runtime.job_queue import (
 )
 
 ALLOWED_UPLOAD_EXT = {".pptx", ".md", ".txt", ".json"}
-ARTIFACT_KEYS = {"pptx": "pptx_url", "pdf": "pdf_url"}
+ARTIFACT_KEYS = {"pptx": "pptx_url", "pdf": "pdf_url", "edits": "edits_json_url"}
 
 
 api_blueprint = Blueprint("api", __name__)
@@ -244,6 +244,8 @@ def get_artifact(job_id: str, artifact_type: str):
         mimetype = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     elif artifact_type == "pdf":
         mimetype = "application/pdf"
+    elif artifact_type == "edits":
+        mimetype = "application/json"
     else:
         return _error_response(404, "not_found", f"{artifact_type} not available")
     return send_file(file_path, mimetype=mimetype, as_attachment=True, download_name=file_path.name)
@@ -351,7 +353,7 @@ def _job_status_body(state):
     if state.status == JobStatus.SUCCEEDED:
         _update_registry(tx_root, state.request.stage, state)
     artifacts = {}
-    if state.request.stage == "gen":
+    if state.request.stage in ("gen", "edit"):
         for artifact_type in ARTIFACT_KEYS:
             path = _resolve_artifact_path(state.request.job_id, artifact_type, state=state, tx_root=tx_root)
             if path:

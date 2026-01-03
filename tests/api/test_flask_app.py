@@ -824,11 +824,9 @@ def test_edit_outputs_applied_edits_json(monkeypatch, tmp_path):
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
     assert "edits_json_url" in artifacts
-    edits_path = Path(artifacts["edits_json_url"])
-    if not edits_path.is_absolute():
-        edits_path = tmp_path / edits_path
-    assert edits_path.exists()
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
+    assert edits_resp.status_code == 200
+    payload = json.loads(edits_resp.data)
     assert isinstance(payload.get("edits"), list)
     assert len(payload["edits"]) == 1
 
@@ -859,10 +857,9 @@ def test_edit_outputs_applied_edits_json_empty_edits(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_path = Path(artifacts["edits_json_url"])
-    if not edits_path.is_absolute():
-        edits_path = tmp_path / edits_path
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
+    assert edits_resp.status_code == 200
+    payload = json.loads(edits_resp.data)
     assert isinstance(payload.get("edits"), list)
     assert payload["edits"] == []
 
@@ -896,9 +893,10 @@ def test_edit_artifacts_absolute_path(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_path = Path(artifacts["edits_json_url"])
-    assert edits_path.is_absolute()
-    assert edits_path.exists()
+    edits_url = artifacts["edits_json_url"]
+    assert edits_url.startswith("/jobs/")
+    resp = c.get(edits_url, headers=headers)
+    assert resp.status_code == 200
 
 
 def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):
@@ -1040,8 +1038,7 @@ def test_edit_llm_returns_empty_edits(monkeypatch, tmp_path):
         time.sleep(0.05)
     assert status_body["status"] == "succeeded"
     artifacts = status_body["artifacts"]
-    edits_path = Path(artifacts["edits_json_url"])
-    if not edits_path.is_absolute():
-        edits_path = tmp_path / edits_path
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
+    edits_resp = c.get(artifacts["edits_json_url"], headers=headers)
+    assert edits_resp.status_code == 200
+    payload = json.loads(edits_resp.data)
     assert payload.get("edits") == []

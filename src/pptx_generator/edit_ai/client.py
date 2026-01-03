@@ -70,6 +70,7 @@ def create_edit_ai_client() -> EditAIClient:
         "openai": OpenAIEditClient.from_env,
         "azure-openai": AzureOpenAIEditClient.from_env,
         "anthropic": AnthropicEditClient.from_env,
+        "aws-claude": AwsClaudeEditClient.from_env,
     }
 
     factory = factories.get(resolution.provider)
