@@ -201,36 +201,6 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
 #### `pptx gen`
-- `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- スタイル情報は CLI がテンプレートから抽出した `template_style` メタ（`generate_ready.meta.template_style`）を基準に適用し、抽出に失敗した場合のみ既定スタイルへフォールバックする。追加のブランド設定ファイルは不要。
-
-| オプション | 説明 | 必須 | 位置引数 | 既定値 |
-| --- | --- | --- | --- | --- |
-| `<generate_ready.json>` | generate_ready ドキュメント | ✅ | ✅ | - |
-| `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
-| `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
-| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
-| `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
-| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
-| `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
-| `--libreoffice-path <path>` | `soffice` のパスを明示する |  |  | `PATH` から探索 |
-| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒 |  |  | 120 |
-| `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
-| `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 |  |  | 設定ファイル準拠 |
-| `--polisher-path <path>` | Polisher 実行ファイルのパス |  |  | 指定なし |
-| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし（未指定時はコード内蔵デフォルトを使用） |
-| `--polisher-timeout <sec>` | Polisher のタイムアウト秒 |  |  | 指定なし |
-| `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
-| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
-| `--verbose` | 追加ログを表示する |  |  | 無効 |
-
-#### `pptx gen`
 - stage 3 で生成した `generate_ready.json` を入力に、stage 4 のレンダリング・Polisher・PDF 変換を実行するコマンド。
 - `generate_ready.json.meta.template_path` からテンプレートを解決するため、`--template` オプションは存在しない。テンプレート情報が欠落している場合は CLI がエラーで停止し、再マッピングを促す。
 
