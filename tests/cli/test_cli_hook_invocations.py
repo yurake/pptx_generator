@@ -12,6 +12,7 @@ from pptx_generator.cli_commands.mapping import create_mapping_command
 from pptx_generator.cli_commands.prepare import create_prepare_command
 from pptx_generator.cli_commands.template import create_template_command
 from pptx_generator.cli_hooks.manager import SlideContext
+from pptx_generator.cli_handlers.rendering import GenerateCommandError
 
 
 class DummyHookManager:
@@ -600,6 +601,131 @@ def test_gen_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> N
     assert post_call["continue_default_filter"] is True
 
 
+def test_gen_stage_hook_can_short_circuit(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {}
+
+    class StageOnlyHookManager(DummyHookManager):
+        def run_stage_hook(self, stage: str, env: dict[str, str]) -> tuple[bool, bool]:
+            called["env"] = dict(env)
+            return True, False
+
+        def run_slide_hooks(self, *args, **kwargs):  # noqa: ANN001
+            raise AssertionError("slide hooks should not run when stage hook short-circuits")
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.load_hooks_for_template_id",
+        lambda tpl: StageOnlyHookManager(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("slide contexts should not build")),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(AssertionError("should not run generate when stage hook stops")),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    stage_env = called.get("env")
+    assert isinstance(stage_env, dict)
+    assert stage_env["PPTX_STAGE"] == "gen"
+    assert stage_env["PPTX_TEMPLATE_ID"] == "demo_tpl"
+
+
+def test_gen_slide_hook_can_short_circuit(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {}
+
+    class SlideShortCircuitHookManager(DummyHookManager):
+        def run_slide_hooks(  # noqa: D401
+            self,
+            stage: str,
+            *,
+            slides: list[SlideContext] | list[dict[str, Any]],
+            env: dict[str, str],
+            continue_default_filter: bool | None = None,
+            allow_fallback_context: bool = False,
+        ) -> bool:
+            called["slides"] = slides
+            called["env"] = dict(env)
+            called["continue_default_filter"] = continue_default_filter
+            called["allow_fallback_context"] = allow_fallback_context
+            return True
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.load_hooks_for_template_id",
+        lambda tpl: SlideShortCircuitHookManager(),
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: ["ctx"],
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(AssertionError("generate should not run when slide hook short-circuits")),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert called["slides"] == ["ctx"]
+    assert called["continue_default_filter"] is False
+    assert called["allow_fallback_context"] is True
+
+
 def test_gen_missing_template_id_does_not_call_hooks(monkeypatch, tmp_path: Path) -> None:
     class DummyContext:
         def __init__(self) -> None:
@@ -645,6 +771,325 @@ def test_gen_missing_template_id_does_not_call_hooks(monkeypatch, tmp_path: Path
     )
 
     assert result.exit_code == 0
+
+
+def test_gen_runtime_error_propagates(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: None,
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=True,
+    )
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, RuntimeError)
+    assert "boom" in str(result.exception)
+
+
+def test_gen_post_hook_not_called_on_generate_command_error(monkeypatch, tmp_path: Path) -> None:
+    hook_manager = DummyHookManager()
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.load_hooks_for_template_id", lambda tpl: hook_manager)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(GenerateCommandError("fail", exit_code=7)),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 7
+    assert "fail" in result.output
+    # pre slide hook runs once, post slide hook should not run
+    assert len(hook_manager.slide_calls) == 1
+    assert hook_manager.slide_calls[0]["continue_default_filter"] is False
+
+
+def test_gen_post_hook_not_called_on_runtime_error(monkeypatch, tmp_path: Path) -> None:
+    hook_manager = DummyHookManager()
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.load_hooks_for_template_id", lambda tpl: hook_manager)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=True,
+    )
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, RuntimeError)
+    assert len(hook_manager.slide_calls) == 1
+    assert hook_manager.slide_calls[0]["continue_default_filter"] is False
+
+
+def test_gen_post_hook_without_pdf_sets_only_pptx_path(monkeypatch, tmp_path: Path) -> None:
+    hook_manager = DummyHookManager()
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.load_hooks_for_template_id", lambda tpl: hook_manager)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: ["ctx"],
+    )
+
+    class DummyContext:
+        def __init__(self) -> None:
+            self.artifacts = {}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: type("R", (), {"context": DummyContext(), "audit_path": tmp_path / 'audit.json'})(),
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    contexts_calls = []
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: contexts_calls.append("called") or ["ctx"],
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    # post hook should be the last slide hook invocation
+    env = hook_manager.slide_calls[-1]["env"]
+    assert "PPTX_OUTPUT_PPTX_PATH" in env
+    assert "PPTX_OUTPUT_PDF_PATH" not in env
+    assert contexts_calls.count("called") == 2
+
+
+def test_gen_post_hook_with_pdf_sets_pdf_path(monkeypatch, tmp_path: Path) -> None:
+    hook_manager = DummyHookManager()
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.load_hooks_for_template_id", lambda tpl: hook_manager)
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: "demo_tpl",
+    )
+    contexts_calls = []
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.slide_contexts_from_generate_ready",
+        lambda *args, **kwargs: contexts_calls.append("called") or ["ctx"],
+    )
+
+    class DummyContext:
+        def __init__(self) -> None:
+            self.artifacts = {}
+
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: type("R", (), {"context": DummyContext(), "audit_path": tmp_path / 'audit.json'})(),
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+            "--export-pdf",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    env = hook_manager.slide_calls[-1]["env"]
+    assert "PPTX_OUTPUT_PPTX_PATH" in env
+    assert "PPTX_OUTPUT_PDF_PATH" in env
+    assert contexts_calls.count("called") == 2
+
+
+def test_gen_generate_command_error_outputs_message(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: None,
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(GenerateCommandError("polisher error", exit_code=12)),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 12
+    assert "polisher error" in result.output
+
+
+def test_gen_generate_command_error_with_empty_message(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.extract_template_id_from_json_file",
+        lambda path: None,
+    )
+    monkeypatch.setattr("pptx_generator.cli_commands.gen.run_job_sync", lambda **kwargs: kwargs["func"]())
+    monkeypatch.setattr(
+        "pptx_generator.cli_commands.gen.run_generate_command",
+        lambda config: (_ for _ in ()).throw(GenerateCommandError("", exit_code=9)),
+    )
+
+    cmd = create_gen_command(
+        default_output_dir=tmp_path / "out",
+        default_pptx_name="out.pptx",
+        default_rules_path=_touch(tmp_path / "pipeline_rules.json"),
+        default_pdf_output="out.pdf",
+        default_pdf_timeout=10,
+        default_pdf_retries=1,
+    )
+    generate_ready = _touch(tmp_path / "generate_ready.json")
+
+    result = CliRunner().invoke(
+        cmd,
+        [
+            str(generate_ready),
+            "--output",
+            str(tmp_path / "out"),
+            "--pptx-name",
+            "out.pptx",
+            "--rules",
+            str(tmp_path / "pipeline_rules.json"),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 9
+    assert result.output == ""
 
 
 def test_template_invokes_slide_hooks_with_fallback(monkeypatch, tmp_path: Path) -> None:
