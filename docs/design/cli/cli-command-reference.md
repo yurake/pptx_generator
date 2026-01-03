@@ -196,6 +196,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | （自動） | draft 成果物の出力先 |  |  | `<output>/draft` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
+
 ### stage 4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 

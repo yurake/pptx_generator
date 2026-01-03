@@ -11,7 +11,7 @@
 3. レビューコメントは 24 時間以内を目安に対応し、議論の結果は PR に明記する。
 
 ## 入出力ディレクトリ規約（補足）
-- 出力は各 stage ごとに `.pptx/<stage>/`（CLI 既定）または `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`（API）を利用する。edit は PPTX と `applied_edits.json` を同階層に出力し、artifacts から参照する。
+- 出力は各 stage ごとに `.pptx/<stage>/`（CLI 既定）または `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`（API）を利用する。
 - 入力テンプレートや配置対象ファイルは `.pptx/input/`（CLI 既定）または `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/`（API）で扱う。
 
 ## （参考）テンプレートスタイル（branding.json）について

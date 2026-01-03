@@ -3,7 +3,7 @@
 ## 対象スクリプト
 - `sync_todo_to_issues.py`: `docs/todo/` の Markdown と GitHub Issues を双方向で同期するユーティリティ。
 - `auto_complete_todo.py`: PR 作成時に ToDo を完了状態へ更新し、アーカイブとロードマップ反映までを一括で行う。
-- `api_run_edit.sh`: `/edit` API を叩いてジョブをポーリングし、成果物をダウンロードするスモーク用スクリプト。`PPTX_API_BEARER_TOKEN`（または `TOKEN`）を環境変数で指定する。`transaction_id` は指定省略可。
+- `api_run_*.sh` 系: `/templates` / `/prepare` / `/compose` / `/gen` / `/edit` を叩くスモーク用シェル。`PPTX_API_BEARER_TOKEN`（または `TOKEN`）を環境変数で指定し、ジョブをポーリングして成果物をダウンロードする。`transaction_id` は省略可（サーバ側で払い出し）。`api_run_edit.sh` は `/edit` 専用で PPTX/JSON を取得する。
 
 ## 実行前の準備
 - 必要な環境変数:
@@ -21,7 +21,7 @@
 - 正規表現は `TASK_RE` など既存のパターンを流用し、ToDo フォーマットの逸脱を防ぐ。
 - API 呼び出し失敗時は例外メッセージに HTTP ステータスとレスポンス本文を含める（既存実装は `RuntimeError` を送出）。
 - スクリプトを更新した際は `tests/test_todo_sync_scripts.py` にテストケースを追加し、API 呼び出し箇所はモック化する。
-- `api_run_edit.sh` を利用する場合は `/edit` の入力 PPTX パスと差分指定（`edits_json` など）を引数で渡す。ジョブ完了後に `/jobs` をポーリングして成果物 URL を解決し、PPTX/JSON を保存する。
+- `api_run_*.sh` を利用する場合はステージごとの必要引数（PPTX や JSON パス、edits_json など）を渡し、ジョブ完了後に `/jobs` をポーリングして成果物 URL を解決し、成果物を保存する。
 
 ## レビュー時確認ポイント
 - 実行手順と引数の説明が `README.md` や関連ドキュメントに反映されているか。
