@@ -13,7 +13,14 @@ from pptx_generator.edit_ai import EditAIRequest, create_edit_ai_client
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.edit_ai.client import EditAIResponseFormatError
 from pptx_generator.pipeline import edit_runner
-from pptx_generator.pipeline.edit_runner import apply_and_save_edits, generate_edits_via_llm, resolve_explicit_edits, load_edits, EditRunError
+from pptx_generator.pipeline.edit_runner import (
+    apply_and_save_edits,
+    generate_edits_via_llm,
+    resolve_explicit_edits,
+    load_edits,
+    EditRunError,
+    run_edit_job,
+)
 
 DRAFT_DIRNAME = "draft.json"
 
@@ -195,13 +202,19 @@ def build_edit_job(payload: dict, workdir: Path):
     }
 
     def run():
-        output_path = config["output_path"]
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        explicit_edits = _resolve_explicit_edits(config)
-        if explicit_edits is not None:
-            return _apply_and_save_edits(pptx_path, explicit_edits, output_path=output_path, models=[])
-        llm_edits, models = _generate_edits_via_llm(pptx_path)
-        return _apply_and_save_edits(pptx_path, llm_edits, output_path=output_path, models=models)
+        try:
+            return run_edit_job(
+                pptx_path=pptx_path,
+                edits_json=config["edits_json"],
+                edits_inline=config["edits_inline"],
+                output_path=config["output_path"],
+                snapshot_fn=snapshot_shapes_for_edit,
+                client_factory=create_edit_ai_client,
+                error_cls=EditCommandError,
+                apply_fn=_apply_and_save_edits,
+            )
+        except EditRunError as exc:
+            raise EditCommandError(str(exc)) from exc
 
     return run
 
@@ -266,7 +279,7 @@ def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
 def _apply_and_save_edits(
     pptx_path: Path, edits: list[dict], *, output_path: Path, models: Iterable[str] | set[str] | list[str]
 ):
-    # _save_applied_edits をパッチしやすくするためラッパーを経由
+    # _save_applied_edits をパッチ可能に保つため、ここで書き出しを委譲する
     applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
     normalized_edits = edit_runner._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
     edits_path = _save_applied_edits(output_path, normalized_edits)

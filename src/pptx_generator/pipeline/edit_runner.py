@@ -85,6 +85,30 @@ def apply_and_save_edits(
     }
 
 
+def run_edit_job(
+    *,
+    pptx_path: Path,
+    edits_json: str | Path | None,
+    edits_inline: object,
+    output_path: Path,
+    snapshot_fn: Callable[[Path], list[dict]] = snapshot_shapes_for_edit,
+    client_factory: Callable[[], object] = create_edit_ai_client,
+    error_cls: type[Exception] = EditRunError,
+    apply_fn: Callable[[Path, list[dict]], dict] | None = None,
+):
+    """差分適用の共通実行フロー（CLI/API両用）。"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    explicit = resolve_explicit_edits(edits_json, edits_inline, error_cls=error_cls)
+    if explicit is not None:
+        return (apply_fn or apply_and_save_edits)(pptx_path, explicit, output_path=output_path, models=[])
+    llm_edits, models = generate_edits_via_llm(
+        pptx_path,
+        snapshot_fn=snapshot_fn,
+        client_factory=client_factory,
+    )
+    return (apply_fn or apply_and_save_edits)(pptx_path, llm_edits, output_path=output_path, models=models)
+
+
 def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
     edits_path = output_path.parent / "applied_edits.json"
     edits_path.parent.mkdir(parents=True, exist_ok=True)

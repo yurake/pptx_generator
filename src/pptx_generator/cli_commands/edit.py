@@ -9,12 +9,7 @@ from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_s
 from pptx_generator.edit_ai import create_edit_ai_client, EditAIRequest, build_user_prompt
 from pptx_generator.runtime.job_queue import run_job_sync
 from pptx_generator.settings.paths import build_output_dir
-from pptx_generator.pipeline.edit_runner import (
-    resolve_explicit_edits,
-    generate_edits_via_llm,
-    apply_and_save_edits,
-    EditRunError,
-)
+from pptx_generator.pipeline.edit_runner import resolve_explicit_edits, generate_edits_via_llm, apply_and_save_edits, EditRunError, run_edit_job
 
 
 def _resolve_output_path(default_output_dir: Path | None, output_path: Path | None, pptx_path: Path) -> Path:
@@ -43,20 +38,19 @@ def create_edit_command(default_output_dir: Path | None = None):
         def _run_edit() -> dict[str, object]:
             resolved_output = _resolve_output_path(default_output_dir, output_path, pptx_path)
 
-            explicit_edits = resolve_explicit_edits(edits_json, None, error_cls=ValueError)
-            if explicit_edits is not None:
-                return _apply_edits(pptx_path, explicit_edits, resolved_output)
-
-            all_edits, models = generate_edits_via_llm(
-                pptx_path,
+            result = run_edit_job(
+                pptx_path=pptx_path,
+                edits_json=edits_json,
+                edits_inline=None,
+                output_path=resolved_output,
                 snapshot_fn=snapshot_shapes_for_edit,
                 client_factory=create_edit_ai_client,
+                error_cls=ValueError,
             )
-            applied, missing = apply_shape_text_edits(pptx_path, all_edits, output_path=resolved_output)
             return {
-                "applied": applied,
-                "missing": missing,
-                "models": sorted(models),
+                "applied": result["applied"],
+                "missing": result["missing"],
+                "models": result.get("models", []),
                 "output": resolved_output,
             }
 
