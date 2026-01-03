@@ -186,47 +186,20 @@ def build_edit_job(payload: dict, workdir: Path):
     if not pptx_path.exists():
         raise EditCommandError(f"pptx_path not found: {pptx_path}")
 
-    edits_json = payload.get("edits_json")
-    edits_inline = payload.get("edits")
-    output_path = Path(payload.get("output") or (workdir / pptx_path.name)).expanduser()
+    config = {
+        "edits_json": payload.get("edits_json"),
+        "edits_inline": payload.get("edits"),
+        "output_path": Path(payload.get("output") or (workdir / pptx_path.name)).expanduser(),
+    }
 
     def run():
+        output_path = config["output_path"]
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        # LLM不要ケース（edits_json or edits inline）
-        explicit_edits: list[dict] | None = None
-        if edits_json:
-            json_path = Path(edits_json).expanduser()
-            if not json_path.exists():
-                raise EditCommandError(f"edits_json not found: {json_path}")
-            explicit_edits = _load_edits(json_path)
-        elif edits_inline is not None:
-            if not isinstance(edits_inline, list):
-                raise EditCommandError("edits must be a list when provided inline")
-            explicit_edits = edits_inline
-
+        explicit_edits = _resolve_explicit_edits(config)
         if explicit_edits is not None:
             return _apply_and_save_edits(pptx_path, explicit_edits, output_path=output_path, models=[])
-
-        shapes = snapshot_shapes_for_edit(pptx_path)
-        client = create_edit_ai_client()
-        all_edits: list[dict[str, object]] = []
-        models: set[str] = set()
-
-        slides: dict[int, list[dict[str, object]]] = {}
-        for shape in shapes:
-            slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
-
-        for slide_idx, contexts in slides.items():
-            prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
-            request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
-            response = client.rewrite(request)
-            models.add(response.model)
-            for edit in response.edits:
-                if isinstance(edit, dict):
-                    edit["slide_index"] = slide_idx
-                all_edits.append(edit)
-
-        return _apply_and_save_edits(pptx_path, all_edits, output_path=output_path, models=models)
+        llm_edits, models = _generate_edits_via_llm(pptx_path)
+        return _apply_and_save_edits(pptx_path, llm_edits, output_path=output_path, models=models)
 
     return run
 
@@ -238,6 +211,21 @@ def _load_edits(edits_path: Path):
     if isinstance(payload, list):
         return payload
     raise EditCommandError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
+
+
+def _resolve_explicit_edits(config: dict) -> list[dict] | None:
+    edits_json = config.get("edits_json")
+    edits_inline = config.get("edits_inline")
+    if edits_json:
+        json_path = Path(edits_json).expanduser()
+        if not json_path.exists():
+            raise EditCommandError(f"edits_json not found: {json_path}")
+        return _load_edits(json_path)
+    if edits_inline is not None:
+        if not isinstance(edits_inline, list):
+            raise EditCommandError("edits must be a list when provided inline")
+        return edits_inline
+    return None
 
 
 def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
@@ -292,3 +280,26 @@ def _apply_and_save_edits(
         "models": sorted(models),
         "edits_path": str(edits_path),
     }
+
+
+def _generate_edits_via_llm(pptx_path: Path) -> tuple[list[dict], set[str]]:
+    shapes = snapshot_shapes_for_edit(pptx_path)
+    client = create_edit_ai_client()
+    all_edits: list[dict[str, object]] = []
+    models: set[str] = set()
+
+    slides: dict[int, list[dict[str, object]]] = {}
+    for shape in shapes:
+        slides.setdefault(int(shape.get("slide_index", 0)), []).append(shape)
+
+    for slide_idx, contexts in slides.items():
+        prompt = build_user_prompt(slide_title=None, shape_contexts=contexts)
+        request = EditAIRequest(prompt=prompt, shape_contexts=contexts)
+        response = client.rewrite(request)
+        models.add(response.model)
+        for edit in response.edits:
+            if isinstance(edit, dict):
+                edit["slide_index"] = slide_idx
+            all_edits.append(edit)
+
+    return all_edits, models

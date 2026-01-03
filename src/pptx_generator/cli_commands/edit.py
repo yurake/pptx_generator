@@ -21,6 +21,32 @@ def _load_edits(edits_path: Path) -> Iterable[dict]:
     raise ValueError("edits ファイルの形式が不正です。リストまたは {\"edits\": [...]} を指定してください。")
 
 
+def _load_explicit_edits(edits_json: Path | None) -> list[dict] | None:
+    if edits_json is None:
+        return None
+    edits = _load_edits(edits_json)
+    if not isinstance(edits, list):
+        raise ValueError("edits JSON は配列または {\"edits\": [...]} 形式である必要があります。")
+    return edits
+
+
+def _resolve_output_path(default_output_dir: Path | None, output_path: Path | None, pptx_path: Path) -> Path:
+    base_output_dir = default_output_dir or build_output_dir("edit")
+    resolved_output = output_path or (base_output_dir / pptx_path.name)
+    resolved_output.parent.mkdir(parents=True, exist_ok=True)
+    return resolved_output
+
+
+def _apply_edits(pptx_path: Path, edits: list[dict], resolved_output: Path) -> dict[str, object]:
+    applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=resolved_output)
+    return {
+        "applied": applied,
+        "missing": missing,
+        "models": [],
+        "output": resolved_output,
+    }
+
+
 def create_edit_command(default_output_dir: Path | None = None):
     @click.command("edit", help="PPTX を入力し、shape_id ベースでテキスト差し替えを適用する。edits JSON 未指定時は LLM で自動適用。")
     @click.argument("pptx_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
@@ -28,19 +54,11 @@ def create_edit_command(default_output_dir: Path | None = None):
     @click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), help="出力先 PPTX パス（省略時は既定の stage 出力ディレクトリ配下）")
     def command(pptx_path: Path, edits_json: Path | None, output_path: Path | None) -> None:
         def _run_edit() -> dict[str, object]:
-            base_output_dir = default_output_dir or build_output_dir("edit")
-            resolved_output = output_path or (base_output_dir / pptx_path.name)
-            resolved_output.parent.mkdir(parents=True, exist_ok=True)
+            resolved_output = _resolve_output_path(default_output_dir, output_path, pptx_path)
 
-            if edits_json is not None:
-                edits = _load_edits(edits_json)
-                applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=resolved_output)
-                return {
-                    "applied": applied,
-                    "missing": missing,
-                    "models": [],
-                    "output": resolved_output,
-                }
+            explicit_edits = _load_explicit_edits(edits_json)
+            if explicit_edits is not None:
+                return _apply_edits(pptx_path, explicit_edits, resolved_output)
 
             shapes = snapshot_shapes_for_edit(pptx_path)
             client = create_edit_ai_client()
