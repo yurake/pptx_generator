@@ -200,20 +200,6 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 ### stage 4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
 
-### stage 5: 編集反映
-生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、以下のいずれかで差分を与える:
-- `--edits-json <path>`: 差分 JSON（`edits` 配列か配列単体）。LLM 呼び出しは行わない。
-- `--edits '[...]'`: 直接差分を指定。LLM 呼び出しは行わない。
-- 何も指定しない場合: スライド単位で LLM に shape 情報を渡し、差分を自動生成して適用。
-
-出力:
-- PPTX（書式保持で差し替え済み）
-- `applied_edits.json`（適用した差分の実体。`edits` 配列を保存）
-
-出力先既定:
-- CLI: `.pptx/edit/<pptxファイル名>`（PPTX と JSON を同階層に出力）
-- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX と `applied_edits.json`
-
 #### `pptx gen`
 - `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
 - スタイル情報は CLI がテンプレートから抽出した `template_style` メタ（`generate_ready.meta.template_style`）を基準に適用し、抽出に失敗した場合のみ既定スタイルへフォールバックする。追加のブランド設定ファイルは不要。
@@ -268,6 +254,24 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 |  |  | 無効 |
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
+
+### stage 5: 編集反映
+生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、`--edits-json` 未指定なら LLM が差分を自動生成して適用する（CLI は `--edits` 直接指定を持たない）。
+
+出力:
+- PPTX（書式保持で差し替え済み）
+- `applied_edits.json`（適用した差分の実体。`edits` 配列を保存）
+
+出力先既定:
+- CLI: `.pptx/edit/<pptxファイル名>`（PPTX と JSON を同階層に出力）
+- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX と `applied_edits.json`
+
+#### `pptx edit`
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<pptx_path>` | 差分適用対象の PPTX | ✅ | ✅ | - |
+| `--edits-json <path>` | 差分 JSON。指定時は LLM 呼び出しなしで適用のみ |  |  | 指定なし（LLM 自動生成） |
+| `--output <path>` | 出力先 PPTX パス |  |  | `.pptx/edit/<pptx名>` |
 
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` / `prepare_story_outline.json`: stage 2 で生成される Prepare 成果物。
