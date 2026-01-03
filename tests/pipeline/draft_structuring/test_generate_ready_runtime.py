@@ -18,8 +18,12 @@ from pptx_generator.models import (
     DraftSlideCard,
     GenerateReadyDocument,
     JobSpec,
+    Slide,
 )
+from pptx_generator.models.common import TextboxPosition
 from pptx_generator.pipeline.draft_structuring.generate_ready_runtime import (
+    _build_auto_draw_payload,
+    _build_generate_ready_meta,
     build_generate_ready_document,
     build_generate_ready_meta_payload,
 )
@@ -143,3 +147,69 @@ def test_build_generate_ready_document_with_cards(
     assert payload["statistics"]["total_slides"] == 1
     assert payload["slot_summary"] == {"Title": 1}
     assert payload["mode"] == "static"
+
+
+def test_build_auto_draw_payload_handles_empty_and_values() -> None:
+    base_slide = Slide(id="s1", layout="Title")
+    assert _build_auto_draw_payload(base_slide) == []
+
+    slide_with_boxes = Slide(
+        id="s2",
+        layout="Title",
+        auto_draw_boxes={
+            "a1": TextboxPosition(left_in=1.0, top_in=2.0, width_in=3.0, height_in=4.0),
+            "a2": TextboxPosition(left_in=0.5, top_in=0.75, width_in=1.25, height_in=1.5),
+        },
+    )
+
+    payload = _build_auto_draw_payload(slide_with_boxes)
+    assert payload == [
+        {"anchor": "a1", "left_in": 1.0, "top_in": 2.0, "width_in": 3.0, "height_in": 4.0},
+        {"anchor": "a2", "left_in": 0.5, "top_in": 0.75, "width_in": 1.25, "height_in": 1.5},
+    ]
+
+
+def test_build_generate_ready_meta_template_path_fallback(job_spec: JobSpec) -> None:
+    draft = DraftDocument(sections=[], meta=DraftMeta(template_id="tpl-fallback"))
+
+    meta = _build_generate_ready_meta(
+        draft=draft,
+        spec=job_spec,
+        template_path=None,
+        content_hash="abc123",
+    )
+
+    assert meta.template_path == "/tmp/template.pptx"
+    assert meta.content_hash == "abc123"
+    assert meta.template_version == "tpl-fallback"
+
+
+def test_build_generate_ready_meta_prefers_argument_over_spec(job_spec: JobSpec) -> None:
+    draft = DraftDocument(sections=[], meta=DraftMeta(template_id="tpl-override"))
+    override_path = Path("/override/template.pptx")
+
+    meta = _build_generate_ready_meta(
+        draft=draft,
+        spec=job_spec,
+        template_path=override_path,
+        content_hash=None,
+    )
+
+    assert meta.template_path == str(override_path)
+    assert meta.template_version == "tpl-override"
+
+
+def test_build_generate_ready_meta_keeps_empty_string(job_spec: JobSpec) -> None:
+    spec = job_spec.model_copy(deep=True)
+    spec.meta.template_path = ""
+    draft = DraftDocument(sections=[], meta=DraftMeta(template_id="tpl-empty"))
+
+    meta = _build_generate_ready_meta(
+        draft=draft,
+        spec=spec,
+        template_path=None,
+        content_hash=None,
+    )
+
+    assert meta.template_path == ""
+    assert meta.template_version == "tpl-empty"
