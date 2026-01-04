@@ -32,6 +32,64 @@ LOG_LEVEL_ALIASES = {
 OUT_LOG_FILENAME = "out.log"
 
 
+def _extract_meta_value(meta: object, key: str) -> str | None:
+    if meta is None:
+        return None
+
+    direct_value = getattr(meta, key, None)
+    if direct_value is not None:
+        return direct_value
+
+    if isinstance(meta, BaseModel):
+        extra = getattr(meta, "model_extra", None)
+        if isinstance(extra, dict):
+            candidate = extra.get(key)
+            if candidate is not None:
+                return candidate
+
+    if isinstance(meta, dict):
+        return meta.get(key)
+
+    return None
+
+
+def _load_meta_value_from_file(spec_source: Path, key: str) -> str | None:
+    try:
+        raw_spec: dict[str, Any] = json.loads(spec_source.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+    meta = raw_spec.get("meta")
+    if not isinstance(meta, dict):
+        return None
+
+    value = meta.get(key)
+    return str(value) if value is not None else None
+
+
+def _extract_path_from_config(
+    config_manager: ConfigManager | None, key: str
+) -> tuple[str | None, str | None]:
+    if config_manager is None:
+        return None, None
+
+    candidate, source = config_manager.resolve_with_source(key)
+    if isinstance(candidate, (str, Path)):
+        return str(candidate), source
+
+    return None, source
+
+
+def _build_candidate_paths(path_value: str, spec_source: Path) -> list[Path]:
+    candidate_raw = Path(path_value)
+    if candidate_raw.is_absolute():
+        return [candidate_raw]
+
+    spec_relative = (spec_source.parent / candidate_raw).resolve()
+    cwd_relative = (Path.cwd() / candidate_raw).resolve()
+    return [spec_relative, cwd_relative]
+
+
 def parse_log_level(value: str | None) -> int | None:
     if value is None:
         return None
@@ -84,49 +142,22 @@ def resolve_layouts_path(
 ) -> Path | None:
     """jobspec と spec ファイルから layouts.jsonl の候補を解決する。"""
 
-    source_name: str | None = None
-    layouts_path_value: str | None = None
-    if config_manager is not None:
-        candidate, resolved_source = config_manager.resolve_with_source("layouts_path")
-        if isinstance(candidate, (str, Path)):
-            layouts_path_value = str(candidate)
-            source_name = resolved_source
-
-    meta = getattr(spec, "meta", None)
-    if layouts_path_value is None and meta is not None:
-        layouts_path_value = getattr(meta, "layouts_path", None)
-        if layouts_path_value is None and isinstance(meta, BaseModel):
-            extra = getattr(meta, "model_extra", None)
-            if isinstance(extra, dict):
-                layouts_path_value = extra.get("layouts_path")
-        if layouts_path_value is None and isinstance(meta, dict):
-            layouts_path_value = meta.get("layouts_path")
+    layouts_path_value, source_name = _extract_path_from_config(config_manager, "layouts_path")
+    if layouts_path_value is None:
+        meta = getattr(spec, "meta", None)
+        layouts_path_value = _extract_meta_value(meta, "layouts_path")
         if layouts_path_value is not None and source_name is None:
             source_name = "template_config"
 
     if layouts_path_value is None:
-        try:
-            raw_spec: dict[str, Any] = json.loads(spec_source.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001
-            raw_spec = {}
-        layouts_path_value = (
-            raw_spec.get("meta", {}).get("layouts_path")
-            if isinstance(raw_spec, dict)
-            else None
-        )
+        layouts_path_value = _load_meta_value_from_file(spec_source, "layouts_path")
         if layouts_path_value is not None and source_name is None:
             source_name = "template_config"
 
     if not layouts_path_value:
         return None
 
-    candidate_raw = Path(layouts_path_value)
-    if candidate_raw.is_absolute():
-        candidates = [candidate_raw]
-    else:
-        spec_relative = (spec_source.parent / candidate_raw).resolve()
-        cwd_relative = (Path.cwd() / candidate_raw).resolve()
-        candidates = [spec_relative, cwd_relative]
+    candidates = _build_candidate_paths(layouts_path_value, spec_source)
 
     for candidate in candidates:
         if candidate.exists():
@@ -149,56 +180,31 @@ def resolve_template_path(
 ) -> Path:
     """jobspec と spec ファイルからテンプレートパスの候補を解決する。"""
 
-    template_path_value: str | None = None
-    source_name: str | None = None
+    template_path_value, source_name = _extract_path_from_config(config_manager, "template_path")
 
-    if config_manager is not None:
-        candidate, resolved_source = config_manager.resolve_with_source("template_path")
-        if isinstance(candidate, (str, Path)):
-            template_path_value = str(candidate)
-            source_name = resolved_source
+    if template_path_value is None:
+        meta = getattr(spec, "meta", None)
+        template_path_value = _extract_meta_value(meta, "template_path")
+        if template_path_value is not None and source_name is None:
+            source_name = "template_config"
 
-    meta = getattr(spec, "meta", None)
-    if template_path_value is None and meta is not None:
-        template_path_value = getattr(meta, "template_path", None)
-        if template_path_value is None and isinstance(meta, BaseModel):
-            extra = getattr(meta, "model_extra", None)
-            if isinstance(extra, dict):
-                template_path_value = extra.get("template_path")
-        if template_path_value is None and isinstance(meta, dict):
-            template_path_value = meta.get("template_path")
+    if template_path_value is None:
+        template_path_value = _load_meta_value_from_file(spec_source, "template_path")
         if template_path_value is not None and source_name is None:
             source_name = "template_config"
 
     if not template_path_value:
-        try:
-            raw_spec = json.loads(spec_source.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001
-            raw_spec = {}
-        if isinstance(raw_spec, dict):
-            template_path_value = raw_spec.get("meta", {}).get("template_path")  # type: ignore[assignment]
-            if template_path_value is not None and source_name is None:
-                source_name = "template_config"
-
-    if not template_path_value:
         raise ValueError("jobspec.meta.template_path にテンプレートパスを設定してください。")
 
-    candidate_raw = Path(template_path_value)
-    if candidate_raw.is_absolute():
-        resolved = candidate_raw
-    else:
-        spec_relative = (spec_source.parent / candidate_raw).resolve()
-        cwd_relative = (Path.cwd() / candidate_raw).resolve()
-        if spec_relative.exists():
-            resolved = spec_relative
-        elif cwd_relative.exists():
-            resolved = cwd_relative
-        else:
-            message = (
-                "jobspec.meta.template_path にテンプレートパスを設定してください。"
-                f"（確認したパス: {spec_relative}, {cwd_relative}）"
-            )
-            raise ValueError(message)
+    candidates = _build_candidate_paths(template_path_value, spec_source)
+    resolved = next((candidate for candidate in candidates if candidate.exists()), None)
+
+    if resolved is None:
+        message = (
+            "jobspec.meta.template_path にテンプレートパスを設定してください。"
+            f"（確認したパス: {', '.join(str(path) for path in candidates)}）"
+        )
+        raise ValueError(message)
 
     if not resolved.exists():
         raise ValueError(f"テンプレートファイルが見つかりません: {resolved}")
