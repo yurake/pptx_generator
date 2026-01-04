@@ -1,26 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-import json
 from typing import Iterable
 
 from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
-from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
+from pptx_generator.pipeline.text_edit import snapshot_shapes_for_edit
 from pptx_generator.edit_ai import EditAIRequest, create_edit_ai_client
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.edit_ai.client import EditAIResponseFormatError
-from pptx_generator.pipeline import edit_runner
-from pptx_generator.pipeline.edit_runner import (
-    apply_and_save_edits,
-    generate_edits_via_llm,
-    resolve_explicit_edits,
-    load_edits,
-    EditRunError,
-    run_edit_job,
-)
+from pptx_generator.pipeline.edit_runner import EditRunError, run_edit_job
 
 DRAFT_DIRNAME = "draft.json"
 
@@ -211,7 +202,6 @@ def build_edit_job(payload: dict, workdir: Path):
                 snapshot_fn=snapshot_shapes_for_edit,
                 client_factory=create_edit_ai_client,
                 error_cls=EditCommandError,
-                apply_fn=_apply_and_save_edits,
             )
         except EditRunError as exc:
             raise EditCommandError(str(exc)) from exc
@@ -220,88 +210,3 @@ def build_edit_job(payload: dict, workdir: Path):
             raise EditCommandError(str(exc)) from exc
 
     return run
-
-
-def _load_edits(edits_path: Path):
-    try:
-        return load_edits(edits_path, error_cls=EditCommandError)
-    except EditRunError as exc:
-        raise EditCommandError(str(exc)) from exc
-
-
-def _resolve_explicit_edits(config: dict) -> list[dict] | None:
-    try:
-        return resolve_explicit_edits(
-            config.get("edits_json"),
-            config.get("edits_inline"),
-            error_cls=EditCommandError,
-        )
-    except EditRunError as exc:
-        raise EditCommandError(str(exc)) from exc
-
-
-def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
-    edits_path = output_path.parent / "applied_edits.json"
-    edits_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"edits": applied}
-    edits_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return edits_path
-
-
-def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
-    normalized: list[dict] = []
-    for edit in edits:
-        if not isinstance(edit, dict):
-            continue
-        if not edit.get("edit", True):
-            continue
-        shape_id = edit.get("shape_id")
-        contents = edit.get("contents")
-        if shape_id is None or contents is None:
-            continue
-        try:
-            shape_id_int = int(shape_id)
-        except (TypeError, ValueError):
-            continue
-        try:
-            slide_idx = int(edit.get("slide_index")) if edit.get("slide_index") is not None else None
-        except (TypeError, ValueError):
-            slide_idx = None
-        name_val = edit.get("name")
-        normalized.append(
-            {
-                "shape_id": shape_id_int,
-                "slide_index": slide_idx,
-                "name": str(name_val) if name_val is not None else None,
-                "contents": str(contents),
-            }
-        )
-    return normalized
-
-
-def _apply_and_save_edits(
-    pptx_path: Path, edits: list[dict], *, output_path: Path, models: Iterable[str] | set[str] | list[str]
-):
-    # _save_applied_edits をパッチ可能に保つため、ここで書き出しを委譲する
-    applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
-    normalized_edits = edit_runner._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
-    edits_path = _save_applied_edits(output_path, normalized_edits)
-    return {
-        "artifacts": {"pptx_url": str(output_path)},
-        "applied": applied,
-        "missing": missing,
-        "models": sorted(models),
-        "edits_path": str(edits_path),
-    }
-
-
-def _generate_edits_via_llm(pptx_path: Path) -> tuple[list[dict], set[str]]:
-    return generate_edits_via_llm(
-        pptx_path,
-        snapshot_fn=snapshot_shapes_for_edit,
-        client_factory=create_edit_ai_client,
-    )
-
-
-def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
-    return edit_runner._save_applied_edits(output_path, applied)  # type: ignore[attr-defined]

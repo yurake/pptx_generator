@@ -990,8 +990,8 @@ def test_edit_save_failure_marks_job_failed(monkeypatch, tmp_path):
     def _raise(*args, **kwargs):
         raise OSError("disk full")
 
-    monkeypatch.setattr(stages_module, "_save_applied_edits", _raise)
-    monkeypatch.setattr(stages_module, "apply_shape_text_edits", lambda *a, **k: ([], []))
+    from pptx_generator.pipeline import edit_runner
+    monkeypatch.setattr(edit_runner, "apply_and_save_edits", _raise)
 
     app = create_app()
     c = app.test_client()

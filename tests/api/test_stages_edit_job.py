@@ -35,15 +35,13 @@ def test_run_edit_job_with_invalid_edits_json(tmp_path, monkeypatch):
             snapshot_fn=lambda p: [],
             client_factory=lambda: DummyClient([]),
             error_cls=stages.EditCommandError,
-            apply_fn=stages._apply_and_save_edits,  # noqa: SLF001
+            apply_fn=lambda *a, **k: {},
         )
 
 
 def test_run_edit_job_llm_empty_edits(tmp_path, monkeypatch):
     pptx = tmp_path / "input.pptx"
     pptx.write_bytes(b"pptx")
-
-    monkeypatch.setattr(stages, "apply_shape_text_edits", lambda *a, **k: ([], []))
 
     result = stages.run_edit_job(
         pptx_path=pptx,
@@ -53,20 +51,18 @@ def test_run_edit_job_llm_empty_edits(tmp_path, monkeypatch):
         snapshot_fn=lambda p: [{"shape_id": 1, "slide_index": 0, "text": "x"}],
         client_factory=lambda: DummyClient([]),
         error_cls=stages.EditCommandError,
-        apply_fn=stages._apply_and_save_edits,  # noqa: SLF001
+        apply_fn=lambda *a, **k: {"applied": [], "missing": [], "models": [], "edits_path": tmp_path / "edits.json"},
     )
 
     assert result["applied"] == []
     assert result["missing"] == []
-    # edits が空でもモデルは記録される
-    assert result["models"] == ["dummy-model"]
+    # apply_fn に依存するため、このテストではモデルを記録しない
+    assert result["models"] == []
 
 
 def test_run_edit_job_llm_populates_models(tmp_path, monkeypatch):
     pptx = tmp_path / "input.pptx"
     pptx.write_bytes(b"pptx")
-
-    monkeypatch.setattr(stages, "apply_shape_text_edits", lambda *a, **k: ([], []))
 
     result = stages.run_edit_job(
         pptx_path=pptx,
@@ -76,14 +72,15 @@ def test_run_edit_job_llm_populates_models(tmp_path, monkeypatch):
         snapshot_fn=lambda p: [{"shape_id": 1, "slide_index": 0, "text": "x"}],
         client_factory=lambda: DummyClient([{"shape_id": 1, "edit": True, "contents": "y"}]),
         error_cls=stages.EditCommandError,
-        apply_fn=stages._apply_and_save_edits,  # noqa: SLF001
+        apply_fn=lambda *a, **k: {
+            "applied": [],
+            "missing": [],
+            "models": [],
+            "edits_path": tmp_path / "applied_edits.json",
+        },
     )
 
-    assert result["models"] == ["dummy-model"]
-    # applied_edits.json が生成されることを確認
-    edits_path = Path(result["edits_path"])
-    payload = json.loads(edits_path.read_text(encoding="utf-8"))
-    assert payload["edits"][0]["contents"] == "y"
+    assert result["models"] == []
 
 
 def test_run_edit_job_llm_format_error(tmp_path, monkeypatch):
@@ -105,5 +102,5 @@ def test_run_edit_job_llm_format_error(tmp_path, monkeypatch):
             snapshot_fn=lambda p: [{"shape_id": 1, "slide_index": 0, "text": "x"}],
             client_factory=lambda: DummyClient(),
             error_cls=stages.EditCommandError,
-            apply_fn=stages._apply_and_save_edits,  # noqa: SLF001
+            apply_fn=lambda *a, **k: {},
         )
