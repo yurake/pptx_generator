@@ -64,7 +64,7 @@ def _load_meta_value_from_file(spec_source: Path, key: str) -> str | None:
         return None
 
     value = meta.get(key)
-    return str(value) if value is not None else None
+    return value if value is not None else None
 
 
 def _extract_path_from_config(
@@ -88,6 +88,14 @@ def _build_candidate_paths(path_value: str, spec_source: Path) -> list[Path]:
     spec_relative = (spec_source.parent / candidate_raw).resolve()
     cwd_relative = (Path.cwd() / candidate_raw).resolve()
     return [spec_relative, cwd_relative]
+
+
+def _normalize_path_value(value: object | None, *, key: str, allow_none: bool) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, (str, Path)):
+        return str(value)
+    raise ValueError(f"jobspec.meta.{key} は文字列またはパスで指定してください。")
 
 
 def parse_log_level(value: str | None) -> int | None:
@@ -154,6 +162,8 @@ def resolve_layouts_path(
         if layouts_path_value is not None and source_name is None:
             source_name = "template_config"
 
+    layouts_path_value = _normalize_path_value(layouts_path_value, key="layouts_path", allow_none=True)
+
     if not layouts_path_value:
         return None
 
@@ -192,6 +202,8 @@ def resolve_template_path(
         template_path_value = _load_meta_value_from_file(spec_source, "template_path")
         if template_path_value is not None and source_name is None:
             source_name = "template_config"
+
+    template_path_value = _normalize_path_value(template_path_value, key="template_path", allow_none=False)
 
     if not template_path_value:
         raise ValueError("jobspec.meta.template_path にテンプレートパスを設定してください。")
