@@ -30,6 +30,12 @@ def test_healthcheck_without_auth(client):
     assert resp.get_json() == {"status": "ok"}
 
 
+def test_healthcheck_ignores_auth(client):
+    resp = client.get("/health", headers={"Authorization": "Bearer token-123"})
+    assert resp.status_code == 200
+    assert resp.get_json() == {"status": "ok"}
+
+
 def test_request_id_logging_truncated(client, caplog):
     rid = "req-1234567890"
     api_logger = logging.getLogger("pptx_generator.api.flask_app")
