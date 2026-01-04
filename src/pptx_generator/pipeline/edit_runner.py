@@ -75,8 +75,7 @@ def apply_and_save_edits(
     pptx_path: Path, edits: list[dict], *, output_path: Path, models: Iterable[str] | set[str] | list[str]
 ):
     applied, missing = apply_shape_text_edits(pptx_path, edits, output_path=output_path)
-    normalized_edits = _normalize_edits_for_save(edits)
-    edits_path = _save_applied_edits(output_path, normalized_edits)
+    edits_path = _save_applied_edits(output_path, _normalize_edits_for_save(edits))
     return {
         "artifacts": {"pptx_url": str(output_path)},
         "applied": applied,
@@ -114,42 +113,39 @@ def run_edit_job(
 
 
 def _save_applied_edits(output_path: Path, applied: list[dict]) -> Path:
-    edits_path = output_path.parent / "applied_edits.json"
-    edits_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"edits": applied}
-    edits_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return edits_path
+    path = output_path.parent / "applied_edits.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"edits": applied}, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
 
 
 def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
-    normalized: list[dict] = []
+    result: list[dict] = []
     for edit in edits:
-        if not isinstance(edit, dict):
+        if not isinstance(edit, dict) or not edit.get("edit", True):
             continue
-        if not edit.get("edit", True):
-            continue
-        shape_id = edit.get("shape_id")
         contents = edit.get("contents")
-        if shape_id is None or contents is None:
-            continue
         try:
-            shape_id_int = int(shape_id)
+            shape_id = int(edit.get("shape_id"))
         except (TypeError, ValueError):
             continue
+        if contents is None:
+            continue
+        slide_raw = edit.get("slide_index")
         try:
-            slide_idx = int(edit.get("slide_index")) if edit.get("slide_index") is not None else None
+            slide_idx = int(slide_raw) if slide_raw is not None else None
         except (TypeError, ValueError):
             slide_idx = None
         name_val = edit.get("name")
-        normalized.append(
+        result.append(
             {
-                "shape_id": shape_id_int,
+                "shape_id": shape_id,
                 "slide_index": slide_idx,
-                "name": str(name_val) if name_val is not None else None,
+                "name": None if name_val is None else str(name_val),
                 "contents": str(contents),
             }
         )
-    return normalized
+    return result
 
 
 __all__ = [
