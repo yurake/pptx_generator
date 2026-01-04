@@ -12,6 +12,7 @@
 - パイプラインは「テンプレ → コンテンツ準備 → マッピング（HITL + 自動）→ レンダリング」の 4 stage で構成される。
 - `pptx compose` は stage 3（マッピング）を連続実行するラッパーで、HITL 承認から `generate_ready.json` 出力までを一括で処理する。
 - `pptx gen` は stage 4（レンダリング）を担当し、stage 3 で生成した `generate_ready.json` を入力に最終成果物（PPTX／PDF）と監査メタを出力する。
+- Stage5（編集反映）向けに `pptx edit` を用意。Stage4 生成済み PPTX と差分 JSON（`shape_id`, `edit`, `contents`）を入力し、書式を保持したままテキスト差し替えを行う。位置引数で PPTX を指定し、`--edits-json`（または `--edits` 直接指定）が無い場合は LLM で差分を生成して適用する。
 - 出力ルートは `PPTX_OUTPUT_ROOT` で切り替えられる（未指定は `.pptx/<stage>`）。API/Web では `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` 規約を前提とする。
 - 入力ルートは Web/API 専用で `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/` を利用する（未指定は `.pptx/input`）。CLI 既定の入力パスは従来どおりで変更しない。
 - CLI は内部的にメモリキュー＋ワーカーを用いるが、実行完了まで待機する同期挙動を維持する。API/Web は同一プロセス内の複数ワーカーで非同期実行を前提とし、ジョブ状態の永続化は行わない（必要ならクライアント側で保持）。
@@ -156,7 +157,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック | ✅ | ✅ | - |
-| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json`。省略時は `.pptx/prepare/prepare_card.json` を探索し、存在しなければエラー |  |  | `.pptx/prepare/prepare_card.json` |
 | `--generate-ready-filename <name>` | `generate_ready.json` のファイル名 |  |  | `generate_ready.json` |
 | `--generate-ready-meta <name>` | `generate_ready_meta.json` のファイル名 |  |  | `generate_ready_meta.json` |
 | `--review-log-filename <name>` | `draft_review_log.json` のファイル名 |  |  | `draft_review_log.json` |
@@ -175,7 +176,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | オプション | 説明 | 必須 | 位置引数 | 既定値 |
 | --- | --- | --- | --- | --- |
 | `<jobspec.json>` | Stage1 で生成したジョブスペック（位置引数） | ✅ | ✅ | - |
-| `--prepare-cards <path>` | stage 2 の `prepare_card.json` | ✅ |  | `.pptx/prepare/prepare_card.json` |
+| `--prepare-cards <path>` | stage 2 の `prepare_card.json`。省略時は `.pptx/prepare/prepare_card.json` を探索し、存在しなければエラー |  |  | `.pptx/prepare/prepare_card.json` |
 | `--output <dir>` | ドラフト成果物を保存するディレクトリ |  |  | `.pptx/draft` |
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
@@ -195,38 +196,9 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | （自動） | draft 成果物の出力先 |  |  | `<output>/draft` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` を必ず設定する。CLI はこれらのメタ情報からパスを解決し、欠落時はエラーになる。
+
 ### stage 4: レンダリング
 最終成果物（PPTX/PDF）と監査ログを生成する。
-
-#### `pptx gen`
-- `generate_ready.json` を入力に stage 4 を実行する。テンプレートパスは `meta.template_path` から自動解決され、LibreOffice・Polisher などの周辺処理も同時に実行される。
-- スタイル情報は CLI がテンプレートから抽出した `template_style` メタ（`generate_ready.meta.template_style`）を基準に適用し、抽出に失敗した場合のみ既定スタイルへフォールバックする。追加のブランド設定ファイルは不要。
-
-| オプション | 説明 | 必須 | 位置引数 | 既定値 |
-| --- | --- | --- | --- | --- |
-| `<generate_ready.json>` | generate_ready ドキュメント | ✅ | ✅ | - |
-| `--output <dir>` | 生成物を保存するディレクトリ |  |  | `.pptx/gen` |
-| `--pptx-name <filename>` | 出力 PPTX 名を変更する |  |  | `proposal.pptx` |
-| `--rules <path>` | Analyzer / Polisher 設定に利用するルールファイル |  |  | `src/pptx_generator/config/pipeline_rules.json` |
-| `--export-pdf` | LibreOffice 経由で PDF を同時生成 |  |  | 無効 |
-| `--pdf-mode <both\|only>` | PDF のみ出力するかを選択 |  |  | `both` |
-| `--pdf-output <filename>` | 出力 PDF 名を変更する |  |  | `proposal.pdf` |
-| `--libreoffice-path <path>` | `soffice` のパスを明示する |  |  | `PATH` から探索 |
-| `--pdf-timeout <sec>` | LibreOffice 実行のタイムアウト秒 |  |  | 120 |
-| `--pdf-retries <count>` | PDF 変換のリトライ回数 |  |  | 2 |
-| `--polisher/--no-polisher` | Polisher の明示的な有効化／無効化 |  |  | 設定ファイル準拠 |
-| `--polisher-path <path>` | Polisher 実行ファイルのパス |  |  | 指定なし |
-| `--polisher-rules <path>` | Polisher のルール設定 |  |  | 指定なし（未指定時はコード内蔵デフォルトを使用） |
-| `--polisher-timeout <sec>` | Polisher のタイムアウト秒 |  |  | 指定なし |
-| `--polisher-arg <value>` | Polisher へ渡す追加引数（複数指定可） |  |  | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリ |  |  | 指定なし |
-| `--emit-structure-snapshot` | Analyzer の構造スナップショットを出力する |  |  | 無効 |
-| `--polisher-path <path>` | Polisher 実行ファイル（`.exe` / `.dll` 等）を明示する |  |  | `src/pptx_generator/config/pipeline_rules.json` の `polisher.executable` または環境変数 |
-| `--polisher-rules <path>` | Polisher 用ルール設定ファイルを差し替える |  |  | 指定なし（デフォルトは内蔵ルールを使用） |
-| `--polisher-timeout <sec>` | Polisher 実行のタイムアウト秒数 |  |  | `polisher.timeout_sec` |
-| `--polisher-arg <value>` | Polisher に追加引数を渡す（複数指定可 / `{pptx}`, `{rules}` プレースホルダー対応） |  |  | 指定なし |
-| `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
-| `--verbose` | 追加ログを表示する |  |  | 無効 |
 
 #### `pptx gen`
 - stage 3 で生成した `generate_ready.json` を入力に、stage 4 のレンダリング・Polisher・PDF 変換を実行するコマンド。
@@ -252,6 +224,23 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--polisher-cwd <dir>` | Polisher 実行時のカレントディレクトリを固定する |  |  | カレントディレクトリ |
 | `--emit-structure-snapshot` | Analyzer の構造スナップショット (`analysis_snapshot.json`) を生成 |  |  | 無効 |
 | `--verbose` | 追加ログを表示する |  |  | 無効 |
+
+### stage 5: 編集反映
+生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、`--edits-json` 未指定なら LLM が差分を自動生成して適用する（CLI は `--edits` 直接指定を持たない）。
+
+出力:
+- PPTX（書式保持で差し替え済み。差分 JSON は内部保存のみ）
+
+出力先既定:
+- CLI: `.pptx/edit/<pptxファイル名>`
+- API: `PPTX_OUTPUT_ROOT/<transaction_id>/edit/<job_id>/` 配下に PPTX（JSON は内部保存）
+
+#### `pptx edit`
+| オプション | 説明 | 必須 | 位置引数 | 既定値 |
+| --- | --- | --- | --- | --- |
+| `<pptx_path>` | 差分適用対象の PPTX | ✅ | ✅ | - |
+| `--edits-json <path>` | 差分 JSON。指定時は LLM 呼び出しなしで適用のみ |  |  | 指定なし（LLM 自動生成） |
+| `--output <path>` | 出力先 PPTX パス |  |  | `.pptx/edit/<pptx名>` |
 
 ## 生成物とログの設計メモ
 - `prepare_card.json` / `prepare_log.json` / `prepare_ai_log.json` / `ai_generation_meta.json` / `prepare_story_outline.json`: stage 2 で生成される Prepare 成果物。

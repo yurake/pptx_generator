@@ -127,7 +127,6 @@ class InProcessJobQueue:
                 state.request.transaction_id[:8],
                 exc_info=True,
             )
-            raise
         finally:
             reset_current_stage(stage_token)
             reset_current_job(token)

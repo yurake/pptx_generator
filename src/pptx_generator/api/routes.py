@@ -32,10 +32,12 @@ from pptx_generator.api.stages import (
     build_prepare_job,
     build_compose_job,
     build_gen_job,
+    build_edit_job,
     TemplateCommandError,
     PrepareCommandError,
     ComposeCommandError,
     GenerateCommandError,
+    EditCommandError,
 )
 from pptx_generator.logging import set_current_request_id, reset_current_request_id
 from pptx_generator.runtime.job_queue import (
@@ -80,6 +82,17 @@ def _prepare_prepare_payload(queue: InProcessJobQueue, tx_root: Path, transactio
         require_path_exists(src, "prepare_sources")
     payload["prepare_inputs"] = sources
     payload["mode"] = (payload.get("mode") or "dynamic").lower()
+    return payload
+
+
+def _prepare_edit_payload(payload: dict) -> dict:
+    require_fields(payload, ["pptx_path"])
+    require_path_exists(payload.get("pptx_path"), "pptx_path")
+    if payload.get("edits_json"):
+        require_path_exists(payload.get("edits_json"), "edits_json")
+    if request.files:
+        # ファイルアップロードと pptx_path 同時指定は 422
+        abort_error(422, "validation_error", "pptx_path and file cannot both be set")
     return payload
 
 
@@ -138,6 +151,7 @@ def handle_request_entity_too_large(e):
 @api_blueprint.errorhandler(PrepareCommandError)
 @api_blueprint.errorhandler(ComposeCommandError)
 @api_blueprint.errorhandler(GenerateCommandError)
+@api_blueprint.errorhandler(EditCommandError)
 def handle_command_error(exc):
     code = getattr(exc, "exit_code", 1)
     if code in (4, 6):  # ファイル関連/検証エラー
@@ -178,6 +192,25 @@ def post_gen():
     tx_id = payload.get("transaction_id") or _generate_id("tx")
     job_id = _generate_id("gen")
     state = _enqueue_job(get_queue(), stage="gen", job_id=job_id, transaction_id=tx_id, payload=payload)
+    return _job_response(state)
+
+
+@api_blueprint.post("/edit")
+def post_edit():
+    if request.mimetype and request.mimetype.startswith("multipart/"):
+        data: dict = {}
+        for key, values in request.form.lists():
+            if len(values) == 1:
+                data[key] = values[0]
+            else:
+                data[key] = values
+        payload = data
+    else:
+        payload = require_json()
+    tx_id = payload.get("transaction_id") or _generate_id("tx")
+    job_id = _generate_id("edit")
+    _prepare_edit_payload(payload)
+    state = _enqueue_job(get_queue(), stage="edit", job_id=job_id, transaction_id=tx_id, payload=payload)
     return _job_response(state)
 
 
@@ -278,6 +311,11 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             compose_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"]),
             template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True),
         )
+    elif stage == "edit":
+        func = build_edit_job(
+            payload=payload,
+            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
+        )
     else:
         def _noop_job():
             if stage == "gen":
@@ -313,7 +351,9 @@ def _job_status_body(state):
     if state.status == JobStatus.SUCCEEDED:
         _update_registry(tx_root, state.request.stage, state)
     artifacts = {}
-    if state.request.stage == "gen":
+    if state.request.stage == "edit" and state.status == JobStatus.SUCCEEDED:
+        artifacts["pptx_url"] = _artifact_api_path(state.request.job_id, "pptx")
+    elif state.request.stage == "gen":
         for artifact_type in ARTIFACT_KEYS:
             path = _resolve_artifact_path(state.request.job_id, artifact_type, state=state, tx_root=tx_root)
             if path:

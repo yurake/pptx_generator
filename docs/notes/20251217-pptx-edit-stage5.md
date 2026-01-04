@@ -204,3 +204,13 @@
     ```
     了解です。書式維持を前提に、既存ランを残して run.text だけを差し替える実装方針で進めます。
     ```
+- 9回目:
+  - アシスタント:
+    ```
+    グループ配下の子シェイプと表セルを slide_snapshot で再帰抽出し、親座標加算・parent_shape_id・table_cell(row/col) を保持する形に整理。shape_id を持つセルにもテキストを含める。
+    書式維持でテキスト差し替えするヘルパを用意。text_frame の段落・ラン・余白/ワープ設定を取得し、clear 後に再適用してテキストのみ置換する構成。
+    ```
+- 10回目:
+  - 追加メモ:
+- 差分適用用の CLI `pptx edit <PPTX>` を用意。edits JSON 未指定なら snapshot→LLM→適用を実行。`--edits-json` 指定時は LLM を呼ばず適用のみ。JSON は `{shape_id, contents, edit}` の配列または `{edits: [...]}` を受け付ける。既存書式を保持したまま `apply_shape_text_edits` で適用。内部は job_queue 経由で同期実行（他ステージと同じ基盤）。
+    - テーブルセルは `table_cell_shape_id(parent_shape_id, row, col)` で一意。`slide_snapshot.json` の `table_cell` メタと合わせて shape_id を組み立てる。

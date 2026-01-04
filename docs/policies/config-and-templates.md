@@ -10,6 +10,10 @@
 2. Pull Request でレビューを受けるまで `draft` 状態を維持する。
 3. レビューコメントは 24 時間以内を目安に対応し、議論の結果は PR に明記する。
 
+## 入出力ディレクトリ規約（補足）
+- 出力は各 stage ごとに `.pptx/<stage>/`（CLI 既定）または `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/`（API）を利用する。
+- 入力テンプレートや配置対象ファイルは `.pptx/input/`（CLI 既定）または `PPTX_INPUT_ROOT/<transaction_id>/<job_id>/`（API）で扱う。
+
 ## （参考）テンプレートスタイル（branding.json）について
 - ランタイムはテンプレートから TemplateStyle を抽出して利用するため、`branding.json` は `pptx template` 実行時に `.pptx/template/` 配下へ出力されるスナップショットのみを参考用途として扱う（リポジトリ直下に配置しない）。
 - スキーマバージョンは `version: "layout-style-v1"` を既定とし、テンプレートのテーマやプレースホルダーから得られたフォント／カラー／配置のサマリを含む。

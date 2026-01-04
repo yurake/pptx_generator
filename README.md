@@ -105,6 +105,7 @@ flowchart TD
 | 2. コンテンツ準備 | 入力資料を仮スライドへ正規化し、AI ログや監査情報付きのドラフトを生成 | `uv run pptx prepare samples/input/pitch.md` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","prepare_sources":["samples/input/pitch.md"],"mode":"dynamic"}'` |
 | 3. マッピング | HITL 承認とレイアウト割り当てを行い、`.pptx/compose/generate_ready.json` を作成 | `uv run pptx compose .pptx/template/jobspec.json --prepare-cards .pptx/prepare/prepare_card.json` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic"}'` |
 | 4. PPTX 生成 | `generate_ready.json` を用いて PPTX／PDF と監査ログを出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","export_pdf":false}'` |
+| 5. 編集反映 | 生成済み PPTX に差分を自動適用（LLMで差分生成）、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-dynamic","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ### 静的生成 (static mode)
 テンプレートで決めたスライド構造に合わせて資料データを自動で割り当てて仕上げるモードです。スライドの配置やルールが決まっているケースで役立ちます。
@@ -160,6 +161,7 @@ flowchart TD
 | 2. コンテンツ準備 | 雛形 (`.pptx/template/prompts/01_*.md`) と入力マニフェスト (`.pptx/slide_inputs.md`) を編集し、必要なら `<data file path>` を省略して Blueprint の Slot 定義に沿って仮スライドを整形 | `uv run pptx prepare --mode static` | `curl -X POST http://localhost:8000/prepare -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","prepare_sources":["samples/input/pitch.md"],"mode":"static"}'` |
 | 3. マッピング | Slot 充足状況を検証しつつ `generate_ready.json` を生成 | `uv run pptx compose .pptx/template/jobspec.json --static` | `curl -X POST http://localhost:8000/compose -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static"}'` |
 | 4. PPTX 生成 | 固定レイアウトで PPTX／PDF を出力 | `uv run pptx gen .pptx/compose/generate_ready.json` | `curl -X POST http://localhost:8000/gen -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","export_pdf":false}'` |
+| 5. 編集反映 | 生成済み PPTX に差分を自動適用（LLMで差分生成）、書式を保持したままテキスト置換 | `uv run pptx edit .pptx/gen/proposal.pptx` | `curl -X POST http://localhost:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -H "Content-Type: application/json" -d '{"transaction_id":"tx-static","pptx_path":".pptx/gen/proposal.pptx"}'` |
 
 ## 詳細オプション
 - CLI: `docs/design/cli/cli-command-reference.md`

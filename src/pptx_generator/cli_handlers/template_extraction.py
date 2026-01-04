@@ -360,6 +360,7 @@ def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
                 "shape_id": shape.shape_id,
                 "name": shape.name or "",
                 "shape_type": _shape_type_name(shape.shape_type),
+                "parent_shape_id": shape.parent_shape_id,
                 "left_in": shape.left_in,
                 "top_in": shape.top_in,
                 "width_in": shape.width_in,
@@ -373,6 +374,7 @@ def _serialize_slide_snapshot(slide, snapshot: SlideSnapshot) -> dict[str, Any]:
                 "text_frame_word_wrap": shape.text_frame_word_wrap,
                 "text_frame_vertical_anchor": shape.text_frame_vertical_anchor,
                 "text_frame_auto_size": shape.text_frame_auto_size,
+                "table_cell": shape.table_cell,
                 "paragraphs": paragraphs,
             }
         )

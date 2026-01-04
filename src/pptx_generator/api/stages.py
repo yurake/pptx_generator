@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Iterable
 
 from pptx_generator.cli_handlers.common import dump_json
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
 from pptx_generator.cli_handlers.prepare import PrepareCommandConfig, PrepareCommandError, SLIDE_INPUTS_FILENAME, run_prepare_command
 from pptx_generator.cli_handlers.rendering import GenerateCommandConfig, GenerateCommandError, run_generate_command
+from pptx_generator.pipeline.text_edit import snapshot_shapes_for_edit
+from pptx_generator.edit_ai import EditAIRequest, create_edit_ai_client
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
+from pptx_generator.edit_ai.client import EditAIResponseFormatError
+from pptx_generator.pipeline.edit_runner import EditRunError, run_edit_job
 
 DRAFT_DIRNAME = "draft.json"
 
@@ -15,11 +20,19 @@ __all__ = [
     "build_prepare_job",
     "build_compose_job",
     "build_gen_job",
+    "build_edit_job",
     "TemplateCommandError",
     "PrepareCommandError",
     "ComposeCommandError",
     "GenerateCommandError",
+    "EditCommandError",
 ]
+
+
+class EditCommandError(RuntimeError):
+    def __init__(self, message: str, exit_code: int = 1):
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 def build_template_job(payload: dict, workdir: Path):
@@ -164,5 +177,36 @@ def build_gen_job(payload: dict, workdir: Path, compose_artifacts: dict, templat
         if payload.get("export_pdf"):
             artifacts["pdf_url"] = str(pdf_path)
         return {"artifacts": artifacts, "result": result}
+
+    return run
+
+
+def build_edit_job(payload: dict, workdir: Path):
+    pptx_path = Path(payload["pptx_path"]).expanduser()
+    if not pptx_path.exists():
+        raise EditCommandError(f"pptx_path not found: {pptx_path}")
+
+    config = {
+        "edits_json": payload.get("edits_json"),
+        "edits_inline": payload.get("edits"),
+        "output_path": Path(payload.get("output") or (workdir / pptx_path.name)).expanduser(),
+    }
+
+    def run():
+        try:
+            return run_edit_job(
+                pptx_path=pptx_path,
+                edits_json=config["edits_json"],
+                edits_inline=config["edits_inline"],
+                output_path=config["output_path"],
+                snapshot_fn=snapshot_shapes_for_edit,
+                client_factory=create_edit_ai_client,
+                error_cls=EditCommandError,
+            )
+        except EditRunError as exc:
+            raise EditCommandError(str(exc)) from exc
+        except EditAIResponseFormatError as exc:
+            # LLM 応答不正もユーザー向けエラーとして扱う
+            raise EditCommandError(str(exc)) from exc
 
     return run

@@ -216,6 +216,7 @@ class OpenAIPrepareLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
+        logger.debug("prepare_ai openai raw response: %s", response)
         logger.info(
             "prepare_ai call done: provider=openai model=%s latency_ms=%.1f finish_reason=%s",
             target_model,
@@ -314,6 +315,7 @@ class AzureOpenAIPrepareLLMClient:
                 "completion": getattr(usage, "completion_tokens", 0),
                 "total": getattr(usage, "total_tokens", 0),
             }
+        logger.debug("prepare_ai azure raw response: %s", response)
         logger.info(
             "prepare_ai call done: provider=azure model=%s latency_ms=%.1f",
             target_model,

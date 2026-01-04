@@ -38,9 +38,9 @@
 | Service-G Distributor | ストレージ保存、通知、ログ登録 | Python, Azure SDK / AWS SDK |
 
 ## 3. データフロー
-最新ロードマップでは、以下の 4 stage で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
+最新ロードマップでは、以下の 5 stage で資料を生成する。詳細な検討内容は `docs/notes/20251011-roadmap-refresh.md` を参照。
 
-README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
+README の「アーキテクチャ概要」節にも同じ 5 stage を視覚化した Mermaid フローを掲載しているため、stage の全体像を素早く把握したい場合は併せて確認する。
 
 1. **テンプレ**（自動＋HITL）  
   テンプレ資産（`.pptx`）を整備し、`uv run pptx template` で抽出・検証・リリースメタ生成までを一括実行する。`template_spec.json`・`jobspec.json`・`branding.json`（テンプレートスタイルの参考スナップショット）・`layouts.jsonl`・`diagnostics.json` を `.pptx/template/` に出力し、必要に応じて `.pptx/release/` に `template_release.json` を生成する。
@@ -51,6 +51,8 @@ README の「アーキテクチャ概要」節にも同じ 4 stage を視覚化�
   Prepare 成果物とテンプレ仕様を突合し、HITL で章構成を確定しつつレイアウト割付・フォールバック制御を行う。成果物は `generate_ready.json`・`generate_ready_meta.json`・`draft_review_log.json`・`draft_mapping_log.json` に集約される。
 4. **PPTX レンダリング**（自動）  
   `generate_ready.json` とテンプレを用いて `output.pptx` を生成し、軽量整合チェックと `rendering_log.json` を出力。PDF 変換、Polisher、Distributor などの後 stage は従来どおり。
+5. **編集反映**（自動）  
+  生成済み PPTX を入力し、書式を保持したままテキスト差分を適用する。差分 JSON を指定しない場合は LLM がスライド単位で差分を生成して適用する。出力は編集済み PPTX（API成果物は PPTX のみ）。
 
 stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻し・Auto-fix 提案をサポートする。AI レビュー仕様と状態遷移は後述および `docs/design/schema/stage-02-prepare.md` / `docs/design/stages/stage-03-compose.md` にまとめている。
 
@@ -60,6 +62,7 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 | コンテンツ準備 | プレペア入力（Markdown / JSON） | `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `ai_generation_meta.json`, `prepare_story_outline.json`, `audit_log.json` | PrepareCard 生成、AI レビュー結果・監査メタを保存 |
 | マッピング (HITL + 自動) | `jobspec.json`, `prepare_card.json`, `prepare_log.json`, `prepare_ai_log.json`, `layouts.jsonl`, 章テンプレ辞書, 差戻し理由辞書 | `generate_ready.json`, `generate_ready_meta.json`, `draft_review_log.json`, `draft_mapping_log.json`, `fallback_report.json` | 章承認・差戻しログ、レイアウトスコアリング、フォールバック（縮約→分割→付録）、Analyzer 連携 |
 | レンダリング | `generate_ready.json`, `template.pptx` | `proposal.pptx`, `proposal.pdf`, `analysis.json`, `rendering_log.json`, `monitoring_report.json`, `audit_log.json`, `analysis_snapshot.json`, `review_engine_analyzer.json` | `generate_ready.meta.template_style` を基にテンプレートスタイルを適用。軽量整合チェック、Analyzer 連携、PDF/Polisher 統合 |
+| 編集反映 | 編集対象 PPTX, 差分（任意 JSON） | 編集済み PPTX | 差分 JSON が無い場合は LLM で差分生成し適用。成果物は PPTX のみ。 |
 
 ### 3.2 stage 別設計ドキュメント
 | stage | 設計ドキュメント | 主な設計観点 |
@@ -68,6 +71,7 @@ stage 2・3 は Human-in-the-Loop (HITL) を前提とし、部分承認・差戻
 | 2 コンテンツ準備 (Prepare) | [stage-02-prepare.md](./stages/stage-02-prepare.md) | 承認 API、AI レビュー、監査ログ |
 | 3 Compose | [stage-03-compose.md](./stages/stage-03-compose.md) | `generate_ready` 構築、承認ログ、レイアウト候補スコアリング、フォールバック制御 |
 | 4 PPTX 生成 | [stage-04-gen.md](./stages/stage-04-gen.md) | レンダリング制御、整合チェック、PDF/Polisher 連携 |
+| 5 編集反映 | [stage-05-edit.md](./stages/stage-05-edit.md) | 差分適用（LLM自動/手動）、成果物出力、書式保持 |
 
 > 過去 stage の検討内容は各設計ドキュメント内に統合済み。参照時は上記 4 ファイルを起点に確認する。
 
