@@ -5,8 +5,8 @@
 roadmap_item: RM-098 改行・空行の保持
 ---
 
-- [ ] ブランチ作成・初期コミット・push
-  - メモ: feat/rm098-linebreak-preservation を upstream/main から作成。初期コミット・push は未実施。
+- [x] ブランチ作成・初期コミット・push
+  - メモ: feat/rm098-linebreak-preservation を upstream/main から作成。初期コミットと origin への push 済み。
     - 必ずmainからブランチを切る
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
