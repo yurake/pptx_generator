@@ -103,26 +103,31 @@ class PrepareSourceDocument(BaseModel):
             current_supporting = []
 
         for raw_line in lines:
-            line = raw_line.strip()
-            if not line:
-                continue
-            if line.startswith("# "):
-                title = line[2:].strip()
-                continue
-            if line.startswith("## "):
-                finalize_current()
-                current_title = line[3:].strip()
-                continue
-            if line.startswith("- "):
+            line = raw_line.rstrip()
+            stripped = line.strip()
+            if not stripped:
                 if current_title:
-                    current_supporting.append(line[2:].strip())
+                    current_narrative.append("")
                 else:
-                    intro_lines.append(line[2:].strip())
+                    intro_lines.append("")
+                continue
+            if stripped.startswith("# "):
+                title = stripped[2:].strip()
+                continue
+            if stripped.startswith("## "):
+                finalize_current()
+                current_title = stripped[3:].strip()
+                continue
+            if stripped.startswith("- "):
+                if current_title:
+                    current_supporting.append(stripped[2:].strip())
+                else:
+                    intro_lines.append(stripped[2:].strip())
                 continue
             if current_title:
-                current_narrative.append(line)
+                current_narrative.append(stripped)
             else:
-                intro_lines.append(line)
+                intro_lines.append(stripped)
 
         finalize_current()
 

@@ -21,3 +21,7 @@ def test_parse_file_reads_json(tmp_path) -> None:
 
     assert document.meta.title == "Sample"
     assert document.meta.prepare_id == "example"
+
+
+def test_parse_file_preserves_blank_lines_in_markdown(tmp_path) -> None:
+    text = 
