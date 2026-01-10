@@ -55,6 +55,11 @@ ARTIFACT_KEYS = {"pptx": "pptx_url", "pdf": "pdf_url"}
 api_blueprint = Blueprint("api", __name__)
 
 
+@api_blueprint.get("/health")
+def get_health():
+    return jsonify({"status": "ok"})
+
+
 def _prepare_template_payload(tx_root: Path, payload: dict) -> dict:
     uploads = save_uploaded_files(tx_root, request.files.values(), ALLOWED_UPLOAD_EXT) if request.files else []
     if uploads and payload.get("template_path"):
@@ -112,6 +117,8 @@ def setup_state(setup_state):
             request.path,
             (g.request_id or "")[:8],
         )
+        if request.path == "/health":
+            return None
         error = _verify_auth(
             bearer_token=app.config["BEARER_TOKEN"],
             hmac_keys=app.config["HMAC_KEYS"],
