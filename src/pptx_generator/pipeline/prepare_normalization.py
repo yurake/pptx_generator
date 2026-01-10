@@ -24,6 +24,7 @@ from ..models import (
     ContentSlideSource,
     ContentTableData,
 )
+from ..utils.text_lines import split_lines_preserve_blank
 from .base import PipelineContext, PipelineStage, PipelineStep
 
 logger = logging.getLogger(__name__)
