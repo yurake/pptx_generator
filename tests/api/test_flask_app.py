@@ -36,6 +36,23 @@ def test_healthcheck_ignores_auth(client):
     assert resp.get_json() == {"status": "ok"}
 
 
+def test_healthcheck_path_variations(client):
+    resp = client.get("/health?foo=bar", headers={"Authorization": "Bearer invalid-token"})
+    assert resp.status_code == 200
+    assert resp.get_json() == {"status": "ok"}
+
+    resp_trailing = client.get("/health/", headers={"Authorization": "Bearer invalid-token"})
+    # trailing slash は別ルート扱いとなり認証対象
+    assert resp_trailing.status_code == 401
+    assert resp_trailing.get_json()["code"] == "unauthorized"
+
+
+def test_templates_still_require_auth(client):
+    resp = client.post("/templates", json={"template_path": "x", "mode": "static"}, headers={"Authorization": "Bearer wrong"})
+    assert resp.status_code == 401
+    assert resp.get_json()["code"] == "unauthorized"
+
+
 def test_request_id_logging_truncated(client, caplog):
     rid = "req-1234567890"
     api_logger = logging.getLogger("pptx_generator.api.flask_app")
