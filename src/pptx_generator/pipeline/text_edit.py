@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List
 
@@ -59,81 +60,8 @@ def apply_shape_text_edits(
     presentation = Presentation(pptx_path)
     output_path = Path(output_path) if output_path is not None else pptx_path
 
-    normalized: list[dict[str, object]] = []
-    for edit in edits:
-        if not isinstance(edit, dict):
-            continue
-        if not edit.get("edit", True):
-            continue
-        shape_id = edit.get("shape_id")
-        contents = edit.get("contents")
-        if shape_id is None or contents is None:
-            continue
-        try:
-            shape_id_int = int(shape_id)
-        except (TypeError, ValueError):
-            continue
-        try:
-            slide_idx = int(edit.get("slide_index")) if edit.get("slide_index") is not None else None
-        except (TypeError, ValueError):
-            slide_idx = None
-        name_val = edit.get("name")
-        normalized.append(
-            {
-                "shape_id": shape_id_int,
-                "slide_index": slide_idx,
-                "name": str(name_val) if name_val is not None else None,
-                "contents": str(contents),
-            }
-        )
-
-    applied = 0
-    missing: list[str] = []
-
-    for edit in normalized:
-        target_slide = edit.get("slide_index")
-        target_id = edit["shape_id"]
-        target_name = edit.get("name")
-        new_text = edit["contents"]
-        found = False
-
-        for slide_index, slide in enumerate(presentation.slides):
-            if target_slide is not None and slide_index != target_slide:
-                continue
-            for shape in _iter_shapes(slide.shapes):
-                if getattr(shape, "shape_id", None) != target_id:
-                    continue
-                if target_name is not None and target_name != getattr(shape, "name", None):
-                    continue
-                if hasattr(shape, "text_frame"):
-                    overwrite_text_frame_preserving_style(shape.text_frame, new_text)
-                    applied += 1
-                    found = True
-                    break
-            if found:
-                break
-            for shape in slide.shapes:
-                if not getattr(shape, "has_table", False):
-                    continue
-                for row_idx, row in enumerate(getattr(shape.table, "rows", [])):
-                    for col_idx, cell in enumerate(getattr(row, "cells", [])):
-                        cell_id = table_cell_shape_id(int(shape.shape_id), row_idx, col_idx)
-                        if cell_id != target_id:
-                            continue
-                        if target_name is not None and target_name != getattr(shape, "name", None):
-                            continue
-                        overwrite_text_frame_preserving_style(cell.text_frame, new_text)
-                        applied += 1
-                        found = True
-                        break
-                    if found:
-                        break
-                if found:
-                    break
-
-        if not found:
-            missing.append(f"{target_slide}:{target_id}" if target_slide is not None else str(target_id))
-
+    normalized = _normalize_edits(edits)
+    applied, missing = _apply_edits_to_presentation(presentation, normalized)
     presentation.save(output_path)
     return applied, missing
 
@@ -296,6 +224,89 @@ def _edit_applied(target_shape_id: int, presentation, target_slide_index: int | 
                             if target_name is None or target_name == getattr(shape, "name", None):
                                 return True
     return False
+
+
+@dataclass
+class _NormalizedEdit:
+    shape_id: int
+    slide_index: int | None
+    name: str | None
+    contents: str
+
+
+def _normalize_edits(edits: Iterable[dict[str, object]]) -> list[_NormalizedEdit]:
+    normalized: list[_NormalizedEdit] = []
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        if not edit.get("edit", True):
+            continue
+        shape_id = edit.get("shape_id")
+        contents = edit.get("contents")
+        if shape_id is None or contents is None:
+            continue
+        try:
+            shape_id_int = int(shape_id)
+        except (TypeError, ValueError):
+            continue
+        try:
+            slide_idx = int(edit.get("slide_index")) if edit.get("slide_index") is not None else None
+        except (TypeError, ValueError):
+            slide_idx = None
+        name_val = edit.get("name")
+        normalized.append(
+            _NormalizedEdit(
+                shape_id=shape_id_int,
+                slide_index=slide_idx,
+                name=str(name_val) if name_val is not None else None,
+                contents=str(contents),
+            )
+        )
+    return normalized
+
+
+def _apply_edits_to_presentation(
+    presentation: PptxPresentation, edits: list[_NormalizedEdit]
+) -> tuple[int, list[str]]:
+    applied = 0
+    missing: list[str] = []
+    for edit in edits:
+        if _apply_single_edit(presentation, edit):
+            applied += 1
+        else:
+            missing.append(_format_missing_key(edit))
+    return applied, missing
+
+
+def _apply_single_edit(presentation: PptxPresentation, edit: _NormalizedEdit) -> bool:
+    for slide_index, slide in enumerate(presentation.slides):
+        if edit.slide_index is not None and slide_index != edit.slide_index:
+            continue
+        for shape_id, shape_name, text_frame in _iter_slide_text_frames(slide):
+            if shape_id != edit.shape_id:
+                continue
+            if edit.name is not None and edit.name != shape_name:
+                continue
+            overwrite_text_frame_preserving_style(text_frame, edit.contents)
+            return True
+    return False
+
+
+def _iter_slide_text_frames(slide):
+    for shape in _iter_shapes(slide.shapes):
+        shape_id = getattr(shape, "shape_id", None)
+        shape_name = getattr(shape, "name", None)
+        if getattr(shape, "has_text_frame", False):
+            yield shape_id, shape_name, shape.text_frame
+        if getattr(shape, "has_table", False):
+            for row_idx, row in enumerate(getattr(shape.table, "rows", [])):
+                for col_idx, cell in enumerate(getattr(row, "cells", [])):
+                    cell_id = table_cell_shape_id(int(shape.shape_id), row_idx, col_idx)
+                    yield cell_id, shape_name, cell.text_frame
+
+
+def _format_missing_key(edit: _NormalizedEdit) -> str:
+    return f"{edit.slide_index}:{edit.shape_id}" if edit.slide_index is not None else str(edit.shape_id)
 
 
 __all__ = ["overwrite_text_frame_preserving_style", "apply_shape_text_edits", "generate_edits_template"]
