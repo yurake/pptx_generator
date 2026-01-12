@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from pptx_generator.config_manager import ResolvedConfig
+from pptx_generator.config import ResolvedConfig
 from pptx_generator.models import JobAuth, JobMeta, JobSpec, Slide
 from pptx_generator.pipeline import PipelineContext, PipelineStage, StageResult
 from pptx_generator.pipeline.trace import write_pipeline_trace

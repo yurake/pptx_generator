@@ -1,4 +1,4 @@
-from pptx_generator.config_manager import ConfigManager
+from pptx_generator.config import ConfigManager
 
 
 def test_config_manager_prefers_higher_priority() -> None:

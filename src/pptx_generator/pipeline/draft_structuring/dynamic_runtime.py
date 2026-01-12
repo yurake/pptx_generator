@@ -7,7 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from ...draft_intel import load_analysis_summary
+from ...draft.draft_intel import load_analysis_summary
 from ...prepare.models import PrepareDocument, PrepareGenerationMeta
 from ...models import (
     ContentApprovalDocument,
@@ -17,7 +17,7 @@ from ...models import (
 )
 from ..base import PipelineContext
 from ..slide_alignment import SlideIdAligner, SlideIdAlignerOptions
-from ...draft_recommender import CardLayoutRecommender, CardLayoutRecommenderConfig, LayoutProfile
+from ...draft.draft_recommender import CardLayoutRecommender, CardLayoutRecommenderConfig, LayoutProfile
 from ...settings.ai_policy import resolve_layout_ai_policy_path
 from ...api.draft_store import BoardAlreadyExistsError, DraftStore
 from .errors import DraftStructuringError

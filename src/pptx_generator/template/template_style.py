@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from .branding_extractor import BrandingExtractionError, extract_branding_config
-from .models import (
+from ..models import (
     FontSpec,
     TemplateChartDefaults,
     TemplateColorPalette,
@@ -17,7 +17,7 @@ from .models import (
     TextboxParagraph,
     TextboxPosition,
 )
-from .settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
+from ..settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
 
 logger = logging.getLogger(__name__)
 

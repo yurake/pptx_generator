@@ -26,7 +26,7 @@ from pptx_generator.models import (
     SlideTable,
     TemplateBlueprintSlot,
 )
-from pptx_generator.draft_recommender import LayoutProfile
+from pptx_generator.draft import LayoutProfile
 from pptx_generator.prepare import (
     PrepareBodyBlock,
     PrepareCard,

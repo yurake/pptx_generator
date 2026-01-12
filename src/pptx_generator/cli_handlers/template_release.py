@@ -29,7 +29,7 @@ from pptx_generator.template_audit import (
     build_template_release,
     load_template_release,
 )
-from pptx_generator.template_style import extract_template_style
+from pptx_generator.template import extract_template_style
 from pptx_generator.models import (
     TemplateRelease,
     TemplateReleaseDiagnostics,

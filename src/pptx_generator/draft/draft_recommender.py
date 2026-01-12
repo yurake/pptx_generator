@@ -8,15 +8,22 @@ from pathlib import Path
 from typing import Iterable, Sequence, Tuple
 
 from .draft_intel import clamp_score_detail, compute_analyzer_support
-from .layout_ai import (LayoutAIPolicy, LayoutAIRequest, LayoutAIResponse,
-                        create_layout_ai_client, load_layout_policy_set)
-from .layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
-from .layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
-from .models import (ContentSlide, DraftAnalyzerSummary, DraftLayoutCandidate,
-                     DraftLayoutScoreDetail)
-from .utils.usage_tags import (CANONICAL_USAGE_TAGS, get_usage_tag_catalog,
-                               normalize_usage_tag_value,
-                               normalize_usage_tags_with_unknown)
+from ..layout_ai import (
+    LayoutAIPolicy,
+    LayoutAIRequest,
+    LayoutAIResponse,
+    create_layout_ai_client,
+    load_layout_policy_set,
+)
+from ..layout_ai.client import LayoutAIClient, LayoutAIClientConfigurationError
+from ..layout_ai.policy import LayoutAIPolicyError, LayoutAIPolicySet
+from ..models import ContentSlide, DraftAnalyzerSummary, DraftLayoutCandidate, DraftLayoutScoreDetail
+from ..utils.usage_tags import (
+    CANONICAL_USAGE_TAGS,
+    get_usage_tag_catalog,
+    normalize_usage_tag_value,
+    normalize_usage_tags_with_unknown,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -154,7 +154,7 @@ roadmap_item: RM-049 pptx gen スコープ最適化
 ## メモ
 **主変更点**
 - `src/pptx_generator/cli.py`: `pptx gen` を `generate_ready.json` 専用入力へ統一し、テンプレートパス欠落時にエラーを返す。`pptx mapping` は `--template` 指定を必須化し、監査メタ `mapping_meta` に `template_path` を確実に記録。
-- `src/pptx_generator/pipeline/mapping.py`、`src/pptx_generator/generate_ready.py`: `GenerateReadyDocument.meta.template_path` を埋め込み、`mapping_meta` と監査ログにテンプレート情報を反映。
+- `src/pptx_generator/pipeline/mapping.py`、`src/pptx_generator/pipeline/generate_ready.py`: `GenerateReadyDocument.meta.template_path` を埋め込み、`mapping_meta` と監査ログにテンプレート情報を反映。
 - `tests/test_cli_integration.py` / `tests/test_cli_cheatsheet_flow.py` / `tests/test_mapping_step.py`: generate_ready 専用フローに合わせてテンプレート必須化と新エラーハンドリングを検証。
 - README・`docs/design/cli/cli-command-reference.md`・`docs/runbooks/story-outline-ops.md` ほか関連ドキュメントを更新し、`pptx gen` の入力仕様と `--template` 必須化を明記。
 - `docs/notes/20251109-generate-ready-meta.md`: Prepare 正規化後も generate_ready メタ方針を維持する旨を追記。

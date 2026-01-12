@@ -7,7 +7,7 @@ from pathlib import Path
 import json
 
 from pptx_generator.models import JobSpec
-from pptx_generator.spec_loader import load_jobspec_from_path
+from pptx_generator.template import load_jobspec_from_path
 
 
 def test_load_jobspec_from_scaffold() -> None:

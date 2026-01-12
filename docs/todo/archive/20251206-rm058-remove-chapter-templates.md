@@ -13,7 +13,7 @@ roadmap_item: RM-058 プレペア骨子内製化
     - 対象整理（スコープ、対象ファイル、前提）: 章テンプレート資産 (`config/chapter_templates/`)、CLI `outline`/`compose` のテンプレ関連オプション、Draft structuring / layout 評価のテンプレ依存ロジック、関連テスト・ドキュメントを削除または更新する。
     - ドキュメント／コード修正方針: CLI オプションとハンドラロジックを撤廃し、テンプレ適合率に依存するメタ項目を整備し直す。対応する単体テスト・統合テストを更新し、ドキュメントの記述も改訂する。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo に進捗を記録し、作業完了後にドラフト PR でまとめて共有する。
-    - 想定影響ファイル: `config/chapter_templates/**/*`, `src/pptx_generator/cli_commands/outline.py`, `compose.py`, `cli_handlers/outline.py`, `compose.py`, `draft_intel.py`, draft structuring系 (`pipeline/draft_structuring/*`), テスト群, 関連 docs。
+    - 想定影響ファイル: `config/chapter_templates/**/*`, `src/pptx_generator/cli_commands/outline.py`, `compose.py`, `cli_handlers/outline.py`, `compose.py`, `draft/draft_intel.py`, draft structuring系 (`pipeline/draft_structuring/*`), テスト群, 関連 docs。
     - リスク: 章テンプレ基盤を利用しているワークフローがあれば後方互換がなくなる。`layout_score_detail` などテンプレ由来のログ項目の整理漏れに注意。
     - テスト方針: `uv run --extra dev pytest` 全体実行。特に `tests/cli/test_cli_outline_generation.py` など章テンプレ依存テストの更新確認。
     - ロールバック方法: 章テンプレ削除コミットを revert し、`config/chapter_templates` と CLI オプションを復旧する。

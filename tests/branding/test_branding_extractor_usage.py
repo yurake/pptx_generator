@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.branding_extractor import (
+from pptx_generator.template import (
     BrandingExtractionError,
     extract_branding_config,
 )

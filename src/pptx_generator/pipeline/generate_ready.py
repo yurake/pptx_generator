@@ -8,11 +8,27 @@ from typing import Any, TypeVar, Type
 
 from pydantic import ValidationError
 
-from .models import (ChartOptions, ChartSeries, FontSpec, GenerateReadyDocument,
-                     GenerateReadySlide, JobAuth, JobMeta, JobSpec, Slide,
-                     SlideBullet, SlideBulletGroup, SlideChart, SlideImage,
-                     SlideTable, SlideTextbox, TextCapacity, TextFramePadding,
-                     TextboxParagraph, TextboxPosition)
+from ..models import (
+    ChartOptions,
+    ChartSeries,
+    FontSpec,
+    GenerateReadyDocument,
+    GenerateReadySlide,
+    JobAuth,
+    JobMeta,
+    JobSpec,
+    Slide,
+    SlideBullet,
+    SlideBulletGroup,
+    SlideChart,
+    SlideImage,
+    SlideTable,
+    SlideTextbox,
+    TextCapacity,
+    TextFramePadding,
+    TextboxParagraph,
+    TextboxPosition,
+)
 
 
 def generate_ready_to_jobspec(document: GenerateReadyDocument) -> JobSpec:

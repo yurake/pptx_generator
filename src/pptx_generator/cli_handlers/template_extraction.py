@@ -12,7 +12,7 @@ import click
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 
-from pptx_generator.branding_extractor import extract_branding_config
+from pptx_generator.template import extract_branding_config
 from pptx_generator.cli_handlers.prepare import (
     PROMPT_TEMPLATE_FILENAME_PATTERN,
     PROMPT_USER_SECTION_END,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
-from pptx_generator.draft_recommender import LayoutProfile, RecommendationResult
+from pptx_generator.draft import LayoutProfile, RecommendationResult
 from pptx_generator.layout_ai.client import LayoutAIResponse
 from pptx_generator.models import (
     ContentElements,

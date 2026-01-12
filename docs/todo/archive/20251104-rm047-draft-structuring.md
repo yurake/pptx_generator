@@ -18,7 +18,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
          - `docs/roadmap/roadmap.md` の RM-047 セクションを進行中へ更新し、新設ドキュメントへのリンクを追加する。  
       3. **モデル・ユーティリティ追加**  
          - `src/pptx_generator/models.py` に `GenerateReadyDocument` 系モデルを追加し、旧 `Draft*`/`RenderingReady` 系に依存しない構造へ刷新する。  
-         - `src/pptx_generator/generate_ready.py` を新規実装し、`generate_ready_to_jobspec` など Stage5 で必要な変換ユーティリティを提供する。  
+         - `src/pptx_generator/pipeline/generate_ready.py` を新規実装し、`generate_ready_to_jobspec` など Stage5 で必要な変換ユーティリティを提供する。  
       4. **stage 4 パイプライン実装**  
          - `pipeline/draft_structuring.py` を `prepare_card.json` と `jobspec.json` の突合前提に書き換え、カード単位の割当結果を `GenerateReadyDocument` へ連携できるようにする。  
          - `pipeline/prepare_normalization.py`・`pipeline/mapping.py` を含む CLI パイプラインを全面刷新し、`draft_*`／`rendering_ready` 出力を廃止。`generate_ready.json` を唯一の後続入力として扱う。  
@@ -34,7 +34,7 @@ roadmap_item: RM-047 テンプレ統合構成生成AI連携
       8. **フォローアップ**  
          - stage 2 から追加で必要となった情報があれば docs/notes と ToDo メモに記録し、ユーザーへ報告する。  
       - スコープ: stage 4 全体を `generate_ready` 基盤へ全面置換し、既存 `draft_*` および `rendering_ready` 系の入出力は廃止する。後方互換の考慮は不要、完全新規置換で進める。  
-      - 想定影響ファイル: `docs/design/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/roadmap/roadmap.md`、`src/pptx_generator/models.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/generate_ready.py`（新規）、`src/pptx_generator/pipeline/prepare_normalization.py`、`src/pptx_generator/pipeline/draft_structuring.py`、`src/pptx_generator/pipeline/mapping.py`、該当テストファイル。  
+      - 想定影響ファイル: `docs/design/stages/stage-03-compose.md`、`docs/design/design.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/roadmap/roadmap.md`、`src/pptx_generator/models.py`、`src/pptx_generator/cli.py`、`src/pptx_generator/pipeline/generate_ready.py`（新規）、`src/pptx_generator/pipeline/prepare_normalization.py`、`src/pptx_generator/pipeline/draft_structuring.py`、`src/pptx_generator/pipeline/mapping.py`、該当テストファイル。  
       - リスク: PrepareCard 仕様変更の波及、AI 推薦精度の不確実性による再調整、CLI 引数廃止に伴うドキュメント更新漏れ。  
       - テスト方針: 上記テスト更新に加え、`uv run --extra dev pytest` を実行して全体整合を確認する。  
       - ロールバック方法: 変更・追加した Markdown および Python ファイルを個別に戻すことで復旧可能。  

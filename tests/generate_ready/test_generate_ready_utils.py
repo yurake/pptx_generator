@@ -7,7 +7,7 @@ import pytest
 from pptx_generator.models import (JobAuth, JobMeta, MappingSlideMeta,
                                    GenerateReadyDocument,
                                    GenerateReadyMeta, GenerateReadySlide)
-from pptx_generator.generate_ready import generate_ready_to_jobspec
+from pptx_generator.pipeline.generate_ready import generate_ready_to_jobspec
 
 
 def test_generate_ready_to_jobspec_conversion() -> None:

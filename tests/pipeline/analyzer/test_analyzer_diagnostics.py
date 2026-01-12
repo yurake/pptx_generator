@@ -44,7 +44,7 @@ from pptx_generator.pipeline import (
     SimpleAnalyzerStep,
     SimpleRendererStep,
 )
-from pptx_generator.generate_ready import generate_ready_to_jobspec
+from pptx_generator.pipeline.generate_ready import generate_ready_to_jobspec
 from pptx_generator.pipeline.analyzer import (
     BulletParagraphResolver,
     ShapeSnapshot,

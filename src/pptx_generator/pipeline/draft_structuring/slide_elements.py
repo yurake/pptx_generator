@@ -7,7 +7,7 @@ from typing import Any, Mapping, Sequence
 
 from ...models import ContentElements, ContentSlide, Slide, TemplateBlueprintSlot
 from ...prepare.models import PrepareCard
-from ...draft_recommender import LayoutProfile
+from ...draft.draft_recommender import LayoutProfile
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
 
 logger = logging.getLogger(__name__)

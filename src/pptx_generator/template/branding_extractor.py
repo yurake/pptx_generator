@@ -9,7 +9,7 @@ from typing import Any
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
 
-from .settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
+from ..settings import BrandingConfig, BrandingFont, BoxSpec, ParagraphStyle
 
 NS = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",

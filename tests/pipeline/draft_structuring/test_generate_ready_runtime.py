@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pptx_generator.draft_recommender import LayoutProfile
+from pptx_generator.draft import LayoutProfile
 from pptx_generator.models import (
     ContentApprovalDocument,
     ContentElements,

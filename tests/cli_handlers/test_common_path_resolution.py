@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 
 from pptx_generator.cli_handlers import common
-from pptx_generator.config_manager import ConfigManager
+from pptx_generator.config import ConfigManager
 
 
 class _DummySpec:

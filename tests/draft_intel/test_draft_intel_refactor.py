@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pptx_generator.draft_intel import (
+from pptx_generator.draft import (
     ChapterTemplate,
     ChapterTemplateSection,
     evaluate_chapter_template,

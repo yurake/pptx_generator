@@ -7,10 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from pptx_generator.branding_extractor import (
-    BrandingExtractionError,
-    extract_branding_config,
-)
+from pptx_generator.template import BrandingExtractionError, extract_branding_config
 
 
 def parse_args() -> argparse.Namespace:

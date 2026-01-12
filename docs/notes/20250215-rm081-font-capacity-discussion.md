@@ -29,7 +29,7 @@ Plan（承認待ち）:
    - 既存レコード生成テストを更新し、差分確認用に追加の期待値を組み込む。
 
 4. JobSpec 変換・テスト・サンプル更新  
-   - `src/pptx_generator/spec_loader.py` と `src/pptx_generator/generate_ready.py` で `text_capacity` を取り扱うようにし、Scaffold→JobSpec 変換時に SlideTextbox へ伝播。  
+   - `src/pptx_generator/template/spec_loader.py` と `src/pptx_generator/pipeline/generate_ready.py` で `text_capacity` を取り扱うようにし、Scaffold→JobSpec 変換時に SlideTextbox へ伝播。  
    - `tests/template_audit/test_template_extractor_jobspec_output.py` や `tests/layout_validation/*` など関連テスト、サンプル JSON を更新。  
    - ドキュメント（requirements/design/roadmap/ToDo メモ）に実装結果・利用方法を反映。
 

@@ -1,5 +1,7 @@
-"""Default configuration assets bundled with the package."""
+"""設定関連のエントリーポイント。"""
 
 from __future__ import annotations
 
-__all__ = []
+from .config_manager import ConfigManager, ResolvedConfig
+
+__all__ = ["ConfigManager", "ResolvedConfig"]

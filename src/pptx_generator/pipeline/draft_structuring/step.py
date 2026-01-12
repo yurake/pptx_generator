@@ -36,7 +36,7 @@ from ...models import (
     Slide,
     TemplateSpec,
 )
-from ...draft_recommender import CardLayoutRecommender, LayoutProfile
+from ...draft.draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..base import PipelineContext, PipelineStage
 from .errors import DraftStructuringError

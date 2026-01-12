@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import PipelineContext, StageResult
-from ..config_manager import ResolvedConfig
+from ..config import ResolvedConfig
 
 
 def _serialize_stage_result(result: StageResult) -> dict[str, Any]:

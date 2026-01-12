@@ -10,7 +10,7 @@ from typing import Optional
 
 import click
 
-from pptx_generator.generate_ready import generate_ready_to_jobspec
+from pptx_generator.pipeline.generate_ready import generate_ready_to_jobspec
 from pptx_generator.models import GenerateReadyDocument, TemplateStyle
 from pptx_generator.pipeline import (
     AnalyzerOptions,
@@ -35,7 +35,7 @@ from pptx_generator.review_engine import AnalyzerReviewEngineAdapter
 from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.settings.paths import find_config_path
-from pptx_generator.template_style import extract_template_style
+from pptx_generator.template import extract_template_style
 from .trace_utils import record_stage_trace
 
 logger = logging.getLogger(__name__)
