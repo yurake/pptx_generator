@@ -9,6 +9,16 @@ def test_new_template_imports() -> None:
     assert hasattr(template, "load_jobspec_from_path")
     assert hasattr(template, "extract_branding_config")
     assert hasattr(template, "template_style_from_branding")
+    assert set(template.__all__) == {
+        "BrandingExtractionError",
+        "BrandingExtractionResult",
+        "SCHEME_COLOR_TAG",
+        "convert_scaffold_to_jobspec",
+        "extract_branding_config",
+        "extract_template_style",
+        "load_jobspec_from_path",
+        "template_style_from_branding",
+    }
 
     # 直接モジュールからも import できることを確認
     branding = import_module("pptx_generator.template.branding_extractor")
@@ -24,6 +34,25 @@ def test_new_draft_imports() -> None:
     assert hasattr(draft, "CardLayoutRecommender")
     assert hasattr(draft, "LayoutProfile")
     assert hasattr(draft, "load_return_reasons")
+    assert set(draft.__all__) == {
+        "CardLayoutRecommender",
+        "CardLayoutRecommenderConfig",
+        "ChapterTemplate",
+        "ChapterTemplateEvaluation",
+        "ChapterTemplateSection",
+        "LayoutProfile",
+        "RecommendationResult",
+        "ReturnReasonTemplate",
+        "clamp_score_detail",
+        "compute_analyzer_support",
+        "evaluate_chapter_template",
+        "find_chapter_template_path",
+        "find_template_by_structure",
+        "load_analysis_summary",
+        "load_chapter_template",
+        "load_return_reasons",
+        "summarize_analyzer_counts",
+    }
 
 
 @pytest.mark.parametrize(
