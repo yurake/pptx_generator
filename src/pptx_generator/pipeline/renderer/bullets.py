@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pptx.oxml.ns import qn
+from pptx.oxml.xmlchemy import OxmlElement
+
 from ...models import Slide, SlideBullet, TextboxParagraph
 from .layout import LayoutBox
 
@@ -95,6 +98,8 @@ class BulletMixin:
             )
             paragraph.text = bullet.text
             paragraph.level = bullet.level
+            if not bullet.text.strip():
+                self._suppress_bullet(paragraph)
             self._apply_font(
                 paragraph,
                 bullet.font,
@@ -105,4 +110,22 @@ class BulletMixin:
                 None,
                 fallback=paragraph_style,
                 preserve_level=True,
+            )
+
+    @staticmethod
+    def _suppress_bullet(paragraph) -> None:
+        p_pr = paragraph._p.get_or_add_pPr()
+        for tag in ("a:buChar", "a:buAutoNum", "a:buBlip"):
+            element = p_pr.find(qn(tag))
+            if element is not None:
+                p_pr.remove(element)
+        if p_pr.find(qn("a:buNone")) is None:
+            p_pr.insert_element_before(
+                OxmlElement("a:buNone"),
+                "a:buAutoNum",
+                "a:buChar",
+                "a:buBlip",
+                "a:tabLst",
+                "a:defRPr",
+                "a:extLst",
             )

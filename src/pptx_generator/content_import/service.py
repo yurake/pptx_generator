@@ -75,18 +75,19 @@ class _HTMLTextExtractor(HTMLParser):
             self._chunks.append(stripped)
 
     def get_text(self) -> str:
-        lines = []
+        lines: list[str] = []
         buffer = ""
         for chunk in self._chunks:
             if chunk == "\n":
-                if buffer:
-                    lines.append(buffer)
-                    buffer = ""
+                if buffer or lines:
+                    lines.append(buffer.strip())
+                buffer = ""
                 continue
             buffer = f"{buffer} {chunk}".strip()
         if buffer:
-            lines.append(buffer)
-        return "\n".join(line.strip() for line in lines if line.strip())
+            lines.append(buffer.strip())
+        return "\n".join(lines)
+
 
 
 class ContentImportService:
@@ -452,6 +453,8 @@ def _split_into_blocks(text: str) -> Iterable[tuple[str, list[str]]]:
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
+            if current_title is not None:
+                buffer.append("")
             continue
         if line.startswith("#"):
             new_title = line.lstrip("#").strip()
@@ -469,6 +472,8 @@ def _split_into_blocks(text: str) -> Iterable[tuple[str, list[str]]]:
         yield current_title, buffer
 
 
+
+
 def _strip_bullet_marker(line: str) -> str:
     stripped = line.lstrip("-•*●\t ")
     return stripped if stripped else line.strip()
@@ -477,13 +482,19 @@ def _strip_bullet_marker(line: str) -> str:
 def _build_body_lines(lines: Sequence[str]) -> tuple[list[str], bool]:
     body: list[str] = []
     for line in lines:
+        if not line:
+            body.append("")
+            continue
         stripped = _strip_bullet_marker(line).strip()
         if stripped:
             body.append(stripped)
+        else:
+            body.append("")
 
-    if not body:
+    if not any(body):
         body = ["(本文未設定)"]
     return body, False
+
 
 
 def _truncate(text: str, limit: int) -> str:

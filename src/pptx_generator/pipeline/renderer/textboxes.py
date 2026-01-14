@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from ...models import Slide, SlideTextbox, TextboxParagraph
+from ...utils.text_lines import split_lines_preserve_blank
 from .layout import LayoutBox
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,9 @@ class TextboxMixin:
         default_font = self._style.textbox.font or self._style.body_font
         default_paragraph = self._style.textbox.paragraph or TextboxParagraph()
 
-        lines = textbox_spec.text.splitlines() or [""]
+        lines = split_lines_preserve_blank(textbox_spec.text or "")
+        if not lines:
+            lines = [""]
         for index, line in enumerate(lines):
             paragraph = (
                 text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()

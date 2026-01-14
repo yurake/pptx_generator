@@ -171,20 +171,27 @@ def _create_bullet(
 def _normalize_bullet_value(value: Any) -> list[tuple[str, int]]:
     entries: list[tuple[str, int]] = []
     text: str | None = None
+    has_text = False
     level = 0
     extra_level = None
     if isinstance(value, str):
         text = value.strip()
+        has_text = True
     elif isinstance(value, dict):
-        text = str(value.get("text") or "").strip()
+        if "text" in value:
+            text = str(value.get("text") or "").strip()
+            has_text = True
         extra_level = value.get("level", 0)
-    if not text:
-        return entries
     if extra_level is not None:
         try:
             level = max(int(extra_level), 0)
         except (TypeError, ValueError):
             level = 0
+    if not has_text:
+        return entries
+    if text == "":
+        entries.append(("", level))
+        return entries
     segments = textwrap.wrap(text, width=200, drop_whitespace=True, break_long_words=True)
     if not segments:
         segments = [text]

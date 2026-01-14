@@ -16,6 +16,7 @@ from pptx_generator.api.routes import (
 )
 from pptx_generator.runtime.job_queue import InProcessJobQueue, JobRequest, JobState, JobStatus
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def _proc_update_registry(tx_root_str: str, stage: str, artifact_rel: str, barrier):
@@ -163,7 +164,7 @@ def test_registry_updates_with_newer_job(api_app, tmp_path):
     with api_app.app_context():
         resolved = _ensure_stage_artifacts(queue, tmp_path, tx_id, "template", ["jobspec_url"])
 
-    assert resolved["jobspec_url"].endswith("template/new.json")
+    assert Path(resolved["jobspec_url"]).as_posix().endswith("template/new.json")
     registry = json.loads(_registry_path(tmp_path).read_text(encoding="utf-8"))
     assert registry["template"]["job_id"] == "new-job"
 
@@ -198,7 +199,7 @@ def test_pending_job_waits_and_updates_registry(api_app, tmp_path):
     with api_app.app_context():
         resolved = _ensure_stage_artifacts(queue, tmp_path, "tx-7", "template", ["jobspec_url"])
 
-    assert resolved["jobspec_url"].endswith("template/pending.json")
+    assert Path(resolved["jobspec_url"]).as_posix().endswith("template/pending.json")
     registry = json.loads(_registry_path(tmp_path).read_text(encoding="utf-8"))
     assert registry["template"]["job_id"] == "pending-job"
 

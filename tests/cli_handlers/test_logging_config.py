@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import sys
 from logging import Handler
 from logging.handlers import RotatingFileHandler
@@ -82,7 +83,7 @@ def test_configure_api_logging_uses_stdout_and_rotating(tmp_path, _restore_loggi
     assert any(isinstance(h, logging.StreamHandler) and not isinstance(h, RotatingFileHandler) for h in api_logger.handlers)
 
     rotating = next(h for h in api_logger.handlers if isinstance(h, RotatingFileHandler))
-    assert getattr(rotating, "baseFilename", "").endswith("logs/out.log")
+    assert Path(getattr(rotating, "baseFilename", "")).as_posix().endswith("logs/out.log")
     assert rotating.maxBytes == 10 * 1024 * 1024
     assert rotating.backupCount == 5
 

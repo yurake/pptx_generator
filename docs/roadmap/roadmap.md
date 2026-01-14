@@ -1213,13 +1213,14 @@ flowchart TB
 
 <a id="rm-098"></a>
 ### RM-098 改行・空行の保持
-- ゴール: 入力（HTML/Markdown/AI 応答）から生成までのパイプラインで改行・空行を損なわずに保持し、意図した段落構造を再現する。
+- ゴール: HTML/Markdown/AI 応答の改行・空行を入力から出力まで保持する
 - 対象 stage: 2/3/4（prepare / mapping / rendering）
-- 参照ドキュメント: 未作成（本テーマで作成予定）
-- 参照 ToDo: 未作成（着手時に `docs/todo/` へ登録）
-- 依存: 既存のテキスト正規化方針、Renderer の段落処理、テンプレートの段落設定
-- 状況: 新規（2026-01-08 起票）
+- 参照ドキュメント: `docs/requirements/requirements.md`、`docs/requirements/stages/stage-02-prepare.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/requirements/stages/stage-04-gen.md`
+- 参照 ToDo: [docs/todo/20260109-rm098-linebreak-preservation.md](../todo/20260109-rm098-linebreak-preservation.md)
+- 依頼: なし
+- 状況: 進行中（2026-01-09 更新）
 - 期待成果:
-  - HTML/Markdown/AI 応答の改行・空行を共通ルールで保持する。
-  - Prepare/Mapping で段落/空行を落とさず、生成用 JSON に引き継ぐ。
-  - Rendering でテキストボックスの段落・空行が意図通りに出力されることをテストで確認する。
+  - HTML/Markdown/AI の改行・空行を正規化して保持
+  - Prepare/Mapping の中間 JSON に空行を落とさず反映
+  - Rendering で空行を点なし表示で出力
+
