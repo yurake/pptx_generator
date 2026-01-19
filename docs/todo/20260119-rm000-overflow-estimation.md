@@ -38,16 +38,16 @@ roadmap_item: RM-000 例: RMなしIssue B
   - [x] README.md / AGENTS.md
 - [x] 関連Issue 行動更新
   - メモ: 関連Issue: #540
-- [ ] チェックリスト整合確認
-  - メモ: 子タスク完了時に親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す
-- [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ原因を記載する。todo-auto-complete が自動更新するため手動でチェックしない
+- [x] チェックリスト整合確認
+  - メモ: 親タスクと子タスクのチェックを整合
+- [x] PR 作成
+  - メモ: PR #541 https://github.com/yurake/pptx_generator/pull/541
 
 ## メモ
 - 連続性メモ（短文で上書き）
   - 前提/制約: paragraph は先頭段落の情報を使用
   - 決定と根拠: 段落間隔と正の first_line_indent を推定に反映
   - リスク(UNCONFIRMED): max_lines 推定の変化でレイアウト選定が変わる可能性
-  - Now/Next: Now=PR 作成 / Next=レビュー対応
+  - Now/Next: Now=レビュー待ち / Next=マージ対応
   - テスト実績/抜け: PYTHONPATH=src python -m pytest tests/utils/test_text_capacity.py / 5 passed / coverage.xml / diff-cover 100%
 - 計画のみで完了する場合は、判断者・判断日・次アクション条件を記載する
