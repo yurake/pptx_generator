@@ -47,8 +47,9 @@ def estimate_text_capacity(
     line_height_in = max(line_spacing_pt / 72.0, _MIN_LINE_HEIGHT_IN)
 
     padding_left, padding_right, padding_top, padding_bottom = _resolve_padding(padding)
+    paragraph_spacing_in = _resolve_paragraph_spacing(paragraph)
     inner_width = max(width - padding_left - padding_right, 0.0)
-    inner_height = max(height - padding_top - padding_bottom, 0.0)
+    inner_height = max(height - padding_top - padding_bottom - paragraph_spacing_in, 0.0)
 
     indent_left, indent_right = _resolve_indents(paragraph)
     indent_left += _indent_from_level(paragraph.level if paragraph else 0)
@@ -95,6 +96,9 @@ def _resolve_indents(paragraph: TextboxParagraph | None) -> tuple[float, float]:
         return (0.0, 0.0)
     left = max(float(paragraph.left_indent_in or 0.0), 0.0)
     right = max(float(paragraph.right_indent_in or 0.0), 0.0)
+    first_line_indent = float(paragraph.first_line_indent_in or 0.0)
+    if first_line_indent > 0:
+        left += first_line_indent
     return (left, right)
 
 
@@ -102,6 +106,14 @@ def _indent_from_level(level: int | None) -> float:
     if level is None or level <= 0:
         return 0.0
     return max(level, 0) * _BULLET_INDENT_IN
+
+
+def _resolve_paragraph_spacing(paragraph: TextboxParagraph | None) -> float:
+    if paragraph is None:
+        return 0.0
+    before_pt = max(float(paragraph.space_before_pt or 0.0), 0.0)
+    after_pt = max(float(paragraph.space_after_pt or 0.0), 0.0)
+    return (before_pt + after_pt) / 72.0
 
 
 def _resolve_char_density(font_size: float) -> float:
