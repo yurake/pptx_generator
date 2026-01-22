@@ -41,6 +41,10 @@
   - 実行コマンドは `uv run --extra dev pytest` を使用する（デフォルトで `-n auto` による並列実行が有効）。ローカルに `pytest` を直接インストールしていないため、`uv` 経由で実行すること。デバッグ時は `-n 0` でシーケンシャル実行に切り替える。
   - 結合テスト: `tests/integration/test_cli_generate_pipeline_flow.py` を中心に、サンプル JSON を用いてパイプライン全体 (JSON→PPTX→PDF) を検証する。
   - CLI の統合テストは `uv run --extra dev pytest tests/integration/test_cli_generate_pipeline_flow.py` により実行し、`--output` オプションや jobspec の `meta` からテンプレート／レイアウトを解決する挙動を確認する。
+- UAT / ユーザー目線の手動確認:
+  - ユーザー経路に影響する変更（例: CLI 振る舞い、Docker 起動、外部インターフェース）では、代表的な手順を1本以上実行し、コマンドと結果を PR の「動作確認」欄に記載する。
+  - 例: `docker build -t <tag> .` → `docker run ...` → `curl http://localhost:8000/health`、または `uv run pptx compose ...` → `uv run pptx gen ...` など実ユーザーが辿る最短ルート。
+  - 自動テストで代替できない手動確認を最小化しつつ、ユーザー影響が明確な経路は必ず1本踏む。
 - 差分カバレッジ確認: `uv tool run diff-cover coverage.xml --compare-branch origin/main`。`uv run --extra dev pytest` などで `coverage.xml` を生成したあと、80% 未満なら不足箇所に対するテストを追加する。
 - パフォーマンステスト: 30 スライド規模のケースで処理時間を計測し、結果を記録する。
 - セキュリティテスト: 入力検証、脆弱性スキャン (`pip-audit`, `dotnet list package --vulnerable`) を CI で実施する。
