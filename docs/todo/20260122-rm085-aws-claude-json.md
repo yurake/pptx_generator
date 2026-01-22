@@ -7,7 +7,9 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
 
 - [ ] ブランチ作成・初期コミット・push
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
-    - 必ずmainからブランチを切る
+    - ブランチ: fix/rm085-aws-claude-json（origin/main から作成）
+    - 初期コミット: dc8ceb5 chore: add rm085 aws-claude json todo
+    - push: github.com へ接続できず失敗（ネットワーク許可/認証が必要）
 - [ ] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
     - 対象整理（スコープ、対象ファイル、前提）: 
