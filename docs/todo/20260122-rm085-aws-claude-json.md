@@ -36,6 +36,7 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
 - 追記: `PPTX_LLM_PROVIDER=aws-claude .venv/bin/pptx template samples/templates/dynamic_template.pptx --mode dynamic` 実行
     - 失敗: bedrock-runtime.us-east-2.amazonaws.com へ接続できず（NameResolutionError / EndpointConnectionError）
     - 再実行: 同コマンドで再度失敗（DNS 解決不可のまま）
+    - 修正: ネットワーク許可付きで再実行 → Template stage 成功（warnings=0, errors=0）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
