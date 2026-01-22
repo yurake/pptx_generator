@@ -12,16 +12,16 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
     - push: origin/fix/rm085-aws-claude-json へ push 済み
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提）: aws-claude のコードフェンス付き JSON を全ステージで受け付ける共通パース追加、prepare_ai に aws-claude 対応を追加して stage1〜5 を通せるようにする。
-    - ドキュメント／コード修正方針: 既存 JSON パーサ前段にコードフェンス除去/JSON 抽出の共通関数を追加し、Template/Prepare/Slide/Layout の AI 結果処理に適用。prepare_ai/client.py で Bedrock (aws-claude) を有効化。
+    - 対象整理（スコープ、対象ファイル、前提）: aws-claude のコードフェンス付き JSON を全ステージで受け付ける共通パース追加、prepare_ai に aws-claude 対応を追加して stage1〜4 を通せるようにする。追加で、edit_ai の aws-claude 対応（Bedrock 化）と layouts.jsonl の layout_name エイリアス対応を行う。
+    - ドキュメント／コード修正方針: 既存 JSON パーサ前段にコードフェンス除去/JSON 抽出の共通関数を追加し、Template/Prepare/Slide/Layout の AI 結果処理に適用。prepare_ai/client.py で Bedrock (aws-claude) を有効化。edit_ai は Bedrock 実装へ差し替え、json_utils を使用。layout 名は layout_id へエイリアス登録し警告を抑止。
     - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新と CLI 簡易再実行で挙動を確認する。
-    - 想定影響ファイル: src/pptx_generator/prepare_ai/client.py, src/pptx_generator/llm/*, src/pptx_generator/template_ai/*, src/pptx_generator/layout_ai/*, src/pptx_generator/slide_ai/* など。
-    - リスク: パースを緩めすぎて不正 JSON を通す可能性。抽出後に JSON デコード失敗は従来通りエラーとし、厳格さを維持する。
-    - テスト方針: 文字列パースの単体テスト追加（コードフェンス/前後ノイズ）。可能なら uv run pptx template ... --mode dynamic などの CLI で再現確認。
-    - ロールバック方法: 共通パーサ追加と prepare_ai の aws-claude 対応コミットを revert する。
-    - 承認メッセージ ID／リンク: 2026-01-22 ユーザー OK
+    - 想定影響ファイル: src/pptx_generator/prepare_ai/client.py, src/pptx_generator/llm/*, src/pptx_generator/template_ai/*, src/pptx_generator/layout_ai/*, src/pptx_generator/slide_ai/*, src/pptx_generator/edit_ai/client.py, src/pptx_generator/pipeline/mapping/catalog.py など。
+    - リスク: パースを緩めすぎて不正 JSON を通す可能性。layout_name の重複で誤マッチする可能性。抽出後に JSON デコード失敗は従来通りエラーとし、layout_name が衝突する場合は登録しない。
+    - テスト方針: 文字列パースの単体テスト追加（コードフェンス/前後ノイズ）。edit_ai の aws-claude 経路ユニットテスト追加。mapping で layout_name エイリアスを確認。可能なら CLI で再現確認。
+    - ロールバック方法: 共通パーサ追加・prepare_ai・edit_ai・mapping 変更コミットを revert する。
+    - 承認メッセージ ID／リンク: 2026-01-22 ユーザー OK（追加スコープ承認）
 - [x] 設計・実装方針の確定
-  - メモ: コードフェンス除去と JSON 抽出を共通化するため `pptx_generator/llm/json_utils.py` を追加し、Template/Prepare/Slide/Layout の AI 応答パーサに適用する。prepare_ai は AwsClaudePrepareLLMClient を追加して Bedrock 呼び出しを有効化する。edit_ai は既に成功しているため今回は対象外とする。
+  - メモ: コードフェンス除去と JSON 抽出を共通化するため `pptx_generator/llm/json_utils.py` を追加し、Template/Prepare/Slide/Layout の AI 応答パーサに適用する。prepare_ai は AwsClaudePrepareLLMClient を追加して Bedrock 呼び出しを有効化する。追加で edit_ai を Bedrock 実装に差し替え、json_utils を使ったパースに統一する。mapping の layouts.jsonl は layout_name をエイリアス登録して警告を抑止する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
