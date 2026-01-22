@@ -33,6 +33,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
     - 追加: `.venv/bin/python -m pip install pytest pytest-cov pytest-xdist` を実施
     - 実行: `.venv/bin/python -m pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
     - 結果: 11 passed（coverage.xml 出力）
+- 追記: `PPTX_LLM_PROVIDER=aws-claude .venv/bin/pptx template samples/templates/dynamic_template.pptx --mode dynamic` 実行
+    - 失敗: bedrock-runtime.us-east-2.amazonaws.com へ接続できず（NameResolutionError / EndpointConnectionError）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
