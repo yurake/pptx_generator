@@ -2,7 +2,7 @@
 目的: 改行・空行の保持
 roadmap_item: RM-098 改行・空行の保持
 関連ブランチ: feat/rm098-linebreak-preservation
-関連Issue: なし
+関連Issue: #537
 期限:
 ---
 

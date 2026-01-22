@@ -2,7 +2,7 @@
 目的: 動的・静的テンプレート対応を含む精度改善
 roadmap_item: RM-098 精度改善
 関連ブランチ: feat/rm098-accuracy-improvement
-関連Issue: 
+関連Issue: #527
 期限: 
 ---
 
