@@ -42,6 +42,7 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
       - stage2: prepare 成功（aws-claude 応答はコードフェンス付き JSON だがパース成功）
       - stage3: compose 成功（警告: layouts.jsonl に一致するレイアウトが見つからない）
       - stage4: gen 成功（Rendering warnings=3 / Monitoring alerts=3）
+      - stage5: edit 失敗（AttributeError: AwsClaudeConfig に api_key が無く edit_ai が初期化できない）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
