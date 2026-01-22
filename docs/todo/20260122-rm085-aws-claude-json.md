@@ -20,8 +20,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
     - テスト方針: 文字列パースの単体テスト追加（コードフェンス/前後ノイズ）。可能なら uv run pptx template ... --mode dynamic などの CLI で再現確認。
     - ロールバック方法: 共通パーサ追加と prepare_ai の aws-claude 対応コミットを revert する。
     - 承認メッセージ ID／リンク: 2026-01-22 ユーザー OK
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
+- [x] 設計・実装方針の確定
+  - メモ: コードフェンス除去と JSON 抽出を共通化するため `pptx_generator/llm/json_utils.py` を追加し、Template/Prepare/Slide/Layout の AI 応答パーサに適用する。prepare_ai は AwsClaudePrepareLLMClient を追加して Bedrock 呼び出しを有効化する。edit_ai は既に成功しているため今回は対象外とする。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [ ] 実装
