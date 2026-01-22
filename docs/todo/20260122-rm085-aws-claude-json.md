@@ -26,10 +26,13 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: json_utils 追加、template/prepare/slide/layout の JSON 解析を共通化。prepare_ai に AwsClaudePrepareLLMClient を追加し provider 解決に aws-claude を追加。
-- [ ] テスト・検証
+- [x] テスト・検証
   - メモ: `python3 -m uv run --extra dev pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
     - 失敗: uv が PATH になく `python3 -m uv` を使用 → `UV_CACHE_DIR=.uv-cache` でも uv が panic（system-configuration error）
     - 追加: `.venv` に pip が無く `python3 -m venv .venv --upgrade-deps` を実行 → pip/setuptools の取得で DNS 解決失敗（ネットワーク到達不可）
+    - 追加: `.venv/bin/python -m pip install pytest pytest-cov pytest-xdist` を実施
+    - 実行: `.venv/bin/python -m pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
+    - 結果: 11 passed（coverage.xml 出力）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -50,6 +53,6 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - 前提/制約: aws-claude がコードフェンス付き JSON を返すため、JSON のみ期待のパーサが失敗している。
   - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。prepare_ai に aws-claude を追加。
   - リスク(UNCONFIRMED): 抽出ロジックの過度な緩和で想定外入力を通す可能性。
-  - Now/Next: テスト実行手段の確認 → テスト再実行 → 仕上げ。
-  - テスト実績/抜け: uv 実行時に panic で失敗（system-configuration error）。pip 取得もネットワーク到達不可で失敗。
+  - Now/Next: ドキュメント更新要否の確認 → 仕上げ。
+  - テスト実績/抜け: pytest 実行済み（11 passed）。uv は panic のため未解決。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
