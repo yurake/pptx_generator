@@ -25,7 +25,7 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
-  - メモ: json_utils 追加、template/prepare/slide/layout の JSON 解析を共通化。prepare_ai に AwsClaudePrepareLLMClient を追加し provider 解決に aws-claude を追加。
+  - メモ: json_utils 追加、template/prepare/slide/layout の JSON 解析を共通化。prepare_ai に AwsClaudePrepareLLMClient を追加し provider 解決に aws-claude を追加。edit_ai は Bedrock 実装に差し替え、コードフェンス付き JSON を許容。layouts.jsonl の layout_name をエイリアス登録し、layout_catalog の重複候補は layout_id で重複排除。
 - [x] テスト・検証
   - メモ: `python3 -m uv run --extra dev pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
     - 失敗: uv が PATH になく `python3 -m uv` を使用 → `UV_CACHE_DIR=.uv-cache` でも uv が panic（system-configuration error）
@@ -33,6 +33,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
     - 追加: `.venv/bin/python -m pip install pytest pytest-cov pytest-xdist` を実施
     - 実行: `.venv/bin/python -m pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
     - 結果: 11 passed（coverage.xml 出力）
+    - 追加: `.venv/bin/python -m pytest tests/edit_ai/test_client.py tests/edit_ai/test_client_providers.py tests/pipeline/mapping/test_mapping_step_layout_assignment.py`
+    - 結果: 19 passed
 - 追記: `PPTX_LLM_PROVIDER=aws-claude .venv/bin/pptx template samples/templates/dynamic_template.pptx --mode dynamic` 実行
     - 失敗: bedrock-runtime.us-east-2.amazonaws.com へ接続できず（NameResolutionError / EndpointConnectionError）
     - 再実行: 同コマンドで再度失敗（DNS 解決不可のまま）
@@ -40,9 +42,9 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
     - 動作確認: dynamic の全ステージ実行
       - stage1: template 成功（warnings=0, errors=0）
       - stage2: prepare 成功（aws-claude 応答はコードフェンス付き JSON だがパース成功）
-      - stage3: compose 成功（警告: layouts.jsonl に一致するレイアウトが見つからない）
+      - stage3: compose 成功（layout_name エイリアス対応後は警告なし）
       - stage4: gen 成功（Rendering warnings=3 / Monitoring alerts=3）
-      - stage5: edit 失敗（AttributeError: AwsClaudeConfig に api_key が無く edit_ai が初期化できない）
+      - stage5: edit 成功（適用件数 0 / 出力: output/edit/proposal.pptx）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -61,8 +63,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
   - 前提/制約: aws-claude がコードフェンス付き JSON を返すため、JSON のみ期待のパーサが失敗している。
-  - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。prepare_ai に aws-claude を追加。
-  - リスク(UNCONFIRMED): 抽出ロジックの過度な緩和で想定外入力を通す可能性。
+  - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。prepare_ai と edit_ai を aws-claude (Bedrock) 対応し、layout_name のエイリアスで layout 警告を抑止する。
+  - リスク(UNCONFIRMED): 抽出ロジックの過度な緩和で想定外入力を通す可能性。layout_name の重複がある場合はエイリアス登録をスキップする。
   - Now/Next: ドキュメント更新要否の確認 → 仕上げ。
-  - テスト実績/抜け: pytest 実行済み（11 passed）。uv は panic のため未解決。
+  - テスト実績/抜け: pytest 実行済み（11 passed + 19 passed）。uv は panic のため未解決。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
