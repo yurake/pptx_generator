@@ -24,10 +24,11 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - メモ: コードフェンス除去と JSON 抽出を共通化するため `pptx_generator/llm/json_utils.py` を追加し、Template/Prepare/Slide/Layout の AI 応答パーサに適用する。prepare_ai は AwsClaudePrepareLLMClient を追加して Bedrock 呼び出しを有効化する。edit_ai は既に成功しているため今回は対象外とする。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
   - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
+- [x] 実装
+  - メモ: json_utils 追加、template/prepare/slide/layout の JSON 解析を共通化。prepare_ai に AwsClaudePrepareLLMClient を追加し provider 解決に aws-claude を追加。
 - [ ] テスト・検証
-  - メモ: 実施したテスト内容と結果を記入する
+  - メモ: `python3 -m uv run --extra dev pytest tests/llm/test_json_utils.py tests/prepare_ai/test_prepare_ai_llm_client_configuration.py`
+    - 失敗: uv が PATH になく `python3 -m uv` を使用 → `UV_CACHE_DIR=.uv-cache` でも uv が panic（system-configuration error）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -46,8 +47,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
   - 前提/制約: aws-claude がコードフェンス付き JSON を返すため、JSON のみ期待のパーサが失敗している。
-  - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。
+  - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。prepare_ai に aws-claude を追加。
   - リスク(UNCONFIRMED): 抽出ロジックの過度な緩和で想定外入力を通す可能性。
-  - Now/Next: 設計方針確定 → 実装 → テスト。
-  - テスト実績/抜け: 未実施。
+  - Now/Next: テスト実行手段の確認 → テスト再実行 → 仕上げ。
+  - テスト実績/抜け: uv 実行時に panic で失敗（system-configuration error）。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
