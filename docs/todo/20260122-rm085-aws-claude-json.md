@@ -45,6 +45,12 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
       - stage3: compose 成功（layout_name エイリアス対応後は警告なし）
       - stage4: gen 成功（Rendering warnings=3 / Monitoring alerts=3）
       - stage5: edit 成功（適用件数 0 / 出力: output/edit/proposal.pptx）
+    - 動作確認: static の全ステージ実行
+      - stage1: template 成功（warnings=0, errors=0）
+      - stage2: prepare 成功（Blueprint 必須 slot 数不足の警告あり）
+      - stage3: compose 成功
+      - stage4: gen 成功（Rendering warnings=5 / Monitoring alerts=4）
+      - stage5: edit 成功（適用件数 0 / 出力: output/edit/proposal.pptx）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -66,5 +72,5 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - 決定と理由: コードフェンス除去/JSON 抽出の共通前処理を追加してプロバイダ差分を吸収する。prepare_ai と edit_ai を aws-claude (Bedrock) 対応し、layout_name のエイリアスで layout 警告を抑止する。
   - リスク(UNCONFIRMED): 抽出ロジックの過度な緩和で想定外入力を通す可能性。layout_name の重複がある場合はエイリアス登録をスキップする。
   - Now/Next: ドキュメント更新要否の確認 → 仕上げ。
-  - テスト実績/抜け: pytest 実行済み（11 passed + 19 passed）。uv は panic のため未解決。
+  - テスト実績/抜け: pytest 実行済み（11 passed + 19 passed）。dynamic/static の全ステージ実行済み。uv は panic のため未解決。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
