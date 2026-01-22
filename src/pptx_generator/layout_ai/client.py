@@ -17,6 +17,7 @@ from pptx_generator.llm import (
     load_aws_claude_config,
     load_openai_chat_config,
 )
+from ..llm.json_utils import extract_json_object as parse_json_object
 
 from .policy import LayoutAIPolicy, LayoutAIPolicyError
 from .prompts import build_system_prompt, build_user_prompt
@@ -579,13 +580,7 @@ def _parse_layout_response(text: str, *, model: str) -> LayoutAIResponse:
 
 
 def _extract_json_object(text: str) -> dict[str, object]:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not match:
-            raise
-        return json.loads(match.group(0))
+    return parse_json_object(text)
 
 
 def _iter_layout_candidates(

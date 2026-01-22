@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-import re
 import textwrap
 from typing import Iterable
 
+from ..llm.json_utils import extract_json_object
 from .loggers import LLM_LOGGER
 from .models import (
     AIGenerationRequest,
@@ -77,13 +77,7 @@ def _normalize_body(candidates: Iterable[str]) -> tuple[list[str], list[str]]:
 
 
 def _extract_json_from_text(text: str) -> dict[str, object]:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not match:
-            raise
-        return json.loads(match.group(0))
+    return extract_json_object(text)
 
 
 def _normalize_confidence(value: object) -> float:

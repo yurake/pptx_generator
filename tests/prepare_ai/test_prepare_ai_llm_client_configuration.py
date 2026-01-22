@@ -9,6 +9,7 @@ import types
 import pytest
 
 from pptx_generator.prepare_ai.client import (
+    AwsClaudePrepareLLMClient,
     AzureOpenAIPrepareLLMClient,
     MockPrepareLLMClient,
     OpenAIPrepareLLMClient,
@@ -118,3 +119,35 @@ def test_azure_prepare_client(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_API_VERSION", raising=False)
+
+
+def test_aws_claude_prepare_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeRuntimeClient:
+        def invoke_model(self, **kwargs):
+            return {"body": b'{"content":[{"text":"{\\"chapters\\": []}"}]}'}
+
+    class _FakeSession:
+        def __init__(self, **kwargs) -> None:
+            self._kwargs = kwargs
+
+        def get_credentials(self):
+            return object()
+
+        def client(self, service_name: str, **kwargs):
+            return _FakeRuntimeClient()
+
+    fake_boto3 = types.SimpleNamespace(Session=_FakeSession)
+    fake_exceptions = types.SimpleNamespace(NoCredentialsError=RuntimeError)
+
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setitem(sys.modules, "botocore.exceptions", fake_exceptions)
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "aws-claude")
+
+    client = create_prepare_llm_client()
+    assert isinstance(client, AwsClaudePrepareLLMClient)
+    result = client.generate("prompt")
+    assert "chapters" in result.text
+
+    monkeypatch.delitem(sys.modules, "boto3", raising=False)
+    monkeypatch.delitem(sys.modules, "botocore.exceptions", raising=False)
+    monkeypatch.delenv("PPTX_LLM_PROVIDER", raising=False)

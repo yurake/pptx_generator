@@ -49,6 +49,7 @@ def create_prepare_llm_client() -> PrepareLLMClient:
         "mock": MockPrepareLLMClient,
         "openai": OpenAIPrepareLLMClient.from_env,
         "azure-openai": AzureOpenAIPrepareLLMClient.from_env,
+        "aws-claude": AwsClaudePrepareLLMClient.from_env,
     }
 
     factory = factories.get(resolution.provider)
@@ -322,3 +323,113 @@ class AzureOpenAIPrepareLLMClient:
             latency_ms,
         )
         return PrepareLLMResult(text="".join(texts), model=self.deployment, warnings=[], tokens=tokens)
+
+
+@dataclass
+class AwsClaudePrepareLLMClient:
+    """AWS Bedrock Claude を利用した prepare LLM クライアント。"""
+
+    runtime_client: Any
+    model_id: str
+    max_tokens: int
+    inference_profile_arn: str | None
+    temperature: float
+
+    @classmethod
+    def from_env(cls) -> "AwsClaudePrepareLLMClient":
+        import boto3
+        from botocore.exceptions import NoCredentialsError
+
+        config = load_aws_claude_config(
+            default_model_id="anthropic.claude-3-haiku-20240307-v1:0",
+            default_temperature=0.3,
+            default_max_tokens=32000,
+            error_cls=PrepareLLMConfigurationError,
+        )
+
+        session_kwargs: dict[str, object] = {}
+        if config.profile:
+            session_kwargs["profile_name"] = config.profile
+        if config.region:
+            session_kwargs["region_name"] = config.region
+        session = boto3.Session(**session_kwargs)
+        credentials = session.get_credentials()
+        if credentials is None:
+            raise PrepareLLMConfigurationError(
+                "AWS 認証情報が見つかりません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定するか、`aws configure` で設定してください。"
+            )
+
+        client_kwargs: dict[str, object] = {}
+        if config.region:
+            client_kwargs["region_name"] = config.region
+        try:
+            runtime_client = session.client("bedrock-runtime", **client_kwargs)
+        except NoCredentialsError as exc:
+            raise PrepareLLMConfigurationError(
+                "AWS 認証情報を利用できません。AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY を設定してください。"
+            ) from exc
+
+        return cls(
+            runtime_client=runtime_client,
+            model_id=config.model_id,
+            max_tokens=config.max_tokens,
+            inference_profile_arn=config.inference_profile_arn,
+            temperature=config.temperature,
+        )
+
+    def _resolve_model_id(self, override: str | None) -> str:
+        if override and override.strip() and override != "mock-local":
+            return override
+        return self.model_id
+
+    def _invoke_bedrock(self, *, model_id: str, payload: dict[str, object]) -> str:
+        invoke_kwargs = {
+            "modelId": model_id,
+            "body": json.dumps(payload),
+            "contentType": "application/json",
+            "accept": "application/json",
+        }
+        if self.inference_profile_arn:
+            invoke_kwargs["inferenceProfileArn"] = self.inference_profile_arn
+
+        response = self.runtime_client.invoke_model(**invoke_kwargs)
+        body = response.get("body")
+        body_text = body.read() if hasattr(body, "read") else body
+        if isinstance(body_text, (bytes, bytearray)):
+            body_text = body_text.decode("utf-8")
+        data = json.loads(body_text)
+        text_parts = [item.get("text", "") for item in data.get("content", []) if isinstance(item, dict)]
+        return "\n".join(part.strip() for part in text_parts if isinstance(part, str) and part.strip())
+
+    def generate(self, prompt: str, *, model_hint: str | None = None) -> PrepareLLMResult:
+        model_id = self._resolve_model_id(model_hint)
+        start = time.perf_counter()
+        logger.info(
+            "prepare_ai call start: provider=aws-claude model=%s",
+            model_id,
+        )
+        payload = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "system": "You are a helpful assistant that returns JSON only.",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        }
+                    ],
+                }
+            ],
+        }
+        text = self._invoke_bedrock(model_id=model_id, payload=payload)
+        latency_ms = (time.perf_counter() - start) * 1000
+        logger.info(
+            "prepare_ai call done: provider=aws-claude model=%s latency_ms=%.1f",
+            model_id,
+            latency_ms,
+        )
+        return PrepareLLMResult(text=text, model=model_id, warnings=[], tokens={})
