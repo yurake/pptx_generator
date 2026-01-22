@@ -51,14 +51,13 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
       - stage3: compose 成功
       - stage4: gen 成功（Rendering warnings=5 / Monitoring alerts=4）
       - stage5: edit 成功（適用件数 0 / 出力: output/edit/proposal.pptx）
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+- [x] ドキュメント更新
+  - メモ: CLI 利用例や仕様は既存の README 範囲で完結するため、追加更新は不要。
+  - [x] docs/roadmap 配下
+  - [x] docs/requirements 配下（実装結果との整合再確認）
+  - [x] docs/design 配下（実装結果との整合再確認）
+  - [x] docs/runbook 配下
+  - [x] README.md / AGENTS.md
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
