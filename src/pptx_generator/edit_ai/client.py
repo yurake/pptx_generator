@@ -116,12 +116,18 @@ class OpenAIEditClient:
             default_max_tokens=DEFAULT_MAX_TOKENS,
             error_cls=EditAIClientConfigurationError,
         )
-        return cls(config.model, config.max_tokens)
-
-    def __init__(self, model: str, max_tokens: int | None):
         import openai
 
-        self._client = openai.OpenAI()
+        base_url = getattr(config, "base_url", None)
+        api_key = getattr(config, "api_key", None)
+        if api_key or base_url:
+            client = openai.OpenAI(api_key=api_key, base_url=base_url) if base_url else openai.OpenAI(api_key=api_key)
+        else:
+            client = openai.OpenAI()
+        return cls(client, config.model, config.max_tokens)
+
+    def __init__(self, client, model: str, max_tokens: int | None):
+        self._client = client
         self._model = model
         self._max_tokens = max_tokens
 
@@ -158,10 +164,7 @@ class AzureOpenAIEditClient(OpenAIEditClient):
             api_version=config.api_version,
             azure_endpoint=config.endpoint,
         )
-        instance = cls(config.deployment, config.max_tokens)
-        instance._client = client
-        instance._model = config.deployment
-        return instance
+        return cls(client, config.deployment, config.max_tokens)
 
     def rewrite(self, request: EditAIRequest) -> EditAIResponse:
         messages = _build_messages(request)
@@ -191,12 +194,14 @@ class AnthropicEditClient:
             default_max_tokens=DEFAULT_MAX_TOKENS,
             error_cls=EditAIClientConfigurationError,
         )
-        return cls(config.model, config.max_tokens)
-
-    def __init__(self, model: str, max_tokens: int | None):
         import anthropic
 
-        self._client = anthropic.Anthropic()
+        api_key = getattr(config, "api_key", None)
+        client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
+        return cls(client, config.model, config.max_tokens)
+
+    def __init__(self, client, model: str, max_tokens: int | None):
+        self._client = client
         self._model = model
         self._max_tokens = max_tokens or 2048
 
