@@ -64,9 +64,9 @@ roadmap_item: RM-000 例: RMなしIssue C
 - [x] 実装
   - メモ: mapping/llm_fit.py 追加、MappingSlideProcessor へ LLM 補正追加、MappingStep でクライアント生成
 - [x] テスト・検証
-  - メモ: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py -n 0（12 passed）
+  - メモ: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py tests/pipeline/mapping/test_llm_fit_client.py -n 0（27 passed）
   - メモ: UAT= PPTX_LLM_PROVIDER=mock .venv/bin/pptx compose samples/extract/jobspec.json --prepare-cards /tmp/prepare_card_overflow_llm.json --output /tmp/pptx_generator-uat-llm-fit-20260123-134233
-  - メモ: diff-cover= .venv/bin/python -m diff_cover.diff_cover_tool coverage.xml --compare-branch origin/main（Coverage 26% / Total 580 lines / Missing 427 lines）
+  - メモ: diff-cover= .venv/bin/python -m diff_cover.diff_cover_tool coverage.xml --compare-branch upstream/main（Coverage 86% / Total 330 lines / Missing 46 lines）
 - [x] ドキュメント更新
   - メモ: docs/design/schema/stage-03-mapping.md を更新。Issue / PR に UAT 結果を追記
 - [x] 関連Issue 行動更新
