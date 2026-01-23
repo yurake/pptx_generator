@@ -67,13 +67,13 @@ roadmap_item: RM-000 例: RMなしIssue C
   - メモ: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py -n 0（12 passed）
   - メモ: UAT= PPTX_LLM_PROVIDER=mock .venv/bin/pptx compose samples/extract/jobspec.json --prepare-cards /tmp/prepare_card_overflow_llm.json --output /tmp/pptx_generator-uat-llm-fit-20260123-134233
   - メモ: diff-cover= .venv/bin/python -m diff_cover.diff_cover_tool coverage.xml --compare-branch origin/main（Coverage 26% / Total 580 lines / Missing 427 lines）
-- [ ] ドキュメント更新
-  - メモ: docs/design/schema/stage-03-mapping.md の記述更新済み。Issue / PR に UAT 結果を追記
-- [ ] 関連Issue 行動更新
-  - メモ: 関連Issue: #542
+- [x] ドキュメント更新
+  - メモ: docs/design/schema/stage-03-mapping.md を更新。Issue / PR に UAT 結果を追記
+- [x] 関連Issue 行動更新
+  - メモ: 関連Issue: #542（コメント https://github.com/yurake/pptx_generator/issues/542#issuecomment-3788542508）
 - [ ] チェックリスト整合確認
   - メモ: 親タスクと子タスクのチェックを整合
-- [ ] PR 更新
+- [x] PR 更新
   - メモ: PR #543 を更新
 
 ## メモ
@@ -81,6 +81,6 @@ roadmap_item: RM-000 例: RMなしIssue C
   - 前提/制約: text_hint の max_lines / max_chars に収める
   - 決定と根拠: overflow 時は LLM に再編集を依頼し、成功時のみ本文を差し替える
   - リスク(UNCONFIRMED): LLM の要約で内容が変質する可能性
-  - Now/Next: Now=Issue/PR 更新 / Next=UAT 結果の共有
+  - Now/Next: Now=レビュー待ち / Next=マージ対応
   - テスト実績/抜け: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py -n 0（12 passed）
 - 計画のみで完了する場合は、判断者・判断日・次アクション条件を記載する
