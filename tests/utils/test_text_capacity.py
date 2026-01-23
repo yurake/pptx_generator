@@ -33,3 +33,29 @@ def test_estimate_text_capacity_accounts_for_padding_and_indents() -> None:
     )
 
     assert padded.total_chars < baseline.total_chars
+
+
+def test_estimate_text_capacity_accounts_for_paragraph_spacing() -> None:
+    baseline = estimate_text_capacity(width_in=5, height_in=2, font=_font(18.0))
+
+    spaced = estimate_text_capacity(
+        width_in=5,
+        height_in=2,
+        font=_font(18.0),
+        paragraph=TextboxParagraph(space_before_pt=12.0, space_after_pt=12.0),
+    )
+
+    assert spaced.max_lines < baseline.max_lines
+
+
+def test_estimate_text_capacity_accounts_for_first_line_indent() -> None:
+    baseline = estimate_text_capacity(width_in=5, height_in=2, font=_font(18.0))
+
+    indented = estimate_text_capacity(
+        width_in=5,
+        height_in=2,
+        font=_font(18.0),
+        paragraph=TextboxParagraph(first_line_indent_in=0.4),
+    )
+
+    assert indented.total_chars < baseline.total_chars

@@ -7,6 +7,7 @@ import textwrap
 from typing import Iterable
 
 from ..llm.json_utils import extract_json_object
+from ..utils.text_lines import split_lines_preserve_blank
 from .loggers import LLM_LOGGER
 from .models import (
     AIGenerationRequest,
@@ -27,7 +28,13 @@ def _normalize_body(candidates: Iterable[str]) -> tuple[list[str], list[str]]:
 
     for candidate in candidates:
         text_raw = str(candidate)
-        segments = [segment.strip() for segment in text_raw.splitlines() if segment.strip()]
+        segments: list[str] = []
+        for segment in split_lines_preserve_blank(text_raw):
+            stripped = segment.strip()
+            if stripped:
+                segments.append(stripped)
+            else:
+                segments.append("")
         if segments:
             body_lines.extend(segments)
             continue
@@ -45,6 +52,7 @@ def _normalize_body(candidates: Iterable[str]) -> tuple[list[str], list[str]]:
             break
         stripped = line.strip()
         if not stripped:
+            normalized.append("")
             continue
         if len(stripped) <= MAX_BODY_LINE_LENGTH:
             normalized.append(stripped)
@@ -70,7 +78,7 @@ def _normalize_body(candidates: Iterable[str]) -> tuple[list[str], list[str]]:
     if wrapped and "body_truncated" not in warnings:
         warnings.append("body_wrapped")
 
-    if not normalized:
+    if not any(normalized):
         normalized.append("自動生成コンテンツ")
 
     return normalized, warnings
@@ -134,9 +142,19 @@ def build_generation_response(
         data = _extract_json_from_text(text)
     except json.JSONDecodeError:
         warnings.append("response_not_json")
-        lines = [line.strip("-• ") for line in text.splitlines() if line.strip()]
-        title_source = lines[0] if lines else request.slide.title or request.prompt
-        body_candidates = lines[1:] if len(lines) > 1 else lines
+        lines: list[str] = []
+        for raw_line in split_lines_preserve_blank(text):
+            if raw_line.strip():
+                lines.append(raw_line.strip("-• "))
+            else:
+                lines.append("")
+        title_index = next((i for i, line in enumerate(lines) if line.strip()), None)
+        if title_index is None:
+            title_source = request.slide.title or request.prompt
+            body_candidates = []
+        else:
+            title_source = lines[title_index]
+            body_candidates = lines[title_index + 1 :]
         body, body_warnings = _normalize_body(body_candidates)
         warnings.extend(body_warnings)
         title_text = str(title_source).strip() or request.slide.title or request.prompt

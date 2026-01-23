@@ -64,6 +64,8 @@ roadmap_item: RM-085 LLM プロバイダ共通化  # 既存 RM を指定。未�
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+    - PR（fork）: https://github.com/kkeito-investigate/pptx_generator/pull/1
+    - PR（upstream）: https://github.com/yurake/pptx_generator/pull/546
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新

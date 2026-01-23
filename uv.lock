@@ -250,6 +250,18 @@ wheels = [
 ]
 
 [[package]]
+name = "gunicorn"
+version = "21.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/89/acd9879fa6a5309b4bf16a5a8855f1e58f26d38e0c18ede9b3a70996b021/gunicorn-21.2.0.tar.gz", hash = "sha256:88ec8bff1d634f98e61b9f65bc4bf3cd918a90806c6f5c48bc5603849ec81033", size = 3632557 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0e/2a/c3a878eccb100ccddf45c50b6b8db8cf3301a6adede6e31d48e8531cab13/gunicorn-21.2.0-py3-none-any.whl", hash = "sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0", size = 80176 },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -690,6 +702,7 @@ dependencies = [
     { name = "click" },
     { name = "deepdiff" },
     { name = "flask" },
+    { name = "gunicorn", marker = "sys_platform != 'win32'" },
     { name = "jsonschema" },
     { name = "openai" },
     { name = "pydantic" },
@@ -713,6 +726,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1,<9" },
     { name = "deepdiff", specifier = ">=7,<8" },
     { name = "flask", specifier = ">=3.0,<4" },
+    { name = "gunicorn", marker = "sys_platform != 'win32'", specifier = ">=21,<22" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
     { name = "jsonschema", specifier = ">=4.22,<5" },
     { name = "openai", specifier = ">=2.6.1" },

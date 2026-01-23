@@ -1210,3 +1210,27 @@ flowchart TB
   - PPTX からスライド単位の PNG を生成する CLI/API パスを用意（バッチ/単一スライド両対応）。
   - 画像と slide_snapshot の対応を維持し、LLM 入力で shape_id と紐づく座標参照が可能なメタ情報を出力する。
   - 既存 Stage4 生成成果物に追加の生成物（スクリーンショット＋メタ）を付与し、Stage5 で再利用できるようにする。
+
+<a id="rm-098"></a>
+### RM-098 改行・空行の保持
+- ゴール: HTML/Markdown/AI 応答の改行・空行を入力から出力まで保持する
+- 対象 stage: 2/3/4（prepare / mapping / rendering）
+- 参照ドキュメント: `docs/requirements/requirements.md`、`docs/requirements/stages/stage-02-prepare.md`、`docs/requirements/stages/stage-03-compose.md`、`docs/requirements/stages/stage-04-gen.md`
+- 参照 ToDo: [docs/todo/20260109-rm098-linebreak-preservation.md](../todo/20260109-rm098-linebreak-preservation.md)
+- 依頼: なし
+- 状況: 進行中（2026-01-09 更新）
+- 期待成果:
+  - HTML/Markdown/AI の改行・空行を正規化して保持
+  - Prepare/Mapping の中間 JSON に空行を落とさず反映
+  - Rendering で空行を点なし表示で出力
+
+<a id="rm-099"></a>
+### RM-099 編集履歴コメント反映
+- ゴール: edit 機能で変更前の内容を PowerPoint の校閲コメントとして残し、スライド内で差分履歴を参照できるようにする。
+- 対象 stage: 5・6（編集適用とレンダリング）
+- 参照ドキュメント: （未作成 — 着手時に整備）
+- 状況: 未着手（2026-01-22 更新）
+- 期待成果:
+  - 編集 API/CLI で変更前テキストをコメントとして埋め込み、対象要素・編集者・時刻などの差分メタを付与する。
+  - コメントを PPTX 出力に保持し、閲覧・削除ポリシーを定義する。
+  - 監査ログやサマリにコメント付与の有無を記録し、後続ステージでも参照できるようにする。

@@ -69,3 +69,13 @@ def test_normalize_body_truncates_and_wraps() -> None:
 
     assert len(normalized) == MAX_BODY_LINES
     assert "body_wrapped" in warnings
+
+def test_normalize_body_preserves_blank_lines() -> None:
+    candidates = ["line1\n\nline2"]
+
+    normalized, warnings = _normalize_body(candidates)
+
+    assert normalized[:3] == ["line1", "", "line2"]
+    assert "body_wrapped" not in warnings
+    assert "body_truncated" not in warnings
+

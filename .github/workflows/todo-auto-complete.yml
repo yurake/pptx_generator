@@ -14,9 +14,7 @@ permissions:
 
 jobs:
   auto-complete:
-    if: >
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     env:
       AUTO_COMPLETE_PAT: ${{ secrets.TODO_AUTO_COMPLETE_PAT }}

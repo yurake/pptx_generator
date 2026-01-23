@@ -305,6 +305,15 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     assert slide_log["warnings"] == [
         "body が許容行数 2 を超過しています（現在 3 行）"
     ]
+    assert slide_log["capacity_warnings"] == [
+        {
+            "slide_id": "s01",
+            "element": "body",
+            "max_lines": 2,
+            "actual_lines": 3,
+            "layout_id": "layout_basic",
+        }
+    ]
 
     assert not fallback_report_path.exists()
 

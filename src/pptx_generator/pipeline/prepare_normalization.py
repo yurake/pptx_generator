@@ -24,6 +24,7 @@ from ..models import (
     ContentSlideSource,
     ContentTableData,
 )
+from ..utils.text_lines import split_lines_preserve_blank
 from .base import PipelineContext, PipelineStage, PipelineStep
 
 logger = logging.getLogger(__name__)
@@ -296,8 +297,8 @@ class PrepareNormalizationStep:
             return self._lines_from_bullets(block.data)
 
         lines: list[str] = []
-        lines.extend(self._split_text(block.text))
-        lines.extend(self._split_text(block.description))
+        lines.extend(self._split_text(block.text, preserve_blank=True))
+        lines.extend(self._split_text(block.description, preserve_blank=True))
         return lines
 
     def _lines_from_bullets(self, raw_items: Any) -> list[str]:
@@ -332,25 +333,23 @@ class PrepareNormalizationStep:
             return 0
 
     @staticmethod
-    def _split_text(value: Any) -> list[str]:
+    def _split_text(value: Any, *, preserve_blank: bool = False) -> list[str]:
         if not isinstance(value, str):
             return []
 
-        stripped = value.strip()
-        if not stripped:
-            return []
-
-        segments = stripped.splitlines() if "\n" in stripped else [stripped]
+        segments = split_lines_preserve_blank(value)
         output: list[str] = []
         for segment in segments:
-            segment = segment.strip()
-            if not segment:
+            stripped = segment.strip()
+            if not stripped:
+                if preserve_blank:
+                    output.append("")
                 continue
-            if len(segment) <= 200:
-                output.append(segment)
+            if len(stripped) <= 200:
+                output.append(stripped)
                 continue
             wrapped = textwrap.wrap(
-                segment,
+                stripped,
                 width=200,
                 drop_whitespace=True,
                 break_long_words=True,

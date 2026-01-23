@@ -19,6 +19,7 @@ __all__ = [
     "MappingCandidate",
     "MappingFallbackState",
     "MappingAIPatch",
+    "MappingLogCapacityWarning",
     "MappingLogAnalyzerIssue",
     "MappingLogAnalyzerSummary",
     "MappingLogSlide",
@@ -89,6 +90,14 @@ class MappingAIPatch(BaseModel):
     patch: list[JsonPatchOperation] = Field(default_factory=list)
 
 
+class MappingLogCapacityWarning(BaseModel):
+    slide_id: str
+    element: str
+    max_lines: int
+    actual_lines: int
+    layout_id: str | None = None
+
+
 class MappingLogAnalyzerIssue(BaseModel):
     issue_id: str
     issue_type: str
@@ -114,6 +123,7 @@ class MappingLogSlide(BaseModel):
     fallback: MappingFallbackState = Field(default_factory=MappingFallbackState)
     ai_patch: list[MappingAIPatch] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    capacity_warnings: list[MappingLogCapacityWarning] = Field(default_factory=list)
     analyzer: MappingLogAnalyzerSummary = Field(default_factory=MappingLogAnalyzerSummary)
     layout_description: dict[str, Any] | None = None
 

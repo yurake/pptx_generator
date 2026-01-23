@@ -12,6 +12,22 @@ security:
   - HmacAuth: []
   - BearerAuth: []
 paths:
+  /health:
+    get:
+      summary: ヘルスチェック
+      description: 稼働確認用のシンプルなヘルスチェック。認証不要。
+      security: []  # public endpoint
+      responses:
+        "200":
+          description: 稼働中
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
   /edit:
     post:
       summary: Stage5 edit のジョブ登録
