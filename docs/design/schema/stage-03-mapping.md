@@ -143,4 +143,4 @@ stage 3（マッピング）で利用する JSON 仕様を定義する。
 - `generate_ready.json` の `layout_id` がテンプレ構造 (`layouts.jsonl`) に存在すること。
 - `elements` のキーがプレースホルダ定義と一致すること。
 - `meta.content_hash` が Prepare 成果物のハッシュと一致すること（任意検証）。
-- `ContentElements.body` は Stage2 から全文を保持し、stage 3 ではレイアウトヒントの許容量を超えた場合に警告を記録するのみで自動トリミングは行わない（RM-068 対応済み）。
+- `ContentElements.body` は Stage2 の本文を基本としつつ、レイアウトヒントの許容量を超えた場合は LLM で再編集を試みる。成功時は `ai_patch` に差分を記録し、失敗時は警告のみで本文は保持する。

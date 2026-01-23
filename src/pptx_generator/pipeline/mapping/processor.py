@@ -9,6 +9,7 @@ from ...models import (
     ContentSlide,
     DraftSlideCard,
     GenerateReadySlide,
+    JsonPatchOperation,
     MappingAIPatch,
     MappingLogCapacityWarning,
     MappingCandidate,
@@ -19,6 +20,12 @@ from ...models import (
 )
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
 from ...utils.usage_tags import normalize_usage_tag_value
+from .llm_fit import (
+    MappingTextFitClient,
+    MappingTextFitClientExecutionError,
+    MappingTextFitResponseFormatError,
+    MappingTextFitRequest,
+)
 from .types import LayoutProfile, MappingAccumulator, MappingOptions, MappingWorkItem
 
 logger = logging.getLogger(__name__)
@@ -32,9 +39,13 @@ class MappingSlideProcessor:
         *,
         options: MappingOptions,
         layout_catalog: Mapping[str, LayoutProfile],
+        text_fit_client: MappingTextFitClient | None = None,
+        text_fit_error: str | None = None,
     ) -> None:
         self.options = options
         self.layout_catalog = layout_catalog
+        self.text_fit_client = text_fit_client
+        self.text_fit_error = text_fit_error
 
     def process(
         self,
@@ -401,25 +412,159 @@ class MappingSlideProcessor:
             return fallback, ai_patches, warnings, capacity_warnings
 
         max_lines = layout.max_lines()
+        max_chars = layout.max_chars()
         body = elements.get("body")
-        if max_lines is not None and isinstance(body, list) and len(body) > max_lines:
-            warnings.append(
-                f"body が許容行数 {max_lines} を超過しています（現在 {len(body)} 行）"
-            )
-            capacity_warnings.append(
-                MappingLogCapacityWarning(
+        if isinstance(body, list):
+            actual_lines = len(body)
+            actual_chars = self._count_body_chars(body)
+            overflow_lines = max_lines is not None and actual_lines > max_lines
+            overflow_chars = max_chars is not None and actual_chars > max_chars
+            if overflow_lines or overflow_chars:
+                if overflow_lines:
+                    warnings.append(
+                        "body が許容行数 {max} を超過しているため LLM で調整します（元 {actual} 行）".format(
+                            max=max_lines,
+                            actual=actual_lines,
+                        )
+                    )
+                    capacity_warnings.append(
+                        MappingLogCapacityWarning(
+                            slide_id=slide_id,
+                            element="body",
+                            max_lines=max_lines or 0,
+                            actual_lines=actual_lines,
+                            layout_id=layout.layout_id,
+                        )
+                    )
+                if overflow_chars:
+                    warnings.append(
+                        "body が許容文字数 {max} を超過しているため LLM で調整します（元 {actual} 文字）".format(
+                            max=max_chars,
+                            actual=actual_chars,
+                        )
+                    )
+                self._apply_text_fit(
                     slide_id=slide_id,
-                    element="body",
-                    max_lines=max_lines,
-                    actual_lines=len(body),
                     layout_id=layout.layout_id,
+                    max_lines=max_lines,
+                    max_chars=max_chars,
+                    elements=elements,
+                    original_body=body,
+                    warnings=warnings,
+                    ai_patches=ai_patches,
+                )
+
+            updated_body = elements.get("body")
+            if isinstance(updated_body, list) and not updated_body:
+                warnings.append("body が空です")
+
+        return fallback, ai_patches, warnings, capacity_warnings
+
+    def _apply_text_fit(
+        self,
+        *,
+        slide_id: str,
+        layout_id: str | None,
+        max_lines: int | None,
+        max_chars: int | None,
+        elements: dict[str, Any],
+        original_body: list[str],
+        warnings: list[str],
+        ai_patches: list[MappingAIPatch],
+    ) -> None:
+        if self.text_fit_client is None:
+            if self.text_fit_error:
+                warnings.append(
+                    f"LLM 補正をスキップしました（{self.text_fit_error}）"
+                )
+            else:
+                warnings.append("LLM 補正クライアントが未設定のため本文を保持しました")
+            return
+
+        request = MappingTextFitRequest(
+            slide_id=slide_id,
+            layout_id=layout_id,
+            max_lines=max_lines,
+            max_chars=max_chars,
+            body=list(original_body),
+            subtitle=elements.get("subtitle"),
+            note=elements.get("note"),
+        )
+        try:
+            response = self.text_fit_client.fit(request)
+        except (MappingTextFitClientExecutionError, MappingTextFitResponseFormatError) as exc:
+            logger.warning(
+                "mapping text fit failed: slide_id=%s layout=%s error=%s",
+                slide_id,
+                layout_id,
+                exc,
+            )
+            warnings.append("LLM による本文調整に失敗したため本文を保持しました")
+            return
+
+        candidate_body = response.body
+        if not candidate_body and original_body:
+            warnings.append("LLM 出力が空のため適用しませんでした")
+            return
+        if not self._fits_constraints(candidate_body, max_lines, max_chars):
+            warnings.append("LLM 出力が制約を満たさないため適用しませんでした")
+            return
+
+        patch_ops: list[JsonPatchOperation] = []
+        if candidate_body != original_body:
+            elements["body"] = candidate_body
+            patch_ops.append(
+                JsonPatchOperation(
+                    op="replace",
+                    path="/body",
+                    value=candidate_body,
                 )
             )
 
-        if isinstance(body, list) and not body:
-            warnings.append("body が空です")
+        if response.subtitle is not None and response.subtitle != elements.get("subtitle"):
+            elements["subtitle"] = response.subtitle
+            patch_ops.append(
+                JsonPatchOperation(
+                    op="replace",
+                    path="/subtitle",
+                    value=response.subtitle,
+                )
+            )
 
-        return fallback, ai_patches, warnings, capacity_warnings
+        if response.note is not None and response.note != elements.get("note"):
+            elements["note"] = response.note
+            patch_ops.append(
+                JsonPatchOperation(
+                    op="replace",
+                    path="/note",
+                    value=response.note,
+                )
+            )
+
+        if patch_ops:
+            ai_patches.append(
+                MappingAIPatch(
+                    patch_id=f"mapping-text-fit:{slide_id}",
+                    description="LLM により本文を許容量内に調整",
+                    patch=patch_ops,
+                )
+            )
+
+    @staticmethod
+    def _fits_constraints(
+        body: list[str],
+        max_lines: int | None,
+        max_chars: int | None,
+    ) -> bool:
+        if max_lines is not None and len(body) > max_lines:
+            return False
+        if max_chars is not None and sum(len(line) for line in body) > max_chars:
+            return False
+        return True
+
+    @staticmethod
+    def _count_body_chars(body: list[str]) -> int:
+        return sum(len(line) for line in body)
 
     @staticmethod
     def _build_auto_draw_payload(spec_slide: Slide | None) -> list[dict[str, float]]:

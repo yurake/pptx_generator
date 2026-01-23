@@ -29,7 +29,9 @@ from pptx_generator.models import (
 )
 from pptx_generator.pipeline.base import PipelineContext
 from pptx_generator.pipeline.mapping import MappingOptions, MappingStep
+from pptx_generator.pipeline.mapping.llm_fit import MappingTextFitResponse
 from pptx_generator.pipeline.mapping.processor import MappingSlideProcessor
+from pptx_generator.pipeline.mapping.types import LayoutProfile
 from pptx_generator.prepare import (
     PrepareBodyBlock,
     PrepareCard,
@@ -290,7 +292,7 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
 
     generate_ready_payload = json.loads(generate_ready_path.read_text(encoding="utf-8"))
     body = generate_ready_payload["slides"][0]["elements"]["body"]
-    assert body == ["1行目", "2行目", "3行目"], "オーバーフロー時でも本文は維持されること"
+    assert body == ["1行目", "2行目..."], "オーバーフロー時は本文を短縮すること"
     assert generate_ready_payload["slides"][0]["meta"]["fallback"] == "none"
     assert generate_ready_payload["meta"]["template_path"] == template_path.name
 
@@ -300,10 +302,10 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
     assert slide_log["fallback"]["history"] == []
     assert slide_log["analyzer"]["issue_count"] == 0
     assert mapping_payload["meta"]["fallback_count"] == 0
-    assert mapping_payload["meta"]["ai_patch_count"] == 0
+    assert mapping_payload["meta"]["ai_patch_count"] == 1
     assert mapping_payload["meta"]["analyzer_issue_count"] == 0
     assert slide_log["warnings"] == [
-        "body が許容行数 2 を超過しています（現在 3 行）"
+        "body が許容行数 2 を超過しているため LLM で調整します（元 3 行）"
     ]
     assert slide_log["capacity_warnings"] == [
         {
@@ -317,6 +319,112 @@ def test_mapping_step_applies_fallback_when_body_overflow(tmp_path: Path) -> Non
 
     assert not fallback_report_path.exists()
 
+
+def test_mapping_capacity_controls_skips_invalid_llm_output(tmp_path: Path) -> None:
+    class InvalidTextFitClient:
+        def fit(self, request):  # type: ignore[no-untyped-def]
+            return MappingTextFitResponse(
+                model="mock-invalid",
+                body=request.body + ["追加"],
+                subtitle=request.subtitle,
+                note=request.note,
+                raw_text="{}",
+            )
+
+    processor = MappingSlideProcessor(
+        options=MappingOptions(output_dir=tmp_path),
+        layout_catalog={},
+        text_fit_client=InvalidTextFitClient(),
+    )
+    layout = LayoutProfile(
+        layout_id="layout_basic",
+        layout_name="Basic",
+        usage_tags=(),
+        text_hint={"max_lines": 2},
+        media_hint={},
+    )
+    elements = {"body": ["1行目", "2行目", "3行目"]}
+
+    fallback, ai_patches, warnings, capacity_warnings = processor._apply_capacity_controls(
+        slide_id="s01",
+        layout=layout,
+        elements=elements,
+    )
+
+    assert fallback.applied is False
+    assert ai_patches == []
+    assert elements["body"] == ["1行目", "2行目", "3行目"]
+    assert "LLM 出力が制約を満たさないため適用しませんでした" in warnings
+    assert len(capacity_warnings) == 1
+    warning = capacity_warnings[0]
+    assert warning.slide_id == "s01"
+    assert warning.element == "body"
+    assert warning.max_lines == 2
+    assert warning.actual_lines == 3
+    assert warning.layout_id == "layout_basic"
+
+
+def test_mapping_capacity_controls_warns_on_missing_text_fit_client(tmp_path: Path) -> None:
+    processor = MappingSlideProcessor(
+        options=MappingOptions(output_dir=tmp_path),
+        layout_catalog={},
+        text_fit_client=None,
+        text_fit_error="config error",
+    )
+    layout = LayoutProfile(
+        layout_id="layout_basic",
+        layout_name="Basic",
+        usage_tags=(),
+        text_hint={"max_lines": 2},
+        media_hint={},
+    )
+    elements = {"body": ["1行目", "2行目", "3行目"]}
+
+    _, ai_patches, warnings, _ = processor._apply_capacity_controls(
+        slide_id="s01",
+        layout=layout,
+        elements=elements,
+    )
+
+    assert ai_patches == []
+    assert any("LLM 補正をスキップしました" in warning for warning in warnings)
+    assert elements["body"] == ["1行目", "2行目", "3行目"]
+
+
+def test_mapping_capacity_controls_skips_empty_llm_output(tmp_path: Path) -> None:
+    class EmptyTextFitClient:
+        def fit(self, request):  # type: ignore[no-untyped-def]
+            return MappingTextFitResponse(
+                model="mock-empty",
+                body=[],
+                subtitle=request.subtitle,
+                note=request.note,
+                raw_text="{\"body\": []}",
+            )
+
+    processor = MappingSlideProcessor(
+        options=MappingOptions(output_dir=tmp_path),
+        layout_catalog={},
+        text_fit_client=EmptyTextFitClient(),
+    )
+    layout = LayoutProfile(
+        layout_id="layout_basic",
+        layout_name="Basic",
+        usage_tags=(),
+        text_hint={"max_lines": 2},
+        media_hint={},
+    )
+    elements = {"body": ["1行目", "2行目", "3行目"]}
+
+    _, ai_patches, warnings, _ = processor._apply_capacity_controls(
+        slide_id="s01",
+        layout=layout,
+        elements=elements,
+    )
+
+    assert ai_patches == []
+    assert "LLM 出力が空のため適用しませんでした" in warnings
+    assert elements["body"] == ["1行目", "2行目", "3行目"]
 
 def test_mapping_step_assigns_table_anchor(tmp_path: Path) -> None:
     layouts_path = tmp_path / "layouts.jsonl"
