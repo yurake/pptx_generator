@@ -1,86 +1,92 @@
 ---
-目標: テキスト溢れ時に LLM で本文を枠内へ収める
-関連ブランチ: verify/overflow-autofix
-関連Issue: #542
-roadmap_item: RM-000 例: RMなしIssue C
+rm: RM-000
+title: "コンテンツオーバーフロー自動修正"
+status: 実装完了
+priority: high
+created: 2026-01-19
+updated: 2026-01-23
+related_issues:
+  - https://github.com/yurake/pptx_generator/issues/542
+related_prs:
+  - https://github.com/yurake/pptx_generator/pull/543
+assignee: Cline
 ---
 
-- [x] ブランチ作成・初期コミット・push
-  - メモ: ブランチ名: feat/overflow-autofix / 初期コミット: docs(todo): add rm000 overflow autofix / push: 済み
-    - 必ず main からブランチを切る
-- [x] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること
-    - 対象スコープ: MappingStep で body 超過時に自動短縮し末尾に "..." を付与
-    - 対象ファイル: src/pptx_generator/pipeline/mapping/processor.py, tests/pipeline/mapping/test_mapping_step_layout_assignment.py
-    - 前提: max_lines は layout の text_hint を使用
-    - ドキュメント／コード修正方針: body を短縮し warnings に記録
-    - 確認・共有方法: ToDo 更新、Issue コメント
-    - 想定影響ファイル: generate_ready.json の body 出力
-    - リスク: 内容の末尾が削られる
-    - テスト方針: PYTHONPATH=src python -m pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py
-    - ロールバック方針: 追加処理を revert
-    - 承認メッセージ ID／リンク: ユーザー OK
-- [x] 設計・実装方針の確定
-  - メモ: max_lines 超過時に body を短縮し、末尾行へ "..." を付与する
-  - [x] 設計・実装方針メモの共有（不要）
-  - [x] 方針メモを更新するまで以降の stage へ進まないこと
-- [x] 実装
-  - メモ: src/pptx_generator/pipeline/mapping/processor.py, tests/pipeline/mapping/test_mapping_step_layout_assignment.py
-- [x] テスト・検証
-  - メモ: PYTHONPATH=src python -m pytest -n 0 tests/pipeline/mapping/test_mapping_step_layout_assignment.py / 10 passed / coverage.xml / diff-cover: python -m diff_cover.diff_cover_tool coverage.xml --compare-branch origin/main / Coverage 100%（26 lines）
-- [x] ドキュメント更新
-  - メモ: docs/todo/20260119-rm000-overflow-autofix.md, C:\PPT_test_textyabai\実施事項概要.md
-  - メモ: 対象外: docs/roadmap 配下, docs/requirements 配下, docs/design 配下, docs/runbook 配下, README.md / AGENTS.md
-  - [x] docs/roadmap 配下
-  - [x] docs/requirements 配下（実装結果との整合を確認）
-  - [x] docs/design 配下（実装結果との整合を確認）
-  - [x] docs/runbook 配下
-  - [x] README.md / AGENTS.md
-- [x] 関連Issue 行動更新
-  - メモ: 関連Issue: #542
-- [x] チェックリスト整合確認
-  - メモ: 親タスクと子タスクのチェックを整合
-- [x] PR 作成
-  - メモ: PR #543 https://github.com/yurake/pptx_generator/pull/543
+# コンテンツオーバーフロー自動修正
 
-## 追加対応: LLM による自動調整
+## 概要
+MappingStep で text_hint (max_lines/max_chars) を超過した本文を LLM で自動調整し、枠内に収める機能を実装。
 
-- [x] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること
-    - 対象スコープ: MappingStep で text_hint の max_lines / max_chars を超過した本文を LLM で再編集し、制約内に収める
-    - 対象ファイル: src/pptx_generator/pipeline/mapping/processor.py, src/pptx_generator/pipeline/mapping/llm_fit.py, src/pptx_generator/pipeline/mapping/__init__.py, tests/pipeline/mapping/test_mapping_step_layout_assignment.py
-    - 前提: LLM 返却は JSON のみ、失敗時は元本文を維持し warnings/capacity_warnings を残す
-    - ドキュメント／コード修正方針: MappingStep 内で LLM 補正を実行し、`MappingAIPatch` で差分を記録
-    - 確認・共有方法: ToDo 更新、Issue/PR の UAT 結果追記
-    - 想定影響ファイル: generate_ready.json の body/subtitle/note 出力
-    - リスク: LLM で要約され内容が変質する可能性
-    - テスト方針: uv run --extra dev pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py -n 0
-    - ロールバック方針: 追加した LLM 補正処理を revert
-    - 承認メッセージ ID／リンク: ユーザー OK
-- [x] 設計・実装方針の確定
-  - メモ: overflow 検知後に LLM 補正を呼び出し、成功時のみ本文差し替えと MappingAIPatch 記録、失敗時は warnings のみ残す。LLM は mapping/llm_fit.py に集約し、MappingStep でクライアント生成→MappingSlideProcessor へ注入する。
-  - [x] 設計・実装方針メモの共有
-  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+## タスク
+
+- [x] 要件定義
+  - メモ: LLM により本文・サブタイトル・ノートを max_lines/max_chars 内に収める
+  - メモ: 成功時は ai_patch 記録＋要素更新、失敗時は元内容維持＋warning 記録
+- [x] 設計
+  - メモ: llm_fit.py に LLM クライアント追加（OpenAI/Azure/Anthropic/AWS Claude/Mock対応）
+  - メモ: processor.py で capacity_controls 実行時に LLM fit を呼び出し
+  - メモ: types.py に MappingTextFitRequest/Response を追加
 - [x] 実装
-  - メモ: mapping/llm_fit.py 追加、MappingSlideProcessor へ LLM 補正追加、MappingStep でクライアント生成
+  - メモ: src/pptx_generator/pipeline/mapping/llm_fit.py 新規作成
+  - メモ: src/pptx_generator/pipeline/mapping/processor.py 修正
+  - メモ: src/pptx_generator/pipeline/mapping/step.py 修正
+  - メモ: src/pptx_generator/pipeline/mapping/types.py 修正
 - [x] テスト・検証
   - メモ: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py tests/pipeline/mapping/test_llm_fit_client.py -n 0（27 passed）
-  - メモ: UAT= PPTX_LLM_PROVIDER=mock .venv/bin/pptx compose samples/extract/jobspec.json --prepare-cards /tmp/prepare_card_overflow_llm.json --output /tmp/pptx_generator-uat-llm-fit-20260123-134233
   - メモ: diff-cover= .venv/bin/python -m diff_cover.diff_cover_tool coverage.xml --compare-branch upstream/main（Coverage 86% / Total 330 lines / Missing 46 lines）
+  - メモ: UAT（mock LLM）= PPTX_LLM_PROVIDER=mock .venv/bin/pptx compose samples/extract/jobspec.json --prepare-cards /tmp/prepare_card_overflow_llm.json
+  - メモ: UAT（aws-claude 全ステージ）= Stage1-5 実行完了、ai_patch_count=9、全スライドで LLM オーバーフロー修正動作確認済み
+    - Stage1 template: 成功（warnings=0, errors=0）
+    - Stage2 prepare: 成功（aws-claude, 22.8秒）
+    - Stage3 compose: 成功（ai_patch=9, mapping_time=12.5秒）
+    - Stage4 gen: 成功（warnings=5, alerts=5）
+    - Stage5 edit: 成功（適用件数=0）
+  - メモ: mapping_log.json 確認：9スライドで LLM が本文を max_lines 内に要約（例: 4行→1行、5行→2行）
 - [x] ドキュメント更新
   - メモ: docs/design/schema/stage-03-mapping.md を更新。Issue / PR に UAT 結果を追記
 - [x] 関連Issue 行動更新
   - メモ: 関連Issue: #542（コメント https://github.com/yurake/pptx_generator/issues/542#issuecomment-3788542508）
-- [ ] チェックリスト整合確認
+- [x] チェックリスト整合確認
   - メモ: 親タスクと子タスクのチェックを整合
 - [x] PR 更新
   - メモ: PR #543 を更新
-
-## メモ
-- 連続性メモ（短文で上書き）
-  - 前提/制約: text_hint の max_lines / max_chars に収める
-  - 決定と根拠: overflow 時は LLM に再編集を依頼し、成功時のみ本文を差し替える
   - リスク(UNCONFIRMED): LLM の要約で内容が変質する可能性
   - Now/Next: Now=レビュー待ち / Next=マージ対応
-  - テスト実績/抜け: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py -n 0（12 passed）
-- 計画のみで完了する場合は、判断者・判断日・次アクション条件を記載する
+  - テスト実績/抜け: PYTHONPATH=src .venv/bin/pytest tests/pipeline/mapping/test_mapping_step_layout_assignment.py tests/pipeline/mapping/test_llm_fit_client.py -n 0（27 passed）
+
+## 実装詳細
+
+### 追加ファイル
+- `src/pptx_generator/pipeline/mapping/llm_fit.py`: LLM クライアント（OpenAI/Azure/Anthropic/AWS Claude/Mock）
+- `tests/pipeline/mapping/test_llm_fit_client.py`: LLM クライアントのユニットテスト
+
+### 変更ファイル
+- `src/pptx_generator/pipeline/mapping/processor.py`: `_apply_capacity_controls` で LLM fit 実行
+- `src/pptx_generator/pipeline/mapping/step.py`: ai_patch_count のカウント追加
+- `src/pptx_generator/pipeline/mapping/types.py`: MappingTextFitRequest/Response 追加
+- `tests/pipeline/mapping/test_mapping_step_layout_assignment.py`: LLM fit のテストケース追加
+
+### 動作フロー
+1. MappingStep で text_hint (max_lines/max_chars) を超過検知
+2. LLM に短縮依頼（最大3回リトライ）
+3. 成功時: ai_patch 記録＋要素を更新
+4. 失敗時: 元内容維持＋warning 記録
+
+### UAT結果詳細（aws-claude）
+- **ai_patch_count**: 9
+- **修正例**:
+  - `two_column_detail-01`: 4行 → 1行（「ブランドガイドラインを自動反映し...」）
+  - `one_column_detail-01-clone02`: 5行 → 1行（「余白逸脱・フォントサイズ不足...」）
+  - `two_column_detail-01-clone01`: 4行 → 2行（動的/静的モードの説明）
+- **全スライドで capacity_warnings 記録**
+- **warnings**: 「body が許容行数 X を超過しているため LLM で調整します」
+
+## リスク・制約
+- LLM の要約で内容が変質する可能性（要レビュー）
+- LLM 呼び出しコスト（大量スライド時）
+- LLM API 失敗時は元内容維持（フォールバック済み）
+
+## 参照
+- Issue: https://github.com/yurake/pptx_generator/issues/542
+- PR: https://github.com/yurake/pptx_generator/pull/543
+- docs/design/schema/stage-03-mapping.md
