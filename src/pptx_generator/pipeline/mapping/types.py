@@ -53,6 +53,13 @@ class LayoutProfile:
         except (TypeError, ValueError):
             return None
 
+    def max_chars(self) -> int | None:
+        value = self.text_hint.get("max_chars")
+        try:
+            return int(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
 
 @dataclass(slots=True)
 class MappingWorkItem:

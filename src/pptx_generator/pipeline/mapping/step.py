@@ -18,6 +18,10 @@ from ...models import (
     TemplateStyle,
 )
 from .catalog import load_layout_catalog
+from .llm_fit import (
+    MappingTextFitClientConfigurationError,
+    create_mapping_text_fit_client,
+)
 from .outputs import (
     finalize_outputs,
     format_template_path,
@@ -83,9 +87,18 @@ class MappingStep:
         )
 
         accumulator = MappingAccumulator()
+        text_fit_client = None
+        text_fit_error: str | None = None
+        try:
+            text_fit_client = create_mapping_text_fit_client()
+        except MappingTextFitClientConfigurationError as exc:
+            text_fit_error = str(exc)
+            logger.warning("mapping text fit client unavailable: %s", exc)
         processor = MappingSlideProcessor(
             options=self.options,
             layout_catalog=layout_catalog,
+            text_fit_client=text_fit_client,
+            text_fit_error=text_fit_error,
         )
 
         previous_layout: str | None = None
