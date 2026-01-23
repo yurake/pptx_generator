@@ -10,6 +10,7 @@ from ...models import (
     DraftSlideCard,
     GenerateReadySlide,
     MappingAIPatch,
+    MappingLogCapacityWarning,
     MappingCandidate,
     MappingFallbackState,
     MappingLogSlide,
@@ -71,7 +72,7 @@ class MappingSlideProcessor:
                     payload=table_payload,
                 )
 
-        fallback_state, ai_patches, warnings = self._apply_capacity_controls(
+        fallback_state, ai_patches, warnings, capacity_warnings = self._apply_capacity_controls(
             slide_id=slide_id,
             layout=selected_profile,
             elements=elements,
@@ -115,6 +116,7 @@ class MappingSlideProcessor:
                 fallback=fallback_state,
                 ai_patch=ai_patches,
                 warnings=warnings,
+                capacity_warnings=capacity_warnings,
                 layout_description=layout_description,
             )
         )
@@ -380,13 +382,19 @@ class MappingSlideProcessor:
         slide_id: str,
         layout: LayoutProfile | None,
         elements: dict[str, Any],
-    ) -> tuple[MappingFallbackState, list[MappingAIPatch], list[str]]:
+    ) -> tuple[
+        MappingFallbackState,
+        list[MappingAIPatch],
+        list[str],
+        list[MappingLogCapacityWarning],
+    ]:
         fallback = MappingFallbackState()
         ai_patches: list[MappingAIPatch] = []
         warnings: list[str] = []
+        capacity_warnings: list[MappingLogCapacityWarning] = []
 
         if layout is None:
-            return fallback, ai_patches, warnings
+            return fallback, ai_patches, warnings, capacity_warnings
 
         max_lines = layout.max_lines()
         body = elements.get("body")
@@ -394,11 +402,20 @@ class MappingSlideProcessor:
             warnings.append(
                 f"body が許容行数 {max_lines} を超過しています（現在 {len(body)} 行）"
             )
+            capacity_warnings.append(
+                MappingLogCapacityWarning(
+                    slide_id=slide_id,
+                    element="body",
+                    max_lines=max_lines,
+                    actual_lines=len(body),
+                    layout_id=layout.layout_id,
+                )
+            )
 
         if isinstance(body, list) and not body:
             warnings.append("body が空です")
 
-        return fallback, ai_patches, warnings
+        return fallback, ai_patches, warnings, capacity_warnings
 
     @staticmethod
     def _build_auto_draw_payload(spec_slide: Slide | None) -> list[dict[str, float]]:

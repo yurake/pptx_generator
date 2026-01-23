@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from urllib.parse import urlparse
 
 from pptx_generator.content_import import ContentImportError, ContentImportResult, ContentImportService
+from pptx_generator.utils.text_lines import normalize_line_list_preserve_blank
+
 from pptx_generator.prepare.source import (
     PrepareSourceChapter,
     PrepareSourceDocument,
@@ -144,11 +146,13 @@ def _convert_import_result_to_prepare_source(
 
     for index, slide in enumerate(result.document.slides, start=1):
         title = slide.elements.title or f"{summary or 'Import'} {index:02d}"
-        body_lines = [line.strip() for line in (slide.elements.body or []) if line.strip()]
-        message = body_lines[0] if body_lines else title
+        body_lines = normalize_line_list_preserve_blank(slide.elements.body or [])
+        message_source = next((line for line in body_lines if line), None)
+        message = message_source if message_source is not None else title
         supporting_points = [
             PrepareSourceSupportingPoint(statement=line)
             for line in body_lines[1:]
+            if line
         ]
         chapter = PrepareSourceChapter(
             id=f"import-{index:02d}",

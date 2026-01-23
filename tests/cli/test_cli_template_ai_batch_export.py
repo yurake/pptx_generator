@@ -15,6 +15,8 @@ def test_template_ai_script_runs_successfully(tmp_path) -> None:
     script_path = project_root / "scripts" / "test_template_ai.sh"
     if not script_path.exists():
         pytest.skip("scripts/test_template_ai.sh が存在しないためスキップします")
+    if os.name == "nt":
+        pytest.skip("Windows環境ではbash実行が安定しないためスキップします")
 
     env = os.environ.copy()
     env.setdefault("UV_CACHE_DIR", ".uv-cache")

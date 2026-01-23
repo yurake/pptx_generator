@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import pytest
 import subprocess
 from pathlib import Path
 
@@ -11,6 +12,8 @@ def test_template_extraction_script_runs_successfully() -> None:
     project_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
     env.setdefault("UV_CACHE_DIR", ".uv-cache")
+    if os.name == "nt":
+        pytest.skip("Windows環境ではbash実行が安定しないためスキップします")
 
     result = subprocess.run(
         ["bash", "scripts/test_template_extraction.sh"],

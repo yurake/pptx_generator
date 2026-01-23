@@ -10,6 +10,9 @@ from pptx_generator.pipeline.text_edit import (
     apply_shape_text_edits,
     generate_edits_template,
     overwrite_text_frame_preserving_style,
+    _apply_single_edit,
+    _iter_slide_text_frames,
+    _normalize_edits,
 )
 from pptx_generator.pipeline.analyzer.snapshot import table_cell_shape_id
 
@@ -258,3 +261,124 @@ def test_pptx_edit_cli_same_name_multiple_runs(tmp_path, monkeypatch) -> None:
     assert first_output.exists()
     outputs = list(out_root.rglob("input_cli_multi.pptx"))
     assert outputs == [first_output]
+
+
+def test_normalize_edits_filters_and_preserves_indices() -> None:
+    normalized = _normalize_edits(
+        [
+            {"shape_id": "10", "contents": "ok", "slide_index": "2"},
+            {"shape_id": "11", "contents": "keep", "slide_index": -1},
+            {"shape_id": None, "contents": "skip"},
+            {"shape_id": "bad", "contents": "skip"},
+            {"shape_id": "12", "contents": "skip", "edit": False},
+            "not a dict",
+        ]
+    )
+
+    assert [n.shape_id for n in normalized] == [10, 11]
+    assert normalized[0].slide_index == 2
+    assert normalized[1].slide_index == -1  # 負値は維持されることを確認
+
+
+def test_apply_single_edit_requires_name_exact_match(tmp_path) -> None:
+    pptx_path = tmp_path / "name_case.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    shape.name = "ExactName"
+    shape.text = "before"
+    presentation.save(pptx_path)
+
+    edit = _normalize_edits(
+        [{"shape_id": shape.shape_id, "contents": "after", "name": "exactname"}]
+    )[0]
+
+    assert _apply_single_edit(presentation, edit) is False
+
+
+def test_apply_single_edit_skips_when_slide_index_not_found(tmp_path) -> None:
+    pptx_path = tmp_path / "missing_slide.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    shape.text = "before"
+    presentation.save(pptx_path)
+
+    edit = _normalize_edits(
+        [{"shape_id": shape.shape_id, "contents": "after", "slide_index": 5}]
+    )[0]
+
+    assert _apply_single_edit(presentation, edit) is False
+
+
+def test_iter_slide_text_frames_includes_group_and_table(monkeypatch) -> None:
+    class DummyText:
+        def __init__(self, shape_id, name):
+            self.shape_id = shape_id
+            self.name = name
+            self.has_text_frame = True
+            self.text_frame = f"text-{shape_id}"
+            self.has_table = False
+
+    class DummyTable:
+        def __init__(self, shape_id, name):
+            self.shape_id = shape_id
+            self.name = name
+            self.has_text_frame = False
+            self.has_table = True
+            self.table = type(
+                "T",
+                (),
+                {
+                    "rows": [
+                        type("R", (), {"cells": [type("C", (), {"text_frame": "cell-tf"})]})
+                    ]
+                },
+            )()
+
+    class DummyGroup:
+        def __init__(self, shapes):
+            self.shapes = shapes
+
+    inner_text = DummyText(101, "inner")
+    group_shape = DummyGroup([inner_text])
+    table_shape = DummyTable(201, "tbl")
+    slide = type("S", (), {"shapes": [group_shape, table_shape]})
+
+    def fake_iter_shapes(shapes):
+        for shape in shapes:
+            yield shape
+            if hasattr(shape, "shapes"):
+                yield from shape.shapes
+
+    monkeypatch.setattr("pptx_generator.pipeline.text_edit._iter_shapes", fake_iter_shapes)
+
+    frames = list(_iter_slide_text_frames(slide))
+
+    text_entries = [(sid, name) for sid, name, _tf in frames if isinstance(_tf, str)]
+    assert (101, "inner") in text_entries
+    assert any(sid == table_cell_shape_id(201, 0, 0) for sid, _name, _tf in frames)
+
+
+def test_apply_shape_text_edits_handles_mixed_text_and_table(tmp_path) -> None:
+    pptx_path = tmp_path / "mixed.pptx"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+    textbox.text = "box"
+    table_shape = slide.shapes.add_table(1, 1, Inches(1), Inches(2), Inches(2), Inches(1))
+    table_id = table_cell_shape_id(int(table_shape.shape_id), 0, 0)
+    presentation.save(pptx_path)
+
+    edits = [
+        {"shape_id": table_id, "contents": "table-new"},
+        {"shape_id": textbox.shape_id, "contents": "text-new"},
+    ]
+
+    applied, missing = apply_shape_text_edits(pptx_path, edits)
+
+    assert applied == 2
+    assert missing == []
+    reloaded = Presentation(pptx_path)
+    assert reloaded.slides[0].shapes[0].text == "text-new"
+    assert reloaded.slides[0].shapes[1].table.cell(0, 0).text == "table-new"

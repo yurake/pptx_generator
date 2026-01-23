@@ -8,6 +8,7 @@ from typing import Any, Mapping, Sequence
 from ...models import ContentElements, ContentSlide, Slide, TemplateBlueprintSlot
 from ...prepare.models import PrepareCard
 from ...draft.draft_recommender import LayoutProfile
+from ...utils.text_lines import split_lines_preserve_blank
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
 
 logger = logging.getLogger(__name__)
@@ -292,9 +293,12 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
             append_bullet_entries(block.data.get("items"), bullet_entries)
             continue
         if isinstance(block.text, str):
-            text = block.text.strip()
-            if text:
-                paragraph_entries.append(text)
+            for line in split_lines_preserve_blank(block.text):
+                stripped = line.strip()
+                if stripped:
+                    paragraph_entries.append(stripped)
+                else:
+                    paragraph_entries.append("")
     return bullet_entries, paragraph_entries
 
 
