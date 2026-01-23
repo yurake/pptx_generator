@@ -17,6 +17,7 @@ from pptx_generator.llm import (
     load_openai_chat_config,
 )
 
+from ..llm.json_utils import extract_json_object
 from ..utils.usage_tags import CANONICAL_USAGE_TAGS, normalize_usage_tags
 from .policy import TemplateAIPolicy, TemplateAIPolicyError
 from .prompts import build_system_prompt, build_user_prompt
@@ -425,7 +426,7 @@ def _parse_template_ai_response(raw_text: str | None) -> tuple[tuple[str, ...] |
     if not raw_text:
         return None, None
     try:
-        data = json.loads(raw_text)
+        data = extract_json_object(raw_text)
     except json.JSONDecodeError:
         return None, None
 

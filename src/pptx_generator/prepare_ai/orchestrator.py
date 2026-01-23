@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, Literal, Sequence
 
 from ..models import TemplateBlueprint, TemplateBlueprintSlide, TemplateBlueprintSlot
+from ..llm.json_utils import extract_json_object
 from .errors import PrepareAIOrchestrationError
 from .client import PrepareLLMClient, PrepareLLMConfigurationError, PrepareLLMResult, create_prepare_llm_client
 from ..prepare.models import (
@@ -258,7 +259,7 @@ class PrepareAIOrchestrator:
         if not text:
             raise PrepareAIOrchestrationError("LLM 応答が空でした")
         try:
-            return json.loads(text)
+            return extract_json_object(text)
         except json.JSONDecodeError as exc:
             logger.warning("LLM 応答の JSON 解析に失敗: %s", exc)
             raise PrepareAIOrchestrationError("LLM 応答を JSON として解析できませんでした") from exc

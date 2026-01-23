@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from .errors import PrepareAIOrchestrationError
 from .client import (
+    AwsClaudePrepareLLMClient,
     AzureOpenAIPrepareLLMClient,
     MockPrepareLLMClient,
     OpenAIPrepareLLMClient,
@@ -55,6 +56,7 @@ __all__ = [
     "PrepareAIOrchestrator",
     "StaticPromptOverride",
     "AzureOpenAIPrepareLLMClient",
+    "AwsClaudePrepareLLMClient",
     "MockPrepareLLMClient",
     "OpenAIPrepareLLMClient",
     "PrepareLLMClient",

@@ -12,30 +12,30 @@ def test_create_edit_ai_client_aws_claude(monkeypatch):
     # ダミー設定を返す
     class DummyConfig:
         model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
-        model = model_id
         max_tokens = 128
         temperature = 0.0
         region = "us-east-1"
         profile = None
         inference_profile_arn = None
-        api_key = "dummy"
-        endpoint = "https://bedrock.runtime.aws"
 
     monkeypatch.setattr(edit_ai_client, "load_aws_claude_config", lambda **kwargs: DummyConfig())
 
-    # anthropic をダミー化して外部呼び出しを避ける
-    dummy_module = types.SimpleNamespace()
+    class DummyRuntimeClient:
+        def invoke_model(self, **kwargs):
+            return {"body": b'{"content":[{"text":"[]"}]}'}
 
-    class DummyMessages:
-        def create(self, **kwargs):
-            return types.SimpleNamespace(model="dummy", content=[])
-
-    class DummyAnthropic:
+    class DummySession:
         def __init__(self, **kwargs):
-            self.messages = DummyMessages()
+            self._kwargs = kwargs
 
-    dummy_module.Anthropic = DummyAnthropic
-    monkeypatch.setitem(sys.modules, "anthropic", dummy_module)
+        def get_credentials(self):
+            return object()
+
+        def client(self, service_name: str, **kwargs):
+            return DummyRuntimeClient()
+
+    monkeypatch.setitem(sys.modules, "boto3", types.SimpleNamespace(Session=DummySession))
+    monkeypatch.setitem(sys.modules, "botocore.exceptions", types.SimpleNamespace(NoCredentialsError=RuntimeError))
 
     client = edit_ai_client.create_edit_ai_client()
     assert isinstance(client, edit_ai_client.AwsClaudeEditClient)
@@ -48,6 +48,12 @@ def test_parse_edits_accepts_edits_wrapper():
         {"shape_id": 1, "edit": False, "contents": "x"},
         {"shape_id": 2, "edit": True, "contents": "y"},
     ]
+
+
+def test_parse_edits_accepts_code_fence():
+    raw = "```json\n[{\"shape_id\": 1, \"contents\": \"x\"}]\n```"
+    parsed = edit_ai_client._parse_edits(raw)
+    assert parsed == [{"shape_id": 1, "edit": True, "contents": "x"}]
 
 
 def test_parse_edits_invalid_json_raises():

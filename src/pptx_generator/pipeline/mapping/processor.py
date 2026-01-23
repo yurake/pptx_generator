@@ -172,7 +172,11 @@ class MappingSlideProcessor:
         )
 
         candidates: list[MappingCandidate] = []
+        seen_layout_ids: set[str] = set()
         for profile in self.layout_catalog.values():
+            if profile.layout_id in seen_layout_ids:
+                continue
+            seen_layout_ids.add(profile.layout_id)
             score = 0.0
             if intent and intent in profile.usage_tags:
                 score += 0.5

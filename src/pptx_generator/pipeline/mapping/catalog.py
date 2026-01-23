@@ -33,6 +33,17 @@ def load_layout_catalog(path: Path | None) -> dict[str, LayoutProfile]:
             continue
         profile = _build_profile(payload)
         catalog[profile.layout_id] = profile
+        layout_name = profile.layout_name
+        if layout_name and layout_name != profile.layout_id:
+            existing = catalog.get(layout_name)
+            if existing is None:
+                catalog[layout_name] = profile
+            elif existing.layout_id != profile.layout_id:
+                logger.warning(
+                    "layouts.jsonl の layout_name が重複しています: %s (layout_id=%s)",
+                    layout_name,
+                    profile.layout_id,
+                )
     return catalog
 
 

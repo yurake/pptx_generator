@@ -64,22 +64,34 @@ def test_anthropic_client_execution_error(monkeypatch):
 
 
 def test_aws_claude_client_execution_error(monkeypatch):
-    class DummyMessages:
-        def create(self, **kwargs):
+    class DummyRuntimeClient:
+        def invoke_model(self, **kwargs):
             raise RuntimeError("aws-boom")
 
-    class DummyAnthropic:
+    class DummySession:
         def __init__(self, **kwargs):
-            self.messages = DummyMessages()
+            self._kwargs = kwargs
+
+        def get_credentials(self):
+            return object()
+
+        def client(self, service_name: str, **kwargs):
+            return DummyRuntimeClient()
 
     monkeypatch.setattr(
         edit_ai_client,
         "load_aws_claude_config",
-        lambda **k: types.SimpleNamespace(model="m", max_tokens=10, api_key="k", endpoint="e", model_id="mid", temperature=0.0),
+        lambda **k: types.SimpleNamespace(
+            model_id="mid",
+            max_tokens=10,
+            temperature=0.0,
+            region="us-east-1",
+            profile=None,
+            inference_profile_arn=None,
+        ),
     )
-    dummy_types = types.SimpleNamespace(MessageParam=dict)
-    monkeypatch.setitem(sys.modules, "anthropic.types", dummy_types)
-    monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=DummyAnthropic, types=dummy_types))
+    monkeypatch.setitem(sys.modules, "boto3", types.SimpleNamespace(Session=DummySession))
+    monkeypatch.setitem(sys.modules, "botocore.exceptions", types.SimpleNamespace(NoCredentialsError=RuntimeError))
 
     client = edit_ai_client.AwsClaudeEditClient.from_env()
     with pytest.raises(edit_ai_client.EditAIClientExecutionError):
