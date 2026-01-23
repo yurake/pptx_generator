@@ -33,7 +33,7 @@ from ...models import (
     Slide,
 )
 from ..base import PipelineContext
-from ...draft_recommender import LayoutProfile
+from ...draft.draft_recommender import LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
 from .errors import DraftStructuringError
 from .types import DraftStructuringOptions, StaticArtifacts, card_slot_fulfilled, card_slot_id

@@ -10,8 +10,8 @@ from typing import Optional
 
 import click
 
-from pptx_generator.config_manager import ConfigManager, ResolvedConfig
-from pptx_generator.generate_ready import generate_ready_to_jobspec
+from pptx_generator.config import ConfigManager, ResolvedConfig
+from pptx_generator.pipeline.generate_ready import generate_ready_to_jobspec
 from pptx_generator.models import (
     GenerateReadyDocument,
     JobMeta,
@@ -109,7 +109,7 @@ def _should_enforce_layouts() -> bool:
 
 
 def prepare_template_style(template: Path) -> TemplateStylePayload:
-    from pptx_generator.template_style import extract_template_style
+    from pptx_generator.template import extract_template_style
 
     style, artifact = extract_template_style(template)
     if artifact.get("source", {}).get("type") == "default":

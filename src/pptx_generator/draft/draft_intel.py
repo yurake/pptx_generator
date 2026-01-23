@@ -8,8 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping
 
-from .models import (DraftAnalyzerSummary, DraftLayoutScoreDetail,
-                     DraftTemplateMismatch)
+from ..models import DraftAnalyzerSummary, DraftLayoutScoreDetail, DraftTemplateMismatch
 
 
 logger = logging.getLogger(__name__)

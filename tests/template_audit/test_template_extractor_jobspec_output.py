@@ -12,7 +12,7 @@ from pptx import Presentation
 
 from pptx_generator.models import (JobSpecScaffold, LayoutInfo, ShapeInfo,
                                    TemplateSpec)
-from pptx_generator.spec_loader import convert_scaffold_to_jobspec
+from pptx_generator.template import convert_scaffold_to_jobspec
 from pptx_generator.pipeline.template_extractor import (
     JOBSPEC_SCHEMA_VERSION,
     SLIDE_BULLET_ANCHORS,

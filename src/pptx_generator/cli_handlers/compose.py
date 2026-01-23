@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from pptx_generator.config_manager import ConfigManager
+from pptx_generator.config import ConfigManager
 from pptx_generator.pipeline import (
     DraftStructuringError,
     DraftStructuringOptions,

@@ -66,7 +66,7 @@
   - チャート: `components.chart.palette` を優先し、系列ごとの `color_hex` がない場合に使用。
   - 画像・テキストボックス: `components.image` / `components.textbox` の `fallback_box` を利用。
   - レイアウト固有設定（`layouts.*.placements`）がある場合はアンカー解決時に上書き。
-- `pptx_generator/branding_extractor` は新スキーマへ対応させる（抽出結果を `theme` 相当へマッピング）。
+- `pptx_generator/template/branding_extractor` は新スキーマへ対応させる（抽出結果を `theme` 相当へマッピング）。
 
 ## テスト計画
 - `tests/test_settings.py`: 新スキーマ読み込みの正常系／異常系テストを更新。

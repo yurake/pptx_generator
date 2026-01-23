@@ -2048,14 +2048,16 @@ async def generate_pptx(spec: GenerateRequest):
 ### Python API 利用例
 
 ```python
+from pathlib import Path
+
 from pptx_generator.pipeline.renderer import Renderer
-from pptx_generator.spec_loader import load_spec
+from pptx_generator.template import load_jobspec_from_path
 
 # JSON 仕様を読み込み
-spec = load_spec("samples/json/sample_spec.json")
+spec = load_jobspec_from_path(Path("samples/json/sample_spec.json"))
 
 # テンプレートを指定してレンダリング
-renderer = Renderer(template_path="samples/templates/templates.pptx")
+renderer = Renderer(template_path=Path("samples/templates/templates.pptx"))
 prs = renderer.render(spec)
 
 # PPTX を保存

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import (
+from ..models import (
     JobAuth,
     JobMeta,
     JobSpec,

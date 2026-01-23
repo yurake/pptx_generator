@@ -23,7 +23,7 @@ from ...utils.layout_metadata import (
     generate_layout_description,
     summarize_placeholders,
 )
-from ...branding_extractor import BrandingExtractionError, extract_branding_config
+from ...template.branding_extractor import BrandingExtractionError, extract_branding_config
 from ...models import FontSpec, LayoutInfo, ShapeInfo, TemplateBlueprint, TemplateSpec
 
 logger = logging.getLogger(__name__)

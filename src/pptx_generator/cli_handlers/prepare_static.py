@@ -20,7 +20,7 @@ from pptx_generator.models import (
 from pptx_generator.content_import import ContentImportService
 from pptx_generator.prepare import PrepareDocument
 from pptx_generator.prepare.source import PrepareSourceDocument
-from pptx_generator.spec_loader import load_jobspec_from_path
+from pptx_generator.template import load_jobspec_from_path
 
 from .prepare_errors import PrepareCommandError
 

@@ -16,7 +16,7 @@ from click.testing import CliRunner
 from pptx import Presentation
 
 from pptx_generator import cli
-from pptx_generator.branding_extractor import BrandingExtractionError
+from pptx_generator.template import BrandingExtractionError
 from pptx_generator.cli import DEFAULT_GENERATE_READY_META_FILENAME, app
 from pptx_generator.layout_validation import LayoutValidationSuite
 from pptx_generator.models import (JobAuth, JobMeta, JobSpec, Slide, TemplateStyle,
@@ -1220,7 +1220,7 @@ def test_cli_gen_template_branding_fallback(tmp_path, monkeypatch) -> None:
         prepare_paths=prepare_paths,
     )
 
-    monkeypatch.setattr("pptx_generator.template_style.extract_branding_config", lambda _: (
+    monkeypatch.setattr("pptx_generator.template.template_style.extract_branding_config", lambda _: (
         _ for _ in ()).throw(BrandingExtractionError("boom")))
 
     result = runner.invoke(

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, MutableMapping, Protocol
 from uuid import uuid4
 
-from ..config_manager import ResolvedConfig
+from ..config import ResolvedConfig
 from ..models import JobSpec
 from ..runtime.job_context import get_current_job
 from ..logging import set_current_stage

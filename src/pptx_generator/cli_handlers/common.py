@@ -9,11 +9,11 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from pptx_generator.config_manager import ConfigManager
+from pptx_generator.config import ConfigManager
 from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 from pptx_generator.logging import LOG_FORMAT, ensure_rotating_file_handler, ensure_stream_handler
 from pptx_generator.models import JobSpec
-from pptx_generator.spec_loader import load_jobspec_from_path
+from pptx_generator.template import load_jobspec_from_path
 
 logger = logging.getLogger(__name__)
 

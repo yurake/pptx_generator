@@ -4,8 +4,8 @@ import logging
 from collections import Counter, defaultdict
 from typing import Any, Mapping, Sequence
 
-from ...draft_intel import summarize_analyzer_counts
-from ...draft_recommender import CardLayoutRecommender, LayoutProfile
+from ...draft.draft_intel import summarize_analyzer_counts
+from ...draft.draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...models import (
     ContentApprovalDocument,
     ContentSlide,

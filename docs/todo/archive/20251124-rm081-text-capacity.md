@@ -28,7 +28,7 @@ roadmap_item: RM-081 文字数許容量算出とスキーマ反映
       - Renderer (`src/pptx_generator/pipeline/renderer.py`): タイトル・本文・箇条書きのフォント適用、段落スタイル、テーブル／チャートの配色、アンカー未指定時のフォールバック座標を `TemplateStyle` のデフォルト値から解決している。
       - Analyzer (`_build_analyzer_options`)・Refiner (`_build_refiner_options`): `TemplateStyle` の body フォントおよびカラーを既定値として取り込み、フォントサイズしきい値やカラー調整の初期値を決定している。
       - 設定ファイル・テスト: `settings.BrandingConfig` はテンプレ抽出結果を `TemplateStyle` に変換するための互換レイヤとして残存。ユニットテスト（`tests/config/test_settings_loading.py`）は引き続き旧スキーマ検証を担う。
-      - テンプレートスタイル抽出: `src/pptx_generator/template_style.py` で `BrandingExtractionResult` を `TemplateStyle`/アーティファクトへ変換する。今後は `branding_extractor` 依存を段階的に薄め、テンプレ由来メタに一本化する。
+      - テンプレートスタイル抽出: `src/pptx_generator/template/template_style.py` で `BrandingExtractionResult` を `TemplateStyle`/アーティファクトへ変換する。今後は `template/branding_extractor` 依存を段階的に薄め、テンプレ由来メタに一本化する。
     - 移行論点:
       - Slide.title / subtitle には現状フォント情報が載らないため、テンプレ抽出時に `SlideTextbox` へ転記するか `generate_ready.meta` 側でヘッダ用スタイルを保持する仕組みが必要。
       - 監査ログ (`audit_log.json`) では `template_style.source` にテンプレパスと抽出エラーを記録している。BrandingConfig 廃止後もテンプレ由来スタイルと抽出エラー情報を保持できるよう新メタ形式を用意する。

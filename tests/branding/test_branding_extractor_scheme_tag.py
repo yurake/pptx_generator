@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from pptx_generator.branding_extractor import SCHEME_COLOR_TAG, _color_from_def, _resolve_background_color
+from pptx_generator.template.branding_extractor import (
+    SCHEME_COLOR_TAG,
+    _color_from_def,
+    _resolve_background_color,
+)
 
 NS = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
