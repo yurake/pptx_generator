@@ -418,14 +418,19 @@ class PrepareAIOrchestrator:
             line = entry.strip()
             return {"text": line, "level": 0} if line else None
         if isinstance(entry, dict):
-            line = str(entry.get("text") or "").strip()
-            if not line:
+            # 空行保持: textが空文字列でもlevelが0の場合は保持
+            text_value = entry.get("text")
+            if text_value is None:
                 return None
+            line = str(text_value).strip()
             level_raw = entry.get("level", 0)
             try:
                 level = max(int(level_raw), 0)
             except (TypeError, ValueError):
                 level = 0
+            # 空文字列でlevel=0の場合は空行として保持
+            if not line and level != 0:
+                return None
             bullet_entry: dict[str, Any] = {"text": line, "level": level}
             for key, value in entry.items():
                 if key in {"text", "level"}:
