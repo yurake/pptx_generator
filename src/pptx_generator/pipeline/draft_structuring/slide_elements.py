@@ -217,6 +217,9 @@ def assign_slot_to_elements(
     if content_type == "table":
         assign_table_content(elements, anchor, card, lines)
         return
+    if content_type == "image":
+        assign_image_content(elements, anchor, card, lines)
+        return
     if content_type == "text":
         assign_text_content(elements, anchor, anchor_lower, card, lines)
         return
@@ -260,6 +263,23 @@ def assign_table_content(
             "headers": ["項目"],
             "rows": [[line] for line in lines],
         }
+
+
+def assign_image_content(
+    elements: dict[str, Any],
+    anchor: str,
+    card: PrepareCard,
+    lines: list[str],
+) -> None:
+    image_block = next(
+        (block for block in card.content.body if block.type == "image"), None
+    )
+    if image_block and image_block.ref:
+        if image_block.ref != anchor:
+            elements[anchor] = {"source": image_block.ref}
+            return
+    if lines:
+        elements[anchor] = lines
 
 
 def assign_text_content(
