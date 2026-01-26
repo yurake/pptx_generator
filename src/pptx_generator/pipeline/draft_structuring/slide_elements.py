@@ -27,7 +27,7 @@ def merge_slide_elements(
 
     elements, table_payload = collect_content_elements(content_slide.elements, base)
     if prepare_card is not None:
-        structured_blocks, has_non_bullet = build_body_blocks(prepare_card)
+        structured_blocks, has_non_bullet, _, _ = build_body_blocks(prepare_card)
         if structured_blocks and has_non_bullet:
             elements["body"] = structured_blocks
 
@@ -294,8 +294,8 @@ def assign_text_content(
     card: PrepareCard,
     lines: list[str],
 ) -> None:
-    structured_blocks, has_non_bullet = build_body_blocks(card)
-    if structured_blocks and has_non_bullet:
+    structured_blocks, has_non_bullet, has_bullets, has_custom = build_body_blocks(card)
+    if structured_blocks and (has_custom or (has_non_bullet and has_bullets)):
         elements[anchor] = structured_blocks
         return
     bullet_entries, paragraph_entries = extract_text_blocks(card)
@@ -349,11 +349,14 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
     return bullet_entries, paragraph_entries
 
 
-def build_body_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], bool]:
+def build_body_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], bool, bool, bool]:
     blocks: list[dict[str, Any]] = []
     has_non_bullet = False
+    has_bullets = False
+    has_custom = False
     for block in card.content.body:
         if block.type == "bullets":
+            has_bullets = True
             items = block.items if block.items is not None else (
                 block.data.get("items") if block.data else None
             )
@@ -377,10 +380,11 @@ def build_body_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], bool]:
                     entry["description"] = block.description
                 blocks.append(entry)
                 has_non_bullet = True
+                has_custom = True
             continue
         if block.type == "table":
             continue
-    return blocks, has_non_bullet
+    return blocks, has_non_bullet, has_bullets, has_custom
 
 
 def append_bullet_entries(
