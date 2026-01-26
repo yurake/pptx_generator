@@ -30,6 +30,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
     - 自動テスト: 未実施（依存関係セットアップで詰まり）
       - `.venv/bin/pip install .` はネットワーク解決不可で失敗（setuptools>=68 取得不可）
       - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest ...` は uv が system-configuration 由来の panic で停止
+      - `uv self update` / `curl https://astral.sh/uv/install.sh | sh` はネットワーク解決不可で失敗
     - ユーザー経路の手動確認（必要な場合）: 実施（mock LLM）
       - Stage2 Prepare: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/sample_spec.md --mode dynamic --output .pptx/uat-rm060/prepare`
         - 出力: `.pptx/uat-rm060/prepare/prepare_card.json` ほか生成
@@ -38,6 +39,8 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
       - Stage4 Gen: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose/generate_ready.json --output .pptx/uat-rm060/gen`
         - 警告: Monitoring alerts 4件（既存コンテンツ由来）
     - 生成物の確認があれば、その方法と結果: outline/compose の `generate_ready_meta.json` で `slide_alignment` を確認（records 4件）
+    - 実プロバイダ（aws-claude）での検証: 失敗
+      - `PPTX_LLM_PROVIDER=aws-claude ... prepare` を実行したが、`bedrock-runtime.us-east-2.amazonaws.com` の名前解決に失敗（EndpointConnectionError）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -58,6 +61,6 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - 前提/制約: RM-060 は SlideIdAligner の可視化が主目的。main とは別 worktree で作業中。
   - 決定と理由: generate_ready_meta に slide_alignment を追加し、CLI/API で調整可能にする方針。
   - リスク(UNCONFIRMED): meta 出力が増えることで下流ツールが未対応の可能性。
-  - Now/Next: 実装・UAT完了。次は差分整理→コミット→PR準備。
-  - テスト実績/抜け: UAT（mock LLM）実施済み。自動テストは未実施。
+  - Now/Next: 実装・mock UATは完了。実プロバイダ UAT と自動テストはネットワーク/uv問題で未完のため、環境整備後に再実行。
+  - テスト実績/抜け: UAT（mock LLM）実施済み。aws-claude は Bedrock への名前解決に失敗。自動テストは uv/pip の環境問題で未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
