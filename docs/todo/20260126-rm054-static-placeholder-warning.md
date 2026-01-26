@@ -9,7 +9,7 @@ roadmap_item: RM-054 静的テンプレ構成統合プランニング
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
     - 2026-01-26: fix/rm054-static-placeholder-warning を作成。初期コミット=1dbbd06。push済み。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
     - 対象整理（スコープ、対象ファイル、前提）: static compose の image slot が空になる問題を解消。対象は draft_structuring/slide_elements.py の assign_slot_to_elements と compose テスト。
     - ドキュメント／コード修正方針: content_type=image で image source が無い場合は text へフォールバック。source があれば image payload を生成。
