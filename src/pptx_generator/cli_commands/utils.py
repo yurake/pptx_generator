@@ -92,6 +92,26 @@ def draft_common_options(
                 show_default=True,
                 help="stage 2 の prepare_card.json",
             ),
+            click.option(
+                "--slide-alignment/--no-slide-alignment",
+                default=True,
+                show_default=True,
+                help="Slide ID 整合 (SlideIdAligner) を有効化/無効化する",
+            ),
+            click.option(
+                "--slide-alignment-threshold",
+                type=click.FloatRange(0.0, 1.0),
+                default=0.6,
+                show_default=True,
+                help="Slide ID 整合の信頼度しきい値 (0.0-1.0)",
+            ),
+            click.option(
+                "--slide-alignment-max-candidates",
+                type=int,
+                default=12,
+                show_default=True,
+                help="Slide ID 整合の候補スライド数上限",
+            ),
         ]
     )
 

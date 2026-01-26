@@ -181,6 +181,7 @@ def persist_dynamic_outputs(
         draft=draft,
         generate_ready=generate_ready,
         ai_summary=ai_summary,
+        alignment_payload=_build_alignment_payload(step, context),
     )
     ready_meta_path = output_dir / step.options.generate_ready_meta_filename
     step._write_json(ready_meta_path, ready_meta_payload)  # type: ignore[attr-defined]
@@ -222,3 +223,22 @@ def resolve_template_path(
     if spec_source_path is not None:
         return (spec_source_path.parent / candidate).resolve()
     return candidate.resolve()
+
+
+def _build_alignment_payload(
+    step: DraftStructuringStep,
+    context: PipelineContext,
+) -> dict[str, Any] | None:
+    if not step.options.enable_slide_alignment:
+        return {"meta": {"status": "disabled"}}
+
+    meta = context.artifacts.get("content_alignment_meta")
+    records = context.artifacts.get("content_alignment_records")
+    payload: dict[str, Any] = {}
+
+    if isinstance(meta, dict):
+        payload["meta"] = meta
+    if isinstance(records, list):
+        payload["records"] = records
+
+    return payload or None
