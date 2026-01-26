@@ -38,14 +38,14 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
       - Stage4 Gen: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose-live/generate_ready.json --output .pptx/uat-rm060/gen-live`
         - 警告: Rendering warnings 39 / Monitoring alerts 15（サンプルコンテンツ由来）
     - 生成物の確認があれば、その方法と結果: outline-live / compose-live の `generate_ready_meta.json` で `slide_alignment` を確認（records 16件）
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+- [x] ドキュメント更新
+  - メモ: CLI リファレンス（docs/design/cli/cli-command-reference.md）へ slide alignment オプションを追記済み。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（変更不要: ロードマップ項目の変更なし）
+  - [x] docs/requirements 配下（変更不要: 仕様変更なし）
+  - [x] docs/design 配下（更新済み: CLI コマンドリファレンス）
+  - [x] docs/runbook 配下（変更不要: 運用手順の変更なし）
+  - [x] README.md / AGENTS.md（変更不要: 追加手順なし）
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
