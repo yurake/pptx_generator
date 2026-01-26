@@ -165,6 +165,7 @@ class DraftStructuringStep:
         spec: JobSpec,
         draft: DraftDocument,
         content_document: ContentApprovalDocument | None,
+        prepare_document: PrepareDocument | None = None,
         template_path: Path | None = None,
     ) -> GenerateReadyDocument:
         from .generate_ready_runtime import build_generate_ready_document
@@ -174,6 +175,7 @@ class DraftStructuringStep:
             spec=spec,
             draft=draft,
             content_document=content_document,
+            prepare_document=prepare_document,
             template_path=template_path,
         )
 
@@ -244,6 +246,7 @@ class DraftStructuringStep:
         spec_slide: Slide | None,
         content_slide: ContentSlide | None,
         layout_profile: LayoutProfile | None,
+        prepare_card: PrepareCard | None = None,
     ) -> dict[str, Any]:
         from .slide_elements import merge_slide_elements
 
@@ -251,6 +254,7 @@ class DraftStructuringStep:
             content_slide=content_slide,
             spec_slide=spec_slide,
             layout_profile=layout_profile,
+            prepare_card=prepare_card,
         )
 
     def _collect_content_elements(

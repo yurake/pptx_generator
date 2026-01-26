@@ -215,7 +215,10 @@ def test_mapping_step_generates_generate_ready_outputs(tmp_path: Path) -> None:
     assert slide["layout_id"] == "layout_basic"
     assert slide["elements"]["title"] == "概要"
     assert slide["elements"]["subtitle"] == "サブタイトル"
-    assert slide["elements"]["body"] == ["最初のポイント", "次のステップ"]
+    assert slide["elements"]["body"] == [
+        {"type": "paragraph", "text": "最初のポイント"},
+        {"type": "paragraph", "text": "次のステップ"},
+    ]
     assert slide["meta"]["page_no"] == 1
     assert slide["meta"]["fallback"] == "none"
     meta_payload = generate_ready_payload["meta"]

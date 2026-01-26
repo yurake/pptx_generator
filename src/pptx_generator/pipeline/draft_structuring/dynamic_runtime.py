@@ -164,11 +164,15 @@ def persist_dynamic_outputs(
     step._write_json(mapping_log_path, mapping_logs)  # type: ignore[attr-defined]
 
     template_path_value = resolve_template_path(step, context)
+    prepare_document = context.artifacts.get("prepare_document")
+    if not isinstance(prepare_document, PrepareDocument):
+        prepare_document = None
     generate_ready = build_generate_ready_document(
         step=step,
         spec=context.spec,
         draft=draft,
         content_document=content_document,
+        prepare_document=prepare_document,
         template_path=template_path_value,
     )
 

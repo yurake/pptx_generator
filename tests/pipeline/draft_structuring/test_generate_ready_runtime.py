@@ -11,6 +11,7 @@ from pptx_generator.models import (
     ContentApprovalDocument,
     ContentElements,
     ContentSlide,
+    ContentSlideSource,
     DraftDocument,
     DraftLayoutCandidate,
     DraftMeta,
@@ -19,6 +20,13 @@ from pptx_generator.models import (
     GenerateReadyDocument,
     JobSpec,
     Slide,
+)
+from pptx_generator.prepare.models import (
+    PrepareBodyBlock,
+    PrepareCard,
+    PrepareCardContent,
+    PrepareCardRole,
+    PrepareDocument,
 )
 from pptx_generator.models.common import TextboxPosition
 from pptx_generator.pipeline.draft_structuring.generate_ready_runtime import (
@@ -147,6 +155,76 @@ def test_build_generate_ready_document_with_cards(
     assert payload["statistics"]["total_slides"] == 1
     assert payload["slot_summary"] == {"Title": 1}
     assert payload["mode"] == "static"
+
+
+def test_build_generate_ready_document_prefers_typed_body_blocks(
+    job_spec: JobSpec,
+    sample_step: DraftStructuringStep,
+) -> None:
+    draft = DraftDocument(
+        sections=[
+            DraftSection(
+                name="Main",
+                order=1,
+                slides=[
+                    DraftSlideCard(
+                        ref_id="card-1",
+                        order=1,
+                        layout_hint="Title",
+                        layout_candidates=[DraftLayoutCandidate(layout_id="Title", score=1.0)],
+                    )
+                ],
+            )
+        ],
+        meta=DraftMeta(template_id="tpl-003"),
+    )
+    content_document = ContentApprovalDocument(
+        slides=[
+            ContentSlide(
+                id="card-1",
+                intent="overview",
+                elements=ContentElements(title="Merged Title", body=["line"]),
+                status="approved",
+                source=ContentSlideSource(card_id="card-1"),
+            )
+        ]
+    )
+    prepare_document = PrepareDocument(
+        prepare_id="prep-1",
+        cards=[
+            PrepareCard(
+                card_id="card-1",
+                role=PrepareCardRole(story_phase="introduction"),
+                content=PrepareCardContent(
+                    title="Sample",
+                    body=[
+                        PrepareBodyBlock(type="paragraph", text="段落1\n\n段落2"),
+                        PrepareBodyBlock(
+                            type="bullets",
+                            items=[{"text": "要点1", "level": 0}],
+                        ),
+                        PrepareBodyBlock(type="custom", text="カスタム", description="説明"),
+                    ],
+                ),
+            )
+        ],
+    )
+
+    generate_ready = build_generate_ready_document(
+        step=sample_step,
+        spec=job_spec,
+        draft=draft,
+        content_document=content_document,
+        prepare_document=prepare_document,
+        template_path=None,
+    )
+
+    slide = generate_ready.slides[0]
+    assert slide.elements["body"] == [
+        {"type": "paragraph", "text": "段落1\n\n段落2"},
+        {"type": "bullets", "items": [{"text": "要点1", "level": 0}]},
+        {"type": "custom", "text": "カスタム", "description": "説明"},
+    ]
 
 
 def test_build_auto_draw_payload_handles_empty_and_values() -> None:

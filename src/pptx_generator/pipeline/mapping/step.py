@@ -17,6 +17,7 @@ from ...models import (
     PipelineFallbackError,
     TemplateStyle,
 )
+from ...prepare.models import PrepareDocument, PrepareCard
 from .catalog import load_layout_catalog
 from .llm_fit import (
     MappingTextFitClientConfigurationError,
@@ -75,6 +76,10 @@ class MappingStep:
             if content_document is not None
             else {}
         )
+        prepare_lookup: dict[str, PrepareCard] | None = None
+        prepare_document = context.artifacts.get("prepare_document")
+        if isinstance(prepare_document, PrepareDocument):
+            prepare_lookup = {card.card_id: card for card in prepare_document.cards}
         spec_lookup = {slide.id: slide for slide in context.spec.slides}
 
         work_items = build_work_items(
@@ -97,6 +102,7 @@ class MappingStep:
         processor = MappingSlideProcessor(
             options=self.options,
             layout_catalog=layout_catalog,
+            prepare_lookup=prepare_lookup,
             text_fit_client=text_fit_client,
             text_fit_error=text_fit_error,
         )

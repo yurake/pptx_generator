@@ -19,12 +19,17 @@ def merge_slide_elements(
     content_slide: ContentSlide | None,
     spec_slide: Slide | None,
     layout_profile: LayoutProfile | None,
+    prepare_card: PrepareCard | None = None,
 ) -> dict[str, Any]:
     base = convert_slide_elements(spec_slide) if spec_slide is not None else {}
     if content_slide is None or content_slide.elements is None:
         return base
 
     elements, table_payload = collect_content_elements(content_slide.elements, base)
+    if prepare_card is not None:
+        structured_blocks, has_non_bullet = build_body_blocks(prepare_card)
+        if structured_blocks and has_non_bullet:
+            elements["body"] = structured_blocks
 
     if spec_slide is not None:
         merge_spec_slide_details(
@@ -289,6 +294,10 @@ def assign_text_content(
     card: PrepareCard,
     lines: list[str],
 ) -> None:
+    structured_blocks, has_non_bullet = build_body_blocks(card)
+    if structured_blocks and has_non_bullet:
+        elements[anchor] = structured_blocks
+        return
     bullet_entries, paragraph_entries = extract_text_blocks(card)
     if bullet_entries:
         elements[anchor] = bullet_entries
@@ -338,6 +347,40 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
                 else:
                     paragraph_entries.append("")
     return bullet_entries, paragraph_entries
+
+
+def build_body_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], bool]:
+    blocks: list[dict[str, Any]] = []
+    has_non_bullet = False
+    for block in card.content.body:
+        if block.type == "bullets":
+            items = block.items if block.items is not None else (
+                block.data.get("items") if block.data else None
+            )
+            if items:
+                bullet_entries: list[dict[str, Any]] = []
+                append_bullet_entries(items, bullet_entries)
+                if bullet_entries:
+                    blocks.append({"type": "bullets", "items": bullet_entries})
+            continue
+        if block.type == "paragraph" and isinstance(block.text, str):
+            if block.text:
+                blocks.append({"type": "paragraph", "text": block.text})
+                has_non_bullet = True
+            continue
+        if block.type == "custom":
+            if block.text or block.description:
+                entry: dict[str, Any] = {"type": "custom"}
+                if block.text:
+                    entry["text"] = block.text
+                if block.description:
+                    entry["description"] = block.description
+                blocks.append(entry)
+                has_non_bullet = True
+            continue
+        if block.type == "table":
+            continue
+    return blocks, has_non_bullet
 
 
 def append_bullet_entries(

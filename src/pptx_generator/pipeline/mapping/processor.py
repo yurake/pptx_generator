@@ -18,8 +18,11 @@ from ...models import (
     MappingSlideMeta,
     Slide,
 )
+from ...prepare.models import PrepareCard
+from ..draft_structuring.slide_elements import build_body_blocks
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
 from ...utils.usage_tags import normalize_usage_tag_value
+from ...utils.text_lines import split_lines_preserve_blank
 from .llm_fit import (
     MappingTextFitClient,
     MappingTextFitClientExecutionError,
@@ -39,11 +42,13 @@ class MappingSlideProcessor:
         *,
         options: MappingOptions,
         layout_catalog: Mapping[str, LayoutProfile],
+        prepare_lookup: Mapping[str, PrepareCard] | None = None,
         text_fit_client: MappingTextFitClient | None = None,
         text_fit_error: str | None = None,
     ) -> None:
         self.options = options
         self.layout_catalog = layout_catalog
+        self.prepare_lookup = prepare_lookup
         self.text_fit_client = text_fit_client
         self.text_fit_error = text_fit_error
 
@@ -70,7 +75,15 @@ class MappingSlideProcessor:
         selected_layout = self._select_layout(default_layout, item.card, candidates)
         selected_profile = self.layout_catalog.get(selected_layout)
 
-        elements = self._build_elements(item.spec_slide, item.content_slide)
+        prepare_card = None
+        if self.prepare_lookup and item.content_slide and item.content_slide.source:
+            source_id = item.content_slide.source.card_id
+            if source_id:
+                prepare_card = self.prepare_lookup.get(source_id)
+        if prepare_card is None and self.prepare_lookup and item.card:
+            prepare_card = self.prepare_lookup.get(item.card.ref_id)
+
+        elements = self._build_elements(item.spec_slide, item.content_slide, prepare_card)
         if item.content_slide and item.content_slide.elements:
             table_payload = self._build_table_payload(
                 item=item,
@@ -258,9 +271,10 @@ class MappingSlideProcessor:
         self,
         spec_slide: Slide | None,
         content_slide: ContentSlide | None,
+        prepare_card: PrepareCard | None,
     ) -> dict[str, Any]:
         if content_slide is not None and content_slide.elements is not None:
-            base = self._build_elements(spec_slide, None)
+            base = self._build_elements(spec_slide, None, None)
             elements: dict[str, Any] = {
                 "title": content_slide.elements.title,
             }
@@ -272,6 +286,10 @@ class MappingSlideProcessor:
                 elements["body"] = list(content_slide.elements.body)
             elif "body" in base:
                 elements["body"] = base["body"]
+            if prepare_card is not None:
+                structured_blocks, has_non_bullet = build_body_blocks(prepare_card)
+                if structured_blocks and has_non_bullet:
+                    elements["body"] = structured_blocks
             if content_slide.elements.note:
                 elements["note"] = content_slide.elements.note
             elif "note" in base:
@@ -415,8 +433,10 @@ class MappingSlideProcessor:
         max_chars = layout.max_chars()
         body = elements.get("body")
         if isinstance(body, list):
-            actual_lines = len(body)
-            actual_chars = self._count_body_chars(body)
+            structured = self._is_structured_body(body)
+            body_lines = self._flatten_structured_body(body) if structured else body
+            actual_lines = len(body_lines)
+            actual_chars = self._count_body_chars(body_lines)
             overflow_lines = max_lines is not None and actual_lines > max_lines
             overflow_chars = max_chars is not None and actual_chars > max_chars
             if overflow_lines or overflow_chars:
@@ -443,16 +463,19 @@ class MappingSlideProcessor:
                             actual=actual_chars,
                         )
                     )
-                self._apply_text_fit(
-                    slide_id=slide_id,
-                    layout_id=layout.layout_id,
-                    max_lines=max_lines,
-                    max_chars=max_chars,
-                    elements=elements,
-                    original_body=body,
-                    warnings=warnings,
-                    ai_patches=ai_patches,
-                )
+                if structured:
+                    warnings.append("body が type 付きブロックのため LLM 補正をスキップしました")
+                else:
+                    self._apply_text_fit(
+                        slide_id=slide_id,
+                        layout_id=layout.layout_id,
+                        max_lines=max_lines,
+                        max_chars=max_chars,
+                        elements=elements,
+                        original_body=body,
+                        warnings=warnings,
+                        ai_patches=ai_patches,
+                    )
 
             updated_body = elements.get("body")
             if isinstance(updated_body, list) and not updated_body:
@@ -565,6 +588,76 @@ class MappingSlideProcessor:
     @staticmethod
     def _count_body_chars(body: list[str]) -> int:
         return sum(len(line) for line in body)
+
+    @staticmethod
+    def _is_structured_body(body: list[Any]) -> bool:
+        return any(isinstance(item, dict) and "type" in item for item in body)
+
+    @staticmethod
+    def _flatten_structured_body(body: list[Any]) -> list[str]:
+        lines: list[str] = []
+        for entry in body:
+            if isinstance(entry, dict):
+                entry_type = entry.get("type")
+                if entry_type == "bullets":
+                    items = entry.get("items", [])
+                    if isinstance(items, list):
+                        for item in items:
+                            lines.extend(MappingSlideProcessor._flatten_bullet_item(item))
+                    continue
+                if entry_type == "paragraph":
+                    lines.extend(
+                        MappingSlideProcessor._split_text(entry.get("text"), preserve_blank=True)
+                    )
+                    continue
+                if entry_type == "custom":
+                    lines.extend(
+                        MappingSlideProcessor._split_text(entry.get("text"), preserve_blank=True)
+                    )
+                    lines.extend(
+                        MappingSlideProcessor._split_text(entry.get("description"), preserve_blank=True)
+                    )
+                    continue
+                lines.extend(
+                    MappingSlideProcessor._split_text(entry.get("text"), preserve_blank=True)
+                )
+                continue
+            if entry is None:
+                continue
+            lines.append(str(entry))
+        return lines
+
+    @staticmethod
+    def _flatten_bullet_item(item: Any) -> list[str]:
+        if isinstance(item, dict):
+            text = str(item.get("text") or "").strip()
+            if not text:
+                return []
+            level_raw = item.get("level", 0)
+            try:
+                level = max(int(level_raw), 0)
+            except (TypeError, ValueError):
+                level = 0
+            indent = "  " * level
+            return [f"{indent}{text}"]
+        if isinstance(item, str):
+            text = item.strip()
+            return [text] if text else []
+        return []
+
+    @staticmethod
+    def _split_text(value: Any, *, preserve_blank: bool = False) -> list[str]:
+        if not isinstance(value, str):
+            return []
+        segments = split_lines_preserve_blank(value)
+        output: list[str] = []
+        for segment in segments:
+            stripped = segment.strip()
+            if stripped:
+                output.append(stripped)
+            elif preserve_blank:
+                output.append("")
+        return output
 
     @staticmethod
     def _build_auto_draw_payload(spec_slide: Slide | None) -> list[dict[str, float]]:
