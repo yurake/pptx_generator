@@ -1,7 +1,7 @@
 ---
 目的: RM-060 Stage3 ID 整合性強制の運用改善（整合結果の可視化とUATでの検証性向上）
 関連ブランチ: feat/rm060-slide-alignment-visibility
-関連Issue: 未作成
+関連Issue: 未作成（issues disabled）
 roadmap_item: RM-060 Stage3 ID 整合性強制
 ---
 
