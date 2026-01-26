@@ -29,10 +29,15 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - メモ: 以下を簡潔に記載する
     - 自動テスト: 未実施（依存関係セットアップで詰まり）
       - `.venv/bin/pip install .` はネットワーク解決不可で失敗（setuptools>=68 取得不可）
+      - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest ...` は uv が system-configuration 由来の panic で停止
     - ユーザー経路の手動確認（必要な場合）: 実施（mock LLM）
-      - `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli compose samples/extract/jobspec.json --prepare-cards samples/prepare/prepare_card.json --output .pptx/uat-rm060/compose`
-      - 生成物: `.pptx/uat-rm060/compose/generate_ready_meta.json` に `slide_alignment` を確認（records 4件）
-    - 生成物の確認があれば、その方法と結果: `generate_ready_meta.json` / `draft/generate_ready_meta.json` の両方で `slide_alignment` を確認
+      - Stage2 Prepare: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/sample_spec.md --mode dynamic --output .pptx/uat-rm060/prepare`
+        - 出力: `.pptx/uat-rm060/prepare/prepare_card.json` ほか生成
+      - Stage3 Outline: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli outline samples/extract/jobspec.json --prepare-cards samples/prepare/prepare_card.json --output .pptx/uat-rm060/outline`
+      - Stage3 Compose: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli compose samples/extract/jobspec.json --prepare-cards samples/prepare/prepare_card.json --output .pptx/uat-rm060/compose`
+      - Stage4 Gen: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose/generate_ready.json --output .pptx/uat-rm060/gen`
+        - 警告: Monitoring alerts 4件（既存コンテンツ由来）
+    - 生成物の確認があれば、その方法と結果: outline/compose の `generate_ready_meta.json` で `slide_alignment` を確認（records 4件）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
