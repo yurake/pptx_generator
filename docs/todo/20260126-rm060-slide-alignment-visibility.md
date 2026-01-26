@@ -27,20 +27,17 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - メモ: CLI/API へ slide alignment オプションを追加し、dynamic runtime で alignment meta/records を generate_ready_meta に同梱。CLI リファレンス更新済み。
 - [x] テスト・検証
   - メモ: 以下を簡潔に記載する
-    - 自動テスト: 未実施（依存関係セットアップで詰まり）
-      - `.venv/bin/pip install .` はネットワーク解決不可で失敗（setuptools>=68 取得不可）
-      - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest ...` は uv が system-configuration 由来の panic で停止
-      - `uv self update` / `curl https://astral.sh/uv/install.sh | sh` はネットワーク解決不可で失敗
-    - ユーザー経路の手動確認（必要な場合）: 実施（mock LLM）
-      - Stage2 Prepare: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/sample_spec.md --mode dynamic --output .pptx/uat-rm060/prepare`
-        - 出力: `.pptx/uat-rm060/prepare/prepare_card.json` ほか生成
-      - Stage3 Outline: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli outline samples/extract/jobspec.json --prepare-cards samples/prepare/prepare_card.json --output .pptx/uat-rm060/outline`
-      - Stage3 Compose: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli compose samples/extract/jobspec.json --prepare-cards samples/prepare/prepare_card.json --output .pptx/uat-rm060/compose`
-      - Stage4 Gen: `PPTX_LLM_PROVIDER=mock PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose/generate_ready.json --output .pptx/uat-rm060/gen`
-        - 警告: Monitoring alerts 4件（既存コンテンツ由来）
-    - 生成物の確認があれば、その方法と結果: outline/compose の `generate_ready_meta.json` で `slide_alignment` を確認（records 4件）
-    - 実プロバイダ（aws-claude）での検証: 失敗
-      - `PPTX_LLM_PROVIDER=aws-claude ... prepare` を実行したが、`bedrock-runtime.us-east-2.amazonaws.com` の名前解決に失敗（EndpointConnectionError）
+    - 自動テスト: 実施
+      - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py tests/layout_validation/test_slide_alignment_metrics.py`
+        - 結果: 23 passed
+    - ユーザー経路の手動確認（必要な場合）: 実施（aws-claude）
+      - Stage2 Prepare: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/bullet_only.md --mode dynamic --output .pptx/uat-rm060/prepare-live`
+        - 出力: `.pptx/uat-rm060/prepare-live/prepare_card.json` ほか生成
+      - Stage3 Outline: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli outline samples/extract/jobspec.json --prepare-cards .pptx/uat-rm060/prepare-live/prepare_card.json --output .pptx/uat-rm060/outline-live`
+      - Stage3 Compose: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli compose samples/extract/jobspec.json --prepare-cards .pptx/uat-rm060/prepare-live/prepare_card.json --output .pptx/uat-rm060/compose-live`
+      - Stage4 Gen: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose-live/generate_ready.json --output .pptx/uat-rm060/gen-live`
+        - 警告: Rendering warnings 39 / Monitoring alerts 15（サンプルコンテンツ由来）
+    - 生成物の確認があれば、その方法と結果: outline-live / compose-live の `generate_ready_meta.json` で `slide_alignment` を確認（records 16件）
 - [ ] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -61,6 +58,6 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - 前提/制約: RM-060 は SlideIdAligner の可視化が主目的。main とは別 worktree で作業中。
   - 決定と理由: generate_ready_meta に slide_alignment を追加し、CLI/API で調整可能にする方針。
   - リスク(UNCONFIRMED): meta 出力が増えることで下流ツールが未対応の可能性。
-  - Now/Next: 実装・mock UATは完了。実プロバイダ UAT と自動テストはネットワーク/uv問題で未完のため、環境整備後に再実行。
-  - テスト実績/抜け: UAT（mock LLM）実施済み。aws-claude は Bedrock への名前解決に失敗。自動テストは uv/pip の環境問題で未実施。
+  - Now/Next: 実装・UAT（aws-claude）・自動テスト完了。次はPR作成。
+  - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（Stage2 は bullet_only で実施）。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
