@@ -1,7 +1,7 @@
 ---
 目的: RM-054 静的テンプレートの empty_placeholder 警告解消（static UAT の警告を削減）
 関連ブランチ: fix/rm054-static-placeholder-warning
-関連Issue: 未作成
+関連Issue: #555
 roadmap_item: RM-054 静的テンプレ構成統合プランニング
 ---
 
@@ -45,8 +45,8 @@ roadmap_item: RM-054 静的テンプレ構成統合プランニング
   - [x] docs/design 配下（変更不要: 設計変更なし）
   - [x] docs/runbook 配下（変更不要: 運用変更なし）
   - [x] README.md / AGENTS.md（変更不要: 手順追加なし）
-- [ ] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] 関連Issue 行の更新
+  - メモ: 関連Issue を #555 へ更新済み。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
