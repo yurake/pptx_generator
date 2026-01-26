@@ -38,6 +38,12 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
       - Stage4 Gen: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose-live/generate_ready.json --output .pptx/uat-rm060/gen-live`
         - 警告: Rendering warnings 39 / Monitoring alerts 15（サンプルコンテンツ由来）
     - 生成物の確認があれば、その方法と結果: outline-live / compose-live の `generate_ready_meta.json` で `slide_alignment` を確認（records 16件）
+    - 静的UAT（aws-claude / static small jobspec）:
+      - Stage2 Prepare: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/bullet_only.md --mode static --jobspec .pptx/uat-rm060/template-static-small/jobspec.json --output .pptx/uat-rm060/prepare-static`
+      - Stage3 Compose: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli compose .pptx/uat-rm060/template-static-small/jobspec.json --prepare-cards .pptx/uat-rm060/prepare-static/prepare_card.json --output .pptx/uat-rm060/compose-static`
+      - Stage4 Gen: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli gen .pptx/uat-rm060/compose-static/generate_ready.json --output .pptx/uat-rm060/gen-static`
+        - 警告: Rendering warnings 1 / Monitoring alerts 1（empty_placeholder: Content Placeholder 2 / slide_id=one_column_detail-01）
+      - 確認: compose-static の `generate_ready_meta.json` に `slide_alignment` は出力されない
 - [x] ドキュメント更新
   - メモ: CLI リファレンス（docs/design/cli/cli-command-reference.md）へ slide alignment オプションを追記済み。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -58,6 +64,6 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - 前提/制約: RM-060 は SlideIdAligner の可視化が主目的。main とは別 worktree で作業中。
   - 決定と理由: generate_ready_meta に slide_alignment を追加し、CLI/API で調整可能にする方針。
   - リスク(UNCONFIRMED): meta 出力が増えることで下流ツールが未対応の可能性。
-  - Now/Next: 実装・UAT（aws-claude）・自動テスト完了。次はPR作成。
-  - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（Stage2 は bullet_only で実施）。
+  - Now/Next: 実装・UAT（aws-claude dynamic/static）・自動テスト完了。次はPR作成。
+  - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（dynamic: bullet_only / static: small jobspec 1枚）。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
