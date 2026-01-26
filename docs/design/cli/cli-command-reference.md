@@ -165,6 +165,9 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
+| `--slide-alignment/--no-slide-alignment` | Slide ID 整合 (SlideIdAligner) の有効/無効 |  |  | 有効 |
+| `--slide-alignment-threshold <float>` | Slide ID 整合の信頼度しきい値 |  |  | 0.6 |
+| `--slide-alignment-max-candidates <int>` | Slide ID 整合の候補スライド数上限 |  |  | 12 |
 | `--rules <path>` | マッピング時に参照するルール設定 |  |  | `src/pptx_generator/config/pipeline_rules.json` |
 
 > ※ jobspec の `meta` に `template_path` / `layouts_path` が含まれていることが前提です（CLI 側で必須チェックを行います）。
@@ -181,6 +184,9 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 | `--target-length`, `--structure-pattern`, `--appendix-limit` | chapter API のチューニング |  |  | Spec から推定 / 5 |
 | `--import-analysis <path>` | `analysis_summary.json` を取り込み補助情報を活用する |  |  | 指定なし |
 | `--show-layout-reasons` | layout_hint スコアの内訳を標準出力に表示する |  |  | 無効 |
+| `--slide-alignment/--no-slide-alignment` | Slide ID 整合 (SlideIdAligner) の有効/無効 |  |  | 有効 |
+| `--slide-alignment-threshold <float>` | Slide ID 整合の信頼度しきい値 |  |  | 0.6 |
+| `--slide-alignment-max-candidates <int>` | Slide ID 整合の候補スライド数上限 |  |  | 12 |
 
 ドラフト成果物を任意ディレクトリへ分離したい場合は、`--output` を `<root>` に設定したうえで `<root>/draft` を参照する。
 

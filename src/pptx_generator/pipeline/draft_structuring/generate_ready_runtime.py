@@ -151,6 +151,7 @@ def build_generate_ready_meta_payload(
     draft: DraftDocument,
     generate_ready: GenerateReadyDocument,
     ai_summary: dict[str, Any],
+    alignment_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     sections_payload, main_slides_total, appendix_slides_total = summarize_sections(draft)
     template_info = build_template_info(draft)
@@ -170,6 +171,8 @@ def build_generate_ready_meta_payload(
         "return_reason_stats": draft.meta.return_reason_stats,
         "ai_recommendation": build_ai_recommendation_block(ai_summary),
     }
+    if alignment_payload:
+        payload["slide_alignment"] = alignment_payload
     apply_optional_generate_ready_meta(
         payload=payload,
         generate_ready=generate_ready,

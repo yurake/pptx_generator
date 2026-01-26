@@ -54,6 +54,9 @@ def create_outline_command(
         analysis_summary_path: Path | None,
         show_layout_reasons: bool,
         prepare_cards: Path,
+        slide_alignment: bool,
+        slide_alignment_threshold: float | None,
+        slide_alignment_max_candidates: int | None,
     ) -> None:
         """stage 4 ドラフト構成（アウトライン）を生成する。"""
 
@@ -67,6 +70,9 @@ def create_outline_command(
             prepare_cards=prepare_cards,
             require_prepare=True,
             show_layout_reasons=show_layout_reasons,
+            slide_alignment=slide_alignment,
+            slide_alignment_threshold=slide_alignment_threshold,
+            slide_alignment_max_candidates=slide_alignment_max_candidates,
             draft_filename=default_draft_filename,
             approved_filename=default_approved_filename,
             log_filename=default_draft_log_filename,

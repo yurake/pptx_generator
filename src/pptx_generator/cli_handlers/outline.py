@@ -20,6 +20,12 @@ from pptx_generator.pipeline import (
 from .common import dump_json, load_jobspec, resolve_layouts_path
 
 logger = logging.getLogger(__name__)
+_DEFAULT_SLIDE_ALIGNMENT_THRESHOLD = DraftStructuringOptions.__dataclass_fields__[
+    "slide_alignment_threshold"
+].default
+_DEFAULT_SLIDE_ALIGNMENT_MAX_CANDIDATES = DraftStructuringOptions.__dataclass_fields__[
+    "slide_alignment_max_candidates"
+].default
 
 
 @dataclass(slots=True)
@@ -33,6 +39,9 @@ class OutlineCommandConfig:
     prepare_cards: Path
     require_prepare: bool
     show_layout_reasons: bool
+    slide_alignment: bool
+    slide_alignment_threshold: float | None
+    slide_alignment_max_candidates: int | None
     draft_filename: str
     approved_filename: str
     log_filename: str
@@ -73,6 +82,9 @@ def run_outline_command(config: OutlineCommandConfig) -> None:
             analysis_summary_path=config.analysis_summary_path,
             prepare_cards=config.prepare_cards,
             require_prepare=config.require_prepare,
+            slide_alignment=config.slide_alignment,
+            slide_alignment_threshold=config.slide_alignment_threshold,
+            slide_alignment_max_candidates=config.slide_alignment_max_candidates,
             draft_filename=config.draft_filename,
             approved_filename=config.approved_filename,
             log_filename=config.log_filename,
@@ -102,6 +114,9 @@ def execute_outline(
     analysis_summary_path: Path | None,
     prepare_cards: Path | None,
     require_prepare: bool,
+    slide_alignment: bool,
+    slide_alignment_threshold: float | None,
+    slide_alignment_max_candidates: int | None,
     draft_filename: str,
     approved_filename: str,
     log_filename: str,
@@ -109,6 +124,16 @@ def execute_outline(
     generate_ready_meta_filename: str,
     meta_filename: str,
 ) -> OutlineResult:
+    resolved_slide_alignment_threshold = (
+        _DEFAULT_SLIDE_ALIGNMENT_THRESHOLD
+        if slide_alignment_threshold is None
+        else slide_alignment_threshold
+    )
+    resolved_slide_alignment_max_candidates = (
+        _DEFAULT_SLIDE_ALIGNMENT_MAX_CANDIDATES
+        if slide_alignment_max_candidates is None
+        else slide_alignment_max_candidates
+    )
     draft_options = DraftStructuringOptions(
         layouts_path=layouts,
         output_dir=output_dir,
@@ -118,6 +143,9 @@ def execute_outline(
         appendix_limit=appendix_limit,
         analysis_summary_path=analysis_summary_path,
         draft_store_dir=output_dir / "store",
+        enable_slide_alignment=slide_alignment,
+        slide_alignment_threshold=resolved_slide_alignment_threshold,
+        slide_alignment_max_candidates=resolved_slide_alignment_max_candidates,
     )
 
     context = run_draft_pipeline(
