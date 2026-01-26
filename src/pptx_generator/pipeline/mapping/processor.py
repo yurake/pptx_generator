@@ -287,8 +287,10 @@ class MappingSlideProcessor:
             elif "body" in base:
                 elements["body"] = base["body"]
             if prepare_card is not None:
-                structured_blocks, has_non_bullet = build_body_blocks(prepare_card)
-                if structured_blocks and has_non_bullet:
+                structured_blocks, has_non_bullet, has_bullets, has_custom = (
+                    build_body_blocks(prepare_card)
+                )
+                if structured_blocks and (has_custom or (has_non_bullet and has_bullets)):
                     elements["body"] = structured_blocks
             if content_slide.elements.note:
                 elements["note"] = content_slide.elements.note
