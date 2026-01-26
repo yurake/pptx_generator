@@ -30,6 +30,8 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
     - 自動テスト: 実施
       - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest tests/pipeline/compose/test_draft_structuring_step.py tests/layout_validation/test_slide_alignment_metrics.py`
         - 結果: 23 passed
+      - `UV_CACHE_DIR=.pptx/uv-cache uv run --extra dev pytest tests/cli/test_cli_job_queue_flow.py tests/integration/test_cli_generate_pipeline_flow.py`
+        - 結果: uv が system-configuration で panic し中断
     - ユーザー経路の手動確認（必要な場合）: 実施（aws-claude）
       - Stage2 Prepare: `PPTX_LLM_PROVIDER=aws-claude PYTHONPATH=/Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/rm060/src /Users/keitokimura/work/generativeAI/20260121-llmcoe-backend/pptx_generator/.venv/bin/python -m pptx_generator.cli prepare samples/input/bullet_only.md --mode dynamic --output .pptx/uat-rm060/prepare-live`
         - 出力: `.pptx/uat-rm060/prepare-live/prepare_card.json` ほか生成
@@ -64,6 +66,6 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - 前提/制約: RM-060 は SlideIdAligner の可視化が主目的。main とは別 worktree で作業中。
   - 決定と理由: generate_ready_meta に slide_alignment を追加し、CLI/API で調整可能にする方針。
   - リスク(UNCONFIRMED): meta 出力が増えることで下流ツールが未対応の可能性。
-  - Now/Next: 実装・UAT（aws-claude dynamic/static）・自動テスト完了。PR作成済み、次はレビュー待ち。
-  - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（dynamic: bullet_only / static: small jobspec 1枚）。
+  - Now/Next: PR作成済み。CI失敗の修正を反映済み、CI再実行待ち。
+  - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（dynamic: bullet_only / static: small jobspec 1枚）。CLIテストはuv panicで未完了。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。

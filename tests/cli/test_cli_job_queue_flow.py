@@ -171,6 +171,9 @@ def test_compose_invokes_queue(monkeypatch, tmp_path: Path) -> None:
         tmp_path / ".pptx/compose",
         rules_path,
         prepare_cards,
+        True,
+        0.6,
+        12,
     )
     assert called["stage"] == "compose"
     assert called["ran_handler"] is True

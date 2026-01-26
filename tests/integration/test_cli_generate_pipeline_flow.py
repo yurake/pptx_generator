@@ -229,6 +229,9 @@ def test_compose_logs_outline_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 output_dir=tmp_path / "compose",
                 rules=tmp_path / "pipeline_rules.json",
                 prepare_cards=tmp_path / "prepare_card.json",
+                slide_alignment=True,
+                slide_alignment_threshold=0.6,
+                slide_alignment_max_candidates=12,
             )
 
     assert exc.value.exit_code == 1
@@ -309,6 +312,9 @@ def test_compose_logs_mapping_stage_error(monkeypatch: pytest.MonkeyPatch, tmp_p
                 output_dir=tmp_path / "compose",
                 rules=rules_path,
                 prepare_cards=tmp_path / "prepare_card.json",
+                slide_alignment=True,
+                slide_alignment_threshold=0.6,
+                slide_alignment_max_candidates=12,
             )
 
     assert exc.value.exit_code == 1
