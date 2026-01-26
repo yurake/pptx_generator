@@ -16,6 +16,7 @@ class PrepareBodyBlock(BaseModel):
 
     type: str
     text: str | None = None
+    items: list[dict[str, Any]] | None = None  # bullets type用の構造化データ
     headers: list[str] | None = None
     rows: list[list[str]] | None = None
     ref: str | None = None
@@ -172,7 +173,10 @@ class PrepareCard(BaseModel):
         return self._yield_segments(text)
 
     def _iter_block_data(self, block: PrepareBodyBlock) -> Iterable[str]:
-        items = block.data.get("items") if isinstance(block.data, dict) else None
+        # items フィールドを優先的に参照（bullets type用）
+        items = block.items if block.items is not None else (
+            block.data.get("items") if isinstance(block.data, dict) else None
+        )
         if not isinstance(items, list):
             return []
 

@@ -242,6 +242,9 @@ class RenderingAuditStep:
                 if self._shape_text(shape):
                     return True
         for shape in slide.shapes:
+            if getattr(shape, "has_table", False):
+                return True
+        for shape in slide.shapes:
             if getattr(shape, "is_placeholder", False):
                 continue
             if not getattr(shape, "has_text_frame", False):

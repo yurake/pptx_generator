@@ -23,6 +23,7 @@ from ...models import (
     MappingSlideMeta,
     Slide,
 )
+from ...prepare.models import PrepareDocument, PrepareCard
 from .slide_elements import convert_slide_elements, merge_slide_elements
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ def build_generate_ready_document(
     spec: JobSpec,
     draft: DraftDocument,
     content_document: ContentApprovalDocument | None,
+    prepare_document: PrepareDocument | None = None,
     template_path: Path | None = None,
 ) -> GenerateReadyDocument:
     section_lookup: Dict[str, str] = {}
@@ -89,6 +91,10 @@ def build_generate_ready_document(
         except (TypeError, ValueError) as exc:
             logger.debug("content_approved のハッシュ化に失敗しました: %s", exc)
 
+    prepare_lookup: Dict[str, PrepareCard] = {}
+    if prepare_document is not None:
+        prepare_lookup = {card.card_id: card for card in prepare_document.cards}
+
     slides: List[GenerateReadySlide] = []
     if not cards_in_order:
         return _build_empty_generate_ready(
@@ -103,6 +109,12 @@ def build_generate_ready_document(
         spec_slide = spec_lookup.get(card.ref_id)
         section_name = section_lookup.get(card.ref_id)
         content_slide = content_lookup.get(card.ref_id)
+        prepare_card = None
+        if prepare_lookup:
+            if content_slide is not None and content_slide.source and content_slide.source.card_id:
+                prepare_card = prepare_lookup.get(content_slide.source.card_id)
+            if prepare_card is None:
+                prepare_card = prepare_lookup.get(card.ref_id)
         layout_id = card.layout_hint
         if not layout_id and spec_slide is not None:
             layout_id = spec_slide.layout
@@ -117,6 +129,7 @@ def build_generate_ready_document(
             content_slide=content_slide,
             spec_slide=spec_slide,
             layout_profile=layout_profile,
+            prepare_card=prepare_card,
         )
         sources = [spec_slide.id] if spec_slide is not None else [card.ref_id]
         auto_draw_payload = []

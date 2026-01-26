@@ -19,12 +19,17 @@ def merge_slide_elements(
     content_slide: ContentSlide | None,
     spec_slide: Slide | None,
     layout_profile: LayoutProfile | None,
+    prepare_card: PrepareCard | None = None,
 ) -> dict[str, Any]:
     base = convert_slide_elements(spec_slide) if spec_slide is not None else {}
     if content_slide is None or content_slide.elements is None:
         return base
 
     elements, table_payload = collect_content_elements(content_slide.elements, base)
+    if prepare_card is not None:
+        structured_blocks, has_non_bullet, _, _ = build_body_blocks(prepare_card)
+        if structured_blocks and has_non_bullet:
+            elements["body"] = structured_blocks
 
     if spec_slide is not None:
         merge_spec_slide_details(
@@ -289,6 +294,10 @@ def assign_text_content(
     card: PrepareCard,
     lines: list[str],
 ) -> None:
+    structured_blocks, has_non_bullet, has_bullets, has_custom = build_body_blocks(card)
+    if structured_blocks and (has_custom or (has_non_bullet and has_bullets)):
+        elements[anchor] = structured_blocks
+        return
     bullet_entries, paragraph_entries = extract_text_blocks(card)
     if bullet_entries:
         elements[anchor] = bullet_entries
@@ -309,9 +318,27 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
     bullet_entries: list[dict[str, Any]] = []
     paragraph_entries: list[str] = []
     for block in card.content.body:
-        if block.type == "bullets" and block.data:
-            append_bullet_entries(block.data.get("items"), bullet_entries)
+        # bullets type: items フィールドまたは data.items から箇条書きを抽出
+        if block.type == "bullets":
+            items = block.items if block.items is not None else (
+                block.data.get("items") if block.data else None
+            )
+            if items:
+                append_bullet_entries(items, bullet_entries)
             continue
+        # paragraph type: text フィールドを段落として扱う
+        if block.type == "paragraph" and isinstance(block.text, str):
+            for line in split_lines_preserve_blank(block.text):
+                stripped = line.strip()
+                if stripped:
+                    paragraph_entries.append(stripped)
+                else:
+                    paragraph_entries.append("")
+            continue
+        # table type はここでは扱わない（別途 assign_table_content で処理）
+        if block.type == "table":
+            continue
+        # custom type や未知の type: text があれば段落として扱う
         if isinstance(block.text, str):
             for line in split_lines_preserve_blank(block.text):
                 stripped = line.strip()
@@ -320,6 +347,44 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
                 else:
                     paragraph_entries.append("")
     return bullet_entries, paragraph_entries
+
+
+def build_body_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], bool, bool, bool]:
+    blocks: list[dict[str, Any]] = []
+    has_non_bullet = False
+    has_bullets = False
+    has_custom = False
+    for block in card.content.body:
+        if block.type == "bullets":
+            has_bullets = True
+            items = block.items if block.items is not None else (
+                block.data.get("items") if block.data else None
+            )
+            if items:
+                bullet_entries: list[dict[str, Any]] = []
+                append_bullet_entries(items, bullet_entries)
+                if bullet_entries:
+                    blocks.append({"type": "bullets", "items": bullet_entries})
+            continue
+        if block.type == "paragraph" and isinstance(block.text, str):
+            if block.text:
+                blocks.append({"type": "paragraph", "text": block.text})
+                has_non_bullet = True
+            continue
+        if block.type == "custom":
+            if block.text or block.description:
+                entry: dict[str, Any] = {"type": "custom"}
+                if block.text:
+                    entry["text"] = block.text
+                if block.description:
+                    entry["description"] = block.description
+                blocks.append(entry)
+                has_non_bullet = True
+                has_custom = True
+            continue
+        if block.type == "table":
+            continue
+    return blocks, has_non_bullet, has_bullets, has_custom
 
 
 def append_bullet_entries(
