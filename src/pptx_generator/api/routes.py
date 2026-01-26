@@ -90,14 +90,18 @@ def _prepare_prepare_payload(queue: InProcessJobQueue, tx_root: Path, transactio
     return payload
 
 
-def _prepare_edit_payload(payload: dict) -> dict:
+def _prepare_edit_payload(tx_root: Path, payload: dict) -> dict:
+    uploads = save_uploaded_files(tx_root, request.files.values(), {".pptx"}) if request.files else []
+    if uploads and payload.get("pptx_path"):
+        abort_error(422, "validation_error", "pptx_path and file cannot both be set")
+    if len(uploads) > 1:
+        abort_error(422, "validation_error", "only one pptx file is allowed")
+    if uploads:
+        payload["pptx_path"] = str(uploads[0])
     require_fields(payload, ["pptx_path"])
     require_path_exists(payload.get("pptx_path"), "pptx_path")
     if payload.get("edits_json"):
         require_path_exists(payload.get("edits_json"), "edits_json")
-    if request.files:
-        # ファイルアップロードと pptx_path 同時指定は 422
-        abort_error(422, "validation_error", "pptx_path and file cannot both be set")
     return payload
 
 
@@ -216,7 +220,6 @@ def post_edit():
         payload = require_json()
     tx_id = payload.get("transaction_id") or _generate_id("tx")
     job_id = _generate_id("edit")
-    _prepare_edit_payload(payload)
     state = _enqueue_job(get_queue(), stage="edit", job_id=job_id, transaction_id=tx_id, payload=payload)
     return _job_response(state)
 
@@ -320,7 +323,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
         )
     elif stage == "edit":
         func = build_edit_job(
-            payload=payload,
+            payload=_prepare_edit_payload(tx_root, payload),
             workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
         )
     else:

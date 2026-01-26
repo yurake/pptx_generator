@@ -970,6 +970,57 @@ def test_edit_rejects_both_pptx_and_upload(monkeypatch, tmp_path):
     assert resp.status_code == 422
 
 
+def test_edit_accepts_upload(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    with open("samples/templates/edit_sample.pptx", "rb") as f:
+        resp = c.post(
+            "/edit",
+            headers=headers,
+            data={"file": (f, "edit_sample.pptx")},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 202
+    job = resp.get_json()
+    assert job["stage"] == "edit"
+
+    status_body = {}
+    for _ in range(10):
+        status_resp = c.get(job["status_url"], headers=headers)
+        assert status_resp.status_code == 200
+        status_body = status_resp.get_json()
+        if status_body["status"] not in ("pending", "running"):
+            break
+        time.sleep(0.05)
+    assert status_body["status"] == "succeeded"
+    assert "pptx_url" in status_body["artifacts"]
+
+
+def test_edit_rejects_multiple_uploads(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app()
+    c = app.test_client()
+    headers = {"Authorization": "Bearer token-123"}
+
+    with open("samples/templates/edit_sample.pptx", "rb") as f1, open(
+        "samples/templates/edit_sample.pptx", "rb"
+    ) as f2:
+        resp = c.post(
+            "/edit",
+            headers=headers,
+            data={"file": (f1, "edit_sample.pptx"), "file2": (f2, "edit_sample.pptx")},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 422
+
+
 def test_edit_llm_failure_returns_failed(monkeypatch, tmp_path):
     from pptx_generator.api import stages as stages_module
 
