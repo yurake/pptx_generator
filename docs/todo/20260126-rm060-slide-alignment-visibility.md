@@ -64,6 +64,6 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
   - 前提/制約: RM-060 は SlideIdAligner の可視化が主目的。main とは別 worktree で作業中。
   - 決定と理由: generate_ready_meta に slide_alignment を追加し、CLI/API で調整可能にする方針。
   - リスク(UNCONFIRMED): meta 出力が増えることで下流ツールが未対応の可能性。
-  - Now/Next: 実装・UAT（aws-claude dynamic/static）・自動テスト完了。次はPR作成。
+  - Now/Next: 実装・UAT（aws-claude dynamic/static）・自動テスト完了。PR作成済み、次はレビュー待ち。
   - テスト実績/抜け: uv pytest 23件パス。UATは aws-claude で Stage2/3/4 実施済み（dynamic: bullet_only / static: small jobspec 1枚）。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
