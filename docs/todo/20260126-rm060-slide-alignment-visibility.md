@@ -1,7 +1,7 @@
 ---
 目的: RM-060 Stage3 ID 整合性強制の運用改善（整合結果の可視化とUATでの検証性向上）
 関連ブランチ: feat/rm060-slide-alignment-visibility
-関連Issue: 未作成（issues disabled）
+関連Issue: #553
 roadmap_item: RM-060 Stage3 ID 整合性強制
 ---
 
@@ -57,7 +57,7 @@ roadmap_item: RM-060 Stage3 ID 整合性強制
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [x] PR 作成
-  - メモ: PR #2 https://github.com/kkeito-investigate/pptx_generator/pull/2
+  - メモ: PR #554 https://github.com/yurake/pptx_generator/pull/554
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
