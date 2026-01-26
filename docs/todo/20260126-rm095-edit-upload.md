@@ -1,7 +1,7 @@
 ---
 目的: RM-095 Stage5 PPTX 編集反映 / /edit ファイルアップロード対応
 関連ブランチ: feat/rm095-edit-upload
-関連Issue: 未作成
+関連Issue: #558
 roadmap_item: RM-095 Stage5 PPTX 編集反映
 ---
 
@@ -32,8 +32,11 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
         - 結果: 11 passed
       - `uv tool run diff-cover coverage.xml --compare-branch upstream/main`
         - 結果: Diff coverage 100%
-    - ユーザー経路の手動確認（必要な場合）: 未実施（/edit は API テストで代替）
-    - 生成物の確認があれば、その方法と結果: 生成物は API テストで確認
+    - ユーザー経路の手動確認（必要な場合）:
+      - `uv run flask --app pptx_generator.api.flask_app run --host 127.0.0.1 --port 8000`
+      - `curl -X POST http://127.0.0.1:8000/edit -H "Authorization: Bearer $PPTX_API_BEARER_TOKEN" -F "file=@samples/templates/edit_sample.pptx" -F "transaction_id=tx-uat-upload"`
+      - `curl http://127.0.0.1:8000/jobs/<job_id> ...` で status=succeeded / pptx_url を確認
+    - 生成物の確認があれば、その方法と結果: status の pptx_url を確認
 - [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -42,8 +45,8 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - [x] docs/design 配下（変更不要: 設計変更なし）
   - [x] docs/runbook 配下（変更不要: 運用手順変更なし）
   - [x] README.md / AGENTS.md（変更不要: 手順追加なし）
-- [ ] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] 関連Issue 行の更新
+  - メモ: #558 を反映。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
@@ -54,6 +57,6 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - 前提/制約: /edit のファイルアップロードのみ対応。edits の JSON 文字列パースは次タスク。
   - 決定と理由: upload は tx_root 配下に保存し pptx_path に差し替える。pptx_path と同時指定は 422 を維持。
   - リスク(UNCONFIRMED): multipart で edits が文字列のまま残る場合は 422 になる。
-  - Now/Next: 実装・テスト完了。次は Issue/PR 作成。
+  - Now/Next: 実装・テスト・UAT完了。次は PR 作成。
   - テスト実績/抜け: pytest 11件パス、diff-cover 100%。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
