@@ -309,9 +309,27 @@ def extract_text_blocks(card: PrepareCard) -> tuple[list[dict[str, Any]], list[s
     bullet_entries: list[dict[str, Any]] = []
     paragraph_entries: list[str] = []
     for block in card.content.body:
-        if block.type == "bullets" and block.data:
-            append_bullet_entries(block.data.get("items"), bullet_entries)
+        # bullets type: items フィールドまたは data.items から箇条書きを抽出
+        if block.type == "bullets":
+            items = block.items if block.items is not None else (
+                block.data.get("items") if block.data else None
+            )
+            if items:
+                append_bullet_entries(items, bullet_entries)
             continue
+        # paragraph type: text フィールドを段落として扱う
+        if block.type == "paragraph" and isinstance(block.text, str):
+            for line in split_lines_preserve_blank(block.text):
+                stripped = line.strip()
+                if stripped:
+                    paragraph_entries.append(stripped)
+                else:
+                    paragraph_entries.append("")
+            continue
+        # table type はここでは扱わない（別途 assign_table_content で処理）
+        if block.type == "table":
+            continue
+        # custom type や未知の type: text があれば段落として扱う
         if isinstance(block.text, str):
             for line in split_lines_preserve_blank(block.text):
                 stripped = line.strip()
