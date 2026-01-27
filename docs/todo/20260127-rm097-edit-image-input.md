@@ -1,7 +1,7 @@
 ---
 目的: RM-097 Stage5 スクリーンショット生成 / edit 画像入力対応
 関連ブランチ: feat/rm097-edit-image-input
-関連Issue: 未作成
+関連Issue: #567
 roadmap_item: RM-097 Stage5 スクリーンショット生成
 ---
 
@@ -47,8 +47,8 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - [x] docs/design 配下（stage-05-edit / schema 反映）
   - [x] docs/runbook 配下（変更なし: 運用手順の追加なし）
   - [x] README.md / AGENTS.md（変更なし: CLI/運用の追記なし）
-- [ ] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
+- [x] 関連Issue 行の更新
+  - メモ: フロントマターの `関連Issue` を `#567` に更新。
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
@@ -59,6 +59,6 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - 前提/制約:
   - 決定と理由:
   - リスク(UNCONFIRMED):
-  - Now/Next: テスト・検証まで完了。次は関連IssueとPR準備。
+  - Now/Next: テスト・検証まで完了。次はPR準備。
   - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
