@@ -24,6 +24,7 @@
 ## 内部記録: applied_edits.json（適用済み差分）
 - 形式: `{ "edits": [<edits要素>...] }`
 - 用途: 監査・再適用・検証向けの内部ログ（HTTP では公開しない）。
+- 画像入力が有効な場合は `images/` と `edit_slide_images.json` を内部保存する（HTTP では公開しない）。
 
 ## 成果物
 - 編集済み PPTX のみ（HTTP artifacts は `pptx_url` のみ）。JSON 成果物の URL は返さない。

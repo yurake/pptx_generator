@@ -1203,7 +1203,7 @@ flowchart TB
 ### RM-097 Stage5 スクリーンショット生成
 - ゴール: Stage5 の指示抽出で利用するスライドスクリーンショットを生成・提供できるようにし、LLM への画像入力を可能にする。
 - 対象 stage: 5（編集反映の前処理）
-- 参照ドキュメント: 未作成（本テーマで作成予定）
+- 参照ドキュメント: [docs/notes/20260127-rm097-edit-image-input.md](../notes/20260127-rm097-edit-image-input.md)
 - 依存: LibreOffice/仕上げツールの画像出力手段、slide_snapshot の座標情報
 - 状況: 新規（2025-12-30 起票）
 - 期待成果:

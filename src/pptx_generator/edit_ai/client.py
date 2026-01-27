@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import logging
 from dataclasses import dataclass, field
@@ -25,7 +26,7 @@ DEFAULT_AZURE_API_VERSION = "2024-02-15-preview"
 DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-20240620"
 DEFAULT_AWS_CLAUDE_MODEL = "anthropic.claude-3-sonnet-20240229-v1:0"
 EDIT_SYSTEM_PROMPT = """あなたはプレゼン編集アシスタントです。以下の指示に従って JSON を返してください。
-- 入力: shape_id と元テキストのリスト、およびスライド情報
+- 入力: shape_id と元テキストのリスト、およびスライド情報（必要ならスクリーンショットと座標）
 - 各要素について、編集指示が含まれているかを判定し、必要なら書き換えた contents を返す
 - 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
 - 余計なキーやテキストは出力しないこと
@@ -35,11 +36,20 @@ EDIT_SYSTEM_PROMPT = """あなたはプレゼン編集アシスタントです�
 
 
 @dataclass(slots=True)
+class EditAIImage:
+    """LLM へ渡す画像データ。"""
+
+    media_type: str
+    data: bytes
+
+
+@dataclass(slots=True)
 class EditAIRequest:
     """Stage5 指示適用用の LLM リクエスト。"""
 
     prompt: str
     shape_contexts: list[dict[str, object]]
+    images: list[EditAIImage] = field(default_factory=list)
     model: str | None = None
     max_tokens: int | None = None
 
@@ -313,17 +323,7 @@ class AwsClaudeEditClient:
             "max_tokens": request.max_tokens or self._max_tokens,
             "temperature": self._temperature,
             "system": EDIT_SYSTEM_PROMPT,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": request.prompt,
-                        }
-                    ],
-                }
-            ],
+            "messages": _build_claude_messages(request),
         }
         model_id = self._resolve_model_id(request.model)
         try:
@@ -336,15 +336,42 @@ class AwsClaudeEditClient:
 
 
 def _build_messages(request: EditAIRequest):
+    if not request.images:
+        return [
+            {"role": "system", "content": EDIT_SYSTEM_PROMPT},
+            {"role": "user", "content": request.prompt},
+        ]
+    content: list[dict[str, object]] = [{"type": "text", "text": request.prompt}]
+    for image in request.images:
+        encoded = base64.b64encode(image.data).decode("utf-8")
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{image.media_type};base64,{encoded}"},
+            }
+        )
     return [
         {"role": "system", "content": EDIT_SYSTEM_PROMPT},
-        {"role": "user", "content": request.prompt},
+        {"role": "user", "content": content},
     ]
 
 
 def _build_claude_messages(request: EditAIRequest):
+    if not request.images:
+        return [
+            {"role": "user", "content": request.prompt},
+        ]
+    content: list[dict[str, object]] = [{"type": "text", "text": request.prompt}]
+    for image in request.images:
+        encoded = base64.b64encode(image.data).decode("utf-8")
+        content.append(
+            {
+                "type": "image",
+                "source": {"type": "base64", "media_type": image.media_type, "data": encoded},
+            }
+        )
     return [
-        {"role": "user", "content": request.prompt},
+        {"role": "user", "content": content},
     ]
 
 
