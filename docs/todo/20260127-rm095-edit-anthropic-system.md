@@ -8,7 +8,7 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
 - [x] ブランチ作成・初期コミット・push
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
-    - 2026-01-27: feat/rm095-edit-anthropic-system を作成。初期コミット=未実施（ToDo作成後にcommit予定）。
+    - 2026-01-27: feat/rm095-edit-anthropic-system を作成。初期コミット=b85ef2f（ToDo追加）。push済み。
 - [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
     - 対象整理（スコープ、対象ファイル、前提）: Anthropic Edit クライアントの system パラメータをトップレベルに移動。対象は src/pptx_generator/edit_ai/client.py と tests/edit_ai/test_client_providers.py。
