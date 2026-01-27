@@ -40,7 +40,7 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
         - 結果: 既存の ToDo 不整合で失敗（RM-000 系や既存ToDoの未整備が原因）
     - ユーザー経路の手動確認（UAT）:
       - `UV_CACHE_DIR=.uv-cache PPTX_LLM_PROVIDER=mock PPTX_EDIT_IMAGE_INPUT=1 PPTX_EDIT_IMAGE_FORMATS=png uv run --extra dev pptx edit samples/templates/edit_sample.pptx --output .pptx/uat-rm097/edit_sample.pptx`
-        - 結果: `soffice` 未導入のためスクリーンショット生成はスキップ（警告出力）。PPTX 出力と `applied_edits.json` を生成、`.pptx/uat-rm097/images/` は空。
+        - 結果: `images/png/slide_001.png` と `images/edit_slide_images.json` を生成。PPTX 出力と `applied_edits.json` を生成。
 - [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -62,5 +62,5 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - 決定と理由:
   - リスク(UNCONFIRMED):
   - Now/Next: PR 作成済み。レビュー/CI 待ち。
-  - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。lint_todo_completion は既存 ToDo 不整合で失敗。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
+  - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。lint_todo_completion は既存 ToDo 不整合で失敗。UAT は mock で edit 実行し、画像生成とメタ出力を確認。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
