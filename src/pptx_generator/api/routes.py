@@ -98,6 +98,15 @@ def _prepare_edit_payload(tx_root: Path, payload: dict) -> dict:
         abort_error(422, "validation_error", "only one pptx file is allowed")
     if uploads:
         payload["pptx_path"] = str(uploads[0])
+    edits_value = payload.get("edits")
+    if edits_value is not None and isinstance(edits_value, str):
+        try:
+            parsed = json.loads(edits_value)
+        except json.JSONDecodeError as exc:
+            abort_error(422, "validation_error", f"edits is not valid JSON: {exc}")
+        if not isinstance(parsed, list):
+            abort_error(422, "validation_error", "edits must be a JSON array")
+        payload["edits"] = parsed
     require_fields(payload, ["pptx_path"])
     require_path_exists(payload.get("pptx_path"), "pptx_path")
     if payload.get("edits_json"):
