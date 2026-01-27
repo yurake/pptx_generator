@@ -19,25 +19,29 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
     - テスト方針: `uv run --extra dev pytest tests/edit_ai/test_client_providers.py -k anthropic`、`uv tool run diff-cover coverage.xml --compare-branch upstream/main`。
     - ロールバック方法: Anthropic の system 引数変更とテスト修正を revert。
     - 承認メッセージ ID／リンク: 2026-01-27 ユーザー承認「OK」
-- [ ] 設計・実装方針の確定
+- [x] 設計・実装方針の確定
   - メモ: AnthropicEditClient.rewrite で messages から system を除外し、system は top-level 引数へ移動。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
+  - [x] 設計・実装方針メモの共有（不要）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: messages.create の top-level に system を追加し、_build_claude_messages から system を除外。Anthropic 専用テストを追加。
+- [x] テスト・検証
   - メモ: 以下を簡潔に記載する
-    - 自動テスト: 実行コマンドと結果（例: `uv run --extra dev pytest`, `diff-cover`）
-    - ユーザー経路の手動確認（必要な場合）: 代表手順1本のコマンドと結果
-    - 生成物の確認があれば、その方法と結果
-- [ ] ドキュメント更新
+    - 自動テスト:
+      - `uv run --extra dev pytest tests/edit_ai/test_client_providers.py -k "anthropic"`
+        - 結果: 2 passed
+      - `uv tool run diff-cover coverage.xml --compare-branch upstream/main`
+        - 結果: No lines with coverage information in this diff.
+    - ユーザー経路の手動確認（必要な場合）: 変更は SDK 呼び出し引数のため不要
+    - 生成物の確認があれば、その方法と結果: なし
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（変更不要: 既存 RM-095 の運用更新なし）
+  - [x] docs/requirements 配下（変更不要: 仕様変更なし）
+  - [x] docs/design 配下（変更不要: 設計変更なし）
+  - [x] docs/runbook 配下（変更不要: 運用手順変更なし）
+  - [x] README.md / AGENTS.md（変更不要: 手順追加なし）
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
@@ -50,6 +54,6 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - 前提/制約: Anthropic の system は top-level に配置する。
   - 決定と理由: Anthropic SDK の仕様準拠。
   - リスク(UNCONFIRMED): SDK バージョン差異で挙動が変わる可能性。
-  - Now/Next: ToDo 作成済み。次は設計・実装方針の確定。
-  - テスト実績/抜け: 未実施。
+  - Now/Next: 実装・テスト完了。次は Issue/PR 作成。
+  - テスト実績/抜け: pytest 2件パス、diff-cover は対象行なし。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
