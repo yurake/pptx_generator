@@ -36,6 +36,8 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
         - 結果: 10 passed（coverage.xml 生成）
       - `UV_CACHE_DIR=.uv-cache uv tool run diff-cover coverage.xml --compare-branch upstream/main`
         - 結果: Coverage 83%
+      - `UV_CACHE_DIR=.uv-cache uv run python scripts/lint_todo_completion.py`
+        - 結果: 既存の ToDo 不整合で失敗（RM-000 系や既存ToDoの未整備が原因）
     - ユーザー経路の手動確認（UAT）:
       - `UV_CACHE_DIR=.uv-cache PPTX_LLM_PROVIDER=mock PPTX_EDIT_IMAGE_INPUT=1 PPTX_EDIT_IMAGE_FORMATS=png uv run --extra dev pptx edit samples/templates/edit_sample.pptx --output .pptx/uat-rm097/edit_sample.pptx`
         - 結果: `soffice` 未導入のためスクリーンショット生成はスキップ（警告出力）。PPTX 出力と `applied_edits.json` を生成、`.pptx/uat-rm097/images/` は空。
@@ -60,5 +62,5 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - 決定と理由:
   - リスク(UNCONFIRMED):
   - Now/Next: テスト・検証まで完了。次はPR準備。
-  - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
+  - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。lint_todo_completion は既存 ToDo 不整合で失敗。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
