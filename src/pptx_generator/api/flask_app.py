@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from flask import Flask
+from flask_cors import CORS
 
 from pptx_generator.api.logging_config import configure_api_logging
 from pptx_generator.api.routes import api_blueprint
@@ -12,6 +13,13 @@ from pptx_generator.runtime.job_queue import get_queue
 def create_app() -> Flask:
     """Create Flask application for stage1-4 API."""
     app = Flask(__name__)
+    CORS(
+        app,
+        origins=["http://localhost:4200"],
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    )
 
     logger = configure_api_logging(os.environ.get("LOG_LEVEL", "INFO"))
     _validate_required_env(logger)

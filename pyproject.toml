@@ -17,6 +17,7 @@ dependencies = [
     "boto3>=1.40.64",
     "anthropic>=0.72.0",
     "flask>=3.0,<4",
+    "flask-cors>=4.0,<5",
 ]
 
 [project.optional-dependencies]
