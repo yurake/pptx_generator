@@ -1,7 +1,7 @@
 ---
 目的: RM-095 Stage5 PPTX 編集反映 / Anthropic system パラメータ修正
 関連ブランチ: feat/rm095-edit-anthropic-system
-関連Issue: 未作成
+関連Issue: #565
 roadmap_item: RM-095 Stage5 PPTX 編集反映
 ---
 
@@ -42,10 +42,10 @@ roadmap_item: RM-095 Stage5 PPTX 編集反映
   - [x] docs/design 配下（変更不要: 設計変更なし）
   - [x] docs/runbook 配下（変更不要: 運用手順変更なし）
   - [x] README.md / AGENTS.md（変更不要: 手順追加なし）
-- [ ] 関連Issue 行の更新
-  - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
-- [ ] チェックリスト整合確認
-  - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
+- [x] 関連Issue 行の更新
+  - メモ: フロントマターの `関連Issue` を #565 に更新。
+- [x] チェックリスト整合確認
+  - メモ: 実装/テスト/ドキュメントまで完了。残りは PR 作成。
 - [ ] PR 作成
   - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
 
