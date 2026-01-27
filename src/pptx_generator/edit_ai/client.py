@@ -214,6 +214,7 @@ class AnthropicEditClient:
                 model=request.model or self._model,
                 max_tokens=request.max_tokens or self._max_tokens,
                 temperature=0,
+                system=EDIT_SYSTEM_PROMPT,
                 messages=messages,
             )
         except Exception as exc:  # noqa: BLE001
@@ -343,7 +344,6 @@ def _build_messages(request: EditAIRequest):
 
 def _build_claude_messages(request: EditAIRequest):
     return [
-        {"role": "system", "content": EDIT_SYSTEM_PROMPT},
         {"role": "user", "content": request.prompt},
     ]
 
