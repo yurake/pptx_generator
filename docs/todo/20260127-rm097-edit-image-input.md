@@ -9,16 +9,16 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
     - 2026-01-27: feat/rm097-edit-image-input を作成。初期コミット=a2e9c34（ToDo追加）。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提):
-    - ドキュメント／コード修正方針:
-    - 確認・共有方法（レビュー、ToDo 更新など）:
-    - 想定影響ファイル:
-    - リスク:
-    - テスト方針:
-    - ロールバック方法:
-    - 承認メッセージ ID／リンク:
+    - 対象整理（スコープ、対象ファイル、前提): Stage5 edit のみに画像入力を追加。PPTX→スライド画像生成＋LLM入力の共通レイヤーを実装し、非対応プロバイダはテキストのみフォールバック。対象は pipeline/edit_runner.py、pipeline/text_edit.py、edit_ai/client.py、edit_ai/prompts.py、cli_commands/edit.py、api/stages.py、設定/ユーティリティ（画像生成）。画像は複数形式（png/jpeg等）に対応。
+    - ドキュメント／コード修正方針: RM-097 の位置づけに沿って Stage5 前処理として画像生成を追加。LLM入力は provider 依存を最小化し、共通の payload builder から各プロバイダへ変換。画像未対応はテキストのみで挙動維持。画像の保存先は出力ディレクトリ配下に統一する。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo に進捗/結果を記録し PR 本文へテスト/UAT結果を記載。
+    - 想定影響ファイル: edit_runner.py、text_edit.py、edit_ai/client.py/prompts.py、cli_commands/edit.py、api/stages.py、新規画像生成ユーティリティ、tests/edit_ai・tests/pipeline。
+    - リスク: LibreOffice 依存（環境差/タイムアウト）、画像サイズ増によるLMM遅延、プロバイダ非対応時のフォールバック品質。
+    - テスト方針: 画像生成ユーティリティの単体テスト、edit runner 統合テスト（画像あり/なし）、`uv run --extra dev pytest tests/edit_ai/test_client_providers.py -k edit`、`uv tool run diff-cover coverage.xml --compare-branch upstream/main`。
+    - ロールバック方法: 画像生成と LLM入力の追加パスを revert し、従来の text-only に戻す。
+    - 承認メッセージ ID／リンク: 2026-01-27 ユーザー承認「OK」
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
@@ -50,6 +50,6 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - 前提/制約:
   - 決定と理由:
   - リスク(UNCONFIRMED):
-  - Now/Next: ToDo 作成済み。次は計画策定。
+  - Now/Next: 計画承認済み。次は設計・実装方針の確定。
   - テスト実績/抜け: 未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
