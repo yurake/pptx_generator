@@ -19,25 +19,34 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
     - テスト方針: 画像生成ユーティリティの単体テスト、edit runner 統合テスト（画像あり/なし）、`uv run --extra dev pytest tests/edit_ai/test_client_providers.py -k edit`、`uv tool run diff-cover coverage.xml --compare-branch upstream/main`。
     - ロールバック方法: 画像生成と LLM入力の追加パスを revert し、従来の text-only に戻す。
     - 承認メッセージ ID／リンク: 2026-01-27 ユーザー承認「OK」
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
+- [x] 設計・実装方針の確定
+  - メモ: Stage5 edit の前処理でスライド画像を生成し、LLM 入力に画像＋shape 座標を付与する。画像入力は `PPTX_EDIT_IMAGE_INPUT=1` で有効化し、未指定時はテキストのみで既存挙動を維持する。画像は `images/` 配下に保存し、`edit_slide_images.json` に PPTX/スライド/shape の対応メタを記録する。
+  - [x] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
+    - docs/notes/20260127-rm097-edit-image-input.md
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: 画像生成ユーティリティ（slide_image_exporter）追加、edit LLM 入力に画像＋座標メタを付与、スクリーンショットメタ保存、環境変数で有効化する分岐を追加。
+- [x] テスト・検証
   - メモ: 以下を簡潔に記載する
     - 自動テスト: 実行コマンドと結果（例: `uv run --extra dev pytest`, `diff-cover`）
     - ユーザー経路の手動確認（必要な場合）: 代表手順1本のコマンドと結果
     - 生成物の確認があれば、その方法と結果
-- [ ] ドキュメント更新
+    - 自動テスト:
+      - `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/pipeline/test_slide_image_exporter.py tests/pipeline/test_edit_runner_images.py tests/edit_ai/test_client_providers.py --cov=src/pptx_generator --cov-report=xml`
+        - 結果: 10 passed（coverage.xml 生成）
+      - `UV_CACHE_DIR=.uv-cache uv tool run diff-cover coverage.xml --compare-branch upstream/main`
+        - 結果: Coverage 83%
+    - ユーザー経路の手動確認（UAT）:
+      - `UV_CACHE_DIR=.uv-cache PPTX_LLM_PROVIDER=mock PPTX_EDIT_IMAGE_INPUT=1 PPTX_EDIT_IMAGE_FORMATS=png uv run --extra dev pptx edit samples/templates/edit_sample.pptx --output .pptx/uat-rm097/edit_sample.pptx`
+        - 結果: `soffice` 未導入のためスクリーンショット生成はスキップ（警告出力）。PPTX 出力と `applied_edits.json` を生成、`.pptx/uat-rm097/images/` は空。
+- [x] ドキュメント更新
   - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（RM-097 の参照ドキュメントを追加）
+  - [x] docs/requirements 配下（stage-05-edit / requirements 反映）
+  - [x] docs/design 配下（stage-05-edit / schema 反映）
+  - [x] docs/runbook 配下（変更なし: 運用手順の追加なし）
+  - [x] README.md / AGENTS.md（変更なし: CLI/運用の追記なし）
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
@@ -50,6 +59,6 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
   - 前提/制約:
   - 決定と理由:
   - リスク(UNCONFIRMED):
-  - Now/Next: 計画承認済み。次は設計・実装方針の確定。
-  - テスト実績/抜け: 未実施。
+  - Now/Next: テスト・検証まで完了。次は関連IssueとPR準備。
+  - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。

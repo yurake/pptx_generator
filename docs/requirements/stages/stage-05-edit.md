@@ -9,16 +9,19 @@
 - 必須: 対象 PPTX（ステージ4などで生成済み）。
 - 任意: 差分 JSON（`edits` 配列）。指定時はその差分のみ適用。
 - 内部: スライド/shape スナップショット（LLM プロンプトに利用）。
+- 任意: スライドスクリーンショット（`PPTX_EDIT_IMAGE_INPUT=1` のとき生成）。
 
 ## 出力
 - 編集後 PPTX（書式保持で差し替え済み）。
 - 内部記録: `applied_edits.json`（適用した差分の実体。API ではダウンロード用 URL は返さず内部保存のみ）。
+- 内部記録: 画像入力が有効な場合は `images/` と `edit_slide_images.json` を保存。
 
 ## ワークフロー
 1. PPTX を読み込み、shape_id/slide_index/name をキーに差分適用する。
 2. 差分 JSON があれば適用のみ。無ければ各スライドの図形スナップショットを LLM に渡し、差分を生成して適用。
-3. 書式を保持したままテキストを上書きし、適用件数と未適用 shape_id を集計する。
-4. 出力ディレクトリ（API: `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/`）に PPTX を保存し、差分ログ（applied_edits.json）を記録する。
+3. 画像入力が有効な場合はスライドスクリーンショットと座標情報を LLM 入力に含める。
+4. 書式を保持したままテキストを上書きし、適用件数と未適用 shape_id を集計する。
+5. 出力ディレクトリ（API: `PPTX_OUTPUT_ROOT/<tx>/edit/<job_id>/`）に PPTX を保存し、差分ログ（applied_edits.json）を記録する。
 
 ## 品質ゲート
 - PPTX が正常に開けること。
