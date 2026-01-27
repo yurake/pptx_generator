@@ -54,7 +54,7 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
-  - メモ: PR #568 https://github.com/yurake/pptx_generator/pull/568 。todo-auto-complete が自動更新するため手動でチェックしない。
+  - メモ: PR #568 https://github.com/yurake/pptx_generator/pull/568 。todo-auto-complete は PR 作成時に skipped。
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
