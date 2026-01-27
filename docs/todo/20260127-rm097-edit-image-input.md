@@ -54,13 +54,13 @@ roadmap_item: RM-097 Stage5 スクリーンショット生成
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
-  - メモ: PR 番号と URL を記録。ワークフローが未動作の場合のみ理由を記載する。todo-auto-complete が自動更新するため手動でチェックしない。
+  - メモ: PR #568 https://github.com/yurake/pptx_generator/pull/568 。todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
   - 前提/制約:
   - 決定と理由:
   - リスク(UNCONFIRMED):
-  - Now/Next: テスト・検証まで完了。次はPR準備。
+  - Now/Next: PR 作成済み。レビュー/CI 待ち。
   - テスト実績/抜け: uv 再インストール後に pytest と diff-cover 実行済み。lint_todo_completion は既存 ToDo 不整合で失敗。UAT は mock で edit 実行、LibreOffice 未導入のため画像生成はスキップ。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
