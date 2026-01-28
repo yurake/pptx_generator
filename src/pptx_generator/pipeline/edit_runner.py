@@ -17,7 +17,7 @@ from pptx_generator.pipeline.slide_image_exporter import (
     SlideImageExportOptions,
     SlideImageExporter,
 )
-from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit
+from pptx_generator.pipeline.text_edit import apply_shape_text_edits, snapshot_shapes_for_edit, _strip_style_tags
 
 
 logger = logging.getLogger(__name__)
@@ -192,14 +192,16 @@ def _normalize_edits_for_save(edits: list[dict] | tuple | set) -> list[dict]:
         except (TypeError, ValueError):
             slide_idx = None
         name_val = edit.get("name")
-        result.append(
-            {
-                "shape_id": shape_id,
-                "slide_index": slide_idx,
-                "name": None if name_val is None else str(name_val),
-                "contents": str(contents),
-            }
-        )
+        normalized_contents = _strip_style_tags(str(contents))
+        payload = {
+            "shape_id": shape_id,
+            "slide_index": slide_idx,
+            "name": None if name_val is None else str(name_val),
+            "contents": normalized_contents,
+        }
+        if "fit" in edit:
+            payload["fit"] = bool(edit.get("fit"))
+        result.append(payload)
     return result
 
 

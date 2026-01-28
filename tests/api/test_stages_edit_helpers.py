@@ -31,12 +31,12 @@ def test_apply_and_save_edits_writes_json(tmp_path, monkeypatch):
 
 def test_normalize_edits_for_save_filters_invalid():
     edits = [
-        {"shape_id": "1", "contents": "ok", "edit": True},
+        {"shape_id": "1", "contents": "<b>ok</b>", "edit": True, "fit": True},
         {"shape_id": "2", "contents": "skip", "edit": False},  # edit=False は除外
         {"shape_id": None, "contents": "ng"},
         {"shape_id": "x", "contents": "ng"},
     ]
     normalized = edit_runner._normalize_edits_for_save(edits)  # type: ignore[attr-defined]
     assert normalized == [
-        {"shape_id": 1, "slide_index": None, "name": None, "contents": "ok"},
+        {"shape_id": 1, "slide_index": None, "name": None, "contents": "ok", "fit": True},
     ]

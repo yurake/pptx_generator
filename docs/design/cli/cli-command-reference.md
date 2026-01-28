@@ -233,6 +233,7 @@ uv run pptx prepare notes/brief.md https://example.com/report.pdf \
 
 ### stage 5: 編集反映
 生成済み PPTX へテキスト差し替えを適用する。位置引数で PPTX を指定し、`--edits-json` 未指定なら LLM が差分を自動生成して適用する（CLI は `--edits` 直接指定を持たない）。
+差分 JSON の `contents` にはスタイルタグを含められる（太字/斜体/色）。枠内収容が必要な場合は `fit: true` を指定する。
 
 出力:
 - PPTX（書式保持で差し替え済み。差分 JSON は内部保存のみ）

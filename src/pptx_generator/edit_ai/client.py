@@ -29,9 +29,15 @@ EDIT_SYSTEM_PROMPT = """あなたはプレゼン編集アシスタントです�
 - 入力: shape_id と元テキストのリスト、およびスライド情報（必要ならスクリーンショットと座標）
 - 各要素について、編集指示が含まれているかを判定し、必要なら書き換えた contents を返す
 - 出力は JSON 配列のみ: [{"shape_id": number, "edit": true|false, "contents": string}]
-- 余計なキーやテキストは出力しないこと
+- 余計なキーやテキストは出力しないこと（必要な場合のみ "fit": true を追加）
 - 箇条書きは元の構造をできるだけ保つ（改行・リスト記号を維持）
 - 固有名詞は改変しない
+- 指示文は日本語で書かれている前提で解釈し、指示部分は最終テキストから除去する
+- スタイル指定は contents 内にタグで表現する（タグは同一行内で閉じる）
+  - 太字: <b>...</b>
+  - 斜体: <i>...</i>
+  - 色: <color=red>...</color> / <color=青>...</color> / <color=#RRGGBB>...</color>
+- 「枠に収まるように」「はみ出さないように」などの指示がある場合は "fit": true を追加する
 """
 
 
@@ -390,11 +396,12 @@ def _parse_edits(text: str) -> list[dict[str, object]]:
             continue
         if "shape_id" not in item or "contents" not in item:
             continue
-        cleaned.append(
-            {
-                "shape_id": item.get("shape_id"),
-                "edit": bool(item.get("edit", True)),
-                "contents": str(item.get("contents", "")),
-            }
-        )
+        payload = {
+            "shape_id": item.get("shape_id"),
+            "edit": bool(item.get("edit", True)),
+            "contents": str(item.get("contents", "")),
+        }
+        if "fit" in item:
+            payload["fit"] = bool(item.get("fit"))
+        cleaned.append(payload)
     return cleaned

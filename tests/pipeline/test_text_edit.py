@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Inches, Pt
 
 import json
@@ -48,6 +49,32 @@ def test_overwrite_text_frame_preserves_run_style() -> None:
         assert para.runs[0].font.bold is True
         assert para.runs[0].font.color.rgb == RGBColor(0x12, 0x34, 0x56)
     assert text_frame.word_wrap is False
+
+
+def test_overwrite_text_frame_applies_inline_style_and_fit() -> None:
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+
+    text_frame = textbox.text_frame
+    paragraph = text_frame.paragraphs[0]
+    paragraph.text = "base"
+    run = paragraph.runs[0]
+    run.font.name = "Calibri"
+    run.font.size = Pt(18)
+
+    overwrite_text_frame_preserving_style(
+        text_frame,
+        "Normal <b>Bold</b> <i>Italic</i> <color=red>Red</color>",
+        fit=True,
+    )
+
+    assert text_frame.auto_size == MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+    combined = "".join(run.text for run in text_frame.paragraphs[0].runs)
+    assert combined == "Normal Bold Italic Red"
+    assert any(run.text == "Bold" and run.font.bold is True for run in text_frame.paragraphs[0].runs)
+    assert any(run.text == "Italic" and run.font.italic is True for run in text_frame.paragraphs[0].runs)
+    assert any(run.text == "Red" and run.font.color.rgb == RGBColor(0xFF, 0x00, 0x00) for run in text_frame.paragraphs[0].runs)
 
 
 def test_apply_shape_text_edits_updates_textbox(tmp_path) -> None:

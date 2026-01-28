@@ -3,17 +3,158 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List
+import logging
+import re
 
 from pptx import Presentation
 from pptx.presentation import Presentation as PptxPresentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.text import MSO_AUTO_SIZE
 import json
 
 from .analyzer.snapshot import table_cell_shape_id
 
+logger = logging.getLogger(__name__)
 
-def overwrite_text_frame_preserving_style(text_frame, new_text: str) -> None:
+_STYLE_TAG_RE = re.compile(r"<(/?)(b|i|color)(?:=([^>]+))?>", re.IGNORECASE)
+_COLOR_NAME_MAP: dict[str, str] = {
+    "red": "FF0000",
+    "赤": "FF0000",
+    "赤色": "FF0000",
+    "赤字": "FF0000",
+    "blue": "0000FF",
+    "青": "0000FF",
+    "青色": "0000FF",
+    "青字": "0000FF",
+    "green": "00FF00",
+    "緑": "00FF00",
+    "緑色": "00FF00",
+    "緑字": "00FF00",
+    "black": "000000",
+    "黒": "000000",
+    "黒色": "000000",
+    "黒字": "000000",
+    "white": "FFFFFF",
+    "白": "FFFFFF",
+    "白色": "FFFFFF",
+    "白字": "FFFFFF",
+    "gray": "808080",
+    "grey": "808080",
+    "グレー": "808080",
+    "灰": "808080",
+    "灰色": "808080",
+    "orange": "FFA500",
+    "オレンジ": "FFA500",
+    "yellow": "FFFF00",
+    "黄": "FFFF00",
+    "黄色": "FFFF00",
+    "navy": "000080",
+    "紺": "000080",
+    "紺色": "000080",
+}
+
+
+@dataclass(frozen=True)
+class _StyleState:
+    bold: bool | None
+    italic: bool | None
+    color: RGBColor | None
+
+
+@dataclass(frozen=True)
+class _StyledSegment:
+    text: str
+    bold: bool | None
+    italic: bool | None
+    color: RGBColor | None
+
+
+def _parse_color(value: str | None) -> RGBColor | None:
+    if not value:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    normalized = normalized.replace(" ", "")
+    if normalized.lower().startswith("0x"):
+        normalized = normalized[2:]
+    if normalized.startswith("#"):
+        normalized = normalized[1:]
+    if re.fullmatch(r"[0-9a-fA-F]{6}", normalized):
+        return RGBColor(int(normalized[0:2], 16), int(normalized[2:4], 16), int(normalized[4:6], 16))
+    mapped = _COLOR_NAME_MAP.get(normalized) or _COLOR_NAME_MAP.get(normalized.lower())
+    if mapped:
+        return RGBColor(int(mapped[0:2], 16), int(mapped[2:4], 16), int(mapped[4:6], 16))
+    logger.debug("edit style: unknown color=%s", value)
+    return None
+
+
+def _append_segment(segments: list[_StyledSegment], segment: _StyledSegment) -> None:
+    if not segment.text:
+        return
+    if segments:
+        last = segments[-1]
+        if last.bold == segment.bold and last.italic == segment.italic and last.color == segment.color:
+            segments[-1] = _StyledSegment(
+                text=last.text + segment.text,
+                bold=last.bold,
+                italic=last.italic,
+                color=last.color,
+            )
+            return
+    segments.append(segment)
+
+
+def _parse_styled_line(line: str) -> list[_StyledSegment]:
+    segments: list[_StyledSegment] = []
+    style_stack: list[_StyleState] = [_StyleState(bold=None, italic=None, color=None)]
+    cursor = 0
+    for match in _STYLE_TAG_RE.finditer(line):
+        start, end = match.span()
+        if start > cursor:
+            text = line[cursor:start]
+            current = style_stack[-1]
+            _append_segment(segments, _StyledSegment(text=text, bold=current.bold, italic=current.italic, color=current.color))
+        closing = match.group(1) == "/"
+        tag = match.group(2).lower()
+        if closing:
+            if len(style_stack) > 1:
+                style_stack.pop()
+        else:
+            current = style_stack[-1]
+            if tag == "b":
+                next_state = _StyleState(bold=True, italic=current.italic, color=current.color)
+            elif tag == "i":
+                next_state = _StyleState(bold=current.bold, italic=True, color=current.color)
+            else:
+                parsed_color = _parse_color(match.group(3))
+                next_state = _StyleState(
+                    bold=current.bold,
+                    italic=current.italic,
+                    color=parsed_color if parsed_color is not None else current.color,
+                )
+            style_stack.append(next_state)
+        cursor = end
+    if cursor < len(line):
+        current = style_stack[-1]
+        _append_segment(
+            segments,
+            _StyledSegment(text=line[cursor:], bold=current.bold, italic=current.italic, color=current.color),
+        )
+    return segments
+
+
+def _strip_style_tags(text: str) -> str:
+    lines = text.splitlines() or [""]
+    cleaned_lines: list[str] = []
+    for line in lines:
+        segments = _parse_styled_line(line)
+        cleaned_lines.append("".join(segment.text for segment in segments))
+    return "\n".join(cleaned_lines)
+
+
+def overwrite_text_frame_preserving_style(text_frame, new_text: str, *, fit: bool | None = None) -> None:
     """
     text_frame のテキストを差し替える。既存のラン／段落の書式をベースに再適用する。
     """
@@ -35,15 +176,29 @@ def overwrite_text_frame_preserving_style(text_frame, new_text: str) -> None:
 
     text_frame.clear()
     _apply_text_frame_style(text_frame, frame_style)
+    if fit:
+        text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     for index, line in enumerate(lines):
         paragraph = text_frame.paragraphs[0] if index == 0 else text_frame.add_paragraph()
-        paragraph.text = line
         _apply_paragraph_style(paragraph, paragraph_style)
-        if not paragraph.runs:
-            paragraph.add_run()
-        run = paragraph.runs[0]
-        _apply_run_style(run.font, run_style)
+        segments = _parse_styled_line(line)
+        if not segments:
+            run = paragraph.add_run()
+            run.text = ""
+            _apply_run_style(run.font, run_style)
+            continue
+        for segment in segments:
+            run = paragraph.add_run()
+            run.text = segment.text
+            segment_style = dict(run_style)
+            if segment.bold is not None:
+                segment_style["bold"] = segment.bold
+            if segment.italic is not None:
+                segment_style["italic"] = segment.italic
+            if segment.color is not None:
+                segment_style["color_rgb"] = segment.color
+            _apply_run_style(run.font, segment_style)
 
 
 def apply_shape_text_edits(
@@ -232,6 +387,7 @@ class _NormalizedEdit:
     slide_index: int | None
     name: str | None
     contents: str
+    fit: bool | None
 
 
 def _normalize_edits(edits: Iterable[dict[str, object]]) -> list[_NormalizedEdit]:
@@ -254,12 +410,15 @@ def _normalize_edits(edits: Iterable[dict[str, object]]) -> list[_NormalizedEdit
         except (TypeError, ValueError):
             slide_idx = None
         name_val = edit.get("name")
+        fit_val = edit.get("fit")
+        fit = bool(fit_val) if fit_val is not None else None
         normalized.append(
             _NormalizedEdit(
                 shape_id=shape_id_int,
                 slide_index=slide_idx,
                 name=str(name_val) if name_val is not None else None,
                 contents=str(contents),
+                fit=fit,
             )
         )
     return normalized
@@ -287,7 +446,7 @@ def _apply_single_edit(presentation: PptxPresentation, edit: _NormalizedEdit) ->
                 continue
             if edit.name is not None and edit.name != shape_name:
                 continue
-            overwrite_text_frame_preserving_style(text_frame, edit.contents)
+            overwrite_text_frame_preserving_style(text_frame, edit.contents, fit=edit.fit)
             return True
     return False
 
@@ -309,4 +468,9 @@ def _format_missing_key(edit: _NormalizedEdit) -> str:
     return f"{edit.slide_index}:{edit.shape_id}" if edit.slide_index is not None else str(edit.shape_id)
 
 
-__all__ = ["overwrite_text_frame_preserving_style", "apply_shape_text_edits", "generate_edits_template"]
+__all__ = [
+    "overwrite_text_frame_preserving_style",
+    "apply_shape_text_edits",
+    "generate_edits_template",
+    "_strip_style_tags",
+]
