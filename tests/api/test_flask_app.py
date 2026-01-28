@@ -88,6 +88,27 @@ def test_create_app_missing_auth(monkeypatch):
     assert "PPTX_API_BEARER_TOKEN or PPTX_API_HMAC_KEY_CURRENT" in str(exc.value)
 
 
+def test_create_app_defer_env_validation(monkeypatch):
+    monkeypatch.delenv("PPTX_API_BEARER_TOKEN", raising=False)
+    monkeypatch.delenv("PPTX_API_HMAC_KEY_CURRENT", raising=False)
+    app = create_app(validate_env=False)
+    app.testing = True
+    client = app.test_client()
+    with pytest.raises(RuntimeError):
+        client.get("/health")
+
+
+def test_create_app_defer_env_validation_marks_valid(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    app = create_app(validate_env=False)
+    app.testing = True
+    client = app.test_client()
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert app.config["ENV_VALIDATED"] is True
+
+
 def test_auth_missing_returns_401(client):
     resp = client.post("/templates", json={"template_path": "x", "mode": "static"})
     assert resp.status_code == 401
