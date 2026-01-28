@@ -15,7 +15,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     CORS(
         app,
-        origins=["http://localhost:4200"],
+        origins=_load_cors_origins(),
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -37,6 +37,18 @@ def create_app() -> Flask:
 
     app.register_blueprint(api_blueprint)
     return app
+
+
+def _load_cors_origins() -> list[str] | str:
+    configured = os.environ.get("PPTX_API_CORS_ORIGINS", "").strip()
+    if not configured:
+        return ["http://localhost", "http://localhost:4200"]
+    if configured == "*":
+        return "*"
+    origins = [item.strip() for item in configured.split(",") if item.strip()]
+    if not origins:
+        return ["http://localhost", "http://localhost:4200"]
+    return origins
 
 
 def _load_hmac_keys() -> list[str]:

@@ -71,8 +71,9 @@
 - FastAPI 実装は本実装で置き換え、後方互換なしで削除する。移行後は Flask API を正とし、FastAPI ルートは廃止。
 
 ## CORS
-- 開発環境: 任意オリジン許可。
-- 本番: 許可リストのみ（デフォルト拒否）に切り替える。
+- `PPTX_API_CORS_ORIGINS` に許可オリジンをカンマ区切りで指定する。
+- 未設定時は `http://localhost` / `http://localhost:4200` を許可する。
+- 全許可が必要な場合は `*` を指定する。
 
 ## 入出力ディレクトリ規約（API）
 - 出力: `PPTX_OUTPUT_ROOT/<transaction_id>/<stage>/<job_id>/` に成果物を配置する。未設定時は `.pptx/<stage>` を利用する実装もあるが、API 経路では tx/job 付きパスを前提とする。edit は PPTX のみを返却し、適用差分の JSON は内部保存とする。
