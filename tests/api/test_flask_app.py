@@ -821,6 +821,36 @@ def test_cors_allows_localhost_origin(monkeypatch, tmp_path):
     assert resp.headers.get("Access-Control-Allow-Origin") == "http://localhost:4200"
 
 
+def test_cors_respects_env_override(monkeypatch, tmp_path):
+    monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
+    monkeypatch.setenv("PPTX_API_BEARER_TOKEN", "token-123")
+    monkeypatch.setenv("PPTX_API_CORS_ORIGINS", "http://localhost")
+    app = create_app()
+    c = app.test_client()
+
+    blocked = c.open(
+        "/health",
+        method="OPTIONS",
+        headers={
+            "Origin": "http://localhost:4200",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert blocked.status_code in (200, 204)
+    assert blocked.headers.get("Access-Control-Allow-Origin") is None
+
+    allowed = c.open(
+        "/health",
+        method="OPTIONS",
+        headers={
+            "Origin": "http://localhost",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert allowed.status_code in (200, 204)
+    assert allowed.headers.get("Access-Control-Allow-Origin") == "http://localhost"
+
+
 def test_edit_job_submission(monkeypatch, tmp_path):
     monkeypatch.setenv("PPTX_LLM_PROVIDER", "mock")
     monkeypatch.setenv("PPTX_OUTPUT_ROOT", str(tmp_path))
