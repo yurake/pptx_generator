@@ -9,16 +9,17 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
     - 2026-01-28: fix/rm089-cors-localhost を upstream/main から作成。初期コミット=c1d235c（ToDo追加）。push済み。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提）: 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+    - 対象整理（スコープ、対象ファイル、前提）: CORS 許可オリジンを `PPTX_API_CORS_ORIGINS` で制御し、未設定時は `http://localhost` / `http://localhost:4200` を既定とする。対象は `src/pptx_generator/api/flask_app.py`、`tests/api/test_flask_app.py`、`docs/design/api/flask.md`。
+    - ドキュメント／コード修正方針: Flask CORS 設定を環境変数ベースに変更し、テストと設計ドキュメントへ反映する。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新 + PR 本文にテスト結果を記載する前提。
+    - 想定影響ファイル: `src/pptx_generator/api/flask_app.py`、`tests/api/test_flask_app.py`、`docs/design/api/flask.md`。
+    - リスク: 環境変数の未設定/誤設定で許可オリジンが不足する可能性。
+    - テスト方針: `uv run --extra dev pytest tests/api/test_flask_app.py -k "cors"`、`uv tool run diff-cover coverage.xml --compare-branch upstream/main`。
+    - ロールバック方法: CORS 設定変更とテスト/ドキュメント更新のコミットを revert。
+    - 承認メッセージ ID／リンク: 2026-01-28 ユーザー承認「OK」
+    - 参照済みドキュメント: `AGENTS.md`、`docs/policies/context-engineering.md`、`CONTRIBUTING.md`、`docs/policies/task-management.md`、`docs/todo/README.md`、`docs/design/api/flask.md`。
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
