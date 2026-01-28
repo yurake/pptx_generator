@@ -48,7 +48,8 @@ roadmap_item: RM-100 編集指示スタイリング対応
 - [ ] チェックリスト整合確認
   - メモ: 子タスクをすべて完了した親タスクが未チェックになっていないか確認し、必要に応じて `[x]` へ更新する。親タスクのメモに完了内容を残す。
 - [ ] PR 作成
-  - メモ: PR #3 https://github.com/kkeito-investigate/pptx_generator/pull/3
+  - メモ: PR #569 https://github.com/yurake/pptx_generator/pull/569
+  - メモ: fork 側の作業PRは https://github.com/kkeito-investigate/pptx_generator/pull/3
   - メモ: todo-auto-complete が自動更新するため手動でチェックしない。
 
 ## メモ
