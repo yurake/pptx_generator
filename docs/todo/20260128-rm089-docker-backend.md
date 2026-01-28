@@ -9,16 +9,17 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - メモ: ブランチ名や初期コミット内容、push したコミットの内容、差分がない場合はその理由を記入する
     - 必ずmainからブランチを切る
     - 2026-01-28: chore/rm089-docker-backend を upstream/main から作成。初期コミット=d40eaa6（ToDo追加）。push済み。
-- [ ] 計画策定（スコープ・前提の整理）
+- [x] 計画策定（スコープ・前提の整理）
   - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提）: 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+    - 対象整理（スコープ、対象ファイル、前提）: 本番バックエンド用 Dockerfile をリポジトリ直下に新規追加し、`.dockerignore` を修正する。`templates/` をコンテナに含める前提で運用する。
+    - ドキュメント／コード修正方針: multi-stage build を採用し、`uv.lock` と整合する uv で依存をインストール。`gunicorn --factory` で Flask app を起動する。`.dockerignore` の混入テキストを修正する。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新 + PR 本文に build/run/healthcheck 結果を記載する前提。
+    - 想定影響ファイル: `Dockerfile`（新規）、`.dockerignore`（更新）、`docs/todo/20260128-rm089-docker-backend.md`。
+    - リスク: system lib 不足で起動失敗、必須環境変数未設定で API 起動に失敗。
+    - テスト方針: `docker build` / `docker run` / `curl http://localhost:8000/health`。
+    - ロールバック方法: Dockerfile/.dockerignore を revert。
+    - 承認メッセージ ID／リンク: 2026-01-28 ユーザー承認「OK」
+    - 参照済みドキュメント: `AGENTS.md`、`docs/policies/context-engineering.md`、`CONTRIBUTING.md`、`docs/policies/task-management.md`、`docs/todo/README.md`。
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
