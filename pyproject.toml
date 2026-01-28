@@ -12,7 +12,7 @@ dependencies = [
     "jsonschema>=4.22,<5",
     "deepdiff>=7,<8",
     "python-dotenv>=1.0,<2",
-    "gunicorn>=21,<22; platform_system != \"Windows\"",
+    "gunicorn>=20,<21; platform_system != \"Windows\"",
     "openai>=2.6.1",
     "boto3>=1.40.64",
     "anthropic>=0.72.0",

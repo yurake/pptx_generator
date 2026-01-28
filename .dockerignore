@@ -64,7 +64,6 @@ Thumbs.db
 
 # External resources
 external/
-samples/
 dotnet/
 
 # Scripts (not needed in container)

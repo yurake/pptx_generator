@@ -10,7 +10,7 @@ from pptx_generator.api.routes import api_blueprint
 from pptx_generator.runtime.job_queue import get_queue
 
 
-def create_app() -> Flask:
+def create_app(validate_env: bool = True) -> Flask:
     """Create Flask application for stage1-4 API."""
     app = Flask(__name__)
     CORS(
@@ -22,7 +22,8 @@ def create_app() -> Flask:
     )
 
     logger = configure_api_logging(os.environ.get("LOG_LEVEL", "INFO"))
-    _validate_required_env(logger)
+    if validate_env:
+        _validate_required_env(logger)
     app.config["API_LOGGER"] = logger
     app.config["HMAC_KEYS"] = _load_hmac_keys()
     app.config["HMAC_SKEW_SEC"] = int(os.environ.get("PPTX_API_HMAC_CLOCK_SKEW_SEC", "300"))
@@ -34,6 +35,17 @@ def create_app() -> Flask:
 
     app.queue = get_queue()  # type: ignore[attr-defined]
     app.queue.ensure_workers(app.config["WORKER_COUNT"])
+
+    if not validate_env:
+        app.config["ENV_VALIDATED"] = False
+
+        @app.before_request
+        def _ensure_env_validated():  # type: ignore[unused-local]
+            if app.config.get("ENV_VALIDATED"):
+                return None
+            _validate_required_env(logger)
+            app.config["ENV_VALIDATED"] = True
+            return None
 
     app.register_blueprint(api_blueprint)
     return app
@@ -75,3 +87,6 @@ def _validate_required_env(logger) -> None:
         message = f"missing required environment variables: {', '.join(missing)}"
         logger.error(message)
         raise RuntimeError(message)
+
+
+app = create_app(validate_env=False)
