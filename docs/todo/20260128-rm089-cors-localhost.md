@@ -33,6 +33,8 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
         - 結果: uv キャッシュ初期化失敗（/Users/keitokimura/.cache/uv の権限エラー）
       - `UV_CACHE_DIR=.uv-cache uv run --extra dev pytest tests/api/test_flask_app.py -k "cors"`
         - 結果: uv が panic（system-configuration の NULL object エラー）
+      - `UV_CACHE_DIR=.uv-cache uv run --no-sync --extra dev pytest tests/api/test_flask_app.py -k "cors"`
+        - 結果: 2 passed（coverage.xml 出力）
       - `.venv/bin/python -m pytest tests/api/test_flask_app.py -k "cors"`
         - 結果: 2 passed（coverage.xml 出力）
       - `.venv/bin/python -m diff_cover.diff_cover_tool coverage.xml --compare-branch upstream/main`
@@ -60,5 +62,5 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
   - 決定と理由: フロント/バックのポート差を吸収するため、CORS を環境変数化して運用で調整可能にする。
   - リスク(UNCONFIRMED): 設定ミスで許可オリジンが不足する可能性。
   - Now/Next: 実装とテスト完了。次は Issue 更新と PR 作成。
-  - テスト実績/抜け: pytest 2件パス（.venv）。diff-cover 未実施（diff_cover 未導入 / uv 実行失敗）。
+  - テスト実績/抜け: pytest 2件パス（uv --no-sync と .venv）。diff-cover 未実施（diff_cover 未導入 / uv 実行失敗）。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
