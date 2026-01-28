@@ -8,16 +8,16 @@ roadmap_item: RM-100 編集指示スタイリング対応
 - [x] ブランチ作成・初期コミット・push
   - メモ: ブランチ名 `feat/rm100-edit-styling` / 初期コミットは RM-100 準備の ToDo 作成 / push 済み
     - 必ずmainからブランチを切る
-- [ ] 計画策定（スコープ・前提の整理）
-  - メモ: 承認済み Plan をそのまま転記する。以下の項目を含めること。
-    - 対象整理（スコープ、対象ファイル、前提): 
-    - ドキュメント／コード修正方針: 
-    - 確認・共有方法（レビュー、ToDo 更新など）: 
-    - 想定影響ファイル: 
-    - リスク: 
-    - テスト方針: 
-    - ロールバック方法: 
-    - 承認メッセージ ID／リンク: 
+- [x] 計画策定（スコープ・前提の整理）
+  - メモ: 承認済み Plan
+    - 対象整理（スコープ、対象ファイル、前提): Stage5 edit のスタイリング指示対応（太字/斜体/色/枠内収容）を実装。日本語指示を前提に LLM で解釈し、内部表現として適用する。
+    - ドキュメント／コード修正方針: edit AI のプロンプト/パースと text_edit の適用ロジックを拡張し、applied_edits の保存形式も更新する。ドキュメントは stage-05-edit と CLI リファレンスを更新。
+    - 確認・共有方法（レビュー、ToDo 更新など）: ToDo 更新と差分共有で確認する。
+    - 想定影響ファイル: `src/pptx_generator/edit_ai/prompts.py`, `src/pptx_generator/edit_ai/client.py`, `src/pptx_generator/pipeline/text_edit.py`, `src/pptx_generator/pipeline/edit_runner.py`, `docs/requirements/stages/stage-05-edit.md`, `docs/design/cli/cli-command-reference.md`, `tests/pipeline/test_text_edit.py`, `tests/edit_ai/test_client.py`
+    - リスク: auto-fit によりフォントが過度に縮小される可能性。色名の解釈ゆれは未適用として警告扱いにする。
+    - テスト方針: 既存 unit に装飾/auto-fit のテストを追加。必要に応じて CLI の簡易 UAT を実施。
+    - ロールバック方法: 関連コミットを `git revert` し、従来のテキスト差し替えに戻す。
+    - 承認メッセージ ID／リンク: ユーザー OK（2026-01-28）
 - [ ] 設計・実装方針の確定
   - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
   - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
@@ -47,8 +47,8 @@ roadmap_item: RM-100 編集指示スタイリング対応
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
   - 前提/制約: edit 指示からスタイリングと文字サイズ調整を反映する。
-  - 決定と理由: 
-  - リスク(UNCONFIRMED): 
-  - Now/Next: Now=ToDo 起票 / Next=Plan 作成
-  - テスト実績/抜け: 
+  - 決定と理由: 日本語指示を前提に LLM で解釈し、内部マークアップを適用する。
+  - リスク(UNCONFIRMED): auto-fit による可読性低下の可能性。
+  - Now/Next: Now=Plan 承認 / Next=設計・実装方針の確定
+  - テスト実績/抜け: 未実施
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
