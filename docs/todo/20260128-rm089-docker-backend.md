@@ -20,25 +20,24 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
     - ロールバック方法: Dockerfile/.dockerignore を revert。
     - 承認メッセージ ID／リンク: 2026-01-28 ユーザー承認「OK」
     - 参照済みドキュメント: `AGENTS.md`、`docs/policies/context-engineering.md`、`CONTRIBUTING.md`、`docs/policies/task-management.md`、`docs/todo/README.md`。
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
-- [ ] テスト・検証
+- [x] 設計・実装方針の確定
+  - メモ: repo 直下に Dockerfile を追加し、`.dockerignore` を整備。templates を含め、multi-stage build + `gunicorn --factory` で API 起動する。
+  - [x] 設計・実装方針メモの共有（不要）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: Dockerfile と `.dockerignore` を追加。templates をコピー対象とし、`.dockerignore` の混入テキストを修正した。
+- [x] テスト・検証
   - メモ: 以下を簡潔に記載する
-    - 自動テスト: 実行コマンドと結果（例: `uv run --extra dev pytest`, `diff-cover`）
-    - ユーザー経路の手動確認（必要な場合）: 代表手順1本のコマンドと結果（例: docker build/run/curl, CLI compose→gen）
-    - 生成物の確認があれば、その方法と結果
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
-  - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+    - 自動テスト: 未実施（Docker 未導入で `docker` コマンド不在）
+    - ユーザー経路の手動確認（必要な場合）: `docker build` / `docker run` / `curl /health` は環境制約で未実施
+    - 生成物の確認があれば、その方法と結果: なし
+- [x] ドキュメント更新
+  - メモ: Dockerfile/.dockerignore 追加のみ。ドキュメント変更は不要と判断。
+  - [x] docs/roadmap 配下（変更不要: RM-089 の更新なし）
+  - [x] docs/requirements 配下（変更不要: 要件変更なし）
+  - [x] docs/design 配下（変更不要: 仕様変更なし）
+  - [x] docs/runbook 配下（変更不要: 変更なし）
+  - [x] README.md / AGENTS.md（変更不要: 手順追加なし）
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
@@ -48,9 +47,9 @@ roadmap_item: RM-089 stage1-4 Flask Web/API 化
 
 ## メモ
 - 連続性メモ（短文化し、更新があれば上書きする）※設計確定・実装完了・テスト完了・PR作成前後など状態変化のたびに更新
-  - 前提/制約: 
-  - 決定と理由: 
-  - リスク(UNCONFIRMED): 
-  - Now/Next: 
-  - テスト実績/抜け: 
+  - 前提/制約: 本番バックエンド用 Dockerfile を main に入れて運用する前提。templates を同梱する。
+  - 決定と理由: 再現性確保のため repo 直下に Dockerfile を追加し、CORS/認証は環境変数で制御する。
+  - リスク(UNCONFIRMED): system lib 不足や環境変数未設定で起動失敗の可能性。
+  - Now/Next: 実装完了。Issue 更新と PR 作成、Docker 環境での build/run 確認が次。
+  - テスト実績/抜け: Docker 未導入のため build/run/healthcheck 未実施。
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
