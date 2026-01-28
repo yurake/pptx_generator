@@ -24,11 +24,16 @@ roadmap_item: RM-100 編集指示スタイリング対応
   - [x] 方針メモを更新するまで以降の stage へ進まないこと
 - [x] 実装
   - メモ: edit AI プロンプト更新、スタイルタグのパースと適用、`fit` の auto-fit 反映、applied_edits のタグ除去保存を実装。
-- [ ] テスト・検証
-  - メモ: 以下を簡潔に記載する
-    - 自動テスト: 実行コマンドと結果（例: `uv run --extra dev pytest`, `diff-cover`）
-    - ユーザー経路の手動確認（必要な場合）: 代表手順1本のコマンドと結果（例: docker build/run/curl, CLI compose→gen）
-    - 生成物の確認があれば、その方法と結果
+- [x] テスト・検証
+  - メモ:
+    - 自動テスト: `uv run --extra dev pytest tests/pipeline/test_text_edit.py tests/edit_ai/test_client.py tests/api/test_stages_edit_helpers.py`（23 passed）
+    - ユーザー経路の手動確認（必要な場合）: stage1-5 の CLI を順に実行
+      - Stage1: `uv run pptx template samples/templates/dynamic_template.pptx --mode dynamic`（output/template）
+      - Stage2: `uv run pptx prepare samples/input/pitch.md --mode dynamic`（output/prepare）
+      - Stage3: `uv run pptx compose output/template/jobspec.json --prepare-cards output/prepare/prepare_card.json`（output/compose）
+      - Stage4: `uv run pptx gen output/compose/generate_ready.json`（output/gen, rendering warnings=2）
+      - Stage5: `uv run pptx edit output/gen/proposal.pptx`（output/edit/proposal.pptx, 適用件数=0）
+    - 生成物の確認があれば、その方法と結果: output 配下の成果物生成を確認
 - [x] ドキュメント更新
   - メモ: stage-05-edit と CLI リファレンスを更新。その他は更新不要。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
@@ -49,6 +54,6 @@ roadmap_item: RM-100 編集指示スタイリング対応
   - 前提/制約: edit 指示からスタイリングと文字サイズ調整を反映する。
   - 決定と理由: 日本語指示を前提に LLM で解釈し、内部マークアップを適用する。
   - リスク(UNCONFIRMED): auto-fit による可読性低下の可能性。
-  - Now/Next: Now=実装完了 / Next=テスト・検証
-  - テスト実績/抜け: 未実施
+  - Now/Next: Now=テスト・UAT完了 / Next=結果共有とPR準備
+  - テスト実績/抜け: `uv run --extra dev pytest tests/pipeline/test_text_edit.py tests/edit_ai/test_client.py tests/api/test_stages_edit_helpers.py`（23 passed）
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
