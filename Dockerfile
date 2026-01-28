@@ -61,6 +61,7 @@ COPY --from=builder --chown=pptxuser:pptxuser /app/.venv /app/.venv
 COPY --from=builder --chown=pptxuser:pptxuser /app/src /app/src
 COPY --from=builder --chown=pptxuser:pptxuser /app/pyproject.toml /app/
 COPY --chown=pptxuser:pptxuser templates/ /app/templates/
+COPY --chown=pptxuser:pptxuser samples/ /app/samples/
 
 USER pptxuser
 
