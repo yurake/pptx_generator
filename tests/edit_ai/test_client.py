@@ -42,10 +42,10 @@ def test_create_edit_ai_client_aws_claude(monkeypatch):
 
 
 def test_parse_edits_accepts_edits_wrapper():
-    raw = '{"edits": [{"shape_id": 1, "contents": "x", "edit": false}, {"shape_id": 2, "contents": "y"}]}'
+    raw = '{"edits": [{"shape_id": 1, "contents": "x", "edit": false, "fit": true}, {"shape_id": 2, "contents": "y"}]}'
     parsed = edit_ai_client._parse_edits(raw)
     assert parsed == [
-        {"shape_id": 1, "edit": False, "contents": "x"},
+        {"shape_id": 1, "edit": False, "contents": "x", "fit": True},
         {"shape_id": 2, "edit": True, "contents": "y"},
     ]
 
