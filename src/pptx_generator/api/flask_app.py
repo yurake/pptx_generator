@@ -75,3 +75,6 @@ def _validate_required_env(logger) -> None:
         message = f"missing required environment variables: {', '.join(missing)}"
         logger.error(message)
         raise RuntimeError(message)
+
+
+app = create_app()

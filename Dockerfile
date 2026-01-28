@@ -77,5 +77,4 @@ CMD ["gunicorn", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--log-level", "info", \
-     "--factory", \
-     "pptx_generator.api.flask_app:create_app"]
+     "pptx_generator.api.flask_app:app"]
