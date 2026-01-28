@@ -18,25 +18,25 @@ roadmap_item: RM-100 編集指示スタイリング対応
     - テスト方針: 既存 unit に装飾/auto-fit のテストを追加。必要に応じて CLI の簡易 UAT を実施。
     - ロールバック方法: 関連コミットを `git revert` し、従来のテキスト差し替えに戻す。
     - 承認メッセージ ID／リンク: ユーザー OK（2026-01-28）
-- [ ] 設計・実装方針の確定
-  - メモ: Plan 承認内容を踏まえた設計・実装方針をここに記載し、ユーザー確認が必要な論点があれば列挙する。
-  - [ ] 設計・実装方針メモの共有（必要な場合に docs/notes 等へのリンクを記載）
-  - [ ] 方針メモを更新するまで以降の stage へ進まないこと
-- [ ] 実装
-  - メモ: 実装範囲や未対応事項があれば記載する
+- [x] 設計・実装方針の確定
+  - メモ: LLM 出力の `contents` にスタイルタグを埋め込み、`fit` は boolean で受け取る。タグは `<b>`, `<i>`, `<color=...>`（色名 or `#RRGGBB`）を許容し、タグは同一行内で閉じる。適用は run 分割で行い、ベース書式に対して bold/italic/color を上書きする。`fit: true` で `MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE` を適用する。`applied_edits.json` はタグを除去した本文と `fit` を保存する。
+  - [x] 設計・実装方針メモの共有（不要）
+  - [x] 方針メモを更新するまで以降の stage へ進まないこと
+- [x] 実装
+  - メモ: edit AI プロンプト更新、スタイルタグのパースと適用、`fit` の auto-fit 反映、applied_edits のタグ除去保存を実装。
 - [ ] テスト・検証
   - メモ: 以下を簡潔に記載する
     - 自動テスト: 実行コマンドと結果（例: `uv run --extra dev pytest`, `diff-cover`）
     - ユーザー経路の手動確認（必要な場合）: 代表手順1本のコマンドと結果（例: docker build/run/curl, CLI compose→gen）
     - 生成物の確認があれば、その方法と結果
-- [ ] ドキュメント更新
-  - メモ: 結果と影響範囲を整理し、迷う点は必ずユーザーへ相談した結果を残す
+- [x] ドキュメント更新
+  - メモ: stage-05-edit と CLI リファレンスを更新。その他は更新不要。
   - メモ: 変更不要の場合も必ず理由をメモに記録して `[x]` を付ける
-  - [ ] docs/roadmap 配下
-  - [ ] docs/requirements 配下（実装結果との整合再確認）
-  - [ ] docs/design 配下（実装結果との整合再確認）
-  - [ ] docs/runbook 配下
-  - [ ] README.md / AGENTS.md
+  - [x] docs/roadmap 配下（更新不要）
+  - [x] docs/requirements 配下（stage-05-edit.md を更新）
+  - [x] docs/design 配下（cli-command-reference.md を更新）
+  - [x] docs/runbook 配下（更新不要）
+  - [x] README.md / AGENTS.md（更新不要）
 - [ ] 関連Issue 行の更新
   - メモ: フロントマターの `関連Issue` が `未作成` の場合は、対応する Issue 番号（例: `#123`）へ更新する。進捗をissueに書き込むものではない。
 - [ ] チェックリスト整合確認
@@ -49,6 +49,6 @@ roadmap_item: RM-100 編集指示スタイリング対応
   - 前提/制約: edit 指示からスタイリングと文字サイズ調整を反映する。
   - 決定と理由: 日本語指示を前提に LLM で解釈し、内部マークアップを適用する。
   - リスク(UNCONFIRMED): auto-fit による可読性低下の可能性。
-  - Now/Next: Now=Plan 承認 / Next=設計・実装方針の確定
+  - Now/Next: Now=実装完了 / Next=テスト・検証
   - テスト実績/抜け: 未実施
 - 計画のみで完了とする場合は、判断者・判断日と次のアクション条件をここに記載する。
