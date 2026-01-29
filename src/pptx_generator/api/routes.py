@@ -227,6 +227,19 @@ def post_edit():
         payload = data
     else:
         payload = require_json()
+    edits_value = payload.get("edits")
+    edits_json_value = payload.get("edits_json")
+    logging.getLogger("pptx_generator.api").info(
+        "edit payload summary: has_edits=%s edits_type=%s edits_count=%s "
+        "has_edits_json=%s edits_json_type=%s edits_json_len=%s mime=%s",
+        "edits" in payload,
+        type(edits_value).__name__ if "edits" in payload else "-",
+        len(edits_value) if isinstance(edits_value, list) else "-",
+        "edits_json" in payload,
+        type(edits_json_value).__name__ if "edits_json" in payload else "-",
+        len(edits_json_value) if isinstance(edits_json_value, str) else "-",
+        request.mimetype or "-",
+    )
     tx_id = payload.get("transaction_id") or _generate_id("tx")
     job_id = _generate_id("edit")
     state = _enqueue_job(get_queue(), stage="edit", job_id=job_id, transaction_id=tx_id, payload=payload)
