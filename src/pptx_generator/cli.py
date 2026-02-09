@@ -22,15 +22,9 @@ from .cli_handlers.common import (
 from .cli_commands import (
     build_prepare_config as _build_prepare_config,
     create_compose_command,
-    create_edit_command,
     create_gen_command,
-    create_layout_validate_command,
-    create_mapping_command,
-    create_outline_command,
     create_prepare_command,
     create_template_command,
-    create_tpl_extract_command,
-    create_tpl_release_command,
 )
 from .pipeline import DraftStructuringOptions
 from .logging import configure_root_logging
@@ -92,10 +86,8 @@ DEFAULT_TEMPLATE_OUTPUT_DIR = build_output_dir("template", root=_OUTPUT_ROOT)
 DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR = build_output_dir("release", root=_OUTPUT_ROOT)
 DEFAULT_PREPARE_OUTPUT_DIR = build_output_dir("prepare", root=_OUTPUT_ROOT)
 DEFAULT_JOBSPEC_PATH = DEFAULT_TEMPLATE_OUTPUT_DIR / "jobspec.json"
-DEFAULT_DRAFT_OUTPUT_DIR = build_output_dir("draft", root=_OUTPUT_ROOT)
 DEFAULT_COMPOSE_OUTPUT_DIR = build_output_dir("compose", root=_OUTPUT_ROOT)
 DEFAULT_GEN_OUTPUT_DIR = build_output_dir("gen", root=_OUTPUT_ROOT)
-DEFAULT_VALIDATION_OUTPUT_DIR = build_output_dir("validation", root=_OUTPUT_ROOT)
 @click.group(
     help="JSON 仕様から PPTX を生成する CLI",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -138,20 +130,6 @@ template = create_template_command(
     default_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
 )
 app.add_command(template)
-outline = create_outline_command(
-    default_output_dir=DEFAULT_DRAFT_OUTPUT_DIR,
-    default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
-    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / PREPARE_CARD_FILENAME,
-    default_draft_filename=DEFAULT_DRAFT_FILENAME,
-    default_approved_filename=DEFAULT_APPROVED_FILENAME,
-    default_draft_log_filename=DEFAULT_DRAFT_LOG_FILENAME,
-    default_generate_ready_filename=DEFAULT_GENERATE_READY_FILENAME,
-    default_generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
-    default_draft_meta_filename=DEFAULT_DRAFT_META_FILENAME,
-)
-app.add_command(outline)
-
-
 compose = create_compose_command(
     default_appendix_limit=DEFAULT_APPENDIX_LIMIT,
     default_output_dir=DEFAULT_COMPOSE_OUTPUT_DIR,
@@ -165,37 +143,6 @@ compose = create_compose_command(
     default_generate_ready_meta_filename=DEFAULT_GENERATE_READY_META_FILENAME,
 )
 app.add_command(compose)
-
-
-mapping = create_mapping_command(
-    default_output_dir=DEFAULT_GEN_OUTPUT_DIR,
-    default_rules_path=DEFAULT_RULES_PATH,
-    default_prepare_cards_path=DEFAULT_PREPARE_OUTPUT_DIR / PREPARE_CARD_FILENAME,
-)
-app.add_command(mapping)
-
-
-tpl_extract = create_tpl_extract_command(
-    default_output_dir=DEFAULT_TEMPLATE_OUTPUT_DIR,
-    default_layout_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
-)
-app.add_command(tpl_extract)
-
-
-layout_validate = create_layout_validate_command(
-    default_output_dir=DEFAULT_VALIDATION_OUTPUT_DIR,
-)
-app.add_command(layout_validate)
-
-edit = create_edit_command()
-app.add_command(edit)
-
-
-tpl_release = create_tpl_release_command(
-    default_output_dir=DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR,
-    default_layout_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
-)
-app.add_command(tpl_release)
 
 
 if __name__ == "__main__":
