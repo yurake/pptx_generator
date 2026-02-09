@@ -1,0 +1,134 @@
+{
+  "excel_to_pptx_mapping": {
+    "message_line": {
+      "initial_amount": {
+        "sheet": "投資",
+        "cell": "K17",
+        "format": "億円"
+      },
+      "running_years": {
+        "sheet": "部門別経費",
+        "cell": "B4",
+        "format": "年"
+      },
+      "running_amount": {
+        "sheet": "部門別経費",
+        "cell": "C3",
+        "format": "億円"
+      }
+    },
+    "table": {
+      "initial_total": {
+        "sheet": "投資",
+        "cell": "K17",
+        "format": "億円",
+        "target": "（１）初期　計"
+      },
+      "initial_profit": {
+        "sheet": "投資",
+        "cell": "M17",
+        "format": "億円",
+        "target": "（１）初期　計 利益"
+      },
+      "keikan_total": {
+        "sheet": "部門別経費",
+        "cell": "C7",
+        "format": "億円",
+        "target": "期間請負"
+      },
+      "keikan_profit": {
+        "sheet": "部門別経費",
+        "cell": "D7",
+        "format": "億円",
+        "target": "期間請負 利益"
+      },
+      "employee_total": {
+        "sheet": "部門別経費",
+        "cell": "C8",
+        "format": "億円",
+        "target": "社員"
+      },
+      "employee_profit": {
+        "sheet": "部門別経費",
+        "cell": "D8",
+        "format": "億円",
+        "target": "社員 利益"
+      },
+      "inhouse_total": {
+        "sheet": "部門別経費",
+        "cell": "C9",
+        "format": "億円",
+        "target": "内製開発"
+      },
+      "inhouse_profit": {
+        "sheet": "部門別経費",
+        "cell": "D9",
+        "format": "億円",
+        "target": "内製開発 利益"
+      },
+      "pjm_total": {
+        "sheet": "部門別経費",
+        "cell": "C10",
+        "format": "億円",
+        "target": "PJ管理"
+      },
+      "pjm_profit": {
+        "sheet": "部門別経費",
+        "cell": "D10",
+        "format": "億円",
+        "target": "PJ管理 利益"
+      },
+      "pn_total": {
+        "sheet": "部門別経費",
+        "cell": "C11",
+        "format": "億円",
+        "target": "PN(IBM)"
+      },
+      "pn_profit": {
+        "sheet": "部門別経費",
+        "cell": "D11",
+        "format": "億円",
+        "target": "PN(IBM) 利益"
+      },
+      "si_total": {
+        "sheet": "投資",
+        "cell": "K9",
+        "format": "億円",
+        "target": "SI"
+      },
+      "si_profit": {
+        "sheet": "投資",
+        "cell": "M9",
+        "format": "億円",
+        "target": "SI 利益"
+      },
+      "running_total": {
+        "sheet": "部門別経費",
+        "cell": "C3",
+        "format": "億円",
+        "target": "（２）ランニング 計"
+      },
+      "machine_total": {
+        "sheet": "部門別経費",
+        "cell": "C14",
+        "format": "億円",
+        "target": "機器"
+      },
+      "software_total": {
+        "sheet": "部門別経費",
+        "cell": "C15",
+        "format": "億円",
+        "target": "ソフト使用料"
+      },
+      "operation_total": {
+        "sheet": "部門別経費",
+        "cell": "C16",
+        "format": "億円",
+        "target": "運用"
+      }
+    }
+  },
+  "conversion": {
+    "円_to_億円": 100000000
+  }
+}

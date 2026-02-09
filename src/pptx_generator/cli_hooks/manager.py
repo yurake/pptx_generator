@@ -13,7 +13,7 @@ from typing import Any, Mapping
 logger = logging.getLogger(__name__)
 
 HOOKS_FILENAME = "hooks.json"
-EXTERNAL_ROOT = Path("external")
+EXTERNAL_ROOT = Path("src/pptx_generator")
 
 STAGE_TEMPLATE = "template"
 STAGE_PREPARE = "prepare"

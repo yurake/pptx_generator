@@ -1,0 +1,9 @@
+{
+  "excel_source_path": "input/cost_dummy.xlsx",
+  "diagram_png_path": "../../../.pptx/executive_board/prepare/system_dependencies.png",
+  "requirements_md_path": "input/system_requirements.md",
+  "schedule_md_path": "input/schedule.md",
+  "organization_md_path": "input/organization.md",
+  "personnel_schedule_md_path": "input/schedule.md",
+  "personnel_xlsx_path": "input/personnel_data_column.xlsx"
+}
