@@ -32,12 +32,10 @@ from pptx_generator.api.stages import (
     build_prepare_job,
     build_compose_job,
     build_gen_job,
-    build_edit_job,
     TemplateCommandError,
     PrepareCommandError,
     ComposeCommandError,
     GenerateCommandError,
-    EditCommandError,
 )
 from pptx_generator.logging import set_current_request_id, reset_current_request_id
 from pptx_generator.runtime.job_queue import (
@@ -90,28 +88,6 @@ def _prepare_prepare_payload(queue: InProcessJobQueue, tx_root: Path, transactio
     return payload
 
 
-def _prepare_edit_payload(tx_root: Path, payload: dict) -> dict:
-    uploads = save_uploaded_files(tx_root, request.files.values(), {".pptx"}) if request.files else []
-    if uploads and payload.get("pptx_path"):
-        abort_error(422, "validation_error", "pptx_path and file cannot both be set")
-    if len(uploads) > 1:
-        abort_error(422, "validation_error", "only one pptx file is allowed")
-    if uploads:
-        payload["pptx_path"] = str(uploads[0])
-    edits_value = payload.get("edits")
-    if edits_value is not None and isinstance(edits_value, str):
-        try:
-            parsed = json.loads(edits_value)
-        except json.JSONDecodeError as exc:
-            abort_error(422, "validation_error", f"edits is not valid JSON: {exc}")
-        if not isinstance(parsed, list):
-            abort_error(422, "validation_error", "edits must be a JSON array")
-        payload["edits"] = parsed
-    require_fields(payload, ["pptx_path"])
-    require_path_exists(payload.get("pptx_path"), "pptx_path")
-    if payload.get("edits_json"):
-        require_path_exists(payload.get("edits_json"), "edits_json")
-    return payload
 
 
 @api_blueprint.record_once
@@ -171,7 +147,6 @@ def handle_request_entity_too_large(e):
 @api_blueprint.errorhandler(PrepareCommandError)
 @api_blueprint.errorhandler(ComposeCommandError)
 @api_blueprint.errorhandler(GenerateCommandError)
-@api_blueprint.errorhandler(EditCommandError)
 def handle_command_error(exc):
     code = getattr(exc, "exit_code", 1)
     if code in (4, 6):  # ファイル関連/検証エラー
@@ -215,22 +190,6 @@ def post_gen():
     return _job_response(state)
 
 
-@api_blueprint.post("/edit")
-def post_edit():
-    if request.mimetype and request.mimetype.startswith("multipart/"):
-        data: dict = {}
-        for key, values in request.form.lists():
-            if len(values) == 1:
-                data[key] = values[0]
-            else:
-                data[key] = values
-        payload = data
-    else:
-        payload = require_json()
-    tx_id = payload.get("transaction_id") or _generate_id("tx")
-    job_id = _generate_id("edit")
-    state = _enqueue_job(get_queue(), stage="edit", job_id=job_id, transaction_id=tx_id, payload=payload)
-    return _job_response(state)
 
 
 @api_blueprint.get("/jobs/<job_id>")
@@ -330,11 +289,6 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             compose_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"]),
             template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True),
         )
-    elif stage == "edit":
-        func = build_edit_job(
-            payload=_prepare_edit_payload(tx_root, payload),
-            workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
-        )
     else:
         def _noop_job():
             if stage == "gen":
@@ -370,9 +324,7 @@ def _job_status_body(state):
     if state.status == JobStatus.SUCCEEDED:
         _update_registry(tx_root, state.request.stage, state)
     artifacts = {}
-    if state.request.stage == "edit" and state.status == JobStatus.SUCCEEDED:
-        artifacts["pptx_url"] = _artifact_api_path(state.request.job_id, "pptx")
-    elif state.request.stage == "gen":
+    if state.request.stage == "gen":
         for artifact_type in ARTIFACT_KEYS:
             path = _resolve_artifact_path(state.request.job_id, artifact_type, state=state, tx_root=tx_root)
             if path:

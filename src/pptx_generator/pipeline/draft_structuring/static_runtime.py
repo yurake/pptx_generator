@@ -222,6 +222,7 @@ def build_static_artifacts(
         slides=generate_ready_slides,
         meta=GenerateReadyMeta(
             template_version=None,
+            template_id=getattr(spec.meta, "template_id", None),
             template_path=None,
             content_hash=content_hash,
             generated_at=timestamp,

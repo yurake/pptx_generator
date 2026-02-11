@@ -52,6 +52,7 @@ def _build_generate_ready_meta(
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     meta = GenerateReadyMeta(
         template_version=draft.meta.template_id,
+        template_id=getattr(spec.meta, "template_id", None) or draft.meta.template_id,
         template_path=str(template_path) if template_path else getattr(spec.meta, "template_path", None),
         content_hash=content_hash,
         generated_at=timestamp,
