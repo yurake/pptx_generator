@@ -36,19 +36,10 @@ from ...models import (
     Slide,
     TemplateSpec,
 )
-from ...draft.draft_recommender import CardLayoutRecommender, LayoutProfile
 from ...api.draft_store import DraftStore, BoardAlreadyExistsError
 from ..base import PipelineContext, PipelineStage
+from ..mapping.types import LayoutProfile
 from .errors import DraftStructuringError
-from .dynamic_flow import build_dynamic_document
-from .dynamic_runtime import (
-    align_content_if_needed,
-    get_content_document,
-    get_prepare_meta,
-    prepare_dynamic_inputs,
-    persist_dynamic_outputs,
-    should_use_static_mode,
-)
 from .static_runtime import run_static_mode
 from .types import DraftStructuringOptions, StaticArtifacts, card_slot_fulfilled, card_slot_id
 
@@ -63,55 +54,31 @@ class DraftStructuringStep:
 
     def __init__(self, options: DraftStructuringOptions | None = None) -> None:
         self.options = options or DraftStructuringOptions()
-        self._recommender: CardLayoutRecommender | None = None
         self._alignment_records: list | None = None
         self._layout_name_lookup: dict[str, str] = {}
-        self._layout_catalog: dict[str, LayoutProfile] = {}
+        self._layout_catalog: dict[str, str] = {}
 
     # ------------------------------------------------------------------ #
     # public API
     # ------------------------------------------------------------------ #
     def run(self, context: PipelineContext) -> None:
-        document = get_content_document(self, context)
-        if document is None:
+        content_document = context.artifacts.get("content_approved")
+        if content_document is None:
             return
 
-        prepare_meta = get_prepare_meta(self, context)
-        if should_use_static_mode(prepare_meta):
-            run_static_mode(
-                step=self,
-                context=context,
-                content_document=document,
-                prepare_meta=prepare_meta,
-            )
-            return
+        prepare_meta = context.artifacts.get("prepare_generation_meta")
+        if prepare_meta is None:
+            raise DraftStructuringError("prepare_meta が見つかりません")
 
-        document = align_content_if_needed(self, context, document)
+        mode = (getattr(prepare_meta, "mode", None) or "dynamic").lower()
+        if mode != "static":
+            raise DraftStructuringError("dynamic モードは削除されました。static を指定してください。")
 
-        (
-            layouts,
-            analyzer_map,
-            recommender,
-            dynamic_prepare,
-        ) = prepare_dynamic_inputs(self, context=context, prepare_meta=prepare_meta)
-
-        draft, mapping_logs, ai_summary = build_dynamic_document(
-            options=self.options,
-            spec=context.spec,
-            document=document,
-            layouts=layouts,
-            analyzer_map=analyzer_map,
-            recommender=recommender,
-            dynamic_prepare=dynamic_prepare,
-        )
-
-        persist_dynamic_outputs(
-            self,
+        run_static_mode(
+            step=self,
             context=context,
-            draft=draft,
-            mapping_logs=mapping_logs,
-            ai_summary=ai_summary,
-            content_document=document,
+            content_document=content_document,
+            prepare_meta=prepare_meta,
         )
 
     # ------------------------------------------------------------------ #

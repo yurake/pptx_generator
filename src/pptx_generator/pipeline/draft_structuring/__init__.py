@@ -2,7 +2,6 @@
 
 from .errors import DraftStructuringError
 from .step import DraftStructuringStep
-from ..slide_alignment import SlideIdAligner
 from .types import (
     DraftAccumulator,
     DraftStructuringOptions,
@@ -21,5 +20,4 @@ __all__ = [
     "StaticArtifacts",
     "card_slot_id",
     "card_slot_fulfilled",
-    "SlideIdAligner",
 ]

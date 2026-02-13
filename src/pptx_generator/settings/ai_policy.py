@@ -55,29 +55,7 @@ def resolve_template_ai_policy_path(path: Path | None = None) -> PolicyResolutio
     )
 
 
-def resolve_layout_ai_policy_path(path: Path | None = None) -> PolicyResolution:
-    """レイアウト AI ポリシーの探索順を統一する（パッケージ同梱が既定）。"""
-
-    return _resolve_policy(
-        explicit=path,
-        env_var="PPTX_LAYOUT_AI_POLICY",
-        package_filename="layout.json",
-    )
-
-
-def resolve_slide_ai_policy_path(path: Path | None = None) -> PolicyResolution:
-    """スライド生成 AI ポリシーの探索順を統一する（パッケージ同梱が既定）。"""
-
-    return _resolve_policy(
-        explicit=path,
-        env_var="PPTX_SLIDE_AI_POLICY",
-        package_filename="slide.json",
-    )
-
-
 __all__ = [
     "PolicyResolution",
     "resolve_template_ai_policy_path",
-    "resolve_layout_ai_policy_path",
-    "resolve_slide_ai_policy_path",
 ]

@@ -37,14 +37,6 @@ from .outline import OutlineResult, execute_outline, print_outline_result
 from .trace_utils import record_stage_trace
 
 logger = logging.getLogger(__name__)
-_DEFAULT_SLIDE_ALIGNMENT_THRESHOLD = DraftStructuringOptions.__dataclass_fields__[
-    "slide_alignment_threshold"
-].default
-_DEFAULT_SLIDE_ALIGNMENT_MAX_CANDIDATES = DraftStructuringOptions.__dataclass_fields__[
-    "slide_alignment_max_candidates"
-].default
-
-
 @dataclass(slots=True)
 class ComposeCommandConfig:
     spec_path: Path
@@ -57,9 +49,6 @@ class ComposeCommandConfig:
     output_dir: Path
     rules_path: Path
     prepare_cards: Path
-    slide_alignment: bool
-    slide_alignment_threshold: Optional[float]
-    slide_alignment_max_candidates: Optional[int]
     draft_filename: str
     approved_filename: str
     log_filename: str
@@ -128,24 +117,7 @@ class ComposeCommandError(Exception):
         self.errors = errors
 
 
-def _resolve_slide_alignment_options(
-    threshold: Optional[float],
-    max_candidates: Optional[int],
-) -> tuple[float, int]:
-    resolved_threshold = (
-        _DEFAULT_SLIDE_ALIGNMENT_THRESHOLD if threshold is None else threshold
-    )
-    resolved_max_candidates = (
-        _DEFAULT_SLIDE_ALIGNMENT_MAX_CANDIDATES if max_candidates is None else max_candidates
-    )
-    return resolved_threshold, resolved_max_candidates
-
-
 def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
-    slide_alignment_threshold, slide_alignment_max_candidates = _resolve_slide_alignment_options(
-        config.slide_alignment_threshold,
-        config.slide_alignment_max_candidates,
-    )
     try:
         spec = load_jobspec(config.spec_path)
     except SpecValidationError as exc:
@@ -209,9 +181,6 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
             analysis_summary_path=config.analysis_summary_path,
             prepare_cards=config.prepare_cards,
             require_prepare=True,
-            slide_alignment=config.slide_alignment,
-            slide_alignment_threshold=slide_alignment_threshold,
-            slide_alignment_max_candidates=slide_alignment_max_candidates,
             draft_filename=config.draft_filename,
             approved_filename=config.approved_filename,
             log_filename=config.log_filename,
@@ -266,9 +235,6 @@ def run_compose_command(config: ComposeCommandConfig) -> ComposeCommandResult:
         appendix_limit=config.appendix_limit,
         analysis_summary_path=config.analysis_summary_path,
         draft_store_dir=(config.draft_output / "store"),
-        enable_slide_alignment=config.slide_alignment,
-        slide_alignment_threshold=slide_alignment_threshold,
-        slide_alignment_max_candidates=slide_alignment_max_candidates,
     )
 
     try:

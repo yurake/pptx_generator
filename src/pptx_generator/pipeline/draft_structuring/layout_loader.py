@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ...draft.draft_recommender import LayoutProfile
+from ..mapping.types import LayoutProfile
 from ...utils.usage_tags import normalize_usage_tags
 from ..table_anchor import normalize_placeholders
 from .errors import DraftStructuringError

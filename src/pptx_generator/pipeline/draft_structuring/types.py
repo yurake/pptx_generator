@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 from ...models import ContentSlide, DraftDocument, DraftSection, GenerateReadyDocument, Slide
-from ...settings.ai_policy import resolve_layout_ai_policy_path
 from ...prepare.models import PrepareCard
 
 
@@ -27,18 +26,6 @@ class DraftStructuringOptions:
     appendix_limit: int = 5
     analysis_summary_path: Path | None = None
     draft_store_dir: Path | None = None
-    enable_ai_recommender: bool = True
-    ai_weight: float = 0.25
-    diversity_weight: float = 0.05
-    max_layout_candidates: int = 5
-    layout_ai_policy_path: Path | None = field(
-        default_factory=lambda: resolve_layout_ai_policy_path().path
-    )
-    layout_ai_policy_id: str | None = "layout-default"
-    enable_ai_simulation: bool = True
-    enable_slide_alignment: bool = True
-    slide_alignment_threshold: float = 0.6
-    slide_alignment_max_candidates: int = 12
 
 
 @dataclass(slots=True)

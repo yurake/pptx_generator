@@ -240,7 +240,7 @@ def configure_llm_logger(log_dir: Path | None = None) -> None:
 
     target_dir = log_dir or Path("logs")
     target_dir.mkdir(parents=True, exist_ok=True)
-    llm_logger = logging.getLogger("pptx_generator.slide_ai.llm")
+    llm_logger = logging.getLogger("pptx_generator.prepare_ai.llm")
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 
     class _LLMLogFilter(logging.Filter):
