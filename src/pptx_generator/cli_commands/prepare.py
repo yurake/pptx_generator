@@ -227,9 +227,9 @@ def create_prepare_command(
     )
     @click.option(
         "--mode",
-        type=click.Choice(["dynamic", "static"], case_sensitive=False),
+        type=click.Choice(["dynamic"], case_sensitive=False),
         required=True,
-        help="カード生成モード。static は Blueprint を利用する",
+        help="カード生成モード。dynamic のみ利用可能",
     )
     @click.option(
         "--jobspec",
