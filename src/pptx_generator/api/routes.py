@@ -84,7 +84,9 @@ def _prepare_prepare_payload(queue: InProcessJobQueue, tx_root: Path, transactio
     for src in sources:
         require_path_exists(src, "prepare_sources")
     payload["prepare_inputs"] = sources
-    payload["mode"] = (payload.get("mode") or "dynamic").lower()
+    payload["mode"] = (payload.get("mode") or "static").lower()
+    if payload["mode"] != "static":
+        abort_error(422, "validation_error", "mode must be static")
     return payload
 
 

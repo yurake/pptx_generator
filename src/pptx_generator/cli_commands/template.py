@@ -12,13 +12,7 @@ from pptx_generator.cli_handlers.template_commands import (
 from pptx_generator.runtime.job_queue import run_job_sync
 
 from pptx_generator.cli_handlers.common import log_current_llm_provider
-from pptx_generator.cli_hooks import (
-    STAGE_TEMPLATE,
-    derive_template_id_from_template_path,
-    load_hooks_for_template_id,
-    slide_contexts_from_blueprint,
-    ensure_hook_skeleton,
-)
+from pptx_generator.cli_hooks.template_id import derive_template_id_from_template_path
 
 
 def create_template_command(
@@ -168,45 +162,7 @@ def create_template_command(
 
         log_current_llm_provider("template")
 
-        hook_manager = None
         effective_template_id = template_id or derive_template_id_from_template_path(template_path)
-        layout_mode_lower = mode.lower()
-        stage_env = {
-            "PPTX_STAGE": STAGE_TEMPLATE,
-            "PPTX_TEMPLATE_ID": effective_template_id,
-            "PPTX_TEMPLATE_PATH": str(template_path.resolve()),
-            "PPTX_STAGE_OUTPUT_DIR": str(output.resolve()),
-            "PPTX_LAYOUT_MODE": layout_mode_lower,
-            "PPTX_TEMPLATE_FORMAT": format,
-            "PPTX_TEMPLATE_LAYOUT_FILTER": layout or "",
-            "PPTX_TEMPLATE_ANCHOR_FILTER": anchor or "",
-            "PPTX_TEMPLATE_WITH_RELEASE": "1" if with_release else "0",
-            "PPTX_TEMPLATE_BRAND": brand or "",
-            "PPTX_TEMPLATE_VERSION": version or "",
-            "PPTX_TEMPLATE_RELEASE_OUTPUT": str(release_output.resolve()),
-            "PPTX_TEMPLATE_BASELINE_RELEASE": str(baseline_release) if baseline_release else "",
-            "PPTX_TEMPLATE_GOLDEN_SPEC_COUNT": str(len(golden_specs)),
-            "PPTX_TEMPLATE_AI_POLICY": str(template_ai_policy) if template_ai_policy else "",
-            "PPTX_TEMPLATE_AI_POLICY_ID": template_ai_policy_id or "",
-            "PPTX_TEMPLATE_DISABLE_AI": "1" if disable_template_ai else "0",
-            "PPTX_TEMPLATE_STATIC_SOURCE": static_source,
-            "PPTX_TEMPLATE_SLIDE_SNAPSHOT": "1" if slide else "0",
-            "PPTX_TEMPLATE_FORCE": "1" if force else "0",
-        }
-        if layout_mode_lower == "static":
-            hook_manager = load_hooks_for_template_id(effective_template_id)
-        if hook_manager:
-            executed, continue_default = hook_manager.run_stage_hook(
-                STAGE_TEMPLATE,
-                env=stage_env,
-            )
-            if executed:
-                click.echo(
-                    "[hooks] template stage executed via external hook "
-                    f"(template_id={effective_template_id})"
-                )
-                if not continue_default:
-                    return
 
         config = TemplateCommandConfig(
             template_path=template_path,
@@ -243,52 +199,13 @@ def create_template_command(
                 click.echo(message, err=True)
             raise click.exceptions.Exit(code=exc.exit_code) from exc
 
-        blueprint_slides = None
-        if result.extraction.template_spec.blueprint is not None:
-            blueprint_slides = [
-                slide.model_dump(mode="json")
-                for slide in result.extraction.template_spec.blueprint.slides
-            ]
-        contexts = []
-        if blueprint_slides:
-            contexts = slide_contexts_from_blueprint(
-                blueprint_slides,
-                prompts_dir=result.extraction.prompt_templates_dir,
-            )
-            skeleton_path = ensure_hook_skeleton(
-                effective_template_id,
-                [ctx.key for ctx in contexts],
-            )
-            if skeleton_path:
-                click.echo(f"[hooks] scaffold created: {skeleton_path}")
-            if hook_manager is None:
-                hook_manager = load_hooks_for_template_id(effective_template_id)
-
-        if hook_manager:
-            stage_env_with_outputs = dict(stage_env)
-            stage_env_with_outputs.update(
-                {
-                    "PPTX_TEMPLATE_SPEC_PATH": str(result.extraction.template_spec_path.resolve()),
-                    "PPTX_JOBSPEC_SCAFFOLD_PATH": str(result.extraction.jobspec_path.resolve()),
-                    "PPTX_BRANDING_PATH": str(result.extraction.branding_path.resolve()),
-                }
-            )
-            if contexts:
-                hook_manager.run_slide_hooks(
-                    STAGE_TEMPLATE,
-                    slides=contexts,
-                    env=stage_env_with_outputs,
-                    continue_default_filter=True,
-                    allow_fallback_context=True,
-                )
-
         extraction_result = result.extraction
 
         if extraction_result.prompt_templates_dir is not None:
             click.echo(f"プロンプト雛形を出力しました: {extraction_result.prompt_templates_dir}")
             if extraction_result.prompt_templates_created:
                 click.echo(
-                    f"  -> {extraction_result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて編集し、static prepare で反映してください。"
+                    f"  -> {extraction_result.prompt_templates_created} 件のスライド雛形を生成しました。必要に応じて編集し、prepare で反映してください。"
                 )
             else:
                 click.echo("  -> 既存の雛形を保持しました。変更があればファイルを手動で更新してください。")

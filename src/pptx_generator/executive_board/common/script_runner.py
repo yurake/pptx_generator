@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import sys
 import os
 from pathlib import Path
 from typing import Iterable
@@ -43,6 +44,7 @@ def run_prepare_scripts(
 ) -> None:
     env = _base_env(stage="prepare", output_dir=output_dir, context_path=context_path)
     env["PPTX_PREPARE_OUTPUT_DIR"] = str(output_dir.resolve())
+    env["PPTX_MODE"] = "static"
     if jobspec_path is not None:
         env["PPTX_JOBSPEC_PATH"] = str(jobspec_path.resolve())
     if prepare_inputs:
@@ -78,8 +80,14 @@ def run_compose_scripts(
         from pptx_generator.executive_board.overview import generate_ready_from_input_sample
         from pptx_generator.executive_board.system import generate_ready_from_requirements
 
-        generate_ready_from_input_sample.main()
-        generate_ready_from_requirements.main()
+        original_argv = sys.argv
+        try:
+            sys.argv = [__file__]
+            generate_ready_from_input_sample.main()
+            sys.argv = [__file__]
+            generate_ready_from_requirements.main()
+        finally:
+            sys.argv = original_argv
 
 
 def run_gen_scripts(
@@ -131,4 +139,3 @@ def run_gen_scripts(
                 os.environ.pop("PPTX_SLIDE_PAGE_NO", None)
                 os.environ.pop("PPTX_SLIDE_INDEX", None)
             runners[name]()
-

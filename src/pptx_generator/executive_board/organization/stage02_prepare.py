@@ -16,6 +16,9 @@ def _configure_sys_path() -> None:
     src_dir = Path(__file__).resolve().parents[3] / "src"
     if str(src_dir) not in sys.path:
         sys.path.insert(0, str(src_dir))
+    organization_dir = Path(__file__).resolve().parent
+    if str(organization_dir) not in sys.path:
+        sys.path.insert(0, str(organization_dir))
 
 
 _configure_sys_path()
