@@ -289,7 +289,7 @@ def _enqueue_job(queue: InProcessJobQueue, *, stage: str, job_id: str, transacti
             payload=payload,
             workdir=Path(_resolve_output_root(transaction_id, stage, job_id)),
             compose_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "compose", ["generate_ready_url"]),
-            template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["diagnostics_url"], allow_missing=True),
+            template_artifacts=_ensure_stage_artifacts(queue, tx_root, transaction_id, "template", ["jobspec_url"], allow_missing=True),
         )
     else:
         def _noop_job():

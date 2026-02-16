@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from pptx_generator.cli_hooks.template_id import derive_template_id_from_template_path
@@ -133,8 +134,25 @@ def build_compose_job(payload: dict, workdir: Path, template_artifacts: dict, pr
     return run
 
 
+def _resolve_template_basename(template_artifacts: dict) -> str | None:
+    jobspec = template_artifacts.get("jobspec_url")
+    if not isinstance(jobspec, str) or not jobspec:
+        return None
+    try:
+        payload = json.loads(Path(jobspec).read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    meta = payload.get("meta") if isinstance(payload, dict) else None
+    if not isinstance(meta, dict):
+        return None
+    template_path = meta.get("template_path")
+    if isinstance(template_path, str) and template_path.strip():
+        return Path(template_path).name
+    return None
+
 def build_gen_job(payload: dict, workdir: Path, compose_artifacts: dict, template_artifacts: dict):
-    pptx_path = Path(workdir) / "proposal.pptx"
+    template_name = _resolve_template_basename(template_artifacts)
+    pptx_path = Path(workdir) / (template_name or "proposal.pptx")
     pdf_path = Path(workdir) / "proposal.pdf"
     export_pdf = bool(payload.get("export_pdf", False))
     context_path = workdir.parent.parent / "hook_context.json"

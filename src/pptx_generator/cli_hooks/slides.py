@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, Iterable, List, Sequence
 
 from pptx_generator.cli_handlers.prepare import slugify_prompt_layout
 
-from .manager import SlideContext
+@dataclass
+class SlideContext:
+    key: str
+    index: int
+    slide_id: str | None
+    layout: str | None
+    extra_env: dict[str, str]
 
 
 def build_slide_key(index: int, layout: str | None, slide_id: str | None) -> str:
