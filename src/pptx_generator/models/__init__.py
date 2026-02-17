@@ -180,5 +180,4 @@ __all__ = [
     "TemplateBlueprintSlide",
     "TemplateBlueprint",
     "TemplateSpec",
-    # template release
 ]
