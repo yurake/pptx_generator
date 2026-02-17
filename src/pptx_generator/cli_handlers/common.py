@@ -10,10 +10,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from pptx_generator.config import ConfigManager
-from pptx_generator.llm import log_provider_resolution, resolve_llm_provider
 from pptx_generator.logging import LOG_FORMAT, ensure_rotating_file_handler, ensure_stream_handler
 from pptx_generator.models import JobSpec
-from pptx_generator.template import load_jobspec_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +137,7 @@ def determine_log_level(verbose: bool, debug: bool) -> tuple[int, list[tuple[int
 
 def load_jobspec(path: Path) -> JobSpec:
     logger.info("Loading JobSpec from %s", path.resolve())
-    return load_jobspec_from_path(path)
+    return _load_jobspec_from_path(path)
 
 
 def resolve_layouts_path(
@@ -227,62 +225,16 @@ def resolve_template_path(
 
 
 def log_current_llm_provider(context: str) -> None:
-    resolution = resolve_llm_provider()
-    log_provider_resolution(
-        logging.getLogger("pptx_generator.cli.llm"),
-        component=context,
-        resolution=resolution,
-    )
+    logger.info("LLM provider resolved: component=%s provider=disabled source=local", context)
+
 
 
 def configure_llm_logger(log_dir: Path | None = None) -> None:
-    """LLM ログのファイル・ストリーム出力を準備する。"""
+    return
+
 
     target_dir = log_dir or Path("logs")
     target_dir.mkdir(parents=True, exist_ok=True)
-    llm_logger = logging.getLogger("pptx_generator.prepare_ai.llm")
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-
-    class _LLMLogFilter(logging.Filter):
-        def filter(self, record: logging.LogRecord) -> bool:
-            return True
-
-    if not any(isinstance(f, _LLMLogFilter) for f in llm_logger.filters):
-        llm_logger.addFilter(_LLMLogFilter())
-
-    existing_handler = next(
-        (
-            handler
-            for handler in llm_logger.handlers
-            if isinstance(handler, logging.FileHandler)
-            and getattr(handler, "baseFilename", None) == str(target_dir / OUT_LOG_FILENAME)
-        ),
-        None,
-    )
-    if existing_handler:
-        existing_handler.setLevel(logging.INFO)
-        existing_handler.setFormatter(formatter)
-    else:
-        ensure_rotating_file_handler(
-            llm_logger,
-            file_path=target_dir / OUT_LOG_FILENAME,
-            level=logging.INFO,
-            formatter=formatter,
-        )
-
-    stream_handler_exists = any(
-        isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
-        for handler in llm_logger.handlers
-    )
-    if not stream_handler_exists:
-        ensure_stream_handler(
-            llm_logger,
-            level=logging.INFO,
-            formatter=formatter,
-            stream=sys.stdout,
-        )
-    llm_logger.setLevel(logging.INFO)
-    llm_logger.propagate = False
 
 
 def configure_file_logging(log_dir: Path | None = None) -> None:
@@ -312,3 +264,45 @@ def dump_json(path: Path, payload: object) -> None:
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     path.write_text(text, encoding="utf-8")
     logger.info("Saved JSON to %s", path.resolve())
+
+
+def _load_jobspec_from_path(path: Path) -> JobSpec:
+    raw = path.read_text(encoding="utf-8")
+    try:
+        return JobSpec.model_validate_json(raw)
+    except Exception:
+        pass
+
+    from pptx_generator.models import JobSpecScaffold, JobMeta, JobAuth, Slide
+
+    try:
+        scaffold = JobSpecScaffold.model_validate_json(raw)
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"jobspec の読み込みに失敗しました: {path}") from exc
+
+    template_path = scaffold.meta.template_path
+    template_id = scaffold.meta.template_id
+    title = template_id or Path(template_path).stem
+
+    meta = JobMeta(
+        schema_version=scaffold.meta.schema_version,
+        title=title,
+        template_path=template_path,
+        template_id=template_id,
+        created_at=scaffold.meta.generated_at,
+        layouts_path=scaffold.meta.layouts_path,
+        template_spec_path=scaffold.meta.template_spec_path,
+    )
+    auth = JobAuth(created_by="cli")
+    slides = []
+    for slide in scaffold.slides:
+        auto_draw = [p.anchor for p in slide.placeholders if p.auto_draw and p.anchor]
+        slides.append(
+            Slide(
+                id=slide.id,
+                layout=slide.layout,
+                auto_draw_anchors=auto_draw,
+            )
+        )
+
+    return JobSpec(meta=meta, auth=auth, slides=slides)

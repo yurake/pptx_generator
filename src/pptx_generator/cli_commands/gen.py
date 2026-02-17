@@ -18,11 +18,18 @@ def create_gen_command(
     default_pdf_retries: int,
 ) -> click.Command:
 
+    def _derive_output_dir(generate_ready_path: Path, output_dir: Path) -> Path:
+        if output_dir != default_output_dir:
+            return output_dir
+        for parent in generate_ready_path.parents:
+            if parent.name == "compose":
+                return parent.parent / "gen"
+        return output_dir
+
     @click.command("gen")
     @click.argument(
         "generate_ready_path",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
     )
     @click.option(
         "--output",
@@ -41,8 +48,7 @@ def create_gen_command(
     )
     @click.option(
         "--rules",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=default_rules_path,
         show_default=True,
         help="検証ルール設定ファイル",
@@ -68,8 +74,7 @@ def create_gen_command(
     )
     @click.option(
         "--libreoffice-path",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
         help="LibreOffice (soffice) 実行ファイルのパス",
     )
@@ -95,15 +100,13 @@ def create_gen_command(
     )
     @click.option(
         "--polisher-path",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
         help="Open XML Polisher 実行ファイルのパス",
     )
     @click.option(
         "--polisher-rules",
-        type=click.Path(exists=True, dir_okay=False,
-                        readable=True, path_type=Path),
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
         default=None,
         help="Open XML Polisher のルール設定ファイル",
     )
@@ -121,8 +124,7 @@ def create_gen_command(
     )
     @click.option(
         "--polisher-cwd",
-        type=click.Path(exists=True, file_okay=False,
-                        dir_okay=True, path_type=Path),
+        type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
         default=None,
         help="Polisher 実行時のカレントディレクトリ",
     )
@@ -170,9 +172,11 @@ def create_gen_command(
             click.echo("gen の追加オプションはサポートされません", err=True)
             raise click.exceptions.Exit(code=2)
 
+        resolved_output_dir = _derive_output_dir(generate_ready_path, output_dir)
+
         run_gen_scripts(
             generate_ready_path=generate_ready_path,
-            output_dir=output_dir,
+            output_dir=resolved_output_dir,
             pptx_name=pptx_name,
             context_path=None,
         )

@@ -13,20 +13,14 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 
 from pptx_generator.template import extract_branding_config
-from pptx_generator.cli_handlers.prepare import (
+from pptx_generator.cli_handlers.prompt_utils import (
     PROMPT_TEMPLATE_FILENAME_PATTERN,
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
-    SLIDE_INPUTS_FILENAME,
     build_prompt_identifier,
     slugify_prompt_layout,
 )
-from pptx_generator.layout_validation import (
-    LayoutValidationError,
-    LayoutValidationResult,
-    LayoutValidationOptions,
-    LayoutValidationSuite,
-)
+from pptx_generator.cli_handlers.prepare import SLIDE_INPUTS_FILENAME
 from pptx_generator.models import (
     JobSpecScaffold,
     TemplateBlueprint,
@@ -40,7 +34,6 @@ from pptx_generator.pipeline import (
     TemplateExtractorOptions,
 )
 from pptx_generator.pipeline.analyzer import SlideSnapshot
-from pptx_generator.settings.ai_policy import resolve_template_ai_policy_path
 from pptx_generator.cli_handlers.trace_utils import record_stage_trace
 from pptx_generator.models import JobMeta, JobAuth, JobSpec
 
@@ -56,7 +49,7 @@ class TemplateExtractionResult:
     template_spec_path: Path
     branding_path: Path
     jobspec_path: Path
-    validation_result: LayoutValidationResult | None
+    validation_result: Any | None
     output_dir: Path
     slide_snapshot_path: Path | None
     prompt_templates_dir: Path | None
@@ -71,9 +64,6 @@ def run_template_extraction(
     layout: str | None,
     anchor: str | None,
     output_format: str,
-    template_ai_policy: Path | None,
-    template_ai_policy_id: str | None,
-    disable_template_ai: bool,
     layout_mode: str,
     static_source: str,
     skip_validation: bool = False,
@@ -91,15 +81,6 @@ def run_template_extraction(
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    policy_resolution = resolve_template_ai_policy_path(
-        None if disable_template_ai else template_ai_policy
-    )
-    ai_policy_path = None if disable_template_ai else policy_resolution.path
-    ai_policy_id = template_ai_policy_id or os.getenv("PPTX_TEMPLATE_AI_POLICY_ID")
-    effective_disable = disable_template_ai or ai_policy_path is None
-    if effective_disable and not disable_template_ai:
-        logger.info("Template AI validation disabled: no policy file available")
 
     extractor = TemplateExtractor(extractor_options)
     template_spec = extractor.extract()
@@ -133,33 +114,8 @@ def run_template_extraction(
     branding_path.write_text(branding_text, encoding="utf-8")
     logger.info("Artifact written: branding %s", branding_path.resolve())
 
-    validation_result: LayoutValidationResult | None = None
-    if not skip_validation:
-        logger.info("Starting layout validation for %s", template_path)
-        validation_options = LayoutValidationOptions(
-            template_path=template_path,
-            output_dir=output_dir,
-            template_ai_policy_path=ai_policy_path,
-            template_ai_policy_id=ai_policy_id,
-            disable_template_ai=effective_disable,
-        )
-        validation_suite = LayoutValidationSuite(validation_options)
-        validation_result = validation_suite.run()
-        logger.info(
-            "Layout validation finished: warnings=%d errors=%d",
-            validation_result.warnings_count,
-            validation_result.errors_count,
-        )
-
-        try:
-            layouts_relative = str(
-                validation_result.layouts_path.relative_to(output_dir)
-            )
-        except ValueError:
-            layouts_relative = str(validation_result.layouts_path)
-    else:
-        validation_result = None
-        layouts_relative = None
+    validation_result = None
+    layouts_relative = None
 
     template_spec_relative: str | None = None
     try:
@@ -271,7 +227,7 @@ def echo_template_extraction_result(result: TemplateExtractionResult) -> None:
             % (validation_result.warnings_count, validation_result.errors_count)
         )
     else:
-        click.echo("検証をスキップしました (--force)")
+        click.echo("検証をスキップしました")
 
     if result.slide_snapshot_path is not None:
         click.echo(f"スライドスナップショットを出力しました: {result.slide_snapshot_path}")

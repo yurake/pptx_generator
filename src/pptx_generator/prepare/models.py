@@ -2,260 +2,128 @@ from __future__ import annotations
 
 import hashlib
 import json
-import textwrap
-from datetime import datetime, timezone
-from typing import Any, Iterable, Literal
+from typing import Any, Iterable
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-
-PrepareActionType = Literal["approve", "return", "comment", "autofix", "regenerate"]
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PrepareBodyBlock(BaseModel):
-    """本文のブロック定義。"""
+    model_config = ConfigDict(extra="allow")
 
     type: str
     text: str | None = None
-    items: list[dict[str, Any]] | None = None  # bullets type用の構造化データ
-    headers: list[str] | None = None
-    rows: list[list[str]] | None = None
-    ref: str | None = None
     description: str | None = None
     data: dict[str, Any] | None = None
-
-    @field_validator("text")
-    @classmethod
-    def normalize_text(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        stripped = value.strip()
-        return stripped or None
-
-
-class PrepareNoteEntry(BaseModel):
-    """ノート欄に出力する補足情報。"""
-
-    type: str = "note"
-    text: str
-
-    @field_validator("text")
-    @classmethod
-    def validate_text(cls, value: str) -> str:
-        stripped = value.strip()
-        if not stripped:
-            raise ValueError("note text must not be empty")
-        return stripped
+    headers: list[str] | None = None
+    rows: list[list[Any]] | None = None
 
 
 class PrepareCardContent(BaseModel):
-    """カードの本文構造。"""
+    model_config = ConfigDict(extra="allow")
 
+    headline: str | None = None
     title: str | None = None
-    headline: str | None = None  # このページで最も伝えたい結論を短く明示する
     subtitle: str | None = None
     body: list[PrepareBodyBlock] = Field(default_factory=list)
-    notes: list[PrepareNoteEntry] = Field(default_factory=list)
-
-    @field_validator("title", "headline", "subtitle", mode="before")
-    @classmethod
-    def normalize_heading(cls, value: Any) -> str | None:  # noqa: ANN401
-        if value is None:
-            return None
-        text = str(value).strip()
-        return text or None
-
-    @model_validator(mode="after")
-    def ensure_single_primary_heading(self) -> "PrepareCardContent":
-        has_title = bool(self.title)
-        has_headline = bool(self.headline)
-        if has_title == has_headline:
-            msg = "title と headline はどちらか一方のみ指定してください"
-            raise ValueError(msg)
-        return self
+    notes: list[Any] = Field(default_factory=list)
 
 
 class PrepareCardRole(BaseModel):
-    """カードの役割情報。"""
+    model_config = ConfigDict(extra="allow")
 
     story_phase: str | None = None
     intent_tags: list[str] = Field(default_factory=list)
 
-    @field_validator("story_phase", mode="before")
-    @classmethod
-    def normalize_story_phase(cls, value: Any) -> str | None:
-        if value is None:
-            return None
-        text = str(value).strip()
-        return text or None
-
-    @field_validator("intent_tags", mode="before")
-    @classmethod
-    def normalize_intent_tags(cls, value: Any) -> list[str]:
-        if value is None:
-            return []
-        if isinstance(value, list):
-            return [str(item).strip() for item in value if str(item).strip()]
-        return [str(value).strip()]
-
 
 class PrepareCard(BaseModel):
-    """テンプレート非依存のプレペアカード。"""
+    model_config = ConfigDict(extra="allow")
 
-    card_id: str = Field(..., pattern=r"^[a-z0-9][a-z0-9\-]*$")
+    card_id: str
     order: int | None = None
-    role: PrepareCardRole
-    content: PrepareCardContent
+    role: PrepareCardRole = Field(default_factory=PrepareCardRole)
+    content: PrepareCardContent = Field(default_factory=PrepareCardContent)
     meta: dict[str, Any] = Field(default_factory=dict)
 
-    # ------------------------------------------------------------------ #
-    # Convenience helpers for downstream pipeline
-    # ------------------------------------------------------------------ #
-    def resolved_intent_tags(self) -> list[str]:
-        intents = [tag for tag in self.role.intent_tags if tag]
-        if not intents and self.role.story_phase:
-            intents = [self.role.story_phase]
-        return intents
-
-    def primary_intent(self) -> str | None:
-        intents = self.resolved_intent_tags()
-        if intents:
-            return intents[0]
-        return self.role.story_phase
-
     def headline_or_title(self) -> str:
-        value = self.content.headline or self.content.title
-        return value.strip() if value else ""
+        for candidate in (
+            self.content.headline,
+            self.content.title,
+            self.meta.get("headline"),
+            self.meta.get("title"),
+        ):
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        return ""
 
     def subtitle_or_chapter(self) -> str | None:
         subtitle = self.content.subtitle
-        if subtitle and subtitle.strip():
+        if isinstance(subtitle, str) and subtitle.strip():
             return subtitle.strip()
-        source_chapter = (self.meta.get("source_chapter") if isinstance(self.meta, dict) else None) or {}
-        chapter_title = source_chapter.get("title")
-        if isinstance(chapter_title, str) and chapter_title.strip():
-            return chapter_title.strip()
+        meta_value = self.meta.get("chapter") or self.meta.get("chapter_title")
+        if isinstance(meta_value, str) and meta_value.strip():
+            return meta_value.strip()
         return None
+
+    def notes_text(self) -> list[str]:
+        lines: list[str] = []
+        for item in self.content.notes:
+            if isinstance(item, PrepareBodyBlock):
+                if item.text:
+                    lines.append(item.text)
+                if item.description:
+                    lines.append(item.description)
+                continue
+            if isinstance(item, dict):
+                text = item.get("text") or item.get("description")
+                if isinstance(text, str) and text.strip():
+                    lines.append(text.strip())
+                continue
+            if isinstance(item, str) and item.strip():
+                lines.append(item.strip())
+        return lines
+
+    def primary_intent(self) -> str | None:
+        return self.role.intent_tags[0] if self.role.intent_tags else None
+
+    def resolved_intent_tags(self) -> list[str]:
+        return [tag for tag in self.role.intent_tags if tag]
+
+    def blueprint_meta(self) -> dict[str, Any] | None:
+        meta = self.meta.get("blueprint")
+        return meta if isinstance(meta, dict) else None
 
     def iter_body_text(self) -> Iterable[str]:
         for block in self.content.body:
-            yield from self._iter_block_text(block)
-            yield from self._iter_block_data(block)
-            yield from self._iter_block_rows(block)
-            yield from self._iter_block_description(block)
-
-    @staticmethod
-    def _yield_segments(value: str) -> Iterable[str]:
-        if "\n" in value:
-            lines = value.splitlines()
-        else:
-            lines = [value]
-        for line in lines:
-            chunk = line.strip()
-            if not chunk:
+            if block.type == "table":
                 continue
-            if len(chunk) <= 200:
-                yield chunk
+            if block.type == "bullets":
+                items = None
+                if isinstance(block.data, dict):
+                    items = block.data.get("items")
+                if isinstance(items, list):
+                    for entry in items:
+                        if isinstance(entry, dict):
+                            text = entry.get("text")
+                            if isinstance(text, str) and text.strip():
+                                yield text.strip()
+                        elif isinstance(entry, str) and entry.strip():
+                            yield entry.strip()
                 continue
-            for segment in textwrap.wrap(
-                chunk, width=200, drop_whitespace=True, break_long_words=True
-            ):
-                segment_stripped = segment.strip()
-                if segment_stripped:
-                    yield segment_stripped
-
-    def _iter_block_text(self, block: PrepareBodyBlock) -> Iterable[str]:
-        value = block.text
-        if not isinstance(value, str):
-            return []
-        text = value.strip()
-        if not text:
-            return []
-        return self._yield_segments(text)
-
-    def _iter_block_data(self, block: PrepareBodyBlock) -> Iterable[str]:
-        # items フィールドを優先的に参照（bullets type用）
-        items = block.items if block.items is not None else (
-            block.data.get("items") if isinstance(block.data, dict) else None
-        )
-        if not isinstance(items, list):
-            return []
-
-        for item in items:
-            if isinstance(item, str):
-                text = item.strip()
-                if text:
-                    yield from self._yield_segments(text)
-                continue
-            if isinstance(item, dict):
-                yield from self._iter_data_mapping(item)
-
-    def _iter_block_rows(self, block: PrepareBodyBlock) -> Iterable[str]:
-        if not isinstance(block.rows, list):
-            return []
-
-        for row in block.rows:
-            row_text = " | ".join(cell.strip() for cell in row if cell and cell.strip())
-            if row_text:
-                yield from self._yield_segments(row_text)
-
-    def _iter_block_description(self, block: PrepareBodyBlock) -> Iterable[str]:
-        value = block.description
-        if not isinstance(value, str):
-            return []
-        desc = value.strip()
-        if not desc:
-            return []
-        return self._yield_segments(desc)
-
-    def _iter_data_mapping(self, item: dict[str, Any]) -> Iterable[str]:
-        line_raw = item.get("text")
-        if not isinstance(line_raw, str):
-            return []
-        line = line_raw.strip()
-        if not line:
-            return []
-
-        level_raw = item.get("level", 0)
-        try:
-            level = max(int(level_raw), 0)
-        except (TypeError, ValueError):
-            level = 0
-        indent = "  " * level
-        for segment in self._yield_segments(line):
-            yield f"{indent}{segment}"
-
-    def notes_text(self) -> list[str]:
-        return [note.text.strip() for note in self.content.notes if note.text.strip()]
-
-    def resolved_chapter_title(self) -> str:
-        source_chapter = (self.meta.get("source_chapter") if isinstance(self.meta, dict) else None) or {}
-        title = source_chapter.get("title")
-        if isinstance(title, str) and title.strip():
-            return title.strip()
-        blueprint = (self.meta.get("blueprint") if isinstance(self.meta, dict) else None) or {}
-        layout = blueprint.get("layout")
-        if isinstance(layout, str) and layout.strip():
-            return layout.strip()
-        return self.content.title or self.content.headline or ""
-
-    def blueprint_meta(self) -> dict[str, Any] | None:
-        if isinstance(self.meta, dict):
-            blueprint = self.meta.get("blueprint")
-            if isinstance(blueprint, dict):
-                return blueprint
-        return None
+            if block.text and block.text.strip():
+                yield block.text.strip()
+            if block.description and block.description.strip():
+                yield block.description.strip()
 
 
 class PrepareChapterDefinition(BaseModel):
-    """ストーリー章定義。"""
+    model_config = ConfigDict(extra="allow")
 
-    id: str = Field(..., pattern=r"^[a-z0-9\-]+$")
+    id: str
     title: str
-    description: str | None = None
 
 
 class PrepareStoryContext(BaseModel):
-    """プレペア全体の文脈情報。"""
+    model_config = ConfigDict(extra="allow")
 
     chapters: list[PrepareChapterDefinition] = Field(default_factory=list)
     tone: str | None = None
@@ -263,7 +131,7 @@ class PrepareStoryContext(BaseModel):
 
 
 class PrepareDocument(BaseModel):
-    """プレペアカード集合と文脈。"""
+    model_config = ConfigDict(extra="allow")
 
     prepare_id: str
     cards: list[PrepareCard] = Field(default_factory=list)
@@ -271,115 +139,22 @@ class PrepareDocument(BaseModel):
     meta: dict[str, Any] = Field(default_factory=dict)
 
     def compute_content_hash(self) -> str:
-        """成果物全体のハッシュ値を返す。"""
-
-        payload = self.model_dump(mode="json", exclude_none=True, exclude={"meta"})
-        digest = json.dumps(payload, ensure_ascii=False, sort_keys=True)
-        return hashlib.sha256(digest.encode("utf-8")).hexdigest()
-
-
-class PrepareLogEntry(BaseModel):
-    """HITL アクションログ。"""
-
-    card_id: str
-    version: int
-    action: PrepareActionType
-    actor: str | None = None
-    timestamp: datetime
-    notes: str | None = None
-    applied_autofix: list[str] = Field(default_factory=list)
-    diff_snapshot: dict[str, Any] | None = None
-
-    @field_validator("timestamp", mode="before")
-    @classmethod
-    def normalize_timestamp(cls, value: Any) -> datetime:
-        if isinstance(value, datetime):
-            return value
-        return datetime.fromisoformat(str(value))
-
-
-class PrepareAIRecord(BaseModel):
-    """生成 AI 呼び出しログ。"""
-
-    card_id: str
-    prompt_template: str
-    model: str = "mock-local"
-    prompt_fragment: str | None = None
-    response_digest: str | None = None
-    warnings: list[str] = Field(default_factory=list)
-    tokens: dict[str, int] = Field(default_factory=dict)
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    batch_card_ids: list[str] | None = None
-    prompt_template_path: str | None = None
-    prompt_template_instructions: str | None = None
-    slide_input_path: str | None = None
+        payload = self.model_dump(mode="json", exclude_none=True)
+        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
 
 
 class PrepareGenerationMeta(BaseModel):
-    """生成メタデータ。"""
+    model_config = ConfigDict(extra="allow")
 
-    prepare_id: str
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    policy_id: str | None = None
-    input_hash: str
-    cards: list[dict[str, Any]] = Field(default_factory=list)
-    statistics: dict[str, int] = Field(default_factory=dict)
-    mode: Literal["dynamic", "static"] = "dynamic"
+    template_id: str | None = None
+    template_source: str | None = None
     blueprint_path: str | None = None
     blueprint_hash: str | None = None
-    slot_coverage: dict[str, int] = Field(default_factory=dict)
-    constraints: dict[str, Any] = Field(default_factory=dict)
-    prompt_templates: list[dict[str, Any]] = Field(default_factory=list)
-    slide_inputs: list[dict[str, Any]] = Field(default_factory=list)
-    import_sources: list[dict[str, Any]] = Field(default_factory=list)
-    template_source: Literal["slide", "template"] = "template"
 
-    @classmethod
-    def from_document(
-        cls,
-        *,
-        document: PrepareDocument,
-        policy_id: str | None,
-        source_payload: dict[str, Any],
-        cards_meta: list[dict[str, Any]],
-        mode: Literal["dynamic", "static"] = "dynamic",
-        blueprint_path: str | None = None,
-        blueprint_hash: str | None = None,
-        slot_summary: dict[str, int] | None = None,
-        constraints: dict[str, Any] | None = None,
-        prompt_templates: list[dict[str, Any]] | None = None,
-        slide_inputs: list[dict[str, Any]] | None = None,
-        import_sources: list[dict[str, Any]] | None = None,
-        template_source: Literal["slide", "template"] = "template",
-    ) -> "PrepareGenerationMeta":
-        normalized_source = json.dumps(source_payload, ensure_ascii=False, sort_keys=True)
-        hash_value = hashlib.sha256(normalized_source.encode("utf-8")).hexdigest()
-        stats = {
-            "cards_total": len(document.cards),
-        }
-        slot_coverage = slot_summary or {}
-        if slot_summary:
-            stats.update(
-                {
-                    "required_slot_total": slot_summary.get("required_total", 0),
-                    "required_slot_fulfilled": slot_summary.get("required_fulfilled", 0),
-                    "optional_slot_total": slot_summary.get("optional_total", 0),
-                    "optional_slot_used": slot_summary.get("optional_used", 0),
-                }
-            )
-        return cls(
-            prepare_id=document.prepare_id,
-            policy_id=policy_id,
-            input_hash=hash_value,
-            cards=cards_meta,
-            statistics=stats,
-            mode=mode,
-            blueprint_path=blueprint_path,
-            blueprint_hash=blueprint_hash,
-            slot_coverage=slot_coverage,
-            constraints=constraints or {},
-            prompt_templates=prompt_templates or [],
-            slide_inputs=slide_inputs or [],
-            import_sources=import_sources or [],
-            template_source=template_source,
-        )
+
+class PrepareLogEntry(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    timestamp: str | None = None
+    message: str | None = None

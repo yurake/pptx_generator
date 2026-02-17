@@ -7,7 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Sequence
 
-from pptx_generator.cli_handlers.prepare import slugify_prompt_layout
+from pptx_generator.cli_handlers.prompt_utils import slugify_prompt_layout
 
 @dataclass
 class SlideContext:

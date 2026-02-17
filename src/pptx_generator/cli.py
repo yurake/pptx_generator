@@ -10,8 +10,6 @@ import click
 from dotenv import load_dotenv
 
 from .cli_handlers import (
-    PROMPT_USER_SECTION_END,  # noqa: F401 - re-exported for downstream usage
-    PROMPT_USER_SECTION_START,  # noqa: F401 - re-exported for downstream usage
     SLIDE_INPUTS_FILENAME,
     PrepareCommandConfig,
 )
@@ -83,7 +81,6 @@ load_dotenv()
 
 _OUTPUT_ROOT = get_output_root()
 DEFAULT_TEMPLATE_OUTPUT_DIR = build_output_dir("template", root=_OUTPUT_ROOT)
-DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR = build_output_dir("release", root=_OUTPUT_ROOT)
 DEFAULT_PREPARE_OUTPUT_DIR = build_output_dir("prepare", root=_OUTPUT_ROOT)
 DEFAULT_JOBSPEC_PATH = DEFAULT_TEMPLATE_OUTPUT_DIR / "jobspec.json"
 DEFAULT_COMPOSE_OUTPUT_DIR = build_output_dir("compose", root=_OUTPUT_ROOT)
@@ -126,7 +123,6 @@ app.add_command(prepare)
 
 template = create_template_command(
     default_extract_output=DEFAULT_TEMPLATE_OUTPUT_DIR,
-    default_release_output=DEFAULT_TEMPLATE_RELEASE_OUTPUT_DIR,
     default_mode=DEFAULT_TEMPLATE_LAYOUT_MODE,
 )
 app.add_command(template)

@@ -12,15 +12,12 @@ from pptx_generator.cli_handlers.template_commands import (
 from pptx_generator.runtime.job_queue import run_job_sync
 
 from pptx_generator.cli_handlers.common import log_current_llm_provider
-from pptx_generator.cli_hooks.template_id import derive_template_id_from_template_path
 
 
 def create_template_command(
     *,
     default_extract_output: Path,
-    default_release_output: Path,
     default_mode: str,
-    default_template_ai_policy: Path | None = None,
 ) -> click.Command:
     @click.command("template")
     @click.argument(
@@ -62,59 +59,6 @@ def create_template_command(
         help="テンプレートの想定運用モード。static を指定すると Blueprint を出力する",
     )
     @click.option(
-        "--with-release",
-        is_flag=True,
-        help="抽出・検証後にテンプレートリリースメタも生成する",
-    )
-    @click.option("--brand", type=str, default=None, help="--with-release 時のブランド名")
-    @click.option("--version", type=str, default=None, help="--with-release 時のテンプレートバージョン")
-    @click.option(
-        "--template-id",
-        type=str,
-        default=None,
-        help="--with-release 時のテンプレート識別子。未指定時は <brand>_<version> を使用",
-    )
-    @click.option(
-        "--release-output",
-        type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-        default=default_release_output,
-        show_default=True,
-        help="テンプレートリリース成果物の出力ディレクトリ",
-    )
-    @click.option("--generated-by", type=str, default=None, help="テンプレートリリースメタの生成者")
-    @click.option("--reviewed-by", type=str, default=None, help="テンプレートリリースメタのレビュー担当者")
-    @click.option(
-        "--baseline-release",
-        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-        default=None,
-        help="比較対象となる過去の template_release.json",
-    )
-    @click.option(
-        "--golden-spec",
-        "golden_specs",
-        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
-        multiple=True,
-        help="テンプレ互換性検証に使用する spec ファイル（複数指定可）",
-    )
-    @click.option(
-        "--template-ai-policy",
-        type=click.Path(dir_okay=False, readable=True, path_type=Path),
-        default=default_template_ai_policy,
-        help="テンプレート usage_tags 推定に使用する AI ポリシー JSON",
-    )
-    @click.option(
-        "--template-ai-policy-id",
-        type=str,
-        default=None,
-        help="テンプレート AI ポリシーセット内の利用対象 ID",
-    )
-    @click.option(
-        "--disable-template-ai",
-        is_flag=True,
-        default=False,
-        help="生成AIによる usage_tags 推定を無効化する",
-    )
-    @click.option(
         "--from",
         "static_source",
         type=click.Choice(["slide", "template"]),
@@ -142,18 +86,6 @@ def create_template_command(
         layout: str | None,
         anchor: str | None,
         mode: str,
-        with_release: bool,
-        brand: str | None,
-        version: str | None,
-        template_id: str | None,
-        release_output: Path,
-        generated_by: str | None,
-        reviewed_by: str | None,
-        baseline_release: Path | None,
-        golden_specs: tuple[Path, ...],
-        template_ai_policy: Path | None,
-        template_ai_policy_id: str | None,
-        disable_template_ai: bool,
         static_source: str,
         slide: bool,
         force: bool,
@@ -161,8 +93,6 @@ def create_template_command(
         """テンプレ stage（抽出・検証・必要に応じてリリース）を実行する。"""
 
         log_current_llm_provider("template")
-
-        effective_template_id = template_id or derive_template_id_from_template_path(template_path)
 
         config = TemplateCommandConfig(
             template_path=template_path,
@@ -172,18 +102,6 @@ def create_template_command(
             anchor=anchor,
             layout_mode=mode,
             static_source=static_source,
-            template_ai_policy=template_ai_policy,
-            template_ai_policy_id=template_ai_policy_id,
-            disable_template_ai=disable_template_ai,
-            with_release=with_release,
-            brand=brand,
-            version=version,
-            template_id=effective_template_id,
-            release_output=release_output,
-            generated_by=generated_by,
-            reviewed_by=reviewed_by,
-            baseline_release=baseline_release,
-            golden_specs=golden_specs,
             slide_snapshot=slide,
             force=force,
         )
@@ -212,10 +130,6 @@ def create_template_command(
 
         click.echo("テンプレ stage（抽出＋検証）が完了しました。")
 
-        if not result.release:
-            return
-
-        click.echo("テンプレ stage（抽出＋検証＋リリース）が完了しました。")
 
     return template
 

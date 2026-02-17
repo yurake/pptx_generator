@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pptx_generator.cli_hooks.template_id import derive_template_id_from_template_path
 from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
 from pptx_generator.cli_handlers.prepare import PrepareCommandError
-from pptx_generator.cli_handlers.rendering import GenerateCommandError
 from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.executive_board.common.script_runner import (
     run_prepare_scripts,
@@ -14,7 +12,17 @@ from pptx_generator.executive_board.common.script_runner import (
     run_gen_scripts,
 )
 
+class GenerateCommandError(Exception):
+    def __init__(self, message: str, *, exit_code: int) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
+
+
+
 DRAFT_DIRNAME = "draft.json"
+
+DEFAULT_RULES_PATH = Path(__file__).resolve().parents[1] / "config" / "pipeline_rules.json"
+
 
 __all__ = [
     "build_template_job",
@@ -31,9 +39,6 @@ __all__ = [
 def build_template_job(payload: dict, workdir: Path):
     layout_mode = payload.get("mode", "static")
     static_source = payload.get("static_source", "slide")
-    effective_template_id = payload.get("template_id") or derive_template_id_from_template_path(
-        Path(payload["template_path"])
-    )
     config = TemplateCommandConfig(
         template_path=Path(payload["template_path"]),
         output_dir=workdir,
@@ -42,18 +47,6 @@ def build_template_job(payload: dict, workdir: Path):
         anchor=payload.get("anchor"),
         layout_mode=layout_mode,
         static_source=static_source,
-        template_ai_policy=None,
-        template_ai_policy_id=None,
-        disable_template_ai=False,
-        with_release=bool(payload.get("with_release")),
-        brand=payload.get("brand"),
-        version=payload.get("version"),
-        template_id=effective_template_id,
-        release_output=workdir,
-        generated_by=None,
-        reviewed_by=None,
-        baseline_release=None,
-        golden_specs=(),
         slide_snapshot=bool(payload.get("slide_snapshot")),
         force=bool(payload.get("force")),
     )
@@ -63,7 +56,7 @@ def build_template_job(payload: dict, workdir: Path):
         artifacts = {
             "jobspec_url": str(workdir / "jobspec.json"),
             "template_spec_url": str(workdir / "template_spec.json"),
-            "diagnostics_url": str(workdir / "diagnostics.json"),
+            "diagnostics_url": str(DEFAULT_RULES_PATH),
         }
         return {"artifacts": artifacts, "result": result}
 
