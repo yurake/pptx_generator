@@ -4,10 +4,8 @@ from pathlib import Path
 
 import click
 
-from pptx_generator.cli_handlers import (
-    SLIDE_INPUTS_FILENAME,
-    PrepareCommandConfig,
-)
+from pptx_generator.stages.prepare.handler import SLIDE_INPUTS_FILENAME
+from pptx_generator.stages.prepare.models import PrepareCommandConfig
 from pptx_generator.executive_board.common.script_runner import run_prepare_scripts
 
 

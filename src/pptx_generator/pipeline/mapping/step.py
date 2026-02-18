@@ -17,7 +17,7 @@ from ...models import (
     PipelineFallbackError,
     TemplateStyle,
 )
-from ...prepare.models import PrepareDocument, PrepareCard
+from ...stages.prepare.data_models import PrepareDocument, PrepareCard
 from .catalog import load_layout_catalog
 from .llm_fit import (
     MappingTextFitClientConfigurationError,

@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pptx_generator.cli_handlers.compose import ComposeCommandConfig, ComposeCommandError, run_compose_command
-from pptx_generator.cli_handlers.prepare import PrepareCommandError
-from pptx_generator.cli_handlers.template_commands import TemplateCommandConfig, TemplateCommandError, run_template_command
+from pptx_generator.stages.compose.handler import ComposeCommandConfig, ComposeCommandError, run_compose_command
+from pptx_generator.stages.prepare.errors import PrepareCommandError
+from pptx_generator.stages.template.commands import TemplateCommandConfig, TemplateCommandError, run_template_command
 from pptx_generator.executive_board.common.script_runner import (
     run_prepare_scripts,
     run_compose_scripts,

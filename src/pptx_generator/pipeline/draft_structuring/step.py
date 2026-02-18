@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from ...prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
+from ...stages.prepare.data_models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ...models import (
     ContentApprovalDocument,
     ContentSlide,

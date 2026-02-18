@@ -17,11 +17,7 @@ from pptx_generator.models import JobSpec, SpecValidationError
 from pptx_generator.settings.loader import load_rules_config
 from pptx_generator.models import PipelineFallbackError
 
-from .common import (
-    load_jobspec,
-    resolve_layouts_path,
-    resolve_template_path,
-)
+from pptx_generator.stages.shared.common import load_jobspec, resolve_layouts_path, resolve_template_path
 from .mapping import (
     DEFAULT_GENERATE_READY_FILENAME,
     DEFAULT_GENERATE_READY_META_FILENAME,
@@ -34,7 +30,7 @@ from .mapping import (
     run_mapping_pipeline,
 )
 from .outline import OutlineResult, execute_outline, print_outline_result
-from .trace_utils import record_stage_trace
+from pptx_generator.stages.shared.trace_utils import record_stage_trace
 
 logger = logging.getLogger(__name__)
 @dataclass(slots=True)

@@ -29,7 +29,7 @@ from schedule_parser import (  # noqa: E402
     parse_schedule_markdown,
     save_schedule_json,
 )
-from pptx_generator.prepare.models import (  # noqa: E402
+from pptx_generator.stages.prepare.data_models import (  # noqa: E402
     PrepareBodyBlock,
     PrepareCard,
     PrepareCardContent,

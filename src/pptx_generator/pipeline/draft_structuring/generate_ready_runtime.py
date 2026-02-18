@@ -23,7 +23,7 @@ from ...models import (
     MappingSlideMeta,
     Slide,
 )
-from ...prepare.models import PrepareDocument, PrepareCard
+from ...stages.prepare.data_models import PrepareDocument, PrepareCard
 from .slide_elements import convert_slide_elements, merge_slide_elements
 
 logger = logging.getLogger(__name__)

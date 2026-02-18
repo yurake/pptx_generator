@@ -12,15 +12,15 @@ import click
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 
-from pptx_generator.template import extract_branding_config
-from pptx_generator.cli_handlers.prompt_utils import (
+from pptx_generator.stages.template.assets import extract_branding_config
+from pptx_generator.stages.shared.prompt_utils import (
     PROMPT_TEMPLATE_FILENAME_PATTERN,
     PROMPT_USER_SECTION_END,
     PROMPT_USER_SECTION_START,
     build_prompt_identifier,
     slugify_prompt_layout,
 )
-from pptx_generator.cli_handlers.prepare import SLIDE_INPUTS_FILENAME
+from pptx_generator.stages.prepare.handler import SLIDE_INPUTS_FILENAME
 from pptx_generator.models import (
     JobSpecScaffold,
     TemplateBlueprint,
@@ -34,7 +34,7 @@ from pptx_generator.pipeline import (
     TemplateExtractorOptions,
 )
 from pptx_generator.pipeline.analyzer import SlideSnapshot
-from pptx_generator.cli_handlers.trace_utils import record_stage_trace
+from pptx_generator.stages.shared.trace_utils import record_stage_trace
 from pptx_generator.models import JobMeta, JobAuth, JobSpec
 
 logger = logging.getLogger(__name__)

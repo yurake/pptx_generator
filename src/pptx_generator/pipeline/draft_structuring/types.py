@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ...models import ContentSlide, DraftDocument, DraftSection, GenerateReadyDocument, Slide
-from ...prepare.models import PrepareCard
+from ...stages.prepare.data_models import PrepareCard
 
 
 @dataclass(slots=True)

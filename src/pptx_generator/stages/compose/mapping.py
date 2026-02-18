@@ -37,12 +37,7 @@ from pptx_generator.pipeline import (
 from pptx_generator.settings import RulesConfig
 from pptx_generator.settings.loader import load_rules_config
 
-from .common import (
-    dump_json,
-    load_jobspec,
-    resolve_layouts_path,
-    resolve_template_path,
-)
+from pptx_generator.stages.shared.common import dump_json, load_jobspec, resolve_layouts_path, resolve_template_path
 from .outline import run_draft_pipeline
 
 logger = logging.getLogger(__name__)
@@ -109,7 +104,7 @@ def _should_enforce_layouts() -> bool:
 
 
 def prepare_template_style(template: Path) -> TemplateStylePayload:
-    from pptx_generator.template import extract_template_style
+    from pptx_generator.stages.template.assets import extract_template_style
 
     style, artifact = extract_template_style(template)
     if artifact.get("source", {}).get("type") == "default":

@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from pptx_generator.cli_hooks.slides import build_slide_key
+from pptx_generator.stages.shared.slides import build_slide_key
 
 
 def _load_blueprint_slides(spec_path: Path) -> list[dict]:

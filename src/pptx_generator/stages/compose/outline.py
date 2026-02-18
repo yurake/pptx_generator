@@ -17,7 +17,7 @@ from pptx_generator.pipeline import (
     PrepareNormalizationStep,
 )
 
-from .common import dump_json, load_jobspec, resolve_layouts_path
+from pptx_generator.stages.shared.common import dump_json, load_jobspec, resolve_layouts_path
 
 logger = logging.getLogger(__name__)
 @dataclass(slots=True)

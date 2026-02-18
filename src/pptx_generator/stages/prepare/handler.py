@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from .prepare_errors import PrepareCommandError
-from .prepare_models import PrepareCommandConfig, PrepareCommandResult
+from .errors import PrepareCommandError
+from .models import PrepareCommandConfig, PrepareCommandResult
 
 SLIDE_INPUTS_FILENAME = Path("slide_inputs.md")
 

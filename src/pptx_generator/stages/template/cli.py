@@ -4,14 +4,14 @@ from pathlib import Path
 
 import click
 
-from pptx_generator.cli_handlers.template_commands import (
+from pptx_generator.stages.template.commands import (
     TemplateCommandConfig,
     TemplateCommandError,
     run_template_command,
 )
 from pptx_generator.runtime.job_queue import run_job_sync
 
-from pptx_generator.cli_handlers.common import log_current_llm_provider
+from pptx_generator.stages.shared.common import log_current_llm_provider
 
 
 def create_template_command(

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, List, Mapping, Sequence, Tuple
 
-from ...prepare.models import PrepareCard, PrepareDocument, PrepareGenerationMeta
+from ...stages.prepare.data_models import PrepareCard, PrepareDocument, PrepareGenerationMeta
 from ...models import (
     ContentApprovalDocument,
     DraftDocument,

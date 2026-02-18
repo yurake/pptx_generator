@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from .template_extraction import (
+from .extraction import (
     TemplateExtractionResult,
     echo_template_extraction_result,
     run_template_extraction,

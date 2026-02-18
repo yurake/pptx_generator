@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Iterable
 
-from pptx_generator.cli_hooks.slides import slide_contexts_from_generate_ready
+from pptx_generator.stages.shared.slides import slide_contexts_from_generate_ready
 
 
 @contextmanager

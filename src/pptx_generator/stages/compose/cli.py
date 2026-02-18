@@ -4,15 +4,14 @@ from pathlib import Path
 
 import click
 
-from pptx_generator.cli_handlers.compose import (
+from pptx_generator.stages.compose.handler import (
     ComposeCommandConfig,
     ComposeCommandError,
     run_compose_command,
 )
 from pptx_generator.runtime.job_queue import run_job_sync
 from pptx_generator.executive_board.common.script_runner import run_compose_scripts
-
-from .utils import draft_common_options, handle_command_error
+from pptx_generator.stages.shared.cli_utils import draft_common_options, handle_command_error
 
 
 def _build_compose_config(

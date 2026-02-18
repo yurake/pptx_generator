@@ -9,27 +9,18 @@ from pathlib import Path
 import click
 from dotenv import load_dotenv
 
-from .cli_handlers import (
-    SLIDE_INPUTS_FILENAME,
-    PrepareCommandConfig,
-)
-from .cli_handlers.common import (
-    configure_llm_logger,
-    determine_log_level,
-)
-from .cli_commands import (
-    build_prepare_config as _build_prepare_config,
-    create_compose_command,
-    create_gen_command,
-    create_prepare_command,
-    create_template_command,
-)
+from .stages.prepare.handler import SLIDE_INPUTS_FILENAME
+from .stages.prepare.models import PrepareCommandConfig
+from .stages.shared.common import configure_llm_logger, determine_log_level
+from .stages.compose.cli import create_compose_command
+from .stages.gen.cli import create_gen_command
+from .stages.prepare.cli import build_prepare_config as _build_prepare_config
+from .stages.prepare.cli import create_prepare_command
+from .stages.template.cli import create_template_command
 from .pipeline import DraftStructuringOptions
 from .logging import configure_root_logging
 from .settings import RulesConfig  # noqa: F401 - re-exported for compatibility
-from .cli_handlers.template_extraction import (
-    PROMPT_TEMPLATE_DIRNAME,
-)
+from .stages.template.extraction import PROMPT_TEMPLATE_DIRNAME
 from .settings.paths import get_default_config_path, get_output_root, build_output_dir
 
 DEFAULT_RULES_PATH = get_default_config_path("pipeline_rules.json")

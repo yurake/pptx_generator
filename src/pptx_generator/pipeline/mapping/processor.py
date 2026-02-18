@@ -18,7 +18,7 @@ from ...models import (
     MappingSlideMeta,
     Slide,
 )
-from ...prepare.models import PrepareCard
+from ...stages.prepare.data_models import PrepareCard
 from ..draft_structuring.slide_elements import build_body_blocks
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
 from ...utils.usage_tags import normalize_usage_tag_value

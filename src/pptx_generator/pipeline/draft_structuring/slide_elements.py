@@ -6,7 +6,7 @@ import logging
 from typing import Any, Mapping, Sequence
 
 from ...models import ContentElements, ContentSlide, Slide, TemplateBlueprintSlot
-from ...prepare.models import PrepareCard
+from ...stages.prepare.data_models import PrepareCard
 from ..mapping.types import LayoutProfile
 from ...utils.text_lines import split_lines_preserve_blank
 from ..table_anchor import build_table_payload, is_table_payload, resolve_table_anchor
